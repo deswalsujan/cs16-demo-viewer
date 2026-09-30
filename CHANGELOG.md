@@ -21,7 +21,7 @@ What changed in the viewer, newest first. Dates are when the change went live.
 - Cached maps are rebuilt once after this update (for the fence fix), so the first open of each map takes a little longer.
 
 ### Fixed
-- Practice rounds before a "live on 3" were counted as part of the match (Moscow 5 vs Na`Vi on Mirage showed 1:3 at the real round 1).
+- Practice rounds before a "live on 3" were counted as part of the match (Moscow 5 vs Na`Vi on Mirage showed 1:3 at the real round 1). It now reads 16-9 to Na`Vi, matching the result posted on [HLTV's match page](https://www.hltv.org/matches/1901911/natus-vincere-vs-moscow-five-eswc-2011) (ESWC 2011).
 - Fences and grates rendered with a purple tint.
 
 ### Discussed, not changed
@@ -31,7 +31,6 @@ What changed in the viewer, newest first. Dates are when the change went live.
 - HLTV demos don't record the first-person weapon's animation, so it's rebuilt from shots, weapon switches and the player's body animation. Timing can differ slightly from in-game, and idle variations won't match. If a `v_` model is missing, no gun is shown.
 - Player models get even lighting, so they don't darken in shaded spots the way they do in-game.
 - Custom player models and sounds aren't checked yet. A model with an unusual skeleton may pose oddly; compressed or 24-bit sounds stay silent.
-- Moscow 5 vs Na`Vi on Mirage reads 16-9 to Na`Vi. Not yet confirmed against an official result.
 - Na`Vi vs FX on Dust2 shows 17-11 against the official 16-11, because the demo has an extra first-half round played by admin mistake.
 
 ## Earlier
