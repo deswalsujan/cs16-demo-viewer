@@ -30,7 +30,7 @@ Custom maps work too, as long as the map's `.bsp` (and its `.wad` files if it us
 - First-person weapons in Player's eyes view, animated from the demo: drawing, shooting, reloading, grenade throws and bomb plants
 - Sound from your game files: gunshots, footsteps, reloads, hits, grenades, bomb beeps and radio lines, quieter with distance and panned left or right (M to mute)
 - Timeline with kill ticks, wallbangs, bomb plants and pauses; speeds from 0.25x to 8x
-- Round list, kill list, and player stats split by T side, CT side and overtime
+- Round list, kill list, and player stats split by T side, CT side and overtime. Warmups, knife rounds and cancelled starts are left out, using the server's own "Live" and end-of-half announcements when the demo has them
 - Wallbang finder: kills where the victim was fully hidden and the crosshair was on the wall, with a copyable list of timestamps
 - Kill markers on the crosshair (kill, headshot, wallbang) and a death cam
 - Health, weapons, grenades, smokes, heatmaps, a hold-Tab scoreboard with spectators and the HLTV audience count
