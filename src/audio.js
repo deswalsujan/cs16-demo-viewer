@@ -3,7 +3,7 @@
 // reloads, hits, grenades, bomb beeps and the radio lines, placed around the listener like in-game:
 // quieter with distance, panned left/right. The listener is the 3D camera, or in 2D the player you
 // follow (or the middle of the radar).
-const SND = { ctx: null, out: null, bufs: {}, loading: {}, on: ls.get('snd-on') !== false, vol: ls.get('snd-vol') ?? 0.6, sentences: null, chans: {}, iSnd: 0, iShot: 0, iBoom: 0, iRad: 0 };
+const SND = { ctx: null, out: null, bufs: {}, loading: {}, on: ls.get('snd-on') !== false, vol: ls.get('snd-level') ?? 0.6, sentences: null, chans: {}, iSnd: 0, iShot: 0, iBoom: 0, iRad: 0 };
 // weapon fire events -> the sounds the CS client plays for them
 const FIRE = {
   ak47: ['ak47-1', 'ak47-2'], aug: ['aug-1'], awp: ['awp1'], deagle: ['deagle-1', 'deagle-2'], elite_left: ['elite_fire'], elite_right: ['elite_fire'],
@@ -77,11 +77,18 @@ function decodeWav(u8, ctx) {
   }
   return buf;
 }
+// The slider is 0..1. Hearing is logarithmic, so the slider maps to decibels: the far left is
+// silent (and shows as muted), the first step is barely audible, the far right is full volume.
+const volGain = (v) => (v <= 0 ? 0 : Math.pow(10, (v - 1) * 2.5)); // 0.01 -> about -50 dB, 1 -> 0 dB
 function audio() {
   if (!SND.ctx) {
     const AC = window.AudioContext || window.webkitAudioContext; if (!AC) return null;
     SND.ctx = new AC();
-    SND.out = SND.ctx.createGain(); SND.out.gain.value = SND.vol; SND.out.connect(SND.ctx.destination);
+    SND.out = SND.ctx.createGain(); SND.out.gain.value = volGain(SND.vol);
+    // a limiter at the end, so a burst of shots and explosions never clips or blasts
+    const lim = SND.ctx.createDynamicsCompressor();
+    lim.threshold.value = -18; lim.knee.value = 6; lim.ratio.value = 12; lim.attack.value = 0.003; lim.release.value = 0.25;
+    SND.out.connect(lim); lim.connect(SND.ctx.destination);
   }
   if (SND.ctx.state === 'suspended') SND.ctx.resume().catch(() => {});
   return SND.ctx;
@@ -174,8 +181,19 @@ function soundTick(t0, t1) {
   if (SND.sentences) for (const r of D.radio || []) if (r.t > t0 && r.t <= t1) { const p = SND.sentences[r.s.toUpperCase()]; if (p) playSound(p, null, 0.8, 0, 100, 'radio', L); }
 }
 function stopSounds() { for (const k in SND.chans) try { SND.chans[k].stop(); } catch (e) { } SND.chans = {}; }
+function setVolume(v) {
+  if (v <= 0) { setSound(false); return; } // the far left of the slider is mute
+  SND.vol = v; ls.set('snd-level', v);
+  if (SND.out) SND.out.gain.value = volGain(v);
+  if (!SND.on) setSound(true); else showVolume();
+}
+function showVolume() {
+  const el = $('sndVol'); el.value = SND.on ? SND.vol : 0;
+  el.title = SND.on ? `Volume ${Math.round(SND.vol * 100)}%` : 'Muted';
+}
 function setSound(on) {
   SND.on = on; ls.set('snd-on', on);
+  showVolume();
   $('bSnd').classList.toggle('on', on); $('bSnd').setAttribute('aria-pressed', on);
   $('sndIcon').innerHTML = on ? '<path d="M2 6h3l4-3v10l-4-3H2z"/><path d="M11 5.5c1 .8 1 4.2 0 5M12.6 4c2 1.6 2 6.4 0 8" fill="none" stroke="currentColor" stroke-width="1.3"/>' : '<path d="M2 6h3l4-3v10l-4-3H2z"/><path d="M11 6l4 4M15 6l-4 4" fill="none" stroke="currentColor" stroke-width="1.3"/>';
   if (on) audio(); else stopSounds();

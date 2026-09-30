@@ -379,6 +379,7 @@ function update3() {
   }
   camera.updateProjectionMatrix();
   renderer.render(R3.scene, camera);
+  if (cam3.mode === 'eyes' && selected) drawViewModel(renderer, camera, selected, playerState(selected, T));
 
   // name labels on a 2D overlay
   const lc = $('lbl'), lx = lc.getContext('2d');

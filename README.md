@@ -19,6 +19,7 @@ Custom maps work too, as long as the map's `.bsp` (and its `.wad` files if it us
 - 2D radar on the in-game overview, 3D view with the map's real textures and lighting, or both side by side
 - Cameras: free fly, player's eyes, behind the player
 - Real player and weapon models from your game files: legs run with the movement, the upper body aims where the player looks, shots and reloads animate, and bodies stay on the floor until the round ends
+- First-person weapons in Player's eyes view, animated from the demo: drawing, shooting, reloading, grenade throws and bomb plants
 - Sound from your game files: gunshots, footsteps, reloads, hits, grenades, bomb beeps and radio lines, quieter with distance and panned left or right (M to mute)
 - Timeline with kill ticks, wallbangs, bomb plants and pauses; speeds from 0.25x to 8x
 - Round list, kill list, and player stats split by T side, CT side and overtime
@@ -34,7 +35,7 @@ src/demo.js         GoldSrc demo (.dem) parser. Runs in a Web Worker.
 src/bsp.js          Map (.bsp) and texture (.wad) reader, line-of-sight checks
 src/view3d.part.js  3D view (three.js)
 src/mdl.js          Studio model (.mdl) reader and skeletal animation
-src/players3d.js    Player models in the 3D view: gait, aiming, deaths, corpses
+src/players3d.js    Player models in the 3D view: gait, aiming, deaths, corpses, first-person weapons
 src/audio.js        Sound: .wav decoding, positional playback, radio lines
 src/template.html   The page: layout, styles, 2D radar, timeline, panels
 build.py            Combines everything into one self-contained page

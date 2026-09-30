@@ -39,7 +39,7 @@ function getModel(name) {
 function retryMissingModels() { for (const k in MODELS) if (MODELS[k].status === 'missing') delete MODELS[k]; }
 
 // one posed instance of a model in the scene
-function makeRig(M) {
+function makeRig(M, parent) {
   const mdl = M.mdl, g = new THREE.Group(), parts = [];
   for (const bp of mdl.bodyparts) {
     const sub = bp.models[0]; if (!sub) continue;
@@ -54,7 +54,7 @@ function makeRig(M) {
       g.add(mesh); parts.push({ me, pos, nrm, mat });
     }
   }
-  R3.dyn.add(g);
+  (parent || R3.dyn).add(g);
   const n = mdl.numbones;
   return { M, g, parts, p: new Float32Array(n * 3), q: new Float32Array(n * 4), p2: new Float32Array(n * 3), q2: new Float32Array(n * 4), mats: new Float32Array(n * 12), used: true, tint: null };
 }
@@ -97,15 +97,19 @@ function prepAnim() {
   if (S < 11) return;
   const shotT = {};
   const sh = D.shots || [];
-  for (let i = 0; i < sh.length; i += 4) { const e = sh[i + 1]; if (e >= 1 && e <= 64) (shotT[e] || (shotT[e] = [])).push(sh[i]); }
+  const shotK = {}; // index of each shot in D.shots, to know the weapon event and silencer state
+  for (let i = 0; i < sh.length; i += 4) { const e = sh[i + 1]; if (e >= 1 && e <= 64) { (shotT[e] || (shotT[e] = [])).push(sh[i]); (shotK[e] || (shotK[e] = [])).push(i / 4); } }
   for (const e in D.slots) {
     const a = D.slots[e];
-    const rs = new Float32Array(n), gs = new Float32Array(n), gy = new Float32Array(n), gd = new Float32Array(n);
+    const rs = new Float32Array(n), gs = new Float32Array(n), gy = new Float32Array(n), gd = new Float32Array(n), ws = new Float32Array(n);
+    let cw = -1, w0 = 0;
     let cs = -1, cg = -1, s0 = 0, g0 = 0, yaw = null, dist = 0, px = NaN, py = NaN;
     for (let i = 0; i < n; i++) {
       const o = i * S, t = times[i], x = a[o], y = a[o + 1], vy = a[o + 3];
       if (a[o + 9] !== cs) { cs = a[o + 9]; s0 = t; }
       if (a[o + 10] !== cg) { cg = a[o + 10]; g0 = t; }
+      if (a[o + 6] !== cw) { cw = a[o + 6]; w0 = t; }
+      ws[i] = w0;
       rs[i] = s0; gs[i] = g0;
       if (isNaN(x) || a[o + 5] <= 0) { px = NaN; yaw = null; gy[i] = vy; gd[i] = dist; continue; }
       if (yaw == null) yaw = vy;
@@ -121,7 +125,7 @@ function prepAnim() {
       } else yaw += angDiff(vy, yaw) * 0.12; // standing: legs catch up with where the player looks
       gy[i] = yaw; gd[i] = dist; px = x; py = y;
     }
-    ANIM[e] = { rs, gs, gy, gd, shots: shotT[e] || [] };
+    ANIM[e] = { rs, gs, gy, gd, ws, shots: shotT[e] || [], shotK: shotK[e] || [] };
   }
 }
 function lastBefore(arr, t) { let lo = 0, hi = arr.length - 1, r = -1; while (lo <= hi) { const m = (lo + hi) >> 1; if (arr[m] <= t) { r = m; lo = m + 1; } else hi = m - 1; } return r >= 0 ? arr[r] : -1e9; }
@@ -224,4 +228,93 @@ function drawCorpses(r) {
     placeRig(rig, c.pos[0], c.pos[1], c.pos[2], c.yaw, 0);
   });
   return lying;
+}
+
+// ---------------- first-person weapon (Player's eyes) ----------------
+// The v_ model the player holds, drawn on top of the world like in-game. HLTV demos don't record
+// what the view model is doing, so its animation is worked out from the demo: drawing the weapon
+// when it changes, a shot on every fire event, reloads, grenade throws and bomb plants from the
+// player's own body animation, and idle in between.
+let VM = null;
+function vmScene() {
+  if (VM) return VM;
+  const scene = new THREE.Scene();
+  scene.add(new THREE.AmbientLight(0xffffff, 0.8));
+  const d = new THREE.DirectionalLight(0xffffff, 0.45); d.position.set(-0.3, 1, 0.6); scene.add(d);
+  return VM = { scene, camera: new THREE.PerspectiveCamera(70, 1, 0.5, 400), rig: null };
+}
+const vName = (p) => (p ? p.replace(/(^|\/)p_([^/]+\.mdl)$/i, '$1v_$2') : null);
+function vmSeq(mdl, name) { for (let k = 0; k < mdl.seqs.length; k++) if (mdl.seqs[k].name.toLowerCase() === name) return k; return -1; }
+// which animation the view model plays at time t, and how far into it
+function vmAnim(mdl, e, t) {
+  const A = ANIM[e]; if (!A) return null;
+  const a = D.slots[e], S = D.stride, i = M.idxAt(t);
+  const wModel = D.models[a[i * S + 6]] || '';
+  const w = (/p_(\w+)\.mdl/i.exec(wModel) || [])[1] || '';
+  // silencer on or off: from this player's latest shot with that weapon (their first one if none yet)
+  let unsil = false;
+  if (w === 'usp' || w === 'm4a1') {
+    let b = null;
+    for (let k = A.shotK.length - 1; k >= 0; k--) { const j = A.shotK[k]; if (eventName(D.shots[j * 4 + 2]) !== w) continue; b = D.shots[j * 4 + 3]; if (D.shots[j * 4] <= t) break; }
+    unsil = b === 0;
+  }
+  const pick = (...names) => { for (const n of names) { let k = unsil ? vmSeq(mdl, n + '_unsil') : -1; if (k < 0) k = vmSeq(mdl, n); if (k >= 0) return k; } return -1; };
+  const idle = pick('idle', 'idle1');
+  const cands = [];
+  const drawT = A.ws[i];
+  const draw = pick('draw', 'deploy');
+  if (draw >= 0) cands.push({ t: drawT, seq: draw });
+  // the last shot since the weapon came out
+  let lastK = -1;
+  for (let k = A.shotK.length - 1; k >= 0; k--) { const j = A.shotK[k]; if (D.shots[j * 4] <= t) { lastK = k; break; } }
+  if (lastK >= 0) {
+    const j = A.shotK[lastK], st = D.shots[j * 4];
+    if (st >= drawT - 0.05) {
+      const ev = eventName(D.shots[j * 4 + 2]);
+      let seq = -1;
+      if (w === 'knife') seq = pick(lastK % 2 ? 'midslash2' : 'midslash1');
+      else if (ev === 'elite_left' || ev === 'elite_right') seq = pick(ev === 'elite_left' ? 'shoot_left1' : 'shoot_right1');
+      else { const opts = [1, 2, 3].map((n) => pick('shoot' + n)).filter((k) => k >= 0); seq = opts.length ? opts[lastK % opts.length] : pick('shoot'); }
+      if (seq >= 0) cands.push({ t: st, seq });
+    }
+  }
+  // reloads, grenade throws and bomb plants show in the player's body animation
+  const pm = MODELS[(D.models[a[i * S + 8]] || '').toLowerCase()];
+  const body = pm && pm.mdl && pm.mdl.seqs[a[i * S + 9]] ? pm.mdl.seqs[a[i * S + 9]].name : '';
+  if (/reload/.test(body)) {
+    const r = pick('reload');
+    if (r >= 0) cands.push({ t: A.rs[i], seq: r });
+    else { const ins = pick('insert'); if (ins >= 0) cands.push({ t: A.rs[i], seq: ins, loop: true }); } // shotguns load shell by shell
+  } else if (/shoot_grenade|shoot_shieldgren/.test(body)) { const k = pick('throw'); if (k >= 0) cands.push({ t: A.rs[i], seq: k }); }
+  else if (/shoot_c4/.test(body)) { const k = pick('pressbutton'); if (k >= 0) cands.push({ t: A.rs[i], seq: k }); }
+  let cur = null;
+  for (const c of cands) if (c.t <= t + 0.001 && (!cur || c.t >= cur.t)) cur = c;
+  if (cur) {
+    const q = mdl.seqs[cur.seq], f = (t - cur.t) * q.fps;
+    if (cur.loop || (q.flags & 1) || f < q.numframes - 1) return { seq: cur.seq, frame: f };
+    if (idle >= 0) return { seq: idle, frame: (t - cur.t - q.numframes / q.fps) * mdl.seqs[idle].fps };
+    return { seq: cur.seq, frame: q.numframes - 1 };
+  }
+  return idle >= 0 ? { seq: idle, frame: t * mdl.seqs[idle].fps } : { seq: 0, frame: 0 };
+}
+// draw the held weapon over the finished frame (called right after the world is rendered)
+function drawViewModel(renderer, camera, e, s) {
+  if (!opts.models || !s || s.state <= 0 || !s.weapon) return;
+  const M2 = getModel(vName(s.weapon)); if (!M2) return;
+  const V = vmScene();
+  if (!V.rig || V.rig.M !== M2) {
+    if (V.rig) { V.scene.remove(V.rig.g); V.rig.g.traverse((o) => { if (o.geometry) o.geometry.dispose(); if (o.material) o.material.dispose(); }); }
+    V.rig = makeRig(M2, V.scene);
+    // model space (x forward, y left, z up) -> camera space (looking down -z)
+    V.rig.g.rotation.set(0, Math.PI / 2, 0);
+  }
+  const an = vmAnim(M2.mdl, e, T); if (!an) return;
+  mdlPose(M2.mdl, an.seq, an.frame, 0.5, 0.5, V.rig.p, V.rig.q);
+  mdlBoneMats(M2.mdl, V.rig.p, V.rig.q, V.rig.mats);
+  skinRig(V.rig);
+  V.camera.fov = camera.fov; V.camera.aspect = camera.aspect; V.camera.updateProjectionMatrix();
+  // drawn last, over a cleared depth buffer, so the gun never pokes into walls
+  const ac = renderer.autoClear; renderer.autoClear = false;
+  renderer.clearDepth(); renderer.render(V.scene, V.camera);
+  renderer.autoClear = ac;
 }

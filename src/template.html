@@ -202,7 +202,7 @@ kbd { font-family: var(--f-mono); font-size: 11px; background: var(--panel-2); b
 .ib svg { width: 16px; height: 16px; fill: currentColor; }
 .kbd { color: var(--faint); font-size: 11px; font-family: var(--f-mono); }
 .sndgrp { display: inline-flex; align-items: center; gap: 6px; }
-.sndgrp input { width: 84px; accent-color: var(--sand); }
+.sndgrp input { width: 100px; accent-color: var(--sand); }
 #bSnd.on { color: var(--fg); border-color: var(--line); }
 #bSnd:not(.on) { color: var(--faint); }
 
@@ -392,7 +392,7 @@ kbd { font-family: var(--f-mono); font-size: 11px; background: var(--panel-2); b
       <button class="btn ib" id="bNextR" type="button" title="Next round (↓)"><svg viewBox="0 0 16 16"><path d="M11 2h2v12h-2zM2 2v12l8-6z"/></svg></button>
       <span class="time" id="time"><b>0:00</b> / 0:00</span>
       <button class="btn" id="bScope" type="button" title="Timeline shows the whole match or only this round">Timeline: match</button>
-      <span class="sndgrp"><button class="btn ib" id="bSnd" type="button" title="Sound on or off (M)" aria-pressed="true"><svg viewBox="0 0 16 16" id="sndIcon"></svg></button><input type="range" id="sndVol" min="0" max="1" step="0.05" aria-label="Volume" title="Volume"></span>
+      <span class="sndgrp"><button class="btn ib" id="bSnd" type="button" title="Sound on or off (M)" aria-pressed="true"><svg viewBox="0 0 16 16" id="sndIcon"></svg></button><input type="range" id="sndVol" min="0" max="1" step="0.01" aria-label="Volume" title="Volume"></span>
       <button class="btn" id="bKeys" type="button" title="Keyboard shortcuts (?)">Shortcuts <span class="kbd">?</span></button>
       <div class="sp" id="speeds"></div>
     </div>
@@ -776,6 +776,20 @@ function derive() {
     liveSegs = best != null ? [best] : [];
   }
   for (const r of rounds) r.live = liveSegs.includes(String(r.seg)) && r.kills.length > 0 && r.dur > 5 && r.winner != null;
+  // False starts: a live stretch where a first half should begin (or an overtime) that stops short
+  // of a full half and is followed by another live start. Typical case: a few practice rounds on a
+  // fresh 0:0, then the admins restart "live on 3" for the real match.
+  {
+    const segs = [...new Set(rounds.filter((r) => r.live).map((r) => r.seg))].sort((a, b) => a - b);
+    let total = 0;
+    for (let i = 0; i < segs.length; i++) {
+      const rs = rounds.filter((r) => r.live && r.seg === segs[i]);
+      const halfStart = total === 0 || (total >= 30 && (total - 30) % 6 === 0);
+      const minHalf = total >= 30 ? 3 : 12;
+      if (i < segs.length - 1 && halfStart && rs.length < minHalf) { for (const r of rs) r.live = false; continue; }
+      total += rs.length;
+    }
+  }
   if (!rounds.some((r) => r.live)) for (const r of rounds) r.live = r.dur > 5;
 
   // sides per player per live round (sample 5s into the round)
@@ -1710,8 +1724,7 @@ setControls(false);
 $('tgModels').onclick = () => { opts.models = !opts.models; $('tgModels').classList.toggle('on', opts.models); ls.set('models', opts.models); };
 if (ls.get('models') === false) { opts.models = false; $('tgModels').classList.remove('on'); }
 $('bSnd').onclick = () => setSound(!SND.on);
-$('sndVol').value = SND.vol;
-$('sndVol').oninput = (e) => { SND.vol = +e.target.value; ls.set('snd-vol', SND.vol); if (SND.out) SND.out.gain.value = SND.vol; if (SND.vol > 0 && !SND.on) setSound(true); };
+$('sndVol').oninput = (e) => setVolume(+e.target.value);
 // browsers only let a page make sound after you've clicked or pressed a key on it
 const wake = () => { if (SND.on) audio(); };
 document.addEventListener('pointerdown', wake, true); document.addEventListener('keydown', wake, true);
