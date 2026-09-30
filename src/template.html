@@ -256,7 +256,7 @@ kbd { font-family: var(--f-mono); font-size: 11px; background: var(--panel-2); b
       <span class="viewers" id="viewers" title="People watching the HLTV broadcast at this moment"></span>
     </div>
     <div class="seg" id="viewSeg" role="group" aria-label="View"><button type="button" data-v="2d" class="on">2D</button><button type="button" data-v="3d">3D</button><button type="button" data-v="split">3D + radar</button></div>
-    <div class="hbtns"><button class="btn" id="btnOpen" type="button">Open another demo</button></div>
+    <div class="hbtns"><button class="btn" id="bFull" type="button" title="Full screen (F)">Full screen</button><button class="btn" id="btnOpen" type="button">Open another demo</button></div>
   </header>
 
   <section class="radar m2d" id="radar">
@@ -293,7 +293,8 @@ kbd { font-family: var(--f-mono); font-size: 11px; background: var(--panel-2); b
             <dt>Hold <kbd>Tab</kbd></dt><dd>Scoreboard</dd>
             <dt><kbd>N</kbd></dt><dd>Show or hide names</dd>
             <dt><kbd>H</kbd></dt><dd>Names through walls on or off (3D)</dd>
-            <dt><kbd>M</kbd></dt><dd>Sound on or off</dd></dl>
+            <dt><kbd>M</kbd></dt><dd>Sound on or off</dd>
+            <dt><kbd>F</kbd></dt><dd>Full screen on or off</dd></dl>
           </section>
           <section><h3>3D camera</h3>
             <dl><dt><kbd>V</kbd></dt><dd>Switch camera: free, player's eyes, behind player</dd>
@@ -327,14 +328,14 @@ kbd { font-family: var(--f-mono); font-size: 11px; background: var(--panel-2); b
       <button class="btn on" id="tgNames" type="button">Names</button>
       <button class="btn on" id="tgNades" type="button">Grenades</button>
       <button class="btn on" id="tgLines" type="button">Kill lines</button>
-      <button class="btn on" id="tgXray" type="button" title="Show names through walls in 3D (H)">Names through walls</button>
+      <button class="btn" id="tgXray" type="button" title="Show names through walls in 3D (H)">Names through walls</button>
       <button class="btn" id="tgFit" type="button">Reset view</button>
     </div>
     <div class="heatbar" id="heatbar" hidden>
       <select id="hmMode" aria-label="Heatmap">
         <option value="off">Heatmap: off</option>
-        <option value="deaths">Heatmap: deaths</option>
-        <option value="kills">Heatmap: kill spots</option>
+        <option value="deaths">Heatmap: where players died</option>
+        <option value="kills">Heatmap: where kills were made from</option>
         <option value="presence">Heatmap: where players stand</option>
       </select>
       <select id="hmSide" aria-label="Heatmap filter">
@@ -421,7 +422,7 @@ let view = { s: 1, x: 0, y: 0 };
 let selected = null;     // selected player entity
 let scope = 'match';
 let tab = 'rounds';
-const opts = { names: true, nades: true, lines: true, xray: true, models: true };
+const opts = { names: true, nades: true, lines: true, xray: false, models: true };
 // kill moments that just happened, for the hit markers (timed in real seconds so they stay visible at any speed)
 const flashes = [];
 let prevT = null;
@@ -640,7 +641,7 @@ async function loadMap(map) {
     status3(`Loading ${map}…`);
     let bspBlob = files.maps[key] || null, tex = null;
     if (!bspBlob) {
-      const c = await idb.get('map:' + key);
+      const c = await idb.get('map2:' + key);
       if (c) { bspBlob = c.bsp; tex = c.tex; }
     }
     if (!bspBlob) { clear3d(); status3(`The map file ${map}.bsp was not found.`, true); return null; }
@@ -660,7 +661,7 @@ async function loadMap(map) {
           for (const n in found) { tex[n] = found[n]; missing.delete(n); }
         } catch (e) { /* skip unreadable wad */ }
       }
-      idb.put('map:' + key, { bsp: bspBlob, tex });
+      idb.put('map2:' + key, { bsp: bspBlob, tex });
     }
     MAP = { name: key, bsp, tex };
     // breakable brushes (vents, glass, wooden planks): these can be shot out during a round
@@ -1240,6 +1241,7 @@ document.addEventListener('keydown', (e) => {
   else if (k === 'n' || k === 'N') toggleOpt('names', 'tgNames');
   else if (k === 'h' || k === 'H') toggleOpt('xray', 'tgXray');
   else if (k === 'm' || k === 'M') setSound(!SND.on);
+  else if (k === 'f' || k === 'F') toggleFull();
   else if (k === 'x' || k === 'X') { nextPlayer(1); if (viewMode !== '2d' && cam3.mode === 'free') setCam('eyes'); }
   else if (k === 'z' || k === 'Z') { nextPlayer(-1); if (viewMode !== '2d' && cam3.mode === 'free') setCam('eyes'); }
   else if (/^[0-9]$/.test(k)) { const pid = playerOrder()[(+k + 9) % 10]; const e = pid && M.slotOf(pid, T); if (e) { selected = e; renderPane(); if (viewMode !== '2d' && cam3.mode === 'free') setCam('eyes'); } }
@@ -1563,6 +1565,13 @@ function draw() {
 let heat = null;
 const heatOn = () => $('hmMode').value !== 'off';
 ['hmMode', 'hmSide', 'hmScope'].forEach((id) => $(id).onchange = () => { heat = null; });
+// when a round is live: from the end of freeze time to the moment it's won
+function playSpan(r) {
+  const rts = (D.roundTimes || []).filter((x) => x.t >= r.start - 1 && x.t < r.end);
+  const start = rts.length >= 2 ? rts[1].t : r.start; // first timer is freeze time, the second starts the round
+  return [start, r.endT != null ? r.endT : r.end];
+}
+function pausedAt(t) { let on = false; for (const p of D.pauses || []) { if (p.t > t) break; on = p.on; } return on; }
 function buildHeat() {
   const mode = $('hmMode').value, side = $('hmSide').value, sc = $('hmScope').value;
   const W = 256, H = 192; const iw = OV ? OV.w : 1024, ih = OV ? OV.h : 768;
@@ -1585,11 +1594,14 @@ function buildHeat() {
         if (mode === 'kills' && k.kpos && k.killer !== k.victim && want(k.kteam) && (!selected || k.killer === selected)) add(k.kpos[0], k.kpos[1], 1);
       }
     } else {
-      const S = D.stride; const i0 = M.idxAt(r.start), i1 = M.idxAt(sc === 'round' ? Math.min(r.end, T) : r.end);
+      // only while the round is actually being played: not freeze time at the start, not the few
+      // seconds after the round is decided, and not while the match is paused
+      const [p0, p1] = playSpan(r);
+      const S = D.stride; const i0 = M.idxAt(p0), i1 = M.idxAt(sc === 'round' ? Math.min(p1, T) : p1);
       for (const e in D.slots) {
         if (selected && +e !== selected) continue;
         const a = D.slots[e];
-        for (let i = i0; i <= i1; i += 15) { const st = a[i * S + 5]; if (st <= 0 || isNaN(a[i * S])) continue; if (side !== 'all' && String(st) !== side) continue; add(a[i * S], a[i * S + 1], 0.2); }
+        for (let i = i0; i <= i1; i += 15) { const st = a[i * S + 5]; if (st <= 0 || isNaN(a[i * S])) continue; if (side !== 'all' && String(st) !== side) continue; if (pausedAt(D.times[i])) continue; add(a[i * S], a[i * S + 1], 0.2); }
       }
     }
   }
@@ -1724,6 +1736,15 @@ setControls(false);
 $('tgModels').onclick = () => { opts.models = !opts.models; $('tgModels').classList.toggle('on', opts.models); ls.set('models', opts.models); };
 if (ls.get('models') === false) { opts.models = false; $('tgModels').classList.remove('on'); }
 $('bSnd').onclick = () => setSound(!SND.on);
+// full screen: the whole viewer fills the screen (Esc or F leaves it)
+function toggleFull() {
+  const el = document.documentElement;
+  if (document.fullscreenElement) { document.exitFullscreen().catch(() => {}); return; }
+  const req = el.requestFullscreen ? el.requestFullscreen() : Promise.reject(new Error('no fullscreen'));
+  req.catch(() => { setMsg('Full screen is blocked here. Press F11 in your browser instead.'); if (D) toast('Full screen is blocked here. Press F11 in your browser instead.'); });
+}
+$('bFull').onclick = toggleFull;
+document.addEventListener('fullscreenchange', () => { $('bFull').textContent = document.fullscreenElement ? 'Exit full screen' : 'Full screen'; });
 $('sndVol').oninput = (e) => setVolume(+e.target.value);
 // browsers only let a page make sound after you've clicked or pressed a key on it
 const wake = () => { if (SND.on) audio(); };

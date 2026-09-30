@@ -39,6 +39,7 @@ src/players3d.js    Player models in the 3D view: gait, aiming, deaths, corpses,
 src/audio.js        Sound: .wav decoding, positional playback, radio lines
 src/template.html   The page: layout, styles, 2D radar, timeline, panels
 build.py            Combines everything into one self-contained page
+CHANGELOG.md        What changed, newest first
 index.html          The built page (what GitHub Pages serves)
 ```
 

@@ -186,11 +186,13 @@ function endRigs() { for (const k in R3.rigs) if (!R3.rigs[k].used) R3.rigs[k].g
 function clearRigs() { if (!R3 || !R3.rigs) return; for (const k in R3.rigs) disposeRig(R3.rigs[k]); R3.rigs = {}; }
 
 const SEL_TINT = 0x5a4a22;
+// the model a player is drawn with, as the game does: the one named in their player info
+const playerModelName = (k) => ((D.pmodels ? D.pmodels[k] : D.models[k]) || '');
 // a living or dying player; returns true when drawn with a real model
 function drawModelPlayer(e, s, hide) {
   if (!opts.models) return false;
   const a = D.slots[e], S = D.stride, i = M.idxAt(T);
-  const pname = D.models[a[i * S + 8]];
+  const pname = playerModelName(a[i * S + 8]);
   if (!pname || !/\.mdl$/i.test(pname)) return false;
   const r = rigFor('p' + e, pname);
   if (!r) return false;
@@ -216,8 +218,8 @@ function drawCorpses(r) {
     // the camera sits on this body during the death cam, so leave it out then
     if (c.e === selected && cam3.mode !== 'free') return;
     // same model the player had when they died (the corpse message can name a different one)
-    const sl = D.slots[c.e], mi = sl ? sl[M.idxAt(Math.max(r.start, c.start)) * D.stride + 8] : 0;
-    const name = mi && /^models\/player\//i.test(D.models[mi] || '') ? D.models[mi] : `models/player/${c.model}/${c.model}.mdl`;
+    const sl = D.slots[c.e], pn = sl ? playerModelName(sl[M.idxAt(Math.max(r.start, c.start)) * D.stride + 8]) : '';
+    const name = /^models\/player\//i.test(pn) ? pn : `models/player/${c.model}/${c.model}.mdl`;
     const rig = rigFor('c' + k, name); if (!rig) return;
     const mdl = rig.M.mdl, q = mdl.seqs[c.seq] || mdl.seqs[0];
     if (rig.frameFor !== k || rig.lastFrame !== Math.min(q.numframes - 1, (T - c.start) * q.fps)) {
@@ -279,7 +281,7 @@ function vmAnim(mdl, e, t) {
     }
   }
   // reloads, grenade throws and bomb plants show in the player's body animation
-  const pm = MODELS[(D.models[a[i * S + 8]] || '').toLowerCase()];
+  const pm = MODELS[playerModelName(a[i * S + 8]).toLowerCase()];
   const body = pm && pm.mdl && pm.mdl.seqs[a[i * S + 9]] ? pm.mdl.seqs[a[i * S + 9]].name : '';
   if (/reload/.test(body)) {
     const r = pick('reload');

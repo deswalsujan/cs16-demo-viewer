@@ -148,8 +148,11 @@ function decodeMip(u8, base, m0, w, h, name) {
   for (let i = 0; i < n; i++) {
     const c = u8[base + m0 + i];
     const p = pal + c * 3;
-    out[i * 4] = u8[p]; out[i * 4 + 1] = u8[p + 1]; out[i * 4 + 2] = u8[p + 2];
-    out[i * 4 + 3] = trans && c === 255 ? 0 : 255;
+    // see-through texels (fences, grates) are marked with palette colour 255, usually pure blue:
+    // blank them so texture smoothing can't bleed that blue into the visible parts
+    const see = trans && c === 255;
+    out[i * 4] = see ? 0 : u8[p]; out[i * 4 + 1] = see ? 0 : u8[p + 1]; out[i * 4 + 2] = see ? 0 : u8[p + 2];
+    out[i * 4 + 3] = see ? 0 : 255;
   }
   return out;
 }

@@ -123,7 +123,7 @@ const TE_SIZES = {
 };
 
 const SAMPLE_HZ = 30;
-const STRIDE = 11; // x, y, z, yaw, pitch, state, weaponModel, ducked, playerModel, sequence, gaitsequence
+const STRIDE = 11; // x, y, z, yaw, pitch, state, weaponModel, ducked, playerModel (index into pmodels), sequence, gaitsequence
 
 export function parseDemo(buffer, onProgress) {
   const u8 = buffer instanceof Uint8Array ? buffer : new Uint8Array(buffer);
@@ -199,7 +199,7 @@ export function parseDemo(buffer, onProgress) {
       }
       const a = slotArr(e);
       const state = dead.has(e) ? -side : side;
-      if (st) a.push(st['origin[0]'] || 0, st['origin[1]'] || 0, st['origin[2]'] || 0, st['angles[1]'] || 0, st['angles[0]'] || 0, state, st.weaponmodel || 0, st.usehull || 0, st.modelindex || 0, st.sequence || 0, st.gaitsequence || 0);
+      if (st) a.push(st['origin[0]'] || 0, st['origin[1]'] || 0, st['origin[2]'] || 0, st['angles[1]'] || 0, st['angles[0]'] || 0, state, st.weaponmodel || 0, st.usehull || 0, pmIndex(p, st), st.sequence || 0, st.gaitsequence || 0);
       else a.push(NaN, NaN, NaN, 0, 0, state, 0, 0, 0, 0, 0);
     }
     for (const k in nadeEnts) {
@@ -216,6 +216,14 @@ export function parseDemo(buffer, onProgress) {
     }
     for (const m in now) if (brushVis[m] !== now[m]) { brushVis[m] = now[m]; brushEvents.push(time, +m.slice(1), now[m]); }
     for (const m in brushVis) if (!(m in now) && brushVis[m]) { brushVis[m] = 0; brushEvents.push(time, +m.slice(1), 0); }
+  }
+
+  // player models seen in the demo, by the name each player's info gives (falls back to the entity's model)
+  const pmodels = [], pmSeen = {};
+  function pmIndex(p, st) {
+    const name = p && p.model ? `models/player/${p.model}/${p.model}.mdl` : (resources.models[st.modelindex] || '');
+    if (!(name in pmSeen)) { pmSeen[name] = pmodels.length; pmodels.push(name); }
+    return pmSeen[name];
   }
 
   function isProxy() {
@@ -424,6 +432,8 @@ export function parseDemo(buffer, onProgress) {
           players[e].isHltv = kv['*hltv'] !== undefined;
           players[e].userId = uid;
           if (kv['*sid']) players[e].sid = kv['*sid'];
+          // the game draws each player with the model named in their info (not the entity's model index)
+          if (kv.model) players[e].model = kv.model.toLowerCase().replace(/[^a-z0-9_\-]/g, '');
           if (!info) players[e].left = true;
           // occupant bookkeeping
           const cur = curOcc[e];
@@ -697,7 +707,7 @@ export function parseDemo(buffer, onProgress) {
     occupants, brushEvents: new Float32Array(brushEvents), viewers: hltvStatus,
     times: new Float32Array(samples.t), slots,
     finalScore: { ...scores }, models: resources.models, stride: STRIDE,
-    sounds: resources.sounds, events: resources.events, snds: new Float32Array(snds), shots: new Float32Array(shots), booms: new Float32Array(booms), radio, corpses,
+    pmodels, sounds: resources.sounds, events: resources.events, snds: new Float32Array(snds), shots: new Float32Array(shots), booms: new Float32Array(booms), radio, corpses,
     errors, errSamples,
   };
 }
