@@ -88,8 +88,8 @@ function build3d() {
   if (!R3 || !MAP) return;
   const { world } = R3;
   while (world.children.length) { const c = world.children.pop(); c.geometry && c.geometry.dispose(); }
-  const mesh = buildMesh(MAP.bsp, MAP.breakables);
-  R3.brk = {};
+  const mesh = buildMesh(MAP.bsp, new Set([...MAP.breakables, ...MAP.movers.keys()]));
+  R3.brk = {}; R3.mov = {};
   const lmTex = new THREE.DataTexture(mesh.atlas.data, mesh.atlas.w, mesh.atlas.h, THREE.RGBAFormat);
   lmTex.magFilter = THREE.LinearFilter; lmTex.minFilter = THREE.LinearFilter; lmTex.needsUpdate = true;
   const texCache = {};
@@ -108,7 +108,9 @@ function build3d() {
     if (!g.pos.length) continue;
     const geo = new THREE.BufferGeometry();
     const p = g.pos; const q = new Float32Array(p.length);
-    for (let i = 0; i < p.length; i += 3) { q[i] = p[i]; q[i + 1] = p[i + 2]; q[i + 2] = -p[i + 1]; }
+    // movers are built around their own origin, then placed each frame where the demo says they are
+    const mo = MAP.movers.get(g.model) || [0, 0, 0];
+    for (let i = 0; i < p.length; i += 3) { q[i] = p[i] - mo[0]; q[i + 1] = p[i + 2] - mo[2]; q[i + 2] = -(p[i + 1] - mo[1]); }
     geo.setAttribute('position', new THREE.BufferAttribute(q, 3));
     geo.setAttribute('uv', new THREE.BufferAttribute(g.uv, 2));
     geo.setAttribute('uv2', new THREE.BufferAttribute(g.uv2, 2));
@@ -121,8 +123,10 @@ function build3d() {
     });
     const m3 = new THREE.Mesh(geo, mat);
     if (g.model >= 0) (R3.brk[g.model] || (R3.brk[g.model] = [])).push(m3);
+    if (MAP.movers.has(g.model)) { m3.matrixAutoUpdate = false; (R3.mov[g.model] || (R3.mov[g.model] = [])).push(m3); }
     world.add(m3);
   }
+  for (const m in R3.mov) placeMover(R3.mov[m], brushPose(MAP.movers.get(+m), null));
   view3.ready = true; view3.map = MAP.name;
 }
 // Forget everything tied to the previous demo: who we follow, camera, markers, figures, and
@@ -145,8 +149,20 @@ function resetForNewDemo() {
 function clear3d() {
   if (!R3) return;
   while (R3.world.children.length) { const c = R3.world.children.pop(); c.geometry && c.geometry.dispose(); }
-  R3.brk = {};
+  R3.brk = {}; R3.mov = {};
   view3.ready = false; view3.map = null;
+}
+// Put a mover's meshes where it is: the engine's forward, left (-right) and up as the brush's axes,
+// then from game space (x, y, z) to three.js space (x, z, -y).
+const moverMat = new THREE.Matrix4();
+function placeMover(list, ps) {
+  const f = ps.f || [1, 0, 0], r = ps.r || [0, -1, 0], u = ps.u || [0, 0, 1], o = ps.o;
+  // columns are the brush's local x, y, z in three.js space; local y (left) is -right
+  const c = (v) => [v[0], v[2], -v[1]];
+  const X = c(f), Y = c([-r[0], -r[1], -r[2]]), Z = c(u), O = c(o);
+  // three.js local = (x, z, -y) of game local, so the columns are X, Z, -Y
+  moverMat.set(X[0], Z[0], -Y[0], O[0], X[1], Z[1], -Y[1], O[1], X[2], Z[2], -Y[2], O[2], 0, 0, 0, 1);
+  for (const m of list) { m.matrix.copy(moverMat); m.matrixWorldNeedsUpdate = true; }
 }
 
 function resetCam3() {
@@ -224,6 +240,9 @@ function update3() {
   const r = roundAt(T);
   // breakables: hide the ones that have been shot out at this moment
   if (R3.brk) for (const m in R3.brk) { const vis = !brokenAt(+m, T); for (const x of R3.brk[m]) x.visible = vis; }
+  // doors and other movers: where the demo says they are right now (open, closed or halfway)
+  R3.poses = posesAt(T); R3.broken = brokenSet(T);
+  if (R3.mov && MAP) for (const m in R3.mov) placeMover(R3.mov[m], R3.poses.get(+m) || brushPose(MAP.movers.get(+m), null));
   // players
   const lab = [];
   beginRigs();
@@ -345,7 +364,7 @@ function update3() {
         const far = [head[0] - back[0] * FULL, head[1] - back[1] * FULL, head[2] - back[2] * FULL + 14];
         let allow = FULL;
         if (MAP) {
-          const r = solidAlong(MAP.bsp, head, far, 2);
+          const r = solidAlong(MAP.bsp, head, far, 2, R3.broken, R3.poses);
           if (r.hit.length) allow = Math.max(0, r.hit[0].f0 * r.len - 10);
         }
         if (allow < cam3.cLen) cam3.cLen = allow;               // pull in at once
@@ -396,7 +415,7 @@ function update3() {
     if (!opts.xray && MAP) {
       const s = L.s, headZ = s.z + (s.duck ? 12 : 24);
       // a free camera floating above the map starts outside the level, which counts as solid: ignore that first stretch
-      const blocked = (to) => { const r = solidAlong(MAP.bsp, camW, to, 4); return r.hit.some((h, i) => !(i === 0 && h.f0 * r.len <= 8)); };
+      const blocked = (to) => { const r = solidAlong(MAP.bsp, camW, to, 4, R3.broken, R3.poses); return r.hit.some((h, i) => !(i === 0 && h.f0 * r.len <= 8)); };
       if (blocked([s.x, s.y, headZ]) && blocked([s.x, s.y, s.z])) continue;
     }
     const sx = (v.x + 1) / 2 * W, sy = (1 - v.y) / 2 * H;

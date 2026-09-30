@@ -9,6 +9,20 @@ What changed in the viewer, newest first. The version shows in the viewer's shor
 - A demo that's cut off (interrupted download or recording) can't be opened at all yet, even though the part before the cut is readable. See [IDEAS.md](IDEAS.md).
 - Na`Vi vs FX on Dust2 shows 17-11 against the official 16-11, because the demo has an extra first-half round played by admin mistake.
 
+## 0.7.0 (2026-10-01)
+
+### Fixed
+- Doors are no longer treated as always closed. The demo records where every door is and how far it's turned, and the viewer now uses that: open doors (either way) no longer count as cover in the wallbang finder, and in 3D doors open and close as they did in the match. Applies to every door, including the Nuke rotating door, the Tuscan A site door and the Inferno blue door. On Fnatic vs ALTERNATE (Nuke) 7 false wallbangs through the open door are gone; on Fnatic vs mousesports (Tuscan) 3, including both round 14 kills at 1:05. Kills through the Nuke glass doors while they're shut still count.
+- First-person weapons are held in the right hand, like CS 1.6's default. The stock model files are left-handed, and the game mirrors them.
+- The start screen scrolls on smaller screens, so the demo list, messages and "Clear saved files" are always reachable.
+- Opening a demo that was deleted or moved after choosing the folder no longer hangs on the progress bar. It says the file is gone, takes it off the list, and asks to choose the folder again.
+
+### Added
+- Coming back to the page checks the listed demos are still in the folder, and takes any that were deleted or moved off the list with a note.
+- The load summary warns when files in the Half-Life folder changed on disk after the folder was chosen (for example when copying the folder over again), names a few, and offers "Choose Half-Life folder". Until then the viewer uses the copies this browser saved, where it has them.
+- Dead players are greyed out in the Players tab with a "dead" tag and can't be picked (or jumped to with 1 to 0) until the next round. Clicking one says why.
+- Clearer notes in the load summary: where the radar overview files belong, and how many of the missing sounds are weapon sounds.
+
 ## 0.6.0 (2026-10-01)
 
 ### Changed

@@ -18,6 +18,8 @@ This is an unofficial fan project. It is not affiliated with or endorsed by Valv
 3. Pick a demo from the list, or open any `.dem` file.
 4. Press `?` for keyboard shortcuts.
 
+If you add, replace or delete files in the folder while the page is open, choose the folder again so the viewer sees the changes. The viewer tells you when a file it needs has changed on disk.
+
 Custom maps work too, as long as the map's `.bsp` (and its `.wad` files if it uses any) are in `cstrike/maps` or `cstrike_downloads/maps`.
 
 ## Features
@@ -32,7 +34,7 @@ Custom maps work too, as long as the map's `.bsp` (and its `.wad` files if it us
 - Wallbang finder: kills where the victim was fully hidden and the crosshair was on the wall, with a copyable list of timestamps
 - Kill markers on the crosshair (kill, headshot, wallbang) and a death cam
 - Health, weapons, grenades, smokes, heatmaps, a hold-Tab scoreboard with spectators and the HLTV audience count
-- Breakable vents and windows disappear in 3D when they are shot out
+- Breakable vents and windows disappear in 3D when they are shot out, and doors open and close as they did in the match (the wallbang finder uses where each door really was)
 
 ## Project layout
 

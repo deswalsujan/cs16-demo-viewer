@@ -154,6 +154,7 @@ export function parseDemo(buffer, onProgress) {
   // who is in each slot over time (slots get reused when people leave and others join)
   const occupants = [], curOcc = {};
   const brushVis = {}, brushEvents = []; // breakable brush models (vents, glass, logs) shown or hidden
+  const brushPoseNow = {}, brushPose = []; // brush models' position and turn over time: time, model, x, y, z, pitch, yaw, roll
   const hltvStatus = [];
   // sounds heard in the demo: server sounds, weapon fire events, explosions, radio lines and corpses
   const snds = [];      // time, sound resource index, entity, volume, attenuation, pitch, channel, x, y, z (NaN when not sent)
@@ -213,6 +214,10 @@ export function parseDemo(buffer, onProgress) {
       const m = resources.models[st.modelindex];
       if (!m || m[0] !== '*') continue;
       now[m] = (now[m] || 0) | ((st.effects || 0) & 128 ? 0 : 1);
+      // doors and other movers: where the brush is and how it's turned (a door can be open either way)
+      const pz = [st['origin[0]'] || 0, st['origin[1]'] || 0, st['origin[2]'] || 0, st['angles[0]'] || 0, st['angles[1]'] || 0, st['angles[2]'] || 0];
+      const last = brushPoseNow[m];
+      if (!last || pz.some((v, i) => Math.abs(v - last[i]) > 0.05)) { brushPoseNow[m] = pz; brushPose.push(time, +m.slice(1), ...pz); }
     }
     for (const m in now) if (brushVis[m] !== now[m]) { brushVis[m] = now[m]; brushEvents.push(time, +m.slice(1), now[m]); }
     for (const m in brushVis) if (!(m in now) && brushVis[m]) { brushVis[m] = 0; brushEvents.push(time, +m.slice(1), 0); }
@@ -704,7 +709,7 @@ export function parseDemo(buffer, onProgress) {
     mapName: (serverInfo && serverInfo.mapFile) ? serverInfo.mapFile.replace(/^maps\//, '').replace(/\.bsp$/, '') : header.mapName,
     start: playbackStart || 0, end: time,
     players, kills, rounds, bomb, chat, nades, roundTimes, pauses, hp: new Float32Array(hp),
-    occupants, brushEvents: new Float32Array(brushEvents), viewers: hltvStatus,
+    occupants, brushEvents: new Float32Array(brushEvents), brushPose: new Float32Array(brushPose), viewers: hltvStatus,
     times: new Float32Array(samples.t), slots,
     finalScore: { ...scores }, models: resources.models, stride: STRIDE,
     pmodels, sounds: resources.sounds, events: resources.events, snds: new Float32Array(snds), shots: new Float32Array(shots), booms: new Float32Array(booms), radio, corpses,

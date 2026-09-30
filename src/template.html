@@ -119,6 +119,9 @@ button { cursor: pointer; }
 .prow .sc { text-align: right; font-family: var(--f-mono); font-size: 12px; font-variant-numeric: tabular-nums; color: var(--fg); }
 .prow .sc.pos { color: var(--good); } .prow .sc.neg { color: var(--kill); }
 .prow.gone .main { opacity: .5; }
+.prow.dead { cursor: not-allowed; }
+.prow.dead .main, .prow.dead .sc { opacity: .45; }
+.deadtag { font-family: var(--f-mono); font-size: 10px; color: var(--t); border: 1px solid color-mix(in srgb, var(--t) 45%, transparent); border-radius: 3px; padding: 0 4px; margin-left: 6px; }
 .stathead { cursor: default; padding-top: 2px; padding-bottom: 4px; }
 .stathead:hover { background: none; }
 .stathead .sc { color: var(--muted); font-size: 11px; }
@@ -240,10 +243,11 @@ kbd { font-family: var(--f-mono); font-size: 11px; background: var(--panel-2); b
 
 /* load screen */
 .load {
-  position: absolute; inset: 0; display: grid; place-items: center; padding: 24px; z-index: 10;
+  position: absolute; inset: 0; display: flex; padding: 24px; z-index: 10; overflow-y: auto; overscroll-behavior: contain;
   background: radial-gradient(ellipse at 50% 40%, #151a1e 0%, var(--radar) 70%);
 }
-.load-card { max-width: 560px; width: 100%; display: grid; gap: 18px; }
+/* margin: auto centres the card when it fits, and lets the page scroll from the top when it doesn't (small screens) */
+.load-card { max-width: 560px; width: 100%; display: grid; gap: 18px; margin: auto; }
 .load h1 { font-family: var(--f-display); font-size: clamp(26px, 5vw, 38px); line-height: 1.05; text-transform: uppercase; letter-spacing: .02em; text-wrap: balance; margin: 0; }
 .load h1 span { color: var(--sand); }
 .load p { color: var(--muted); margin: 0; line-height: 1.55; max-width: 60ch; }
@@ -488,9 +492,19 @@ const ls = {
 const fmt = (s) => { s = Math.max(0, s); const m = Math.floor(s / 60), x = Math.floor(s % 60); return m + ':' + String(x).padStart(2, '0'); };
 const esc = (s) => String(s).replace(/[&<>"]/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c]));
 const cleanName = (s) => (s || '?').replace(/[\x00-\x1f]/g, '');
-function setMsg(t, err) { $('msg').textContent = t || ''; $('msg').classList.toggle('err', !!err); }
+function setMsg(t, err) { $('msg').textContent = t || ''; $('msg').classList.toggle('err', !!err); if (err && t && !$('load').hidden) $('msg').scrollIntoView({ block: 'nearest' }); }
 function sideCol(side) { return side === 1 ? COL.t : side === 2 ? COL.ct : COL.muted; }
 function weaponShort(m) { if (!m) return ''; const x = /p_(\w+)\.mdl/.exec(m); return x ? x[1] : ''; }
+// A file picked from the folder that can't be read any more: it was deleted, moved, renamed or
+// changed on disk after the folder was chosen. The browser only lets the page read the files as they
+// were at that moment, so the fix is to choose the folder again.
+const STALE = new Set();
+function isStale(e) { return !!e && (e.name === 'NotFoundError' || e.name === 'NotReadableError'); }
+function noteStale(e, name) { if (isStale(e)) STALE.add(name); return isStale(e); }
+// read a picked file, or null when it has gone stale (noted for the load summary)
+async function readPicked(blob, name) {
+  try { return new Uint8Array(await blob.arrayBuffer()); } catch (e) { if (noteStale(e, name)) return null; throw e; }
+}
 
 // ---------------- file loading ----------------
 $('btnFolder').onclick = () => $('fFolder').click();
@@ -502,6 +516,7 @@ $('fFolder').onchange = (e) => { indexFolder([...e.target.files]); e.target.valu
 function indexFolder(list) {
   let nOv = 0;
   files.demos = [];
+  STALE.clear();
   for (const f of list) {
     const p = (f.webkitRelativePath || f.name).replace(/\\/g, '/').toLowerCase();
     const m = /(?:^|\/)(cstrike(?:_downloads)?)\/overviews\/([^/]+)\.(bmp|txt)$/.exec(p);
@@ -547,6 +562,18 @@ function renderDemoList() {
     el.appendChild(b);
   }
 }
+// Coming back to the page (for example after deleting demos in Finder or Explorer): check the listed
+// demos are still there, and take the ones that aren't off the list with a note, instead of failing later.
+async function checkDemoList() {
+  if ($('load').hidden || !files.demos.length) return;
+  const gone = [];
+  for (const f of files.demos) { try { await f.slice(0, 4).arrayBuffer(); } catch (e) { if (isStale(e)) gone.push(f); } }
+  if (!gone.length) return;
+  files.demos = files.demos.filter((f) => !gone.includes(f)); renderDemoList();
+  setMsg(`${gone.length === 1 ? gone[0].name + ' is' : gone.length + ' demos are'} no longer in your folder and ${gone.length === 1 ? 'was' : 'were'} taken off the list. Choose the folder again to pick up new or changed files.`, true);
+}
+window.addEventListener('focus', checkDemoList);
+document.addEventListener('visibilitychange', () => { if (!document.hidden) checkDemoList(); });
 
 // drag and drop anywhere
 let dragDepth = 0;
@@ -591,7 +618,16 @@ async function loadDemoFile(f) {
   setMsg(`Reading ${f.name}…`);
   $('prog').hidden = false; $('progBar').style.width = '2%';
   let buf;
-  try { buf = await f.arrayBuffer(); } catch (e) { setMsg('Could not read that file. ' + e.message, true); return; }
+  try { buf = await f.arrayBuffer(); }
+  catch (e) {
+    $('prog').hidden = true;
+    if (isStale(e)) {
+      // the file was moved, renamed or deleted after the folder was chosen: say so, and drop it from the list
+      files.demos = files.demos.filter((x) => x !== f); renderDemoList();
+      setMsg(`${f.name} is no longer in your folder. It was moved, renamed or deleted after you chose the folder. Choose the folder again to refresh the list.`, true);
+    } else setMsg(`Could not read ${f.name}. ${e.message || ''}`, true);
+    return;
+  }
   if (worker) worker.terminate();
   worker = makeWorker();
   worker.onmessage = async (e) => {
@@ -639,8 +675,11 @@ async function tryLoadOverview(map) {
   const key = map.toLowerCase();
   let bmp = null, txt = null;
   const f = files.overviews[key];
-  if (f && f.bmp && f.txt) { bmp = f.bmp; txt = await f.txt.text(); idb.put(key, { bmp, txt }); }
-  else {
+  if (f && f.bmp && f.txt) {
+    try { txt = await f.txt.text(); await f.bmp.slice(0, 2).arrayBuffer(); bmp = f.bmp; idb.put(key, { bmp, txt }); }
+    catch (e) { noteStale(e, `overviews/${key}.bmp`); bmp = txt = null; }
+  }
+  if (!bmp || !txt) {
     const cached = await idb.get(key);
     if (cached) { bmp = cached.bmp; txt = cached.txt; }
   }
@@ -667,6 +706,7 @@ const unitsPerPx = () => OV ? 8 / OV.zoom : 1 / M.bounds.k;
 
 // ---------------- map geometry (.bsp + .wad) ----------------
 let MAP = null;          // { bsp, tex: {name: {w,h,data}}, name }
+const MOVERS = /^func_(door|door_rotating|rotating|train|tracktrain|plat|pushable|vehicle)$/;
 let mapLoading = null;
 async function loadMap(map) {
   const key = map.toLowerCase();
@@ -675,13 +715,15 @@ async function loadMap(map) {
   mapLoading = (async () => {
     status3(`Loading ${map}…`);
     let bspBlob = files.maps[key] || null, tex = null;
-    if (!bspBlob) {
+    let bspU8 = bspBlob ? await readPicked(bspBlob, `maps/${key}.bsp`) : null;
+    // not in the folder, or changed on disk since it was chosen: use this browser's saved copy if there is one
+    if (!bspU8) {
       const c = await idb.get('map2:' + key);
-      if (c) { bspBlob = c.bsp; tex = c.tex; }
+      if (c) { bspBlob = c.bsp; tex = c.tex; bspU8 = new Uint8Array(await bspBlob.arrayBuffer()); }
     }
-    if (!bspBlob) { clear3d(); status3(`The map file ${map}.bsp was not found.`, true); return null; }
+    if (!bspU8) { clear3d(); status3(STALE.has(`maps/${key}.bsp`) ? `${map}.bsp changed on disk after you chose the folder. Choose your Half-Life folder again.` : `The map file ${map}.bsp was not found.`, true); return null; }
     let bsp;
-    try { bsp = parseBsp(new Uint8Array(await bspBlob.arrayBuffer())); }
+    try { bsp = parseBsp(bspU8); }
     catch (e) { status3(`Could not read ${map}.bsp: ${e.message}`, true); return null; }
     if (!tex) {
       tex = {};
@@ -692,7 +734,8 @@ async function loadMap(map) {
         if (!missing.size) break;
         status3(`Loading textures from ${w}…`);
         try {
-          const found = parseWad(new Uint8Array(await files.wads[w].arrayBuffer()), missing);
+          const u8 = await readPicked(files.wads[w], w); if (!u8) continue;
+          const found = parseWad(u8, missing);
           for (const n in found) { tex[n] = found[n]; missing.delete(n); }
         } catch (e) { /* skip unreadable wad */ }
       }
@@ -702,6 +745,8 @@ async function loadMap(map) {
     MAP.missingTex = bsp.textures.filter((t) => !t.data && !tex[t.name]).length;
     // breakable brushes (vents, glass, wooden planks): these can be shot out during a round
     MAP.breakables = new Set(bsp.entities.filter((e) => e.classname === 'func_breakable' && e.model && e.model[0] === '*').map((e) => +e.model.slice(1)));
+    // doors and other brushes that move: model -> where the map file puts them (the demo says where they really are)
+    MAP.movers = new Map(bsp.solids.filter((s) => MOVERS.test(s.cls)).map((s) => [s.model, s.origin]));
     status3('');
     computeWallbangs();
     if (view3.ready === false || view3.map !== key) build3d();
@@ -719,10 +764,11 @@ function computeWallbangs() {
   if (!MAP || !D) return;
   const bsp = MAP.bsp;
   let skip = null; // breakables already broken when this kill happened (e.g. a shot-out vent)
+  let poses = null; // doors where they were when this kill happened (open either way, or closed)
   const bodyVisible = (eye, v) => {
     const dx = v[0] - eye[0], dy = v[1] - eye[1]; const hl = Math.hypot(dx, dy) || 1; const px = -dy / hl, py = dx / hl;
     const zs = v[3] ? [-12, 0, 10, 16] : [-30, -12, 6, 22, 30];
-    for (const z of zs) for (const sd of [-12, 0, 12]) if (solidAlong(bsp, eye, [v[0] + px * sd, v[1] + py * sd, v[2] + z], 2, skip).solid === 0) return true;
+    for (const z of zs) for (const sd of [-12, 0, 12]) if (solidAlong(bsp, eye, [v[0] + px * sd, v[1] + py * sd, v[2] + z], 2, skip, poses).solid === 0) return true;
     return false;
   };
   const eyeOf = (p) => [p[0], p[1], p[2] + (p[3] ? 12 : 17)];
@@ -731,14 +777,15 @@ function computeWallbangs() {
     if (!k.kpos || !k.vpos || k.killer === k.victim || NO_WB.has(k.weapon)) continue;
     const kNow = [...k.kpos, k.kduck], vNow = [...k.vpos, k.vduck];
     skip = brokenSet(k.t - 0.05);
+    poses = posesAt(k.t - 0.05);
     if (bodyVisible(eyeOf(kNow), vNow)) continue;
     const eye = eyeOf(kNow);
     let raw = k.kang ? k.kang[0] : 0; if (raw > 180) raw -= 360;
     const pitch = -raw * 3 * Math.PI / 180, yaw = (k.kang ? k.kang[1] : 0) * Math.PI / 180;
     const dist = Math.hypot(k.vpos[0] - eye[0], k.vpos[1] - eye[1], k.vpos[2] - eye[2]);
     const end = [eye[0] + Math.cos(pitch) * Math.cos(yaw) * dist, eye[1] + Math.cos(pitch) * Math.sin(yaw) * dist, eye[2] - Math.sin(pitch) * dist];
-    const aim = solidAlong(bsp, eye, end, 2, skip);
-    const mid = solidAlong(bsp, eye, [k.vpos[0], k.vpos[1], k.vpos[2] + (k.vduck ? 4 : 6)], 2, skip);
+    const aim = solidAlong(bsp, eye, end, 2, skip, poses);
+    const mid = solidAlong(bsp, eye, [k.vpos[0], k.vpos[1], k.vpos[2] + (k.vduck ? 4 : 6)], 2, skip, poses);
     if (aim.solid === 0) continue; // crosshair had a clear line: the victim was hit in the open
     const hit = aim.hit;
     k.wb = { thick: Math.round(aim.solid > 0 ? aim.solid : mid.solid), aim: Math.round(aim.solid), what: hit.some((h) => h.model !== 0) ? 'object' : 'wall', eye };
@@ -1044,6 +1091,26 @@ function brokenSet(t) {
   if (MAP && MAP.breakables) for (const m of MAP.breakables) if (brokenAt(m, t)) s.add(m);
   return s;
 }
+// doors and other movers over time, from the demo: model -> [time, x, y, z, pitch, yaw, roll, ...]
+let bpose = {};
+function buildPose() {
+  bpose = {};
+  const e = D.brushPose || [];
+  for (let i = 0; i < e.length; i += 8) (bpose[e[i + 1]] || (bpose[e[i + 1]] = [])).push(e[i], e[i + 2], e[i + 3], e[i + 4], e[i + 5], e[i + 6], e[i + 7]);
+}
+// where every mover is at time t (only the ones the demo has recorded; the rest stay as the map file has them)
+function posesAt(t) {
+  const out = new Map();
+  if (!MAP || !MAP.movers) return out;
+  for (const m of MAP.movers.keys()) {
+    const a = bpose[m]; if (!a || a[0] > t) continue;
+    let lo = 0, hi = a.length / 7 - 1;
+    while (lo < hi) { const mid = (lo + hi + 1) >> 1; if (a[mid * 7] <= t) lo = mid; else hi = mid - 1; }
+    const o = lo * 7;
+    out.set(m, brushPose([a[o + 1], a[o + 2], a[o + 3]], [a[o + 4], a[o + 5], a[o + 6]]));
+  }
+  return out;
+}
 // HLTV broadcast audience at time t (from the relay's status updates)
 function viewersAt(t) {
   const v = D.viewers; if (!v || !v.length) return null;
@@ -1079,7 +1146,7 @@ async function onDemo() {
   heat = null; $('hmMode').value = 'off';
   afterOverview(ok, true);
   M.wbs = [];
-  buildHp(); buildBrk(); prepAnim();
+  buildHp(); buildBrk(); buildPose(); prepAnim();
   const sndDone = preloadSounds();
   renderPane(); fitView(); drawTimeline(); updateHud(true);
   if (MAP && MAP.name === D.mapName.toLowerCase()) computeWallbangs();
@@ -1200,7 +1267,8 @@ function renderPane() {
         <div class="row prow stathead"><span class="main"></span><span class="sc">K</span><span class="sc">D</span><span class="sc" title="Kills minus deaths">K−D</span><span class="sc" title="Headshot kills as a share of all kills">HS</span></div>`;
       for (const { e, s: x } of rows) {
         const pm = x.k - x.d;
-        h += `<div class="row prow${selected != null && M.slotOf(e, T) === selected ? ' sel' : ''}${M.slotOf(e, T) == null ? ' gone' : ''}" data-p="${e}"><span class="main"><span class="pnum">${(playerOrder().indexOf(e) + 1) % 10}</span>${esc(M.pl[e].name)}${x.tk ? `<span class="sub"> · ${x.tk} TK</span>` : ''}</span><span class="sc">${x.k}</span><span class="sc">${x.d}</span><span class="sc ${pm > 0 ? 'pos' : pm < 0 ? 'neg' : ''}">${pm > 0 ? '+' : ''}${pm}</span><span class="sc">${x.k ? Math.round(x.hs / x.k * 100) : 0}%</span></div>`;
+        const slot = M.slotOf(e, T), dead = slot != null && isDeadNow(slot);
+        h += `<div class="row prow${selected != null && slot === selected ? ' sel' : ''}${slot == null ? ' gone' : ''}${dead ? ' dead' : ''}" data-p="${e}"${dead ? ' title="Dead until the next round"' : ''}><span class="main"><span class="pnum">${(playerOrder().indexOf(e) + 1) % 10}</span>${esc(M.pl[e].name)}${dead ? '<span class="deadtag">dead</span>' : ''}${x.tk ? `<span class="sub"> · ${x.tk} TK</span>` : ''}</span><span class="sc">${x.k}</span><span class="sc">${x.d}</span><span class="sc ${pm > 0 ? 'pos' : pm < 0 ? 'neg' : ''}">${pm > 0 ? '+' : ''}${pm}</span><span class="sc">${x.k ? Math.round(x.hs / x.k * 100) : 0}%</span></div>`;
       }
     }
     h += `<div class="opt">Kills and deaths from the kill feed only: no bonus points for bomb plants or defuses, and team kills (TK) are not counted as kills. Only live rounds count${M.hasOT ? `; overtime is every round after round ${M.reg}` : ''}. Click a player to highlight them. The number is their 1 to 0 key.</div>`;
@@ -1216,6 +1284,7 @@ function renderPane() {
   p.querySelectorAll('[data-p]').forEach((el) => el.onclick = () => {
     const e = M.slotOf(el.dataset.p, T);
     if (e == null) { toast(`${M.pl[el.dataset.p].name} isn't on the server at this point in the demo.`); return; }
+    if (isDeadNow(e) && e !== selected) { toast(`${M.pl[el.dataset.p].name} is dead until the next round. Pick a living player, or press ↓ for the next round.`, 4000); return; }
     selectPlayer(e);
   });
 }
@@ -1282,7 +1351,11 @@ document.addEventListener('keydown', (e) => {
   else if (k === 'f' || k === 'F') toggleFull();
   else if (k === 'x' || k === 'X') { nextPlayer(1); if (viewMode !== '2d' && cam3.mode === 'free') setCam('eyes'); }
   else if (k === 'z' || k === 'Z') { nextPlayer(-1); if (viewMode !== '2d' && cam3.mode === 'free') setCam('eyes'); }
-  else if (/^[0-9]$/.test(k)) { const pid = playerOrder()[(+k + 9) % 10]; const e = pid && M.slotOf(pid, T); if (e) { selected = e; renderPane(); if (viewMode !== '2d' && cam3.mode === 'free') setCam('eyes'); } }
+  else if (/^[0-9]$/.test(k)) {
+    const pid = playerOrder()[(+k + 9) % 10]; const e = pid && M.slotOf(pid, T);
+    if (e && isDeadNow(e)) toast(`${M.pl[pid].name} is dead until the next round.`, 2500);
+    else if (e) { selected = e; renderPane(); if (viewMode !== '2d' && cam3.mode === 'free') setCam('eyes'); }
+  }
   else if (k === 'Tab') { e.preventDefault(); if (!e.repeat) showScoreboard(true); }
   else if (k === '?') toggleKeys();
   else if (k === 'Escape') { $('keys').hidden = true; showScoreboard(false); closeSummary(); }
@@ -1296,6 +1369,8 @@ $('keys').onclick = (e) => { if (e.target === $('keys')) toggleKeys(false); };
 // players in scoreboard order: team 1 then team 2, by slot
 // players (people, not slots) in scoreboard order: team 1 then team 2
 function playerOrder() { return M ? [...M.teams[0], ...M.teams[1]] : []; }
+// dead right now (killed this round): can't be followed until they respawn
+function isDeadNow(e) { const s = playerState(e, T); return !!s && s.state < 0; }
 
 let sbTimer = null;
 function showScoreboard(v) {
@@ -1329,7 +1404,7 @@ function showScoreboard(v) {
 }
 
 // ---------------- HUD ----------------
-let lastRound = null, lastFeedKey = '', lastPaneT = 0;
+let lastRound = null, lastFeedKey = '', lastPaneT = 0, lastAliveKey = '';
 function updateHud(force) {
   const r = roundAt(T);
   $('time').innerHTML = `<b>${fmt(T - D.start)}</b> / ${fmt(D.end - D.start)}`;
@@ -1352,9 +1427,12 @@ function updateHud(force) {
       return `<div>${nameHtml(k.kp, ks)}<span class="w">${esc(k.weapon)}</span>${k.hs ? '<span class="hs">HS</span>' : ''}${nameHtml(k.vp, vs)}</div>`;
     }).join('');
   }
-  if (r !== lastRound || force || ((tab === 'kills' || tab === 'wb') && Math.abs(T - lastPaneT) > 1)) {
+  // the players list greys out whoever is dead right now, so redraw it when someone dies or respawns
+  let aliveKey = '';
+  if (tab === 'players') aliveKey = Object.keys(D.slots).filter((e) => isDeadNow(+e)).join();
+  if (r !== lastRound || force || ((tab === 'kills' || tab === 'wb') && Math.abs(T - lastPaneT) > 1) || (tab === 'players' && aliveKey !== lastAliveKey)) {
     const changed = r !== lastRound;
-    lastRound = r; lastPaneT = T; renderPane();
+    lastRound = r; lastPaneT = T; lastAliveKey = aliveKey; renderPane();
     if (changed && scope === 'round') drawTimeline();
     if (changed && heat && $('hmScope').value === 'round') heat = null;
     if (changed || force) { const cur = $('pane').querySelector('.row.cur'); if (cur && tab === 'rounds') cur.scrollIntoView({ block: 'nearest' }); }
@@ -1838,7 +1916,7 @@ async function loadSummary(sndDone) {
   if (!map) rows.push({ s: 'fail', t: `Map ${D.mapName} not found`, n: 'No 3D view and no wallbang finder. Add the .bsp from cstrike\\maps or cstrike_downloads\\maps.' });
   else if (map.missingTex) rows.push({ s: 'warn', t: `Map loaded, ${map.missingTex} textures missing`, n: 'Those surfaces show a grey checkerboard in 3D.' });
   else rows.push({ s: 'ok', t: 'Map and textures', n: '' });
-  rows.push(OV ? { s: 'ok', t: 'Radar overview', n: '' } : { s: 'warn', t: 'Radar overview not found', n: 'The 2D radar uses a plain grid instead of the map picture.' });
+  rows.push(OV ? { s: 'ok', t: 'Radar overview', n: '' } : { s: 'warn', t: 'Radar overview not found', n: `The 2D radar uses a plain grid instead of the map picture. It needs ${D.mapName}.bmp and ${D.mapName}.txt in cstrike\\overviews or cstrike_downloads\\overviews.` });
   const modelRow = (label, o, effect) => {
     const bad = [...o.missing, ...o.broken];
     if (!o.total) return null;
@@ -1852,17 +1930,25 @@ async function loadSummary(sndDone) {
   if (custom.length) rows.push({ s: 'info', t: `Custom models: ${few(custom)}`, n: 'Different from the stock game files. Used as they are; they may look or move slightly differently.' });
   if (!sounds.total) { /* nothing to play */ }
   else if (sounds.found === sounds.total) rows.push({ s: 'ok', t: `Sounds: ${sounds.found} of ${sounds.total}`, n: '' });
-  else rows.push({ s: sounds.found ? 'warn' : 'fail', t: `Sounds: ${sounds.found} of ${sounds.total}`, n: sounds.found ? 'The missing ones stay silent.' : 'The demo plays without sound.' });
+  else {
+    // say which kind of sound is missing and where it belongs, so the right folder can be checked
+    const wpn = sounds.missing.filter((n) => n.startsWith('weapons/')).length;
+    const where = wpn ? `${wpn} of them are weapon sounds (cstrike\\sound\\weapons). ` : '';
+    rows.push({ s: sounds.found ? 'warn' : 'fail', t: `Sounds: ${sounds.found} of ${sounds.total}`, n: `${where}Missing ${few(sounds.missing.map((n) => n.split('/').pop()))}. ${sounds.found ? 'The missing ones stay silent.' : 'The demo plays without sound.'}` });
+  }
+  // files that were there when the folder was chosen but can't be read now (deleted, moved or replaced since)
+  // listed first, since it's usually the reason for the misses below
+  if (STALE.size) rows.splice(1, 0, { s: 'warn', t: 'Your Half-Life folder changed after you chose it', n: `${STALE.size} ${STALE.size === 1 ? 'file' : 'files'} couldn't be read, for example ${few([...STALE].map((n) => n.split('/').pop()))}. Choose the folder again to pick up the changes.` });
 
   const onlyDemo = !map && !OV && !players.found && !sounds.found;
   const anyBad = rows.some((r) => r.s === 'warn' || r.s === 'fail');
   let res;
   if (onlyDemo) {
-    rows.splice(1, rows.length - 1, { s: 'warn', t: 'Map, overview, models and sounds: none loaded yet', n: 'The radar uses a plain grid, there is no 3D view, and the demo plays silently.' });
+    rows.splice(STALE.size ? 2 : 1, rows.length, { s: 'warn', t: 'Map, overview, models and sounds: none loaded yet', n: 'The radar uses a plain grid, there is no 3D view, and the demo plays silently.' });
     res = { state: 'warn', title: 'The demo will play, in 2D only', text: 'Only the demo file is loaded. Choose your Half-Life folder to add the map, player models and sounds.', folder: true };
   }
   else if (!anyBad) res = { state: 'ok', title: 'Ready to watch', text: 'Everything loaded. The demo will play in full.' };
-  else res = { state: 'warn', title: 'The demo will play, with a few gaps', text: 'Some files are missing or damaged. Playback works; the parts marked below will look or sound different.', folder: !map };
+  else res = { state: 'warn', title: 'The demo will play, with a few gaps', text: 'Some files are missing or damaged. Playback works; the parts marked below will look or sound different.', folder: !map || STALE.size > 0 };
   renderSummary(Object.assign(res, { rows }));
 }
 

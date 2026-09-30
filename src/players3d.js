@@ -4,10 +4,10 @@
 // animations, and dead players fall and stay on the floor until the round ends. When a model file
 // isn't available, the simple figure is drawn instead.
 const MODELS = {}; // resource name -> { status, mdl, tex, gaitMask, custom, done }
-async function fingerprint(blob) {
+async function fingerprint(u8) {
   try {
     if (!(window.crypto && crypto.subtle)) return null;
-    const h = new Uint8Array(await crypto.subtle.digest('SHA-256', await blob.arrayBuffer()));
+    const h = new Uint8Array(await crypto.subtle.digest('SHA-256', u8));
     return [...h.slice(0, 8)].map((b) => b.toString(16).padStart(2, '0')).join('');
   } catch (e) { return null; }
 }
@@ -20,12 +20,18 @@ function modelEntry(name) {
   m.done = (async () => {
     try {
       let blob = files.mdl[name] || null, tblob = files.mdl[name.replace(/\.mdl$/, 't.mdl')] || null;
-      const fromFolder = !!blob;
-      if (!blob) { const c = await idb.get('mdl:' + name); if (c) { blob = c.m; tblob = c.t || null; } }
-      if (!blob) { m.status = 'missing'; return m; }
-      const fp = await fingerprint(blob);
+      let fromFolder = !!blob;
+      let u8 = blob ? await readPicked(blob, name) : null, t8 = u8 && tblob ? await readPicked(tblob, name.replace(/\.mdl$/, 't.mdl')) : null;
+      // not in the folder, or changed on disk since it was chosen: use this browser's saved copy if there is one
+      if (!u8 || (tblob && !t8)) {
+        fromFolder = false;
+        const c = await idb.get('mdl:' + name);
+        if (c) { blob = c.m; tblob = c.t || null; u8 = new Uint8Array(await blob.arrayBuffer()); t8 = tblob ? new Uint8Array(await tblob.arrayBuffer()) : null; }
+      }
+      if (!u8) { m.status = 'missing'; return m; }
+      const fp = await fingerprint(u8);
       m.custom = fp != null && STOCK_MDL[name] !== fp;
-      const mdl = parseMdl(new Uint8Array(await blob.arrayBuffer()), tblob ? new Uint8Array(await tblob.arrayBuffer()) : null);
+      const mdl = parseMdl(u8, t8);
       m.tex = mdl.textures.map((t) => {
         const x = new THREE.DataTexture(t.rgba, t.w, t.h, THREE.RGBAFormat);
         x.magFilter = THREE.LinearFilter; x.minFilter = THREE.LinearMipmapLinearFilter; x.generateMipmaps = true;
@@ -324,6 +330,9 @@ function drawViewModel(renderer, camera, e, s) {
     V.rig = makeRig(M2, V.scene);
     // model space (x forward, y left, z up) -> camera space (looking down -z)
     V.rig.g.rotation.set(0, Math.PI / 2, 0);
+    // The stock v_ models are left-handed in the files; CS 1.6 mirrors them to the right hand by
+    // default (cl_righthand 1), so do the same: flip the model's left/right axis.
+    V.rig.g.scale.set(1, 1, -1);
   }
   const an = vmAnim(M2.mdl, e, T); if (!an) return;
   mdlPose(M2.mdl, an.seq, an.frame, 0.5, 0.5, V.rig.p, V.rig.q);

@@ -98,12 +98,14 @@ function loadSound(name) {
   if (SND.loading[name]) return SND.loading[name];
   return SND.loading[name] = (async () => {
     let blob = files.snd[name] || null;
-    const fromFolder = !!blob;
-    if (!blob) blob = await idb.get('snd:' + name);
-    if (!blob) { SND.bufs[name] = null; return null; }
+    let fromFolder = !!blob;
     try {
       const ctx = audio(); if (!ctx) return null;
-      const b = decodeWav(new Uint8Array(await blob.arrayBuffer()), ctx);
+      let u8 = blob ? await readPicked(blob, 'sound/' + name) : null;
+      // not in the folder, or changed on disk since it was chosen: use this browser's saved copy if there is one
+      if (!u8) { fromFolder = false; blob = await idb.get('snd:' + name); u8 = blob ? new Uint8Array(await blob.arrayBuffer()) : null; }
+      if (!u8) { SND.bufs[name] = null; return null; }
+      const b = decodeWav(u8, ctx);
       if (fromFolder) idb.put('snd:' + name, blob);
       return SND.bufs[name] = b;
     } catch (e) { return SND.bufs[name] = null; }

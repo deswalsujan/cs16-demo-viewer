@@ -98,6 +98,19 @@ function solidModels(bsp) {
   return out;
 }
 
+// A brush entity's placement: origin plus the engine's forward/right/up for its angles (pitch, yaw, roll)
+export function brushPose(o, ang) {
+  if (!ang || (!ang[0] && !ang[1] && !ang[2])) return { o, f: null, r: null, u: null };
+  const d = Math.PI / 180;
+  const sy = Math.sin(ang[1] * d), cy = Math.cos(ang[1] * d), sp = Math.sin(ang[0] * d), cp = Math.cos(ang[0] * d), sr = Math.sin(ang[2] * d), cr = Math.cos(ang[2] * d);
+  return {
+    o,
+    f: [cp * cy, cp * sy, -sp],
+    r: [-sr * sp * cy + cr * sy, -sr * sp * sy - cr * cy, -sr * cp],
+    u: [cr * sp * cy + sr * sy, cr * sp * sy - sr * cy, cr * cp],
+  };
+}
+
 // Which contents is point p in, for a given model head node (hull 0)
 function pointContents(bsp, head, x, y, z) {
   let n = head;
@@ -113,7 +126,9 @@ function pointContents(bsp, head, x, y, z) {
 // Returns the amount of solid (in units) along the segment a->b, sampled every `step` units.
 // Walls, sky and blocking brush entities count; water does not.
 // skip: optional Set of brush model numbers to ignore (e.g. vents that are already broken)
-export function solidAlong(bsp, a, b, step = 2, skip = null) {
+// poses: optional Map of brush model number -> where it is at that moment ({ o, f, r, u }, see brushPose),
+//        for doors and other movers that aren't where the map file puts them (a door opened either way)
+export function solidAlong(bsp, a, b, step = 2, skip = null, poses = null) {
   const dx = b[0] - a[0], dy = b[1] - a[1], dz = b[2] - a[2];
   const len = Math.hypot(dx, dy, dz);
   const n = Math.max(1, Math.ceil(len / step));
@@ -124,7 +139,14 @@ export function solidAlong(bsp, a, b, step = 2, skip = null) {
     for (const s of bsp.solids) {
       if (skip && skip.has(s.model)) continue;
       const mdl = bsp.models[s.model];
-      const lx = x - s.origin[0], ly = y - s.origin[1], lz = z - s.origin[2];
+      let lx, ly, lz;
+      const ps = poses && s.model !== 0 ? poses.get(s.model) : null;
+      if (ps) {
+        // into the brush's own frame, the way the engine traces against a turned brush
+        const tx = x - ps.o[0], ty = y - ps.o[1], tz = z - ps.o[2];
+        if (ps.f) { lx = tx * ps.f[0] + ty * ps.f[1] + tz * ps.f[2]; ly = -(tx * ps.r[0] + ty * ps.r[1] + tz * ps.r[2]); lz = tx * ps.u[0] + ty * ps.u[1] + tz * ps.u[2]; }
+        else { lx = tx; ly = ty; lz = tz; }
+      } else { lx = x - s.origin[0]; ly = y - s.origin[1]; lz = z - s.origin[2]; }
       if (s.model !== 0 && (lx < mdl.mins[0] || ly < mdl.mins[1] || lz < mdl.mins[2] || lx > mdl.maxs[0] || ly > mdl.maxs[1] || lz > mdl.maxs[2])) continue;
       const c = pointContents(bsp, mdl.head, lx, ly, lz);
       if (c === -2 || c === -6) {
