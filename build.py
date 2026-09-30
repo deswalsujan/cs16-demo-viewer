@@ -13,12 +13,14 @@ parser = src('demo.js')
 bsp = src('bsp.js').replace('export function', 'function')
 view3d = src('view3d.part.js')
 # player models and sound live in their own files, placed just before the simple player figures
-models = src('mdl.js') + '\n' + src('players3d.js') + '\n' + src('audio.js') + '\n'
+models = src('stock.js') + '\n' + src('mdl.js') + '\n' + src('players3d.js') + '\n' + src('audio.js') + '\n'
 view3d = view3d.replace('/*MODELS*/\n', models)
 for name, code in (('demo.js', parser), ('bsp.js', bsp), ('models', models)):
     assert '</script' not in code, name + ' must not contain a closing script tag'
 
+version = open(os.path.join(here, 'VERSION'), encoding='utf-8').read().strip()
 page = (src('template.html')
+        .replace('__VERSION__', version)
         .replace('/*PARSER*/', parser)
         .replace('/*BSP*/', bsp)
         .replace('/*VIEW3D*/', view3d))

@@ -201,6 +201,13 @@ kbd { font-family: var(--f-mono); font-size: 11px; background: var(--panel-2); b
 .ib { width: 34px; height: 32px; padding: 0; justify-content: center; }
 .ib svg { width: 16px; height: 16px; fill: currentColor; }
 .kbd { color: var(--faint); font-size: 11px; font-family: var(--f-mono); }
+.keys-head .kh-r { display: flex; gap: 8px; align-items: center; flex-wrap: wrap; justify-content: flex-end; }
+.ver { color: var(--muted); font-family: var(--f-mono); font-size: 12px; }
+.ver a { color: var(--sand); }
+.dbgbox { width: 100%; min-height: 140px; background: var(--bg); color: var(--fg); border: 1px solid var(--line); border-radius: 4px; font: 11px/1.4 var(--f-mono); padding: 8px; }
+.loadfoot { display: flex; justify-content: space-between; align-items: center; gap: 12px; flex-wrap: wrap; color: var(--faint); font-size: 12px; font-family: var(--f-mono); }
+.loadfoot .btn { font-size: 12px; padding: 4px 8px; }
+#toast { white-space: pre-line; line-height: 1.5; }
 .sndgrp { display: inline-flex; align-items: center; gap: 6px; }
 .sndgrp input { width: 100px; accent-color: var(--sand); }
 #bSnd.on { color: var(--fg); border-color: var(--line); }
@@ -276,7 +283,8 @@ kbd { font-family: var(--f-mono); font-size: 11px; background: var(--panel-2); b
     <div class="overlay" id="sb" hidden></div>
     <div class="overlay keys" id="keys" hidden>
       <div class="keys-card">
-        <div class="keys-head"><b>Shortcuts and kill markers</b><button class="btn" id="bKeysClose" type="button">Close</button></div>
+        <div class="keys-head"><b>Shortcuts and kill markers</b><div class="kh-r"><span class="ver">Version __VERSION__ · <a href="https://github.com/deswalsujan/cs16-demo-viewer/blob/main/CHANGELOG.md" target="_blank" rel="noopener">What's new</a> · <a href="https://github.com/deswalsujan/cs16-demo-viewer/issues/new/choose" target="_blank" rel="noopener">Report a bug</a></span><button class="btn" id="bDebug" type="button" title="Copies details for a bug report: browser, demo name, what loaded, errors. No file contents.">Copy debug info</button><button class="btn" id="bKeysClose" type="button">Close</button></div></div>
+        <textarea class="dbgbox" id="dbgBox" readonly hidden aria-label="Debug info"></textarea>
         <div class="keys-grid">
           <section><h3>Playback</h3>
             <dl><dt><kbd>Space</kbd></dt><dd>Play or pause</dd>
@@ -369,6 +377,7 @@ kbd { font-family: var(--f-mono); font-size: 11px; background: var(--panel-2); b
         <div class="drophint">Or drop a .dem file, or an overview .bmp and .txt pair, anywhere on this page</div>
         <div class="prog" id="prog" hidden><i id="progBar"></i></div>
         <div class="msg" id="msg"></div>
+        <div class="loadfoot"><span>Version __VERSION__</span><button class="btn" id="bClear" type="button" title="Deletes the maps, models, sounds and overviews this browser saved from your folder">Clear saved files</button></div>
       </div>
     </div>
   </section>
@@ -664,6 +673,7 @@ async function loadMap(map) {
       idb.put('map2:' + key, { bsp: bspBlob, tex });
     }
     MAP = { name: key, bsp, tex };
+    MAP.missingTex = bsp.textures.filter((t) => !t.data && !tex[t.name]).length;
     // breakable brushes (vents, glass, wooden planks): these can be shot out during a round
     MAP.breakables = new Set(bsp.entities.filter((e) => e.classname === 'func_breakable' && e.model && e.model[0] === '*').map((e) => +e.model.slice(1)));
     status3('');
@@ -1041,28 +1051,30 @@ async function onDemo() {
   $('score').hidden = false; $('legend').hidden = false; $('heatbar').hidden = false; $('rclock').hidden = false;
   $('tnA').textContent = M.tnames[0]; $('tnB').textContent = M.tnames[1];
   heat = null; $('hmMode').value = 'off';
-  afterOverview(ok);
+  afterOverview(ok, true);
   M.wbs = [];
-  buildHp(); buildBrk(); prepAnim(); preloadSounds();
+  buildHp(); buildBrk(); prepAnim();
+  const sndDone = preloadSounds();
   renderPane(); fitView(); drawTimeline(); updateHud(true);
   if (MAP && MAP.name === D.mapName.toLowerCase()) computeWallbangs();
   else { MAP = null; clear3d(); loadMap(D.mapName); }
   resetCam3();
   setView(viewMode);
+  loadSummary(sndDone);
 }
-function afterOverview(ok) {
+function afterOverview(ok, quiet) {
   if (ok === true || OV) setMsg('');
-  if (!OV) {
+  if (!OV && !quiet) {
     toast(`No overview found for ${D.mapName}. Showing positions on a plain grid. Drop overviews/${D.mapName}.bmp and .txt here to add it.`);
   }
   heat = null; fitView();
 }
 let toastTimer = null;
-function toast(t) {
+function toast(t, ms = 9000) {
   let el = $('toast');
   if (!el) { el = document.createElement('div'); el.id = 'toast'; el.className = 'rclock'; el.style.cssText = 'top:auto;bottom:56px;left:12px;right:12px;max-width:520px;color:var(--fg)'; $('radar').appendChild(el); }
   el.textContent = t; el.hidden = false;
-  clearTimeout(toastTimer); toastTimer = setTimeout(() => el.hidden = true, 9000);
+  clearTimeout(toastTimer); toastTimer = setTimeout(() => el.hidden = true, ms);
 }
 function showLoad(v) {
   $('load').hidden = !v;
@@ -1751,5 +1763,99 @@ const wake = () => { if (SND.on) audio(); };
 document.addEventListener('pointerdown', wake, true); document.addEventListener('keydown', wake, true);
 function isDeathSeq(e) { const a = D.slots[e], i = M.idxAt(T), sq = a ? a[i * D.stride + 9] : 0; return sq >= 101 && sq <= 110; }
 setSound(SND.on);
+
+// ---------------- what loaded ----------------
+// After a demo opens: which of the files it needs were found, which are custom and which are
+// missing. Shown briefly over the view, and kept for "Copy debug info".
+let ASSETS = null;
+async function loadSummary(sndDone) {
+  const d = D;
+  const pm = [...new Set((D.pmodels || []).filter((n) => /\.mdl$/i.test(n)).map((n) => n.toLowerCase()))];
+  const used = new Set();
+  const S = D.stride;
+  for (const e in D.slots) { const a = D.slots[e]; for (let i = 6; i < a.length; i += S * 15) if (a[i]) used.add(a[i]); }
+  const pw = [...used].map((k) => (D.models[k] || '').toLowerCase()).filter((n) => /(^|\/)p_[^/]+\.mdl$/.test(n));
+  const vw = pw.map((n) => vName(n));
+  const check = async (list) => {
+    const out = { found: 0, total: list.length, custom: [], missing: [], broken: [] };
+    for (const n of list) {
+      const m = await modelEntry(n).done;
+      const short = n.split('/').pop();
+      if (m.status === 'ok') { out.found++; if (m.custom) out.custom.push(short); }
+      else if (m.status === 'broken') out.broken.push(short);
+      else out.missing.push(short);
+    }
+    return out;
+  };
+  const [players, weapons, views] = [await check(pm), await check(pw), await check(vw)];
+  await sndDone;
+  const need = demoSoundList();
+  const sounds = { found: need.filter((n) => SND.bufs[n]).length, total: need.length, missing: need.filter((n) => !SND.bufs[n]) };
+  let map = null;
+  for (let k = 0; k < 40 && !MAP && mapLoading; k++) await new Promise((r) => setTimeout(r, 250));
+  if (MAP && MAP.name === D.mapName.toLowerCase()) map = { ok: true, missingTex: MAP.missingTex || 0 };
+  if (d !== D) return; // another demo was opened meanwhile
+  ASSETS = { map, overview: !!OV, players, weapons, views, sounds };
+  const cnt = (o) => `${o.found} of ${o.total}`;
+  const mapTxt = !map ? 'map not found (3D and wallbangs need it)' : map.missingTex ? `map loaded, ${map.missingTex} textures missing` : 'map and textures loaded';
+  const lines = [`${D.mapName}: ${mapTxt}, ${OV ? 'overview loaded' : 'no overview (radar uses a plain grid)'}`];
+  lines.push(`Player models ${cnt(players)} · Weapons ${cnt({ found: weapons.found + views.found, total: weapons.total + views.total })} · Sounds ${cnt(sounds)}`);
+  const custom = [...players.custom, ...weapons.custom, ...views.custom];
+  if (custom.length) lines.push(`Custom: ${custom.slice(0, 4).join(', ')}${custom.length > 4 ? ` and ${custom.length - 4} more` : ''}`);
+  const broken = [...players.broken, ...weapons.broken, ...views.broken];
+  if (broken.length) lines.push(`Couldn't read: ${broken.slice(0, 4).join(', ')}${broken.length > 4 ? ` and ${broken.length - 4} more` : ''} (drawn as simple figures)`);
+  const nothing = !map && !OV && !players.found && !sounds.found;
+  if (nothing) lines.splice(0, lines.length, 'Only the demo is loaded. Choose your Half-Life folder for the map, models and sounds.');
+  toast(lines.join('\n'), 10000);
+}
+
+// ---------------- debug info for bug reports ----------------
+const ERRLOG = [];
+window.addEventListener('error', (e) => { ERRLOG.push(`${e.message} (${(e.filename || '').split('/').pop()}:${e.lineno})`); if (ERRLOG.length > 20) ERRLOG.shift(); });
+window.addEventListener('unhandledrejection', (e) => { ERRLOG.push('Promise: ' + (e.reason && e.reason.message || e.reason)); if (ERRLOG.length > 20) ERRLOG.shift(); });
+function debugInfo() {
+  let gpu = '';
+  try { const gl = document.createElement('canvas').getContext('webgl'); const x = gl && gl.getExtension('WEBGL_debug_renderer_info'); gpu = gl ? (x ? gl.getParameter(x.UNMASKED_RENDERER_WEBGL) : 'WebGL available') : 'no WebGL'; } catch (e) { gpu = 'unknown'; }
+  const L = [`CS 1.6 Demo Viewer __VERSION__`, `Browser: ${navigator.userAgent}`, `Screen: ${screen.width}x${screen.height} at ${devicePixelRatio}x, window ${innerWidth}x${innerHeight}`, `Graphics: ${gpu}`];
+  L.push(`Folder: ${Object.keys(files.maps).length} maps, ${Object.keys(files.overviews).length} overviews, ${Object.keys(files.mdl).length} models, ${Object.keys(files.snd).length} sounds, ${files.demos.length} demos`);
+  if (D) {
+    L.push(`Demo: ${D.fileName}, map ${D.mapName}, length ${fmt(D.end - D.start)}, ${M.liveR.length} live rounds, final ${M.liveR.length ? M.liveR[M.liveR.length - 1].scoreAfter.join(':') : '-'}`);
+    L.push(`Read errors: ${D.errors}${D.errSamples && D.errSamples.length ? ' (' + D.errSamples.join('; ') + ')' : ''}`);
+    L.push(`Now: ${fmt(T - D.start)}, view ${viewMode}, camera ${cam3.mode}, speed ${speed}x, sound ${SND.on ? Math.round(SND.vol * 100) + '%' : 'off'}`);
+  } else L.push('Demo: none open');
+  if (ASSETS) {
+    const A = ASSETS, list = (o) => `${o.found}/${o.total}` + (o.custom && o.custom.length ? `, custom: ${o.custom.join(' ')}` : '') + (o.missing.length ? `, missing: ${o.missing.join(' ')}` : '') + (o.broken && o.broken.length ? `, unreadable: ${o.broken.join(' ')}` : '');
+    L.push(`Map: ${A.map ? 'loaded' + (A.map.missingTex ? `, ${A.map.missingTex} textures missing` : '') : 'not found'}; overview ${A.overview ? 'loaded' : 'missing'}`);
+    L.push(`Player models: ${list(A.players)}`, `Weapon models: ${list(A.weapons)}`, `First-person weapons: ${list(A.views)}`);
+    L.push(`Sounds: ${A.sounds.found}/${A.sounds.total}` + (A.sounds.missing.length ? `, missing: ${A.sounds.missing.slice(0, 30).join(' ')}${A.sounds.missing.length > 30 ? ' ...' : ''}` : ''));
+  }
+  L.push(`Page errors: ${ERRLOG.length ? ERRLOG.join(' | ') : 'none'}`);
+  return L.join('\n');
+}
+$('bDebug').onclick = () => {
+  const txt = debugInfo(), b = $('bDebug'), box = $('dbgBox');
+  const shown = () => { box.value = txt; box.hidden = false; box.focus(); box.select(); };
+  const ok = () => { b.textContent = 'Copied'; setTimeout(() => b.textContent = 'Copy debug info', 1500); };
+  try { navigator.clipboard.writeText(txt).then(ok, () => { b.textContent = 'Select and copy below'; shown(); }); } catch (e) { b.textContent = 'Select and copy below'; shown(); }
+};
+
+// ---------------- clear saved files ----------------
+async function savedSize() {
+  try { const e = navigator.storage && await navigator.storage.estimate(); return e && e.usage ? e.usage : null; } catch (e) { return null; }
+}
+let clearArmed = null;
+$('bClear').onclick = async () => {
+  const b = $('bClear');
+  if (!clearArmed) {
+    const sz = await savedSize();
+    b.textContent = `Click again to delete ${sz == null ? '' : sz < 1048576 ? 'less than 1 MB of ' : Math.round(sz / 1048576) + ' MB of '}saved files`;
+    clearArmed = setTimeout(() => { clearArmed = null; b.textContent = 'Clear saved files'; }, 4000);
+    return;
+  }
+  clearTimeout(clearArmed); clearArmed = null;
+  try { const db = await idb.open(); await new Promise((res) => { const q = db.transaction('overviews', 'readwrite').objectStore('overviews').clear(); q.onsuccess = res; q.onerror = res; }); } catch (e) { }
+  b.textContent = 'Clear saved files';
+  setMsg('Saved files deleted. Anything already open keeps working until you reload the page.');
+};
 })();
 </script>

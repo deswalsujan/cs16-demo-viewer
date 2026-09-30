@@ -3,19 +3,28 @@
 // with the movement (gait), the upper body aims where the player looks, shots and reloads play their
 // animations, and dead players fall and stay on the floor until the round ends. When a model file
 // isn't available, the simple figure is drawn instead.
-const MODELS = {}; // resource name -> { status, mdl, tex, gaitMask }
-function getModel(name) {
-  if (!name) return null;
+const MODELS = {}; // resource name -> { status, mdl, tex, gaitMask, custom, done }
+async function fingerprint(blob) {
+  try {
+    if (!(window.crypto && crypto.subtle)) return null;
+    const h = new Uint8Array(await crypto.subtle.digest('SHA-256', await blob.arrayBuffer()));
+    return [...h.slice(0, 8)].map((b) => b.toString(16).padStart(2, '0')).join('');
+  } catch (e) { return null; }
+}
+// start loading a model if needed; returns the entry (check .status, or await .done)
+function modelEntry(name) {
   name = name.toLowerCase().replace(/\\/g, '/');
   let m = MODELS[name];
-  if (m) return m.status === 'ok' ? m : null;
-  m = MODELS[name] = { status: 'loading' };
-  (async () => {
+  if (m) return m;
+  m = MODELS[name] = { status: 'loading', name };
+  m.done = (async () => {
     try {
       let blob = files.mdl[name] || null, tblob = files.mdl[name.replace(/\.mdl$/, 't.mdl')] || null;
       const fromFolder = !!blob;
       if (!blob) { const c = await idb.get('mdl:' + name); if (c) { blob = c.m; tblob = c.t || null; } }
-      if (!blob) { m.status = 'missing'; return; }
+      if (!blob) { m.status = 'missing'; return m; }
+      const fp = await fingerprint(blob);
+      m.custom = fp != null && STOCK_MDL[name] !== fp;
       const mdl = parseMdl(new Uint8Array(await blob.arrayBuffer()), tblob ? new Uint8Array(await tblob.arrayBuffer()) : null);
       m.tex = mdl.textures.map((t) => {
         const x = new THREE.DataTexture(t.rgba, t.w, t.h, THREE.RGBAFormat);
@@ -31,12 +40,18 @@ function getModel(name) {
       m.mdl = mdl;
       if (fromFolder) idb.put('mdl:' + name, { m: blob, t: tblob });
       m.status = 'ok';
-    } catch (e) { m.status = 'missing'; }
+    } catch (e) { m.status = 'broken'; m.error = e.message || String(e); }
+    return m;
   })();
-  return null;
+  return m;
+}
+function getModel(name) {
+  if (!name) return null;
+  const m = modelEntry(name);
+  return m.status === 'ok' ? m : null;
 }
 // forget models from an earlier folder pick that were missing, so a new pick gets another try
-function retryMissingModels() { for (const k in MODELS) if (MODELS[k].status === 'missing') delete MODELS[k]; }
+function retryMissingModels() { for (const k in MODELS) if (MODELS[k].status !== 'ok' && MODELS[k].status !== 'loading') delete MODELS[k]; }
 
 // one posed instance of a model in the scene
 function makeRig(M, parent) {

@@ -51,13 +51,12 @@ Checked on two demos:
 
 - **Test suite.** Known answers per demo (final score, round count, zero read errors), wallbang ground truth checked in-game, break-it tests with corrupt files and nasty player names, scripted browser run-throughs, and a folder of custom model and sound packs that must load or fall back cleanly. Could run on every push through GitHub Actions. Verified results so far: WinFakt vs Check-Six Mirage 16-6, Na`Vi vs FX Dust2 16-11 (viewer shows 17-11, known quirk), M5 vs Na`Vi Mirage 16-9.
 - **Safety with custom and bad files.** Fall back to the simple figure when a model's skeleton or animations don't match stock CS, cap model and sound size, decode unusual WAVs through the browser, audit every place player names and demo text reach the page, and bail out of files with nonsense values.
-- **Load summary.** A short timed message after a demo opens: maps, models and sounds loaded, which ones are custom (by comparing file fingerprints against the stock files) and which fell back.
-- **Privacy hardening for sujandeswal.com.** Self-host three.js and the fonts, add a security header that blocks the page from sending data anywhere, and a "Clear cached files" button.
-- **Highlight finder.** 3Ks, 4Ks, aces, clutches and quick multi-kills, filterable by player and weapon.
+- **Privacy hardening for sujandeswal.com.** Self-host three.js and the fonts, and add a security header that blocks the page from sending data anywhere.
+- **Highlight finder** (parked, not urgent). 3Ks, 4Ks, aces, clutches and quick multi-kills, filterable by player and weapon.
 - **Record a clip** from the 3D view, with sound, to a video file.
 - **Bookmarks with notes**, exportable with the same timestamps as the wallbang list.
 - **Sounds on the radar**: gunshots and footsteps as brief pulses in 2D.
 - **Share a moment by link**, such as `#r12` to open round 12.
-- **Product basics**: version number and "what's new" in the page, a "Copy debug info" button for bug reports (no file contents), a GitHub issue template, a compatibility note (browsers, HLTV vs POV demos), and a license.
-- **1.6-era look** as an optional theme: VGUI-style panels, Verdana/Tahoma, orange HUD numbers, sprites read from the player's own `cstrike/sprites`.
+- **Product basics still to do**: a compatibility note (browsers, HLTV vs POV demos) and a license.
+- **1.6-era look** (parked, not urgent) as an optional theme: VGUI-style panels, Verdana/Tahoma, orange HUD numbers, sprites read from the player's own `cstrike/sprites`.
 - **Shaded lighting on player models** so they darken in shadowed areas like in-game.

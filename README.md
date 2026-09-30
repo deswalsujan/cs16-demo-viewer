@@ -41,8 +41,16 @@ src/template.html   The page: layout, styles, 2D radar, timeline, panels
 build.py            Combines everything into one self-contained page
 CHANGELOG.md        What changed, newest first
 IDEAS.md            Parked ideas and open decisions, with the discussion behind them
+VERSION             Current version, shown in the viewer
+src/stock.js        Fingerprints of the stock CS 1.6 models, to spot custom ones
 index.html          The built page (what GitHub Pages serves)
 ```
+
+## Reporting a bug
+
+In the viewer, press `?` and click **Copy debug info**, then open an issue on GitHub and paste it in. It lists your browser, the demo name, what loaded and any errors. It never includes file contents.
+
+## Building
 
 To rebuild after editing anything in `src/`:
 
