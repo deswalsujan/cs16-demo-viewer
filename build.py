@@ -28,6 +28,9 @@ open(os.path.join(here, 'dist', 'artifact.html'), 'w', encoding='utf-8').write(p
 
 full = ('<!doctype html>\n<html lang="en">\n<head>\n<meta charset="utf-8">\n'
         '<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">\n'
+        # Keeps the GitHub Pages test copy out of search results. Remove this line when the viewer
+        # moves to sujandeswal.com, where it is fine for it to be indexed.
+        '<meta name="robots" content="noindex">\n'
         '<meta name="description" content="Play Counter-Strike 1.6 HLTV demos in your browser: 2D radar, 3D replay, kill timeline and a wallbang finder.">\n'
         '<style>body{margin:0}</style>\n</head>\n<body>\n' + page + '\n</body>\n</html>\n')
 open(os.path.join(here, 'index.html'), 'w', encoding='utf-8').write(full)
