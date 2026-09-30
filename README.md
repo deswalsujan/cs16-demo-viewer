@@ -2,7 +2,13 @@
 
 Play Counter-Strike 1.6 HLTV demos in your browser. 2D radar, textured 3D replay with the real player models and game sounds, first-person and chase cameras, a kill timeline, round and player stats, heatmaps, and an automatic wallbang finder.
 
-Everything runs locally in the browser. The page reads your own Counter-Strike 1.6 files (maps, textures, overviews, player models, sounds, demos) from your computer. Nothing is uploaded and no game files are included here.
+> [!IMPORTANT]
+> **You need your own legitimate copy of Counter-Strike 1.6, installed through [Steam](https://store.steampowered.com/app/10/CounterStrike/).**
+> The viewer uses the maps, textures, player models and sounds from your installation. It does not include, download or share any of the game's files, and it is not meant to be used with copies of the game obtained any other way.
+
+Everything runs locally in the browser. The page reads the files it needs from your own Half-Life folder (maps, textures, overviews, player models, sounds, demos). Nothing is uploaded. The only thing this project stores from the game is a short fingerprint of each stock model file, used to tell stock models from custom ones.
+
+This is an unofficial fan project. It is not affiliated with or endorsed by Valve. Counter-Strike, Half-Life and Steam are trademarks of Valve Corporation.
 
 ## How to use it
 
