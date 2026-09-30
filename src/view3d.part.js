@@ -137,7 +137,9 @@ function resetForNewDemo() {
     R3.players = {};
     for (const l of R3.lines) R3.scene.remove(l);
     R3.lines = [];
+    clearRigs();
   }
+  ANIM = {}; stopSounds();
   $('pov').hidden = true;
 }
 function clear3d() {
@@ -191,7 +193,8 @@ document.addEventListener('keydown', (e) => {
 document.addEventListener('keyup', (e) => { k3[e.key.toLowerCase()] = false; if (e.key === 'Shift') k3.shift = false; });
 window.addEventListener('blur', () => { for (const k in k3) k3[k] = false; });
 
-// simple player figures: body, head and a gun pointing where they look
+/*MODELS*/
+// simple player figures (used when the model files aren't available): body, head and a gun pointing where they look
 const TEAMCOL = { 1: 0xe8574d, 2: 0x5ea3e8 };
 let figMats = null;
 function playerFig(e) {
@@ -223,12 +226,26 @@ function update3() {
   if (R3.brk) for (const m in R3.brk) { const vis = !brokenAt(+m, T); for (const x of R3.brk[m]) x.visible = vis; }
   // players
   const lab = [];
+  beginRigs();
+  const lying = drawCorpses(r);
   for (const e in D.slots) {
     const s = playerState(+e, T);
     const f = R3.players[e];
-    if (!s || s.state < 0) { if (f) f.g.visible = false; continue; }
+    const hideSelf = +e === selected && (cam3.mode === 'eyes' || (cam3.mode === 'chase' && cam3.chaseDist != null && cam3.chaseDist < 12));
+    if (!s || s.state < 0) {
+      if (f) f.g.visible = false;
+      // falling down: the player's own death animation plays until the game swaps in the corpse
+      if (s && !lying.has(+e) && isDeathSeq(+e) && !(+e === selected && cam3.mode !== 'free')) drawModelPlayer(+e, s, false);
+      continue;
+    }
+    if (drawModelPlayer(+e, s, hideSelf)) {
+      if (f) f.g.visible = false;
+      const top = s.z + (s.duck ? 26 : 44);
+      lab.push({ e: +e, s, p: g3(s.x, s.y, top + 10) });
+      continue;
+    }
     const fig = playerFig(e);
-    fig.g.visible = !(+e === selected && (cam3.mode === 'eyes' || (cam3.mode === 'chase' && cam3.chaseDist != null && cam3.chaseDist < 12)));
+    fig.g.visible = !hideSelf;
     const h = s.duck ? 36 : 54, feet = s.z - (s.duck ? 18 : 36);
     fig.body.material = fig.head.material = (+e === selected && cam3.mode === 'free') ? figMats.sel : figMats[s.state];
     fig.body.scale.y = h; fig.body.position.set(0, feet + h / 2, 0);
@@ -239,6 +256,7 @@ function update3() {
     fig.g.position.set(s.x, 0, -s.y);
     lab.push({ e: +e, s, p: g3(s.x, s.y, feet + h + 20) });
   }
+  endRigs();
   // round overlays are rebuilt every frame (cheap: a few dozen objects)
   for (const l of R3.lines) { R3.scene.remove(l); if (l.geometry && !l.userData.shared) l.geometry.dispose(); l.material.dispose(); }
   R3.lines = [];

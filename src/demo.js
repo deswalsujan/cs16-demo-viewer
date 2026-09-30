@@ -1,4 +1,3 @@
-// GoldSrc (CS 1.6) HLTV demo reader.
 // Reads a .dem ArrayBuffer and returns a compact match timeline:
 // players, sampled positions, kills, rounds, bomb events.
 // Message layouts adapted from hlviewer.js (MIT, Stefan Stojkovic).
@@ -124,6 +123,7 @@ const TE_SIZES = {
 };
 
 const SAMPLE_HZ = 30;
+const STRIDE = 11; // x, y, z, yaw, pitch, state, weaponModel, ducked, playerModel, sequence, gaitsequence
 
 export function parseDemo(buffer, onProgress) {
   const u8 = buffer instanceof Uint8Array ? buffer : new Uint8Array(buffer);
@@ -145,7 +145,7 @@ export function parseDemo(buffer, onProgress) {
   const userMsgs = {}; // id -> {name,size}
   let maxClients = 32;
   let serverInfo = null;
-  const resources = { models: {}, sounds: {} };
+  const resources = { models: {}, sounds: {}, events: {} };
   const baseline = [];
   const instBaseline = [];
   let ents = [];
@@ -155,6 +155,13 @@ export function parseDemo(buffer, onProgress) {
   const occupants = [], curOcc = {};
   const brushVis = {}, brushEvents = []; // breakable brush models (vents, glass, logs) shown or hidden
   const hltvStatus = [];
+  // sounds heard in the demo: server sounds, weapon fire events, explosions, radio lines and corpses
+  const snds = [];      // time, sound resource index, entity, volume, attenuation, pitch, channel, x, y, z (NaN when not sent)
+  const shots = [];     // time, entity, event resource index, bparam1
+  const radio = [];     // { t, s: sentence name }
+  const corpses = [];   // { t, start, model, pos, yaw, seq, team, e }
+  const booms = [];     // time, x, y, z (grenade and C4 explosions)
+  let pendingEv = [];
   let scores = { T: 0, CT: 0 };
   let curRound = null;
   let time = 0;
@@ -168,11 +175,10 @@ export function parseDemo(buffer, onProgress) {
   const samples = { t: [], slots: {} }; // slots[ent] = number[] of x,y,z,yaw,pitch,alive
   let lastSampleT = -1;
 
-  const STRIDE = 8; // x, y, z, yaw, pitch, state, weaponModel, ducked
   function slotArr(e) {
     if (!samples.slots[e]) {
       const a = [];
-      for (let k = 0; k < samples.t.length; k++) a.push(NaN, NaN, NaN, 0, 0, 0, 0, 0);
+      for (let k = 0; k < samples.t.length; k++) a.push(NaN, NaN, NaN, 0, 0, 0, 0, 0, 0, 0, 0);
       samples.slots[e] = a;
     }
     return samples.slots[e];
@@ -188,13 +194,13 @@ export function parseDemo(buffer, onProgress) {
       const p = players[e];
       const side = p ? (p.team === 'TERRORIST' ? 1 : p.team === 'CT' ? 2 : 0) : 0;
       if (!side) {
-        if (samples.slots[e]) samples.slots[e].push(NaN, NaN, NaN, 0, 0, 0, 0, 0);
+        if (samples.slots[e]) samples.slots[e].push(NaN, NaN, NaN, 0, 0, 0, 0, 0, 0, 0, 0);
         continue;
       }
       const a = slotArr(e);
       const state = dead.has(e) ? -side : side;
-      if (st) a.push(st['origin[0]'] || 0, st['origin[1]'] || 0, st['origin[2]'] || 0, st['angles[1]'] || 0, st['angles[0]'] || 0, state, st.weaponmodel || 0, st.usehull || 0);
-      else a.push(NaN, NaN, NaN, 0, 0, state, 0, 0);
+      if (st) a.push(st['origin[0]'] || 0, st['origin[1]'] || 0, st['origin[2]'] || 0, st['angles[1]'] || 0, st['angles[0]'] || 0, state, st.weaponmodel || 0, st.usehull || 0, st.modelindex || 0, st.sequence || 0, st.gaitsequence || 0);
+      else a.push(NaN, NaN, NaN, 0, 0, state, 0, 0, 0, 0, 0);
     }
     for (const k in nadeEnts) {
       const st = ents[k];
@@ -316,6 +322,19 @@ export function parseDemo(buffer, onProgress) {
           if (inPlayback) roundTimes.push({ t: time, secs: m.s() });
           break;
         }
+        case 'SendAudio': {
+          m.ub(); const s = m.str();
+          if (inPlayback && s) radio.push({ t: time, s: s.replace(/^%!/, '') });
+          break;
+        }
+        case 'ClCorpse': {
+          const model = m.str();
+          const pos = [m.i() / 128, m.i() / 128, m.i() / 128];
+          m.s(); const yaw = m.s() / 8; m.s();
+          const delay = m.i() / 100, seq = m.ub(); m.ub(); const team = m.ub(), e = m.ub();
+          if (inPlayback) corpses.push({ t: time, start: time + delay, model, pos, yaw, seq, team, e });
+          break;
+        }
         case 'BombDrop': {
           const x = m.s() / 8, y = m.s() / 8, z = m.s() / 8, flag = m.ub();
           if (inPlayback && flag === 1) bomb.push({ t: time, type: 'plantpos', pos: [x, y, z], round: curRound ? curRound.n : 0 });
@@ -353,8 +372,10 @@ export function parseDemo(buffer, onProgress) {
           r.bitsStart();
           const n = r.bits(5);
           for (let k = 0; k < n; k++) {
-            r.bits(10);
-            if (r.bits(1)) { r.bits(11); if (r.bits(1)) readDelta(r, deltas.event_t, {}); }
+            const ei = r.bits(10);
+            let pk = -1, ev = null;
+            if (r.bits(1)) { pk = r.bits(11); if (r.bits(1)) ev = readDelta(r, deltas.event_t, {}); }
+            if (inPlayback) pendingEv.push(ei, pk, ev);
             if (r.bits(1)) r.bits(16);
           }
           r.bitsEnd();
@@ -365,13 +386,14 @@ export function parseDemo(buffer, onProgress) {
         case 6: { // sound
           r.bitsStart();
           const fl = r.bits(9);
-          if (fl & 1) r.bits(8);
-          if (fl & 2) r.bits(8);
-          r.bits(3); r.bits(11);
-          if (fl & 4) r.bits(16); else r.bits(8);
+          const sndVol = fl & 1 ? r.bits(8) / 255 : 1;
+          const sndAtt = fl & 2 ? r.bits(8) / 64 : 0.8;
+          const sch = r.bits(3), se = r.bits(11);
+          const si = fl & 4 ? r.bits(16) : r.bits(8);
           const hx = r.bits(1), hy = r.bits(1), hz = r.bits(1);
-          if (hx) r.coord(); if (hy) r.coord(); if (hz) r.coord();
-          if (fl & 8) r.bits(8);
+          const sx = hx ? r.coord() : 0, sy = hy ? r.coord() : 0, sz = hz ? r.coord() : 0;
+          const pitch = fl & 8 ? r.bits(8) : 100;
+          if (inPlayback && !(fl & (16 | 32))) snds.push(time, si, se, sndVol, sndAtt, pitch, sch, (hx || hy || hz) ? sx : NaN, sy, sz);
           r.bitsEnd();
           break;
         }
@@ -450,9 +472,10 @@ export function parseDemo(buffer, onProgress) {
         }
         case 21: { // event reliable
           r.bitsStart();
-          r.bits(10);
-          readDelta(r, deltas.event_t, {});
+          const ei = r.bits(10);
+          const ev = readDelta(r, deltas.event_t, {});
           if (r.bits(1)) r.bits(16);
+          if (inPlayback) pendingEv.push(ei, -1, ev);
           r.bitsEnd();
           break;
         }
@@ -475,7 +498,11 @@ export function parseDemo(buffer, onProgress) {
         }
         case 23: { // temp entity
           const t = r.ub();
-          if (t === 13) { r.skip(8); if (r.s()) r.skip(2); }
+          if (t === 3) { // explosion: plays its own sound unless flagged silent
+            const x = r.s() / 8, y = r.s() / 8, z = r.s() / 8; r.skip(4); const fl = r.ub();
+            if (inPlayback && !(fl & 4)) booms.push(time, x, y, z);
+          }
+          else if (t === 13) { r.skip(8); if (r.s()) r.skip(2); }
           else if (t === 29) {
             r.skip(5);
             const effect = r.ub();
@@ -555,6 +582,7 @@ export function parseDemo(buffer, onProgress) {
             if (r.bits(3) & 4) r.b += 128;
             if (r.bits(1)) r.b += 256;
             if (t === 2) resources.models[idx] = name;
+            else if (t === 5) resources.events[idx] = name;
             else if (t === 0) resources.sounds[idx] = name;
           }
           if (r.bits(1)) while (r.bits(1)) r.b += r.bits(1) ? 5 : 10;
@@ -623,6 +651,16 @@ export function parseDemo(buffer, onProgress) {
           const end = r.p + len;
           try { parseMessages(end); }
           catch (e) { errors++; if (errSamples.length < 10) errSamples.push(e.message + ' @' + time.toFixed(2)); }
+          if (pendingEv.length) {
+            // an event names its entity by position in this frame's entity list
+            let order = null;
+            for (let k = 0; k < pendingEv.length; k += 3) {
+              const ev = pendingEv[k + 2]; let e = ev && ev.entindex ? ev.entindex : 0;
+              if (!e && pendingEv[k + 1] >= 0) { if (!order) { order = []; for (let n = 0; n < ents.length; n++) if (ents[n]) order.push(n); } e = order[pendingEv[k + 1]] || 0; }
+              shots.push(time, e, pendingEv[k], ev && ev.bparam1 ? 1 : 0);
+            }
+            pendingEv = [];
+          }
           r.p = end;
           if (inPlayback) takeSample();
           break;
@@ -659,6 +697,7 @@ export function parseDemo(buffer, onProgress) {
     occupants, brushEvents: new Float32Array(brushEvents), viewers: hltvStatus,
     times: new Float32Array(samples.t), slots,
     finalScore: { ...scores }, models: resources.models, stride: STRIDE,
+    sounds: resources.sounds, events: resources.events, snds: new Float32Array(snds), shots: new Float32Array(shots), booms: new Float32Array(booms), radio, corpses,
     errors, errSamples,
   };
 }

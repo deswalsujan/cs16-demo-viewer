@@ -210,6 +210,10 @@ kbd { font-family: var(--f-mono); font-size: 11px; background: var(--panel-2); b
 .ib { width: 34px; height: 32px; padding: 0; justify-content: center; }
 .ib svg { width: 16px; height: 16px; fill: currentColor; }
 .kbd { color: var(--faint); font-size: 11px; font-family: var(--f-mono); }
+.sndgrp { display: inline-flex; align-items: center; gap: 6px; }
+.sndgrp input { width: 84px; accent-color: var(--sand); }
+#bSnd.on { color: var(--fg); border-color: var(--line); }
+#bSnd:not(.on) { color: var(--faint); }
 
 /* load screen */
 .load {
@@ -275,6 +279,7 @@ kbd { font-family: var(--f-mono); font-size: 11px; background: var(--panel-2); b
       <button class="btn" data-c="chase" type="button">Behind player</button>
       <button class="btn" id="bPrevP" type="button" title="Previous player (Z or right-click)">‹ Prev player</button>
       <button class="btn" id="bNextP" type="button" title="Next player (X or click)">Next player ›</button>
+      <button class="btn on" id="tgModels" type="button" title="Real player models from your game files, or simple figures in team colours">Player models</button>
     </div>
     <div class="hint3" id="hint3">Press ? for keyboard shortcuts</div>
     <div class="overlay" id="sb" hidden></div>
@@ -296,7 +301,8 @@ kbd { font-family: var(--f-mono); font-size: 11px; background: var(--panel-2); b
             <dt><kbd>1</kbd> … <kbd>0</kbd></dt><dd>Jump to a player, in scoreboard order</dd>
             <dt>Hold <kbd>Tab</kbd></dt><dd>Scoreboard</dd>
             <dt><kbd>N</kbd></dt><dd>Show or hide names</dd>
-            <dt><kbd>H</kbd></dt><dd>Names through walls on or off (3D)</dd></dl>
+            <dt><kbd>H</kbd></dt><dd>Names through walls on or off (3D)</dd>
+            <dt><kbd>M</kbd></dt><dd>Sound on or off</dd></dl>
           </section>
           <section><h3>3D camera</h3>
             <dl><dt><kbd>V</kbd></dt><dd>Switch camera: free, player's eyes, behind player</dd>
@@ -358,7 +364,7 @@ kbd { font-family: var(--f-mono); font-size: 11px; background: var(--panel-2); b
         <div class="steps">
           <div class="step" id="stepFolder">
             <div class="k">1</div>
-            <div class="tx"><b>Choose your Half-Life folder</b><small>Gives the viewer your maps, textures and demos. Chrome will ask to "upload" the files: that is its standard wording, and nothing leaves your computer. Click Upload.</small></div>
+            <div class="tx"><b>Choose your Half-Life folder</b><small>Gives the viewer your maps, textures, player models, sounds and demos. Chrome will ask to "upload" the files: that is its standard wording, and nothing leaves your computer. Click Upload.</small></div>
             <button class="btn" id="btnFolder" type="button">Choose folder</button>
           </div>
           <div class="step" id="stepDemo">
@@ -395,6 +401,7 @@ kbd { font-family: var(--f-mono); font-size: 11px; background: var(--panel-2); b
       <button class="btn ib" id="bNextR" type="button" title="Next round (↓)"><svg viewBox="0 0 16 16"><path d="M11 2h2v12h-2zM2 2v12l8-6z"/></svg></button>
       <span class="time" id="time"><b>0:00</b> / 0:00</span>
       <button class="btn" id="bScope" type="button" title="Timeline shows the whole match or only this round">Timeline: match</button>
+      <span class="sndgrp"><button class="btn ib" id="bSnd" type="button" title="Sound on or off (M)" aria-pressed="true"><svg viewBox="0 0 16 16" id="sndIcon"></svg></button><input type="range" id="sndVol" min="0" max="1" step="0.05" aria-label="Volume" title="Volume"></span>
       <button class="btn" id="bKeys" type="button" title="Keyboard shortcuts (?)">Shortcuts <span class="kbd">?</span></button>
       <div class="sp" id="speeds"></div>
     </div>
@@ -404,8 +411,7 @@ kbd { font-family: var(--f-mono); font-size: 11px; background: var(--panel-2); b
 <input type="file" id="fFolder" webkitdirectory multiple hidden>
 <input type="file" id="fAny" multiple hidden>
 
-<script type="text/plain" id="parserSrc">// GoldSrc (CS 1.6) HLTV demo reader.
-// Reads a .dem ArrayBuffer and returns a compact match timeline:
+<script type="text/plain" id="parserSrc">// Reads a .dem ArrayBuffer and returns a compact match timeline:
 // players, sampled positions, kills, rounds, bomb events.
 // Message layouts adapted from hlviewer.js (MIT, Stefan Stojkovic).
 
@@ -530,6 +536,7 @@ const TE_SIZES = {
 };
 
 const SAMPLE_HZ = 30;
+const STRIDE = 11; // x, y, z, yaw, pitch, state, weaponModel, ducked, playerModel, sequence, gaitsequence
 
 export function parseDemo(buffer, onProgress) {
   const u8 = buffer instanceof Uint8Array ? buffer : new Uint8Array(buffer);
@@ -551,7 +558,7 @@ export function parseDemo(buffer, onProgress) {
   const userMsgs = {}; // id -> {name,size}
   let maxClients = 32;
   let serverInfo = null;
-  const resources = { models: {}, sounds: {} };
+  const resources = { models: {}, sounds: {}, events: {} };
   const baseline = [];
   const instBaseline = [];
   let ents = [];
@@ -561,6 +568,13 @@ export function parseDemo(buffer, onProgress) {
   const occupants = [], curOcc = {};
   const brushVis = {}, brushEvents = []; // breakable brush models (vents, glass, logs) shown or hidden
   const hltvStatus = [];
+  // sounds heard in the demo: server sounds, weapon fire events, explosions, radio lines and corpses
+  const snds = [];      // time, sound resource index, entity, volume, attenuation, pitch, channel, x, y, z (NaN when not sent)
+  const shots = [];     // time, entity, event resource index, bparam1
+  const radio = [];     // { t, s: sentence name }
+  const corpses = [];   // { t, start, model, pos, yaw, seq, team, e }
+  const booms = [];     // time, x, y, z (grenade and C4 explosions)
+  let pendingEv = [];
   let scores = { T: 0, CT: 0 };
   let curRound = null;
   let time = 0;
@@ -574,11 +588,10 @@ export function parseDemo(buffer, onProgress) {
   const samples = { t: [], slots: {} }; // slots[ent] = number[] of x,y,z,yaw,pitch,alive
   let lastSampleT = -1;
 
-  const STRIDE = 8; // x, y, z, yaw, pitch, state, weaponModel, ducked
   function slotArr(e) {
     if (!samples.slots[e]) {
       const a = [];
-      for (let k = 0; k < samples.t.length; k++) a.push(NaN, NaN, NaN, 0, 0, 0, 0, 0);
+      for (let k = 0; k < samples.t.length; k++) a.push(NaN, NaN, NaN, 0, 0, 0, 0, 0, 0, 0, 0);
       samples.slots[e] = a;
     }
     return samples.slots[e];
@@ -594,13 +607,13 @@ export function parseDemo(buffer, onProgress) {
       const p = players[e];
       const side = p ? (p.team === 'TERRORIST' ? 1 : p.team === 'CT' ? 2 : 0) : 0;
       if (!side) {
-        if (samples.slots[e]) samples.slots[e].push(NaN, NaN, NaN, 0, 0, 0, 0, 0);
+        if (samples.slots[e]) samples.slots[e].push(NaN, NaN, NaN, 0, 0, 0, 0, 0, 0, 0, 0);
         continue;
       }
       const a = slotArr(e);
       const state = dead.has(e) ? -side : side;
-      if (st) a.push(st['origin[0]'] || 0, st['origin[1]'] || 0, st['origin[2]'] || 0, st['angles[1]'] || 0, st['angles[0]'] || 0, state, st.weaponmodel || 0, st.usehull || 0);
-      else a.push(NaN, NaN, NaN, 0, 0, state, 0, 0);
+      if (st) a.push(st['origin[0]'] || 0, st['origin[1]'] || 0, st['origin[2]'] || 0, st['angles[1]'] || 0, st['angles[0]'] || 0, state, st.weaponmodel || 0, st.usehull || 0, st.modelindex || 0, st.sequence || 0, st.gaitsequence || 0);
+      else a.push(NaN, NaN, NaN, 0, 0, state, 0, 0, 0, 0, 0);
     }
     for (const k in nadeEnts) {
       const st = ents[k];
@@ -722,6 +735,19 @@ export function parseDemo(buffer, onProgress) {
           if (inPlayback) roundTimes.push({ t: time, secs: m.s() });
           break;
         }
+        case 'SendAudio': {
+          m.ub(); const s = m.str();
+          if (inPlayback && s) radio.push({ t: time, s: s.replace(/^%!/, '') });
+          break;
+        }
+        case 'ClCorpse': {
+          const model = m.str();
+          const pos = [m.i() / 128, m.i() / 128, m.i() / 128];
+          m.s(); const yaw = m.s() / 8; m.s();
+          const delay = m.i() / 100, seq = m.ub(); m.ub(); const team = m.ub(), e = m.ub();
+          if (inPlayback) corpses.push({ t: time, start: time + delay, model, pos, yaw, seq, team, e });
+          break;
+        }
         case 'BombDrop': {
           const x = m.s() / 8, y = m.s() / 8, z = m.s() / 8, flag = m.ub();
           if (inPlayback && flag === 1) bomb.push({ t: time, type: 'plantpos', pos: [x, y, z], round: curRound ? curRound.n : 0 });
@@ -759,8 +785,10 @@ export function parseDemo(buffer, onProgress) {
           r.bitsStart();
           const n = r.bits(5);
           for (let k = 0; k < n; k++) {
-            r.bits(10);
-            if (r.bits(1)) { r.bits(11); if (r.bits(1)) readDelta(r, deltas.event_t, {}); }
+            const ei = r.bits(10);
+            let pk = -1, ev = null;
+            if (r.bits(1)) { pk = r.bits(11); if (r.bits(1)) ev = readDelta(r, deltas.event_t, {}); }
+            if (inPlayback) pendingEv.push(ei, pk, ev);
             if (r.bits(1)) r.bits(16);
           }
           r.bitsEnd();
@@ -771,13 +799,14 @@ export function parseDemo(buffer, onProgress) {
         case 6: { // sound
           r.bitsStart();
           const fl = r.bits(9);
-          if (fl & 1) r.bits(8);
-          if (fl & 2) r.bits(8);
-          r.bits(3); r.bits(11);
-          if (fl & 4) r.bits(16); else r.bits(8);
+          const sndVol = fl & 1 ? r.bits(8) / 255 : 1;
+          const sndAtt = fl & 2 ? r.bits(8) / 64 : 0.8;
+          const sch = r.bits(3), se = r.bits(11);
+          const si = fl & 4 ? r.bits(16) : r.bits(8);
           const hx = r.bits(1), hy = r.bits(1), hz = r.bits(1);
-          if (hx) r.coord(); if (hy) r.coord(); if (hz) r.coord();
-          if (fl & 8) r.bits(8);
+          const sx = hx ? r.coord() : 0, sy = hy ? r.coord() : 0, sz = hz ? r.coord() : 0;
+          const pitch = fl & 8 ? r.bits(8) : 100;
+          if (inPlayback && !(fl & (16 | 32))) snds.push(time, si, se, sndVol, sndAtt, pitch, sch, (hx || hy || hz) ? sx : NaN, sy, sz);
           r.bitsEnd();
           break;
         }
@@ -856,9 +885,10 @@ export function parseDemo(buffer, onProgress) {
         }
         case 21: { // event reliable
           r.bitsStart();
-          r.bits(10);
-          readDelta(r, deltas.event_t, {});
+          const ei = r.bits(10);
+          const ev = readDelta(r, deltas.event_t, {});
           if (r.bits(1)) r.bits(16);
+          if (inPlayback) pendingEv.push(ei, -1, ev);
           r.bitsEnd();
           break;
         }
@@ -881,7 +911,11 @@ export function parseDemo(buffer, onProgress) {
         }
         case 23: { // temp entity
           const t = r.ub();
-          if (t === 13) { r.skip(8); if (r.s()) r.skip(2); }
+          if (t === 3) { // explosion: plays its own sound unless flagged silent
+            const x = r.s() / 8, y = r.s() / 8, z = r.s() / 8; r.skip(4); const fl = r.ub();
+            if (inPlayback && !(fl & 4)) booms.push(time, x, y, z);
+          }
+          else if (t === 13) { r.skip(8); if (r.s()) r.skip(2); }
           else if (t === 29) {
             r.skip(5);
             const effect = r.ub();
@@ -961,6 +995,7 @@ export function parseDemo(buffer, onProgress) {
             if (r.bits(3) & 4) r.b += 128;
             if (r.bits(1)) r.b += 256;
             if (t === 2) resources.models[idx] = name;
+            else if (t === 5) resources.events[idx] = name;
             else if (t === 0) resources.sounds[idx] = name;
           }
           if (r.bits(1)) while (r.bits(1)) r.b += r.bits(1) ? 5 : 10;
@@ -1029,6 +1064,16 @@ export function parseDemo(buffer, onProgress) {
           const end = r.p + len;
           try { parseMessages(end); }
           catch (e) { errors++; if (errSamples.length < 10) errSamples.push(e.message + ' @' + time.toFixed(2)); }
+          if (pendingEv.length) {
+            // an event names its entity by position in this frame's entity list
+            let order = null;
+            for (let k = 0; k < pendingEv.length; k += 3) {
+              const ev = pendingEv[k + 2]; let e = ev && ev.entindex ? ev.entindex : 0;
+              if (!e && pendingEv[k + 1] >= 0) { if (!order) { order = []; for (let n = 0; n < ents.length; n++) if (ents[n]) order.push(n); } e = order[pendingEv[k + 1]] || 0; }
+              shots.push(time, e, pendingEv[k], ev && ev.bparam1 ? 1 : 0);
+            }
+            pendingEv = [];
+          }
           r.p = end;
           if (inPlayback) takeSample();
           break;
@@ -1065,6 +1110,7 @@ export function parseDemo(buffer, onProgress) {
     occupants, brushEvents: new Float32Array(brushEvents), viewers: hltvStatus,
     times: new Float32Array(samples.t), slots,
     finalScore: { ...scores }, models: resources.models, stride: STRIDE,
+    sounds: resources.sounds, events: resources.events, snds: new Float32Array(snds), shots: new Float32Array(shots), booms: new Float32Array(booms), radio, corpses,
     errors, errSamples,
   };
 }
@@ -1353,12 +1399,12 @@ let view = { s: 1, x: 0, y: 0 };
 let selected = null;     // selected player entity
 let scope = 'match';
 let tab = 'rounds';
-const opts = { names: true, nades: true, lines: true, xray: true };
+const opts = { names: true, nades: true, lines: true, xray: true, models: true };
 // kill moments that just happened, for the hit markers (timed in real seconds so they stay visible at any speed)
 const flashes = [];
 let prevT = null;
 const FLASH_MS = 750;
-const files = { overviews: {}, demos: [], maps: {}, wads: {} }; // from folder pick
+const files = { overviews: {}, demos: [], maps: {}, wads: {}, mdl: {}, snd: {}, sentences: null }; // from folder pick
 let M = null;            // derived match data
 
 // ---------------- storage (per-browser convenience) ----------------
@@ -1411,14 +1457,24 @@ function indexFolder(list) {
       const mm = /(?:^|\/)(cstrike(?:_downloads)?)\/maps\/([^/]+)\.bsp$/.exec(p);
       if (mm) { if (!files.maps[mm[2]] || mm[1] === 'cstrike') files.maps[mm[2]] = f; continue; }
       const wm = /(?:^|\/)(cstrike|cstrike_downloads|valve)\/([^/]+\.wad)$/.exec(p);
-      if (wm) { if (!files.wads[wm[2]] || wm[1] !== 'cstrike_downloads') files.wads[wm[2]] = f; }
+      if (wm) { if (!files.wads[wm[2]] || wm[1] !== 'cstrike_downloads') files.wads[wm[2]] = f; continue; }
+      // player and weapon models, sounds: the game's own files take priority over downloaded and Half-Life ones
+      const rank = (g) => (g === 'cstrike' ? 3 : g === 'cstrike_downloads' ? 2 : 1);
+      const mm2 = /(?:^|\/)(cstrike|cstrike_downloads|valve)\/(models\/.+\.mdl)$/.exec(p);
+      if (mm2) { const o = files.mdl[mm2[2]]; if (!o || rank(mm2[1]) > o.rank) { f.rank = rank(mm2[1]); files.mdl[mm2[2]] = f; } continue; }
+      const sm = /(?:^|\/)(cstrike|cstrike_downloads|valve)\/sound\/(.+\.wav)$/.exec(p);
+      if (sm) { const o = files.snd[sm[2]]; if (!o || rank(sm[1]) > o.rank) { f.rank = rank(sm[1]); files.snd[sm[2]] = f; } continue; }
+      if (/(?:^|\/)cstrike\/sound\/sentences\.txt$/.test(p)) files.sentences = f;
     }
   }
   files.demos.sort((a, b) => b.lastModified - a.lastModified);
   $('stepFolder').classList.add('done');
   $('stepFolder').querySelector('.k').textContent = '✓';
   renderDemoList();
-  setMsg(`Found ${Object.keys(files.maps).length} maps, ${Object.keys(files.overviews).length} overviews and ${files.demos.length} demos.`);
+  const nPm = Object.keys(files.mdl).filter((k) => k.startsWith('models/player/')).length;
+  setMsg(`Found ${Object.keys(files.maps).length} maps, ${Object.keys(files.overviews).length} overviews, ${nPm} player models, ${Object.keys(files.snd).length} sounds and ${files.demos.length} demos.`);
+  retryMissingModels(); retryMissingSounds(); SND.sentences = null;
+  if (D) preloadSounds();
   if (D && !MAP) loadMap(D.mapName);
 }
 
@@ -1950,7 +2006,7 @@ async function onDemo() {
   heat = null; $('hmMode').value = 'off';
   afterOverview(ok);
   M.wbs = [];
-  buildHp(); buildBrk();
+  buildHp(); buildBrk(); prepAnim(); preloadSounds();
   renderPane(); fitView(); drawTimeline(); updateHud(true);
   if (MAP && MAP.name === D.mapName.toLowerCase()) computeWallbangs();
   else { MAP = null; clear3d(); loadMap(D.mapName); }
@@ -2147,6 +2203,7 @@ document.addEventListener('keydown', (e) => {
   else if (k === ']') { const i = SPEEDS.indexOf(speed); if (i < SPEEDS.length - 1) setSpeed(SPEEDS[i + 1]); }
   else if (k === 'n' || k === 'N') toggleOpt('names', 'tgNames');
   else if (k === 'h' || k === 'H') toggleOpt('xray', 'tgXray');
+  else if (k === 'm' || k === 'M') setSound(!SND.on);
   else if (k === 'x' || k === 'X') { nextPlayer(1); if (viewMode !== '2d' && cam3.mode === 'free') setCam('eyes'); }
   else if (k === 'z' || k === 'Z') { nextPlayer(-1); if (viewMode !== '2d' && cam3.mode === 'free') setCam('eyes'); }
   else if (/^[0-9]$/.test(k)) { const pid = playerOrder()[(+k + 9) % 10]; const e = pid && M.slotOf(pid, T); if (e) { selected = e; renderPane(); if (viewMode !== '2d' && cam3.mode === 'free') setCam('eyes'); } }
@@ -2734,7 +2791,9 @@ function resetForNewDemo() {
     R3.players = {};
     for (const l of R3.lines) R3.scene.remove(l);
     R3.lines = [];
+    clearRigs();
   }
+  ANIM = {}; stopSounds();
   $('pov').hidden = true;
 }
 function clear3d() {
@@ -2788,7 +2847,613 @@ document.addEventListener('keydown', (e) => {
 document.addEventListener('keyup', (e) => { k3[e.key.toLowerCase()] = false; if (e.key === 'Shift') k3.shift = false; });
 window.addEventListener('blur', () => { for (const k in k3) k3[k] = false; });
 
-// simple player figures: body, head and a gun pointing where they look
+// ---------------- GoldSrc studio models (.mdl v10) ----------------
+// Reads player and weapon models straight from the game files and poses them for any
+// sequence, frame and blend, the same way the game's studio renderer does.
+function parseMdl(u8, texU8) {
+  const dv = new DataView(u8.buffer, u8.byteOffset, u8.byteLength);
+  const i32 = (o) => dv.getInt32(o, true), f32 = (o) => dv.getFloat32(o, true), i16 = (o) => dv.getInt16(o, true), u16 = (o) => dv.getUint16(o, true);
+  const str = (o, n) => { let s = ''; for (let k = 0; k < n; k++) { const c = u8[o + k]; if (!c) break; s += String.fromCharCode(c); } return s; };
+  if (str(0, 4) !== 'IDST' || i32(4) !== 10) throw new Error('not a version 10 studio model');
+  const H = {
+    numbones: i32(140), boneindex: i32(144), numseq: i32(164), seqindex: i32(168), numseqgroups: i32(172), seqgroupindex: i32(176),
+    numtextures: i32(180), textureindex: i32(184), numskinref: i32(192), numskinfamilies: i32(196), skinindex: i32(200),
+    numbodyparts: i32(204), bodypartindex: i32(208),
+  };
+  const bones = [];
+  for (let b = 0; b < H.numbones; b++) {
+    const o = H.boneindex + b * 112;
+    const value = [], scale = [];
+    for (let k = 0; k < 6; k++) { value.push(f32(o + 64 + k * 4)); scale.push(f32(o + 88 + k * 4)); }
+    bones.push({ name: str(o, 32), parent: i32(o + 32), value, scale });
+  }
+  const seqs = [];
+  for (let s = 0; s < H.numseq; s++) {
+    const o = H.seqindex + s * 176;
+    const q = {
+      name: str(o, 32), fps: f32(o + 32), flags: i32(o + 36), numframes: i32(o + 56), motiontype: i32(o + 68), motionbone: i32(o + 72),
+      linear: [f32(o + 76), f32(o + 80), f32(o + 84)], numblends: i32(o + 120), animindex: i32(o + 124),
+      blendtype: i32(o + 128), blendstart: f32(o + 136), blendend: f32(o + 144), group: i32(o + 156), anims: [],
+    };
+    // animations stored in the main file (sequence group 0); extra groups live in NAME01.mdl files, which CS player models don't use
+    if (q.group === 0) {
+      for (let bl = 0; bl < Math.max(1, q.numblends); bl++) {
+        const base = q.animindex + bl * H.numbones * 12, arr = [];
+        for (let b = 0; b < H.numbones; b++) { const a = base + b * 12; const offs = []; for (let k = 0; k < 6; k++) { const off = u16(a + k * 2); offs.push(off ? a + off : 0); } arr.push(offs); }
+        q.anims.push(arr);
+      }
+    }
+    seqs.push(q);
+  }
+  // textures come from the model itself, or from NAMEt.mdl when the model keeps them separately
+  const tsrc = H.numtextures ? { u8, dv, H } : (texU8 ? (() => { const d2 = new DataView(texU8.buffer, texU8.byteOffset, texU8.byteLength); return { u8: texU8, dv: d2, H: { numtextures: d2.getInt32(180, true), textureindex: d2.getInt32(184, true), numskinref: d2.getInt32(192, true), numskinfamilies: d2.getInt32(196, true), skinindex: d2.getInt32(200, true) } }; })() : null);
+  const textures = [];
+  let skins = [];
+  if (tsrc) {
+    const { u8: tu, dv: td, H: th } = tsrc;
+    for (let t = 0; t < th.numtextures; t++) {
+      const o = th.textureindex + t * 80;
+      let name = ''; for (let k = 0; k < 64; k++) { const c = tu[o + k]; if (!c) break; name += String.fromCharCode(c); }
+      const flags = td.getInt32(o + 64, true), w = td.getInt32(o + 68, true), h = td.getInt32(o + 72, true), idx = td.getInt32(o + 76, true);
+      const pal = idx + w * h, rgba = new Uint8Array(w * h * 4);
+      const masked = !!(flags & 64);
+      for (let p = 0; p < w * h; p++) {
+        const c = tu[idx + p];
+        rgba[p * 4] = tu[pal + c * 3]; rgba[p * 4 + 1] = tu[pal + c * 3 + 1]; rgba[p * 4 + 2] = tu[pal + c * 3 + 2];
+        rgba[p * 4 + 3] = masked && c === 255 ? 0 : 255;
+      }
+      textures.push({ name, flags, w, h, rgba });
+    }
+    for (let k = 0; k < th.numskinref; k++) skins.push(td.getInt16(th.skinindex + k * 2, true));
+  }
+  // geometry: every triangle corner keeps its bone, its position in that bone's space, normal and uv
+  const bodyparts = [];
+  for (let bp = 0; bp < H.numbodyparts; bp++) {
+    const o = H.bodypartindex + bp * 76;
+    const nummodels = i32(o + 64), base = i32(o + 68), modelindex = i32(o + 72);
+    const models = [];
+    for (let m = 0; m < nummodels; m++) {
+      const mo = modelindex + m * 112;
+      const nummesh = i32(mo + 72), meshindex = i32(mo + 76), numverts = i32(mo + 80), vertinfo = i32(mo + 84), vertindex = i32(mo + 88);
+      const normindex = i32(mo + 100), norminfo = i32(mo + 96);
+      const meshes = [];
+      for (let me = 0; me < nummesh; me++) {
+        const eo = meshindex + me * 20;
+        const skinref = i32(eo + 8);
+        let p = i32(eo + 4);
+        const tex = textures[skins[skinref] != null ? skins[skinref] : skinref];
+        const tw = tex ? tex.w : 64, th2 = tex ? tex.h : 64;
+        const pos = [], nrm = [], uv = [], bone = [], nbone = [];
+        const corner = (c) => {
+          const vi = i16(c), ni = i16(c + 2), s = i16(c + 4), t = i16(c + 6);
+          pos.push(f32(vertindex + vi * 12), f32(vertindex + vi * 12 + 4), f32(vertindex + vi * 12 + 8));
+          nrm.push(f32(normindex + ni * 12), f32(normindex + ni * 12 + 4), f32(normindex + ni * 12 + 8));
+          uv.push((s + 0.5) / tw, (t + 0.5) / th2);
+          bone.push(u8[vertinfo + vi]); nbone.push(u8[norminfo + ni]);
+        };
+        for (let guard = 0; guard < 100000; guard++) {
+          let n = i16(p); p += 2;
+          if (!n) break;
+          const fan = n < 0; n = Math.abs(n);
+          const cs = []; for (let k = 0; k < n; k++) { cs.push(p); p += 8; }
+          for (let k = 2; k < n; k++) {
+            if (fan) { corner(cs[0]); corner(cs[k - 1]); corner(cs[k]); }
+            else if (k % 2) { corner(cs[k - 1]); corner(cs[k - 2]); corner(cs[k]); }
+            else { corner(cs[k - 2]); corner(cs[k - 1]); corner(cs[k]); }
+          }
+        }
+        if (pos.length) meshes.push({ tex: tex ? textures.indexOf(tex) : -1, pos: new Float32Array(pos), nrm: new Float32Array(nrm), uv: new Float32Array(uv), bone: new Uint8Array(bone), nbone: new Uint8Array(nbone) });
+      }
+      models.push({ name: str(mo, 64), meshes, numverts });
+    }
+    bodyparts.push({ name: str(o, 64), base, models });
+  }
+  const seqByName = {}; seqs.forEach((q, k) => { seqByName[q.name.toLowerCase()] = k; });
+  const boneByName = {}; bones.forEach((b, k) => { boneByName[b.name] = k; });
+  return { u8, dv, bones, seqs, textures, bodyparts, seqByName, boneByName, numbones: H.numbones };
+}
+
+// one channel of one bone at a given frame (run-length packed values, as in the HL SDK)
+function mdlAnimValue(dv, off, frame) {
+  let k = frame, p = off;
+  for (let guard = 0; guard < 4096; guard++) {
+    const valid = dv.getUint8(p), total = dv.getUint8(p + 1);
+    if (total > k) {
+      return valid > k ? dv.getInt16(p + (k + 1) * 2, true) : dv.getInt16(p + valid * 2, true);
+    }
+    k -= total; p += (valid + 1) * 2;
+    if (!total) return 0;
+  }
+  return 0;
+}
+function eulerToQuat(x, y, z, out) {
+  const sy = Math.sin(z * 0.5), cy = Math.cos(z * 0.5), sp = Math.sin(y * 0.5), cp = Math.cos(y * 0.5), sr = Math.sin(x * 0.5), cr = Math.cos(x * 0.5);
+  out[0] = sr * cp * cy - cr * sp * sy; out[1] = cr * sp * cy + sr * cp * sy; out[2] = cr * cp * sy - sr * sp * cy; out[3] = cr * cp * cy + sr * sp * sy;
+  return out;
+}
+function slerpQ(a, b, t, out) {
+  let d = a[0] * b[0] + a[1] * b[1] + a[2] * b[2] + a[3] * b[3], s = 1;
+  if (d < 0) { d = -d; s = -1; }
+  let k0 = 1 - t, k1 = t * s;
+  if (d < 0.9995) { const om = Math.acos(d), so = Math.sin(om); k0 = Math.sin((1 - t) * om) / so; k1 = Math.sin(t * om) / so * s; }
+  for (let i = 0; i < 4; i++) out[i] = a[i] * k0 + b[i] * k1;
+  const l = Math.hypot(out[0], out[1], out[2], out[3]) || 1; for (let i = 0; i < 4; i++) out[i] /= l;
+  return out;
+}
+// local bone position + rotation for a sequence at a (fractional) frame.
+// bs, bt: blend 0..1. CS player models keep 9 aim poses in a 3x3 grid: columns turn the upper
+// body left/right against the legs (bs), rows aim up/down (bt). Two-blend models use bs only.
+function mdlPose(mdl, si, frame, bs, bt, pos, quat) {
+  const q = mdl.seqs[si] || mdl.seqs[0];
+  const nb = mdl.numbones, nf = Math.max(1, q.numframes);
+  if (q.flags & 1) { frame %= nf; if (frame < 0) frame += nf; } else frame = Math.max(0, Math.min(nf - 1, frame));
+  const f0 = Math.floor(frame), f1 = (q.flags & 1) ? (f0 + 1) % nf : Math.min(nf - 1, f0 + 1), fr = frame - f0;
+  const na = q.anims.length;
+  // which stored poses to mix, and how
+  let picks;
+  if (na >= 9) {
+    const col = Math.max(0, Math.min(1, bs)) * 2, row = Math.max(0, Math.min(1, bt)) * 2;
+    const c0 = Math.min(1, Math.floor(col)), r0 = Math.min(1, Math.floor(row));
+    picks = { a: [r0 * 3 + c0, r0 * 3 + c0 + 1, (r0 + 1) * 3 + c0, (r0 + 1) * 3 + c0 + 1], s: col - c0, t: row - r0 };
+  } else if (na >= 2) picks = { a: [0, 1], s: Math.max(0, Math.min(1, bs)) };
+  else picks = { a: [0] };
+  const tq = [[0, 0, 0, 1], [0, 0, 0, 1], [0, 0, 0, 1], [0, 0, 0, 1]], tp = [[0, 0, 0], [0, 0, 0], [0, 0, 0], [0, 0, 0]];
+  const e0 = [0, 0, 0, 1], e1 = [0, 0, 0, 1];
+  for (let b = 0; b < nb; b++) {
+    const bone = mdl.bones[b];
+    for (let k = 0; k < picks.a.length; k++) {
+      const offs = q.anims[picks.a[k]] ? q.anims[picks.a[k]][b] : null;
+      const ch = (c, f) => bone.value[c] + (offs && offs[c] ? mdlAnimValue(mdl.dv, offs[c], f) * bone.scale[c] : 0);
+      eulerToQuat(ch(3, f0), ch(4, f0), ch(5, f0), e0); eulerToQuat(ch(3, f1), ch(4, f1), ch(5, f1), e1);
+      slerpQ(e0, e1, fr, tq[k]);
+      for (let c = 0; c < 3; c++) tp[k][c] = ch(c, f0) * (1 - fr) + ch(c, f1) * fr;
+    }
+    let rq = tq[0], rp = tp[0];
+    if (picks.a.length >= 2) {
+      slerpQ(tq[0], tq[1], picks.s, tq[0]); for (let c = 0; c < 3; c++) tp[0][c] += (tp[1][c] - tp[0][c]) * picks.s;
+      if (picks.a.length === 4) {
+        slerpQ(tq[2], tq[3], picks.s, tq[2]); for (let c = 0; c < 3; c++) tp[2][c] += (tp[3][c] - tp[2][c]) * picks.s;
+        slerpQ(tq[0], tq[2], picks.t, tq[0]); for (let c = 0; c < 3; c++) tp[0][c] += (tp[2][c] - tp[0][c]) * picks.t;
+      }
+    }
+    pos[b * 3] = rp[0]; pos[b * 3 + 1] = rp[1]; pos[b * 3 + 2] = rp[2];
+    quat[b * 4] = rq[0]; quat[b * 4 + 1] = rq[1]; quat[b * 4 + 2] = rq[2]; quat[b * 4 + 3] = rq[3];
+  }
+  // sequences that walk the model forward have that motion taken out: the entity's origin already moves
+  const mb = q.motionbone;
+  if (mb >= 0 && mb < nb) { if (q.motiontype & 1) pos[mb * 3] = 0; if (q.motiontype & 2) pos[mb * 3 + 1] = 0; if (q.motiontype & 4) pos[mb * 3 + 2] = 0; }
+}
+// bone matrices (3x4, row major) in model space from local pose
+function mdlBoneMats(mdl, pos, quat, out, merge) {
+  for (let b = 0; b < mdl.numbones; b++) {
+    const o = b * 12;
+    if (merge && merge[b] >= 0) { const src = merge.mats, s = merge[b] * 12; for (let k = 0; k < 12; k++) out[o + k] = src[s + k]; continue; }
+    const x = quat[b * 4], y = quat[b * 4 + 1], z = quat[b * 4 + 2], w = quat[b * 4 + 3];
+    const m = [1 - 2 * y * y - 2 * z * z, 2 * x * y - 2 * w * z, 2 * x * z + 2 * w * y, pos[b * 3],
+      2 * x * y + 2 * w * z, 1 - 2 * x * x - 2 * z * z, 2 * y * z - 2 * w * x, pos[b * 3 + 1],
+      2 * x * z - 2 * w * y, 2 * y * z + 2 * w * x, 1 - 2 * x * x - 2 * y * y, pos[b * 3 + 2]];
+    const par = mdl.bones[b].parent;
+    if (par < 0) { for (let k = 0; k < 12; k++) out[o + k] = m[k]; continue; }
+    const p = par * 12;
+    for (let r = 0; r < 3; r++) for (let c = 0; c < 4; c++) {
+      out[o + r * 4 + c] = out[p + r * 4] * m[c] + out[p + r * 4 + 1] * m[4 + c] + out[p + r * 4 + 2] * m[8 + c] + (c === 3 ? out[p + r * 4 + 3] : 0);
+    }
+  }
+  return out;
+}
+
+// ---------------- player models (3D) ----------------
+// Real CS 1.6 player and weapon models, read from the Half-Life folder like the maps are. Legs run
+// with the movement (gait), the upper body aims where the player looks, shots and reloads play their
+// animations, and dead players fall and stay on the floor until the round ends. When a model file
+// isn't available, the simple figure is drawn instead.
+const MODELS = {}; // resource name -> { status, mdl, tex, gaitMask }
+function getModel(name) {
+  if (!name) return null;
+  name = name.toLowerCase().replace(/\\/g, '/');
+  let m = MODELS[name];
+  if (m) return m.status === 'ok' ? m : null;
+  m = MODELS[name] = { status: 'loading' };
+  (async () => {
+    try {
+      let blob = files.mdl[name] || null, tblob = files.mdl[name.replace(/\.mdl$/, 't.mdl')] || null;
+      const fromFolder = !!blob;
+      if (!blob) { const c = await idb.get('mdl:' + name); if (c) { blob = c.m; tblob = c.t || null; } }
+      if (!blob) { m.status = 'missing'; return; }
+      const mdl = parseMdl(new Uint8Array(await blob.arrayBuffer()), tblob ? new Uint8Array(await tblob.arrayBuffer()) : null);
+      m.tex = mdl.textures.map((t) => {
+        const x = new THREE.DataTexture(t.rgba, t.w, t.h, THREE.RGBAFormat);
+        x.magFilter = THREE.LinearFilter; x.minFilter = THREE.LinearMipmapLinearFilter; x.generateMipmaps = true;
+        x.wrapS = x.wrapT = THREE.RepeatWrapping; x.anisotropy = 4; x.needsUpdate = true;
+        return x;
+      });
+      // legs and hips follow the movement animation; everything from the spine up follows the aim/shoot/reload one
+      const spine = mdl.boneByName['Bip01 Spine'];
+      const under = new Uint8Array(mdl.numbones);
+      for (let b = 0; b < mdl.numbones; b++) under[b] = b === spine || (mdl.bones[b].parent >= 0 && under[mdl.bones[b].parent]) ? 1 : 0;
+      m.gaitMask = spine == null ? null : under.map((u) => (u ? 0 : 1));
+      m.mdl = mdl;
+      if (fromFolder) idb.put('mdl:' + name, { m: blob, t: tblob });
+      m.status = 'ok';
+    } catch (e) { m.status = 'missing'; }
+  })();
+  return null;
+}
+// forget models from an earlier folder pick that were missing, so a new pick gets another try
+function retryMissingModels() { for (const k in MODELS) if (MODELS[k].status === 'missing') delete MODELS[k]; }
+
+// one posed instance of a model in the scene
+function makeRig(M) {
+  const mdl = M.mdl, g = new THREE.Group(), parts = [];
+  for (const bp of mdl.bodyparts) {
+    const sub = bp.models[0]; if (!sub) continue;
+    for (const me of sub.meshes) {
+      const geo = new THREE.BufferGeometry();
+      const pos = new THREE.BufferAttribute(new Float32Array(me.pos.length), 3), nrm = new THREE.BufferAttribute(new Float32Array(me.nrm.length), 3);
+      pos.setUsage(THREE.DynamicDrawUsage); nrm.setUsage(THREE.DynamicDrawUsage);
+      geo.setAttribute('position', pos); geo.setAttribute('normal', nrm); geo.setAttribute('uv', new THREE.BufferAttribute(me.uv, 2));
+      const t = mdl.textures[me.tex];
+      const mat = new THREE.MeshLambertMaterial({ map: M.tex[me.tex] || null, side: THREE.DoubleSide, alphaTest: t && (t.flags & 64) ? 0.5 : 0 });
+      const mesh = new THREE.Mesh(geo, mat); mesh.frustumCulled = false;
+      g.add(mesh); parts.push({ me, pos, nrm, mat });
+    }
+  }
+  R3.dyn.add(g);
+  const n = mdl.numbones;
+  return { M, g, parts, p: new Float32Array(n * 3), q: new Float32Array(n * 4), p2: new Float32Array(n * 3), q2: new Float32Array(n * 4), mats: new Float32Array(n * 12), used: true, tint: null };
+}
+function disposeRig(r) {
+  R3.dyn.remove(r.g);
+  for (const x of r.parts) { x.mesh && x.mesh.geometry.dispose(); x.mat.dispose(); }
+  r.g.traverse((o) => o.geometry && o.geometry.dispose());
+}
+// move every vertex with its bone (model space -> three space: x, z, -y)
+function skinRig(r) {
+  const M = r.mats;
+  for (const pt of r.parts) {
+    const me = pt.me, P = pt.pos.array, N = pt.nrm.array, sp = me.pos, sn = me.nrm, bo = me.bone, nb = me.nbone;
+    for (let i = 0, n = bo.length; i < n; i++) {
+      const b = bo[i] * 12, x = sp[i * 3], y = sp[i * 3 + 1], z = sp[i * 3 + 2];
+      const wx = M[b] * x + M[b + 1] * y + M[b + 2] * z + M[b + 3];
+      const wy = M[b + 4] * x + M[b + 5] * y + M[b + 6] * z + M[b + 7];
+      const wz = M[b + 8] * x + M[b + 9] * y + M[b + 10] * z + M[b + 11];
+      P[i * 3] = wx; P[i * 3 + 1] = wz; P[i * 3 + 2] = -wy;
+      const c = nb[i] * 12, nx = sn[i * 3], ny = sn[i * 3 + 1], nz = sn[i * 3 + 2];
+      N[i * 3] = M[c] * nx + M[c + 1] * ny + M[c + 2] * nz;
+      N[i * 3 + 1] = M[c + 8] * nx + M[c + 9] * ny + M[c + 10] * nz;
+      N[i * 3 + 2] = -(M[c + 4] * nx + M[c + 5] * ny + M[c + 6] * nz);
+    }
+    pt.pos.needsUpdate = true; pt.nrm.needsUpdate = true;
+  }
+}
+function placeRig(r, x, y, z, yaw, tint) {
+  r.g.position.set(x, z, -y); r.g.rotation.set(0, yaw * Math.PI / 180, 0);
+  if (r.tint !== tint) { r.tint = tint; for (const pt of r.parts) pt.mat.emissive.setHex(tint || 0); }
+  r.g.visible = true; r.used = true;
+}
+
+// per-player animation bookkeeping, worked out once per demo so any moment can be drawn directly
+let ANIM = {};
+const angDiff = (a, b) => { let d = (a - b) % 360; if (d > 180) d -= 360; if (d < -180) d += 360; return d; };
+function prepAnim() {
+  ANIM = {};
+  const S = D.stride, times = D.times, n = times.length;
+  if (S < 11) return;
+  const shotT = {};
+  const sh = D.shots || [];
+  for (let i = 0; i < sh.length; i += 4) { const e = sh[i + 1]; if (e >= 1 && e <= 64) (shotT[e] || (shotT[e] = [])).push(sh[i]); }
+  for (const e in D.slots) {
+    const a = D.slots[e];
+    const rs = new Float32Array(n), gs = new Float32Array(n), gy = new Float32Array(n), gd = new Float32Array(n);
+    let cs = -1, cg = -1, s0 = 0, g0 = 0, yaw = null, dist = 0, px = NaN, py = NaN;
+    for (let i = 0; i < n; i++) {
+      const o = i * S, t = times[i], x = a[o], y = a[o + 1], vy = a[o + 3];
+      if (a[o + 9] !== cs) { cs = a[o + 9]; s0 = t; }
+      if (a[o + 10] !== cg) { cg = a[o + 10]; g0 = t; }
+      rs[i] = s0; gs[i] = g0;
+      if (isNaN(x) || a[o + 5] <= 0) { px = NaN; yaw = null; gy[i] = vy; gd[i] = dist; continue; }
+      if (yaw == null) yaw = vy;
+      const dt = i ? t - times[i - 1] : 0;
+      let spd = 0, dir = 0;
+      if (!isNaN(px) && dt > 0 && dt < 0.25) { const d = Math.hypot(x - px, y - py); if (d < 80) { spd = d / dt; dir = Math.atan2(y - py, x - px) * 180 / Math.PI; } }
+      if (spd > 20) {
+        // legs point along the movement; moving backwards turns them around and plays the run in reverse
+        let sign = 1, tgt = dir; const diff = angDiff(vy, dir);
+        if (diff > 90) { tgt = dir + 180; sign = -1; } else if (diff < -90) { tgt = dir - 180; sign = -1; }
+        yaw += angDiff(tgt, yaw) * 0.5;
+        dist += spd * dt * sign;
+      } else yaw += angDiff(vy, yaw) * 0.12; // standing: legs catch up with where the player looks
+      gy[i] = yaw; gd[i] = dist; px = x; py = y;
+    }
+    ANIM[e] = { rs, gs, gy, gd, shots: shotT[e] || [] };
+  }
+}
+function lastBefore(arr, t) { let lo = 0, hi = arr.length - 1, r = -1; while (lo <= hi) { const m = (lo + hi) >> 1; if (arr[m] <= t) { r = m; lo = m + 1; } else hi = m - 1; } return r >= 0 ? arr[r] : -1e9; }
+
+// pose a player rig for time t; returns false when the model isn't ready
+function posePlayer(r, e, s, t) {
+  const A = ANIM[e]; if (!A) return false;
+  const mdl = r.M.mdl, S = D.stride, a = D.slots[e];
+  const i = M.idxAt(t), j = Math.min(i + 1, D.times.length - 1), o = i * S;
+  const span = D.times[j] - D.times[i], f = span > 0 && span < 0.5 ? Math.max(0, Math.min(1, (t - D.times[i]) / span)) : 0;
+  const seq = a[o + 9], gait = a[o + 10];
+  const q = mdl.seqs[seq] || mdl.seqs[0];
+  let start = A.rs[i];
+  if (/shoot/.test(q.name)) start = Math.max(start, lastBefore(A.shots, t)); // every shot restarts the recoil
+  const upFrame = (t - start) * q.fps;
+  const gyaw = s.state > 0 && gait ? A.gy[i] + angDiff(A.gy[j], A.gy[i]) * f : s.yaw;
+  const bs = 0.5 - Math.max(-90, Math.min(90, angDiff(s.yaw, gyaw))) / 180;
+  const bt = (Math.max(-90, Math.min(90, s.pitch)) + 90) / 180;
+  mdlPose(mdl, seq, upFrame, bs, bt, r.p, r.q);
+  if (gait && r.M.gaitMask && mdl.seqs[gait]) {
+    const gq = mdl.seqs[gait];
+    const gf = gq.linear[0] > 1 ? (A.gd[i] + (A.gd[j] - A.gd[i]) * f) / gq.linear[0] * gq.numframes : (t - A.gs[i]) * gq.fps;
+    mdlPose(mdl, gait, gf, 0.5, 0.5, r.p2, r.q2);
+    const gm = r.M.gaitMask;
+    for (let b = 0; b < mdl.numbones; b++) if (gm[b]) {
+      r.p[b * 3] = r.p2[b * 3]; r.p[b * 3 + 1] = r.p2[b * 3 + 1]; r.p[b * 3 + 2] = r.p2[b * 3 + 2];
+      r.q[b * 4] = r.q2[b * 4]; r.q[b * 4 + 1] = r.q2[b * 4 + 1]; r.q[b * 4 + 2] = r.q2[b * 4 + 2]; r.q[b * 4 + 3] = r.q2[b * 4 + 3];
+    }
+  }
+  mdlBoneMats(mdl, r.p, r.q, r.mats);
+  skinRig(r);
+  return gyaw;
+}
+// weapons in hand share the hand bones of the player holding them
+function poseWeapon(w, pr) {
+  const wm = w.M.mdl, pm = pr.M.mdl;
+  if (w.mergeFor !== pm) {
+    w.mergeFor = pm;
+    w.merge = new Int16Array(wm.numbones);
+    for (let b = 0; b < wm.numbones; b++) { const k = pm.boneByName[wm.bones[b].name]; w.merge[b] = k == null ? -1 : k; }
+    mdlPose(wm, 0, 0, 0.5, 0.5, w.p, w.q);
+  }
+  w.merge.mats = pr.mats;
+  mdlBoneMats(wm, w.p, w.q, w.mats, w.merge);
+  skinRig(w);
+}
+
+// the rigs in the scene this frame, by key: "p5" player 5, "w5" their weapon, "c12" a corpse
+function rigFor(key, name) {
+  const M = getModel(name); if (!M) return null;
+  let r = R3.rigs[key];
+  if (r && r.M !== M) { disposeRig(r); r = null; }
+  if (!r) r = R3.rigs[key] = makeRig(M);
+  return r;
+}
+function beginRigs() { if (!R3.rigs) R3.rigs = {}; for (const k in R3.rigs) R3.rigs[k].used = false; }
+function endRigs() { for (const k in R3.rigs) if (!R3.rigs[k].used) R3.rigs[k].g.visible = false; }
+function clearRigs() { if (!R3 || !R3.rigs) return; for (const k in R3.rigs) disposeRig(R3.rigs[k]); R3.rigs = {}; }
+
+const SEL_TINT = 0x5a4a22;
+// a living or dying player; returns true when drawn with a real model
+function drawModelPlayer(e, s, hide) {
+  if (!opts.models) return false;
+  const a = D.slots[e], S = D.stride, i = M.idxAt(T);
+  const pname = D.models[a[i * S + 8]];
+  if (!pname || !/\.mdl$/i.test(pname)) return false;
+  const r = rigFor('p' + e, pname);
+  if (!r) return false;
+  if (hide) { r.used = true; r.g.visible = false; const w = R3.rigs['w' + e]; if (w) { w.used = true; w.g.visible = false; } return true; }
+  const yaw = posePlayer(r, e, s, T);
+  if (yaw === false) return false;
+  const tint = e === selected && cam3.mode === 'free' ? SEL_TINT : 0;
+  placeRig(r, s.x, s.y, s.z, yaw, tint);
+  if (s.state > 0 && s.weapon && /\.mdl$/i.test(s.weapon)) {
+    const w = rigFor('w' + e, s.weapon);
+    if (w) { poseWeapon(w, r); placeRig(w, s.x, s.y, s.z, yaw, tint); }
+  }
+  return true;
+}
+// bodies left on the floor after a death (the game sends them as "corpse" messages)
+function drawCorpses(r) {
+  if (!opts.models || !D.corpses || !r) return new Set();
+  const lying = new Set();
+  const end = r.end != null ? r.end : D.end;
+  D.corpses.forEach((c, k) => {
+    if (c.t < r.start || c.t > T || c.t > end) return;
+    lying.add(c.e);
+    // the camera sits on this body during the death cam, so leave it out then
+    if (c.e === selected && cam3.mode !== 'free') return;
+    // same model the player had when they died (the corpse message can name a different one)
+    const sl = D.slots[c.e], mi = sl ? sl[M.idxAt(Math.max(r.start, c.start)) * D.stride + 8] : 0;
+    const name = mi && /^models\/player\//i.test(D.models[mi] || '') ? D.models[mi] : `models/player/${c.model}/${c.model}.mdl`;
+    const rig = rigFor('c' + k, name); if (!rig) return;
+    const mdl = rig.M.mdl, q = mdl.seqs[c.seq] || mdl.seqs[0];
+    if (rig.frameFor !== k || rig.lastFrame !== Math.min(q.numframes - 1, (T - c.start) * q.fps)) {
+      rig.frameFor = k; rig.lastFrame = Math.min(q.numframes - 1, (T - c.start) * q.fps);
+      mdlPose(mdl, c.seq, rig.lastFrame, 0.5, 0.5, rig.p, rig.q);
+      mdlBoneMats(mdl, rig.p, rig.q, rig.mats); skinRig(rig);
+    }
+    placeRig(rig, c.pos[0], c.pos[1], c.pos[2], c.yaw, 0);
+  });
+  return lying;
+}
+
+// ---------------- sound ----------------
+// Plays the demo's sounds from the game's own .wav files: gunshots (from the weapon events), footsteps,
+// reloads, hits, grenades, bomb beeps and the radio lines, placed around the listener like in-game:
+// quieter with distance, panned left/right. The listener is the 3D camera, or in 2D the player you
+// follow (or the middle of the radar).
+const SND = { ctx: null, out: null, bufs: {}, loading: {}, on: ls.get('snd-on') !== false, vol: ls.get('snd-vol') ?? 0.6, sentences: null, chans: {}, iSnd: 0, iShot: 0, iBoom: 0, iRad: 0 };
+// weapon fire events -> the sounds the CS client plays for them
+const FIRE = {
+  ak47: ['ak47-1', 'ak47-2'], aug: ['aug-1'], awp: ['awp1'], deagle: ['deagle-1', 'deagle-2'], elite_left: ['elite_fire'], elite_right: ['elite_fire'],
+  famas: ['famas-1', 'famas-2'], fiveseven: ['fiveseven-1'], g3sg1: ['g3sg1-1'], galil: ['galil-1', 'galil-2'], glock18: ['glock18-1', 'glock18-2'],
+  m249: ['m249-1', 'm249-2'], m3: ['m3-1'], mac10: ['mac10-1'], mp5n: ['mp5-1', 'mp5-2'], p228: ['p228-1'], p90: ['p90-1'], scout: ['scout_fire-1'],
+  sg550: ['sg550-1'], sg552: ['sg552-1', 'sg552-2'], tmp: ['tmp-1', 'tmp-2'], ump45: ['ump45-1'], xm1014: ['xm1014-1'],
+  m4a1: { on: ['m4a1-1'], off: ['m4a1_unsil-1', 'm4a1_unsil-2'] }, usp: { on: ['usp1', 'usp2'], off: ['usp_unsil-1'] },
+};
+function fireSound(ev, silenced, k) {
+  const f = FIRE[ev]; if (!f) return null;
+  const list = Array.isArray(f) ? f : silenced ? f.on : f.off;
+  return 'weapons/' + list[k % list.length] + '.wav';
+}
+const eventName = (idx) => ((D.events && D.events[idx]) || '').replace(/^events\//, '').replace(/\.sc$/, '');
+const sndName = (idx) => (D.sounds && D.sounds[idx] ? D.sounds[idx].replace(/^\*/, '').replace(/\\/g, '/').toLowerCase() : '');
+
+// every sound this demo can play, so they can be loaded before they're needed
+function demoSoundList() {
+  const need = new Set();
+  const s = D.snds || [];
+  for (let i = 0; i < s.length; i += 10) { const n = sndName(s[i + 1]); if (n) need.add(n); }
+  const sh = D.shots || [];
+  const seen = new Set();
+  for (let i = 0; i < sh.length; i += 4) seen.add(eventName(sh[i + 2]));
+  for (const ev of seen) { const f = FIRE[ev]; if (!f) continue; for (const x of Array.isArray(f) ? f : [...f.on, ...f.off]) need.add('weapons/' + x + '.wav'); }
+  if (D.booms && D.booms.length) for (const x of ['explode3', 'explode4', 'explode5']) need.add('weapons/' + x + '.wav');
+  if (SND.sentences) for (const r of D.radio || []) { const p = SND.sentences[r.s.toUpperCase()]; if (p) need.add(p); }
+  return [...need];
+}
+async function loadSentences() {
+  if (SND.sentences) return;
+  let txt = null;
+  if (files.sentences) { txt = await files.sentences.text(); idb.put('sentences', txt); }
+  else txt = await idb.get('sentences');
+  if (!txt) return;
+  const out = {};
+  for (const line of txt.split(/\r?\n/)) {
+    const m = /^\s*([A-Za-z0-9_]+)\s+(\S+)/.exec(line); if (!m || line.trim().startsWith('//')) continue;
+    out[m[1].toUpperCase()] = m[2].replace(/\\/g, '/').toLowerCase() + '.wav';
+  }
+  SND.sentences = out;
+}
+let sndPreload = 0;
+async function preloadSounds() {
+  if (!D) return;
+  const run = ++sndPreload;
+  await loadSentences();
+  for (const n of demoSoundList()) { if (run !== sndPreload) return; await loadSound(n); }
+}
+// .wav files from GoldSrc: 8 or 16 bit PCM, mono or stereo; decoded by hand so every file works
+function decodeWav(u8, ctx) {
+  const dv = new DataView(u8.buffer, u8.byteOffset, u8.byteLength);
+  if (dv.getUint32(0, false) !== 0x52494646) throw new Error('not a wav');
+  let p = 12, fmt = null, data = null;
+  while (p + 8 <= u8.length) {
+    const id = String.fromCharCode(u8[p], u8[p + 1], u8[p + 2], u8[p + 3]), len = dv.getUint32(p + 4, true);
+    if (id === 'fmt ') fmt = { tag: dv.getUint16(p + 8, true), ch: dv.getUint16(p + 10, true), rate: dv.getUint32(p + 12, true), bits: dv.getUint16(p + 22, true) };
+    else if (id === 'data') data = { off: p + 8, len: Math.min(len, u8.length - p - 8) };
+    p += 8 + len + (len & 1);
+  }
+  if (!fmt || !data || fmt.tag !== 1) throw new Error('unsupported wav');
+  const bps = fmt.bits / 8, frames = Math.floor(data.len / (bps * fmt.ch));
+  if (!frames) throw new Error('empty wav');
+  const buf = ctx.createBuffer(fmt.ch, frames, fmt.rate);
+  for (let c = 0; c < fmt.ch; c++) {
+    const d = buf.getChannelData(c);
+    for (let i = 0; i < frames; i++) {
+      const o = data.off + (i * fmt.ch + c) * bps;
+      d[i] = bps === 1 ? (u8[o] - 128) / 128 : dv.getInt16(o, true) / 32768;
+    }
+  }
+  return buf;
+}
+function audio() {
+  if (!SND.ctx) {
+    const AC = window.AudioContext || window.webkitAudioContext; if (!AC) return null;
+    SND.ctx = new AC();
+    SND.out = SND.ctx.createGain(); SND.out.gain.value = SND.vol; SND.out.connect(SND.ctx.destination);
+  }
+  if (SND.ctx.state === 'suspended') SND.ctx.resume().catch(() => {});
+  return SND.ctx;
+}
+function loadSound(name) {
+  if (SND.bufs[name] !== undefined) return Promise.resolve(SND.bufs[name]);
+  if (SND.loading[name]) return SND.loading[name];
+  return SND.loading[name] = (async () => {
+    let blob = files.snd[name] || null;
+    const fromFolder = !!blob;
+    if (!blob) blob = await idb.get('snd:' + name);
+    if (!blob) { SND.bufs[name] = null; return null; }
+    try {
+      const ctx = audio(); if (!ctx) return null;
+      const b = decodeWav(new Uint8Array(await blob.arrayBuffer()), ctx);
+      if (fromFolder) idb.put('snd:' + name, blob);
+      return SND.bufs[name] = b;
+    } catch (e) { return SND.bufs[name] = null; }
+    finally { delete SND.loading[name]; }
+  })();
+}
+function retryMissingSounds() { for (const k in SND.bufs) if (SND.bufs[k] === null) delete SND.bufs[k]; }
+
+// where the listener is and which way is "right"
+function listener() {
+  if (viewMode !== '2d' && R3) {
+    const c = R3.camera, d = new THREE.Vector3(); c.getWorldDirection(d);
+    return { p: [c.position.x, -c.position.z, c.position.y], right: [-d.z, -d.x, 0], flat: false };
+  }
+  const s = selected && playerState(selected, T);
+  if (s && s.state > 0) { const yr = s.yaw * Math.PI / 180; return { p: [s.x, s.y, s.z + 17], right: [Math.sin(yr), -Math.cos(yr), 0], flat: false }; }
+  // middle of the radar, heard from above: only left/right placement, no height
+  const A = w2i(0, 0), B = w2i(1, 0), C = w2i(0, 1);
+  const S = base.s * view.s, cx = (cw / 2 - base.x * view.s - view.x) / S, cy = (ch / 2 - base.y * view.s - view.y) / S;
+  const a = B[0] - A[0], b = C[0] - A[0], c = B[1] - A[1], d = C[1] - A[1], det = a * d - b * c || 1;
+  const wx = (d * (cx - A[0]) - b * (cy - A[1])) / det, wy = (-c * (cx - A[0]) + a * (cy - A[1])) / det;
+  const rx = d / det, ry = -c / det, rl = Math.hypot(rx, ry) || 1; // world direction of "screen right"
+  return { p: [wx, wy, 0], right: [rx / rl, ry / rl, 0], flat: true };
+}
+function playSound(name, pos, vol, atten, pitch, key, L) {
+  const buf = SND.bufs[name];
+  if (buf === undefined) { loadSound(name); return; }
+  if (!buf) return;
+  const ctx = audio(); if (!ctx) return;
+  let gain = vol, pan = 0;
+  if (pos && !isNaN(pos[0])) {
+    const dx = pos[0] - L.p[0], dy = pos[1] - L.p[1], dz = L.flat ? 0 : pos[2] - L.p[2];
+    const dist = Math.hypot(dx, dy, dz);
+    // GoldSrc: loudness falls off linearly, reaching silence at 1000 units / attenuation
+    gain *= Math.max(0, 1 - dist * atten / 1000);
+    if (dist > 1) pan = Math.max(-1, Math.min(1, (dx * L.right[0] + dy * L.right[1]) / dist)) * 0.8;
+  }
+  if (gain < 0.01) return;
+  const src = ctx.createBufferSource(); src.buffer = buf;
+  src.playbackRate.value = (pitch || 100) / 100;
+  const g = ctx.createGain(); g.gain.value = Math.min(1, gain);
+  let node = g;
+  if (ctx.createStereoPanner) { const p = ctx.createStereoPanner(); p.pan.value = pan; g.connect(p); node = p; }
+  node.connect(SND.out);
+  src.connect(g);
+  // a new sound on the same entity channel cuts the previous one, as in the game (rapid fire, reloads)
+  if (key) { const old = SND.chans[key]; if (old) try { old.stop(); } catch (e) { } SND.chans[key] = src; src.onended = () => { if (SND.chans[key] === src) delete SND.chans[key]; }; }
+  src.start();
+}
+// first index in a flat, time-sorted array (stride n) with time > t
+function firstAfter(arr, n, t) { let lo = 0, hi = arr.length / n; while (lo < hi) { const m = (lo + hi) >> 1; if (arr[m * n] > t) hi = m; else lo = m + 1; } return lo; }
+function entPos(e, t) { if (e >= 1 && e <= 64) { const s = playerState(e, t); if (s) return [s.x, s.y, s.z]; } return null; }
+// play everything that happened between the last frame and now
+function soundTick(t0, t1) {
+  if (!SND.on || !D || !D.snds || t1 <= t0 || t1 - t0 > 0.5 * Math.max(1, speed)) return;
+  const L = listener();
+  const fast = speed >= 4; // at high speed, keep it to shots, explosions and the radio
+  const s = D.snds;
+  for (let i = firstAfter(s, 10, t0); i * 10 < s.length && s[i * 10] <= t1; i++) {
+    const o = i * 10, name = sndName(s[o + 1]); if (!name) continue;
+    if (fast && /pl_step|pl_dirt|pl_duct|pl_metal|pl_tile|pl_grate|pl_snow|pl_slosh|pl_wade|pl_ladder/.test(name)) continue;
+    const e = s[o + 2];
+    const pos = !isNaN(s[o + 7]) ? [s[o + 7], s[o + 8], s[o + 9]] : entPos(e, s[o]);
+    playSound(name, pos, s[o + 3], s[o + 4], s[o + 5], s[o + 6] ? e + ':' + s[o + 6] : null, L);
+  }
+  const sh = D.shots || [];
+  for (let i = firstAfter(sh, 4, t0); i * 4 < sh.length && sh[i * 4] <= t1; i++) {
+    const o = i * 4, name = fireSound(eventName(sh[o + 2]), sh[o + 3], i); if (!name) continue;
+    playSound(name, entPos(sh[o + 1], sh[o]), 1, 0.64, 94 + (i * 7) % 16, sh[o + 1] + ':w', L);
+  }
+  const b = D.booms || [];
+  for (let i = firstAfter(b, 4, t0); i * 4 < b.length && b[i * 4] <= t1; i++) {
+    const o = i * 4; playSound('weapons/explode' + (3 + i % 3) + '.wav', [b[o + 1], b[o + 2], b[o + 3]], 1, 0.3, 100, null, L);
+  }
+  if (SND.sentences) for (const r of D.radio || []) if (r.t > t0 && r.t <= t1) { const p = SND.sentences[r.s.toUpperCase()]; if (p) playSound(p, null, 0.8, 0, 100, 'radio', L); }
+}
+function stopSounds() { for (const k in SND.chans) try { SND.chans[k].stop(); } catch (e) { } SND.chans = {}; }
+function setSound(on) {
+  SND.on = on; ls.set('snd-on', on);
+  $('bSnd').classList.toggle('on', on); $('bSnd').setAttribute('aria-pressed', on);
+  $('sndIcon').innerHTML = on ? '<path d="M2 6h3l4-3v10l-4-3H2z"/><path d="M11 5.5c1 .8 1 4.2 0 5M12.6 4c2 1.6 2 6.4 0 8" fill="none" stroke="currentColor" stroke-width="1.3"/>' : '<path d="M2 6h3l4-3v10l-4-3H2z"/><path d="M11 6l4 4M15 6l-4 4" fill="none" stroke="currentColor" stroke-width="1.3"/>';
+  if (on) audio(); else stopSounds();
+}
+
+// simple player figures (used when the model files aren't available): body, head and a gun pointing where they look
 const TEAMCOL = { 1: 0xe8574d, 2: 0x5ea3e8 };
 let figMats = null;
 function playerFig(e) {
@@ -2820,12 +3485,26 @@ function update3() {
   if (R3.brk) for (const m in R3.brk) { const vis = !brokenAt(+m, T); for (const x of R3.brk[m]) x.visible = vis; }
   // players
   const lab = [];
+  beginRigs();
+  const lying = drawCorpses(r);
   for (const e in D.slots) {
     const s = playerState(+e, T);
     const f = R3.players[e];
-    if (!s || s.state < 0) { if (f) f.g.visible = false; continue; }
+    const hideSelf = +e === selected && (cam3.mode === 'eyes' || (cam3.mode === 'chase' && cam3.chaseDist != null && cam3.chaseDist < 12));
+    if (!s || s.state < 0) {
+      if (f) f.g.visible = false;
+      // falling down: the player's own death animation plays until the game swaps in the corpse
+      if (s && !lying.has(+e) && isDeathSeq(+e) && !(+e === selected && cam3.mode !== 'free')) drawModelPlayer(+e, s, false);
+      continue;
+    }
+    if (drawModelPlayer(+e, s, hideSelf)) {
+      if (f) f.g.visible = false;
+      const top = s.z + (s.duck ? 26 : 44);
+      lab.push({ e: +e, s, p: g3(s.x, s.y, top + 10) });
+      continue;
+    }
     const fig = playerFig(e);
-    fig.g.visible = !(+e === selected && (cam3.mode === 'eyes' || (cam3.mode === 'chase' && cam3.chaseDist != null && cam3.chaseDist < 12)));
+    fig.g.visible = !hideSelf;
     const h = s.duck ? 36 : 54, feet = s.z - (s.duck ? 18 : 36);
     fig.body.material = fig.head.material = (+e === selected && cam3.mode === 'free') ? figMats.sel : figMats[s.state];
     fig.body.scale.y = h; fig.body.position.set(0, feet + h / 2, 0);
@@ -2836,6 +3515,7 @@ function update3() {
     fig.g.position.set(s.x, 0, -s.y);
     lab.push({ e: +e, s, p: g3(s.x, s.y, feet + h + 20) });
   }
+  endRigs();
   // round overlays are rebuilt every frame (cheap: a few dozen objects)
   for (const l of R3.lines) { R3.scene.remove(l); if (l.geometry && !l.userData.shared) l.geometry.dispose(); l.material.dispose(); }
   R3.lines = [];
@@ -3080,6 +3760,7 @@ function frame(now) {
   if (D) {
     // a kill "lands" when playback moves forward past it (not when you jump around)
     if (prevT != null && T > prevT && T - prevT < 1) for (const k of D.kills) if (k.t > prevT && k.t <= T && k.killer !== k.victim && k.kp) flashes.push({ k, at: now });
+    if (prevT != null && playing && !tlDrag) soundTick(prevT, T);
     prevT = T;
     while (flashes.length && now - flashes[0].at > FLASH_MS) flashes.shift();
   }
@@ -3100,6 +3781,16 @@ requestAnimationFrame(frame);
 // restore overview cache note
 setMsg('');
 setControls(false);
+$('tgModels').onclick = () => { opts.models = !opts.models; $('tgModels').classList.toggle('on', opts.models); ls.set('models', opts.models); };
+if (ls.get('models') === false) { opts.models = false; $('tgModels').classList.remove('on'); }
+$('bSnd').onclick = () => setSound(!SND.on);
+$('sndVol').value = SND.vol;
+$('sndVol').oninput = (e) => { SND.vol = +e.target.value; ls.set('snd-vol', SND.vol); if (SND.out) SND.out.gain.value = SND.vol; if (SND.vol > 0 && !SND.on) setSound(true); };
+// browsers only let a page make sound after you've clicked or pressed a key on it
+const wake = () => { if (SND.on) audio(); };
+document.addEventListener('pointerdown', wake, true); document.addEventListener('keydown', wake, true);
+function isDeathSeq(e) { const a = D.slots[e], i = M.idxAt(T), sq = a ? a[i * D.stride + 9] : 0; return sq >= 101 && sq <= 110; }
+setSound(SND.on);
 })();
 </script>
 

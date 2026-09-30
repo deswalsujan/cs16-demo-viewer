@@ -201,6 +201,10 @@ kbd { font-family: var(--f-mono); font-size: 11px; background: var(--panel-2); b
 .ib { width: 34px; height: 32px; padding: 0; justify-content: center; }
 .ib svg { width: 16px; height: 16px; fill: currentColor; }
 .kbd { color: var(--faint); font-size: 11px; font-family: var(--f-mono); }
+.sndgrp { display: inline-flex; align-items: center; gap: 6px; }
+.sndgrp input { width: 84px; accent-color: var(--sand); }
+#bSnd.on { color: var(--fg); border-color: var(--line); }
+#bSnd:not(.on) { color: var(--faint); }
 
 /* load screen */
 .load {
@@ -266,6 +270,7 @@ kbd { font-family: var(--f-mono); font-size: 11px; background: var(--panel-2); b
       <button class="btn" data-c="chase" type="button">Behind player</button>
       <button class="btn" id="bPrevP" type="button" title="Previous player (Z or right-click)">‹ Prev player</button>
       <button class="btn" id="bNextP" type="button" title="Next player (X or click)">Next player ›</button>
+      <button class="btn on" id="tgModels" type="button" title="Real player models from your game files, or simple figures in team colours">Player models</button>
     </div>
     <div class="hint3" id="hint3">Press ? for keyboard shortcuts</div>
     <div class="overlay" id="sb" hidden></div>
@@ -287,7 +292,8 @@ kbd { font-family: var(--f-mono); font-size: 11px; background: var(--panel-2); b
             <dt><kbd>1</kbd> … <kbd>0</kbd></dt><dd>Jump to a player, in scoreboard order</dd>
             <dt>Hold <kbd>Tab</kbd></dt><dd>Scoreboard</dd>
             <dt><kbd>N</kbd></dt><dd>Show or hide names</dd>
-            <dt><kbd>H</kbd></dt><dd>Names through walls on or off (3D)</dd></dl>
+            <dt><kbd>H</kbd></dt><dd>Names through walls on or off (3D)</dd>
+            <dt><kbd>M</kbd></dt><dd>Sound on or off</dd></dl>
           </section>
           <section><h3>3D camera</h3>
             <dl><dt><kbd>V</kbd></dt><dd>Switch camera: free, player's eyes, behind player</dd>
@@ -349,7 +355,7 @@ kbd { font-family: var(--f-mono); font-size: 11px; background: var(--panel-2); b
         <div class="steps">
           <div class="step" id="stepFolder">
             <div class="k">1</div>
-            <div class="tx"><b>Choose your Half-Life folder</b><small>Gives the viewer your maps, textures and demos. Chrome will ask to "upload" the files: that is its standard wording, and nothing leaves your computer. Click Upload.</small></div>
+            <div class="tx"><b>Choose your Half-Life folder</b><small>Gives the viewer your maps, textures, player models, sounds and demos. Chrome will ask to "upload" the files: that is its standard wording, and nothing leaves your computer. Click Upload.</small></div>
             <button class="btn" id="btnFolder" type="button">Choose folder</button>
           </div>
           <div class="step" id="stepDemo">
@@ -386,6 +392,7 @@ kbd { font-family: var(--f-mono); font-size: 11px; background: var(--panel-2); b
       <button class="btn ib" id="bNextR" type="button" title="Next round (↓)"><svg viewBox="0 0 16 16"><path d="M11 2h2v12h-2zM2 2v12l8-6z"/></svg></button>
       <span class="time" id="time"><b>0:00</b> / 0:00</span>
       <button class="btn" id="bScope" type="button" title="Timeline shows the whole match or only this round">Timeline: match</button>
+      <span class="sndgrp"><button class="btn ib" id="bSnd" type="button" title="Sound on or off (M)" aria-pressed="true"><svg viewBox="0 0 16 16" id="sndIcon"></svg></button><input type="range" id="sndVol" min="0" max="1" step="0.05" aria-label="Volume" title="Volume"></span>
       <button class="btn" id="bKeys" type="button" title="Keyboard shortcuts (?)">Shortcuts <span class="kbd">?</span></button>
       <div class="sp" id="speeds"></div>
     </div>
@@ -414,12 +421,12 @@ let view = { s: 1, x: 0, y: 0 };
 let selected = null;     // selected player entity
 let scope = 'match';
 let tab = 'rounds';
-const opts = { names: true, nades: true, lines: true, xray: true };
+const opts = { names: true, nades: true, lines: true, xray: true, models: true };
 // kill moments that just happened, for the hit markers (timed in real seconds so they stay visible at any speed)
 const flashes = [];
 let prevT = null;
 const FLASH_MS = 750;
-const files = { overviews: {}, demos: [], maps: {}, wads: {} }; // from folder pick
+const files = { overviews: {}, demos: [], maps: {}, wads: {}, mdl: {}, snd: {}, sentences: null }; // from folder pick
 let M = null;            // derived match data
 
 // ---------------- storage (per-browser convenience) ----------------
@@ -472,14 +479,24 @@ function indexFolder(list) {
       const mm = /(?:^|\/)(cstrike(?:_downloads)?)\/maps\/([^/]+)\.bsp$/.exec(p);
       if (mm) { if (!files.maps[mm[2]] || mm[1] === 'cstrike') files.maps[mm[2]] = f; continue; }
       const wm = /(?:^|\/)(cstrike|cstrike_downloads|valve)\/([^/]+\.wad)$/.exec(p);
-      if (wm) { if (!files.wads[wm[2]] || wm[1] !== 'cstrike_downloads') files.wads[wm[2]] = f; }
+      if (wm) { if (!files.wads[wm[2]] || wm[1] !== 'cstrike_downloads') files.wads[wm[2]] = f; continue; }
+      // player and weapon models, sounds: the game's own files take priority over downloaded and Half-Life ones
+      const rank = (g) => (g === 'cstrike' ? 3 : g === 'cstrike_downloads' ? 2 : 1);
+      const mm2 = /(?:^|\/)(cstrike|cstrike_downloads|valve)\/(models\/.+\.mdl)$/.exec(p);
+      if (mm2) { const o = files.mdl[mm2[2]]; if (!o || rank(mm2[1]) > o.rank) { f.rank = rank(mm2[1]); files.mdl[mm2[2]] = f; } continue; }
+      const sm = /(?:^|\/)(cstrike|cstrike_downloads|valve)\/sound\/(.+\.wav)$/.exec(p);
+      if (sm) { const o = files.snd[sm[2]]; if (!o || rank(sm[1]) > o.rank) { f.rank = rank(sm[1]); files.snd[sm[2]] = f; } continue; }
+      if (/(?:^|\/)cstrike\/sound\/sentences\.txt$/.test(p)) files.sentences = f;
     }
   }
   files.demos.sort((a, b) => b.lastModified - a.lastModified);
   $('stepFolder').classList.add('done');
   $('stepFolder').querySelector('.k').textContent = '✓';
   renderDemoList();
-  setMsg(`Found ${Object.keys(files.maps).length} maps, ${Object.keys(files.overviews).length} overviews and ${files.demos.length} demos.`);
+  const nPm = Object.keys(files.mdl).filter((k) => k.startsWith('models/player/')).length;
+  setMsg(`Found ${Object.keys(files.maps).length} maps, ${Object.keys(files.overviews).length} overviews, ${nPm} player models, ${Object.keys(files.snd).length} sounds and ${files.demos.length} demos.`);
+  retryMissingModels(); retryMissingSounds(); SND.sentences = null;
+  if (D) preloadSounds();
   if (D && !MAP) loadMap(D.mapName);
 }
 
@@ -1011,7 +1028,7 @@ async function onDemo() {
   heat = null; $('hmMode').value = 'off';
   afterOverview(ok);
   M.wbs = [];
-  buildHp(); buildBrk();
+  buildHp(); buildBrk(); prepAnim(); preloadSounds();
   renderPane(); fitView(); drawTimeline(); updateHud(true);
   if (MAP && MAP.name === D.mapName.toLowerCase()) computeWallbangs();
   else { MAP = null; clear3d(); loadMap(D.mapName); }
@@ -1208,6 +1225,7 @@ document.addEventListener('keydown', (e) => {
   else if (k === ']') { const i = SPEEDS.indexOf(speed); if (i < SPEEDS.length - 1) setSpeed(SPEEDS[i + 1]); }
   else if (k === 'n' || k === 'N') toggleOpt('names', 'tgNames');
   else if (k === 'h' || k === 'H') toggleOpt('xray', 'tgXray');
+  else if (k === 'm' || k === 'M') setSound(!SND.on);
   else if (k === 'x' || k === 'X') { nextPlayer(1); if (viewMode !== '2d' && cam3.mode === 'free') setCam('eyes'); }
   else if (k === 'z' || k === 'Z') { nextPlayer(-1); if (viewMode !== '2d' && cam3.mode === 'free') setCam('eyes'); }
   else if (/^[0-9]$/.test(k)) { const pid = playerOrder()[(+k + 9) % 10]; const e = pid && M.slotOf(pid, T); if (e) { selected = e; renderPane(); if (viewMode !== '2d' && cam3.mode === 'free') setCam('eyes'); } }
@@ -1668,6 +1686,7 @@ function frame(now) {
   if (D) {
     // a kill "lands" when playback moves forward past it (not when you jump around)
     if (prevT != null && T > prevT && T - prevT < 1) for (const k of D.kills) if (k.t > prevT && k.t <= T && k.killer !== k.victim && k.kp) flashes.push({ k, at: now });
+    if (prevT != null && playing && !tlDrag) soundTick(prevT, T);
     prevT = T;
     while (flashes.length && now - flashes[0].at > FLASH_MS) flashes.shift();
   }
@@ -1688,5 +1707,15 @@ requestAnimationFrame(frame);
 // restore overview cache note
 setMsg('');
 setControls(false);
+$('tgModels').onclick = () => { opts.models = !opts.models; $('tgModels').classList.toggle('on', opts.models); ls.set('models', opts.models); };
+if (ls.get('models') === false) { opts.models = false; $('tgModels').classList.remove('on'); }
+$('bSnd').onclick = () => setSound(!SND.on);
+$('sndVol').value = SND.vol;
+$('sndVol').oninput = (e) => { SND.vol = +e.target.value; ls.set('snd-vol', SND.vol); if (SND.out) SND.out.gain.value = SND.vol; if (SND.vol > 0 && !SND.on) setSound(true); };
+// browsers only let a page make sound after you've clicked or pressed a key on it
+const wake = () => { if (SND.on) audio(); };
+document.addEventListener('pointerdown', wake, true); document.addEventListener('keydown', wake, true);
+function isDeathSeq(e) { const a = D.slots[e], i = M.idxAt(T), sq = a ? a[i * D.stride + 9] : 0; return sq >= 101 && sq <= 110; }
+setSound(SND.on);
 })();
 </script>
