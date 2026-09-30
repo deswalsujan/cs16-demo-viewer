@@ -323,7 +323,7 @@ kbd { font-family: var(--f-mono); font-size: 11px; background: var(--panel-2); b
     <div class="overlay sumwrap" id="sumCard" hidden></div>
     <div class="overlay keys" id="keys" hidden>
       <div class="keys-card">
-        <div class="keys-head"><b>Shortcuts and kill markers</b><div class="kh-r"><span class="ver">Version 0.7.0 · <a href="https://github.com/deswalsujan/cs16-demo-viewer/blob/main/CHANGELOG.md" target="_blank" rel="noopener">What's new</a> · <a href="https://github.com/deswalsujan/cs16-demo-viewer/issues/new/choose" target="_blank" rel="noopener">Report a bug</a></span><button class="btn" id="bDebug" type="button" title="Copies details for a bug report: browser, demo name, what loaded, errors. No file contents.">Copy debug info</button><button class="btn" id="bKeysClose" type="button">Close</button></div></div>
+        <div class="keys-head"><b>Shortcuts and kill markers</b><div class="kh-r"><span class="ver">Version 0.7.1 · <a href="https://github.com/deswalsujan/cs16-demo-viewer/blob/main/CHANGELOG.md" target="_blank" rel="noopener">What's new</a> · <a href="https://github.com/deswalsujan/cs16-demo-viewer/issues/new/choose" target="_blank" rel="noopener">Report a bug</a></span><button class="btn" id="bDebug" type="button" title="Copies details for a bug report: browser, demo name, what loaded, errors. No file contents.">Copy debug info</button><button class="btn" id="bKeysClose" type="button">Close</button></div></div>
         <textarea class="dbgbox" id="dbgBox" readonly hidden aria-label="Debug info"></textarea>
         <div class="keys-grid">
           <section><h3>Playback</h3>
@@ -417,7 +417,7 @@ kbd { font-family: var(--f-mono); font-size: 11px; background: var(--panel-2); b
         <div class="drophint">Or drop a .dem file, or an overview .bmp and .txt pair, anywhere on this page</div>
         <div class="prog" id="prog" hidden><i id="progBar"></i></div>
         <div class="msg" id="msg"></div>
-        <div class="loadfoot"><span>Version 0.7.0</span><button class="btn" id="bClear" type="button" title="Deletes the maps, models, sounds and overviews this browser saved from your folder">Clear saved files</button></div>
+        <div class="loadfoot"><span>Version 0.7.1</span><button class="btn" id="bClear" type="button" title="Deletes the maps, models, sounds and overviews this browser saved from your folder">Clear saved files</button></div>
       </div>
     </div>
   </section>
@@ -610,6 +610,8 @@ export function parseDemo(buffer, onProgress) {
   const brushVis = {}, brushEvents = []; // breakable brush models (vents, glass, logs) shown or hidden
   const brushPoseNow = {}, brushPose = []; // brush models' position and turn over time: time, model, x, y, z, pitch, yaw, roll
   const hltvStatus = [];
+  // server text (admin plugins announce warmups, "Live !" and scores this way): { t, s }
+  const notes = [];
   // sounds heard in the demo: server sounds, weapon fire events, explosions, radio lines and corpses
   const snds = [];      // time, sound resource index, entity, volume, attenuation, pitch, channel, x, y, z (NaN when not sent)
   const shots = [];     // time, entity, event resource index, bparam1
@@ -783,6 +785,7 @@ export function parseDemo(buffer, onProgress) {
           }
           if (msg === '#Bomb_Planted' && inPlayback) bomb.push({ t: time, type: 'planted', round: curRound ? curRound.n : 0 });
           if (msg === '#Game_will_restart_in' && inPlayback) bomb.push({ t: time, type: 'restart' });
+          if (msg && msg[0] !== '#' && inPlayback) notes.push({ t: time, s: msg });
           break;
         }
         case 'RoundTime': {
@@ -813,6 +816,7 @@ export function parseDemo(buffer, onProgress) {
           let b = '', c = '';
           try { b = m.str(); c = m.str(); } catch (e) { /* optional */ }
           if (inPlayback) chat.push({ t: time, id, fmt: a, text: c || b });
+          if (inPlayback && !id) notes.push({ t: time, s: [a, b, c].filter((x) => x && x[0] !== '#').join(' ') });
           break;
         }
       }
@@ -865,7 +869,7 @@ export function parseDemo(buffer, onProgress) {
           break;
         }
         case 7: r.f(); break; // time
-        case 8: r.str(); break; // print
+        case 8: { const s = r.str(); if (inPlayback && s) notes.push({ t: time, s }); break; } // print
         case 9: r.str(); break; // stufftext
         case 10: r.skip(6); break; // setangle
         case 11: { // serverinfo
@@ -985,7 +989,7 @@ export function parseDemo(buffer, onProgress) {
         }
         case 24: { const on = r.ub(); if (inPlayback) pauses.push({ t: time, on: !!on }); break; } // setpause
         case 25: r.ub(); break; // signonnum
-        case 26: r.str(); break; // centerprint
+        case 26: { const s = r.str(); if (inPlayback && s) notes.push({ t: time, s }); break; } // centerprint
         case 27: case 28: case 30: case 42: break;
         case 29: r.skip(14); break; // spawnstaticsound
         case 31: case 34: r.str(); break; // finale, cutscene
@@ -1163,7 +1167,7 @@ export function parseDemo(buffer, onProgress) {
     mapName: (serverInfo && serverInfo.mapFile) ? serverInfo.mapFile.replace(/^maps\//, '').replace(/\.bsp$/, '') : header.mapName,
     start: playbackStart || 0, end: time,
     players, kills, rounds, bomb, chat, nades, roundTimes, pauses, hp: new Float32Array(hp),
-    occupants, brushEvents: new Float32Array(brushEvents), brushPose: new Float32Array(brushPose), viewers: hltvStatus,
+    occupants, brushEvents: new Float32Array(brushEvents), brushPose: new Float32Array(brushPose), viewers: hltvStatus, notes,
     times: new Float32Array(samples.t), slots,
     finalScore: { ...scores }, models: resources.models, stride: STRIDE,
     pmodels, sounds: resources.sounds, events: resources.events, snds: new Float32Array(snds), shots: new Float32Array(shots), booms: new Float32Array(booms), radio, corpses,
@@ -1383,7 +1387,10 @@ function buildMesh(bsp, separate = null) {
   const drawModels = [{ model: 0, origin: [0, 0, 0], amt: 1, mode: 0 }];
   for (const e of bsp.entities) {
     if (!e.model || e.model[0] !== '*' || HIDE.test(e.classname || '')) continue;
-    const mode = +(e.rendermode || 0), amt = e.renderamt != null ? +e.renderamt / 255 : 1;
+    const mode = +(e.rendermode || 0);
+    // like the game: an entity without a renderamt has 0, so a see-through render mode with no amount is invisible
+    // (Inferno's lamp posts have such a box around them for players to bump into)
+    const amt = e.renderamt != null ? +e.renderamt / 255 : 0;
     if (mode && amt === 0) continue;
     drawModels.push({ model: +e.model.slice(1), origin: (e.origin || '0 0 0').split(/\s+/).map(Number), amt: mode === 0 ? 1 : amt, mode });
   }
@@ -1813,6 +1820,32 @@ function computeWallbangs() {
   renderPane(); drawTimeline();
 }
 
+// Stretches of the demo that the server announced as live: [start, end] pairs from its text messages.
+// Opens on "live", closes on the end of a half or the match, a warmup or knife round, or a pause
+// announcement; a "canceled" set throws away the stretch it was in.
+function liveWindows(notes) {
+  const clean = (s) => s.replace(/[\x00-\x1f]/g, ' ').trim();
+  // short announcements only, so a player called "LiveWire" joining doesn't count
+  const isLive = (s) => /\blive\b/i.test(s) && (s.length < 60 || /\blive\b.*\blive\b/i.test(s)) && !/\b(not|until|before|going|goes)\b.{0,12}\blive\b|\blive\b.{0,12}\b(in|after|soon)\b/i.test(s);
+  const isHalfEnd = (s) => /end of (the )?(1st|2nd|first|second|set|half|fight|match|game|map)|half[\s-]?time|match (is )?over|final(e)? score/i.test(s);
+  const isWarm = (s) => /\bwarm[\s-]?up|\bknife\b/i.test(s);
+  const isCancel = (s) => /\b(canceled|cancelled|aborted)\b/i.test(s);
+  const out = []; let open = null, seenLive = false;
+  for (const n of notes) {
+    const s = clean(n.s);
+    if (isCancel(s)) { open = null; continue; }
+    if (isHalfEnd(s) || isWarm(s)) {
+      if (open != null) out.push([open, n.t]);
+      // the demo started partway through a half: everything before this end counted
+      else if (!seenLive && !out.length && isHalfEnd(s)) out.push([-Infinity, n.t]);
+      open = null; continue;
+    }
+    if (isLive(s)) { seenLive = true; if (open == null) open = n.t; }
+  }
+  if (open != null) out.push([open, Infinity]);
+  return seenLive ? out : [];
+}
+
 // ---------------- derive match structure ----------------
 function derive() {
   const S = D.stride, times = D.times, n = times.length;
@@ -1878,17 +1911,26 @@ function derive() {
     const best = Object.keys(segInfo).sort((a, b) => segInfo[b].real - segInfo[a].real)[0];
     liveSegs = best != null ? [best] : [];
   }
-  for (const r of rounds) r.live = liveSegs.includes(String(r.seg)) && r.kills.length > 0 && r.dur > 5 && r.winner != null;
-  // False starts: a live stretch where a first half should begin (or an overtime) that stops short
-  // of a full half and is followed by another live start. Typical case: a few practice rounds on a
-  // fresh 0:0, then the admins restart "live on 3" for the real match.
-  {
+  const counts = (r) => r.kills.length > 0 && r.dur > 5 && r.winner != null;
+  // What the server's admin plugin announced beats guessing. Tournament servers print "Live !" (or
+  // "LIVE LIVE LIVE") when a half starts, "End of 1st set" or "half time" when it ends, and "Current
+  // set canceled" when a start is thrown away. When the demo has these, a round counts only if it
+  // started while the match was announced live; otherwise the guess from restarts below decides.
+  const windows = liveWindows(D.notes || []);
+  if (windows.length) {
+    for (const r of rounds) r.live = counts(r) && windows.some(([a, b]) => r.start >= a - 10 && r.start < b - 1);
+  } else {
+    for (const r of rounds) r.live = liveSegs.includes(String(r.seg)) && counts(r);
+    // False starts: a live stretch where a half should begin (or an overtime) that stops short
+    // of a full half and is followed by another live start. Typical case: a few practice rounds on a
+    // fresh 0:0, then the admins restart "live on 3" for the real match.
     const segs = [...new Set(rounds.filter((r) => r.live).map((r) => r.seg))].sort((a, b) => a - b);
     let total = 0;
     for (let i = 0; i < segs.length; i++) {
       const rs = rounds.filter((r) => r.live && r.seg === segs[i]);
-      const halfStart = total === 0 || (total >= 30 && (total - 30) % 6 === 0);
-      const minHalf = total >= 30 ? 3 : 12;
+      // also at half time: a short stretch played as the second-half warmup, then the real restart
+      const halfStart = total === 0 || total === 15 || total === 12 || (total >= 30 && (total - 30) % 6 === 0);
+      const minHalf = total >= 30 ? 3 : total ? 6 : 12;
       if (i < segs.length - 1 && halfStart && rs.length < minHalf) { for (const r of rs) r.live = false; continue; }
       total += rs.length;
     }
@@ -2388,8 +2430,10 @@ $('keys').onclick = (e) => { if (e.target === $('keys')) toggleKeys(false); };
 // players in scoreboard order: team 1 then team 2, by slot
 // players (people, not slots) in scoreboard order: team 1 then team 2
 function playerOrder() { return M ? [...M.teams[0], ...M.teams[1]] : []; }
-// dead right now (killed this round): can't be followed until they respawn
-function isDeadNow(e) { const s = playerState(e, T); return !!s && s.state < 0; }
+// dead right now (killed this round): can't be followed until they respawn. Read from the recorded
+// state, not from playerState: a few seconds after dying the demo stops sending the body, and then
+// playerState has no position to give, which must not count as alive.
+function isDeadNow(e) { const a = D.slots[e]; if (!a) return false; return a[M.idxAt(T) * D.stride + 5] < 0; }
 
 let sbTimer = null;
 function showScoreboard(v) {
@@ -2956,7 +3000,9 @@ function build3d() {
     const mat = new THREE.ShaderMaterial({
       uniforms: { map: { value: getTex(g.name) }, lm: { value: lmTex }, opacity: { value: water ? 0.7 : g.amt }, bright: { value: water ? 1.0 : 2.0 } },
       vertexShader: SHADER.vertexShader, fragmentShader: SHADER.fragmentShader,
-      transparent: see, depthWrite: !see, side: THREE.DoubleSide,
+      // one-sided like the game: a face is only drawn from the side it faces (map faces wind clockwise seen from the front,
+      // which is three.js's back side). Water is drawn from both sides.
+      transparent: see, depthWrite: !see, side: water ? THREE.DoubleSide : THREE.BackSide,
     });
     const m3 = new THREE.Mesh(geo, mat);
     if (g.model >= 0) (R3.brk[g.model] || (R3.brk[g.model] = [])).push(m3);
@@ -4370,7 +4416,7 @@ window.addEventListener('unhandledrejection', (e) => { ERRLOG.push('Promise: ' +
 function debugInfo() {
   let gpu = '';
   try { const gl = document.createElement('canvas').getContext('webgl'); const x = gl && gl.getExtension('WEBGL_debug_renderer_info'); gpu = gl ? (x ? gl.getParameter(x.UNMASKED_RENDERER_WEBGL) : 'WebGL available') : 'no WebGL'; } catch (e) { gpu = 'unknown'; }
-  const L = [`CS 1.6 Demo Viewer 0.7.0`, `Browser: ${navigator.userAgent}`, `Screen: ${screen.width}x${screen.height} at ${devicePixelRatio}x, window ${innerWidth}x${innerHeight}`, `Graphics: ${gpu}`];
+  const L = [`CS 1.6 Demo Viewer 0.7.1`, `Browser: ${navigator.userAgent}`, `Screen: ${screen.width}x${screen.height} at ${devicePixelRatio}x, window ${innerWidth}x${innerHeight}`, `Graphics: ${gpu}`];
   L.push(`Folder: ${Object.keys(files.maps).length} maps, ${Object.keys(files.overviews).length} overviews, ${Object.keys(files.mdl).length} models, ${Object.keys(files.snd).length} sounds, ${files.demos.length} demos`);
   if (D) {
     L.push(`Demo: ${D.fileName}, map ${D.mapName}, length ${fmt(D.end - D.start)}, ${M.liveR.length} live rounds, final ${M.liveR.length ? M.liveR[M.liveR.length - 1].scoreAfter.join(':') : '-'}`);

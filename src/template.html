@@ -794,6 +794,32 @@ function computeWallbangs() {
   renderPane(); drawTimeline();
 }
 
+// Stretches of the demo that the server announced as live: [start, end] pairs from its text messages.
+// Opens on "live", closes on the end of a half or the match, a warmup or knife round, or a pause
+// announcement; a "canceled" set throws away the stretch it was in.
+function liveWindows(notes) {
+  const clean = (s) => s.replace(/[\x00-\x1f]/g, ' ').trim();
+  // short announcements only, so a player called "LiveWire" joining doesn't count
+  const isLive = (s) => /\blive\b/i.test(s) && (s.length < 60 || /\blive\b.*\blive\b/i.test(s)) && !/\b(not|until|before|going|goes)\b.{0,12}\blive\b|\blive\b.{0,12}\b(in|after|soon)\b/i.test(s);
+  const isHalfEnd = (s) => /end of (the )?(1st|2nd|first|second|set|half|fight|match|game|map)|half[\s-]?time|match (is )?over|final(e)? score/i.test(s);
+  const isWarm = (s) => /\bwarm[\s-]?up|\bknife\b/i.test(s);
+  const isCancel = (s) => /\b(canceled|cancelled|aborted)\b/i.test(s);
+  const out = []; let open = null, seenLive = false;
+  for (const n of notes) {
+    const s = clean(n.s);
+    if (isCancel(s)) { open = null; continue; }
+    if (isHalfEnd(s) || isWarm(s)) {
+      if (open != null) out.push([open, n.t]);
+      // the demo started partway through a half: everything before this end counted
+      else if (!seenLive && !out.length && isHalfEnd(s)) out.push([-Infinity, n.t]);
+      open = null; continue;
+    }
+    if (isLive(s)) { seenLive = true; if (open == null) open = n.t; }
+  }
+  if (open != null) out.push([open, Infinity]);
+  return seenLive ? out : [];
+}
+
 // ---------------- derive match structure ----------------
 function derive() {
   const S = D.stride, times = D.times, n = times.length;
@@ -859,17 +885,26 @@ function derive() {
     const best = Object.keys(segInfo).sort((a, b) => segInfo[b].real - segInfo[a].real)[0];
     liveSegs = best != null ? [best] : [];
   }
-  for (const r of rounds) r.live = liveSegs.includes(String(r.seg)) && r.kills.length > 0 && r.dur > 5 && r.winner != null;
-  // False starts: a live stretch where a first half should begin (or an overtime) that stops short
-  // of a full half and is followed by another live start. Typical case: a few practice rounds on a
-  // fresh 0:0, then the admins restart "live on 3" for the real match.
-  {
+  const counts = (r) => r.kills.length > 0 && r.dur > 5 && r.winner != null;
+  // What the server's admin plugin announced beats guessing. Tournament servers print "Live !" (or
+  // "LIVE LIVE LIVE") when a half starts, "End of 1st set" or "half time" when it ends, and "Current
+  // set canceled" when a start is thrown away. When the demo has these, a round counts only if it
+  // started while the match was announced live; otherwise the guess from restarts below decides.
+  const windows = liveWindows(D.notes || []);
+  if (windows.length) {
+    for (const r of rounds) r.live = counts(r) && windows.some(([a, b]) => r.start >= a - 10 && r.start < b - 1);
+  } else {
+    for (const r of rounds) r.live = liveSegs.includes(String(r.seg)) && counts(r);
+    // False starts: a live stretch where a half should begin (or an overtime) that stops short
+    // of a full half and is followed by another live start. Typical case: a few practice rounds on a
+    // fresh 0:0, then the admins restart "live on 3" for the real match.
     const segs = [...new Set(rounds.filter((r) => r.live).map((r) => r.seg))].sort((a, b) => a - b);
     let total = 0;
     for (let i = 0; i < segs.length; i++) {
       const rs = rounds.filter((r) => r.live && r.seg === segs[i]);
-      const halfStart = total === 0 || (total >= 30 && (total - 30) % 6 === 0);
-      const minHalf = total >= 30 ? 3 : 12;
+      // also at half time: a short stretch played as the second-half warmup, then the real restart
+      const halfStart = total === 0 || total === 15 || total === 12 || (total >= 30 && (total - 30) % 6 === 0);
+      const minHalf = total >= 30 ? 3 : total ? 6 : 12;
       if (i < segs.length - 1 && halfStart && rs.length < minHalf) { for (const r of rs) r.live = false; continue; }
       total += rs.length;
     }
@@ -1369,8 +1404,10 @@ $('keys').onclick = (e) => { if (e.target === $('keys')) toggleKeys(false); };
 // players in scoreboard order: team 1 then team 2, by slot
 // players (people, not slots) in scoreboard order: team 1 then team 2
 function playerOrder() { return M ? [...M.teams[0], ...M.teams[1]] : []; }
-// dead right now (killed this round): can't be followed until they respawn
-function isDeadNow(e) { const s = playerState(e, T); return !!s && s.state < 0; }
+// dead right now (killed this round): can't be followed until they respawn. Read from the recorded
+// state, not from playerState: a few seconds after dying the demo stops sending the body, and then
+// playerState has no position to give, which must not count as alive.
+function isDeadNow(e) { const a = D.slots[e]; if (!a) return false; return a[M.idxAt(T) * D.stride + 5] < 0; }
 
 let sbTimer = null;
 function showScoreboard(v) {

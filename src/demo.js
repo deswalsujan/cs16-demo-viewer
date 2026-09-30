@@ -156,6 +156,8 @@ export function parseDemo(buffer, onProgress) {
   const brushVis = {}, brushEvents = []; // breakable brush models (vents, glass, logs) shown or hidden
   const brushPoseNow = {}, brushPose = []; // brush models' position and turn over time: time, model, x, y, z, pitch, yaw, roll
   const hltvStatus = [];
+  // server text (admin plugins announce warmups, "Live !" and scores this way): { t, s }
+  const notes = [];
   // sounds heard in the demo: server sounds, weapon fire events, explosions, radio lines and corpses
   const snds = [];      // time, sound resource index, entity, volume, attenuation, pitch, channel, x, y, z (NaN when not sent)
   const shots = [];     // time, entity, event resource index, bparam1
@@ -329,6 +331,7 @@ export function parseDemo(buffer, onProgress) {
           }
           if (msg === '#Bomb_Planted' && inPlayback) bomb.push({ t: time, type: 'planted', round: curRound ? curRound.n : 0 });
           if (msg === '#Game_will_restart_in' && inPlayback) bomb.push({ t: time, type: 'restart' });
+          if (msg && msg[0] !== '#' && inPlayback) notes.push({ t: time, s: msg });
           break;
         }
         case 'RoundTime': {
@@ -359,6 +362,7 @@ export function parseDemo(buffer, onProgress) {
           let b = '', c = '';
           try { b = m.str(); c = m.str(); } catch (e) { /* optional */ }
           if (inPlayback) chat.push({ t: time, id, fmt: a, text: c || b });
+          if (inPlayback && !id) notes.push({ t: time, s: [a, b, c].filter((x) => x && x[0] !== '#').join(' ') });
           break;
         }
       }
@@ -411,7 +415,7 @@ export function parseDemo(buffer, onProgress) {
           break;
         }
         case 7: r.f(); break; // time
-        case 8: r.str(); break; // print
+        case 8: { const s = r.str(); if (inPlayback && s) notes.push({ t: time, s }); break; } // print
         case 9: r.str(); break; // stufftext
         case 10: r.skip(6); break; // setangle
         case 11: { // serverinfo
@@ -531,7 +535,7 @@ export function parseDemo(buffer, onProgress) {
         }
         case 24: { const on = r.ub(); if (inPlayback) pauses.push({ t: time, on: !!on }); break; } // setpause
         case 25: r.ub(); break; // signonnum
-        case 26: r.str(); break; // centerprint
+        case 26: { const s = r.str(); if (inPlayback && s) notes.push({ t: time, s }); break; } // centerprint
         case 27: case 28: case 30: case 42: break;
         case 29: r.skip(14); break; // spawnstaticsound
         case 31: case 34: r.str(); break; // finale, cutscene
@@ -709,7 +713,7 @@ export function parseDemo(buffer, onProgress) {
     mapName: (serverInfo && serverInfo.mapFile) ? serverInfo.mapFile.replace(/^maps\//, '').replace(/\.bsp$/, '') : header.mapName,
     start: playbackStart || 0, end: time,
     players, kills, rounds, bomb, chat, nades, roundTimes, pauses, hp: new Float32Array(hp),
-    occupants, brushEvents: new Float32Array(brushEvents), brushPose: new Float32Array(brushPose), viewers: hltvStatus,
+    occupants, brushEvents: new Float32Array(brushEvents), brushPose: new Float32Array(brushPose), viewers: hltvStatus, notes,
     times: new Float32Array(samples.t), slots,
     finalScore: { ...scores }, models: resources.models, stride: STRIDE,
     pmodels, sounds: resources.sounds, events: resources.events, snds: new Float32Array(snds), shots: new Float32Array(shots), booms: new Float32Array(booms), radio, corpses,

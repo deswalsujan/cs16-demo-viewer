@@ -119,7 +119,9 @@ function build3d() {
     const mat = new THREE.ShaderMaterial({
       uniforms: { map: { value: getTex(g.name) }, lm: { value: lmTex }, opacity: { value: water ? 0.7 : g.amt }, bright: { value: water ? 1.0 : 2.0 } },
       vertexShader: SHADER.vertexShader, fragmentShader: SHADER.fragmentShader,
-      transparent: see, depthWrite: !see, side: THREE.DoubleSide,
+      // one-sided like the game: a face is only drawn from the side it faces (map faces wind clockwise seen from the front,
+      // which is three.js's back side). Water is drawn from both sides.
+      transparent: see, depthWrite: !see, side: water ? THREE.DoubleSide : THREE.BackSide,
     });
     const m3 = new THREE.Mesh(geo, mat);
     if (g.model >= 0) (R3.brk[g.model] || (R3.brk[g.model] = [])).push(m3);

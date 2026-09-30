@@ -205,7 +205,10 @@ export function buildMesh(bsp, separate = null) {
   const drawModels = [{ model: 0, origin: [0, 0, 0], amt: 1, mode: 0 }];
   for (const e of bsp.entities) {
     if (!e.model || e.model[0] !== '*' || HIDE.test(e.classname || '')) continue;
-    const mode = +(e.rendermode || 0), amt = e.renderamt != null ? +e.renderamt / 255 : 1;
+    const mode = +(e.rendermode || 0);
+    // like the game: an entity without a renderamt has 0, so a see-through render mode with no amount is invisible
+    // (Inferno's lamp posts have such a box around them for players to bump into)
+    const amt = e.renderamt != null ? +e.renderamt / 255 : 0;
     if (mode && amt === 0) continue;
     drawModels.push({ model: +e.model.slice(1), origin: (e.origin || '0 0 0').split(/\s+/).map(Number), amt: mode === 0 ? 1 : amt, mode });
   }

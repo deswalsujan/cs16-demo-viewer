@@ -9,6 +9,14 @@ What changed in the viewer, newest first. The version shows in the viewer's shor
 - A demo that's cut off (interrupted download or recording) can't be opened at all yet, even though the part before the cut is readable. See [IDEAS.md](IDEAS.md).
 - Na`Vi vs FX on Dust2 shows 17-11 against the official 16-11, because the demo has an extra first-half round played by admin mistake.
 
+## 0.7.1 (2026-10-01)
+
+### Fixed
+- Wrong scores when the second-half warmup was played as real rounds. mousesports vs AGAiN (Inferno, ESWC 2011 final) showed 15-15 over 32 rounds; it now reads 16-11 to mousesports over 27, and Fnatic vs mousesports (Tuscan) 15-15 instead of 16-15. When the server's admin plugin announces "Live !", "End of 1st set" or "Current set canceled", the viewer now uses those to decide which rounds count. Checked round by round against the plugin's "Current score" messages on all three test demos (Nuke, Tuscan, Inferno): every score matches. Demos without such messages still use the restart-based guess, which now also drops a short warmup stretch at half time.
+- Players who died showed as alive again in the Players tab a few seconds later (for example PASHA, 742 and ninja at 23:00 on Inferno). The demo stops sending a dead player's body after a moment, and that gap was read as alive.
+- Inferno's lamp posts showed as brown wooden pillars. Each lamp has an invisible box around it for players to bump into; the viewer drew that box. Entities with a see-through render mode and no amount set are now invisible, as in the game.
+- The Inferno vent showed as a slatted box. Map faces are now drawn one-sided like the game, so the vent's sides hidden inside the wall no longer show.
+
 ## 0.7.0 (2026-10-01)
 
 ### Fixed
