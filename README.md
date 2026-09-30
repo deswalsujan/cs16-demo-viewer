@@ -40,6 +40,7 @@ src/audio.js        Sound: .wav decoding, positional playback, radio lines
 src/template.html   The page: layout, styles, 2D radar, timeline, panels
 build.py            Combines everything into one self-contained page
 CHANGELOG.md        What changed, newest first
+IDEAS.md            Parked ideas and open decisions, with the discussion behind them
 index.html          The built page (what GitHub Pages serves)
 ```
 
