@@ -8,6 +8,15 @@ What changed in the viewer, newest first. The version shows in the viewer's shor
 - Custom models are named in the load summary but not checked further yet. One with an unusual skeleton may pose oddly; compressed or 24-bit sounds stay silent.
 - Na`Vi vs FX on Dust2 shows 17-11 against the official 16-11, because the demo has an extra first-half round played by admin mistake.
 
+## 0.6.0 (2026-10-01)
+
+### Changed
+- The load summary is now a card in the middle of the view instead of a note in the corner. It opens with "Checking your files…" as soon as the demo is read, then lists each check with a tick, a warning or a cross, and what it means for playback (for example "Those players show as simple figures").
+- A headline on the card says whether the demo will play: "Ready to watch", "The demo will play, with a few gaps", "The demo will play, in 2D only", or "This demo can't be played".
+- The card closes on its own: after 6 seconds when everything loaded, 15 seconds when there are gaps. A bar and "Closes in N s" count down. Moving the mouse over the card pauses it. The × button, Esc, clicking outside the card, or pressing play closes it straight away. A "can't play" card stays until closed.
+- Custom models are listed on their own line in the card (they're used, just flagged).
+- Files that aren't demos, and demos that are cut off, now explain why in plain words instead of showing a technical error.
+
 ## 0.5.0 (2026-09-30)
 
 ### Added

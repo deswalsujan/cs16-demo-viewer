@@ -59,4 +59,5 @@ Checked on two demos:
 - **Share a moment by link**, such as `#r12` to open round 12.
 - **Product basics still to do**: a compatibility note (browsers, HLTV vs POV demos) and a license.
 - **1.6-era look** (parked, not urgent) as an optional theme: VGUI-style panels, Verdana/Tahoma, orange HUD numbers, sprites read from the player's own `cstrike/sprites`.
+- **Play cut-off demos up to where they end.** A demo that was cut off (interrupted download, crashed recording) currently can't be opened at all, because the file's index sits at the end. Reading it frame by frame from the start would recover everything up to the cut.
 - **Shaded lighting on player models** so they darken in shadowed areas like in-game.

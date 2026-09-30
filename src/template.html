@@ -208,6 +208,31 @@ kbd { font-family: var(--f-mono); font-size: 11px; background: var(--panel-2); b
 .loadfoot { display: flex; justify-content: space-between; align-items: center; gap: 12px; flex-wrap: wrap; color: var(--faint); font-size: 12px; font-family: var(--f-mono); }
 .loadfoot .btn { font-size: 12px; padding: 4px 8px; }
 #toast { white-space: pre-line; line-height: 1.5; }
+/* load summary card */
+.sumwrap { z-index: 15; background: rgba(8, 10, 12, .45); }
+.sum { width: min(520px, 100%); background: var(--panel); border: 1px solid var(--line); border-radius: 6px; overflow: hidden; box-shadow: 0 12px 40px rgba(0,0,0,.45); }
+.sum-top { display: flex; align-items: flex-start; gap: 12px; padding: 14px 16px; border-bottom: 1px solid var(--line); border-left: 4px solid var(--faint); }
+.sum-top.ok { border-left-color: var(--good); } .sum-top.warn { border-left-color: var(--kill); } .sum-top.fail { border-left-color: var(--t); } .sum-top.busy { border-left-color: var(--sand); }
+.sum-top .ti { flex: 1; min-width: 0; }
+.sum-top h2 { margin: 0 0 4px; font-family: var(--f-display); font-size: 18px; letter-spacing: .02em; }
+.sum-top.ok h2 { color: var(--good); } .sum-top.warn h2 { color: var(--kill); } .sum-top.fail h2 { color: var(--t); } .sum-top.busy h2 { color: var(--sand); }
+.sum-top p { margin: 0; color: var(--fg); font-size: 13px; line-height: 1.5; }
+.sum-x { background: none; border: 1px solid transparent; border-radius: 4px; color: var(--muted); width: 30px; height: 30px; font-size: 18px; line-height: 1; flex-shrink: 0; }
+.sum-x:hover { color: var(--fg); border-color: var(--line); }
+.sum-list { list-style: none; margin: 0; padding: 8px 16px; display: grid; gap: 2px; }
+.sum-list li { display: grid; grid-template-columns: 22px minmax(0, 1fr); gap: 8px; padding: 5px 0; font-size: 13px; line-height: 1.4; }
+.sum-list li small { display: block; color: var(--muted); font-size: 12px; }
+.sum-ic { font-family: var(--f-mono); font-weight: 600; text-align: center; border-radius: 50%; width: 20px; height: 20px; line-height: 20px; font-size: 12px; }
+.sum-ic.ok { color: var(--good); background: color-mix(in srgb, var(--good) 16%, transparent); }
+.sum-ic.warn { color: var(--kill); background: color-mix(in srgb, var(--kill) 16%, transparent); }
+.sum-ic.fail { color: var(--t); background: color-mix(in srgb, var(--t) 16%, transparent); }
+.sum-ic.info { color: var(--sand); background: color-mix(in srgb, var(--sand) 16%, transparent); }
+.sum-ic.busy { color: var(--muted); }
+.sum-foot { display: flex; align-items: center; gap: 10px; padding: 10px 16px 12px; border-top: 1px solid var(--line); color: var(--muted); font-size: 12px; font-family: var(--f-mono); }
+.sum-foot .sp { flex: 1; }
+.sum-bar { height: 3px; background: var(--panel-2); }
+.sum-bar i { display: block; height: 100%; background: var(--sand); width: 100%; transform-origin: left; }
+@media (prefers-reduced-motion: reduce) { .sum-bar { display: none; } }
 .sndgrp { display: inline-flex; align-items: center; gap: 6px; }
 .sndgrp input { width: 100px; accent-color: var(--sand); }
 #bSnd.on { color: var(--fg); border-color: var(--line); }
@@ -281,6 +306,7 @@ kbd { font-family: var(--f-mono); font-size: 11px; background: var(--panel-2); b
     </div>
     <div class="hint3" id="hint3">Press ? for keyboard shortcuts</div>
     <div class="overlay" id="sb" hidden></div>
+    <div class="overlay sumwrap" id="sumCard" hidden></div>
     <div class="overlay keys" id="keys" hidden>
       <div class="keys-card">
         <div class="keys-head"><b>Shortcuts and kill markers</b><div class="kh-r"><span class="ver">Version __VERSION__ · <a href="https://github.com/deswalsujan/cs16-demo-viewer/blob/main/CHANGELOG.md" target="_blank" rel="noopener">What's new</a> · <a href="https://github.com/deswalsujan/cs16-demo-viewer/issues/new/choose" target="_blank" rel="noopener">Report a bug</a></span><button class="btn" id="bDebug" type="button" title="Copies details for a bug report: browser, demo name, what loaded, errors. No file contents.">Copy debug info</button><button class="btn" id="bKeysClose" type="button">Close</button></div></div>
@@ -571,7 +597,7 @@ async function loadDemoFile(f) {
   worker.onmessage = async (e) => {
     const m = e.data;
     if (m.progress != null) { $('progBar').style.width = (m.progress * 100).toFixed(0) + '%'; return; }
-    if (m.error) { setMsg('This file could not be read as a CS 1.6 demo: ' + m.error, true); $('prog').hidden = true; return; }
+    if (m.error) { setMsg('This file could not be read as a CS 1.6 demo: ' + m.error, true); $('prog').hidden = true; showFailCard(f.name, m.error); return; }
     if (m.done) {
       worker.terminate(); worker = null;
       $('progBar').style.width = '100%';
@@ -1209,7 +1235,7 @@ for (const [id, i] of [['tnA', 0], ['tnB', 1]]) {
 // ---------------- playback ----------------
 function seek(t) { T = Math.max(D.start, Math.min(D.end, t)); updateHud(true); }
 function setPlayIcon() { $('playIcon').innerHTML = playing ? '<path d="M3 2h4v12H3zM9 2h4v12H9z"/>' : '<path d="M4 2l10 6-10 6z"/>'; }
-function togglePlay() { if (!D) return; if (T >= D.end - 0.05) T = D.start; playing = !playing; setPlayIcon(); }
+function togglePlay() { if (!D) return; closeSummary(); if (T >= D.end - 0.05) T = D.start; playing = !playing; setPlayIcon(); }
 $('bPlay').onclick = togglePlay;
 $('bBack').onclick = () => D && seek(T - 5);
 $('bFwd').onclick = () => D && seek(T + 5);
@@ -1259,7 +1285,7 @@ document.addEventListener('keydown', (e) => {
   else if (/^[0-9]$/.test(k)) { const pid = playerOrder()[(+k + 9) % 10]; const e = pid && M.slotOf(pid, T); if (e) { selected = e; renderPane(); if (viewMode !== '2d' && cam3.mode === 'free') setCam('eyes'); } }
   else if (k === 'Tab') { e.preventDefault(); if (!e.repeat) showScoreboard(true); }
   else if (k === '?') toggleKeys();
-  else if (k === 'Escape') { $('keys').hidden = true; showScoreboard(false); }
+  else if (k === 'Escape') { $('keys').hidden = true; showScoreboard(false); closeSummary(); }
 });
 document.addEventListener('keyup', (e) => { if (e.key === 'Tab') showScoreboard(false); });
 window.addEventListener('blur', () => showScoreboard(false));
@@ -1770,6 +1796,12 @@ setSound(SND.on);
 let ASSETS = null;
 async function loadSummary(sndDone) {
   const d = D;
+  openSummary({ state: 'busy' });
+  // a file that reads but has no player movement can't be played
+  if (!D.times.length || !Object.keys(D.slots).length || !M.rounds.length) {
+    renderSummary({ state: 'fail', title: "This demo can't be played", text: 'The file opened, but there are no player movements or rounds in it. It may be cut off, or it may not be an HLTV or player demo.', rows: [] });
+    return;
+  }
   const pm = [...new Set((D.pmodels || []).filter((n) => /\.mdl$/i.test(n)).map((n) => n.toLowerCase()))];
   const used = new Set();
   const S = D.stride;
@@ -1796,17 +1828,85 @@ async function loadSummary(sndDone) {
   if (MAP && MAP.name === D.mapName.toLowerCase()) map = { ok: true, missingTex: MAP.missingTex || 0 };
   if (d !== D) return; // another demo was opened meanwhile
   ASSETS = { map, overview: !!OV, players, weapons, views, sounds };
-  const cnt = (o) => `${o.found} of ${o.total}`;
-  const mapTxt = !map ? 'map not found (3D and wallbangs need it)' : map.missingTex ? `map loaded, ${map.missingTex} textures missing` : 'map and textures loaded';
-  const lines = [`${D.mapName}: ${mapTxt}, ${OV ? 'overview loaded' : 'no overview (radar uses a plain grid)'}`];
-  lines.push(`Player models ${cnt(players)} · Weapons ${cnt({ found: weapons.found + views.found, total: weapons.total + views.total })} · Sounds ${cnt(sounds)}`);
+
+  // one line per check: ok (✓), warn (!), fail (✗), info (i)
+  const rows = [];
+  const few = (list) => list.slice(0, 3).join(', ') + (list.length > 3 ? ` and ${list.length - 3} more` : '');
+  const live = M.liveR.length;
+  if (!D.errors) rows.push({ s: 'ok', t: `Demo read: ${live} rounds`, n: '' });
+  else rows.push({ s: 'warn', t: `Demo read: ${live} rounds, ${D.errors} damaged ${D.errors === 1 ? 'packet' : 'packets'}`, n: 'A few moments may skip or show players in the wrong spot.' });
+  if (!map) rows.push({ s: 'fail', t: `Map ${D.mapName} not found`, n: 'No 3D view and no wallbang finder. Add the .bsp from cstrike\\maps or cstrike_downloads\\maps.' });
+  else if (map.missingTex) rows.push({ s: 'warn', t: `Map loaded, ${map.missingTex} textures missing`, n: 'Those surfaces show a grey checkerboard in 3D.' });
+  else rows.push({ s: 'ok', t: 'Map and textures', n: '' });
+  rows.push(OV ? { s: 'ok', t: 'Radar overview', n: '' } : { s: 'warn', t: 'Radar overview not found', n: 'The 2D radar uses a plain grid instead of the map picture.' });
+  const modelRow = (label, o, effect) => {
+    const bad = [...o.missing, ...o.broken];
+    if (!o.total) return null;
+    if (!bad.length) return { s: 'ok', t: `${label}: ${o.found} of ${o.total}`, n: '' };
+    return { s: o.found ? 'warn' : 'fail', t: `${label}: ${o.found} of ${o.total}`, n: `${o.broken.length ? "Couldn't read " + few(o.broken) + '. ' : ''}${o.missing.length ? 'Missing ' + few(o.missing) + '. ' : ''}${effect}` };
+  };
+  for (const r of [modelRow('Player models', players, 'Those players show as simple figures in team colours.'),
+    modelRow('Weapons in hand', weapons, 'Those players are drawn without a gun.'),
+    modelRow("First-person weapons", views, "Player's eyes shows no gun for those weapons.")]) if (r) rows.push(r);
   const custom = [...players.custom, ...weapons.custom, ...views.custom];
-  if (custom.length) lines.push(`Custom: ${custom.slice(0, 4).join(', ')}${custom.length > 4 ? ` and ${custom.length - 4} more` : ''}`);
-  const broken = [...players.broken, ...weapons.broken, ...views.broken];
-  if (broken.length) lines.push(`Couldn't read: ${broken.slice(0, 4).join(', ')}${broken.length > 4 ? ` and ${broken.length - 4} more` : ''} (drawn as simple figures)`);
-  const nothing = !map && !OV && !players.found && !sounds.found;
-  if (nothing) lines.splice(0, lines.length, 'Only the demo is loaded. Choose your Half-Life folder for the map, models and sounds.');
-  toast(lines.join('\n'), 10000);
+  if (custom.length) rows.push({ s: 'info', t: `Custom models: ${few(custom)}`, n: 'Different from the stock game files. Used as they are; they may look or move slightly differently.' });
+  if (!sounds.total) { /* nothing to play */ }
+  else if (sounds.found === sounds.total) rows.push({ s: 'ok', t: `Sounds: ${sounds.found} of ${sounds.total}`, n: '' });
+  else rows.push({ s: sounds.found ? 'warn' : 'fail', t: `Sounds: ${sounds.found} of ${sounds.total}`, n: sounds.found ? 'The missing ones stay silent.' : 'The demo plays without sound.' });
+
+  const onlyDemo = !map && !OV && !players.found && !sounds.found;
+  const anyBad = rows.some((r) => r.s === 'warn' || r.s === 'fail');
+  let res;
+  if (onlyDemo) {
+    rows.splice(1, rows.length - 1, { s: 'warn', t: 'Map, overview, models and sounds: none loaded yet', n: 'The radar uses a plain grid, there is no 3D view, and the demo plays silently.' });
+    res = { state: 'warn', title: 'The demo will play, in 2D only', text: 'Only the demo file is loaded. Choose your Half-Life folder to add the map, player models and sounds.', folder: true };
+  }
+  else if (!anyBad) res = { state: 'ok', title: 'Ready to watch', text: 'Everything loaded. The demo will play in full.' };
+  else res = { state: 'warn', title: 'The demo will play, with a few gaps', text: 'Some files are missing or damaged. Playback works; the parts marked below will look or sound different.', folder: !map };
+  renderSummary(Object.assign(res, { rows }));
+}
+
+// the card itself: opens in the middle of the view, closes on its own (not when it reports a failure)
+const SUM = { timer: null, left: 0, total: 0, paused: false, last: 0 };
+function openSummary(o) { renderSummary(Object.assign({ state: 'busy', title: 'Checking your files…', text: 'Looking for the map, models and sounds this demo needs.', rows: [] }, o)); }
+function closeSummary() { const el = $('sumCard'); if (el) el.hidden = true; clearInterval(SUM.timer); SUM.timer = null; }
+function showFailCard(name, err) {
+  ERRLOG.push('Demo read failed: ' + err);
+  const why = /not a half-life demo/i.test(err) ? "It isn't a Half-Life demo file."
+    : /bounds|overrun|outside/i.test(err) ? 'The file ends partway through, so it may be cut off or still downloading.'
+    : 'Part of the file is damaged.';
+  renderSummary({ state: 'fail', title: "This demo can't be played", text: `${name} couldn't be opened. ${why} Try another copy of the demo, or check that it was recorded in Counter-Strike 1.6.`, rows: [] });
+}
+function renderSummary(r) {
+  const el = $('sumCard');
+  const icon = { ok: '✓', warn: '!', fail: '✕', info: 'i', busy: '…' };
+  el.innerHTML = `<div class="sum" role="dialog" aria-live="polite" aria-labelledby="sumTitle">
+    <div class="sum-top ${r.state}"><div class="ti"><h2 id="sumTitle">${esc(r.title)}</h2><p>${esc(r.text)}</p></div><button class="sum-x" type="button" id="sumX" title="Close (Esc)" aria-label="Close">×</button></div>
+    ${r.rows.length ? `<ul class="sum-list">${r.rows.map((x) => `<li><span class="sum-ic ${x.s}" aria-hidden="true">${icon[x.s]}</span><span>${esc(x.t)}${x.n ? `<small>${esc(x.n)}</small>` : ''}</span></li>`).join('')}</ul>` : ''}
+    ${r.state === 'busy' ? '' : `<div class="sum-foot">${r.folder ? '<button class="btn" type="button" id="sumFolder">Choose Half-Life folder</button>' : ''}<span class="sp"></span><span id="sumCount"></span></div>`}
+    ${r.state === 'busy' || r.state === 'fail' ? '' : '<div class="sum-bar"><i id="sumBar"></i></div>'}
+  </div>`;
+  el.hidden = false;
+  $('sumX').onclick = closeSummary;
+  if ($('sumFolder')) $('sumFolder').onclick = () => { closeSummary(); $('fFolder').click(); };
+  el.onclick = (e) => { if (e.target === el && r.state !== 'busy') closeSummary(); };
+  clearInterval(SUM.timer); SUM.timer = null;
+  const card = el.querySelector('.sum');
+  // pause only when the mouse actually moves over the card (it often opens right under a resting cursor)
+  SUM.paused = false;
+  card.onpointermove = () => { SUM.paused = true; }; card.onpointerleave = () => { SUM.paused = false; };
+  if (r.state === 'busy') return;
+  if (r.state === 'fail') { $('sumCount').textContent = 'Stays open until you close it'; return; }
+  // closes on its own: sooner when there's nothing to read
+  SUM.total = SUM.left = r.state === 'ok' ? 6 : 15; SUM.last = performance.now();
+  const tick = () => {
+    const now = performance.now(), dt = (now - SUM.last) / 1000; SUM.last = now;
+    if (!SUM.paused) SUM.left -= dt;
+    if (SUM.left <= 0) { closeSummary(); return; }
+    $('sumCount').textContent = SUM.paused ? 'Paused while you read' : `Closes in ${Math.ceil(SUM.left)} s`;
+    $('sumBar').style.transform = `scaleX(${Math.max(0, SUM.left / SUM.total)})`;
+  };
+  tick(); SUM.timer = setInterval(tick, 100);
 }
 
 // ---------------- debug info for bug reports ----------------
