@@ -1,4 +1,4 @@
-# Wallbang Demo Viewer
+# CS 1.6 Demo Viewer
 
 Play Counter-Strike 1.6 HLTV demos in your browser. 2D radar, textured 3D replay with first-person and chase cameras, a kill timeline, round and player stats, heatmaps, and an automatic wallbang finder.
 
