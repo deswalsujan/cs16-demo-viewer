@@ -1,0 +1,473 @@
+// ---------------- 3D view ----------------
+let viewMode = '2d';
+let wbFocus = null;
+const view3 = { ready: false, map: null };
+const cam3 = { mode: 'free', pos: [0, 0, 1500], yaw: 0, pitch: 60, keys: {} };
+const g3 = (x, y, z) => new THREE.Vector3(x, z, -y); // GoldSrc (z up) -> three (y up)
+function status3(t, withButton) {
+  const el = $('status3');
+  if (!t) { el.hidden = true; el.innerHTML = ''; return; }
+  el.hidden = false;
+  el.innerHTML = `<div><span>${esc(t)}</span>${withButton ? '<button class="btn" type="button" id="bFolder3">Choose Half-Life folder</button><small>The map lives in cstrike\\maps or cstrike_downloads\\maps. Its textures come from the .wad files.</small>' : ''}</div>`;
+  if (withButton) $('bFolder3').onclick = () => $('fFolder').click();
+}
+document.querySelectorAll('#viewSeg button').forEach((b) => b.onclick = () => setView(b.dataset.v));
+function setView(v) {
+  viewMode = v;
+  document.querySelectorAll('#viewSeg button').forEach((x) => x.classList.toggle('on', x.dataset.v === v));
+  const r = $('radar');
+  r.classList.toggle('m2d', v === '2d'); r.classList.toggle('m3d', v === '3d'); r.classList.toggle('msplit', v === 'split');
+  $('cam3').hidden = v === '2d' || !D;
+  if (v !== '2d' && !window.THREE) status3('The 3D engine could not load. Check your internet connection and reload the page.');
+  else if (v !== '2d' && D && !MAP) loadMap(D.mapName);
+  requestAnimationFrame(() => { resize(); resize3(); });
+}
+
+let R3 = null; // three.js objects
+function init3() {
+  if (R3 || !window.THREE) return;
+  const canvas = $('gl');
+  const renderer = new THREE.WebGLRenderer({ canvas, antialias: true });
+  renderer.setPixelRatio(Math.min(2, window.devicePixelRatio || 1));
+  const scene = new THREE.Scene();
+  scene.background = new THREE.Color(0x7d93a6);
+  const camera = new THREE.PerspectiveCamera(70, 1, 4, 16000);
+  scene.add(new THREE.AmbientLight(0xffffff, 0.75));
+  const sun = new THREE.DirectionalLight(0xffffff, 0.5); sun.position.set(0.4, 1, 0.3); scene.add(sun);
+  const world = new THREE.Group(); scene.add(world);
+  const dyn = new THREE.Group(); scene.add(dyn);
+  R3 = { renderer, scene, camera, world, dyn, players: {}, lines: [] };
+  // camera input: drag to look, wheel to move
+  let dragging = null;
+  canvas.addEventListener('pointerdown', (e) => { canvas.focus(); dragging = { x: e.clientX, y: e.clientY, sx: e.clientX, sy: e.clientY, moved: false }; canvas.setPointerCapture(e.pointerId); });
+  canvas.addEventListener('pointermove', (e) => {
+    if (!dragging) return;
+    if (!dragging.moved && Math.hypot(e.clientX - dragging.sx, e.clientY - dragging.sy) < 5) return;
+    dragging.moved = true;
+    const dx = e.clientX - dragging.x, dy = e.clientY - dragging.y; dragging.x = e.clientX; dragging.y = e.clientY;
+    if (cam3.mode !== 'free') { copyCamToFree(); setCam('free'); }
+    cam3.yaw -= dx * 0.25; cam3.pitch = Math.max(-89, Math.min(89, cam3.pitch + dy * 0.25));
+  });
+  canvas.addEventListener('pointerup', (e) => {
+    const moved = dragging && dragging.moved;
+    dragging = null;
+    if (!moved && cam3.mode !== 'free' && D) nextPlayer(e.button === 2 ? -1 : 1);
+  });
+  canvas.addEventListener('contextmenu', (e) => e.preventDefault());
+  canvas.addEventListener('wheel', (e) => {
+    e.preventDefault();
+    if (cam3.mode !== 'free') { copyCamToFree(); setCam('free'); }
+    const f = fwd(cam3.yaw, cam3.pitch); const d = -e.deltaY * 1.5;
+    cam3.pos[0] += f[0] * d; cam3.pos[1] += f[1] * d; cam3.pos[2] += f[2] * d;
+  }, { passive: false });
+  resize3();
+}
+function fwd(yaw, pitch) { const y = yaw * Math.PI / 180, p = pitch * Math.PI / 180; return [Math.cos(p) * Math.cos(y), Math.cos(p) * Math.sin(y), -Math.sin(p)]; }
+function resize3() {
+  if (!R3) return;
+  const r = $('gl').getBoundingClientRect();
+  if (!r.width) return;
+  R3.renderer.setSize(r.width, r.height, false);
+  R3.camera.aspect = r.width / r.height; R3.camera.updateProjectionMatrix();
+  const l = $('lbl'); l.width = Math.round(r.width * dpr); l.height = Math.round(r.height * dpr);
+}
+new ResizeObserver(() => resize3()).observe($('radar'));
+
+const SHADER = {
+  vertexShader: `varying vec2 vUv; varying vec2 vUv2; attribute vec2 uv2;
+    void main(){ vUv = uv; vUv2 = uv2; gl_Position = projectionMatrix * modelViewMatrix * vec4(position,1.0); }`,
+  fragmentShader: `uniform sampler2D map; uniform sampler2D lm; uniform float opacity; uniform float bright;
+    varying vec2 vUv; varying vec2 vUv2;
+    void main(){ vec4 t = texture2D(map, vUv); if (t.a < 0.5) discard;
+      vec3 l = texture2D(lm, vUv2).rgb;
+      vec3 c = t.rgb * min(l * bright, vec3(1.8));
+      gl_FragColor = vec4(pow(c, vec3(0.85)), opacity); }`,
+};
+function build3d() {
+  init3();
+  if (!R3 || !MAP) return;
+  const { world } = R3;
+  while (world.children.length) { const c = world.children.pop(); c.geometry && c.geometry.dispose(); }
+  const mesh = buildMesh(MAP.bsp, MAP.breakables);
+  R3.brk = {};
+  const lmTex = new THREE.DataTexture(mesh.atlas.data, mesh.atlas.w, mesh.atlas.h, THREE.RGBAFormat);
+  lmTex.magFilter = THREE.LinearFilter; lmTex.minFilter = THREE.LinearFilter; lmTex.needsUpdate = true;
+  const texCache = {};
+  const checker = (() => { const d = new Uint8Array(16 * 16 * 4); for (let i = 0; i < 256; i++) { const c = (((i & 15) >> 3) ^ ((i >> 7) & 1)) ? 150 : 110; d[i * 4] = d[i * 4 + 1] = d[i * 4 + 2] = c; d[i * 4 + 3] = 255; } return { w: 16, h: 16, data: d }; })();
+  const getTex = (name) => {
+    if (texCache[name]) return texCache[name];
+    const bt = MAP.bsp.textures.find((t) => t.name === name);
+    const src = (bt && bt.data) ? bt : (MAP.tex[name] || checker);
+    const t = new THREE.DataTexture(src.data, src.w, src.h, THREE.RGBAFormat);
+    t.wrapS = t.wrapT = THREE.RepeatWrapping;
+    t.magFilter = THREE.LinearFilter; t.minFilter = THREE.LinearMipmapLinearFilter; t.generateMipmaps = true;
+    t.anisotropy = 4; t.needsUpdate = true;
+    return texCache[name] = t;
+  };
+  for (const g of mesh.groups) {
+    if (!g.pos.length) continue;
+    const geo = new THREE.BufferGeometry();
+    const p = g.pos; const q = new Float32Array(p.length);
+    for (let i = 0; i < p.length; i += 3) { q[i] = p[i]; q[i + 1] = p[i + 2]; q[i + 2] = -p[i + 1]; }
+    geo.setAttribute('position', new THREE.BufferAttribute(q, 3));
+    geo.setAttribute('uv', new THREE.BufferAttribute(g.uv, 2));
+    geo.setAttribute('uv2', new THREE.BufferAttribute(g.uv2, 2));
+    const water = g.name[0] === '!';
+    const see = water || g.amt < 1;
+    const mat = new THREE.ShaderMaterial({
+      uniforms: { map: { value: getTex(g.name) }, lm: { value: lmTex }, opacity: { value: water ? 0.7 : g.amt }, bright: { value: water ? 1.0 : 2.0 } },
+      vertexShader: SHADER.vertexShader, fragmentShader: SHADER.fragmentShader,
+      transparent: see, depthWrite: !see, side: THREE.DoubleSide,
+    });
+    const m3 = new THREE.Mesh(geo, mat);
+    if (g.model >= 0) (R3.brk[g.model] || (R3.brk[g.model] = [])).push(m3);
+    world.add(m3);
+  }
+  view3.ready = true; view3.map = MAP.name;
+}
+// Forget everything tied to the previous demo: who we follow, camera, markers, figures, and
+// (when the map changes) the 3D level itself, so nothing from the old demo lingers on screen.
+function resetForNewDemo() {
+  selected = null; playing = false; wbFocus = null;
+  flashes.length = 0; prevT = null;
+  cam3.mode = 'free'; cam3.chase = null; cam3.cYaw = null;
+  document.querySelectorAll('#cam3 [data-c]').forEach((x) => x.classList.toggle('on', x.dataset.c === 'free'));
+  if (R3) {
+    for (const e in R3.players) R3.dyn.remove(R3.players[e].g);
+    R3.players = {};
+    for (const l of R3.lines) R3.scene.remove(l);
+    R3.lines = [];
+  }
+  $('pov').hidden = true;
+}
+function clear3d() {
+  if (!R3) return;
+  while (R3.world.children.length) { const c = R3.world.children.pop(); c.geometry && c.geometry.dispose(); }
+  R3.brk = {};
+  view3.ready = false; view3.map = null;
+}
+
+function resetCam3() {
+  if (!D || !M) return;
+  // start above the middle of the action, looking down at an angle
+  const S = D.stride;
+  let sx = 0, sy = 0, sz = 0, n = 0;
+  for (const e in D.slots) { const a = D.slots[e]; for (let i = 0; i < a.length; i += S * 40) if (!isNaN(a[i]) && a[i + 5] > 0) { sx += a[i]; sy += a[i + 1]; sz += a[i + 2]; n++; } }
+  if (!n) return;
+  cam3.pos = [sx / n - 1500, sy / n, sz / n + 1800]; cam3.yaw = 0; cam3.pitch = 48;
+  cam3.mode = 'free';
+  document.querySelectorAll('#cam3 [data-c]').forEach((x) => x.classList.toggle('on', x.dataset.c === 'free'));
+}
+function copyCamToFree() {
+  if (!R3) return;
+  const c = R3.camera; cam3.pos = [c.position.x, -c.position.z, c.position.y];
+  if (cam3.lastYaw != null) { cam3.yaw = cam3.lastYaw; cam3.pitch = cam3.lastPitch; }
+}
+document.querySelectorAll('#cam3 [data-c]').forEach((b) => b.onclick = () => setCam(b.dataset.c));
+function setCam(m, keepPlayer) {
+  // following needs a living player; keepPlayer = the caller just picked one (e.g. a kill), so don't swap them out
+  if (m !== 'free' && !keepPlayer) { const s = selected && playerState(selected, T); if (!s || s.state < 0) nextPlayer(1); }
+  if (m !== 'free' && !selected) nextPlayer(1);
+  cam3.mode = m; cam3.chase = null; cam3.cYaw = null;
+  document.querySelectorAll('#cam3 [data-c]').forEach((x) => x.classList.toggle('on', x.dataset.c === m));
+}
+function alivePlayers() { return Object.keys(D.slots).map(Number).filter((e) => { const s = playerState(e, T); return s && s.state > 0; }).sort((a, b) => ((teamOfSlot(a, T) ?? 9) - (teamOfSlot(b, T) ?? 9)) || a - b); }
+function nextPlayer(dir) {
+  const list = alivePlayers(); if (!list.length) return;
+  const i = list.indexOf(selected);
+  selected = list[(i + dir + list.length) % list.length];
+  renderPane();
+}
+$('bNextP').onclick = () => { nextPlayer(1); if (cam3.mode === 'free') setCam('eyes'); };
+$('bPrevP').onclick = () => { nextPlayer(-1); if (cam3.mode === 'free') setCam('eyes'); };
+const k3 = cam3.keys;
+document.addEventListener('keydown', (e) => {
+  if (viewMode === '2d' || !D || !$('load').hidden || e.target.tagName === 'INPUT' || e.target.tagName === 'SELECT' || e.target.isContentEditable) return;
+  const k = e.key.toLowerCase();
+  if (k.length === 1 && 'wasdqe'.includes(k)) { k3[k] = true; if (cam3.mode !== 'free') { copyCamToFree(); setCam('free'); } }
+  if (e.key === 'Shift') k3.shift = true;
+  if (k === 'v') setCam(cam3.mode === 'free' ? 'eyes' : cam3.mode === 'eyes' ? 'chase' : 'free');
+});
+document.addEventListener('keyup', (e) => { k3[e.key.toLowerCase()] = false; if (e.key === 'Shift') k3.shift = false; });
+window.addEventListener('blur', () => { for (const k in k3) k3[k] = false; });
+
+// simple player figures: body, head and a gun pointing where they look
+const TEAMCOL = { 1: 0xe8574d, 2: 0x5ea3e8 };
+let figMats = null;
+function playerFig(e) {
+  if (R3.players[e]) return R3.players[e];
+  if (!figMats) figMats = { 1: new THREE.MeshLambertMaterial({ color: TEAMCOL[1] }), 2: new THREE.MeshLambertMaterial({ color: TEAMCOL[2] }), sel: new THREE.MeshLambertMaterial({ color: 0xcbb47e }), gun: new THREE.MeshLambertMaterial({ color: 0x1e1e1e }) };
+  const g = new THREE.Group();
+  const body = new THREE.Mesh(new THREE.CylinderGeometry(11, 13, 1, 12), figMats[1]);
+  const head = new THREE.Mesh(new THREE.SphereGeometry(7, 12, 8), figMats[1]);
+  const gun = new THREE.Mesh(new THREE.BoxGeometry(28, 3, 3), figMats.gun);
+  g.add(body, head, gun);
+  R3.dyn.add(g);
+  return R3.players[e] = { g, body, head, gun };
+}
+function lineMesh(a, b, color, dashed, opacity = 1) {
+  const geo = new THREE.BufferGeometry().setFromPoints([a, b]);
+  const mat = dashed ? new THREE.LineDashedMaterial({ color, dashSize: 12, gapSize: 8, transparent: true, opacity, depthTest: false }) : new THREE.LineBasicMaterial({ color, transparent: true, opacity, depthTest: false });
+  const l = new THREE.Line(geo, mat); if (dashed) l.computeLineDistances(); l.renderOrder = 10;
+  return l;
+}
+const geoCache = {};
+const sphere = (r) => geoCache['s' + r] || (geoCache['s' + r] = new THREE.SphereGeometry(r, 14, 10));
+let lastFrame3 = performance.now();
+function update3() {
+  if (!R3 || !D || viewMode === '2d') return;
+  const now = performance.now(); const dt = Math.min(0.1, (now - lastFrame3) / 1000); lastFrame3 = now;
+  const { camera, renderer } = R3;
+  const r = roundAt(T);
+  // breakables: hide the ones that have been shot out at this moment
+  if (R3.brk) for (const m in R3.brk) { const vis = !brokenAt(+m, T); for (const x of R3.brk[m]) x.visible = vis; }
+  // players
+  const lab = [];
+  for (const e in D.slots) {
+    const s = playerState(+e, T);
+    const f = R3.players[e];
+    if (!s || s.state < 0) { if (f) f.g.visible = false; continue; }
+    const fig = playerFig(e);
+    fig.g.visible = !(+e === selected && (cam3.mode === 'eyes' || (cam3.mode === 'chase' && cam3.chaseDist != null && cam3.chaseDist < 12)));
+    const h = s.duck ? 36 : 54, feet = s.z - (s.duck ? 18 : 36);
+    fig.body.material = fig.head.material = (+e === selected && cam3.mode === 'free') ? figMats.sel : figMats[s.state];
+    fig.body.scale.y = h; fig.body.position.set(0, feet + h / 2, 0);
+    fig.head.position.set(0, feet + h + 6, 0);
+    const yr = s.yaw * Math.PI / 180, pr = s.pitch * Math.PI / 180;
+    fig.gun.position.set(Math.cos(yr) * 16, s.z + (s.duck ? 6 : 12), -Math.sin(yr) * 16);
+    fig.gun.rotation.set(0, yr, -pr, 'YXZ');
+    fig.g.position.set(s.x, 0, -s.y);
+    lab.push({ e: +e, s, p: g3(s.x, s.y, feet + h + 20) });
+  }
+  // round overlays are rebuilt every frame (cheap: a few dozen objects)
+  for (const l of R3.lines) { R3.scene.remove(l); if (l.geometry && !l.userData.shared) l.geometry.dispose(); l.material.dispose(); }
+  R3.lines = [];
+  const add = (o, shared) => { if (shared) o.userData.shared = true; R3.lines.push(o); };
+  if (r) for (const k of r.kills) {
+    if (k.t > T || !k.vpos) continue;
+    const age = T - k.t;
+    const c = k.vteam === 'TERRORIST' ? 0xe8574d : 0x5ea3e8, z = k.vpos[2] - (k.vduck ? 16 : 34);
+    add(lineMesh(g3(k.vpos[0] - 10, k.vpos[1] - 10, z), g3(k.vpos[0] + 10, k.vpos[1] + 10, z), c));
+    add(lineMesh(g3(k.vpos[0] + 10, k.vpos[1] - 10, z), g3(k.vpos[0] - 10, k.vpos[1] + 10, z), c));
+    const life = k.wb ? 6 : 2.5;
+    if (opts.lines && k.kpos && k.killer !== k.victim && age < life) {
+      const eye = k.wb ? k.wb.eye : [k.kpos[0], k.kpos[1], k.kpos[2] + (k.kduck ? 12 : 17)];
+      add(lineMesh(g3(eye[0], eye[1], eye[2]), g3(k.vpos[0], k.vpos[1], k.vpos[2] + (k.vduck ? 4 : 10)), k.wb ? 0xff4fd8 : 0xff9a3c, !!k.wb, 1 - age / life));
+    }
+  }
+  if (r) {
+    const bp = D.bomb.find((b) => b.type === 'plantpos' && b.t >= r.start && b.t <= T && b.t <= r.end);
+    if (bp) {
+      const c4 = new THREE.Mesh(sphere(6), new THREE.MeshBasicMaterial({ color: 0xff9a3c }));
+      c4.position.copy(g3(bp.pos[0], bp.pos[1], bp.pos[2] + 4)); add(c4, true);
+    }
+  }
+  if (opts.nades) for (const g of M.nades) {
+    if (T < g.t0 || T > g.t1 + 1) continue;
+    const p = g.pts;
+    const col = g.type === 'he' ? 0xff9a3c : g.type === 'flash' ? 0xf2f0e6 : 0x9aa3aa;
+    if (g.type === 'smoke' && T >= g.stop) {
+      let k = 0; for (let i = 0; i < p.length; i += 4) if (p[i] >= g.stop) { k = i; break; }
+      const fade = Math.max(0, Math.min(1, (T - g.stop) / 1.5) * Math.min(1, (g.t1 - T) / 2 + 0.2));
+      const sm = new THREE.Mesh(sphere(115), new THREE.MeshLambertMaterial({ color: 0xb4b9bc, transparent: true, opacity: 0.85 * fade, depthWrite: false }));
+      sm.scale.y = 0.6; sm.position.copy(g3(p[k + 1], p[k + 2], p[k + 3] + 40)); add(sm, true);
+      continue;
+    }
+    if (T > g.t1) {
+      if (g.type === 'smoke') continue;
+      const a = 1 - (T - g.t1);
+      const b = new THREE.Mesh(sphere(g.type === 'he' ? 90 : 40), new THREE.MeshBasicMaterial({ color: col, transparent: true, opacity: a * 0.6, depthWrite: false }));
+      b.position.copy(g3(p[p.length - 3], p[p.length - 2], p[p.length - 1])); add(b, true);
+      continue;
+    }
+    const pts = [];
+    for (let i = 0; i < p.length && p[i] <= T; i += 4) pts.push(g3(p[i + 1], p[i + 2], p[i + 3]));
+    if (pts.length > 1) add(new THREE.Line(new THREE.BufferGeometry().setFromPoints(pts), new THREE.LineBasicMaterial({ color: col })));
+    if (pts.length) { const h = new THREE.Mesh(sphere(3), new THREE.MeshBasicMaterial({ color: col })); h.position.copy(pts[pts.length - 1]); add(h, true); }
+  }
+  for (const l of R3.lines) R3.scene.add(l);
+
+  // camera
+  if (cam3.mode === 'free') {
+    const sp = (k3.shift ? 1500 : 550) * dt;
+    const ff = fwd(cam3.yaw, cam3.pitch), rt = [Math.sin(cam3.yaw * Math.PI / 180), -Math.cos(cam3.yaw * Math.PI / 180)];
+    if (k3.w) for (let i = 0; i < 3; i++) cam3.pos[i] += ff[i] * sp;
+    if (k3.s) for (let i = 0; i < 3; i++) cam3.pos[i] -= ff[i] * sp;
+    if (k3.d) { cam3.pos[0] += rt[0] * sp; cam3.pos[1] += rt[1] * sp; }
+    if (k3.a) { cam3.pos[0] -= rt[0] * sp; cam3.pos[1] -= rt[1] * sp; }
+    if (k3.e) cam3.pos[2] += sp;
+    if (k3.q) cam3.pos[2] -= sp;
+    camera.fov = 70;
+    placeCam(cam3.pos, cam3.yaw, cam3.pitch);
+  } else if (!selected) {
+    // nobody to follow any more: hand control back to the free camera where we are
+    copyCamToFree(); setCam('free');
+    placeCam(cam3.pos, cam3.yaw, cam3.pitch);
+  } else {
+    const s = selected && playerState(selected, T);
+    if (s && s.state > 0) {
+      if (cam3.mode === 'eyes') {
+        // CS 1.6 uses a 90 degree horizontal field of view
+        camera.fov = 2 * Math.atan(Math.tan(Math.PI / 4) / camera.aspect) * 180 / Math.PI;
+        placeCam([s.x, s.y, s.z + (s.duck ? 12 : 17)], s.yaw, s.pitch);
+      } else {
+        camera.fov = 70;
+        const b = fwd(s.yaw, 0);
+        // like the in-game chase camera: an arm behind the player's head. The arm's direction
+        // follows the player's view smoothly; its length shortens instantly when a wall is in the
+        // way and grows back slowly, so the camera never bounces in and out.
+        const head = [s.x, s.y, s.z + (s.duck ? 20 : 30)];
+        const pitchC = Math.max(-30, Math.min(40, s.pitch * 0.6 + 6));
+        if (cam3.cYaw == null || cam3.cFor !== selected) { cam3.cYaw = s.yaw; cam3.cPitch = pitchC; cam3.cLen = 110; cam3.cFor = selected; }
+        let dy = s.yaw - cam3.cYaw; while (dy > 180) dy -= 360; while (dy < -180) dy += 360;
+        const k = Math.min(1, dt * 12);
+        cam3.cYaw += dy * k; cam3.cPitch += (pitchC - cam3.cPitch) * k;
+        const back = fwd(cam3.cYaw, cam3.cPitch);
+        const FULL = 110;
+        const far = [head[0] - back[0] * FULL, head[1] - back[1] * FULL, head[2] - back[2] * FULL + 14];
+        let allow = FULL;
+        if (MAP) {
+          const r = solidAlong(MAP.bsp, head, far, 2);
+          if (r.hit.length) allow = Math.max(0, r.hit[0].f0 * r.len - 10);
+        }
+        if (allow < cam3.cLen) cam3.cLen = allow;               // pull in at once
+        else cam3.cLen += (allow - cam3.cLen) * Math.min(1, dt * 2.5); // ease back out
+        const f = cam3.cLen / FULL;
+        const camPos = head.map((v, i) => v + (far[i] - v) * f);
+        cam3.chaseDist = cam3.cLen;
+        placeCam(camPos, cam3.cYaw, cam3.cPitch);
+      }
+    } else {
+      // death cam: the view drops to the floor and turns toward whoever made the kill
+      const death = D.kills.filter((k) => k.victim === selected && k.t <= T + 0.05).pop();
+      if (death && death.vpos) {
+        const age = Math.max(0, T - death.t);
+        const before = playerState(selected, death.t - 0.05);
+        const yaw0 = before ? before.yaw : 0, pitch0 = before ? before.pitch : 0;
+        const eyeZ = death.vpos[2] + (death.vduck ? 12 : 17);
+        const fall = Math.min(1, age / 0.6), turn = Math.min(1, age / 0.9);
+        const ease = (x) => 1 - Math.pow(1 - x, 3);
+        const z = eyeZ + ((death.vpos[2] - (death.vduck ? 12 : 28)) - eyeZ) * ease(fall);
+        let yaw1 = yaw0, pitch1 = pitch0;
+        if (death.kpos && death.killer !== death.victim) {
+          yaw1 = Math.atan2(death.kpos[1] - death.vpos[1], death.kpos[0] - death.vpos[0]) * 180 / Math.PI;
+          pitch1 = -Math.atan2(death.kpos[2] + 17 - z, Math.hypot(death.kpos[0] - death.vpos[0], death.kpos[1] - death.vpos[1])) * 180 / Math.PI;
+        }
+        let dy = yaw1 - yaw0; while (dy > 180) dy -= 360; while (dy < -180) dy += 360;
+        camera.fov = 2 * Math.atan(Math.tan(Math.PI / 4) / camera.aspect) * 180 / Math.PI;
+        placeCam([death.vpos[0], death.vpos[1], z], yaw0 + dy * ease(turn), pitch0 + (pitch1 - pitch0) * ease(turn));
+      }
+    }
+  }
+  camera.updateProjectionMatrix();
+  renderer.render(R3.scene, camera);
+
+  // name labels on a 2D overlay
+  const lc = $('lbl'), lx = lc.getContext('2d');
+  lx.setTransform(dpr, 0, 0, dpr, 0, 0);
+  const W = lc.width / dpr, H = lc.height / dpr;
+  lx.clearRect(0, 0, W, H);
+  const mono = getComputedStyle(document.body).getPropertyValue('--f-mono');
+  const camW = [camera.position.x, -camera.position.z, camera.position.y];
+  if (opts.names) for (const L of lab) {
+    if (cam3.mode === 'eyes' && L.e === selected) continue;
+    const v = L.p.clone().project(camera);
+    if (v.z > 1 || v.z < -1) continue;
+    // with "names through walls" off, only label players the camera can actually see
+    if (!opts.xray && MAP) {
+      const s = L.s, headZ = s.z + (s.duck ? 12 : 24);
+      // a free camera floating above the map starts outside the level, which counts as solid: ignore that first stretch
+      const blocked = (to) => { const r = solidAlong(MAP.bsp, camW, to, 4); return r.hit.some((h, i) => !(i === 0 && h.f0 * r.len <= 8)); };
+      if (blocked([s.x, s.y, headZ]) && blocked([s.x, s.y, s.z])) continue;
+    }
+    const sx = (v.x + 1) / 2 * W, sy = (1 - v.y) / 2 * H;
+    const dist = camera.position.distanceTo(L.p);
+    const nm = nameAt(L.e, T);
+    lx.font = `500 ${dist < 1500 ? 12 : 10}px ${mono}`; lx.textAlign = 'center';
+    lx.lineWidth = 3; lx.strokeStyle = 'rgba(8,10,12,.85)';
+    lx.strokeText(nm, sx, sy); lx.fillStyle = L.e === selected ? COL.sand : sideCol(L.s.state); lx.fillText(nm, sx, sy);
+    const w = weaponShort(L.s.weapon), hpv = hpAt(L.e, T);
+    const sub = [hpv != null ? hpv + ' hp' : '', w].filter(Boolean).join(' · ');
+    if (sub && dist < 2500) { lx.font = `400 10px ${mono}`; lx.strokeText(sub, sx, sy + 12); lx.fillStyle = '#d8d3c8'; lx.fillText(sub, sx, sy + 12); }
+  }
+  drawKillRings(lx, W, H, camera);
+  const pov = $('pov');
+  const s = selected && playerState(selected, T);
+  if (cam3.mode !== 'free' && s && s.state > 0) {
+    pov.hidden = false; pov.classList.remove("dead");
+    const hpv = hpAt(selected, T);
+    pov.innerHTML = `<span class="${s.state === 1 ? 'kt' : 'kct'}">${esc(nameAt(selected, T))}</span>${hpv != null ? ` <b>(${hpv})</b>` : ''}<span class="kw">${esc(weaponShort(s.weapon))}</span>`;
+    if (cam3.mode === 'eyes') drawHitMarker(lx, W / 2, H / 2);
+    if (cam3.mode === 'eyes') { lx.strokeStyle = 'rgba(90,255,90,.85)'; lx.lineWidth = 1.5; const cx = W / 2, cy = H / 2; lx.beginPath(); lx.moveTo(cx - 12, cy); lx.lineTo(cx - 4, cy); lx.moveTo(cx + 4, cy); lx.lineTo(cx + 12, cy); lx.moveTo(cx, cy - 12); lx.lineTo(cx, cy - 4); lx.moveTo(cx, cy + 4); lx.lineTo(cx, cy + 12); lx.stroke(); }
+  } else if (cam3.mode !== 'free' && selected) {
+    const death = D.kills.filter((k) => k.victim === selected && k.t <= T + 0.05).pop();
+    if (death) {
+      // red wash over the view that fades to a steady tint, like taking the final hit
+      const age = Math.max(0, T - death.t);
+      const a = Math.max(0.3, 0.8 - age * 0.35);
+      const g = lx.createRadialGradient(W / 2, H / 2, Math.min(W, H) * 0.15, W / 2, H / 2, Math.max(W, H) * 0.7);
+      g.addColorStop(0, `rgba(120,0,0,${a * 0.35})`); g.addColorStop(1, `rgba(150,0,0,${a})`);
+      lx.fillStyle = g; lx.fillRect(0, 0, W, H);
+      const rr = M.rounds.find((r) => r.n === death.round);
+      const kside = rr && rr.tTeam != null && death.kp ? (M.teamOf[death.kp] === rr.tTeam ? 'kt' : 'kct') : '';
+      const kn = death.kp && death.killer !== death.victim
+        ? `killed by <span class="${kside}">${esc(M.pl[death.kp].name)}</span> · ${esc(death.weapon)}${death.hs ? ' · <span class="khs">HS</span>' : ''}${death.wb ? ' · <span class="kwb">wallbang</span>' : ''}`
+        : (death.weapon === 'world' ? 'died' : 'killed themselves');
+      pov.hidden = false; pov.classList.add('dead');
+      pov.innerHTML = `<b>${esc(nameAt(selected, T))}</b> ${kn} <span class="kw">· ${playing && age < 2.5 ? 'switching to a teammate' : 'press X for the next player'}</span>`;
+    } else { pov.hidden = false; pov.classList.add('dead'); pov.innerHTML = `<span class="kw">${esc(nameAt(selected, T))} is dead. Press X for the next player.</span>`; }
+    // like CS spectating: after a moment, follow a living teammate (or anyone alive)
+    if (death && T - death.t > 2.5 && playing) {
+      const alive = alivePlayers();
+      const mates = alive.filter((e) => teamOfSlot(e, T) === teamOfSlot(selected, T));
+      const pick = (mates.length ? mates : alive)[0];
+      if (pick) { selected = pick; renderPane(); }
+    }
+  } else pov.hidden = true;
+}
+// Hit marker on the crosshair when the player you're watching gets a kill:
+// white for a kill, orange for a headshot, sand for a wallbang, with a short label underneath.
+function drawHitMarker(lx, cx, cy) {
+  const f = flashes.filter((x) => x.k.killer === selected).pop();
+  if (!f) return;
+  const a = (performance.now() - f.at) / FLASH_MS; if (a >= 1) return;
+  const k = f.k;
+  const col = k.wb ? '#ff4fd8' : k.hs ? '#ff9a3c' : '#ffffff';
+  const g0 = 7 + a * 5, g1 = g0 + 9;
+  lx.save();
+  lx.globalAlpha = a < 0.6 ? 1 : 1 - (a - 0.6) / 0.4;
+  lx.lineCap = 'round';
+  for (const [w, c] of [[5, 'rgba(0,0,0,.6)'], [2.5, col]]) {
+    lx.strokeStyle = c; lx.lineWidth = w; lx.beginPath();
+    for (const [dx, dy] of [[1, 1], [1, -1], [-1, 1], [-1, -1]]) { lx.moveTo(cx + dx * g0, cy + dy * g0); lx.lineTo(cx + dx * g1, cy + dy * g1); }
+    lx.stroke();
+    // wallbang: a square frame around the strokes, i.e. "through something"
+    if (k.wb) { const q = g1 + 4; lx.lineWidth = w === 5 ? 4 : 1.5; lx.strokeRect(cx - q, cy - q, q * 2, q * 2); }
+  }
+  const label = k.wb ? `WALLBANG · ${k.wb.thick}u${k.hs ? ' · HS' : ''}` : k.hs ? 'HEADSHOT' : 'KILL';
+  lx.font = `600 11px ${getComputedStyle(document.body).getPropertyValue('--f-mono')}`; lx.textAlign = 'center';
+  lx.lineWidth = 3; lx.strokeStyle = 'rgba(0,0,0,.7)'; lx.strokeText(label, cx, cy + 42); lx.fillStyle = col; lx.fillText(label, cx, cy + 42);
+  lx.restore();
+}
+// A ring that bursts out from the victim in 3D, for every kill
+function drawKillRings(lx, W, H, camera) {
+  for (const f of flashes) {
+    const k = f.k; if (!k.vpos) continue;
+    const a = (performance.now() - f.at) / FLASH_MS; if (a >= 1) continue;
+    const v = g3(k.vpos[0], k.vpos[1], k.vpos[2] + 6).project(camera);
+    if (v.z > 1 || v.z < -1) continue;
+    const sx = (v.x + 1) / 2 * W, sy = (1 - v.y) / 2 * H;
+    lx.globalAlpha = 1 - a; lx.lineWidth = 3;
+    lx.strokeStyle = k.wb ? '#ff4fd8' : k.hs ? '#ff9a3c' : '#ffffff';
+    lx.beginPath(); lx.arc(sx, sy, 6 + a * 28, 0, 7); lx.stroke();
+    lx.globalAlpha = 1;
+  }
+}
+
+function placeCam(p, yaw, pitch) {
+  const c = R3.camera; c.position.copy(g3(p[0], p[1], p[2]));
+  const f = fwd(yaw, pitch);
+  c.up.set(0, 1, 0);
+  c.lookAt(g3(p[0] + f[0], p[1] + f[1], p[2] + f[2]));
+  cam3.lastYaw = yaw; cam3.lastPitch = pitch;
+}
