@@ -9,6 +9,35 @@ What changed in the viewer, newest first. The version shows in the viewer's shor
 - A demo that's cut off (interrupted download or recording) can't be opened at all yet, even though the part before the cut is readable. See [IDEAS.md](IDEAS.md).
 - Which rounds count is exact when the server's admin plugin announces "Live !" and the end of each half in chat. Demos without those messages fall back to a guess from the restarts, which can still count a warmup or miss a round.
 - Na`Vi vs FX on Dust2 shows 17-11 against the official 16-11, because the demo has an extra first-half round played by admin mistake. Not re-checked since 0.7.1.
+- HLTV demos store about ten snapshots a second, so everything between two snapshots is an estimate. A flick that starts and ends between snapshots can't be recovered, and a sharp turn can look slightly rounder than it was. Turn "Smooth aim" off to see the recorded aim without the extra smoothing.
+- "Quality: auto" lowers 3D sharpness at most once per visit and doesn't raise it again on its own. Pick "Quality: high" to go back.
+
+## 0.8.0 (2026-10-01)
+
+### Changed
+- Smoother playback, most of all in Player's eyes. HLTV demos store about ten snapshots a second (every 107 ms on the Na`Vi vs FX Dust2 demo), and the viewer used to join them with straight lines, which turned corners with a jolt at every snapshot. Movement and aim now follow smooth curves through the snapshots around each moment. The curves never swing past a snapshot, so a player who stops dead or turns back doesn't overshoot.
+- Up and down aim is now filled in between snapshots too. Before, it held still and then snapped to the next snapshot, which was most of the stutter in Player's eyes.
+- The demo stamps its snapshots a little unevenly (a 156 ms gap followed by a 68 ms one while the player runs at a steady speed). Filling in between snapshots now uses evened-out times, which removes most of that wobble. Kills, sounds and every other event keep their exact times.
+- Less work per frame: names are checked for being behind walls about ten times a second instead of every frame, grenades, smokes, kill lines and death marks are reused instead of rebuilt every frame, the timeline is drawn once and only the playhead moves, and the page no longer re-reads its font from the styles on every frame.
+
+### Added
+- "Smooth aim" in the 3D bar (on by default): in Player's eyes the view trails the recorded aim by about 30 ms, which takes the edge off the jolts the snapshots still leave. It snaps straight to the aim after a jump in time, a new player or a camera switch. Turn it off to see the recorded aim exactly.
+- "Quality" in the 3D bar: high draws the 3D view at the screen's full sharpness (up to 2x on Retina and other high-density screens), low draws fewer pixels than the screen for slower machines, and auto (the default) starts at high and steps down to 1x if the 3D view averages under 45 frames a second for a few seconds. The choice is remembered.
+
+### How it was measured
+Six 10-second stretches of the Na`Vi vs FX Dust2 demo (rounds 1, 4, 11, 15, 21 and 28, each following the busiest living player in Player's eyes), stepped at exactly 60 frames a second in a headless browser, recording the camera on every frame. A "jolt" is a frame where the camera's turning or movement changes more than a set amount from the frame before (0.5 degrees for aim, 0.5 units for movement).
+
+| | 0.7.1 | 0.8.0 |
+|---|---|---|
+| Aim jolts (of 3,594 frames) | 691 | 465 |
+| Biggest aim jolt, top 1% | 6.2° | 2.5° |
+| Biggest aim jolt | 15.1° | 4.0° |
+| Frames where up/down aim didn't move at all | 3,124 | 80 |
+| Movement jolts | 353 | 218 |
+| Biggest movement jolt | 4.4 units | 1.9 units |
+| The viewer's own work per frame in Player's eyes (3D drawing not counted) | 4.9 ms | 1.9 ms |
+
+With "Smooth aim" off, 0.8.0 still has 487 aim jolts and a biggest jolt of 6.4°; the curves do most of the work and Smooth aim takes off the rest. Frame times are from a headless browser that draws 3D in software, so only the before and after comparison means anything, not the numbers themselves.
 
 ## 0.7.1 (2026-10-01)
 

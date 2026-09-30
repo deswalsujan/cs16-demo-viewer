@@ -94,6 +94,7 @@ button { cursor: pointer; }
 .radar.m3d .heatbar, .radar.msplit .heatbar { display: none; }
 .cam3 { position: absolute; left: 12px; top: 44px; display: flex; gap: 6px; flex-wrap: wrap; z-index: 3; }
 .cam3 .btn { background: rgba(10,12,14,.82); font-size: 12px; padding: 4px 8px; }
+.cam3 select { background: rgba(10,12,14,.82); border: 1px solid var(--line); border-radius: 4px; padding: 3px 6px; font-size: 12px; }
 .hint3 { position: absolute; right: 12px; bottom: 12px; font-family: var(--f-mono); font-size: 11px; color: var(--muted); background: rgba(10,12,14,.82); border: 1px solid var(--line); padding: 4px 8px; border-radius: 3px; white-space: nowrap; }
 .radar.m2d .hint3, .radar.msplit .hint3 { display: none; }
 @media (max-width: 1100px) { .hint3 { display: none; } }
@@ -307,6 +308,12 @@ kbd { font-family: var(--f-mono); font-size: 11px; background: var(--panel-2); b
       <button class="btn" id="bPrevP" type="button" title="Previous player (Z or right-click)">‹ Prev player</button>
       <button class="btn" id="bNextP" type="button" title="Next player (X or click)">Next player ›</button>
       <button class="btn on" id="tgModels" type="button" title="Real player models from your game files, or simple figures in team colours">Player models</button>
+      <button class="btn on" id="tgSmooth" type="button" title="Player's eyes: soften the small jolts between the demo's snapshots. Off shows the recorded aim exactly">Smooth aim</button>
+      <select id="q3" aria-label="3D render quality" title="How sharp the 3D view is drawn. Auto starts sharp and steps down if playback can't keep up">
+        <option value="auto">Quality: auto</option>
+        <option value="high">Quality: high</option>
+        <option value="low">Quality: low</option>
+      </select>
     </div>
     <div class="hint3" id="hint3">Press ? for keyboard shortcuts</div>
     <div class="overlay" id="sb" hidden></div>
@@ -461,7 +468,7 @@ let view = { s: 1, x: 0, y: 0 };
 let selected = null;     // selected player entity
 let scope = 'match';
 let tab = 'rounds';
-const opts = { names: true, nades: true, lines: true, xray: false, models: true };
+const opts = { names: true, nades: true, lines: true, xray: false, models: true, smoothAim: true };
 // kill moments that just happened, for the hit markers (timed in real seconds so they stay visible at any speed)
 const flashes = [];
 let prevT = null;
@@ -491,6 +498,9 @@ const ls = {
 // ---------------- helpers ----------------
 const fmt = (s) => { s = Math.max(0, s); const m = Math.floor(s / 60), x = Math.floor(s % 60); return m + ':' + String(x).padStart(2, '0'); };
 const esc = (s) => String(s).replace(/[&<>"]/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c]));
+// the monospace font stack, read from the page styles once (reading styles every frame is slow)
+let MONO = null;
+const monoFont = () => MONO || (MONO = getComputedStyle(document.body).getPropertyValue('--f-mono'));
 const cleanName = (s) => (s || '?').replace(/[\x00-\x1f]/g, '');
 function setMsg(t, err) { $('msg').textContent = t || ''; $('msg').classList.toggle('err', !!err); if (err && t && !$('load').hidden) $('msg').scrollIntoView({ block: 'nearest' }); }
 function sideCol(side) { return side === 1 ? COL.t : side === 2 ? COL.ct : COL.muted; }
@@ -1551,25 +1561,90 @@ $('tgLines').onclick = () => toggleOpt('lines', 'tgLines');
 $('tgXray').onclick = () => toggleOpt('xray', 'tgXray');
 $('tgFit').onclick = () => fitView();
 
-// interpolated player state at time t
+// Player state at time t, filled in between the demo's snapshots (HLTV stores about ten a second).
+// Movement and aim follow a smooth curve through the snapshots around t instead of straight lines,
+// so speed and turning change gradually rather than jumping at every snapshot. The curve never swings
+// past a snapshot (no overshoot when a player stops or turns back), and it only uses snapshots from the
+// same life: a respawn, a death or a long gap in the recording falls back to straight lines or a hold.
+const wrap180 = (d) => { d %= 360; return d > 180 ? d - 360 : d < -180 ? d + 360 : d; };
+// slope at a snapshot for a curve that can't overshoot (Fritsch-Carlson): zero at peaks, capped near sharp bends
+function slopeAt(dl, dr, hl, hr) {
+  if (dl == null) return dr; if (dr == null) return dl;
+  if (dl * dr <= 0) return 0;
+  const m = (dl * hr + dr * hl) / (hl + hr);
+  const cap = 3 * Math.min(Math.abs(dl), Math.abs(dr));
+  return Math.sign(m) * Math.min(Math.abs(m), cap);
+}
+function hermite(p0, p1, m0, m1, h, f) {
+  const f2 = f * f, f3 = f2 * f;
+  return (2 * f3 - 3 * f2 + 1) * p0 + (f3 - 2 * f2 + f) * h * m0 + (-2 * f3 + 3 * f2) * p1 + (f3 - f2) * h * m1;
+}
+// HLTV stamps its snapshots a little unevenly (a 156 ms gap followed by a 68 ms one while the player runs at
+// a steady speed), and a curve through those times would turn the unevenness into speed wobble. For filling
+// in between snapshots we use evened-out times: a straight-line fit of time against snapshot number over the
+// 8 snapshots either side, kept within stretches with no gap over 0.3 s and never moved more than 50 ms.
+// Kills, sounds and every other event keep the demo's own times.
+function evenTimes() {
+  if (D._even) return D._even;
+  const ts = D.times, n = ts.length, W = 8, out = new Float64Array(n);
+  let s0 = 0;
+  for (let i = 0; i < n; i++) {
+    if (i > 0 && ts[i] - ts[i - 1] > 0.3) s0 = i;
+    let hi = i; while (hi + 1 < n && hi - i < W && ts[hi + 1] - ts[hi] <= 0.3) hi++;
+    const lo = Math.max(s0, i - W);
+    let sx = 0, sy = 0, sxx = 0, sxy = 0, m = 0;
+    for (let k = lo; k <= hi; k++) { const x = k - i; sx += x; sy += ts[k]; sxx += x * x; sxy += x * ts[k]; m++; }
+    const den = m * sxx - sx * sx, b = den > 0 ? (m * sxy - sx * sy) / den : 0, fit = (sy - b * sx) / m;
+    out[i] = Math.abs(fit - ts[i]) <= 0.05 ? fit : ts[i];
+    if (i > 0 && out[i] <= out[i - 1]) out[i] = out[i - 1] + 1e-4;
+  }
+  return D._even = out;
+}
+// last snapshot at or before t on the evened-out times
+function evenIdx(tt, t) {
+  let lo = 0, hi = tt.length - 1;
+  if (t <= tt[0]) return 0;
+  while (lo < hi) { const mid = (lo + hi + 1) >> 1; if (tt[mid] <= t) lo = mid; else hi = mid - 1; }
+  return lo;
+}
+const PS = { t: NaN, D: null, map: new Map() }; // states at the current time, shared by the 2D, 3D and sound code each frame
 function playerState(e, t) {
+  if (t === T && PS.t === T && PS.D === D) { const c = PS.map.get(e); if (c !== undefined) return c; }
+  else if (t === T) { PS.t = T; PS.D = D; PS.map.clear(); }
+  const s = playerStateAt(e, t);
+  if (t === T) PS.map.set(e, s);
+  return s;
+}
+function playerStateAt(e, t) {
   const a = D.slots[e]; if (!a) return null;
-  const S = D.stride; const times = D.times;
-  const i = M.idxAt(t), j = Math.min(i + 1, times.length - 1);
+  const S = D.stride; const times = evenTimes(), n = times.length;
+  const i = evenIdx(times, t), j = Math.min(i + 1, n - 1);
   const ai = i * S, aj = j * S;
   const state = a[ai + 5];
   if (!state) return null;
-  let x = a[ai], y = a[ai + 1], yaw = a[ai + 3];
+  let x = a[ai], y = a[ai + 1], z = a[ai + 2], yaw = a[ai + 3];
   if (isNaN(x)) return null;
-  const span = times[j] - times[i];
-  if (j !== i && span > 0 && span < 0.5 && !isNaN(a[aj]) && a[aj + 5] === state) {
-    const f = Math.max(0, Math.min(1, (t - times[i]) / span));
-    x += (a[aj] - x) * f; y += (a[aj + 1] - y) * f;
-    let dy = a[aj + 3] - yaw; if (dy > 180) dy -= 360; if (dy < -180) dy += 360; yaw += dy * f;
-  }
   let pr = a[ai + 4]; if (pr > 180) pr -= 360;
-  let z = a[ai + 2];
-  if (j !== i && span > 0 && span < 0.5 && !isNaN(a[aj]) && a[aj + 5] === state) z += (a[aj + 2] - z) * Math.max(0, Math.min(1, (t - times[i]) / span));
+  // snapshot k belongs to the same stretch as snapshot i when it exists, has the same state and isn't far away in time
+  const same = (k, prev) => k >= 0 && k < n && !isNaN(a[k * S]) && a[k * S + 5] === state && Math.abs(times[k] - times[prev]) < 0.5;
+  const span = times[j] - times[i];
+  if (j !== i && span > 0 && same(j, i)) {
+    const f = Math.max(0, Math.min(1, (t - times[i]) / span));
+    const hasL = same(i - 1, i), hasR = same(j + 1, j);
+    const hl = hasL ? times[i] - times[i - 1] : 0, hr = hasR ? times[j + 1] - times[j] : 0;
+    // one value through four snapshots: v(k) reads it at snapshot k, unwrapped around the value at i for angles
+    const curve = (v) => {
+      const p0 = v(i), p1 = v(j);
+      const d = (p1 - p0) / span;
+      const dl = hasL ? (p0 - v(i - 1)) / hl : null, dr = hasR ? (v(j + 1) - p1) / hr : null;
+      return hermite(p0, p1, slopeAt(dl, d, hl, span), slopeAt(d, dr, span, hr), span, f);
+    };
+    const yaw0 = a[ai + 3], pr0 = pr;
+    const yawK = (k) => yaw0 + wrap180(a[k * S + 3] - yaw0);
+    const prK = (k) => { let p = a[k * S + 4]; if (p > 180) p -= 360; return pr0 + wrap180(p - pr0); };
+    x = curve((k) => a[k * S]); y = curve((k) => a[k * S + 1]); z = curve((k) => a[k * S + 2]);
+    yaw = curve(yawK); pr = curve(prK);
+  }
   return { x, y, z, yaw, pitch: -pr * 3, duck: a[ai + 7], state, weapon: D.models[a[ai + 6]] };
 }
 
@@ -1605,7 +1680,7 @@ function draw() {
       ctx.fillStyle = `rgba(255,154,60,${0.25 + pulse * 0.35})`;
       ctx.beginPath(); ctx.arc(sx, sy, 10 + pulse * 4, 0, 7); ctx.fill();
       ctx.fillStyle = COL.kill; ctx.fillRect(sx - 5, sy - 4, 10, 8);
-      ctx.fillStyle = '#111'; ctx.font = '600 7px ' + getComputedStyle(document.body).getPropertyValue('--f-mono'); ctx.textAlign = 'center'; ctx.fillText('C4', sx, sy + 2.5);
+      ctx.fillStyle = '#111'; ctx.font = '600 7px ' + monoFont(); ctx.textAlign = 'center'; ctx.fillText('C4', sx, sy + 2.5);
     }
   }
 
@@ -1682,7 +1757,7 @@ function draw() {
 
   // players
   lastPlayers = [];
-  const mono = getComputedStyle(document.body).getPropertyValue('--f-mono');
+  const mono = monoFont();
   const rad = Math.max(5, Math.min(9, 6 * Math.sqrt(view.s)));
   for (const e in D.slots) {
     const s = playerState(+e, T);
@@ -1788,12 +1863,25 @@ function tlRange() {
   if (!showAll && M.liveR.length) return [M.liveR[0].start - 2, M.liveR[M.liveR.length - 1].end + 2];
   return [D.start, D.end];
 }
+// The timeline (rounds, kills, pauses, wallbangs, plants) only changes when its range, size or content
+// changes, so it's drawn once into a hidden canvas and copied each frame; only the playhead moves.
+const tlCache = { cv: document.createElement('canvas'), key: '' };
 function drawTimeline() {
   if (!D) return;
   const W = tlc.width / dpr, H = tlc.height / dpr;
+  const [a, b] = tlRange();
+  const key = [D.fileName, D.end, tlc.width, tlc.height, dpr, a, b, showAll, visibleRounds().length, M.wbs ? M.wbs.length : -1].join('|');
+  if (tlCache.key !== key) { tlCache.key = key; drawTimelineInto(tlCache.cv, W, H, a, b); }
+  tctx.setTransform(1, 0, 0, 1, 0, 0);
+  tctx.clearRect(0, 0, tlc.width, tlc.height);
+  tctx.drawImage(tlCache.cv, 0, 0);
+}
+function drawTimelineInto(cv, W, H, a, b) {
+  cv.width = tlc.width; cv.height = tlc.height;
+  const tctx = cv.getContext('2d');
   tctx.setTransform(dpr, 0, 0, dpr, 0, 0);
   tctx.clearRect(0, 0, W, H);
-  const [a, b] = tlRange(); const X = (t) => (t - a) / (b - a) * W;
+  const X = (t) => (t - a) / (b - a) * W;
   // rounds
   const rs = visibleRounds();
   for (const r of rs) {
@@ -1801,7 +1889,7 @@ function drawTimeline() {
     if (x1 < 0 || x0 > W) continue;
     tctx.fillStyle = r.winner === 'T' ? 'rgba(232,87,77,.16)' : r.winner === 'CT' ? 'rgba(94,163,232,.16)' : 'rgba(255,255,255,.05)';
     tctx.fillRect(x0 + 0.5, 14, Math.max(1, x1 - x0 - 1), H - 14);
-    if (r.live && x1 - x0 > 16) { tctx.fillStyle = '#8d959c'; tctx.font = '10px ' + getComputedStyle(document.body).getPropertyValue('--f-mono'); tctx.textAlign = 'left'; tctx.fillText(r.ln, x0 + 3, 11); }
+    if (r.live && x1 - x0 > 16) { tctx.fillStyle = '#8d959c'; tctx.font = '10px ' + monoFont(); tctx.textAlign = 'left'; tctx.fillText(r.ln, x0 + 3, 11); }
   }
   // kills
   const liveSet = new Set(rs.map((r) => r.n));
@@ -1829,6 +1917,7 @@ function drawPlayhead() {
   const [a, b] = tlRange();
   const x = (T - a) / (b - a) * W;
   drawTimeline();
+  tctx.setTransform(dpr, 0, 0, dpr, 0, 0);
   tctx.fillStyle = COL.sand; tctx.fillRect(Math.round(x) - 1, 0, 2, H);
   tctx.beginPath(); tctx.moveTo(x - 5, 0); tctx.lineTo(x + 5, 0); tctx.lineTo(x, 6); tctx.fill();
 }
@@ -1888,6 +1977,11 @@ setMsg('');
 setControls(false);
 $('tgModels').onclick = () => { opts.models = !opts.models; $('tgModels').classList.toggle('on', opts.models); ls.set('models', opts.models); };
 if (ls.get('models') === false) { opts.models = false; $('tgModels').classList.remove('on'); }
+$('tgSmooth').onclick = () => { opts.smoothAim = !opts.smoothAim; $('tgSmooth').classList.toggle('on', opts.smoothAim); ls.set('smoothAim', opts.smoothAim); };
+if (ls.get('smoothAim') === false) { opts.smoothAim = false; $('tgSmooth').classList.remove('on'); }
+$('q3').value = ['auto', 'high', 'low'].includes(ls.get('quality')) ? ls.get('quality') : 'auto';
+$('q3').onchange = () => { ls.set('quality', $('q3').value); applyQuality(true); };
+if (document.fonts) document.fonts.ready.then(() => { tlCache.key = ''; });
 $('bSnd').onclick = () => setSound(!SND.on);
 // full screen: the whole viewer fills the screen (Esc or F leaves it)
 function toggleFull() {

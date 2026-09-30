@@ -28,7 +28,7 @@ function init3() {
   if (R3 || !window.THREE) return;
   const canvas = $('gl');
   const renderer = new THREE.WebGLRenderer({ canvas, antialias: true });
-  renderer.setPixelRatio(Math.min(2, window.devicePixelRatio || 1));
+  renderer.setPixelRatio(qualityRatio());
   const scene = new THREE.Scene();
   scene.background = new THREE.Color(0x7d93a6);
   const camera = new THREE.PerspectiveCamera(70, 1, 4, 16000);
@@ -36,7 +36,7 @@ function init3() {
   const sun = new THREE.DirectionalLight(0xffffff, 0.5); sun.position.set(0.4, 1, 0.3); scene.add(sun);
   const world = new THREE.Group(); scene.add(world);
   const dyn = new THREE.Group(); scene.add(dyn);
-  R3 = { renderer, scene, camera, world, dyn, players: {}, lines: [] };
+  R3 = { renderer, scene, camera, world, dyn, players: {}, ov: null };
   // camera input: drag to look, wheel to move
   let dragging = null;
   canvas.addEventListener('pointerdown', (e) => { canvas.focus(); dragging = { x: e.clientX, y: e.clientY, sx: e.clientX, sy: e.clientY, moved: false }; canvas.setPointerCapture(e.pointerId); });
@@ -61,6 +61,29 @@ function init3() {
     cam3.pos[0] += f[0] * d; cam3.pos[1] += f[1] * d; cam3.pos[2] += f[2] * d;
   }, { passive: false });
   resize3();
+}
+// Render quality: how many pixels the 3D view draws. High = the screen's full sharpness (up to 2x),
+// low = fewer pixels than the screen (softer, much lighter on the graphics chip). Auto starts at high and
+// steps down to 1x once if the 3D view averages under 45 frames a second for a few seconds.
+const Q = { lowered: false, acc: 0, n: 0 };
+function qualityRatio() {
+  const full = Math.min(2, window.devicePixelRatio || 1);
+  const q = $('q3') ? $('q3').value : 'auto';
+  if (q === 'low') return Math.min(1, full) * 0.75;
+  if (q === 'auto' && Q.lowered) return Math.min(1, full);
+  return full;
+}
+function applyQuality(reset) {
+  if (reset) { Q.lowered = false; Q.acc = 0; Q.n = 0; }
+  if (R3) { R3.renderer.setPixelRatio(qualityRatio()); resize3(); }
+}
+function qualityTick(dt) {
+  if ($('q3').value !== 'auto' || Q.lowered || document.hidden || Math.min(2, window.devicePixelRatio || 1) <= 1) return;
+  if (dt >= 0.1) return; // a stall (tab switch, loading), not a sign of a slow machine
+  Q.acc += dt; Q.n++;
+  if (Q.acc < 3) return;
+  const fps = Q.n / Q.acc; Q.acc = 0; Q.n = 0;
+  if (fps < 45) { Q.lowered = true; applyQuality(false); toast('3D sharpness lowered to keep playback smooth. Choose "Quality: high" in the 3D bar to change it back.', 7000); }
 }
 function fwd(yaw, pitch) { const y = yaw * Math.PI / 180, p = pitch * Math.PI / 180; return [Math.cos(p) * Math.cos(y), Math.cos(p) * Math.sin(y), -Math.sin(p)]; }
 function resize3() {
@@ -141,12 +164,17 @@ function resetForNewDemo() {
   if (R3) {
     for (const e in R3.players) R3.dyn.remove(R3.players[e].g);
     R3.players = {};
-    for (const l of R3.lines) R3.scene.remove(l);
-    R3.lines = [];
+    clearOverlays();
     clearRigs();
   }
   ANIM = {}; stopSounds();
   $('pov').hidden = true;
+}
+// remove the reused round overlays (a new round or a new demo starts a fresh set)
+function clearOverlays() {
+  if (!R3 || !R3.ov) return;
+  for (const o of R3.ov.m.values()) { R3.scene.remove(o); if (o.geometry && !o.userData.shared) o.geometry.dispose(); o.material.dispose(); }
+  R3.ov.m.clear(); R3.ov.key = null;
 }
 function clear3d() {
   if (!R3) return;
@@ -237,7 +265,8 @@ const sphere = (r) => geoCache['s' + r] || (geoCache['s' + r] = new THREE.Sphere
 let lastFrame3 = performance.now();
 function update3() {
   if (!R3 || !D || viewMode === '2d') return;
-  const now = performance.now(); const dt = Math.min(0.1, (now - lastFrame3) / 1000); lastFrame3 = now;
+  const now = performance.now(); const rawDt = (now - lastFrame3) / 1000; const dt = Math.min(0.1, rawDt); lastFrame3 = now;
+  qualityTick(rawDt);
   const { camera, renderer } = R3;
   const r = roundAt(T);
   // breakables: hide the ones that have been shot out at this moment
@@ -278,53 +307,69 @@ function update3() {
     lab.push({ e: +e, s, p: g3(s.x, s.y, feet + h + 20) });
   }
   endRigs();
-  // round overlays are rebuilt every frame (cheap: a few dozen objects)
-  for (const l of R3.lines) { R3.scene.remove(l); if (l.geometry && !l.userData.shared) l.geometry.dispose(); l.material.dispose(); }
-  R3.lines = [];
-  const add = (o, shared) => { if (shared) o.userData.shared = true; R3.lines.push(o); };
-  if (r) for (const k of r.kills) {
+  // round overlays (death marks, kill lines, the bomb, grenades, smokes): each one is made once and then
+  // reused, moved or faded every frame; whatever isn't needed this frame is just hidden
+  const OVL = R3.ov || (R3.ov = { m: new Map(), used: new Set(), key: null });
+  const rkey = D.fileName + '|' + (r ? r.n : '-');
+  if (OVL.key !== rkey) { clearOverlays(); OVL.key = rkey; }
+  OVL.used.clear();
+  const ov = (key, make) => { let o = OVL.m.get(key); if (!o) { o = make(); OVL.m.set(key, o); R3.scene.add(o); } o.visible = true; OVL.used.add(key); return o; };
+  if (r) for (let ki = 0; ki < r.kills.length; ki++) {
+    const k = r.kills[ki];
     if (k.t > T || !k.vpos) continue;
     const age = T - k.t;
     const c = k.vteam === 'TERRORIST' ? 0xe8574d : 0x5ea3e8, z = k.vpos[2] - (k.vduck ? 16 : 34);
-    add(lineMesh(g3(k.vpos[0] - 10, k.vpos[1] - 10, z), g3(k.vpos[0] + 10, k.vpos[1] + 10, z), c));
-    add(lineMesh(g3(k.vpos[0] + 10, k.vpos[1] - 10, z), g3(k.vpos[0] - 10, k.vpos[1] + 10, z), c));
+    ov('x1:' + ki, () => lineMesh(g3(k.vpos[0] - 10, k.vpos[1] - 10, z), g3(k.vpos[0] + 10, k.vpos[1] + 10, z), c));
+    ov('x2:' + ki, () => lineMesh(g3(k.vpos[0] + 10, k.vpos[1] - 10, z), g3(k.vpos[0] - 10, k.vpos[1] + 10, z), c));
     const life = k.wb ? 6 : 2.5;
     if (opts.lines && k.kpos && k.killer !== k.victim && age < life) {
       const eye = k.wb ? k.wb.eye : [k.kpos[0], k.kpos[1], k.kpos[2] + (k.kduck ? 12 : 17)];
-      add(lineMesh(g3(eye[0], eye[1], eye[2]), g3(k.vpos[0], k.vpos[1], k.vpos[2] + (k.vduck ? 4 : 10)), k.wb ? 0xff4fd8 : 0xff9a3c, !!k.wb, 1 - age / life));
+      const l = ov('kl:' + ki, () => lineMesh(g3(eye[0], eye[1], eye[2]), g3(k.vpos[0], k.vpos[1], k.vpos[2] + (k.vduck ? 4 : 10)), k.wb ? 0xff4fd8 : 0xff9a3c, !!k.wb));
+      l.material.opacity = 1 - age / life;
     }
   }
   if (r) {
     const bp = D.bomb.find((b) => b.type === 'plantpos' && b.t >= r.start && b.t <= T && b.t <= r.end);
-    if (bp) {
-      const c4 = new THREE.Mesh(sphere(6), new THREE.MeshBasicMaterial({ color: 0xff9a3c }));
-      c4.position.copy(g3(bp.pos[0], bp.pos[1], bp.pos[2] + 4)); add(c4, true);
-    }
+    if (bp) ov('c4', () => { const c4 = new THREE.Mesh(sphere(6), new THREE.MeshBasicMaterial({ color: 0xff9a3c })); c4.userData.shared = true; return c4; }).position.copy(g3(bp.pos[0], bp.pos[1], bp.pos[2] + 4));
   }
-  if (opts.nades) for (const g of M.nades) {
+  if (opts.nades) for (let gi = 0; gi < M.nades.length; gi++) {
+    const g = M.nades[gi];
     if (T < g.t0 || T > g.t1 + 1) continue;
     const p = g.pts;
     const col = g.type === 'he' ? 0xff9a3c : g.type === 'flash' ? 0xf2f0e6 : 0x9aa3aa;
     if (g.type === 'smoke' && T >= g.stop) {
-      let k = 0; for (let i = 0; i < p.length; i += 4) if (p[i] >= g.stop) { k = i; break; }
       const fade = Math.max(0, Math.min(1, (T - g.stop) / 1.5) * Math.min(1, (g.t1 - T) / 2 + 0.2));
-      const sm = new THREE.Mesh(sphere(115), new THREE.MeshLambertMaterial({ color: 0xb4b9bc, transparent: true, opacity: 0.85 * fade, depthWrite: false }));
-      sm.scale.y = 0.6; sm.position.copy(g3(p[k + 1], p[k + 2], p[k + 3] + 40)); add(sm, true);
+      const sm = ov('sm:' + gi, () => {
+        let k = 0; for (let i = 0; i < p.length; i += 4) if (p[i] >= g.stop) { k = i; break; }
+        const m = new THREE.Mesh(sphere(115), new THREE.MeshLambertMaterial({ color: 0xb4b9bc, transparent: true, opacity: 0, depthWrite: false }));
+        m.userData.shared = true; m.scale.y = 0.6; m.position.copy(g3(p[k + 1], p[k + 2], p[k + 3] + 40)); return m;
+      });
+      sm.material.opacity = 0.85 * fade;
       continue;
     }
     if (T > g.t1) {
       if (g.type === 'smoke') continue;
-      const a = 1 - (T - g.t1);
-      const b = new THREE.Mesh(sphere(g.type === 'he' ? 90 : 40), new THREE.MeshBasicMaterial({ color: col, transparent: true, opacity: a * 0.6, depthWrite: false }));
-      b.position.copy(g3(p[p.length - 3], p[p.length - 2], p[p.length - 1])); add(b, true);
+      const b = ov('bu:' + gi, () => {
+        const m = new THREE.Mesh(sphere(g.type === 'he' ? 90 : 40), new THREE.MeshBasicMaterial({ color: col, transparent: true, opacity: 0, depthWrite: false }));
+        m.userData.shared = true; m.position.copy(g3(p[p.length - 3], p[p.length - 2], p[p.length - 1])); return m;
+      });
+      b.material.opacity = (1 - (T - g.t1)) * 0.6;
       continue;
     }
-    const pts = [];
-    for (let i = 0; i < p.length && p[i] <= T; i += 4) pts.push(g3(p[i + 1], p[i + 2], p[i + 3]));
-    if (pts.length > 1) add(new THREE.Line(new THREE.BufferGeometry().setFromPoints(pts), new THREE.LineBasicMaterial({ color: col })));
-    if (pts.length) { const h = new THREE.Mesh(sphere(3), new THREE.MeshBasicMaterial({ color: col })); h.position.copy(pts[pts.length - 1]); add(h, true); }
+    // the path so far: one line holding the whole flight, drawn up to the latest point
+    let cnt = 0; while (cnt * 4 < p.length && p[cnt * 4] <= T) cnt++;
+    if (cnt > 1) {
+      const ln = ov('tr:' + gi, () => {
+        const arr = new Float32Array(p.length / 4 * 3);
+        for (let i = 0, o = 0; i < p.length; i += 4, o += 3) { arr[o] = p[i + 1]; arr[o + 1] = p[i + 3]; arr[o + 2] = -p[i + 2]; }
+        const geo = new THREE.BufferGeometry(); geo.setAttribute('position', new THREE.BufferAttribute(arr, 3));
+        const l = new THREE.Line(geo, new THREE.LineBasicMaterial({ color: col })); l.frustumCulled = false; return l;
+      });
+      ln.geometry.setDrawRange(0, cnt);
+    }
+    if (cnt) ov('hd:' + gi, () => { const h = new THREE.Mesh(sphere(3), new THREE.MeshBasicMaterial({ color: col })); h.userData.shared = true; return h; }).position.copy(g3(p[(cnt - 1) * 4 + 1], p[(cnt - 1) * 4 + 2], p[(cnt - 1) * 4 + 3]));
   }
-  for (const l of R3.lines) R3.scene.add(l);
+  for (const [key, o] of OVL.m) if (!OVL.used.has(key)) o.visible = false;
 
   // camera
   if (cam3.mode === 'free') {
@@ -348,7 +393,21 @@ function update3() {
       if (cam3.mode === 'eyes') {
         // CS 1.6 uses a 90 degree horizontal field of view
         camera.fov = 2 * Math.atan(Math.tan(Math.PI / 4) / camera.aspect) * 180 / Math.PI;
-        placeCam([s.x, s.y, s.z + (s.duck ? 12 : 17)], s.yaw, s.pitch);
+        // light smoothing of the aim: the view trails the recorded aim by about 30 ms, which takes the
+        // edge off the few jolts the snapshots still leave. It snaps straight to the aim after a jump
+        // in time, a new player or a camera switch, and can be turned off ("Smooth aim").
+        let yaw = s.yaw, pitch = s.pitch;
+        if (opts.smoothAim) {
+          const fresh = cam3.eFor !== selected || cam3.eMode !== cam3.mode || cam3.eT == null || Math.abs(T - cam3.eT) > 0.3;
+          if (fresh) { cam3.eYaw = yaw; cam3.ePitch = pitch; }
+          else {
+            const k = 1 - Math.exp(-dt / 0.03);
+            cam3.eYaw += wrap180(yaw - cam3.eYaw) * k; cam3.ePitch += (pitch - cam3.ePitch) * k;
+            yaw = cam3.eYaw; pitch = cam3.ePitch;
+          }
+          cam3.eFor = selected; cam3.eMode = cam3.mode; cam3.eT = T;
+        }
+        placeCam([s.x, s.y, s.z + (s.duck ? 12 : 17)], yaw, pitch);
       } else {
         camera.fov = 70;
         const b = fwd(s.yaw, 0);
@@ -407,18 +466,29 @@ function update3() {
   lx.setTransform(dpr, 0, 0, dpr, 0, 0);
   const W = lc.width / dpr, H = lc.height / dpr;
   lx.clearRect(0, 0, W, H);
-  const mono = getComputedStyle(document.body).getPropertyValue('--f-mono');
+  const mono = monoFont();
   const camW = [camera.position.x, -camera.position.z, camera.position.y];
+  let visBudget = 3; // routine re-checks this frame; the rest wait a frame or two
   if (opts.names) for (const L of lab) {
     if (cam3.mode === 'eyes' && L.e === selected) continue;
     const v = L.p.clone().project(camera);
     if (v.z > 1 || v.z < -1) continue;
-    // with "names through walls" off, only label players the camera can actually see
+    // with "names through walls" off, only label players the camera can actually see. The check traces
+    // lines through the map, so each player is re-checked about 10 times a second (and at once after a
+    // camera switch or a jump in time), not on every frame.
     if (!opts.xray && MAP) {
-      const s = L.s, headZ = s.z + (s.duck ? 12 : 24);
-      // a free camera floating above the map starts outside the level, which counts as solid: ignore that first stretch
-      const blocked = (to) => { const r = solidAlong(MAP.bsp, camW, to, 4, R3.broken, R3.poses); return r.hit.some((h, i) => !(i === 0 && h.f0 * r.len <= 8)); };
-      if (blocked([s.x, s.y, headZ]) && blocked([s.x, s.y, s.z])) continue;
+      const vis = R3.vis || (R3.vis = new Map());
+      const ck = cam3.mode + '|' + selected;
+      let c = vis.get(L.e);
+      const forced = !c || c.ck !== ck || Math.abs(T - c.t) > 0.5;
+      if (forced || (now - c.at > 100 && visBudget-- > 0)) {
+        const s = L.s, headZ = s.z + (s.duck ? 12 : 24);
+        // a free camera floating above the map starts outside the level, which counts as solid: ignore that first stretch
+        const blocked = (to) => { const r = solidAlong(MAP.bsp, camW, to, 4, R3.broken, R3.poses); return r.hit.some((h, i) => !(i === 0 && h.f0 * r.len <= 8)); };
+        c = { at: now, ck, t: T, hidden: blocked([s.x, s.y, headZ]) && blocked([s.x, s.y, s.z]) };
+        vis.set(L.e, c);
+      }
+      if (c.hidden) continue;
     }
     const sx = (v.x + 1) / 2 * W, sy = (1 - v.y) / 2 * H;
     const dist = camera.position.distanceTo(L.p);
@@ -485,7 +555,7 @@ function drawHitMarker(lx, cx, cy) {
     if (k.wb) { const q = g1 + 4; lx.lineWidth = w === 5 ? 4 : 1.5; lx.strokeRect(cx - q, cy - q, q * 2, q * 2); }
   }
   const label = k.wb ? `WALLBANG · ${k.wb.thick}u${k.hs ? ' · HS' : ''}` : k.hs ? 'HEADSHOT' : 'KILL';
-  lx.font = `600 11px ${getComputedStyle(document.body).getPropertyValue('--f-mono')}`; lx.textAlign = 'center';
+  lx.font = `600 11px ${monoFont()}`; lx.textAlign = 'center';
   lx.lineWidth = 3; lx.strokeStyle = 'rgba(0,0,0,.7)'; lx.strokeText(label, cx, cy + 42); lx.fillStyle = col; lx.fillText(label, cx, cy + 42);
   lx.restore();
 }
