@@ -28,13 +28,13 @@ Everything raised in conversation that isn't finished, in one place. Each item s
 - [ ] Remove the `noindex` tag that `build.py` adds to `index.html` (kept out of search results until then; indexing is fine on sujandeswal.com).
 - [ ] Privacy hardening (see "Other parked ideas").
 
-**Next on the roadmap:** item 2, Requirements (below).
+**Next on the roadmap:** item 2, the README Requirements list (below).
 
 ## Roadmap (agreed 1 Oct 2026, in this order)
 
 Item 1, smoother playback, is done (0.8.0; Smooth aim later removed in 0.10.0). Theatre mode (0.9.0 to 0.9.3), the sniper scope (0.10.0 and 0.10.1), See through walls and Team colours (0.11.0) were added along the way.
 
-2. **Requirements.** A "Requirements" section in the README: desktop, recent Chrome or Edge, WebGL, Steam CS 1.6; 8 GB RAM recommended for long demos; phones not supported; Firefox and Safari untested. Plus a one-line "needs your own copy of CS 1.6 on Steam" on the viewer's start screen.
+2. **Requirements section in the README.** What's left: a short "Requirements" list (desktop computer, recent Chrome or Edge, a browser with WebGL for 3D, 8 GB RAM recommended for long demos, phones not supported, Firefox and Safari work without remembering the folder). Already done, nothing to add: the README's "You need your own legitimate copy of Counter-Strike 1.6, installed through Steam" box at the top, and on the start screen the folder row's "The Half-Life folder from your Steam install" text (0.12.1). Open question for Sujan: is that start screen text enough, or should the start screen also say plainly "Needs your own copy of CS 1.6 on Steam"?
 3. **Keep folder access between visits.** Done in 0.12.0.
 4. **Next features, in order:**
    - **Opening duels and trades.** The first kill of each round (who, where, which side) and whether a death was traded, meaning a teammate got the killer back within a few seconds. Per player: opening kills, opening deaths, and how often their deaths were traded. One of the most-used stats in CS analysis, and the demo has everything needed.
