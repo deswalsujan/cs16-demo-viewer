@@ -10,7 +10,6 @@ What changed in the viewer, newest first. The version shows in the viewer's shor
 - Which rounds count is exact when the server's admin plugin announces "Live !" and the end of each half in chat. Demos without those messages fall back to a guess from the restarts, which can still count a warmup or miss a round.
 - Na`Vi vs FX on Dust2 shows 17-11 against the official 16-11, because the demo has an extra first-half round played by admin mistake. Not re-checked since 0.7.1.
 - HLTV demos store about ten snapshots a second, so everything between two snapshots is an estimate. A flick that starts and ends between snapshots can't be recovered, and a sharp turn can look slightly rounder than it was. Turn "Smooth aim" off to see the recorded aim without the extra smoothing.
-- Theatre mode: in testing on a 14-inch MacBook-sized screen, the header stayed up when the mouse rested just below it near the top edge, instead of hiding after 2 seconds. See 0.9.0 below.
 - Theatre mode switches on by itself only with the viewer's own full screen (F or the Full screen button). The browser's full screen (F11 on Windows, the green window button or Ctrl+Cmd+F on a Mac) doesn't tell the page, so press T there.
 - "Quality: auto" lowers 3D sharpness at most once per visit and doesn't raise it again on its own. Pick "Quality: high" to go back.
 
@@ -31,7 +30,7 @@ A script drove a real mouse and keyboard through 39 checks on five screen setups
 
 Results on the final build: the 13-inch Mac, Windows 100% and Windows 125% passed all 39. Windows 150% passed all 39 on the build just before the last fix (that fix only ignores pointer events where the mouse didn't move) and wasn't rerun.
 
-**One check still fails, on the 14-inch Mac setup (1512 × 982 at 2x):** with the mouse resting just below the header, inside the top edge zone, the header should hide after 2 seconds; in the test it stayed up for more than 30 seconds. The same check passes on the 13-inch Mac and on Windows. Not yet known whether this is a real bug or an effect of the test browser drawing 3D in software (at this size it took about 10 seconds to process the mouse moves). Next step: log every pointer event the page receives at that moment, or check it by hand on a real 14-inch MacBook.
+One check failed only in the test browser on the 14-inch Mac setup (1512 × 982 at 2x): with the mouse resting just below the header, the header stayed up instead of hiding after 2 seconds. Checked by hand on a real MacBook on 1 Oct 2026: the header hides after about 2 seconds as it should. The failure came from the test browser, which draws 3D without a graphics chip and was too slow at that screen size.
 
 Two things found and fixed while testing: a bar that slid in under a mouse that wasn't moving used to hide after 2 seconds even with the pointer on it, and Chrome's "moves" sent when something slides under a still mouse used to restart the hide countdown.
 
