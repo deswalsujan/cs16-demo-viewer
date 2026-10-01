@@ -19,6 +19,9 @@ What changed in the viewer, newest first. The version shows in the viewer's shor
 - Theatre mode: the header, side panel and bottom bar now come in and go out together. Moving the mouse to the top, right or bottom edge brings back the normal layout; moving back to the middle hides it again. Before, each edge brought in only its own panel, which made the panels overlap and was one more thing to learn. Dragging to look around or pan the radar still never brings them in.
 - The score in the round pill is hidden while the header is showing, so it doesn't appear twice.
 
+### Discussed, not changed
+- Showing each panel on its own edge versus all together: all together matches what video players do and what Normal mode looks like, so it's one thing to learn and nothing can overlap. The trigger stays at the edges rather than any mouse movement (as YouTube does), because dragging to look around is the main thing the mouse does here.
+
 ## 0.9.1 (2026-10-01)
 
 ### Fixed
@@ -44,6 +47,10 @@ Results on the final build: the 13-inch Mac, Windows 100% and Windows 125% passe
 One check failed only in the test browser on the 14-inch Mac setup (1512 × 982 at 2x): with the mouse resting just below the header, the header stayed up instead of hiding after 2 seconds. Checked by hand on a real MacBook on 1 Oct 2026: the header hides after about 2 seconds as it should. The failure came from the test browser, which draws 3D without a graphics chip and was too slow at that screen size.
 
 Two things found and fixed while testing: a bar that slid in under a mouse that wasn't moving used to hide after 2 seconds even with the pointer on it, and Chrome's "moves" sent when something slides under a still mouse used to restart the hide countdown.
+
+### Discussed, not changed
+- The name: "raw" was considered but could be read as "raw aim", next to the Smooth aim button. Theatre mode it is.
+- Normal, Theatre and full screen: Normal shows everything. Theatre hides the viewer's own header, side panel and bottom bar but keeps the browser's tabs and address bar. Full screen is Theatre mode with the browser's top bar gone too. In the claude.ai artifact, Theatre fills only the artifact's area.
 
 ## 0.8.0 (2026-10-01)
 
@@ -71,6 +78,10 @@ Six 10-second stretches of the Na`Vi vs FX Dust2 demo (rounds 1, 4, 11, 15, 21 a
 | The viewer's own work per frame in Player's eyes (3D drawing not counted) | 4.9 ms | 1.9 ms |
 
 With "Smooth aim" off, 0.8.0 still has 487 aim jolts and a biggest jolt of 6.4°; the curves do most of the work and Smooth aim takes off the rest. Frame times are from a headless browser that draws 3D in software, so only the before and after comparison means anything, not the numbers themselves.
+
+### Discussed, not changed
+- Smooth aim made no visible difference at normal speed in Sujan's first look. It's meant to be subtle: it shows on fast flicks, best at 0.25x or 0.5x. Whether to keep the button is an open decision in [IDEAS.md](IDEAS.md).
+- How "Quality: auto" decides: it starts at the screen's full sharpness (2 screen pixels per point each way on a Retina Mac), counts frames every 3 seconds while the 3D view is showing, and if that's under 45 a second it drops once to 1 pixel per point and says so. It ignores one-off freezes and hidden tabs, never raises sharpness again by itself, and does nothing on a normal (non-Retina) screen. "Low" draws 0.75 pixels per point, which is why the gun looks soft there.
 
 ## 0.7.1 (2026-10-01)
 

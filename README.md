@@ -18,6 +18,8 @@ This is an unofficial fan project. It is not affiliated with or endorsed by Valv
 3. Pick a demo from the list, or open any `.dem` file.
 4. Press `?` for keyboard shortcuts.
 
+Three ways to watch: **Normal** shows everything. **Theatre** (`T`) fills the browser window with the view and hides the viewer's own controls until you move the mouse to the top, right or bottom edge. **Full screen** (`F`) is Theatre mode with the browser's tabs and address bar gone too.
+
 If you add, replace or delete files in the folder while the page is open, choose the folder again so the viewer sees the changes. The viewer tells you when a file it needs has changed on disk.
 
 Custom maps work too, as long as the map's `.bsp` (and its `.wad` files if it uses any) are in `cstrike/maps` or `cstrike_downloads/maps`.
