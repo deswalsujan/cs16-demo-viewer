@@ -461,10 +461,12 @@ export function parseDemo(buffer, onProgress, opts = {}) {
           if (!info) { if (cur) { cur.to = time; delete curOcc[e]; } }
           else if (!cur || cur.uid !== uid) {
             if (cur) cur.to = time;
-            const o = { id: occupants.length, slot: e, uid, names: [], from: time, to: null, hltv: kv['*hltv'] !== undefined };
+            const o = { id: occupants.length, slot: e, uid, names: [], nameT: [], from: time, to: null, hltv: kv['*hltv'] !== undefined };
             occupants.push(o); curOcc[e] = o;
           }
           if (info && kv.name && curOcc[e] && !curOcc[e].names.includes(kv.name)) curOcc[e].names.push(kv.name);
+          // when each name was taken, so the name a player used while the match was played can be picked (some rename for fun)
+          if (info && kv.name && curOcc[e]) { const nt = curOcc[e].nameT; if (!nt.length || nt[nt.length - 1][1] !== kv.name) nt.push([time, kv.name]); }
           break;
         }
         case 14: { // deltadescription

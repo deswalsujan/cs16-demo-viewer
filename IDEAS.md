@@ -22,6 +22,7 @@ Everything raised in conversation that isn't finished, in one place. Each item s
 - [ ] **Windows 150% Theatre run.** Passed all 39 checks on the build before the last 0.9.x fix and wasn't rerun after it.
 
 **Not yet tested on real demos**
+- [ ] The 102 MB mousesports vs Virus Inferno demo: doesn't finish loading in the test browser within 4 minutes (0.14.1 comparison). Check it opens on your side and its score looks right.
 - [ ] Breakables on Nuke and Inferno (vents) and Tuscan (logs): do they disappear in 3D when shot out?
 - [ ] The 145 MB Moscow 5 vs Na`Vi Mirage demo (memory and load time on a laptop).
 - [ ] Re-check the Dust2 (Na`Vi vs FX, expected 17-11 because of the extra admin-mistake round) and Mirage (WinFakt vs Check-Six 16-6, M5 vs Na`Vi 16-9) scores with the 0.7.1 round counting.
@@ -35,7 +36,7 @@ Everything raised in conversation that isn't finished, in one place. Each item s
 - [ ] Remove the `noindex` tag that `build.py` adds to `index.html` (kept out of search results until then; indexing is fine on sujandeswal.com).
 - [ ] Privacy hardening (see "Other parked ideas").
 
-**Done since this list was written:** 0.14.0 (smokes from the game's own smoke events, HE and flash bursts on maps where the demo has no grenade objects, light green smokes, shorter names and the skull in the Players tab, Free camera starting at the player); and earlier: Train in 3D on Sujan's side (the 2006 NoA vs Pentagram demo, 1 Oct 2026, which led to 0.13.0); 0.13.0 (kills timed from the real moment, the gun rule, POV demos, Clear saved files closing the demo, the smooth summary bar, the side panel lists); the start screen line "Needs your own copy of Counter-Strike 1.6, installed through Steam" (0.12.4, confirmed by Sujan).
+**Done since this list was written:** 0.14.1 (FX vs SK Inferno: lo3, restarted halves, KUBEN twice, renamed players); 0.14.0 (smokes from the game's own smoke events, HE and flash bursts on maps where the demo has no grenade objects, light green smokes, shorter names and the skull in the Players tab, Free camera starting at the player); and earlier: Train in 3D on Sujan's side (the 2006 NoA vs Pentagram demo, 1 Oct 2026, which led to 0.13.0); 0.13.0 (kills timed from the real moment, the gun rule, POV demos, Clear saved files closing the demo, the smooth summary bar, the side panel lists); the start screen line "Needs your own copy of Counter-Strike 1.6, installed through Steam" (0.12.4, confirmed by Sujan).
 
 **Next on the roadmap:** item 2, the README Requirements list (below).
 

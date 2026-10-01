@@ -19,6 +19,36 @@ What changed in the viewer, newest first. The version shows in the viewer's shor
 - On maps with a lot of scenery (de_tuscan above all) the demo has no grenade in flight and no gun on the floor: the old engine sends at most 256 objects per snapshot and the map's own objects fill nearly all of them. Smokes, HE explosions and flashbang pops still show where and when they went off (see 0.14.0), but there's no flight path to draw.
 - A smoke cloud is drawn as one light green ball for as long as the smoke puffs (about 21 seconds, less when the round restarts). The game's own puffs drift and thin out unevenly, which the viewer doesn't copy.
 
+## 0.14.1 (2026-10-02)
+
+Fixes from Sujan's feedback on FX vs SK Gaming on Inferno (IEM5, January 2011, `FX-vs-sk-iem5-inf.dem`).
+
+### Fixed
+- Wrong score, start and sides on that demo: it read 14:7, with the match starting at 56:54 and Frag eXecutors on CT. It now reads 16:13 to Frag eXecutors, starting at 29:15 with them on T, as Sujan knows the match. Three causes:
+  - The admin announced the start as "lo3", which the viewer didn't recognise as a live announcement, so it only saw the later "live" at 56:54 (the second half). "lo3", "l03" and "live on 3" now count.
+  - That second half was started, 7 rounds played, then restarted with "live now, sorry, hlsw". Before the first half, two "lo3" starts were restarted after 0 and 1 rounds. A restart puts the score back to 0:0, so inside an announced match, a stretch ended by a restart before a half is complete (under 12 rounds, or 3 in overtime) is now thrown away. Only when the next stretch starts in the same announced window: a stretch the server closed itself (end of half, or the warmup before another overtime) is kept.
+  - Restarts less than 60 seconds apart were treated as one, which joined the two "lo3" starts (59 seconds apart). Any restart between two rounds now starts a new stretch.
+- KUBEN listed twice. His connection drops at the start of the last round while he plays on, and the viewer started a second player for that slot. A slot whose connection has ended but is still in play now stays with its last occupant.
+- "BobbaN" for RobbaN, and "iZnoGouD" for f0rest. Both renamed for fun for a few seconds in the warmup and renamed back, but the viewer kept each player's list of names without repeats and showed the last new one. A player's name is now the one they used for most of the live rounds (the demo reader records when each name was taken).
+- "Frag eXecutors" still in front of every name in the Players tab: the two KUBENs would have read the same once shortened, and that turned shortening off for the whole team. Now only the players who would clash keep their full names.
+- The PGL plugin's "Neither team has a 6 point lead. The overtime process will now repeat." ends the live stretch. In the Anexis vs fnatic demo a warmup round started before the "Warmup is commencing" line and was counted.
+
+### How it was tested
+- Every demo on Sujan's Mac (19) was read by the previous version and this one in the test browser, comparing the score, number of live rounds, first live round and starting sides (`tests/page/match_summary.js`).
+
+  | Demo | Before | After |
+  |---|---|---|
+  | FX vs SK, Inferno, IEM5 2011 | 14:7, 21 rounds, from 56:54, FX started CT | 16:13, 29 rounds, from 29:15, FX started T |
+  | Anexis vs fnatic, Tuscan, 2012 | 11:9, 20 rounds | 11:8, 19 rounds (the warmup round after the overtime message) |
+  | The other 16 | | unchanged |
+
+  The 102 MB mousesports vs Virus Inferno demo didn't finish loading in the test browser in either version (it waits 4 minutes), so it isn't compared.
+- Names changed only where a player used another name during the match than the one last picked up: "f0restwOw~" is "f0rest" on mousesports vs SK, "minet" is "mTw } minet" on mTw vs Lions, "Edward" is "Edward4[a]" on Na`Vi vs FX Train.
+- On FX vs SK: Frag eXecutors NEO, PASHA, taz, Loord, KUBEN; SK f0rest, RobbaN, allen, face, GeT_RiGhT. `folder_row_test.py` (20 of 20), `start_screen_check.py`, `prefs_check.py`, `players_names_dead.js` and `modes_and_toggles.js` pass.
+
+### Discussed, not changed
+- The match's online records: HLTV.org's report of FX beating SK in the IEM5 semi-final lists Train, Nuke and Dust2, not Inferno ([HLTV.org](https://www.hltv.org/news/6330/fx-beat-sk-to-move-to-iem5-final)), so this Inferno map is from another IEM5 meeting. 16:13 rests on Sujan's word and the demo's own rounds, which add up to it.
+
 ## 0.14.0 (2026-10-02)
 
 Changes from Sujan's feedback on two de_tuscan demos (Anexis vs fnatic, DreamHack Bucharest 2012, and Lions vs mousesports, 2011) and on the free camera.

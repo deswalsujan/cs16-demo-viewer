@@ -62,6 +62,7 @@ Page scripts in `page/`:
 | `players_names_dead.js` | Players tab: shortened names, full names on hover, skulls for dead players, nothing cut off | 0.14.0 |
 | `free_cam_start.js` | Free camera from Player's eyes, Behind player and V starts at the player; dragging keeps the exact view. Moves the camera, so run `reset_view.js` in a separate run | 0.14.0 |
 | `summary_stays_closed.js` | The load summary card closed while checking stays closed | 0.14.0 |
+| `match_summary.js` | Score, live rounds, first live round, starting sides and Players tab names, for comparing versions across all demos (run with `MAP_NEEDED=0`) | 0.14.1 |
 
 Stand-alone checks:
 
@@ -101,6 +102,7 @@ node zoom.mjs ~/Downloads/Half-Life/cstrike/<demo>.dem
 node nade_events.mjs <demo>              # grenade objects, createsmoke events, pop and explosion sounds
 node entity_count.mjs <demo>             # objects each snapshot states vs. read (de_tuscan sits at the 256 limit)
 node nadecheck.mjs <demo> [from] [to]    # grenades as the page builds them, by source; lists those between two demo times
+node rounds_and_people.mjs <demo>        # 0.14.1: server messages, every round with its winner and score, restarts, and each connection's names
 ```
 
 ## Lessons
