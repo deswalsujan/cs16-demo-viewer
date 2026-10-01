@@ -271,6 +271,41 @@ kbd { font-family: var(--f-mono); font-size: 11px; background: var(--panel-2); b
 .drophint { border: 1px dashed var(--line); border-radius: 6px; padding: 10px; text-align: center; color: var(--faint); font-size: 12px; }
 .dragging .drophint { border-color: var(--sand); color: var(--sand); }
 
+/* Theatre mode: the view fills the whole window. The header, side panel and bottom bar float over it
+   and slide in when the mouse moves to their edge, so showing them never resizes the view. */
+.app.theatre { height: 100%; grid-template-columns: minmax(0, 1fr); grid-template-rows: minmax(0, 1fr); grid-template-areas: "radar"; --head-h: 0px; --tr-h: 0px; --side-w: 340px; }
+body:has(.app.theatre) { overflow: hidden; }
+.app.theatre .radar { aspect-ratio: auto; }
+.app.theatre .head, .app.theatre .side, .app.theatre .transport {
+  position: fixed; z-index: 20; opacity: 0; pointer-events: none; box-shadow: 0 0 24px rgba(0,0,0,.45);
+  transition: transform .18s ease, opacity .18s ease;
+}
+.app.theatre .head { top: 0; left: 0; right: 0; transform: translateY(-100%); }
+.app.theatre .transport { left: 0; right: 0; bottom: 0; transform: translateY(100%); z-index: 21; }
+.app.theatre .side { top: 0; right: 0; bottom: 0; width: min(var(--side-w), 90vw); max-height: none; border-top: 0; border-left: 1px solid var(--line); transform: translateX(100%); }
+.app.theatre.show-t .head, .app.theatre.show-b .transport, .app.theatre.show-r .side { transform: none; opacity: 1; pointer-events: auto; }
+/* the controls that sit on the view appear with the bar on their side of the screen */
+.app.theatre .cam3, .app.theatre .legend, .app.theatre .heatbar { opacity: 0; pointer-events: none; transition: opacity .18s ease, top .18s ease, bottom .18s ease; }
+.app.theatre.show-t .cam3, .app.theatre.show-b .legend, .app.theatre.show-b .heatbar { opacity: 1; pointer-events: auto; }
+.app.theatre .hint3 { display: none; }
+/* the on-view display moves out of the way of whichever bar is showing */
+.app.theatre .rclock, .app.theatre .cam3, .app.theatre .feed { transition: top .18s ease, right .18s ease, opacity .18s ease; }
+.app.theatre.show-t .rclock { top: calc(var(--head-h) + 12px); }
+.app.theatre.show-t .cam3 { top: calc(var(--head-h) + 44px); }
+.app.theatre.show-t .feed { top: calc(var(--head-h) + 12px); }
+.app.theatre.show-r .feed { right: calc(min(var(--side-w), 90vw) + 12px); }
+.app.theatre .pov, .app.theatre .legend, .app.theatre .heatbar, .app.theatre #toast { transition: bottom .18s ease, opacity .18s ease; }
+.app.theatre.show-b .pov, .app.theatre.show-b #toast { bottom: calc(var(--tr-h) + 56px); }
+.app.theatre.show-b .legend, .app.theatre.show-b .heatbar { bottom: calc(var(--tr-h) + 12px); }
+.app.theatre .radar.msplit #cv { transition: bottom .18s ease, right .18s ease; }
+.app.theatre.show-b .radar.msplit #cv { bottom: calc(var(--tr-h) + 56px); }
+.app.theatre.show-r .radar.msplit #cv { right: calc(min(var(--side-w), 90vw) + 12px); }
+.app.theatre.idle .radar, .app.theatre.idle #gl, .app.theatre.idle #cv, .app.theatre.idle #lbl { cursor: none; }
+/* score in the round pill, only while the header (where the score normally is) is hidden */
+.rclock .thsc { display: none; }
+.app.theatre .rclock .thsc { display: inline; }
+.rclock .thsc .kt { color: var(--t); } .rclock .thsc .kct { color: var(--ct); }
+@media (prefers-reduced-motion: reduce) { .app.theatre * { transition: none !important; } }
 @media (max-width: 860px) {
   body { overflow: auto; }
   .app { height: auto; grid-template-columns: minmax(0,1fr); grid-template-rows: auto auto auto auto; grid-template-areas: "head" "radar" "transport" "side"; }
@@ -293,7 +328,7 @@ kbd { font-family: var(--f-mono); font-size: 11px; background: var(--panel-2); b
       <span class="viewers" id="viewers" title="People watching the HLTV broadcast at this moment"></span>
     </div>
     <div class="seg" id="viewSeg" role="group" aria-label="View"><button type="button" data-v="2d" class="on">2D</button><button type="button" data-v="3d">3D</button><button type="button" data-v="split">3D + radar</button></div>
-    <div class="hbtns"><button class="btn" id="bFull" type="button" title="Full screen (F)">Full screen</button><button class="btn" id="btnOpen" type="button">Open another demo</button></div>
+    <div class="hbtns"><button class="btn" id="bTheatre" type="button" title="Theatre mode: the view fills the window, controls appear at the edges (T)">Theatre</button><button class="btn" id="bFull" type="button" title="Full screen, in Theatre mode (F)">Full screen</button><button class="btn" id="btnOpen" type="button">Open another demo</button></div>
   </header>
 
   <section class="radar m2d" id="radar">
@@ -339,7 +374,8 @@ kbd { font-family: var(--f-mono); font-size: 11px; background: var(--panel-2); b
             <dt><kbd>N</kbd></dt><dd>Show or hide names</dd>
             <dt><kbd>H</kbd></dt><dd>Names through walls on or off (3D)</dd>
             <dt><kbd>M</kbd></dt><dd>Sound on or off</dd>
-            <dt><kbd>F</kbd></dt><dd>Full screen on or off</dd></dl>
+            <dt><kbd>F</kbd></dt><dd>Full screen on or off (full screen uses Theatre mode)</dd>
+            <dt><kbd>T</kbd></dt><dd>Theatre mode on or off: the view fills the window, and the controls slide in when the mouse moves to the top, right or bottom edge</dd></dl>
           </section>
           <section><h3>3D camera</h3>
             <dl><dt><kbd>V</kbd></dt><dd>Switch camera: free, player's eyes, behind player</dd>
@@ -475,6 +511,8 @@ let prevT = null;
 const FLASH_MS = 750;
 const files = { overviews: {}, demos: [], maps: {}, wads: {}, mdl: {}, snd: {}, sentences: null }; // from folder pick
 let M = null;            // derived match data
+// Theatre mode state (see the Theatre mode section)
+const TH = { on: false, before: false, hint: false, timers: {}, idle: null, drag: false, x: -1, y: -1 };
 
 // ---------------- storage (per-browser convenience) ----------------
 const idb = {
@@ -1216,6 +1254,7 @@ function toast(t, ms = 9000) {
 }
 function showLoad(v) {
   $('load').hidden = !v;
+  applyTheatre(); // the start screen needs the header, so Theatre mode pauses while it's open
   if (v) { playing = false; setPlayIcon(); $('prog').hidden = true; }
   setControls(!v && !!D);
 }
@@ -1394,6 +1433,7 @@ document.addEventListener('keydown', (e) => {
   else if (k === 'h' || k === 'H') toggleOpt('xray', 'tgXray');
   else if (k === 'm' || k === 'M') setSound(!SND.on);
   else if (k === 'f' || k === 'F') toggleFull();
+  else if (k === 't' || k === 'T') setTheatre(!TH.on);
   else if (k === 'x' || k === 'X') { nextPlayer(1); if (viewMode !== '2d' && cam3.mode === 'free') setCam('eyes'); }
   else if (k === 'z' || k === 'Z') { nextPlayer(-1); if (viewMode !== '2d' && cam3.mode === 'free') setCam('eyes'); }
   else if (/^[0-9]$/.test(k)) {
@@ -1462,7 +1502,10 @@ function updateHud(force) {
   const side = (i) => r && r.tTeam != null ? (r.tTeam === i ? 'side-t' : 'side-ct') : '';
   $('tnA').className = 'tn ' + side(0); $('tnB').className = 'tn ' + side(1);
   const paused = (() => { let on = false; for (const p of D.pauses || []) { if (p.t > T) break; on = p.on; } return on; })();
-  $('rclock').innerHTML = (r ? `${r.live ? 'Round <b>' + r.ln + (r.ot ? ' (OT)' : '') + '</b>' : '<b>Not counted</b>'} · <b>${clockText(T) || fmt(T - r.start)}</b>` : '') + (paused ? ' · <b>match paused</b>' : '');
+  // Theatre mode hides the header, so the round pill also carries the score (hidden otherwise)
+  const scSide = (i) => side(i) === 'side-t' ? 'kt' : side(i) === 'side-ct' ? 'kct' : '';
+  const thsc = `<span class="thsc"><span class="${scSide(0)}">${esc(M.tnames[0])}</span> <b>${sc[0]} : ${sc[1]}</b> <span class="${scSide(1)}">${esc(M.tnames[1])}</span> · </span>`;
+  $('rclock').innerHTML = thsc + (r ? `${r.live ? 'Round <b>' + r.ln + (r.ot ? ' (OT)' : '') + '</b>' : '<b>Not counted</b>'} · <b>${clockText(T) || fmt(T - r.start)}</b>` : '') + (paused ? ' · <b>match paused</b>' : '');
   // kill feed
   const feed = D.kills.filter((k) => k.t <= T && k.t > T - 6).slice(-5);
   const key = feed.map((k) => k.t).join();
@@ -1991,7 +2034,91 @@ function toggleFull() {
   req.catch(() => { setMsg('Full screen is blocked here. Press F11 in your browser instead.'); if (D) toast('Full screen is blocked here. Press F11 in your browser instead.'); });
 }
 $('bFull').onclick = toggleFull;
-document.addEventListener('fullscreenchange', () => { $('bFull').textContent = document.fullscreenElement ? 'Exit full screen' : 'Full screen'; });
+document.addEventListener('fullscreenchange', () => {
+  const fs = !!document.fullscreenElement;
+  $('bFull').textContent = fs ? 'Exit full screen' : 'Full screen';
+  // full screen always uses Theatre mode; leaving it puts back whatever was on before
+  if (fs) { TH.before = TH.on; setTheatre(true); } else setTheatre(TH.before);
+});
+
+// ---------------- Theatre mode ----------------
+// The view fills the window. The header, side panel and bottom bar float over it and slide in when
+// the mouse moves to their edge (top, right, bottom). They stay while the mouse is on them and hide
+// shortly after it moves away; near an edge but not on the bar, they hide after 2 seconds without the
+// mouse moving. Nothing slides in while
+// you drag to look around or pan the radar, and the view never changes size when they appear.
+// Edge zones are in page pixels, so they work the same on a Retina Mac and on Windows at any scaling.
+const TH_PANELS = { t: () => [$('app').querySelector('.head'), $('cam3')], r: () => [$('side')], b: () => [$('app').querySelector('.transport'), $('legend'), $('heatbar')] };
+const TH_ZONE = { t: 64, r: 44, b: 96 }; // how close to each edge the mouse must come, in page pixels
+function theatreActive() { return TH.on && !!D && $('load').hidden; }
+function setTheatre(on) {
+  TH.on = !!on;
+  applyTheatre();
+  if (theatreActive() && !TH.hint) { TH.hint = true; toast('Theatre mode. Move the mouse to the top, right or bottom edge for the controls. T leaves it.', 4500); }
+}
+function applyTheatre() {
+  const app = $('app'), act = theatreActive();
+  const was = app.classList.contains('theatre');
+  app.classList.toggle('theatre', act);
+  $('bTheatre').classList.toggle('on', act);
+  $('bTheatre').textContent = act ? 'Exit theatre' : 'Theatre';
+  if (!act) { app.classList.remove('show-t', 'show-r', 'show-b', 'idle'); for (const k in TH.timers) clearTimeout(TH.timers[k]); clearTimeout(TH.idle); }
+  else measureTheatre();
+  if (was !== act) requestAnimationFrame(() => { resize(); resize3(); measureTheatre(); });
+}
+// the floating bars' sizes, so the on-view display can move out of their way
+function measureTheatre() {
+  const app = $('app');
+  app.style.setProperty('--head-h', app.querySelector('.head').offsetHeight + 'px');
+  app.style.setProperty('--tr-h', app.querySelector('.transport').offsetHeight + 'px');
+}
+function thShow(k, on) { $('app').classList.toggle('show-' + k, on); }
+function thShown(k) { return $('app').classList.contains('show-' + k); }
+// the mouse is over one of this edge's panels (or a menu from it is open)
+function thOver(k, target) {
+  const els = TH_PANELS[k]().filter(Boolean);
+  if (target && els.some((el) => el.contains(target))) return true;
+  const a = document.activeElement;
+  return !!(a && a.tagName === 'SELECT' && els.some((el) => el.contains(a)));
+}
+// what's under the pointer right now: a bar can slide in under a mouse that isn't moving
+function thUnder() { return TH.x >= 0 ? document.elementFromPoint(TH.x, TH.y) : null; }
+function thInZone(k, x, y) {
+  if (k === 't') return y <= TH_ZONE.t;
+  if (k === 'b') return y >= innerHeight - TH_ZONE.b;
+  return x >= innerWidth - TH_ZONE.r && y > TH_ZONE.t && y < innerHeight - TH_ZONE.b;
+}
+function thUpdate(target) {
+  for (const k of ['t', 'r', 'b']) {
+    const over = thOver(k, target), want = over || (!TH.drag && TH.x >= 0 && thInZone(k, TH.x, TH.y));
+    clearTimeout(TH.timers[k]);
+    if (want) {
+      if (!thShown(k)) { measureTheatre(); thShow(k, true); }
+      // still, but not on the panel: hide after 2 s; on the panel: stay
+      if (!over) TH.timers[k] = setTimeout(() => { if (!thOver(k, thUnder())) thShow(k, false); }, 2000);
+    } else if (thShown(k)) TH.timers[k] = setTimeout(() => thShow(k, false), 600);
+  }
+}
+document.addEventListener('pointermove', (e) => {
+  if (!theatreActive() || e.pointerType === 'touch') return;
+  // Chrome also sends "moves" when the mouse is still but something slides under it (a bar coming in,
+  // the round pill moving down): those mustn't count, or they keep restarting the hide countdown
+  if (e.clientX === TH.x && e.clientY === TH.y) { TH.lastTarget = e.target; return; }
+  TH.x = e.clientX; TH.y = e.clientY; TH.lastTarget = e.target;
+  const app = $('app');
+  app.classList.remove('idle'); clearTimeout(TH.idle);
+  TH.idle = setTimeout(() => { const u = thUnder(); if (theatreActive() && !['t', 'r', 'b'].some((k) => thOver(k, u))) app.classList.add('idle'); }, 2000);
+  thUpdate(e.target);
+}, true);
+// dragging on the view (looking around in 3D, panning the radar) never pulls a bar in
+document.addEventListener('pointerdown', (e) => { if (theatreActive() && (e.target === $('gl') || e.target === $('cv'))) TH.drag = true; }, true);
+document.addEventListener('pointerup', () => { if (TH.drag) { TH.drag = false; if (theatreActive()) thUpdate(TH.lastTarget); } }, true);
+document.addEventListener('pointercancel', () => { TH.drag = false; }, true);
+// the mouse left the window (another screen, the Dock, the taskbar): tuck everything away
+document.documentElement.addEventListener('mouseleave', () => { if (!theatreActive()) return; TH.x = -1; TH.lastTarget = null; thUpdate(null); });
+window.addEventListener('blur', () => { if (theatreActive()) { TH.x = -1; TH.lastTarget = null; thUpdate(null); } });
+window.addEventListener('resize', () => { if (theatreActive()) measureTheatre(); });
+$('bTheatre').onclick = () => setTheatre(!TH.on);
 $('sndVol').oninput = (e) => setVolume(+e.target.value);
 // browsers only let a page make sound after you've clicked or pressed a key on it
 const wake = () => { if (SND.on) audio(); };
