@@ -19,6 +19,43 @@ What changed in the viewer, newest first. The version shows in the viewer's shor
 - On maps with a lot of scenery (de_tuscan above all) the demo has no grenade in flight and no gun on the floor: the old engine sends at most 256 objects per snapshot and the map's own objects fill nearly all of them. Smokes, HE explosions and flashbang pops still show where and when they went off (see 0.14.0), but there's no flight path to draw.
 - A smoke cloud is drawn as one light green ball for as long as the smoke puffs (about 21 seconds, less when the round restarts). The game's own puffs drift and thin out unevenly, which the viewer doesn't copy.
 
+## In progress: 0.14.2 (not shipped)
+
+Built on the branch `wip/team-swap-and-match-end`, not on main or the claude.ai artifact yet. VERSION still says 0.14.1. Fixes to round counting and player stats, from Sujan's checks of K-D numbers he knows from the real matches.
+
+### What's built
+- **Kills before the first round marker** now count, as a round 0 put in front of round 1 (the NEO Inferno numbers were short because of it). Its winner comes from round 1's score (the side on 1) or from all five of one side dying.
+- **Team swap suicides are never deaths.** When teams switch sides, every player who changes team dies by "world" within a few seconds. Three or more self-kills within 5 seconds are now a swap, looked for across round markers (fnatic vs EG Dust2, 39:44: two land in the ended round and the third a second later in the next). A swap round with no real round before it is dropped; a real round that ended before the swap still counts.
+- **Rounds past the end of a half** are cut when a restart and more play follow. Half ends: 15, 30, then every 3 rounds of overtime. Both Xperia Play FX vs mTw matches played on at 15:15 on the same sides (5 rounds on Inferno, 6 on Nuke), then restarted and played overtime.
+- **The IOL false start** (SK vs Dateam Dust2): the false-start rule is stricter, so a stretch is only thrown away when the next stretch is in the same announced window or its window wasn't closed by an end-of-half message. Two rounds in a row with no kills also end a stretch (idle server).
+- **Overtime after a restart, with no admin messages:** after the last live stretch, new stretches of 1 to 3 real rounds count as overtime.
+- **Stop at 16 by default.** The match ends when a team reaches 16 with the other on 14 or less, or in overtime (MR3) at 19, 22 and so on with a 2-round lead. Rounds played after that are listed in the Rounds tab faded, tagged "after the match", with no number, and don't count anywhere.
+- **"Count them", per demo.** Some events played all 30 rounds and counted them. A note in the Rounds tab and a line in the load summary say how many rounds were played after the match ended, with a "Count them" button (then "Stop at 16"). Counting goes up to round 30 at most and never changes overtime. The choice is remembered per demo file (`count30:<file name>` in saved settings). Mockup, not yet approved by Sujan: [docs/proposed/count-after-16-mock.png](docs/proposed/count-after-16-mock.png).
+
+### Numbers checked so far (all match what Sujan confirmed)
+| Demo | Viewer on the branch | Sujan's number |
+|---|---|---|
+| IOL Final SK vs Dateam, Dust2 (`sk-vs-dateam-iolfinal4-1106181158`) | 16:4, f0rest 25-11 (T 8-3, CT 17-8) | f0rest correct |
+| Xperia FX vs mTw Inferno, two files (`-1104240112`, `-1104240025`) | file 1: 6:9, NEO 15-13; file 2: 13:8, NEO 18-15 (16-11 + overtime 2-4) | NEO 33-28, second half 16-11 |
+| Xperia FX vs mTw Nuke, two files (`-1104240212`, `-1104240242`) | file 1: 8:7, NEO 19-9; file 2: 11:15, NEO 23-16 (12-9 + 4-4 + 7-3) | 42-25 |
+| fnatic vs EG, Dust2 (`fnatic_vs_EG_EM3Global-0903061800`) | 11:16, f0rest (shows as iZnoGouD) 29-17 (T 15-9, CT 14-8); with Count them: 13:17, 32-19 (T 15-9, CT 17-10) | 32-19 (T 15-9, CT 17-10), all 30 rounds played |
+| iFNG FX vs fnatic, Dust2 (`auto_ifng-1103030950`) | 16:13, NEO 30-17 (T 12-9, CT 18-8) | 30-17 (CT 18-8, T 12-9) |
+
+Checked with `tests/page/match_detail.js`. Count them was switched on, then off again, on the EG demo: it goes back to 11:16 and 29-17.
+
+### Still to do before shipping
+1. Sujan's approval of the Count them mockup.
+2. The old vs new comparison on every demo (`tests/page/match_summary.js`, about 25 minutes; warn first). Expected change: Na`Vi vs FX Dust2 may drop the extra first-half round and read the official 16-11.
+3. `folder_row_test.py`, `start_screen_check.py`, `prefs_check.py` and the page checks.
+4. VERSION, this entry turned into a normal 0.14.2 entry, Known limits (below), IDEAS.md, merge into main, push, republish the artifact.
+
+### Known limits to add when shipping
+- A match split over two demo files can't be joined into one: each file is scored on its own, and the overtime split in player stats is per file.
+- Whether rounds after 16 count can't be read from the demo, so it's the default (stop at 16) unless switched per demo.
+
+### Discussed, not changed
+- Stop at 16 or play all 30: most demos Sujan has stop at 16, some events played all 30. Detecting it from the demo isn't reliable, so stopping at 16 is the default with a per-demo switch (agreed 2 Oct 2026). Sujan confirmed overtime must stay MR3 and never be treated as "play to 30".
+
 ## 0.14.1 (2026-10-02)
 
 Fixes from Sujan's feedback on FX vs SK Gaming on Inferno (IEM5, January 2011, `FX-vs-sk-iem5-inf.dem`).

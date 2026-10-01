@@ -1,0 +1,76 @@
+<!doctype html><html><head><meta charset="utf-8">
+<style>
+:root{--bg:#111417;--panel:#171b1f;--panel-2:#1d2227;--line:#2a3137;--fg:#e7e3d9;--muted:#8d959c;--faint:#5b636a;--sand:#cbb47e;--t:#e8574d;--ct:#5ea3e8;--kill:#ff9a3c;--good:#8fc97a;
+--f-display:"Chakra Petch","Arial Narrow",system-ui,sans-serif;--f-body:"IBM Plex Sans",system-ui,sans-serif;--f-mono:"IBM Plex Mono",Menlo,monospace}
+body{margin:0;background:#0b0d0f;color:var(--fg);font-family:var(--f-body);font-size:14px;padding:24px;display:flex;gap:26px;align-items:flex-start}
+.col{width:340px}.col.wide{width:440px}
+.cap{font-size:15px;font-weight:600;margin:0 0 4px}.sub0{color:var(--muted);font-size:12px;margin:0 0 12px;line-height:1.45;min-height:52px}
+.panel{background:var(--panel);border:1px solid var(--line);border-radius:6px;overflow:hidden}
+.btn{background:var(--panel-2);border:1px solid var(--line);border-radius:4px;padding:5px 10px;font-size:12px;color:var(--fg);font-family:var(--f-body);white-space:nowrap}
+.btn.sm{padding:3px 8px}
+/* summary */
+.sum-top{display:flex;gap:12px;padding:14px 16px;border-bottom:1px solid var(--line);border-left:4px solid var(--good)}
+.sum-top h2{margin:0 0 4px;font-family:var(--f-display);font-size:18px;color:var(--good)}.sum-top p{margin:0;font-size:13px;line-height:1.5}
+.sum-list{list-style:none;margin:0;padding:8px 16px;display:grid;gap:2px}
+.sum-list li{display:grid;grid-template-columns:22px minmax(0,1fr);gap:8px;padding:5px 0;font-size:13px;line-height:1.4}
+.sum-list li small{display:block;color:var(--muted);font-size:12px}
+.ic{font-family:var(--f-mono);font-weight:600;text-align:center;border-radius:50%;width:20px;height:20px;line-height:20px;font-size:12px}
+.ic.ok{color:var(--good);background:#8fc97a29}.ic.info{color:var(--sand);background:#cbb47e29}
+.li-btn{margin-top:6px}
+.sum-foot{display:flex;padding:10px 16px 12px;border-top:1px solid var(--line);color:var(--muted);font-size:12px;font-family:var(--f-mono);justify-content:flex-end}
+/* rounds */
+.tabs{display:flex;border-bottom:1px solid var(--line)}.tabs span{flex:1;text-align:center;padding:10px 4px;font-size:12px;letter-spacing:.08em;color:var(--muted)}.tabs .on{color:var(--fg);border-bottom:2px solid var(--sand)}
+.opt{padding:8px 14px;color:var(--muted);font-size:12px;border-bottom:1px solid var(--line)}
+.row{display:grid;grid-template-columns:44px minmax(0,1fr) auto;gap:8px;align-items:center;padding:8px 14px;border-bottom:1px solid var(--line);font-size:13px}
+.n{font-family:var(--f-mono);color:var(--muted);font-size:12px}
+.d{color:var(--muted);font-size:12px;font-family:var(--f-mono);text-align:right}
+.sub{color:var(--muted);font-size:12px}
+.pill{display:inline-block;font-size:11px;font-weight:600;padding:1px 6px;border-radius:3px;margin-right:6px}
+.pill.t{background:#e8574d38;color:var(--t)}.pill.ct{background:#5ea3e838;color:var(--ct)}
+.after{opacity:.5}
+.after .tag{font-family:var(--f-mono);font-size:10px;color:var(--muted);border:1px solid var(--line);border-radius:3px;padding:0 4px;margin-left:6px}
+.note{display:flex;gap:10px;align-items:center;padding:10px 14px;border-bottom:1px solid var(--line);background:#cbb47e14;font-size:12px;line-height:1.45;color:var(--fg)}
+.note span{flex:1}
+.callout{color:var(--muted);font-size:11.5px;margin-top:10px;line-height:1.5}
+</style></head><body>
+
+<div class="col wide"><p class="cap">Load summary</p><p class="sub0">A new line, only on demos where rounds were played after a team reached 16. The button counts them; the choice is remembered for this demo.</p>
+<div class="panel">
+<div class="sum-top"><div><h2>Ready to watch</h2><p>Everything loaded. The demo will play in full; a note on it below.</p></div></div>
+<ul class="sum-list">
+<li><span class="ic ok">✓</span><span>Demo read: 27 rounds</span></li>
+<li><span class="ic info">i</span><span>3 rounds were played after fnatic reached 16 (16:11)<small>Some events played all 30 rounds and count them. Not counted now: the match ends at 16:11.</small><div class="li-btn"><span class="btn sm">Count them</span></div></span></li>
+<li><span class="ic ok">✓</span><span>Map and textures</span></li>
+<li><span class="ic ok">✓</span><span>Radar overview</span></li>
+<li><span class="ic ok">✓</span><span>Player models: 10 of 10</span></li>
+</ul>
+<div class="sum-foot">Closes in 14 s</div>
+</div></div>
+
+<div class="col"><p class="cap">Rounds tab, as it opens</p><p class="sub0">The note sits at the end of the list, where the extra rounds are. They're listed, faded and tagged, without a round number.</p>
+<div class="panel">
+<div class="tabs"><span class="on">ROUNDS</span><span>KILLS</span><span>PLAYERS</span><span>WALLBANGS</span></div>
+<div class="row"><span class="n">R25</span><span><span class="pill t">T</span>EG<div class="sub">elimination · 9 kills</div></span><span class="d">10:15<br>0:59</span></div>
+<div class="row"><span class="n">R26</span><span><span class="pill t">T</span>EG<div class="sub">elimination · 9 kills</div></span><span class="d">11:15<br>1:56</span></div>
+<div class="row"><span class="n">R27</span><span><span class="pill ct">CT</span>fnatic.MSI<div class="sub">bomb defused · 9 kills</div></span><span class="d">11:16<br>1:37</span></div>
+<div class="note"><span>3 rounds were played after fnatic reached 16. Some events count them.</span><span class="btn sm" style="flex:none">Count them</span></div>
+<div class="row after"><span class="n">·</span><span><span class="pill t">T</span>EG<span class="tag">after the match</span><div class="sub">elimination · 9 kills</div></span><span class="d"><br>1:18</span></div>
+<div class="row after"><span class="n">·</span><span><span class="pill t">T</span>EG<span class="tag">after the match</span><div class="sub">elimination · 7 kills</div></span><span class="d"><br>1:06</span></div>
+<div class="row after"><span class="n">·</span><span><span class="pill ct">CT</span>fnatic.MSI<span class="tag">after the match</span><div class="sub">bomb defused · 7 kills</div></span><span class="d"><br>1:35</span></div>
+</div>
+<p class="callout">Score in the header: EG 11 : 16 fnatic. Player stats stop at the same point (f0rest 29-17).</p>
+</div>
+
+<div class="col"><p class="cap">After clicking Count them</p><p class="sub0">The rounds get numbers and scores, and count everywhere: header, timeline, kills and player stats.</p>
+<div class="panel">
+<div class="tabs"><span class="on">ROUNDS</span><span>KILLS</span><span>PLAYERS</span><span>WALLBANGS</span></div>
+<div class="row"><span class="n">R26</span><span><span class="pill t">T</span>EG<div class="sub">elimination · 9 kills</div></span><span class="d">11:15<br>1:56</span></div>
+<div class="row"><span class="n">R27</span><span><span class="pill ct">CT</span>fnatic.MSI<div class="sub">bomb defused · 9 kills</div></span><span class="d">11:16<br>1:37</span></div>
+<div class="note"><span>Counting the 3 rounds played after fnatic reached 16.</span><span class="btn sm" style="flex:none">Stop at 16</span></div>
+<div class="row"><span class="n">R28</span><span><span class="pill t">T</span>EG<div class="sub">elimination · 9 kills</div></span><span class="d">12:16<br>1:18</span></div>
+<div class="row"><span class="n">R29</span><span><span class="pill t">T</span>EG<div class="sub">elimination · 7 kills</div></span><span class="d">13:16<br>1:06</span></div>
+<div class="row"><span class="n">R30</span><span><span class="pill ct">CT</span>fnatic.MSI<div class="sub">bomb defused · 7 kills</div></span><span class="d">13:17<br>1:35</span></div>
+</div>
+<p class="callout">Header: EG 13 : 17 fnatic. f0rest 32-19. Never goes past round 30, and overtime is never affected.</p>
+</div>
+</body></html>
