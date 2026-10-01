@@ -8,8 +8,8 @@ function status3(t, withButton) {
   const el = $('status3');
   if (!t) { el.hidden = true; el.innerHTML = ''; return; }
   el.hidden = false;
-  el.innerHTML = `<div><span>${esc(t)}</span>${withButton ? '<button class="btn" type="button" id="bFolder3">Choose Half-Life folder</button><small>The map lives in cstrike\\maps or cstrike_downloads\\maps. Its textures come from the .wad files.</small>' : ''}</div>`;
-  if (withButton) $('bFolder3').onclick = () => $('fFolder').click();
+  el.innerHTML = `<div><span>${esc(t)}</span>${withButton ? '<button class="btn" type="button" id="bFolder3">' + (HL.handle ? 'Refresh Half-Life folder' : 'Choose Half-Life folder') + '</button><small>The map lives in cstrike\\maps or cstrike_downloads\\maps. Its textures come from the .wad files.</small>' : ''}</div>`;
+  if (withButton) $('bFolder3').onclick = () => refreshOrPick();
 }
 document.querySelectorAll('#viewSeg button').forEach((b) => b.onclick = () => setView(b.dataset.v));
 function setView(v) {

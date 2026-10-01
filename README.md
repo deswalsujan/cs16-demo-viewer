@@ -13,14 +13,16 @@ This is an unofficial fan project. It is not affiliated with or endorsed by Valv
 ## How to use it
 
 1. Open the viewer at **https://deswalsujan.github.io/cs16-demo-viewer/** in Chrome or Edge. It always has the latest version, so there's nothing to download.
-2. Click **Choose folder** and pick your `Half-Life` folder (the one that contains `cstrike` and `valve`).
-   Chrome will ask whether to "upload" the files. That is Chrome's standard wording for picking a folder. The files stay on your computer.
+2. Click **Choose folder** and pick your `Half-Life` folder (the one that contains `cstrike` and `valve`). Chrome asks whether to let the page view the folder; the files stay on your computer.
+   On your next visit Chrome asks once more. Choose **Allow on every visit**, and from then on the folder opens by itself (Chrome and Edge 122 or later).
 3. Pick a demo from the list, or open any `.dem` file.
 4. Press `?` for keyboard shortcuts.
 
 Three ways to watch: **Normal** shows everything. **Theatre** (`T`) fills the browser window with the view and hides the viewer's own controls until you move the mouse to the top, right or bottom edge. **Full screen** (`F`) is Theatre mode with the browser's tabs and address bar gone too.
 
-If you add, replace or delete files in the folder while the page is open, choose the folder again so the viewer sees the changes. The viewer tells you when a file it needs has changed on disk.
+The start screen shows which folder is in use and whether it's up to date. When you add, replace or delete demos, maps, models or sounds, the viewer notices when you come back to the page and shows a summary like "3 new demos, 1 removed" with a **Refresh** button. Changes made between visits are picked up automatically when the page opens.
+
+Firefox, Safari and the claude.ai copy of the viewer can't keep folder access, so there you pick the folder on each visit (Chrome's prompt there says "upload", which is only its wording for picking a folder). The viewer still remembers the folder's name and its list of files, never their contents, so it can tell you what changed since last time.
 
 Custom maps work too, as long as the map's `.bsp` (and its `.wad` files if it uses any) are in `cstrike/maps` or `cstrike_downloads/maps`.
 
@@ -41,6 +43,7 @@ Custom maps work too, as long as the map's `.bsp` (and its `.wad` files if it us
 - Kill markers on the crosshair (kill, headshot, wallbang) and a death cam
 - Health, weapons, grenades, smokes, heatmaps, a hold-Tab scoreboard with spectators and the HLTV audience count
 - Old demos too. CS 1.6 recorded demos as protocol 47 until the update of 23 October 2008 ([announced](https://www.hltv.org/news/1779/cs-16-update-coming-soon) and [released](https://www.hltv.org/news/1787/cs-16-update-live) on HLTV.org). The Steam version only plays protocol 48, so it refuses those older demos unless they're converted. The viewer plays both as they are
+- Remembers your Half-Life folder between visits (Chrome and Edge) and tells you when demos, maps, models or sounds in it change
 - Breakable vents and windows disappear in 3D when they are shot out, and doors open and close as they did in the match (the wallbang finder uses where each door really was)
 
 ## Project layout

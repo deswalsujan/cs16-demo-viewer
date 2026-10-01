@@ -14,6 +14,28 @@ What changed in the viewer, newest first. The version shows in the viewer's shor
 - The sniper scope is rebuilt from the zoom click sounds, since HLTV demos don't record zoom (see 0.10.0). A click the recorder didn't hear would put the zoom one step off until the player's next weapon switch, death or round. Clicks are timed to about a tenth of a second.
 - Theatre mode switches on by itself only with the viewer's own full screen (F or the Full screen button). The browser's full screen (F11 on Windows, the green window button or Ctrl+Cmd+F on a Mac) doesn't tell the page, so press T there.
 - "Quality: auto" lowers 3D sharpness at most once per visit and doesn't raise it again on its own. Pick "Quality: high" to go back.
+- Keeping the Half-Life folder between visits works in Chrome and Edge (122 or later) on an https page such as GitHub Pages. Firefox and Safari don't have the browser feature it needs, and the claude.ai copy is an embedded page, where browsers don't allow it; those pick the folder on each visit. Whether it works in a copy of index.html opened from your own disk hasn't been checked yet.
+
+## 0.12.0 (2026-10-01)
+
+### Added
+- The viewer remembers your Half-Life folder between visits. In Chrome and Edge (122 or later) on an https page, pick it once; on the next visit Chrome asks once more, and choosing "Allow on every visit" means it opens by itself from then on ([Chrome's announcement](https://developer.chrome.com/blog/persistent-permissions-for-the-file-system-access-api)). The viewer only keeps the browser's permission to read the folder, plus the folder's name and its list of files (names, sizes and dates, never contents), in this browser.
+- A permanent "Half-Life folder" row on the start screen, in place of the old step 1. It shows the folder's name and its state:
+  - **Up to date.** When the page opens, anything that changed since your last visit is picked up straight away and listed ("Picked up since last time: 3 new demos, 1 removed").
+  - **Changes found.** Coming back to the page (at most every 30 seconds) or to the start screen (at most every 5 seconds), the viewer reads the folder again. If demos, maps, models, sounds, overviews or texture files were added, removed or replaced, it lists them and offers **Refresh**. While a demo is open, a short note says so too. Refreshing reloads any changed model, sound or the current map.
+  - **Reconnect,** when Chrome wants your OK again (you chose "Allow this time" last visit).
+  - Elsewhere (Firefox, Safari, the claude.ai copy), the row keeps the folder's name and asks you to choose it again for this visit; once chosen, it still says what changed since last time.
+- The "Choose Half-Life folder" buttons in the 3D view and the load summary become "Refresh Half-Life folder" when the folder is remembered.
+
+### Changed
+- Choosing or refreshing the folder now reads it afresh, so files deleted since the last pick drop out of the lists. Before, maps, models and sounds from an earlier pick stayed listed.
+
+### How it was tested
+`tests/folder_row_test.py`, 13 checks, all passed: first visit, picking the folder, changes found while the page is open (3 new demos, 1 removed, 1 model replaced) and Refresh, Reconnect on the next visit, the folder opening by itself on the visit after with its changes applied, the ordinary folder pick with its "since last time" summary, the name remembered for the next visit, and the page inside a frame from another site (like the claude.ai copy) falling back to the ordinary pick. Chrome's real folder picker and its prompts can't be operated in the headless test browser, so those checks use a stand-in for Chrome's folder access. To be checked by hand: the real prompts on GitHub Pages, and a downloaded index.html opened from disk.
+
+### Discussed, not changed
+- Changes found when the page opens are applied without a click (it's a fresh start anyway); changes found while it's open wait for Refresh, so the list doesn't shift under you. Agreed 1 Oct 2026.
+- GitHub Pages (https://deswalsujan.github.io/cs16-demo-viewer/) is live since 1 Oct 2026 and updates on every push, so the folder can be remembered without waiting for sujandeswal.com.
 
 ## 0.11.1 (2026-10-01)
 

@@ -60,6 +60,7 @@ Stand-alone checks:
 | `theatre_all_setups.sh` | The above for five setups: 14-inch and 13-inch MacBook (2x), Windows at 100%, 125% and 150% | about 45 minutes |
 | `theatre_side_panel_test.py`, `theatre_together_test.py` | The 0.9.1 and 0.9.2 checks: the side panel doesn't bring in the header; all panels come and go together | about 5 minutes each |
 | `start_screen_check.py` | Theatre and Full screen are greyed out before a demo is open (no Half-Life folder needed) | under a minute |
+| `folder_row_test.py` | The Half-Life folder row (0.12.0): first visit, up to date, changes found and Refresh, Reconnect, opening by itself on the next visit, the ordinary folder pick, and the page inside a frame from another site. Uses a stand-in for Chrome's folder access, since its picker and prompts can't be driven headless (no Half-Life folder needed) | about 1 minute |
 
 ## Demo data probes (Node)
 

@@ -7,7 +7,7 @@ Parked ideas and features we've discussed but not built yet. Each entry keeps en
 Item 1, smoother playback, is done (0.8.0; Smooth aim later removed in 0.10.0). Theatre mode (0.9.0 to 0.9.3), the sniper scope (0.10.0 and 0.10.1), See through walls and Team colours (0.11.0) were added along the way.
 
 2. **Requirements.** A "Requirements" section in the README: desktop, recent Chrome or Edge, WebGL, Steam CS 1.6; 8 GB RAM recommended for long demos; phones not supported; Firefox and Safari untested. Plus a one-line "needs your own copy of CS 1.6 on Steam" on the viewer's start screen.
-3. **Keep folder access between visits** ("Allow on every visit", Chrome 122+ File System Access API), so owners pick their Half-Life folder once. Details under "Remember the Half-Life folder between visits" below.
+3. **Keep folder access between visits.** Done in 0.12.0.
 4. **Next features, in order:**
    - **Opening duels and trades.** The first kill of each round (who, where, which side) and whether a death was traded, meaning a teammate got the killer back within a few seconds. Per player: opening kills, opening deaths, and how often their deaths were traded. One of the most-used stats in CS analysis, and the demo has everything needed.
    - **Buy type per round.** Full buy, force buy, eco or pistol round, worked out from the weapons each team holds just after freeze time. HLTV demos don't carry players' money, so it's an estimate from weapons, and armour isn't visible. It still explains most rounds at a glance.
@@ -21,14 +21,8 @@ Item 1, smoother playback, is done (0.8.0; Smooth aim later removed in 0.10.0). 
 
 ## Next up (raised 1 Oct 2026, after 0.11.0)
 
-Five points Sujan raised, with the recommendations so far. Confirm with Sujan before starting each. Point 1 (old protocol 47 demos) was done in 0.11.1.
+Five points Sujan raised, with the recommendations so far. Confirm with Sujan before starting each. Point 1 (old protocol 47 demos) was done in 0.11.1, point 2 (remember the Half-Life folder, with a folder row on the start screen) in 0.12.0.
 
-2. **Remember the Half-Life folder, with a folder field on the start screen.** Sujan picks the folder again on every visit, partly because each new version is downloaded from GitHub and opened as a local file. Plan:
-   - Keep the folder between visits with Chrome's folder access (File System Access API, "Allow on every visit", Chrome 122+). See "Remember the Half-Life folder between visits" below.
-   - A permanent folder field on the start screen showing the chosen folder's name (browsers show the name, never the full path), which doubles as the "pick your folder here" instruction.
-   - A status icon: "up to date" or "changes found". The viewer rescans the folder when you come back to the page (new or deleted demos, changed models or maps) and a click refreshes it.
-   - Dependency: it needs one stable https address. The claude.ai artifact blocks this kind of folder access, and a downloaded file opened from disk may not support it (to be checked by hand). GitHub Pages is live since 1 Oct 2026 at https://deswalsujan.github.io/cs16-demo-viewer/ and redeploys on every push to main, so Sujan opens that link instead of downloading new versions. It doesn't have to wait for sujandeswal.com. The current folder pick stays as the fallback.
-   - Agreed 1 Oct 2026: changes found when the page opens are applied automatically; changes found while the page is open show "Changes found" with a summary and a Refresh button.
 3. **"Reset view" seems to do nothing.** It only resets the 2D radar's zoom and pan, so in 3D it has no effect. Fix: in 3D, put the free camera back at its starting overview; in 2D keep what it does now.
 4. **Settings carrying over to a new demo** (0.25x speed and 3D view stayed). Recommendation: keep the viewing choices (2D, 3D or split, Names, Grenades, Kill lines, See through walls, Team colours, Quality), since those are preferences; reset playback to paused at 1x speed. The camera and followed player already reset.
 5. **Bullet marks (decals).** For seeing where a spray actually lands while the crosshair is pulled down against recoil.
@@ -106,5 +100,4 @@ Checked on two demos:
 - **1.6-era look** (parked, not urgent) as an optional theme: VGUI-style panels, Verdana/Tahoma, orange HUD numbers, sprites read from the player's own `cstrike/sprites`.
 - **Play cut-off demos up to where they end.** A demo that was cut off (interrupted download, crashed recording) currently can't be opened at all, because the file's index sits at the end. Reading it frame by frame from the start would recover everything up to the cut.
 - **Shaded lighting on player models** so they darken in shadowed areas like in-game.
-- **Remember the Half-Life folder between visits** (discussed 1 Oct 2026). Chrome's "Upload N files to this site?" prompt comes with every folder pick and the page can't skip it. Chrome's newer folder access (the File System Access API) can keep the folder and, after the first time, reopen it with a one-click "Allow on every visit". Chrome blocks it in embedded cross-site frames like the claude.ai artifact, so this fits the standalone copy (GitHub Pages or sujandeswal.com) and would keep the current folder pick as the fallback. It would also let the viewer notice added, changed or deleted files on its own.
 - **Left-hand option for first-person weapons** (discussed 1 Oct 2026). The viewer now shows weapons in the right hand like CS 1.6's default (cl_righthand 1). A toggle for people who play left-handed is a one-line change if anyone asks.
