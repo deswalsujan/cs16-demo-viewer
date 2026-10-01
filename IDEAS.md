@@ -4,7 +4,7 @@ Parked ideas and features we've discussed but not built yet. Each entry keeps en
 
 ## Roadmap (agreed 1 Oct 2026, in this order)
 
-Item 1, smoother playback, is done (0.8.0). Theatre mode was added along the way (0.9.0 to 0.9.2).
+Item 1, smoother playback, is done (0.8.0; Smooth aim later removed in 0.10.0). Theatre mode (0.9.0 to 0.9.3) and the sniper scope (0.10.0) were added along the way.
 
 2. **Requirements.** A "Requirements" section in the README: desktop, recent Chrome or Edge, WebGL, Steam CS 1.6; 8 GB RAM recommended for long demos; phones not supported; Firefox and Safari untested. Plus a one-line "needs your own copy of CS 1.6 on Steam" on the viewer's start screen.
 3. **Keep folder access between visits** ("Allow on every visit", Chrome 122+ File System Access API), so owners pick their Half-Life folder once. Details under "Remember the Half-Life folder between visits" below.
@@ -21,7 +21,8 @@ Item 1, smoother playback, is done (0.8.0). Theatre mode was added along the way
 
 ## Open decisions
 
-- **Keep or remove the "Smooth aim" button** (discussed 1 Oct 2026). Most of the smoothness in 0.8.0 comes from the curved in-between movement, which is always on. Smooth aim only softens fast flicks (biggest aim jolt 4.0° per frame with it, 6.4° without), and Sujan saw no difference at normal speed. Check fast flicks at 0.25x or 0.5x (an AWPer snapping onto someone, the moment a flick stops). If there's still no visible difference, keep the smoothing on and remove the button, since it adds clutter to the 3D bar.
+- **Quick-scope cut-off** (open since 1 Oct 2026). A sniper kill counts as a quick-scope when the player zoomed in at most 0.3 seconds before the shot (`QUICK_S` in `src/template.html`). 0.3 s is a first guess. Sujan will watch labelled kills (no-scopes and quick-scopes on Dust2 and Tuscan) and confirm or change it.
+- **How the game's own demo player shows the scope** (open since 1 Oct 2026). Sujan has seen the scope in HLTV demos in-game. The viewer rebuilds it from the zoom click sounds, because no zoom field could be found in the demo (checked on Dust2 and Tuscan). If the game shows the scope for these exact demos, it gets it from somewhere still unread, which would be more reliable than the clicks. Worth checking one AWP kill in-game against the viewer.
 
 ## Wallbang hits that didn't kill
 
@@ -73,6 +74,7 @@ Checked on two demos:
 - **Test suite.** Known answers per demo (final score, round count, zero read errors), wallbang ground truth checked in-game, break-it tests with corrupt files and nasty player names, scripted browser run-throughs, and a folder of custom model and sound packs that must load or fall back cleanly. Could run on every push through GitHub Actions. Verified results so far: WinFakt vs Check-Six Mirage 16-6, Na`Vi vs FX Dust2 16-11 (viewer shows 17-11, known quirk), M5 vs Na`Vi Mirage 16-9, and (1 Oct 2026, every round checked against the admin plugin's "Current score" messages) Fnatic vs ALTERNATE aTTaX Nuke 8-16, Fnatic vs mousesports Tuscan 15-15, mousesports vs AGAiN Inferno 16-11. The Dust2 and Mirage demos should be re-checked with 0.7.1, since round counting now also reads admin announcements. Lessons from testing 0.8.0 and 0.9.x (1 Oct 2026): the headless test browser draws 3D without a graphics chip, so it's slow, and checks that depend on timing (a bar hiding after 2 seconds) can fail there and pass on a real machine. Wait for the outcome instead of a fixed time, and confirm timing failures by hand before chasing them. One full Theatre mode run of 39 checks on five screen setups took about 45 minutes. The scripts used (smoothness and frame-time measurement, Theatre mode checks) live outside the repo so far and should be added to it when the test suite is built.
 - **Safety with custom and bad files.** Fall back to the simple figure when a model's skeleton or animations don't match stock CS, cap model and sound size, decode unusual WAVs through the browser, audit every place player names and demo text reach the page, and bail out of files with nonsense values.
 - **Privacy hardening for sujandeswal.com.** Self-host three.js and the fonts, and add a security header that blocks the page from sending data anywhere.
+- **Wallhack measure** (parked, from the "See through walls" discussion, 1 Oct 2026). Measure how long each player's crosshair stays on enemies hidden behind walls, compared with the same players in the open. A high share of time tracking hidden enemies is a sign admins could use alongside watching the view.
 - **Highlight finder** (parked, not urgent). 3Ks, 4Ks, aces, clutches and quick multi-kills, filterable by player and weapon.
 - **Record a clip** from the 3D view, with sound, to a video file.
 - **Bookmarks with notes**, exportable with the same timestamps as the wallbang list.

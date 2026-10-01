@@ -9,9 +9,26 @@ What changed in the viewer, newest first. The version shows in the viewer's shor
 - A demo that's cut off (interrupted download or recording) can't be opened at all yet, even though the part before the cut is readable. See [IDEAS.md](IDEAS.md).
 - Which rounds count is exact when the server's admin plugin announces "Live !" and the end of each half in chat. Demos without those messages fall back to a guess from the restarts, which can still count a warmup or miss a round.
 - Na`Vi vs FX on Dust2 shows 17-11 against the official 16-11, because the demo has an extra first-half round played by admin mistake. Not re-checked since 0.7.1.
-- HLTV demos store about ten snapshots a second, so everything between two snapshots is an estimate. A flick that starts and ends between snapshots can't be recovered, and a sharp turn can look slightly rounder than it was. Turn "Smooth aim" off to see the recorded aim without the extra smoothing.
+- HLTV demos store about ten snapshots a second, so everything between two snapshots is an estimate. A flick that starts and ends between snapshots can't be recovered, and a sharp turn can look slightly rounder than it was. The view always passes exactly through every recorded snapshot.
+- The sniper scope is rebuilt from the zoom click sounds, since HLTV demos don't record zoom (see 0.10.0). A click the recorder didn't hear would put the zoom one step off until the player's next weapon switch, death or round. Clicks are timed to about a tenth of a second.
 - Theatre mode switches on by itself only with the viewer's own full screen (F or the Full screen button). The browser's full screen (F11 on Windows, the green window button or Ctrl+Cmd+F on a Mac) doesn't tell the page, so press T there.
 - "Quality: auto" lowers 3D sharpness at most once per visit and doesn't raise it again on its own. Pick "Quality: high" to go back.
+
+## 0.10.0 (2026-10-01)
+
+### Added
+- Sniper scope in Player's eyes. When the player you follow zooms in with an AWP, Scout, G3SG1 or SG550, the view narrows to the game's zoom (AWP: 1x and 2x) and shows the scope: black around a round lens with crosshair lines across it, and no gun in hand.
+  - HLTV demos don't record zoom: the only zoom messages in the file are for the HLTV recorder itself, and none of the player fields the demo stores changes when someone zooms (checked on Tuscan: of the 766 zoom clicks, the closest-matching field lines up with just 1). What the demo does record is the zoom click sound the game plays on every right-click with a sniper rifle, with the time and the player. The scope is rebuilt from those clicks.
+  - The rules, as the game applies them and confirmed in the demos: each click steps the zoom (none, 1x, 2x, none). An AWP or Scout shot drops the zoom while the bolt cycles, and it comes back by itself at the same level: between consecutive AWP shots on Tuscan, 27 of 28 times there was no click and no weapon switch. Switching weapons drops the zoom: 18 of 19 single clicks between shots followed a weapon switch (the knife quick-switch). Dying and a new round drop it too.
+  - Checked against kills: 20 of 24 sniper kills on Dust2 and 48 of 60 on Tuscan have a zoom click by the killer in the 3 seconds before; the rest were zoomed in earlier than that.
+- No-scope and quick-scope labels on sniper kills, in the Kills list and on the crosshair kill marker. No-scope: not zoomed in when the shot was fired. Quick-scope: zoomed in at most 0.3 seconds before the shot (a first guess, open in [IDEAS.md](IDEAS.md) until checked against real kills). Clicks and shots are stamped to the demo's snapshots, about a tenth of a second apart, so a zoom-in and its shot can land in the same snapshot; the scope then shows for 0.1 seconds before the shot, so a quick-scope is visible instead of lasting zero frames, and the kill still counts as a quick-scope.
+
+### Removed
+- "Smooth aim". The whole story:
+  - **The problem.** HLTV demos store about ten snapshots a second (every 107 ms on the Na`Vi vs FX Dust2 demo). Up to 0.7.1 the viewer joined them with straight lines and didn't fill in up and down aim at all, so Player's eyes stuttered.
+  - **What 0.8.0 did.** Two things. First, movement and aim follow smooth curves that pass exactly through every recorded snapshot, up and down aim included, using evened-out snapshot times. Second, "Smooth aim" (on by default): the camera trailed the recorded aim by about 30 ms (an exponential lag with a 30 ms time constant), snapping straight to the aim after a jump of more than 0.3 seconds, a new player or a camera switch.
+  - **What each part was worth.** Over six 10-second stretches at 60 frames a second, aim jolts went from 691 (0.7.1) to 487 with the curves alone, and 465 with Smooth aim on top. The biggest jolt went from 15.1° to 6.4° with the curves, and 4.0° with Smooth aim. Up and down aim stopped freezing (3,124 frozen frames down to 80). So the curves did almost all the work, and Smooth aim only softened fast flicks. Sujan saw no difference at normal speed.
+  - **Why it was removed.** It's artificial: it shows the aim where it was about 30 ms ago, not where it was. During a fast flick of 300° a second, the crosshair sits about 9° behind the player's real aim, exactly at the moments that matter most here: judging a flick, a quick-scope or a suspicious lock-on through a wall. The curves stay, because they pass through every recorded snapshot exactly and only fill the gaps, which the old straight lines also had to guess. An accurate view beats a slightly smoother one, and the 3D bar has one button less.
 
 ## 0.9.3 (2026-10-01)
 
@@ -66,7 +83,7 @@ Two things found and fixed while testing: a bar that slid in under a mouse that 
 - Less work per frame: names are checked for being behind walls about ten times a second instead of every frame, grenades, smokes, kill lines and death marks are reused instead of rebuilt every frame, the timeline is drawn once and only the playhead moves, and the page no longer re-reads its font from the styles on every frame.
 
 ### Added
-- "Smooth aim" in the 3D bar (on by default): in Player's eyes the view trails the recorded aim by about 30 ms, which takes the edge off the jolts the snapshots still leave. It snaps straight to the aim after a jump in time, a new player or a camera switch. Turn it off to see the recorded aim exactly.
+- "Smooth aim" in the 3D bar (on by default; removed in 0.10.0, see there for why): in Player's eyes the view trails the recorded aim by about 30 ms, which takes the edge off the jolts the snapshots still leave. It snaps straight to the aim after a jump in time, a new player or a camera switch. Turn it off to see the recorded aim exactly.
 - "Quality" in the 3D bar: high draws the 3D view at the screen's full sharpness (up to 2x on Retina and other high-density screens), low draws fewer pixels than the screen for slower machines, and auto (the default) starts at high and steps down to 1x if the 3D view averages under 45 frames a second for a few seconds. The choice is remembered.
 
 ### How it was measured
@@ -85,7 +102,7 @@ Six 10-second stretches of the Na`Vi vs FX Dust2 demo (rounds 1, 4, 11, 15, 21 a
 With "Smooth aim" off, 0.8.0 still has 487 aim jolts and a biggest jolt of 6.4°; the curves do most of the work and Smooth aim takes off the rest. Frame times are from a headless browser that draws 3D in software, so only the before and after comparison means anything, not the numbers themselves.
 
 ### Discussed, not changed
-- Smooth aim made no visible difference at normal speed in Sujan's first look. It's meant to be subtle: it shows on fast flicks, best at 0.25x or 0.5x. Whether to keep the button is an open decision in [IDEAS.md](IDEAS.md).
+- Smooth aim made no visible difference at normal speed in Sujan's first look. It's meant to be subtle: it shows on fast flicks, best at 0.25x or 0.5x. Removed in 0.10.0: see there for the reasons.
 - How "Quality: auto" decides: it starts at the screen's full sharpness (2 screen pixels per point each way on a Retina Mac), counts frames every 3 seconds while the 3D view is showing, and if that's under 45 a second it drops once to 1 pixel per point and says so. It ignores one-off freezes and hidden tabs, never raises sharpness again by itself, and does nothing on a normal (non-Retina) screen. "Low" draws 0.75 pixels per point, which is why the gun looks soft there.
 
 ## 0.7.1 (2026-10-01)

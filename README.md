@@ -32,6 +32,7 @@ Custom maps work too, as long as the map's `.bsp` (and its `.wad` files if it us
 - Theatre mode (T): the view fills the window, and the controls slide back in when the mouse moves to the top, right or bottom edge. Full screen (F) uses it too
 - Real player and weapon models from your game files: legs run with the movement, the upper body aims where the player looks, shots and reloads animate, and bodies stay on the floor until the round ends
 - First-person weapons in Player's eyes view, animated from the demo: drawing, shooting, reloading, grenade throws and bomb plants
+- Sniper scope in Player's eyes (AWP, Scout, G3SG1, SG550), rebuilt from the zoom clicks the demo records, with no-scope and quick-scope labels on sniper kills
 - Sound from your game files: gunshots, footsteps, reloads, hits, grenades, bomb beeps and radio lines, quieter with distance and panned left or right (M to mute)
 - Timeline with kill ticks, wallbangs, bomb plants and pauses; speeds from 0.25x to 8x
 - Round list, kill list, and player stats split by T side, CT side and overtime. Warmups, knife rounds and cancelled starts are left out, using the server's own "Live" and end-of-half announcements when the demo has them

@@ -197,6 +197,7 @@ kbd { font-family: var(--f-mono); font-size: 11px; background: var(--panel-2); b
 .kw { color: var(--muted); font-family: var(--f-mono); font-size: 12px; margin-inline: 5px; }
 .khs { color: var(--kill); font-family: var(--f-mono); font-size: 11px; margin-left: 4px; }
 .kwb { color: var(--wb); font-family: var(--f-mono); font-size: 11px; margin-left: 4px; }
+.ksc { color: var(--sand); font-family: var(--f-mono); font-size: 11px; margin-left: 4px; }
 .sechead { padding: 10px 14px 6px; font-size: 11px; text-transform: uppercase; letter-spacing: .08em; color: var(--muted); display: flex; justify-content: space-between; gap: 8px; }
 .prow { grid-template-columns: minmax(0, 1fr) auto; }
 .prow.sel { box-shadow: inset 3px 0 0 var(--sand); background: var(--panel-2); }
@@ -355,7 +356,6 @@ body:has(.app.theatre) { overflow: hidden; }
       <button class="btn" id="bPrevP" type="button" title="Previous player (Z or right-click)">‹ Prev player</button>
       <button class="btn" id="bNextP" type="button" title="Next player (X or click)">Next player ›</button>
       <button class="btn on" id="tgModels" type="button" title="Real player models from your game files, or simple figures in team colours">Player models</button>
-      <button class="btn on" id="tgSmooth" type="button" title="Player's eyes: soften the small jolts between the demo's snapshots. Off shows the recorded aim exactly">Smooth aim</button>
       <select id="q3" aria-label="3D render quality" title="How sharp the 3D view is drawn. Auto starts sharp and steps down if playback can't keep up">
         <option value="auto">Quality: auto</option>
         <option value="high">Quality: high</option>
@@ -367,7 +367,7 @@ body:has(.app.theatre) { overflow: hidden; }
     <div class="overlay sumwrap" id="sumCard" hidden></div>
     <div class="overlay keys" id="keys" hidden>
       <div class="keys-card">
-        <div class="keys-head"><b>Shortcuts and kill markers</b><div class="kh-r"><span class="ver">Version 0.9.3 · <a href="https://github.com/deswalsujan/cs16-demo-viewer/blob/main/CHANGELOG.md" target="_blank" rel="noopener">What's new</a> · <a href="https://github.com/deswalsujan/cs16-demo-viewer/issues/new/choose" target="_blank" rel="noopener">Report a bug</a></span><button class="btn" id="bDebug" type="button" title="Copies details for a bug report: browser, demo name, what loaded, errors. No file contents.">Copy debug info</button><button class="btn" id="bKeysClose" type="button">Close</button></div></div>
+        <div class="keys-head"><b>Shortcuts and kill markers</b><div class="kh-r"><span class="ver">Version 0.10.0 · <a href="https://github.com/deswalsujan/cs16-demo-viewer/blob/main/CHANGELOG.md" target="_blank" rel="noopener">What's new</a> · <a href="https://github.com/deswalsujan/cs16-demo-viewer/issues/new/choose" target="_blank" rel="noopener">Report a bug</a></span><button class="btn" id="bDebug" type="button" title="Copies details for a bug report: browser, demo name, what loaded, errors. No file contents.">Copy debug info</button><button class="btn" id="bKeysClose" type="button">Close</button></div></div>
         <textarea class="dbgbox" id="dbgBox" readonly hidden aria-label="Debug info"></textarea>
         <div class="keys-grid">
           <section><h3>Playback</h3>
@@ -462,7 +462,7 @@ body:has(.app.theatre) { overflow: hidden; }
         <div class="drophint">Or drop a .dem file, or an overview .bmp and .txt pair, anywhere on this page</div>
         <div class="prog" id="prog" hidden><i id="progBar"></i></div>
         <div class="msg" id="msg"></div>
-        <div class="loadfoot"><span>Version 0.9.3</span><button class="btn" id="bClear" type="button" title="Deletes the maps, models, sounds and overviews this browser saved from your folder">Clear saved files</button></div>
+        <div class="loadfoot"><span>Version 0.10.0</span><button class="btn" id="bClear" type="button" title="Deletes the maps, models, sounds and overviews this browser saved from your folder">Clear saved files</button></div>
       </div>
     </div>
   </section>
@@ -1532,7 +1532,7 @@ let view = { s: 1, x: 0, y: 0 };
 let selected = null;     // selected player entity
 let scope = 'match';
 let tab = 'rounds';
-const opts = { names: true, nades: true, lines: true, xray: false, models: true, smoothAim: true };
+const opts = { names: true, nades: true, lines: true, xray: false, models: true };
 // kill moments that just happened, for the hit markers (timed in real seconds so they stay visible at any speed)
 const flashes = [];
 let prevT = null;
@@ -2083,6 +2083,97 @@ function derive() {
   M = { idxAt, pl, rounds, liveR, teams, teamOf, tnames, nades, bounds, reg, hasOT: liveR.some((r) => r.ot), personAt, slotOf, specs, wbs: [] };
 }
 
+// ---------------- sniper zoom ----------------
+// HLTV demos don't record whether a player is zoomed in. They do record the zoom click sound the game
+// plays on every right-click with a sniper rifle, with the time and the player, so the zoom is rebuilt
+// from those clicks, using the game's own rules (checked against the Tuscan and Dust2 demos):
+//   - each click steps the zoom: none -> 1x -> 2x -> none
+//   - an AWP or Scout shot drops the zoom while the bolt cycles, then it comes back by itself at the same level
+//   - switching weapons, dying and a new round drop the zoom
+// Clicks are stamped to the demo's snapshot, about a tenth of a second.
+const SNIPERS = {
+  awp: { fov: [90, 40, 10], bolt: 1.45 },
+  scout: { fov: [90, 40, 15], bolt: 1.25 },
+  g3sg1: { fov: [90, 40, 15], bolt: 0 },
+  sg550: { fov: [90, 40, 15], bolt: 0 },
+};
+// A kill counts as a quick-scope when the player zoomed in at most this long before the shot.
+// Open point: 0.3 s is a first guess, to be confirmed against real kills (see IDEAS.md).
+const QUICK_S = 0.3;
+// A zoom-in and its shot can land in the same snapshot; the scope then shows for this long before the
+// shot, and stays for this long after it, so the moment is visible instead of lasting zero frames.
+const SCOPE_MIN_SHOW = 0.1;
+let ZOOM = {}; // slot -> { pts: [time, level, ...], shots: [[time, level, zoomedInAt], ...] }
+function buildZoom() {
+  ZOOM = {};
+  if (!D || !M) return;
+  const zids = new Set(Object.keys(D.sounds || {}).filter((k) => /(^|\/)weapons\/zoom\.wav$/i.test(String(D.sounds[k]).replace(/\\/g, '/'))).map(Number));
+  const S = D.stride, times = D.times, ev = [];
+  // order at the same moment: reset (0), weapon change (1), click (2), shot (3)
+  const sn = D.snds || [];
+  for (let i = 0; i < sn.length; i += 10) if (zids.has(sn[i + 1])) ev.push([sn[i], sn[i + 2], 2]);
+  const sh = D.shots || [];
+  for (let i = 0; i < sh.length; i += 4) { const n = eventName(sh[i + 2]); if (SNIPERS[n]) ev.push([sh[i], sh[i + 1], 3, n]); }
+  for (const e in D.slots) {
+    const a = D.slots[e]; let w = -1, alive = false;
+    for (let i = 0; i < times.length; i++) {
+      const wi = a[i * S + 6], st = a[i * S + 5];
+      if (wi !== w) { w = wi; ev.push([times[i], +e, 1, weaponShort(D.models[wi])]); }
+      if ((st > 0) !== alive) { alive = st > 0; if (!alive) ev.push([times[i], +e, 0]); }
+    }
+    for (const r of M.rounds) ev.push([r.start, +e, 0]);
+  }
+  ev.sort((x, y) => x[0] - y[0] || x[2] - y[2]);
+  const st = {};
+  for (const [t, e, kind, extra] of ev) {
+    const z = st[e] || (st[e] = { lvl: 0, w: '', resumeAt: null, resumeLvl: 0, inAt: null, inIdx: -1 });
+    const Z = ZOOM[e] || (ZOOM[e] = { pts: [], shots: [] });
+    const set = (time, lvl) => { if (lvl === z.lvl) return; z.lvl = lvl; Z.pts.push(time, lvl); };
+    if (z.resumeAt != null && z.resumeAt <= t) { set(z.resumeAt, z.resumeLvl); z.resumeAt = null; z.inAt = null; }
+    if (kind === 0) { set(t, 0); z.resumeAt = null; z.inAt = null; }
+    else if (kind === 1) { z.w = extra; set(t, 0); z.resumeAt = null; z.inAt = null; }
+    else if (kind === 2) {
+      if (!SNIPERS[z.w]) continue;
+      let base = z.lvl;
+      if (z.resumeAt != null) { base = z.resumeLvl; z.resumeAt = null; }
+      const next = (base + 1) % 3;
+      if (base === 0 && next > 0) { z.inAt = t; z.inIdx = Z.pts.length; } else if (next === 0) z.inAt = null;
+      set(t, next);
+    } else {
+      const W = SNIPERS[extra]; if (!W) continue;
+      Z.shots.push([t, z.lvl, z.inAt]);
+      if (z.lvl > 0) {
+        // a zoom-in in the same snapshot as the shot: show the scope a moment before the shot
+        if (z.inAt != null && t - z.inAt < SCOPE_MIN_SHOW && Z.pts[z.inIdx] === z.inAt) {
+          const prev = z.inIdx >= 2 ? Z.pts[z.inIdx - 2] : -Infinity;
+          Z.pts[z.inIdx] = Math.max(prev + 0.001, t - SCOPE_MIN_SHOW);
+        }
+        if (W.bolt) { z.resumeLvl = z.lvl; z.resumeAt = t + W.bolt; set(t + SCOPE_MIN_SHOW, 0); z.inAt = null; }
+      }
+    }
+  }
+  for (const e in st) { const z = st[e]; if (z.resumeAt != null) { ZOOM[e].pts.push(z.resumeAt, z.resumeLvl); } }
+  // label sniper kills: no-scope, quick-scope or scoped
+  for (const k of D.kills) {
+    k.scope = null;
+    if (!SNIPERS[k.weapon] || k.killer === k.victim) continue;
+    const Z = ZOOM[k.killer]; if (!Z) continue;
+    let shot = null;
+    for (let i = Z.shots.length - 1; i >= 0; i--) { const x = Z.shots[i]; if (x[0] <= k.t + 0.05) { if (x[0] >= k.t - 0.3) shot = x; break; } }
+    const lvl = shot ? shot[1] : zoomLevel(k.killer, k.t);
+    const kind = !lvl ? 'no' : shot && shot[2] != null && shot[0] - shot[2] <= QUICK_S ? 'quick' : 'scoped';
+    k.scope = { kind, lvl };
+  }
+}
+// zoom level (0 none, 1, 2) of a player at time t
+function zoomLevel(e, t) {
+  const Z = ZOOM[e]; if (!Z || !Z.pts.length) return 0;
+  const p = Z.pts; let lo = 0, hi = p.length / 2 - 1, r = -1;
+  while (lo <= hi) { const m = (lo + hi) >> 1; if (p[m * 2] <= t) { r = m; lo = m + 1; } else hi = m - 1; }
+  return r < 0 ? 0 : p[r * 2 + 1];
+}
+const scopeTag = (k) => k.scope && k.scope.kind !== 'scoped' ? (k.scope.kind === 'no' ? 'NO-SCOPE' : 'QUICK-SCOPE') : '';
+
 // Player health over time (HLTV sends it to spectators whenever it changes)
 let hpIdx = null;
 function buildHp() {
@@ -2257,7 +2348,7 @@ async function onDemo() {
   heat = null; $('hmMode').value = 'off';
   afterOverview(ok, true);
   M.wbs = [];
-  buildHp(); buildBrk(); buildPose(); prepAnim();
+  buildHp(); buildBrk(); buildPose(); prepAnim(); buildZoom();
   const sndDone = preloadSounds();
   renderPane(); fitView(); drawTimeline(); updateHud(true);
   if (MAP && MAP.name === D.mapName.toLowerCase()) computeWallbangs();
@@ -2315,7 +2406,7 @@ function killHtml(k) {
   const ks = k.kteam === 'TERRORIST' ? 1 : k.kteam === 'CT' ? 2 : 0;
   const vs = k.vteam === 'TERRORIST' ? 1 : k.vteam === 'CT' ? 2 : 0;
   if (k.killer === k.victim || !k.kp) return `${nameHtml(k.vp, vs)}<span class="kw">${esc(k.weapon || 'suicide')}</span>`;
-  return `${nameHtml(k.kp, ks)}<span class="kw">${esc(k.weapon)}</span>${nameHtml(k.vp, vs)}${k.hs ? '<span class="khs">HS</span>' : ''}${k.wb ? `<span class="kwb" title="Every line of sight passed through ${k.wb.thick} units of ${k.wb.what}">WB ${k.wb.thick}u</span>` : ''}`;
+  return `${nameHtml(k.kp, ks)}<span class="kw">${esc(k.weapon)}</span>${nameHtml(k.vp, vs)}${k.hs ? '<span class="khs">HS</span>' : ''}${scopeTag(k) ? `<span class="ksc" title="${k.scope.kind === 'no' ? 'Not zoomed in when the shot was fired' : 'Zoomed in less than ' + QUICK_S + ' s before the shot'}">${scopeTag(k)}</span>` : ''}${k.wb ? `<span class="kwb" title="Every line of sight passed through ${k.wb.thick} units of ${k.wb.what}">WB ${k.wb.thick}u</span>` : ''}`;
 }
 function renderPane() {
   if (!D) return;
@@ -4246,20 +4337,10 @@ function update3() {
       if (cam3.mode === 'eyes') {
         // CS 1.6 uses a 90 degree horizontal field of view
         camera.fov = 2 * Math.atan(Math.tan(Math.PI / 4) / camera.aspect) * 180 / Math.PI;
-        // light smoothing of the aim: the view trails the recorded aim by about 30 ms, which takes the
-        // edge off the few jolts the snapshots still leave. It snaps straight to the aim after a jump
-        // in time, a new player or a camera switch, and can be turned off ("Smooth aim").
-        let yaw = s.yaw, pitch = s.pitch;
-        if (opts.smoothAim) {
-          const fresh = cam3.eFor !== selected || cam3.eMode !== cam3.mode || cam3.eT == null || Math.abs(T - cam3.eT) > 0.3;
-          if (fresh) { cam3.eYaw = yaw; cam3.ePitch = pitch; }
-          else {
-            const k = 1 - Math.exp(-dt / 0.03);
-            cam3.eYaw += wrap180(yaw - cam3.eYaw) * k; cam3.ePitch += (pitch - cam3.ePitch) * k;
-            yaw = cam3.eYaw; pitch = cam3.ePitch;
-          }
-          cam3.eFor = selected; cam3.eMode = cam3.mode; cam3.eT = T;
-        }
+        // zoomed in with a sniper rifle: narrower view, like the game's scope
+        const zl = zoomLevel(selected, T), zw = SNIPERS[weaponShort(s.weapon)];
+        if (zl && zw) camera.fov = 2 * Math.atan(Math.tan(zw.fov[zl] * Math.PI / 360) / camera.aspect) * 180 / Math.PI;
+        const yaw = s.yaw, pitch = s.pitch;
         placeCam([s.x, s.y, s.z + (s.duck ? 12 : 17)], yaw, pitch);
       } else {
         camera.fov = 70;
@@ -4312,7 +4393,9 @@ function update3() {
   }
   camera.updateProjectionMatrix();
   renderer.render(R3.scene, camera);
-  if (cam3.mode === 'eyes' && selected) drawViewModel(renderer, camera, selected, playerState(selected, T));
+  // the gun in hand isn't shown while looking through the scope, as in the game
+  const scoped = cam3.mode === 'eyes' && selected && zoomLevel(selected, T) > 0 && (() => { const ss = playerState(selected, T); return ss && ss.state > 0 && SNIPERS[weaponShort(ss.weapon)]; })();
+  if (cam3.mode === 'eyes' && selected && !scoped) drawViewModel(renderer, camera, selected, playerState(selected, T));
 
   // name labels on a 2D overlay
   const lc = $('lbl'), lx = lc.getContext('2d');
@@ -4360,8 +4443,9 @@ function update3() {
     pov.hidden = false; pov.classList.remove("dead");
     const hpv = hpAt(selected, T);
     pov.innerHTML = `<span class="${s.state === 1 ? 'kt' : 'kct'}">${esc(nameAt(selected, T))}</span>${hpv != null ? ` <b>(${hpv})</b>` : ''}<span class="kw">${esc(weaponShort(s.weapon))}</span>`;
+    if (scoped) drawScope(lx, W, H);
     if (cam3.mode === 'eyes') drawHitMarker(lx, W / 2, H / 2);
-    if (cam3.mode === 'eyes') { lx.strokeStyle = 'rgba(90,255,90,.85)'; lx.lineWidth = 1.5; const cx = W / 2, cy = H / 2; lx.beginPath(); lx.moveTo(cx - 12, cy); lx.lineTo(cx - 4, cy); lx.moveTo(cx + 4, cy); lx.lineTo(cx + 12, cy); lx.moveTo(cx, cy - 12); lx.lineTo(cx, cy - 4); lx.moveTo(cx, cy + 4); lx.lineTo(cx, cy + 12); lx.stroke(); }
+    if (cam3.mode === 'eyes' && !scoped) { lx.strokeStyle = 'rgba(90,255,90,.85)'; lx.lineWidth = 1.5; const cx = W / 2, cy = H / 2; lx.beginPath(); lx.moveTo(cx - 12, cy); lx.lineTo(cx - 4, cy); lx.moveTo(cx + 4, cy); lx.lineTo(cx + 12, cy); lx.moveTo(cx, cy - 12); lx.lineTo(cx, cy - 4); lx.moveTo(cx, cy + 4); lx.lineTo(cx, cy + 12); lx.stroke(); }
   } else if (cam3.mode !== 'free' && selected) {
     const death = D.kills.filter((k) => k.victim === selected && k.t <= T + 0.05).pop();
     if (death) {
@@ -4407,9 +4491,21 @@ function drawHitMarker(lx, cx, cy) {
     // wallbang: a square frame around the strokes, i.e. "through something"
     if (k.wb) { const q = g1 + 4; lx.lineWidth = w === 5 ? 4 : 1.5; lx.strokeRect(cx - q, cy - q, q * 2, q * 2); }
   }
-  const label = k.wb ? `WALLBANG · ${k.wb.thick}u${k.hs ? ' · HS' : ''}` : k.hs ? 'HEADSHOT' : 'KILL';
+  const sc = scopeTag(k);
+  const label = (k.wb ? `WALLBANG · ${k.wb.thick}u${k.hs ? ' · HS' : ''}` : k.hs ? 'HEADSHOT' : 'KILL') + (sc ? ' · ' + sc : '');
   lx.font = `600 11px ${monoFont()}`; lx.textAlign = 'center';
   lx.lineWidth = 3; lx.strokeStyle = 'rgba(0,0,0,.7)'; lx.strokeText(label, cx, cy + 42); lx.fillStyle = col; lx.fillText(label, cx, cy + 42);
+  lx.restore();
+}
+// The sniper scope over Player's eyes: black around a round lens, with thin crosshair lines across it
+function drawScope(lx, W, H) {
+  const cx = W / 2, cy = H / 2, r = Math.min(W, H) * 0.46;
+  lx.save();
+  lx.fillStyle = '#000';
+  lx.beginPath(); lx.rect(0, 0, W, H); lx.arc(cx, cy, r, 0, Math.PI * 2, true); lx.fill('evenodd');
+  lx.strokeStyle = '#000'; lx.lineWidth = 1.5;
+  lx.beginPath(); lx.moveTo(cx - r, cy); lx.lineTo(cx + r, cy); lx.moveTo(cx, cy - r); lx.lineTo(cx, cy + r); lx.stroke();
+  lx.lineWidth = 2; lx.beginPath(); lx.arc(cx, cy, r, 0, Math.PI * 2); lx.stroke();
   lx.restore();
 }
 // A ring that bursts out from the victim in 3D, for every kill
@@ -4469,8 +4565,7 @@ setMsg('');
 setControls(false);
 $('tgModels').onclick = () => { opts.models = !opts.models; $('tgModels').classList.toggle('on', opts.models); ls.set('models', opts.models); };
 if (ls.get('models') === false) { opts.models = false; $('tgModels').classList.remove('on'); }
-$('tgSmooth').onclick = () => { opts.smoothAim = !opts.smoothAim; $('tgSmooth').classList.toggle('on', opts.smoothAim); ls.set('smoothAim', opts.smoothAim); };
-if (ls.get('smoothAim') === false) { opts.smoothAim = false; $('tgSmooth').classList.remove('on'); }
+ls.set('smoothAim', null); // Smooth aim was removed in 0.10.0: forget the old setting
 $('q3').value = ['auto', 'high', 'low'].includes(ls.get('quality')) ? ls.get('quality') : 'auto';
 $('q3').onchange = () => { ls.set('quality', $('q3').value); applyQuality(true); };
 if (document.fonts) document.fonts.ready.then(() => { tlCache.key = ''; });
@@ -4712,7 +4807,7 @@ window.addEventListener('unhandledrejection', (e) => { ERRLOG.push('Promise: ' +
 function debugInfo() {
   let gpu = '';
   try { const gl = document.createElement('canvas').getContext('webgl'); const x = gl && gl.getExtension('WEBGL_debug_renderer_info'); gpu = gl ? (x ? gl.getParameter(x.UNMASKED_RENDERER_WEBGL) : 'WebGL available') : 'no WebGL'; } catch (e) { gpu = 'unknown'; }
-  const L = [`CS 1.6 Demo Viewer 0.9.3`, `Browser: ${navigator.userAgent}`, `Screen: ${screen.width}x${screen.height} at ${devicePixelRatio}x, window ${innerWidth}x${innerHeight}`, `Graphics: ${gpu}`];
+  const L = [`CS 1.6 Demo Viewer 0.10.0`, `Browser: ${navigator.userAgent}`, `Screen: ${screen.width}x${screen.height} at ${devicePixelRatio}x, window ${innerWidth}x${innerHeight}`, `Graphics: ${gpu}`];
   L.push(`Folder: ${Object.keys(files.maps).length} maps, ${Object.keys(files.overviews).length} overviews, ${Object.keys(files.mdl).length} models, ${Object.keys(files.snd).length} sounds, ${files.demos.length} demos`);
   if (D) {
     L.push(`Demo: ${D.fileName}, map ${D.mapName}, length ${fmt(D.end - D.start)}, ${M.liveR.length} live rounds, final ${M.liveR.length ? M.liveR[M.liveR.length - 1].scoreAfter.join(':') : '-'}`);

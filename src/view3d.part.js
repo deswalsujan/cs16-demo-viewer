@@ -393,20 +393,10 @@ function update3() {
       if (cam3.mode === 'eyes') {
         // CS 1.6 uses a 90 degree horizontal field of view
         camera.fov = 2 * Math.atan(Math.tan(Math.PI / 4) / camera.aspect) * 180 / Math.PI;
-        // light smoothing of the aim: the view trails the recorded aim by about 30 ms, which takes the
-        // edge off the few jolts the snapshots still leave. It snaps straight to the aim after a jump
-        // in time, a new player or a camera switch, and can be turned off ("Smooth aim").
-        let yaw = s.yaw, pitch = s.pitch;
-        if (opts.smoothAim) {
-          const fresh = cam3.eFor !== selected || cam3.eMode !== cam3.mode || cam3.eT == null || Math.abs(T - cam3.eT) > 0.3;
-          if (fresh) { cam3.eYaw = yaw; cam3.ePitch = pitch; }
-          else {
-            const k = 1 - Math.exp(-dt / 0.03);
-            cam3.eYaw += wrap180(yaw - cam3.eYaw) * k; cam3.ePitch += (pitch - cam3.ePitch) * k;
-            yaw = cam3.eYaw; pitch = cam3.ePitch;
-          }
-          cam3.eFor = selected; cam3.eMode = cam3.mode; cam3.eT = T;
-        }
+        // zoomed in with a sniper rifle: narrower view, like the game's scope
+        const zl = zoomLevel(selected, T), zw = SNIPERS[weaponShort(s.weapon)];
+        if (zl && zw) camera.fov = 2 * Math.atan(Math.tan(zw.fov[zl] * Math.PI / 360) / camera.aspect) * 180 / Math.PI;
+        const yaw = s.yaw, pitch = s.pitch;
         placeCam([s.x, s.y, s.z + (s.duck ? 12 : 17)], yaw, pitch);
       } else {
         camera.fov = 70;
@@ -459,7 +449,9 @@ function update3() {
   }
   camera.updateProjectionMatrix();
   renderer.render(R3.scene, camera);
-  if (cam3.mode === 'eyes' && selected) drawViewModel(renderer, camera, selected, playerState(selected, T));
+  // the gun in hand isn't shown while looking through the scope, as in the game
+  const scoped = cam3.mode === 'eyes' && selected && zoomLevel(selected, T) > 0 && (() => { const ss = playerState(selected, T); return ss && ss.state > 0 && SNIPERS[weaponShort(ss.weapon)]; })();
+  if (cam3.mode === 'eyes' && selected && !scoped) drawViewModel(renderer, camera, selected, playerState(selected, T));
 
   // name labels on a 2D overlay
   const lc = $('lbl'), lx = lc.getContext('2d');
@@ -507,8 +499,9 @@ function update3() {
     pov.hidden = false; pov.classList.remove("dead");
     const hpv = hpAt(selected, T);
     pov.innerHTML = `<span class="${s.state === 1 ? 'kt' : 'kct'}">${esc(nameAt(selected, T))}</span>${hpv != null ? ` <b>(${hpv})</b>` : ''}<span class="kw">${esc(weaponShort(s.weapon))}</span>`;
+    if (scoped) drawScope(lx, W, H);
     if (cam3.mode === 'eyes') drawHitMarker(lx, W / 2, H / 2);
-    if (cam3.mode === 'eyes') { lx.strokeStyle = 'rgba(90,255,90,.85)'; lx.lineWidth = 1.5; const cx = W / 2, cy = H / 2; lx.beginPath(); lx.moveTo(cx - 12, cy); lx.lineTo(cx - 4, cy); lx.moveTo(cx + 4, cy); lx.lineTo(cx + 12, cy); lx.moveTo(cx, cy - 12); lx.lineTo(cx, cy - 4); lx.moveTo(cx, cy + 4); lx.lineTo(cx, cy + 12); lx.stroke(); }
+    if (cam3.mode === 'eyes' && !scoped) { lx.strokeStyle = 'rgba(90,255,90,.85)'; lx.lineWidth = 1.5; const cx = W / 2, cy = H / 2; lx.beginPath(); lx.moveTo(cx - 12, cy); lx.lineTo(cx - 4, cy); lx.moveTo(cx + 4, cy); lx.lineTo(cx + 12, cy); lx.moveTo(cx, cy - 12); lx.lineTo(cx, cy - 4); lx.moveTo(cx, cy + 4); lx.lineTo(cx, cy + 12); lx.stroke(); }
   } else if (cam3.mode !== 'free' && selected) {
     const death = D.kills.filter((k) => k.victim === selected && k.t <= T + 0.05).pop();
     if (death) {
@@ -554,9 +547,21 @@ function drawHitMarker(lx, cx, cy) {
     // wallbang: a square frame around the strokes, i.e. "through something"
     if (k.wb) { const q = g1 + 4; lx.lineWidth = w === 5 ? 4 : 1.5; lx.strokeRect(cx - q, cy - q, q * 2, q * 2); }
   }
-  const label = k.wb ? `WALLBANG · ${k.wb.thick}u${k.hs ? ' · HS' : ''}` : k.hs ? 'HEADSHOT' : 'KILL';
+  const sc = scopeTag(k);
+  const label = (k.wb ? `WALLBANG · ${k.wb.thick}u${k.hs ? ' · HS' : ''}` : k.hs ? 'HEADSHOT' : 'KILL') + (sc ? ' · ' + sc : '');
   lx.font = `600 11px ${monoFont()}`; lx.textAlign = 'center';
   lx.lineWidth = 3; lx.strokeStyle = 'rgba(0,0,0,.7)'; lx.strokeText(label, cx, cy + 42); lx.fillStyle = col; lx.fillText(label, cx, cy + 42);
+  lx.restore();
+}
+// The sniper scope over Player's eyes: black around a round lens, with thin crosshair lines across it
+function drawScope(lx, W, H) {
+  const cx = W / 2, cy = H / 2, r = Math.min(W, H) * 0.46;
+  lx.save();
+  lx.fillStyle = '#000';
+  lx.beginPath(); lx.rect(0, 0, W, H); lx.arc(cx, cy, r, 0, Math.PI * 2, true); lx.fill('evenodd');
+  lx.strokeStyle = '#000'; lx.lineWidth = 1.5;
+  lx.beginPath(); lx.moveTo(cx - r, cy); lx.lineTo(cx + r, cy); lx.moveTo(cx, cy - r); lx.lineTo(cx, cy + r); lx.stroke();
+  lx.lineWidth = 2; lx.beginPath(); lx.arc(cx, cy, r, 0, Math.PI * 2); lx.stroke();
   lx.restore();
 }
 // A ring that bursts out from the victim in 3D, for every kill
