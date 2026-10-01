@@ -30,7 +30,8 @@ Custom maps work too, as long as the map's `.bsp` (and its `.wad` files if it us
 - Cameras: free fly, player's eyes, behind the player. Movement and aim are filled in smoothly between the demo's snapshots (HLTV stores about ten a second)
 - Quality setting for the 3D view (auto, high, low) for slower machines
 - Theatre mode (T): the view fills the window, and the controls slide back in when the mouse moves to the top, right or bottom edge. Full screen (F) uses it too
-- Real player and weapon models from your game files: legs run with the movement, the upper body aims where the player looks, shots and reloads animate, and bodies stay on the floor until the round ends
+- Real player and weapon models from your game files: legs run with the movement, the upper body aims where the player looks, shots and reloads animate, and bodies stay on the floor until the round ends. Team colours (red and blue) on request; simple figures stand in when a model file is missing
+- See through walls (H): players behind walls drawn through them in their team colour, with their names, for checking suspected wallhackers
 - First-person weapons in Player's eyes view, animated from the demo: drawing, shooting, reloading, grenade throws and bomb plants
 - Sniper scope in Player's eyes (AWP, Scout, G3SG1, SG550), as it looks in the game, rebuilt from the zoom clicks the demo records
 - Sound from your game files: gunshots, footsteps, reloads, hits, grenades, bomb beeps and radio lines, quieter with distance and panned left or right (M to mute)

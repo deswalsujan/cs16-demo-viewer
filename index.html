@@ -354,7 +354,7 @@ body:has(.app.theatre) { overflow: hidden; }
       <button class="btn" data-c="chase" type="button">Behind player</button>
       <button class="btn" id="bPrevP" type="button" title="Previous player (Z or right-click)">‹ Prev player</button>
       <button class="btn" id="bNextP" type="button" title="Next player (X or click)">Next player ›</button>
-      <button class="btn on" id="tgModels" type="button" title="Real player models from your game files, or simple figures in team colours">Player models</button>
+      <button class="btn" id="tgModels" type="button" title="Draw the players in flat team colours: red for Terrorists, blue for Counter-Terrorists">Team colours</button>
       <select id="q3" aria-label="3D render quality" title="How sharp the 3D view is drawn. Auto starts sharp and steps down if playback can't keep up">
         <option value="auto">Quality: auto</option>
         <option value="high">Quality: high</option>
@@ -366,7 +366,7 @@ body:has(.app.theatre) { overflow: hidden; }
     <div class="overlay sumwrap" id="sumCard" hidden></div>
     <div class="overlay keys" id="keys" hidden>
       <div class="keys-card">
-        <div class="keys-head"><b>Shortcuts and kill markers</b><div class="kh-r"><span class="ver">Version 0.10.1 · <a href="https://github.com/deswalsujan/cs16-demo-viewer/blob/main/CHANGELOG.md" target="_blank" rel="noopener">What's new</a> · <a href="https://github.com/deswalsujan/cs16-demo-viewer/issues/new/choose" target="_blank" rel="noopener">Report a bug</a></span><button class="btn" id="bDebug" type="button" title="Copies details for a bug report: browser, demo name, what loaded, errors. No file contents.">Copy debug info</button><button class="btn" id="bKeysClose" type="button">Close</button></div></div>
+        <div class="keys-head"><b>Shortcuts and kill markers</b><div class="kh-r"><span class="ver">Version 0.11.0 · <a href="https://github.com/deswalsujan/cs16-demo-viewer/blob/main/CHANGELOG.md" target="_blank" rel="noopener">What's new</a> · <a href="https://github.com/deswalsujan/cs16-demo-viewer/issues/new/choose" target="_blank" rel="noopener">Report a bug</a></span><button class="btn" id="bDebug" type="button" title="Copies details for a bug report: browser, demo name, what loaded, errors. No file contents.">Copy debug info</button><button class="btn" id="bKeysClose" type="button">Close</button></div></div>
         <textarea class="dbgbox" id="dbgBox" readonly hidden aria-label="Debug info"></textarea>
         <div class="keys-grid">
           <section><h3>Playback</h3>
@@ -383,7 +383,7 @@ body:has(.app.theatre) { overflow: hidden; }
             <dt><kbd>1</kbd> … <kbd>0</kbd></dt><dd>Jump to a player, in scoreboard order</dd>
             <dt>Hold <kbd>Tab</kbd></dt><dd>Scoreboard</dd>
             <dt><kbd>N</kbd></dt><dd>Show or hide names</dd>
-            <dt><kbd>H</kbd></dt><dd>Names through walls on or off (3D)</dd>
+            <dt><kbd>H</kbd></dt><dd>See through walls on or off: players behind walls, and their names, drawn on top of the walls (3D)</dd>
             <dt><kbd>M</kbd></dt><dd>Sound on or off</dd>
             <dt><kbd>F</kbd></dt><dd>Full screen on or off (full screen uses Theatre mode)</dd>
             <dt><kbd>T</kbd></dt><dd>Theatre mode on or off: the view fills the window, and all the controls slide in when the mouse moves to the top, right or bottom edge</dd></dl>
@@ -420,7 +420,7 @@ body:has(.app.theatre) { overflow: hidden; }
       <button class="btn on" id="tgNames" type="button">Names</button>
       <button class="btn on" id="tgNades" type="button">Grenades</button>
       <button class="btn on" id="tgLines" type="button">Kill lines</button>
-      <button class="btn" id="tgXray" type="button" title="Show names through walls in 3D (H)">Names through walls</button>
+      <button class="btn" id="tgXray" type="button" title="Show players behind walls, and their names, in 3D (H)">See through walls</button>
       <button class="btn" id="tgFit" type="button">Reset view</button>
     </div>
     <div class="heatbar" id="heatbar" hidden>
@@ -461,7 +461,7 @@ body:has(.app.theatre) { overflow: hidden; }
         <div class="drophint">Or drop a .dem file, or an overview .bmp and .txt pair, anywhere on this page</div>
         <div class="prog" id="prog" hidden><i id="progBar"></i></div>
         <div class="msg" id="msg"></div>
-        <div class="loadfoot"><span>Version 0.10.1</span><button class="btn" id="bClear" type="button" title="Deletes the maps, models, sounds and overviews this browser saved from your folder">Clear saved files</button></div>
+        <div class="loadfoot"><span>Version 0.11.0</span><button class="btn" id="bClear" type="button" title="Deletes the maps, models, sounds and overviews this browser saved from your folder">Clear saved files</button></div>
       </div>
     </div>
   </section>
@@ -1531,7 +1531,7 @@ let view = { s: 1, x: 0, y: 0 };
 let selected = null;     // selected player entity
 let scope = 'match';
 let tab = 'rounds';
-const opts = { names: true, nades: true, lines: true, xray: false, models: true };
+const opts = { names: true, nades: true, lines: true, xray: false, teamColours: false };
 // kill moments that just happened, for the hit markers (timed in real seconds so they stay visible at any speed)
 const flashes = [];
 let prevT = null;
@@ -2678,9 +2678,7 @@ function pickPlayer(e) {
 }
 
 function toggleOpt(k, id) {
-  if (k === 'xray' && !opts.names) return; // only meaningful while names are shown
   opts[k] = !opts[k]; $(id).classList.toggle('on', opts[k]);
-  if (k === 'names') { $('tgXray').disabled = !opts.names; $('tgXray').title = opts.names ? 'Show names through walls in 3D (H)' : 'Turn Names on to use this'; }
 }
 // Jump to a moment before a kill and watch it through the shooter's eyes (in 3D)
 function watchKill(k, before) {
@@ -3691,7 +3689,7 @@ function makeRig(M, parent) {
       const t = mdl.textures[me.tex];
       const mat = new THREE.MeshLambertMaterial({ map: M.tex[me.tex] || null, side: THREE.DoubleSide, alphaTest: t && (t.flags & 64) ? 0.5 : 0 });
       const mesh = new THREE.Mesh(geo, mat); mesh.frustumCulled = false;
-      g.add(mesh); parts.push({ me, pos, nrm, mat });
+      g.add(mesh); parts.push({ me, pos, nrm, mat, mesh, map0: mat.map });
     }
   }
   (parent || R3.dyn).add(g);
@@ -3826,11 +3824,33 @@ function endRigs() { for (const k in R3.rigs) if (!R3.rigs[k].used) R3.rigs[k].g
 function clearRigs() { if (!R3 || !R3.rigs) return; for (const k in R3.rigs) disposeRig(R3.rigs[k]); R3.rigs = {}; }
 
 const SEL_TINT = 0x5a4a22;
+// "Team colours": real models drawn in flat red (Terrorists) or blue (Counter-Terrorists), shading kept
+const TEAM_SKIN = { 1: 0xc42a1e, 2: 0x3462dc }; // clearly red and blue in sun and shade (the selected player also gets the sand highlight)
+function colourRig(r, team) {
+  const key = opts.teamColours && TEAM_SKIN[team] ? team : 0;
+  if (r.colourKey === key) return;
+  r.colourKey = key;
+  for (const pt of r.parts) { pt.mat.map = key ? null : pt.map0; pt.mat.color.setHex(key ? TEAM_SKIN[key] : 0xffffff); pt.mat.needsUpdate = true; }
+}
+// "See through walls": a see-through copy of a player's body, drawn on top of walls in their team colour.
+// It shares the body's shape, so it moves and animates with it.
+const GHOST_MAT = {};
+function ghostMat(team) { return GHOST_MAT[team] || (GHOST_MAT[team] = new THREE.MeshBasicMaterial({ color: team === 1 ? 0xff5a4a : 0x5a9bff, transparent: true, opacity: 0.5, depthTest: false, depthWrite: false })); }
+function ghostRig(r, team, on) {
+  if (!on) { if (r.ghost) r.ghost.visible = false; return; }
+  if (!r.ghost) {
+    r.ghost = new THREE.Group();
+    for (const pt of r.parts) { const m = new THREE.Mesh(pt.mesh.geometry, ghostMat(team)); m.frustumCulled = false; m.renderOrder = 5; r.ghost.add(m); }
+    r.g.add(r.ghost); r.ghostTeam = team;
+  }
+  if (r.ghostTeam !== team) { r.ghostTeam = team; for (const m of r.ghost.children) m.material = ghostMat(team); }
+  r.ghost.visible = true;
+}
 // the model a player is drawn with, as the game does: the one named in their player info
 const playerModelName = (k) => ((D.pmodels ? D.pmodels[k] : D.models[k]) || '');
 // a living or dying player; returns true when drawn with a real model
-function drawModelPlayer(e, s, hide) {
-  if (!opts.models) return false;
+// ghost: the player is behind a wall and "See through walls" is on
+function drawModelPlayer(e, s, hide, ghost) {
   const a = D.slots[e], S = D.stride, i = M.idxAt(T);
   const pname = playerModelName(a[i * S + 8]);
   if (!pname || !/\.mdl$/i.test(pname)) return false;
@@ -3841,6 +3861,8 @@ function drawModelPlayer(e, s, hide) {
   if (yaw === false) return false;
   const tint = e === selected && cam3.mode === 'free' ? SEL_TINT : 0;
   placeRig(r, s.x, s.y, s.z, yaw, tint);
+  colourRig(r, Math.abs(s.state));
+  ghostRig(r, Math.abs(s.state), !!ghost && s.state > 0);
   if (s.state > 0 && s.weapon && /\.mdl$/i.test(s.weapon)) {
     const w = rigFor('w' + e, s.weapon);
     if (w) { poseWeapon(w, r); placeRig(w, s.x, s.y, s.z, yaw, tint); }
@@ -3849,7 +3871,7 @@ function drawModelPlayer(e, s, hide) {
 }
 // bodies left on the floor after a death (the game sends them as "corpse" messages)
 function drawCorpses(r) {
-  if (!opts.models || !D.corpses || !r) return new Set();
+  if (!D.corpses || !r) return new Set();
   const lying = new Set();
   const end = r.end != null ? r.end : D.end;
   D.corpses.forEach((c, k) => {
@@ -3868,6 +3890,7 @@ function drawCorpses(r) {
       mdlBoneMats(mdl, rig.p, rig.q, rig.mats); skinRig(rig);
     }
     placeRig(rig, c.pos[0], c.pos[1], c.pos[2], c.yaw, 0);
+    colourRig(rig, sl ? Math.abs(sl[M.idxAt(Math.max(r.start, c.start)) * D.stride + 5]) : 0);
   });
   return lying;
 }
@@ -3941,7 +3964,7 @@ function vmAnim(mdl, e, t) {
 }
 // draw the held weapon over the finished frame (called right after the world is rendered)
 function drawViewModel(renderer, camera, e, s) {
-  if (!opts.models || !s || s.state <= 0 || !s.weapon) return;
+  if (!s || s.state <= 0 || !s.weapon) return;
   const M2 = getModel(vName(s.weapon)); if (!M2) return;
   const V = vmScene();
   if (!V.rig || V.rig.M !== M2) {
@@ -4178,8 +4201,12 @@ function playerFig(e) {
   const head = new THREE.Mesh(new THREE.SphereGeometry(7, 12, 8), figMats[1]);
   const gun = new THREE.Mesh(new THREE.BoxGeometry(28, 3, 3), figMats.gun);
   g.add(body, head, gun);
+  // see-through copies for "See through walls", following the body and head they belong to
+  const gb = new THREE.Mesh(body.geometry, ghostMat(1)), gh = new THREE.Mesh(head.geometry, ghostMat(1));
+  for (const x of [gb, gh]) { x.renderOrder = 5; x.visible = false; }
+  body.add(gb); head.add(gh);
   R3.dyn.add(g);
-  return R3.players[e] = { g, body, head, gun };
+  return R3.players[e] = { g, body, head, gun, ghosts: [gb, gh] };
 }
 function lineMesh(a, b, color, dashed, opacity = 1) {
   const geo = new THREE.BufferGeometry().setFromPoints([a, b]);
@@ -4215,7 +4242,10 @@ function update3() {
       if (s && !lying.has(+e) && isDeathSeq(+e) && !(+e === selected && cam3.mode !== 'free')) drawModelPlayer(+e, s, false);
       continue;
     }
-    if (drawModelPlayer(+e, s, hideSelf)) {
+    // behind a wall, as last checked (about 10 times a second, in the labels pass below)
+    const vc = R3.vis && R3.vis.get(+e);
+    const ghost = opts.xray && !hideSelf && !!(vc && vc.hidden);
+    if (drawModelPlayer(+e, s, hideSelf, ghost)) {
       if (f) f.g.visible = false;
       const top = s.z + (s.duck ? 26 : 44);
       lab.push({ e: +e, s, p: g3(s.x, s.y, top + 10) });
@@ -4230,6 +4260,7 @@ function update3() {
     const yr = s.yaw * Math.PI / 180, pr = s.pitch * Math.PI / 180;
     fig.gun.position.set(Math.cos(yr) * 16, s.z + (s.duck ? 6 : 12), -Math.sin(yr) * 16);
     fig.gun.rotation.set(0, yr, -pr, 'YXZ');
+    for (const x of fig.ghosts) { x.visible = ghost; x.material = ghostMat(s.state); }
     fig.g.position.set(s.x, 0, -s.y);
     lab.push({ e: +e, s, p: g3(s.x, s.y, feet + h + 20) });
   }
@@ -4388,14 +4419,16 @@ function update3() {
   const mono = monoFont();
   const camW = [camera.position.x, -camera.position.z, camera.position.y];
   let visBudget = 3; // routine re-checks this frame; the rest wait a frame or two
-  if (opts.names) for (const L of lab) {
+  // Which players are behind walls, for "See through walls" (their bodies are drawn on top of the walls)
+  // and for the names (hidden players get no name unless "See through walls" is on). The check traces lines
+  // through the map, so each player is re-checked about 10 times a second (and at once after a camera switch
+  // or a jump in time), not on every frame.
+  if (opts.names || opts.xray) for (const L of lab) {
     if (cam3.mode === 'eyes' && L.e === selected) continue;
     const v = L.p.clone().project(camera);
     if (v.z > 1 || v.z < -1) continue;
-    // with "names through walls" off, only label players the camera can actually see. The check traces
-    // lines through the map, so each player is re-checked about 10 times a second (and at once after a
-    // camera switch or a jump in time), not on every frame.
-    if (!opts.xray && MAP) {
+    let hidden = false;
+    if (MAP) {
       const vis = R3.vis || (R3.vis = new Map());
       const ck = cam3.mode + '|' + selected;
       let c = vis.get(L.e);
@@ -4407,8 +4440,9 @@ function update3() {
         c = { at: now, ck, t: T, hidden: blocked([s.x, s.y, headZ]) && blocked([s.x, s.y, s.z]) };
         vis.set(L.e, c);
       }
-      if (c.hidden) continue;
+      hidden = c.hidden;
     }
+    if (!opts.names || (hidden && !opts.xray)) continue;
     const sx = (v.x + 1) / 2 * W, sy = (1 - v.y) / 2 * H;
     const dist = camera.position.distanceTo(L.p);
     const nm = nameAt(L.e, T);
@@ -4558,8 +4592,10 @@ requestAnimationFrame(frame);
 // restore overview cache note
 setMsg('');
 setControls(false);
-$('tgModels').onclick = () => { opts.models = !opts.models; $('tgModels').classList.toggle('on', opts.models); ls.set('models', opts.models); };
-if (ls.get('models') === false) { opts.models = false; $('tgModels').classList.remove('on'); }
+// Team colours: real models in flat red and blue. The simple figures are only used when a model file is missing or broken.
+$('tgModels').onclick = () => { opts.teamColours = !opts.teamColours; $('tgModels').classList.toggle('on', opts.teamColours); ls.set('teamColours', opts.teamColours); };
+if (ls.get('teamColours') === true) { opts.teamColours = true; $('tgModels').classList.add('on'); }
+ls.set('models', null); // the old "Player models" switch is gone (0.11.0): forget its setting
 ls.set('smoothAim', null); // Smooth aim was removed in 0.10.0: forget the old setting
 $('q3').value = ['auto', 'high', 'low'].includes(ls.get('quality')) ? ls.get('quality') : 'auto';
 $('q3').onchange = () => { ls.set('quality', $('q3').value); applyQuality(true); };
@@ -4802,7 +4838,7 @@ window.addEventListener('unhandledrejection', (e) => { ERRLOG.push('Promise: ' +
 function debugInfo() {
   let gpu = '';
   try { const gl = document.createElement('canvas').getContext('webgl'); const x = gl && gl.getExtension('WEBGL_debug_renderer_info'); gpu = gl ? (x ? gl.getParameter(x.UNMASKED_RENDERER_WEBGL) : 'WebGL available') : 'no WebGL'; } catch (e) { gpu = 'unknown'; }
-  const L = [`CS 1.6 Demo Viewer 0.10.1`, `Browser: ${navigator.userAgent}`, `Screen: ${screen.width}x${screen.height} at ${devicePixelRatio}x, window ${innerWidth}x${innerHeight}`, `Graphics: ${gpu}`];
+  const L = [`CS 1.6 Demo Viewer 0.11.0`, `Browser: ${navigator.userAgent}`, `Screen: ${screen.width}x${screen.height} at ${devicePixelRatio}x, window ${innerWidth}x${innerHeight}`, `Graphics: ${gpu}`];
   L.push(`Folder: ${Object.keys(files.maps).length} maps, ${Object.keys(files.overviews).length} overviews, ${Object.keys(files.mdl).length} models, ${Object.keys(files.snd).length} sounds, ${files.demos.length} demos`);
   if (D) {
     L.push(`Demo: ${D.fileName}, map ${D.mapName}, length ${fmt(D.end - D.start)}, ${M.liveR.length} live rounds, final ${M.liveR.length ? M.liveR[M.liveR.length - 1].scoreAfter.join(':') : '-'}`);

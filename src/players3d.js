@@ -72,7 +72,7 @@ function makeRig(M, parent) {
       const t = mdl.textures[me.tex];
       const mat = new THREE.MeshLambertMaterial({ map: M.tex[me.tex] || null, side: THREE.DoubleSide, alphaTest: t && (t.flags & 64) ? 0.5 : 0 });
       const mesh = new THREE.Mesh(geo, mat); mesh.frustumCulled = false;
-      g.add(mesh); parts.push({ me, pos, nrm, mat });
+      g.add(mesh); parts.push({ me, pos, nrm, mat, mesh, map0: mat.map });
     }
   }
   (parent || R3.dyn).add(g);
@@ -207,11 +207,33 @@ function endRigs() { for (const k in R3.rigs) if (!R3.rigs[k].used) R3.rigs[k].g
 function clearRigs() { if (!R3 || !R3.rigs) return; for (const k in R3.rigs) disposeRig(R3.rigs[k]); R3.rigs = {}; }
 
 const SEL_TINT = 0x5a4a22;
+// "Team colours": real models drawn in flat red (Terrorists) or blue (Counter-Terrorists), shading kept
+const TEAM_SKIN = { 1: 0xc42a1e, 2: 0x3462dc }; // clearly red and blue in sun and shade (the selected player also gets the sand highlight)
+function colourRig(r, team) {
+  const key = opts.teamColours && TEAM_SKIN[team] ? team : 0;
+  if (r.colourKey === key) return;
+  r.colourKey = key;
+  for (const pt of r.parts) { pt.mat.map = key ? null : pt.map0; pt.mat.color.setHex(key ? TEAM_SKIN[key] : 0xffffff); pt.mat.needsUpdate = true; }
+}
+// "See through walls": a see-through copy of a player's body, drawn on top of walls in their team colour.
+// It shares the body's shape, so it moves and animates with it.
+const GHOST_MAT = {};
+function ghostMat(team) { return GHOST_MAT[team] || (GHOST_MAT[team] = new THREE.MeshBasicMaterial({ color: team === 1 ? 0xff5a4a : 0x5a9bff, transparent: true, opacity: 0.5, depthTest: false, depthWrite: false })); }
+function ghostRig(r, team, on) {
+  if (!on) { if (r.ghost) r.ghost.visible = false; return; }
+  if (!r.ghost) {
+    r.ghost = new THREE.Group();
+    for (const pt of r.parts) { const m = new THREE.Mesh(pt.mesh.geometry, ghostMat(team)); m.frustumCulled = false; m.renderOrder = 5; r.ghost.add(m); }
+    r.g.add(r.ghost); r.ghostTeam = team;
+  }
+  if (r.ghostTeam !== team) { r.ghostTeam = team; for (const m of r.ghost.children) m.material = ghostMat(team); }
+  r.ghost.visible = true;
+}
 // the model a player is drawn with, as the game does: the one named in their player info
 const playerModelName = (k) => ((D.pmodels ? D.pmodels[k] : D.models[k]) || '');
 // a living or dying player; returns true when drawn with a real model
-function drawModelPlayer(e, s, hide) {
-  if (!opts.models) return false;
+// ghost: the player is behind a wall and "See through walls" is on
+function drawModelPlayer(e, s, hide, ghost) {
   const a = D.slots[e], S = D.stride, i = M.idxAt(T);
   const pname = playerModelName(a[i * S + 8]);
   if (!pname || !/\.mdl$/i.test(pname)) return false;
@@ -222,6 +244,8 @@ function drawModelPlayer(e, s, hide) {
   if (yaw === false) return false;
   const tint = e === selected && cam3.mode === 'free' ? SEL_TINT : 0;
   placeRig(r, s.x, s.y, s.z, yaw, tint);
+  colourRig(r, Math.abs(s.state));
+  ghostRig(r, Math.abs(s.state), !!ghost && s.state > 0);
   if (s.state > 0 && s.weapon && /\.mdl$/i.test(s.weapon)) {
     const w = rigFor('w' + e, s.weapon);
     if (w) { poseWeapon(w, r); placeRig(w, s.x, s.y, s.z, yaw, tint); }
@@ -230,7 +254,7 @@ function drawModelPlayer(e, s, hide) {
 }
 // bodies left on the floor after a death (the game sends them as "corpse" messages)
 function drawCorpses(r) {
-  if (!opts.models || !D.corpses || !r) return new Set();
+  if (!D.corpses || !r) return new Set();
   const lying = new Set();
   const end = r.end != null ? r.end : D.end;
   D.corpses.forEach((c, k) => {
@@ -249,6 +273,7 @@ function drawCorpses(r) {
       mdlBoneMats(mdl, rig.p, rig.q, rig.mats); skinRig(rig);
     }
     placeRig(rig, c.pos[0], c.pos[1], c.pos[2], c.yaw, 0);
+    colourRig(rig, sl ? Math.abs(sl[M.idxAt(Math.max(r.start, c.start)) * D.stride + 5]) : 0);
   });
   return lying;
 }
@@ -322,7 +347,7 @@ function vmAnim(mdl, e, t) {
 }
 // draw the held weapon over the finished frame (called right after the world is rendered)
 function drawViewModel(renderer, camera, e, s) {
-  if (!opts.models || !s || s.state <= 0 || !s.weapon) return;
+  if (!s || s.state <= 0 || !s.weapon) return;
   const M2 = getModel(vName(s.weapon)); if (!M2) return;
   const V = vmScene();
   if (!V.rig || V.rig.M !== M2) {

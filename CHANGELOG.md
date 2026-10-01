@@ -15,6 +15,21 @@ What changed in the viewer, newest first. The version shows in the viewer's shor
 - Theatre mode switches on by itself only with the viewer's own full screen (F or the Full screen button). The browser's full screen (F11 on Windows, the green window button or Ctrl+Cmd+F on a Mac) doesn't tell the page, so press T there.
 - "Quality: auto" lowers 3D sharpness at most once per visit and doesn't raise it again on its own. Pick "Quality: high" to go back.
 
+## 0.11.0 (2026-10-01)
+
+### Added
+- "See through walls" (H), replacing "Names through walls". Players behind walls are drawn on top of the walls as see-through bodies in their team colour (red for Terrorists, blue for Counter-Terrorists), with their names. Players in plain sight look as usual. Made for admins checking suspected wallhackers: follow the suspect in Player's eyes with it on, and watch whether their crosshair tracks enemies they can't see. It works whether or not names are shown. There's no distance limit: far-away players are small on screen anyway, and a wallhacker can track people anywhere.
+  - "Behind a wall" uses the same line-of-sight check as the names: from the camera to the player's head and feet, through the map and its doors and breakables. Each player is re-checked about 10 times a second, so a body can take up to a tenth of a second to switch when someone steps out of cover.
+  - Checked on Dust2 (round 4, Player's eyes): 7 players were behind walls, and those 7, and only those, were drawn through the walls.
+- "Team colours", replacing the "Player models" button. It draws the real player models in flat red (Terrorists) and blue (Counter-Terrorists), with their shading kept, so the sides read at a glance. Weapons keep their normal look. Off by default; the choice is remembered.
+
+### Changed
+- The simple figures (the capsule shapes) are no longer a choice. They're used automatically for any player whose model file is missing or can't be read, as before. Checked by removing the model files: all 10 players switched to figures.
+
+### Discussed, not changed
+- What "units" are: the game's measure of distance, roughly an inch each. A standing player is 72 units tall and 32 wide, a crouching one 36 tall. "Through 16 units of wall" in the Wallbangs tab means about 16 inches of cover.
+- Measuring wallhacks automatically (how long a player's crosshair stays on enemies hidden behind walls) is parked in [IDEAS.md](IDEAS.md).
+
 ## 0.10.1 (2026-10-01)
 
 ### Changed

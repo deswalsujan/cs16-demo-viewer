@@ -251,8 +251,12 @@ function playerFig(e) {
   const head = new THREE.Mesh(new THREE.SphereGeometry(7, 12, 8), figMats[1]);
   const gun = new THREE.Mesh(new THREE.BoxGeometry(28, 3, 3), figMats.gun);
   g.add(body, head, gun);
+  // see-through copies for "See through walls", following the body and head they belong to
+  const gb = new THREE.Mesh(body.geometry, ghostMat(1)), gh = new THREE.Mesh(head.geometry, ghostMat(1));
+  for (const x of [gb, gh]) { x.renderOrder = 5; x.visible = false; }
+  body.add(gb); head.add(gh);
   R3.dyn.add(g);
-  return R3.players[e] = { g, body, head, gun };
+  return R3.players[e] = { g, body, head, gun, ghosts: [gb, gh] };
 }
 function lineMesh(a, b, color, dashed, opacity = 1) {
   const geo = new THREE.BufferGeometry().setFromPoints([a, b]);
@@ -288,7 +292,10 @@ function update3() {
       if (s && !lying.has(+e) && isDeathSeq(+e) && !(+e === selected && cam3.mode !== 'free')) drawModelPlayer(+e, s, false);
       continue;
     }
-    if (drawModelPlayer(+e, s, hideSelf)) {
+    // behind a wall, as last checked (about 10 times a second, in the labels pass below)
+    const vc = R3.vis && R3.vis.get(+e);
+    const ghost = opts.xray && !hideSelf && !!(vc && vc.hidden);
+    if (drawModelPlayer(+e, s, hideSelf, ghost)) {
       if (f) f.g.visible = false;
       const top = s.z + (s.duck ? 26 : 44);
       lab.push({ e: +e, s, p: g3(s.x, s.y, top + 10) });
@@ -303,6 +310,7 @@ function update3() {
     const yr = s.yaw * Math.PI / 180, pr = s.pitch * Math.PI / 180;
     fig.gun.position.set(Math.cos(yr) * 16, s.z + (s.duck ? 6 : 12), -Math.sin(yr) * 16);
     fig.gun.rotation.set(0, yr, -pr, 'YXZ');
+    for (const x of fig.ghosts) { x.visible = ghost; x.material = ghostMat(s.state); }
     fig.g.position.set(s.x, 0, -s.y);
     lab.push({ e: +e, s, p: g3(s.x, s.y, feet + h + 20) });
   }
@@ -461,14 +469,16 @@ function update3() {
   const mono = monoFont();
   const camW = [camera.position.x, -camera.position.z, camera.position.y];
   let visBudget = 3; // routine re-checks this frame; the rest wait a frame or two
-  if (opts.names) for (const L of lab) {
+  // Which players are behind walls, for "See through walls" (their bodies are drawn on top of the walls)
+  // and for the names (hidden players get no name unless "See through walls" is on). The check traces lines
+  // through the map, so each player is re-checked about 10 times a second (and at once after a camera switch
+  // or a jump in time), not on every frame.
+  if (opts.names || opts.xray) for (const L of lab) {
     if (cam3.mode === 'eyes' && L.e === selected) continue;
     const v = L.p.clone().project(camera);
     if (v.z > 1 || v.z < -1) continue;
-    // with "names through walls" off, only label players the camera can actually see. The check traces
-    // lines through the map, so each player is re-checked about 10 times a second (and at once after a
-    // camera switch or a jump in time), not on every frame.
-    if (!opts.xray && MAP) {
+    let hidden = false;
+    if (MAP) {
       const vis = R3.vis || (R3.vis = new Map());
       const ck = cam3.mode + '|' + selected;
       let c = vis.get(L.e);
@@ -480,8 +490,9 @@ function update3() {
         c = { at: now, ck, t: T, hidden: blocked([s.x, s.y, headZ]) && blocked([s.x, s.y, s.z]) };
         vis.set(L.e, c);
       }
-      if (c.hidden) continue;
+      hidden = c.hidden;
     }
+    if (!opts.names || (hidden && !opts.xray)) continue;
     const sx = (v.x + 1) / 2 * W, sy = (1 - v.y) / 2 * H;
     const dist = camera.position.distanceTo(L.p);
     const nm = nameAt(L.e, T);

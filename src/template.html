@@ -344,7 +344,7 @@ body:has(.app.theatre) { overflow: hidden; }
       <button class="btn" data-c="chase" type="button">Behind player</button>
       <button class="btn" id="bPrevP" type="button" title="Previous player (Z or right-click)">‹ Prev player</button>
       <button class="btn" id="bNextP" type="button" title="Next player (X or click)">Next player ›</button>
-      <button class="btn on" id="tgModels" type="button" title="Real player models from your game files, or simple figures in team colours">Player models</button>
+      <button class="btn" id="tgModels" type="button" title="Draw the players in flat team colours: red for Terrorists, blue for Counter-Terrorists">Team colours</button>
       <select id="q3" aria-label="3D render quality" title="How sharp the 3D view is drawn. Auto starts sharp and steps down if playback can't keep up">
         <option value="auto">Quality: auto</option>
         <option value="high">Quality: high</option>
@@ -373,7 +373,7 @@ body:has(.app.theatre) { overflow: hidden; }
             <dt><kbd>1</kbd> … <kbd>0</kbd></dt><dd>Jump to a player, in scoreboard order</dd>
             <dt>Hold <kbd>Tab</kbd></dt><dd>Scoreboard</dd>
             <dt><kbd>N</kbd></dt><dd>Show or hide names</dd>
-            <dt><kbd>H</kbd></dt><dd>Names through walls on or off (3D)</dd>
+            <dt><kbd>H</kbd></dt><dd>See through walls on or off: players behind walls, and their names, drawn on top of the walls (3D)</dd>
             <dt><kbd>M</kbd></dt><dd>Sound on or off</dd>
             <dt><kbd>F</kbd></dt><dd>Full screen on or off (full screen uses Theatre mode)</dd>
             <dt><kbd>T</kbd></dt><dd>Theatre mode on or off: the view fills the window, and all the controls slide in when the mouse moves to the top, right or bottom edge</dd></dl>
@@ -410,7 +410,7 @@ body:has(.app.theatre) { overflow: hidden; }
       <button class="btn on" id="tgNames" type="button">Names</button>
       <button class="btn on" id="tgNades" type="button">Grenades</button>
       <button class="btn on" id="tgLines" type="button">Kill lines</button>
-      <button class="btn" id="tgXray" type="button" title="Show names through walls in 3D (H)">Names through walls</button>
+      <button class="btn" id="tgXray" type="button" title="Show players behind walls, and their names, in 3D (H)">See through walls</button>
       <button class="btn" id="tgFit" type="button">Reset view</button>
     </div>
     <div class="heatbar" id="heatbar" hidden>
@@ -505,7 +505,7 @@ let view = { s: 1, x: 0, y: 0 };
 let selected = null;     // selected player entity
 let scope = 'match';
 let tab = 'rounds';
-const opts = { names: true, nades: true, lines: true, xray: false, models: true };
+const opts = { names: true, nades: true, lines: true, xray: false, teamColours: false };
 // kill moments that just happened, for the hit markers (timed in real seconds so they stay visible at any speed)
 const flashes = [];
 let prevT = null;
@@ -1652,9 +1652,7 @@ function pickPlayer(e) {
 }
 
 function toggleOpt(k, id) {
-  if (k === 'xray' && !opts.names) return; // only meaningful while names are shown
   opts[k] = !opts[k]; $(id).classList.toggle('on', opts[k]);
-  if (k === 'names') { $('tgXray').disabled = !opts.names; $('tgXray').title = opts.names ? 'Show names through walls in 3D (H)' : 'Turn Names on to use this'; }
 }
 // Jump to a moment before a kill and watch it through the shooter's eyes (in 3D)
 function watchKill(k, before) {
@@ -2094,8 +2092,10 @@ requestAnimationFrame(frame);
 // restore overview cache note
 setMsg('');
 setControls(false);
-$('tgModels').onclick = () => { opts.models = !opts.models; $('tgModels').classList.toggle('on', opts.models); ls.set('models', opts.models); };
-if (ls.get('models') === false) { opts.models = false; $('tgModels').classList.remove('on'); }
+// Team colours: real models in flat red and blue. The simple figures are only used when a model file is missing or broken.
+$('tgModels').onclick = () => { opts.teamColours = !opts.teamColours; $('tgModels').classList.toggle('on', opts.teamColours); ls.set('teamColours', opts.teamColours); };
+if (ls.get('teamColours') === true) { opts.teamColours = true; $('tgModels').classList.add('on'); }
+ls.set('models', null); // the old "Player models" switch is gone (0.11.0): forget its setting
 ls.set('smoothAim', null); // Smooth aim was removed in 0.10.0: forget the old setting
 $('q3').value = ['auto', 'high', 'low'].includes(ls.get('quality')) ? ls.get('quality') : 'auto';
 $('q3').onchange = () => { ls.set('quality', $('q3').value); applyQuality(true); };

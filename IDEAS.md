@@ -4,7 +4,7 @@ Parked ideas and features we've discussed but not built yet. Each entry keeps en
 
 ## Roadmap (agreed 1 Oct 2026, in this order)
 
-Item 1, smoother playback, is done (0.8.0; Smooth aim later removed in 0.10.0). Theatre mode (0.9.0 to 0.9.3) and the sniper scope (0.10.0) were added along the way.
+Item 1, smoother playback, is done (0.8.0; Smooth aim later removed in 0.10.0). Theatre mode (0.9.0 to 0.9.3), the sniper scope (0.10.0 and 0.10.1), See through walls and Team colours (0.11.0) were added along the way.
 
 2. **Requirements.** A "Requirements" section in the README: desktop, recent Chrome or Edge, WebGL, Steam CS 1.6; 8 GB RAM recommended for long demos; phones not supported; Firefox and Safari untested. Plus a one-line "needs your own copy of CS 1.6 on Steam" on the viewer's start screen.
 3. **Keep folder access between visits** ("Allow on every visit", Chrome 122+ File System Access API), so owners pick their Half-Life folder once. Details under "Remember the Half-Life folder between visits" below.
