@@ -14,7 +14,7 @@ This is an unofficial fan project. It is not affiliated with or endorsed by Valv
 
 1. Open the viewer at **https://deswalsujan.github.io/cs16-demo-viewer/** in Chrome or Edge. It always has the latest version, so there's nothing to download.
 2. Click **Choose folder** and pick your `Half-Life` folder (the one that contains `cstrike` and `valve`). Chrome asks whether to let the page view the folder; the files stay on your computer.
-   On your next visit Chrome asks once more. Choose **Allow on every visit**, and from then on the folder opens by itself (Chrome and Edge 122 or later).
+   On your next visit (after closing the tab) Chrome asks once more. Choose **Allow on every visit**, and from then on the folder opens by itself (Chrome and Edge 122 or later). This also works with a downloaded copy of `index.html` opened from your disk.
 3. Pick a demo from the list, or open any `.dem` file.
 4. Press `?` for keyboard shortcuts.
 

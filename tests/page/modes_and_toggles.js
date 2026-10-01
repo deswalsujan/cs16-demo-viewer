@@ -8,7 +8,6 @@
   // jump across rounds: overlays must reset
   jumpRound(1); await wait(800); res.afterJump = R3.ov.key;
   // toggles
-  $('tgSmooth').click(); res.smoothOff = !opts.smoothAim; $('tgSmooth').click();
   $('q3').value = 'low'; $('q3').onchange(); res.lowRatio = R3.renderer.getPixelRatio();
   $('q3').value = 'high'; $('q3').onchange(); res.highRatio = R3.renderer.getPixelRatio();
   $('q3').value = 'auto'; $('q3').onchange();
