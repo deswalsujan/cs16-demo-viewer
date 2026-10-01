@@ -13,6 +13,11 @@ What changed in the viewer, newest first. The version shows in the viewer's shor
 - Theatre mode switches on by itself only with the viewer's own full screen (F or the Full screen button). The browser's full screen (F11 on Windows, the green window button or Ctrl+Cmd+F on a Mac) doesn't tell the page, so press T there.
 - "Quality: auto" lowers 3D sharpness at most once per visit and doesn't raise it again on its own. Pick "Quality: high" to go back.
 
+## 0.9.1 (2026-10-01)
+
+### Fixed
+- Theatre mode: reaching for the side panel's tabs (Rounds, Kills, Players, Wallbangs) also brought in the header, and the panel covered it. While the mouse is on the side panel, header or bottom bar, the other edges no longer pull theirs in. The side panel now sits between the header and the bottom bar, as in the normal layout, so all three can be open together without covering each other (the header's Theatre, Full screen and Open another demo buttons stay reachable).
+
 ## 0.9.0 (2026-10-01)
 
 ### Added

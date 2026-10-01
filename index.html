@@ -292,7 +292,8 @@ body:has(.app.theatre) { overflow: hidden; }
 }
 .app.theatre .head { top: 0; left: 0; right: 0; transform: translateY(-100%); }
 .app.theatre .transport { left: 0; right: 0; bottom: 0; transform: translateY(100%); z-index: 21; }
-.app.theatre .side { top: 0; right: 0; bottom: 0; width: min(var(--side-w), 90vw); max-height: none; border-top: 0; border-left: 1px solid var(--line); transform: translateX(100%); }
+/* the side panel sits between the header and the bottom bar, as in the normal layout, so all three can be open together */
+.app.theatre .side { top: var(--head-h); right: 0; bottom: var(--tr-h); width: min(var(--side-w), 90vw); max-height: none; border-top: 0; border-left: 1px solid var(--line); transform: translateX(100%); }
 .app.theatre.show-t .head, .app.theatre.show-b .transport, .app.theatre.show-r .side { transform: none; opacity: 1; pointer-events: auto; }
 /* the controls that sit on the view appear with the bar on their side of the screen */
 .app.theatre .cam3, .app.theatre .legend, .app.theatre .heatbar { opacity: 0; pointer-events: none; transition: opacity .18s ease, top .18s ease, bottom .18s ease; }
@@ -365,7 +366,7 @@ body:has(.app.theatre) { overflow: hidden; }
     <div class="overlay sumwrap" id="sumCard" hidden></div>
     <div class="overlay keys" id="keys" hidden>
       <div class="keys-card">
-        <div class="keys-head"><b>Shortcuts and kill markers</b><div class="kh-r"><span class="ver">Version 0.9.0 · <a href="https://github.com/deswalsujan/cs16-demo-viewer/blob/main/CHANGELOG.md" target="_blank" rel="noopener">What's new</a> · <a href="https://github.com/deswalsujan/cs16-demo-viewer/issues/new/choose" target="_blank" rel="noopener">Report a bug</a></span><button class="btn" id="bDebug" type="button" title="Copies details for a bug report: browser, demo name, what loaded, errors. No file contents.">Copy debug info</button><button class="btn" id="bKeysClose" type="button">Close</button></div></div>
+        <div class="keys-head"><b>Shortcuts and kill markers</b><div class="kh-r"><span class="ver">Version 0.9.1 · <a href="https://github.com/deswalsujan/cs16-demo-viewer/blob/main/CHANGELOG.md" target="_blank" rel="noopener">What's new</a> · <a href="https://github.com/deswalsujan/cs16-demo-viewer/issues/new/choose" target="_blank" rel="noopener">Report a bug</a></span><button class="btn" id="bDebug" type="button" title="Copies details for a bug report: browser, demo name, what loaded, errors. No file contents.">Copy debug info</button><button class="btn" id="bKeysClose" type="button">Close</button></div></div>
         <textarea class="dbgbox" id="dbgBox" readonly hidden aria-label="Debug info"></textarea>
         <div class="keys-grid">
           <section><h3>Playback</h3>
@@ -460,7 +461,7 @@ body:has(.app.theatre) { overflow: hidden; }
         <div class="drophint">Or drop a .dem file, or an overview .bmp and .txt pair, anywhere on this page</div>
         <div class="prog" id="prog" hidden><i id="progBar"></i></div>
         <div class="msg" id="msg"></div>
-        <div class="loadfoot"><span>Version 0.9.0</span><button class="btn" id="bClear" type="button" title="Deletes the maps, models, sounds and overviews this browser saved from your folder">Clear saved files</button></div>
+        <div class="loadfoot"><span>Version 0.9.1</span><button class="btn" id="bClear" type="button" title="Deletes the maps, models, sounds and overviews this browser saved from your folder">Clear saved files</button></div>
       </div>
     </div>
   </section>
@@ -4536,8 +4537,11 @@ function thInZone(k, x, y) {
   return x >= innerWidth - TH_ZONE.r && y > TH_ZONE.t && y < innerHeight - TH_ZONE.b;
 }
 function thUpdate(target) {
+  // while the mouse is on one of the bars, the other edges don't pull theirs in (reaching for the side
+  // panel's tabs near the top shouldn't bring in the header too)
+  const onBar = ['t', 'r', 'b'].find((k) => thOver(k, target));
   for (const k of ['t', 'r', 'b']) {
-    const over = thOver(k, target), want = over || (!TH.drag && TH.x >= 0 && thInZone(k, TH.x, TH.y));
+    const over = thOver(k, target), want = over || (!onBar && !TH.drag && TH.x >= 0 && thInZone(k, TH.x, TH.y));
     clearTimeout(TH.timers[k]);
     if (want) {
       if (!thShown(k)) { measureTheatre(); thShow(k, true); }
@@ -4707,7 +4711,7 @@ window.addEventListener('unhandledrejection', (e) => { ERRLOG.push('Promise: ' +
 function debugInfo() {
   let gpu = '';
   try { const gl = document.createElement('canvas').getContext('webgl'); const x = gl && gl.getExtension('WEBGL_debug_renderer_info'); gpu = gl ? (x ? gl.getParameter(x.UNMASKED_RENDERER_WEBGL) : 'WebGL available') : 'no WebGL'; } catch (e) { gpu = 'unknown'; }
-  const L = [`CS 1.6 Demo Viewer 0.9.0`, `Browser: ${navigator.userAgent}`, `Screen: ${screen.width}x${screen.height} at ${devicePixelRatio}x, window ${innerWidth}x${innerHeight}`, `Graphics: ${gpu}`];
+  const L = [`CS 1.6 Demo Viewer 0.9.1`, `Browser: ${navigator.userAgent}`, `Screen: ${screen.width}x${screen.height} at ${devicePixelRatio}x, window ${innerWidth}x${innerHeight}`, `Graphics: ${gpu}`];
   L.push(`Folder: ${Object.keys(files.maps).length} maps, ${Object.keys(files.overviews).length} overviews, ${Object.keys(files.mdl).length} models, ${Object.keys(files.snd).length} sounds, ${files.demos.length} demos`);
   if (D) {
     L.push(`Demo: ${D.fileName}, map ${D.mapName}, length ${fmt(D.end - D.start)}, ${M.liveR.length} live rounds, final ${M.liveR.length ? M.liveR[M.liveR.length - 1].scoreAfter.join(':') : '-'}`);

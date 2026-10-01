@@ -282,7 +282,8 @@ body:has(.app.theatre) { overflow: hidden; }
 }
 .app.theatre .head { top: 0; left: 0; right: 0; transform: translateY(-100%); }
 .app.theatre .transport { left: 0; right: 0; bottom: 0; transform: translateY(100%); z-index: 21; }
-.app.theatre .side { top: 0; right: 0; bottom: 0; width: min(var(--side-w), 90vw); max-height: none; border-top: 0; border-left: 1px solid var(--line); transform: translateX(100%); }
+/* the side panel sits between the header and the bottom bar, as in the normal layout, so all three can be open together */
+.app.theatre .side { top: var(--head-h); right: 0; bottom: var(--tr-h); width: min(var(--side-w), 90vw); max-height: none; border-top: 0; border-left: 1px solid var(--line); transform: translateX(100%); }
 .app.theatre.show-t .head, .app.theatre.show-b .transport, .app.theatre.show-r .side { transform: none; opacity: 1; pointer-events: auto; }
 /* the controls that sit on the view appear with the bar on their side of the screen */
 .app.theatre .cam3, .app.theatre .legend, .app.theatre .heatbar { opacity: 0; pointer-events: none; transition: opacity .18s ease, top .18s ease, bottom .18s ease; }
@@ -2089,8 +2090,11 @@ function thInZone(k, x, y) {
   return x >= innerWidth - TH_ZONE.r && y > TH_ZONE.t && y < innerHeight - TH_ZONE.b;
 }
 function thUpdate(target) {
+  // while the mouse is on one of the bars, the other edges don't pull theirs in (reaching for the side
+  // panel's tabs near the top shouldn't bring in the header too)
+  const onBar = ['t', 'r', 'b'].find((k) => thOver(k, target));
   for (const k of ['t', 'r', 'b']) {
-    const over = thOver(k, target), want = over || (!TH.drag && TH.x >= 0 && thInZone(k, TH.x, TH.y));
+    const over = thOver(k, target), want = over || (!onBar && !TH.drag && TH.x >= 0 && thInZone(k, TH.x, TH.y));
     clearTimeout(TH.timers[k]);
     if (want) {
       if (!thShown(k)) { measureTheatre(); thShow(k, true); }
