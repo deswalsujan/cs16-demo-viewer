@@ -53,6 +53,11 @@ Page scripts in `page/`:
 | `see_through_walls.js`, then `team_colours.js`, then `figure_fallback.js` | Bodies through walls only for hidden players; Team colours on every model; plain figures when model files are missing. Run in this order, in one go: each picks up where the previous one left off. | 0.11.0 |
 | `reset_view.js` | Reset view from Player's eyes, Behind player and a moved free camera, in 2D, 3D and split view | 0.12.2 |
 | `new_demo_settings.js` | Opening another demo (needs the Dust2 and 2006 Train demos): viewing settings kept, speed back to 1x, paused | 0.12.3 |
+| `kill_timing_and_lists.js` | Kills moved to the killing shot, the 1-surface gun rule, the wallbang list, kill feed icons, the clicked row (run with `DEMO=noa.penta` and `DEMO=dust2`) | 0.13.0 |
+| `kill_labels.js` | Round and round timer of the kills whose wallbang result changed in 0.13.0 | 0.13.0 |
+| `lists_kills.js`, `lists_rounds.js`, `lists_players.js` | The clicked, playing-now, current-round and followed-player highlights, for screenshots | 0.13.0 |
+| `pov_demo.js`, then `summary_open.js`, `summary_read.js` | A POV demo that switched maps (`DEMO=gp-[pub]`): map, rounds, the notes in the load summary, the smooth countdown bar | 0.13.0 |
+| `clear_saved_open.js`, then `clear_saved_check.js` | Clear saved files with a demo open goes back to a first visit | 0.13.0 |
 
 Stand-alone checks:
 
@@ -83,6 +88,8 @@ node zoom.mjs ~/Downloads/Half-Life/cstrike/<demo>.dem
 | `resume.mjs` | Clicks between consecutive AWP shots (does the scope come back by itself?) |
 | `qs.mjs` | Whether single clicks between shots follow a weapon switch (the knife quick-switch) |
 | `bullets.mjs`, `bullets_hs.mjs`, `bullets_sweep.mjs` | What weapon fire events carry (spread, recoil); how close a rebuilt killing bullet passes to the victim's head; whether shifting aim or victim by a snapshot helps. `make_probe.py` adds the event capture (bullet marks check, 1 Oct 2026) |
+| `kill_lag.mjs` | How late each kill message arrives after the victim's death sound, the killer's last shot and the victim's health reaching 0 (0.13.0). Needs `cp ../../src/demo.js demo.mjs` |
+| `wallbang_timing.mjs` | The viewer's wallbang rules rebuilt outside the page; lists the kills whose result changes when late kills are re-timed (0.13.0). Needs `demo.mjs` and `cp ../../src/bsp.js bsp.mjs`; run as `node wallbang_timing.mjs <demo> <map.bsp>` |
 
 ## Lessons
 

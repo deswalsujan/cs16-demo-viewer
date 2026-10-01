@@ -108,6 +108,13 @@ button { cursor: pointer; }
 .seg button + button { border-left: 1px solid var(--line); }
 .seg button.on { background: var(--sand); color: #1b1a16; font-weight: 600; }
 .wbrow .main { white-space: normal; }
+/* a kill on three lines: killer, the gun (kill feed icon from the player's own game files, and its name), victim */
+.kill3 .main { white-space: normal; }
+.kill3 .kname { display: block; line-height: 1.35; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.kill3 .gun { display: flex; align-items: center; gap: 8px; margin: 3px 0; font-family: var(--f-mono); font-size: 12px; color: var(--muted); }
+.kico { display: inline-block; height: 16px; flex-shrink: 0; background: #c9cdd0; -webkit-mask-size: 100% 100%; mask-size: 100% 100%; -webkit-mask-repeat: no-repeat; mask-repeat: no-repeat; }
+.kico.hs { background: var(--kill); }
+.wbtag { font: 600 10px var(--f-mono); color: var(--wb); border: 1px solid color-mix(in srgb, var(--wb) 55%, transparent); border-radius: 3px; padding: 0 4px; letter-spacing: .06em; }
 .copyrow { padding: 10px 14px; display: flex; gap: 8px; align-items: center; border-bottom: 1px solid var(--line); color: var(--muted); font-size: 12px; line-height: 1.4; }
 .copyrow .btn { flex-shrink: 0; }
 
@@ -173,7 +180,11 @@ kbd { font-family: var(--f-mono); font-size: 11px; background: var(--panel-2); b
   padding: 8px 14px; border-bottom: 1px solid var(--line); cursor: pointer; font-size: 13px;
 }
 .row:hover { background: var(--panel-2); }
-.row.cur { background: var(--panel-2); box-shadow: inset 3px 0 0 var(--sand); }
+.row.cur, .row.pick { background: color-mix(in srgb, var(--sand) 17%, var(--panel)); box-shadow: inset 5px 0 0 var(--sand); }
+.row.cur .n, .row.pick .n { color: var(--sand); }
+/* a kill that playback is passing right now (Kills and Wallbangs): a lighter version of the above */
+.row.pass { background: color-mix(in srgb, var(--sand) 10%, var(--panel)); box-shadow: inset 2px 0 0 color-mix(in srgb, var(--sand) 55%, transparent); }
+.row .mark { width: 10px; height: 13px; display: inline-block; vertical-align: -1px; margin-right: 4px; }
 .row .n { font-family: var(--f-mono); color: var(--muted); font-size: 12px; font-variant-numeric: tabular-nums; }
 .row .d { color: var(--muted); font-size: 12px; font-family: var(--f-mono); text-align: right; font-variant-numeric: tabular-nums; }
 .row .main { min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
@@ -189,7 +200,7 @@ kbd { font-family: var(--f-mono); font-size: 11px; background: var(--panel-2); b
 .kwb { color: var(--wb); font-family: var(--f-mono); font-size: 11px; margin-left: 4px; }
 .sechead { padding: 10px 14px 6px; font-size: 11px; text-transform: uppercase; letter-spacing: .08em; color: var(--muted); display: flex; justify-content: space-between; gap: 8px; }
 .prow { grid-template-columns: minmax(0, 1fr) auto; }
-.prow.sel { box-shadow: inset 3px 0 0 var(--sand); background: var(--panel-2); }
+.prow.sel { background: color-mix(in srgb, var(--sand) 17%, var(--panel)); box-shadow: inset 5px 0 0 var(--sand); }
 .opt { padding: 8px 14px; display: flex; gap: 8px; align-items: center; color: var(--muted); font-size: 12px; border-bottom: 1px solid var(--line); }
 
 /* transport */
@@ -401,7 +412,7 @@ body:has(.app.theatre) { overflow: hidden; }
             <dl class="hmlist">
               <dt><svg class="hm" viewBox="0 0 40 40" aria-hidden="true"><g stroke="#000" stroke-opacity=".6" stroke-width="5" stroke-linecap="round"><path d="M27 27l6 6M27 13l6-6M13 27l-6 6M13 13l-6-6"/></g><g stroke="#ffffff" stroke-width="2.5" stroke-linecap="round"><path d="M27 27l6 6M27 13l6-6M13 27l-6 6M13 13l-6-6"/></g><g stroke="#5aff5a" stroke-width="1.5"><path d="M12 20h5M23 20h5M20 12v5M20 23v5"/></g></svg></dt><dd><b class="hmw">KILL</b><span>A normal kill. Example: an AK spray to the body in the open.</span></dd>
               <dt><svg class="hm" viewBox="0 0 40 40" aria-hidden="true"><g stroke="#000" stroke-opacity=".6" stroke-width="5" stroke-linecap="round"><path d="M27 27l6 6M27 13l6-6M13 27l-6 6M13 13l-6-6"/></g><g stroke="#ff9a3c" stroke-width="2.5" stroke-linecap="round"><path d="M27 27l6 6M27 13l6-6M13 27l-6 6M13 13l-6-6"/></g><g stroke="#5aff5a" stroke-width="1.5"><path d="M12 20h5M23 20h5M20 12v5M20 23v5"/></g></svg></dt><dd><b class="hmo">HEADSHOT</b><span>The killing bullet hit the head. Example: a one-tap with the AK.</span></dd>
-              <dt><svg class="hm" viewBox="0 0 40 40" aria-hidden="true"><g fill="none" stroke="#000" stroke-opacity=".6" stroke-width="5" stroke-linecap="round"><path d="M27 27l6 6M27 13l6-6M13 27l-6 6M13 13l-6-6"/><rect x="4" y="4" width="32" height="32" rx="2"/></g><g fill="none" stroke="#ff4fd8" stroke-width="2.5" stroke-linecap="round"><path d="M27 27l6 6M27 13l6-6M13 27l-6 6M13 13l-6-6"/></g><rect x="4" y="4" width="32" height="32" rx="2" fill="none" stroke="#ff4fd8" stroke-width="1.5"/><g stroke="#5aff5a" stroke-width="1.5"><path d="M12 20h5M23 20h5M20 12v5M20 23v5"/></g></svg></dt><dd><b class="hms">WALLBANG · 14u · HS</b><span>The victim was fully hidden and the bullet went through cover. Magenta, with a square frame around the strokes. The number is how thick the cover was (14u = 14 game units); HS is added when it was also a headshot.</span></dd>
+              <dt><svg class="hm" viewBox="0 0 40 40" aria-hidden="true"><g fill="none" stroke="#000" stroke-opacity=".6" stroke-width="5" stroke-linecap="round"><path d="M27 27l6 6M27 13l6-6M13 27l-6 6M13 13l-6-6"/><rect x="4" y="4" width="32" height="32" rx="2"/></g><g fill="none" stroke="#ff4fd8" stroke-width="2.5" stroke-linecap="round"><path d="M27 27l6 6M27 13l6-6M13 27l-6 6M13 13l-6-6"/></g><rect x="4" y="4" width="32" height="32" rx="2" fill="none" stroke="#ff4fd8" stroke-width="1.5"/><g stroke="#5aff5a" stroke-width="1.5"><path d="M12 20h5M23 20h5M20 12v5M20 23v5"/></g></svg></dt><dd><b class="hms">WALLBANG · HS</b><span>The victim was fully hidden and the bullet went through cover. Magenta, with a square frame around the strokes. HS is added when it was also a headshot.</span></dd>
             </dl>
           </section>
           <section><h3>Radar (2D)</h3>
@@ -521,7 +532,7 @@ const opts = { names: true, nades: true, lines: true, xray: false, teamColours: 
 const flashes = [];
 let prevT = null;
 const FLASH_MS = 750;
-const files = { overviews: {}, demos: [], maps: {}, wads: {}, mdl: {}, snd: {}, sentences: null }; // from folder pick
+const files = { overviews: {}, demos: [], maps: {}, wads: {}, mdl: {}, snd: {}, sentences: null, hud: { txt: null, spr: {} } }; // from folder pick
 let M = null;            // derived match data
 // Theatre mode state (see the Theatre mode section)
 const TH = { on: false, before: false, hint: false, timers: {}, idle: null, drag: false, x: -1, y: -1 };
@@ -577,7 +588,7 @@ $('fFolder').onchange = (e) => { const list = [...e.target.files]; e.target.valu
 // The whole folder is read again each time, so files deleted since the last pick drop out
 function indexFolder(list) {
   let nOv = 0;
-  files.demos = []; files.overviews = {}; files.maps = {}; files.wads = {}; files.mdl = {}; files.snd = {}; files.sentences = null;
+  files.demos = []; files.overviews = {}; files.maps = {}; files.wads = {}; files.mdl = {}; files.snd = {}; files.sentences = null; files.hud = { txt: null, spr: {} };
   STALE.clear();
   for (const f of list) {
     const p = (f.relPath || f.webkitRelativePath || f.name).replace(/\\/g, '/').toLowerCase();
@@ -600,6 +611,10 @@ function indexFolder(list) {
       const sm = /(?:^|\/)(cstrike|cstrike_downloads|valve)\/sound\/(.+\.wav)$/.exec(p);
       if (sm) { const o = files.snd[sm[2]]; if (!o || rank(sm[1]) > o.rank) { f.rank = rank(sm[1]); files.snd[sm[2]] = f; } continue; }
       if (/(?:^|\/)cstrike\/sound\/sentences\.txt$/.test(p)) files.sentences = f;
+      // the kill feed's weapon icons: where they sit (hud.txt) and the sprite sheets they're on
+      if (/(?:^|\/)cstrike\/sprites\/hud\.txt$/.test(p)) files.hud.txt = f;
+      const hm = /(?:^|\/)cstrike\/sprites\/(640hud\d+)\.spr$/.exec(p);
+      if (hm) files.hud.spr[hm[1]] = f;
     }
   }
   files.demos.sort((a, b) => b.lastModified - a.lastModified);
@@ -609,7 +624,63 @@ function indexFolder(list) {
   retryMissingModels(); retryMissingSounds(); SND.sentences = null;
   if (D) preloadSounds();
   if (D && !MAP) loadMap(D.mapName);
+  loadKillIcons();
 }
+
+// ---------------- kill feed weapon icons ----------------
+// Read from the player's own cstrike/sprites, like maps and models; nothing is bundled. hud.txt lists each
+// kill feed icon (d_ak47, d_awp, d_headshot ...) as a rectangle on one of the 640hud*.spr sheets. The game
+// draws these sheets additively, so a pixel's brightness is how solid it is: each icon becomes a white
+// mask, coloured by CSS. Without the files, rows show the weapon's name only.
+const KICONS = {}; // weapon -> width in px at 16 px tall
+let kiconsFrom = null;
+function decodeSpr(u8) {
+  if (u8.length < 64 || String.fromCharCode(u8[0], u8[1], u8[2], u8[3]) !== 'IDSP') return null;
+  const dv = new DataView(u8.buffer, u8.byteOffset, u8.byteLength);
+  let p = 40; const n = dv.getInt16(p, true); p += 2;
+  if (n <= 0 || n > 256) return null;
+  const pal = u8.subarray(p, p + n * 3); p += n * 3;
+  if (p + 20 > u8.length) return null;
+  const w = dv.getInt32(p + 12, true), h = dv.getInt32(p + 16, true); p += 20;
+  if (w <= 0 || h <= 0 || w > 1024 || h > 1024 || p + w * h > u8.length) return null;
+  return { w, h, pal, n, px: u8.subarray(p, p + w * h) };
+}
+async function loadKillIcons() {
+  const txt = files.hud.txt;
+  if (!txt || kiconsFrom === txt) return;
+  kiconsFrom = txt;
+  const css = [];
+  try {
+    const want = {};
+    for (const line of (await txt.text()).split(/\r?\n/)) {
+      const f = line.trim().split(/\s+/);
+      if (f.length === 7 && /^d_[a-z0-9]+$/i.test(f[0]) && f[1] === '640') want[f[0].slice(2).toLowerCase()] = { sheet: f[2].toLowerCase(), x: +f[3], y: +f[4], w: +f[5], h: +f[6] };
+    }
+    const sheets = {};
+    for (const k in want) {
+      const nm = want[k].sheet;
+      if (!(nm in sheets)) { const f = files.hud.spr[nm]; sheets[nm] = f ? decodeSpr(await readPicked(f, `sprites/${nm}.spr`) || new Uint8Array(0)) : null; }
+      const r = want[k], sh = sheets[nm];
+      if (!sh || r.w <= 0 || r.h <= 0 || r.x < 0 || r.y < 0 || r.x + r.w > sh.w || r.y + r.h > sh.h) continue;
+      const cv = document.createElement('canvas'); cv.width = r.w; cv.height = r.h;
+      const g = cv.getContext('2d'), img = g.createImageData(r.w, r.h);
+      for (let j = 0; j < r.h; j++) for (let i = 0; i < r.w; i++) {
+        const c = sh.px[(r.y + j) * sh.w + r.x + i], o = (j * r.w + i) * 4;
+        const a = c < sh.n ? Math.max(sh.pal[c * 3], sh.pal[c * 3 + 1], sh.pal[c * 3 + 2]) : 0;
+        img.data[o] = img.data[o + 1] = img.data[o + 2] = 255; img.data[o + 3] = Math.min(255, Math.round(a * 1.9));
+      }
+      g.putImageData(img, 0, 0);
+      const url = cv.toDataURL();
+      KICONS[k] = Math.round(r.w * 16 / r.h);
+      css.push(`.ki-${k}{width:${KICONS[k]}px;-webkit-mask-image:url(${url});mask-image:url(${url})}`);
+    }
+  } catch (e) { }
+  let st = $('kiconCss'); if (!st) { st = document.createElement('style'); st.id = 'kiconCss'; document.head.appendChild(st); }
+  st.textContent = css.join('\n');
+  if (D) renderPane();
+}
+// the kill feed icon for a weapon, or '' when the player's files don't have it
+const kicon = (w, cls = '') => (KICONS[w] ? `<span class="kico ki-${w}${cls ? ' ' + cls : ''}" aria-hidden="true"></span>` : '');
 
 function renderDemoList() {
   const el = $('demoList');
@@ -649,7 +720,7 @@ const HL_EXAMPLE = 'C:\\Program Files (x86)\\Steam\\steamapps\\common\\Half-Life
 const HL_HELP = `The Half-Life folder from your Steam install, the one that contains cstrike and valve. On Windows that's usually ${HL_EXAMPLE}.`;
 const fsaOK = () => { try { return !HL.fsaBroken && typeof window.showDirectoryPicker === 'function' && window.isSecureContext && window.self === window.top; } catch (e) { return false; } };
 // the files the viewer reads; everything else in the folder is skipped
-const HL_WANT = /(?:^|\/)(?:cstrike|cstrike_downloads|valve)\/(?:maps\/[^/]+\.bsp|overviews\/[^/]+\.(?:bmp|txt)|models\/.+\.mdl|sound\/.+\.wav|sound\/sentences\.txt|[^/]+\.wad)$|\.dem$/;
+const HL_WANT = /(?:^|\/)(?:cstrike|cstrike_downloads|valve)\/(?:maps\/[^/]+\.bsp|overviews\/[^/]+\.(?:bmp|txt)|models\/.+\.mdl|sound\/.+\.wav|sound\/sentences\.txt|sprites\/hud\.txt|sprites\/640hud\d+\.spr|[^/]+\.wad)$|\.dem$/;
 // path inside the chosen folder, lower case, without the folder's own name
 const hlKey = (f) => (f.relPath || f.webkitRelativePath || f.name).replace(/\\/g, '/').toLowerCase().split('/').slice(1).join('/');
 function hlSnap(list, name, gameDirs) {
@@ -874,7 +945,9 @@ async function loadDemoFile(f) {
     if (isStale(e)) {
       // the file was moved, renamed or deleted after the folder was chosen: say so, and drop it from the list
       files.demos = files.demos.filter((x) => x !== f); renderDemoList();
-      setMsg(`${f.name} is no longer in your folder. It was moved, renamed or deleted after you chose the folder. Choose the folder again to refresh the list.`, true);
+      // The browser can't read a file that changed after the folder was read: a demo still being recorded
+      // keeps growing, so it lands here as well as one that was moved, renamed or deleted.
+      setMsg(`${f.name} couldn't be read. It changed after the folder was read, or it was moved, renamed or deleted. If you're still recording it, stop the recording first. Then ${HL.handle ? 'come back to this page' : 'choose the folder again'} and open it from the list.`, true);
     } else setMsg(`Could not read ${f.name}. ${e.message || ''}`, true);
     return;
   }
@@ -1010,6 +1083,12 @@ async function loadMap(map) {
 // (feet to top of head, left to right) is behind solid map geometry AND the shooter's
 // crosshair line also passes through that geometry.
 const NO_WB = new Set(['grenade', 'knife', 'world', '']);
+// Guns whose bullet stops at the first surface it hits, so they can never wallbang. From the game code
+// (ReGameDLL, a reverse-engineered copy of CS 1.6's): these fire with a penetration count of 1
+// (wpn_<gun>.cpp, FireBullets3 in cbase.cpp, which stops when the count reaches 0 after the first hit).
+// The Dual Elites pass BULLET_PLAYER_9MM (= 1) where the count goes. The shotguns use FireBullets,
+// which traces each pellet once with no penetration. Checked 1-2 Oct 2026.
+const ONE_SURFACE = new Set(['usp', 'glock18', 'p228', 'fiveseven', 'elite', 'mac10', 'tmp', 'mp5navy', 'ump45', 'p90', 'm3', 'xm1014']);
 function computeWallbangs() {
   if (!MAP || !D) return;
   const bsp = MAP.bsp;
@@ -1024,7 +1103,7 @@ function computeWallbangs() {
   const eyeOf = (p) => [p[0], p[1], p[2] + (p[3] ? 12 : 17)];
   for (const k of D.kills) {
     k.wb = null;
-    if (!k.kpos || !k.vpos || k.killer === k.victim || NO_WB.has(k.weapon)) continue;
+    if (!k.kpos || !k.vpos || k.killer === k.victim || NO_WB.has(k.weapon) || ONE_SURFACE.has(k.weapon)) continue;
     const kNow = [...k.kpos, k.kduck], vNow = [...k.vpos, k.vduck];
     skip = brokenSet(k.t - 0.05);
     poses = posesAt(k.t - 0.05);
@@ -1070,8 +1149,45 @@ function liveWindows(notes) {
   return seenLive ? out : [];
 }
 
+// ---------------- kills at the moment they happened ----------------
+// Some demos deliver the kill message late: in the 2006 NoA vs Pentagram Train demo it trails the
+// victim's death sound by 0.11 s on average and up to 0.33 s (the 2011 demos: 0 s, with a rare late one).
+// By then a peeking AWPer is back behind cover, so the wallbang check and the kill marker were wrong.
+// The death sound is recorded at the real moment. A kill whose message trails it by more than 0.05 s is
+// moved back to the killing shot (the killer's last shot up to 0.3 s before the death sound), or to the
+// death sound itself when the demo has no such shot, and its positions and aim are read from that moment.
+// Kills that arrive on time are left exactly as they were. k.tMsg keeps when the message arrived.
+function retimeKills() {
+  const sn = (i) => String((D.sounds && D.sounds[i]) || '').toLowerCase();
+  const dieAt = {}, shotAt = {};
+  const s = D.snds || [];
+  for (let i = 0; i < s.length; i += 10) if (/player\/(die|death)/.test(sn(s[i + 1]))) (dieAt[s[i + 2]] || (dieAt[s[i + 2]] = [])).push(s[i]);
+  const sh = D.shots || [];
+  for (let i = 0; i < sh.length; i += 4) (shotAt[sh[i + 1]] || (shotAt[sh[i + 1]] = [])).push(sh[i]);
+  const S = D.stride, times = D.times;
+  const idx = (t) => { let lo = 0, hi = times.length - 1; while (lo < hi) { const m = (lo + hi + 1) >> 1; if (times[m] <= t) lo = m; else hi = m - 1; } return lo; };
+  const lastIn = (arr, from, to) => { let r = null; if (arr) for (const t of arr) { if (t > to) break; if (t > from) r = t; } return r; };
+  let moved = 0;
+  for (const k of D.kills) {
+    if (k.tMsg != null) continue;
+    k.tMsg = k.t;
+    if (k.killer === k.victim) continue;
+    const ds = lastIn(dieAt[k.victim], k.t - 1, k.t + 0.001);
+    if (ds == null || k.t - ds <= 0.05) continue;
+    const st = lastIn(shotAt[k.killer], ds - 0.3, ds + 0.001);
+    const tA = st != null ? st : ds;
+    const a = D.slots[k.killer], v = D.slots[k.victim], i = idx(tA) * S;
+    if (a && !isNaN(a[i])) { k.kpos = [a[i], a[i + 1], a[i + 2]]; k.kang = [a[i + 4], a[i + 3]]; k.kduck = a[i + 7]; }
+    if (v && !isNaN(v[i])) { k.vpos = [v[i], v[i + 1], v[i + 2]]; k.vduck = v[i + 7]; }
+    k.t = tA; k.retimed = st != null ? 'shot' : 'sound'; moved++;
+  }
+  D.kills.sort((x, y) => x.t - y.t);
+  D.killsRetimed = moved;
+}
+
 // ---------------- derive match structure ----------------
 function derive() {
+  retimeKills();
   const S = D.stride, times = D.times, n = times.length;
   const idxAt = (t) => { let lo = 0, hi = n - 1; while (lo < hi) { const mid = (lo + hi + 1) >> 1; if (times[mid] <= t) lo = mid; else hi = mid - 1; } return lo; };
   // ---- people ----
@@ -1143,6 +1259,10 @@ function derive() {
   const windows = liveWindows(D.notes || []);
   if (windows.length) {
     for (const r of rounds) r.live = counts(r) && windows.some(([a, b]) => r.start >= a - 10 && r.start < b - 1);
+  } else if (D.pov) {
+    // A demo recorded by a player, usually on a public server: there's no "live on 3" match structure
+    // to find, so every round that was played to a result counts.
+    for (const r of rounds) r.live = counts(r);
   } else {
     for (const r of rounds) r.live = liveSegs.includes(String(r.seg)) && counts(r);
     // False starts: a live stretch where a half should begin (or an overtime) that stops short
@@ -1499,7 +1619,7 @@ async function onDemo() {
   showLoad(false);
   const first = M.liveR[0];
   T = first ? first.start : D.start;
-  playing = false; selected = null;
+  playing = false; selected = null; pickedKill = null;
   $('meta').textContent = `${D.mapName} · ${D.fileName} · ${fmt(D.end - D.start)}`;
   $('score').hidden = false; $('legend').hidden = false; $('heatbar').hidden = false; $('rclock').hidden = false;
   $('tnA').textContent = M.tnames[0]; $('tnB').textContent = M.tnames[1];
@@ -1528,6 +1648,24 @@ function toast(t, ms = 9000) {
   if (!el) { el = document.createElement('div'); el.id = 'toast'; el.className = 'rclock'; el.style.cssText = 'top:auto;bottom:56px;left:12px;right:12px;max-width:520px;color:var(--fg)'; $('radar').appendChild(el); }
   el.textContent = t; el.hidden = false;
   clearTimeout(toastTimer); toastTimer = setTimeout(() => el.hidden = true, ms);
+}
+// Back to how the page looks before any demo is opened. Used by Clear saved files: it forgets the folder,
+// so the open demo has nothing left to draw from, and the header, side panel and timeline shouldn't keep
+// showing a match that's no longer open.
+function closeDemo() {
+  if (!D) return;
+  if (worker) { worker.terminate(); worker = null; }
+  sndPreload++; // stops a sound preload that's still running for this demo
+  resetForNewDemo(); clear3d(); closeSummary();
+  D = null; M = null; MAP = null; OV = null; T = 0; prevT = null; pickedKill = null; heat = null;
+  $('meta').textContent = 'CS 1.6 HLTV demos, played in your browser';
+  for (const id of ['score', 'legend', 'heatbar', 'rclock', 'cam3', 'status3', 'pov', 'sb']) $(id).hidden = true;
+  $('feed').innerHTML = '';
+  $('pane').innerHTML = '<div class="opt">Rounds, kills and player stats appear here once a demo is open.</div>';
+  $('time').innerHTML = '<b>0:00</b> / 0:00';
+  tlCache.key = ''; tctx.setTransform(1, 0, 0, 1, 0, 0); tctx.clearRect(0, 0, tlc.width, tlc.height);
+  ctx.setTransform(1, 0, 0, 1, 0, 0); ctx.clearRect(0, 0, cv.width, cv.height);
+  setControls(false);
 }
 function showLoad(v) {
   $('load').hidden = !v;
@@ -1564,8 +1702,24 @@ function killHtml(k) {
   const ks = k.kteam === 'TERRORIST' ? 1 : k.kteam === 'CT' ? 2 : 0;
   const vs = k.vteam === 'TERRORIST' ? 1 : k.vteam === 'CT' ? 2 : 0;
   if (k.killer === k.victim || !k.kp) return `${nameHtml(k.vp, vs)}<span class="kw">${esc(k.weapon || 'suicide')}</span>`;
-  return `${nameHtml(k.kp, ks)}<span class="kw">${esc(k.weapon)}</span>${nameHtml(k.vp, vs)}${k.hs ? '<span class="khs">HS</span>' : ''}${k.wb ? `<span class="kwb" title="Every line of sight passed through ${k.wb.thick} units of ${k.wb.what}">WB ${k.wb.thick}u</span>` : ''}`;
+  return `${nameHtml(k.kp, ks)}<span class="kw">${esc(k.weapon)}</span>${nameHtml(k.vp, vs)}${k.hs ? '<span class="khs">HS</span>' : ''}${k.wb ? `<span class="kwb" title="Through ${k.wb.thick} units of ${k.wb.what === 'object' ? 'a breakable or door' : 'wall or crate'}">WB</span>` : ''}`;
 }
+// A kill on three lines, for the Kills and Wallbangs lists: killer, then the gun (its kill feed icon from the
+// player's own files, its name, and the headshot icon), then the victim.
+function killRow3(k, wbTag) {
+  const ks = k.kteam === 'TERRORIST' ? 1 : k.kteam === 'CT' ? 2 : 0;
+  const vs = k.vteam === 'TERRORIST' ? 1 : k.vteam === 'CT' ? 2 : 0;
+  const w = k.weapon || 'suicide';
+  const hs = k.hs ? (KICONS.headshot ? kicon('headshot', 'hs') : '<span class="khs">HS</span>') : '';
+  const gun = `<span class="gun">${kicon(w)}${esc(w)}${hs}${wbTag && k.wb ? '<span class="wbtag">WALLBANG</span>' : ''}</span>`;
+  if (k.killer === k.victim || !k.kp) return `<span class="kname">${nameHtml(k.vp, vs)}</span>${gun}`;
+  return `<span class="kname">${nameHtml(k.kp, ks)}</span>${gun}<span class="kname">${nameHtml(k.vp, vs)}</span>`;
+}
+// The kill last clicked in the Kills or Wallbangs list: it keeps its highlight until another kill is
+// clicked or another demo is opened. A kill that playback is passing gets a lighter one.
+let pickedKill = null;
+const MARK = '<svg class="mark" viewBox="0 0 10 13" aria-hidden="true"><path d="M1 0h8v13L5 9.5 1 13z" fill="currentColor"/></svg>';
+const killState = (k) => (k === pickedKill ? ' pick' : Math.abs(k.t - T) < 2 ? ' pass' : '');
 function renderPane() {
   if (!D) return;
   const p = $('pane');
@@ -1587,7 +1741,7 @@ function renderPane() {
     const r = cr;
     let h = `<div class="sechead"><span>${r && r.live ? 'Round ' + r.ln : 'This round'}</span><span>${r ? r.kills.length : 0} kills</span></div>`;
     if (r) for (const k of r.kills) {
-      h += `<div class="row krow${Math.abs(k.t - T) < 1.5 ? ' cur' : ''}" data-kill="${k.t}"><span class="n" title="Round timer as shown in game">${clockText(k.t) || '+' + fmt(k.t - r.start)}</span><span class="main">${killHtml(k)}</span></div>`;
+      h += `<div class="row krow kill3${killState(k)}" data-kill="${k.t}"><span class="n" title="Round timer as shown in game">${k === pickedKill ? MARK : ''}${clockText(k.t) || '+' + fmt(k.t - r.start)}</span><span class="main">${killRow3(k, true)}</span></div>`;
     }
     if (!r || !r.kills.length) h += `<div class="opt">No kills in this round.</div>`;
     p.innerHTML = h;
@@ -1598,21 +1752,21 @@ function renderPane() {
       h = `<div class="copyrow"><span>${M.wbs.length} kills where the victim was fully hidden from the shooter and the crosshair was on the wall. Times: round and in-game round timer, then demo time.</span><button class="btn" id="bCopyWb" type="button">Copy list</button></div>`;
       for (const k of M.wbs) {
         const r = M.rounds.find((x) => x.n === k.round);
-        h += `<div class="row krow wbrow${Math.abs(k.t - T) < 1.5 ? ' cur' : ''}" data-wb="${k.t}"><span class="n">R${r ? r.ln : '?'} · ${clockText(k.t)}<br>${fmt(k.t - D.start)}</span><span class="main">${killHtml(k)}<div class="sub">Through ${k.wb.thick} units of ${k.wb.what === 'object' ? 'a breakable or door' : 'wall or crate'}</div></span></div>`;
+        h += `<div class="row krow wbrow kill3${killState(k)}" data-wb="${k.t}" title="Through ${k.wb.thick} units of ${k.wb.what === 'object' ? 'a breakable or door' : 'wall or crate'}"><span class="n">${k === pickedKill ? MARK : ''}R${r ? r.ln : '?'} · ${clockText(k.t)}<br>${fmt(k.t - D.start)}</span><span class="main">${killRow3(k, false)}</span></div>`;
       }
       if (!M.wbs.length) h += `<div class="opt">No wallbang kills found in the live rounds.</div>`;
     }
     p.innerHTML = h;
     if ($('bCopyWb')) $('bCopyWb').onclick = () => {
-      const txt = M.wbs.map((k) => { const r = M.rounds.find((x) => x.n === k.round); return `R${r ? r.ln : '?'}  timer ${clockText(k.t)}  demo ${fmt(k.t - D.start)}  ${M.pl[k.kp] ? M.pl[k.kp].name : '?'} -> ${M.pl[k.victim] ? M.pl[k.victim].name : '?'}  ${k.weapon}${k.hs ? ' HS' : ''}  (${k.wb.thick} units)`; }).join('\n');
+      const txt = M.wbs.map((k) => { const r = M.rounds.find((x) => x.n === k.round); return `R${r ? r.ln : '?'}  timer ${clockText(k.t)}  demo ${fmt(k.t - D.start)}  ${M.pl[k.kp] ? M.pl[k.kp].name : '?'} -> ${M.pl[k.vp] ? M.pl[k.vp].name : '?'}  ${k.weapon}${k.hs ? ' HS' : ''}  (${k.wb.thick} units)`; }).join('\n');
       const b = $('bCopyWb');
       const ok = () => { b.textContent = 'Copied'; setTimeout(() => b.textContent = 'Copy list', 1500); };
       try { navigator.clipboard.writeText(`${D.fileName}\n${txt}`).then(ok, () => { b.textContent = 'Copy failed'; }); } catch { b.textContent = 'Copy failed'; }
     };
     p.querySelectorAll('[data-wb]').forEach((el) => el.onclick = () => {
       const k = M.wbs.find((x) => x.t === +el.dataset.wb);
-      wbFocus = k;
-      watchKill(k, 3);
+      wbFocus = k; pickedKill = k;
+      watchKill(k, 3); renderPane();
     });
   } else {
     const buckets = [['all', 'Total'], ['t', 'T side'], ['ct', 'CT side']].concat(M.hasOT ? [['ot', 'Overtime']] : []);
@@ -1640,7 +1794,8 @@ function renderPane() {
   p.querySelectorAll('[data-kill]').forEach((el) => el.onclick = () => {
     const k = D.kills.find((x) => x.t === +el.dataset.kill);
     if (!k) return;
-    watchKill(k, 4);
+    pickedKill = k;
+    watchKill(k, 4); renderPane();
   });
   p.querySelectorAll('[data-p]').forEach((el) => el.onclick = () => {
     const e = M.slotOf(el.dataset.p, T);
@@ -1797,7 +1952,7 @@ function updateHud(force) {
   // the players list greys out whoever is dead right now, so redraw it when someone dies or respawns
   let aliveKey = '';
   if (tab === 'players') aliveKey = Object.keys(D.slots).filter((e) => isDeadNow(+e)).join();
-  if (r !== lastRound || force || ((tab === 'kills' || tab === 'wb') && Math.abs(T - lastPaneT) > 1) || (tab === 'players' && aliveKey !== lastAliveKey)) {
+  if (r !== lastRound || force || ((tab === 'kills' || tab === 'wb') && Math.abs(T - lastPaneT) > 0.5) || (tab === 'players' && aliveKey !== lastAliveKey)) {
     const changed = r !== lastRound;
     lastRound = r; lastPaneT = T; lastAliveKey = aliveKey; renderPane();
     if (changed && scope === 'round') drawTimeline();
@@ -2426,9 +2581,17 @@ let ASSETS = null;
 async function loadSummary(sndDone) {
   const d = D;
   openSummary({ state: 'busy' });
-  // a file that reads but has no player movement can't be played
-  if (!D.times.length || !Object.keys(D.slots).length || !M.rounds.length) {
-    renderSummary({ state: 'fail', title: "This demo can't be played", text: 'The file opened, but there are no player movements or rounds in it. It may be cut off, or it may not be an HLTV or player demo.', rows: [] });
+  // A file that reads but has no player movement, or no rounds, can't be played. Say what was found and
+  // list the likely reasons, the likeliest first.
+  const moved = D.times.length && Object.keys(D.slots).length;
+  if (!moved || !M.rounds.length) {
+    const game = String((D.header && D.header.gameDir) || '').toLowerCase();
+    const other = game && game !== 'cstrike';
+    const why = other ? [`It's from another game: the file says "${game}", and the viewer only plays Counter-Strike 1.6.`] : [];
+    if (!moved) why.push('It was stopped right after it started, before anyone moved.', 'It was cut off: the download or the recording was interrupted.');
+    else why.push("It's from a game mode without rounds, like deathmatch or a training map.", 'It was stopped before the first round started.');
+    if (!other) why.push("It's from another game: the viewer only plays Counter-Strike 1.6.");
+    renderSummary({ state: 'fail', title: "This demo can't be played", text: !moved ? "The file opened, but there's no player movement in it. The likely reasons:" : "The file opened and players move in it, but there are no rounds the viewer can find. The likely reasons:", rows: why.map((t) => ({ s: 'info', t })) });
     return;
   }
   const pm = [...new Set((D.pmodels || []).filter((n) => /\.mdl$/i.test(n)).map((n) => n.toLowerCase()))];
@@ -2464,6 +2627,8 @@ async function loadSummary(sndDone) {
   const live = M.liveR.length;
   if (!D.errors) rows.push({ s: 'ok', t: `Demo read: ${live} rounds`, n: '' });
   else rows.push({ s: 'warn', t: `Demo read: ${live} rounds, ${D.errors} damaged ${D.errors === 1 ? 'packet' : 'packets'}`, n: 'A few moments may skip or show players in the wrong spot.' });
+  if (D.maps && D.maps.length > 1) rows.push({ s: 'info', t: `The recording switched maps. Showing ${D.mapName}, where it spent longest.`, n: D.maps.map((m) => `${m.map} ${fmt(m.dur)}`).join(', then ') });
+  if (D.pov) rows.push({ s: 'info', t: 'Recorded by a player (a POV demo)', n: "A player's game only receives the players near them, so others drop in and out of view, and wallbangs are found less reliably than in HLTV demos." });
   if (!map) rows.push({ s: 'fail', t: `Map ${D.mapName} not found`, n: 'No 3D view and no wallbang finder. Add the .bsp from cstrike\\maps or cstrike_downloads\\maps.' });
   else if (map.missingTex) rows.push({ s: 'warn', t: `Map loaded, ${map.missingTex} textures missing`, n: 'Those surfaces show a grey checkerboard in 3D.' });
   else rows.push({ s: 'ok', t: 'Map and textures', n: '' });
@@ -2498,7 +2663,7 @@ async function loadSummary(sndDone) {
     rows.splice(STALE.size ? 2 : 1, rows.length, { s: 'warn', t: 'Map, overview, models and sounds: none loaded yet', n: 'The radar uses a plain grid, there is no 3D view, and the demo plays silently.' });
     res = { state: 'warn', title: 'The demo will play, in 2D only', text: 'Only the demo file is loaded. Choose your Half-Life folder to add the map, player models and sounds.', folder: true };
   }
-  else if (!anyBad) res = { state: 'ok', title: 'Ready to watch', text: 'Everything loaded. The demo will play in full.' };
+  else if (!anyBad) res = { state: 'ok', title: 'Ready to watch', text: rows.some((r) => r.s === 'info') ? 'Everything loaded. The demo will play in full; a note on it below.' : 'Everything loaded. The demo will play in full.' };
   else res = { state: 'warn', title: 'The demo will play, with a few gaps', text: 'Some files are missing or damaged. Playback works; the parts marked below will look or sound different.', folder: !map || STALE.size > 0 };
   renderSummary(Object.assign(res, { rows }));
 }
@@ -2535,13 +2700,20 @@ function renderSummary(r) {
   if (r.state === 'busy') return;
   if (r.state === 'fail') { $('sumCount').textContent = 'Stays open until you close it'; return; }
   // closes on its own: sooner when there's nothing to read
-  SUM.total = SUM.left = r.state === 'ok' ? 6 : 15; SUM.last = performance.now();
+  SUM.total = SUM.left = r.state === 'ok' && !r.rows.some((x) => x.s === 'info') ? 6 : 15; SUM.last = performance.now();
+  // The bar is animated by the browser, so it shrinks smoothly on every frame instead of in
+  // 10-a-second steps. It pauses and resumes with the countdown.
+  const bar = $('sumBar');
+  SUM.anim = bar && bar.animate ? bar.animate([{ transform: 'scaleX(1)' }, { transform: 'scaleX(0)' }], { duration: SUM.total * 1000, fill: 'forwards', easing: 'linear' }) : null;
   const tick = () => {
     const now = performance.now(), dt = (now - SUM.last) / 1000; SUM.last = now;
     if (!SUM.paused) SUM.left -= dt;
     if (SUM.left <= 0) { closeSummary(); return; }
     $('sumCount').textContent = SUM.paused ? 'Paused while you read' : `Closes in ${Math.ceil(SUM.left)} s`;
-    $('sumBar').style.transform = `scaleX(${Math.max(0, SUM.left / SUM.total)})`;
+    if (SUM.anim) {
+      if (SUM.paused && SUM.anim.playState === 'running') SUM.anim.pause();
+      else if (!SUM.paused && SUM.anim.playState === 'paused') { SUM.anim.currentTime = (SUM.total - SUM.left) * 1000; SUM.anim.play(); }
+    } else if (bar) bar.style.transform = `scaleX(${Math.max(0, SUM.left / SUM.total)})`;
   };
   tick(); SUM.timer = setInterval(tick, 100);
 }
@@ -2593,8 +2765,8 @@ $('bClear').onclick = async () => {
   try { const db = await idb.open(); await new Promise((res) => { const q = db.transaction('overviews', 'readwrite').objectStore('overviews').clear(); q.onsuccess = res; q.onerror = res; }); } catch (e) { }
   b.textContent = 'Clear saved files';
   // back to a first visit straight away, without a reload
-  hlForget();
-  setMsg(`Done: the folder is forgotten and the saved files are deleted.${fsaOK() ? ' Chrome still remembers that it may read the folder; to remove that too, click the icon left of the address bar and choose Remove access.' : ''}${D ? ' The demo that\'s open keeps playing until you open another.' : ''}`);
+  hlForget(); closeDemo();
+  setMsg(`Done: the folder is forgotten and the saved files are deleted.${fsaOK() ? ' Chrome still remembers that it may read the folder; to remove that too, click the icon left of the address bar and choose Remove access.' : ''}`);
 };
 })();
 </script>

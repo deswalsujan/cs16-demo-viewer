@@ -559,7 +559,7 @@ function drawHitMarker(lx, cx, cy) {
     // wallbang: a square frame around the strokes, i.e. "through something"
     if (k.wb) { const q = g1 + 4; lx.lineWidth = w === 5 ? 4 : 1.5; lx.strokeRect(cx - q, cy - q, q * 2, q * 2); }
   }
-  const label = k.wb ? `WALLBANG · ${k.wb.thick}u${k.hs ? ' · HS' : ''}` : k.hs ? 'HEADSHOT' : 'KILL';
+  const label = k.wb ? `WALLBANG${k.hs ? ' · HS' : ''}` : k.hs ? 'HEADSHOT' : 'KILL';
   lx.font = `600 11px ${monoFont()}`; lx.textAlign = 'center';
   lx.lineWidth = 3; lx.strokeStyle = 'rgba(0,0,0,.7)'; lx.strokeText(label, cx, cy + 42); lx.fillStyle = col; lx.fillText(label, cx, cy + 42);
   lx.restore();

@@ -51,6 +51,7 @@ async function preloadSounds() {
   if (!D) return;
   const run = ++sndPreload;
   await loadSentences();
+  if (!D || run !== sndPreload) return; // the demo was closed or another one opened meanwhile
   for (const n of demoSoundList()) { if (run !== sndPreload) return; await loadSound(n); }
 }
 // .wav files from GoldSrc: 8 or 16 bit PCM, mono or stereo; decoded by hand so every file works

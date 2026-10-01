@@ -2,11 +2,16 @@
 
 Parked ideas and features we've discussed but not built yet. Each entry keeps enough of the discussion that it can be picked up later without starting over. When something here gets built, it moves to the [changelog](CHANGELOG.md).
 
-## Open follow-ups (checklist, updated 1 Oct 2026)
+## Open follow-ups (checklist, updated 2 Oct 2026)
 
 Everything raised in conversation that isn't finished, in one place. Each item says who does it. Ideas for new features are further down; this list is for loose ends.
 
 **Hand checks for Sujan** (things the headless test browser can't do)
+- [ ] **The wallbangs that changed in 0.13.0**, in the game's demo player (round and round timer as the viewer shows them):
+  - NoA vs Pentagram, Train 2006, newly listed: R18 1:22 MJE AK on kubenB, R21 1:09 neo M4 on zonic. No longer listed, not commented on yet: R12 1:01 Paddy M4 on kubenB. Still listed and not checked: R4 0:40 and R5 1:24 taz AK on zonic, R10 1:03 Paddy M4 on neo, R22 0:55 neo M4 on ave, R24 0:38 zonic AK on LoordB, R28 1:17 MJE AK on LoordB, R28 1:12 neo M4 on MJE.
+  - Na`Vi vs FX, Train 2011, no longer listed: R9 1:21 Zeus AK on PASHA.
+  - SK vs WinFakt, Mirage 2011, no longer listed: R4 0:37 face M4 on JiGetus, R9 0:50 RobbaN M4 on JiGetus, R19 1:26 i'M(BA-SiC)K FAMAS on Delpan.
+- [ ] **The GP Pub POV demo on your side** (0.13.0): it should open on de_zovine with 27 rounds and the two notes in the load summary.
 - [ ] **Reconnect and "Allow on every visit"** (0.12.0). In a normal (not incognito) Chrome window: open the GitHub Pages link, choose the folder, close every tab of the viewer, open the link again, click Reconnect and choose "Allow on every visit", close the tab again and reopen it. Expected: it goes straight to "Up to date" with no prompt. Not yet done: a reload doesn't show the prompt, because Chrome keeps the access until the last tab of the site closes.
 - [ ] **The 0.12.1 folder row on a real folder** (picking the right folder confirmed on Windows, 1 Oct 2026; the rest still to do): choose a wrong folder (for example `sprint-builds-review`), then the `cstrike` folder itself, then the right one; move demos in and out while the page is open (the list should update when you click back into the tab); click Clear saved files twice (should go straight back to "Choose your Half-Life folder").
 - [ ] **Reset view (0.12.2)** from Player's eyes in 3D: should go back to the starting overview.
@@ -28,7 +33,7 @@ Everything raised in conversation that isn't finished, in one place. Each item s
 - [ ] Remove the `noindex` tag that `build.py` adds to `index.html` (kept out of search results until then; indexing is fine on sujandeswal.com).
 - [ ] Privacy hardening (see "Other parked ideas").
 
-**Done since this list was written:** the start screen line "Needs your own copy of Counter-Strike 1.6, installed through Steam" (0.12.4, confirmed by Sujan).
+**Done since this list was written:** 0.13.0 (kills timed from the real moment, the gun rule, POV demos, Clear saved files closing the demo, the smooth summary bar, the side panel lists); the start screen line "Needs your own copy of Counter-Strike 1.6, installed through Steam" (0.12.4, confirmed by Sujan).
 
 **Next on the roadmap:** item 2, the README Requirements list (below).
 
@@ -139,4 +144,7 @@ Checked on two demos:
 - **Play cut-off demos up to where they end.** A demo that was cut off (interrupted download, crashed recording) currently can't be opened at all, because the file's index sits at the end. Reading it frame by frame from the start would recover everything up to the cut.
 - **Shaded lighting on player models** so they darken in shadowed areas like in-game.
 - **Team names for demos without "-vs-" in the file name** (found 1 Oct 2026). `2006-07-02_15h00_Team3D_Fnatic-...-de_train.dem` names its teams "fnatic" and "o of 3D": the guess from clan tags picked up part of a name. Worth reading names like `Team3D_Fnatic` from the file name too.
+- **Players tab: long names are still cut off** (seen 2 Oct 2026, "PENTAGRAM G-Shoc…"). The Kills and Wallbangs lists moved to three lines in 0.13.0; the Players tab keeps one line per player because of its number columns. Options: drop the clan tag in that tab, or put the name on its own line above the numbers.
+- **A wall thickness limit per gun** (2 Oct 2026). How thick a wall each gun can shoot through would catch wrong wallbangs on its own, but the numbers need care: the game moves a bullet ahead by its "penetration power" (AWP 45, AK 39, M4 35 units, cut by the material: a quarter on concrete) after each hit, and the thickest wall it gets through also depends on how the engine traces from inside a wall. Not used until that's checked in the code and in the game.
+- **Late kill messages in other old demos** (2 Oct 2026). The 2006 NoA vs Pentagram demo is the only one so far where the kill message trails the kill (see CHANGELOG 0.13.0). A second protocol 47 demo would show whether all old demos do this.
 - **Left-hand option for first-person weapons** (discussed 1 Oct 2026). The viewer now shows weapons in the right hand like CS 1.6's default (cl_righthand 1). A toggle for people who play left-handed is a one-line change if anyone asks.

@@ -125,7 +125,10 @@ const TE_SIZES = {
 const SAMPLE_HZ = 30;
 const STRIDE = 11; // x, y, z, yaw, pitch, state, weaponModel, ducked, playerModel (index into pmodels), sequence, gaitsequence
 
-export function parseDemo(buffer, onProgress) {
+// opts (used when the reader runs a second time on the same file, see the end):
+//   stopAtMap: stop at the first map change, for a recording that ran on into the next map
+//   povRounds: start rounds from the round timer, for demos without the HLTV round marker
+export function parseDemo(buffer, onProgress, opts = {}) {
   const u8 = buffer instanceof Uint8Array ? buffer : new Uint8Array(buffer);
   const r = new Reader(u8);
   if (r.nstr(8) !== 'HLDEMO') throw new Error('Not a Half-Life demo file');
@@ -169,6 +172,8 @@ export function parseDemo(buffer, onProgress) {
   let curRound = null;
   let time = 0;
   let inPlayback = false;
+  const mapsSeen = []; // { t, map } for every map the recording was on
+  let stopNow = false; // opts.stopAtMap: the next map has started, read no further
   let dead = new Set();
   let errors = 0, errSamples = [];
   const nadeEnts = {}; // ent index -> {type, pts:[]}
@@ -335,6 +340,10 @@ export function parseDemo(buffer, onProgress) {
           break;
         }
         case 'RoundTime': {
+          // A demo recorded by a player has no HLTV round marker; there the round timer starts each round.
+          // In the GP Pub POV demo (1 Oct 2026) it arrives at the start of freeze time and again when freeze
+          // time ends, so only a timer after the last round ended (or before any round) starts a new one.
+          if (opts.povRounds && inPlayback && (!curRound || curRound.endT != null)) startRound();
           if (inPlayback) roundTimes.push({ t: time, secs: m.s() });
           break;
         }
@@ -370,7 +379,7 @@ export function parseDemo(buffer, onProgress) {
   }
 
   function parseMessages(end) {
-    while (r.p < end) {
+    while (r.p < end && !stopNow) {
       const type = r.ub();
       if (type >= 64) {
         const um = userMsgs[type];
@@ -424,6 +433,8 @@ export function parseDemo(buffer, onProgress) {
           si.maxPlayers = r.ub(); si.playerIndex = r.ub(); si.deathmatch = r.ub();
           si.gameDir = r.str(); si.hostName = r.str(); si.mapFile = r.str(); si.mapCycle = r.str();
           r.skip(1);
+          if (opts.stopAtMap && mapsSeen.length) { stopNow = true; break; }
+          mapsSeen.push({ t: time, map: (si.mapFile || '').replace(/^maps\//, '').replace(/\.bsp$/, '') });
           serverInfo = si;
           maxClients = si.maxPlayers || 32;
           break;
@@ -649,13 +660,13 @@ export function parseDemo(buffer, onProgress) {
   let doneLen = 0, lastProg = 0;
   let playbackStart = null;
 
-  for (let di = 0; di < dirs.length; di++) {
+  for (let di = 0; di < dirs.length && !stopNow; di++) {
     const d = dirs[di];
     inPlayback = di > 0;
     r.p = d.offset;
     const segEnd = d.offset + d.length;
     let done = false;
-    while (!done && r.p < segEnd) {
+    while (!done && !stopNow && r.p < segEnd) {
       const ftype = r.ub();
       const ftime = r.f();
       r.ui();
@@ -708,8 +719,20 @@ export function parseDemo(buffer, onProgress) {
   const slots = {};
   for (const e in samples.slots) slots[e] = new Float32Array(samples.slots[e]);
 
+  // How long the recording spent on each map
+  const maps = opts.maps || mapsSeen.map((m, i, a) => ({ map: m.map, dur: (i + 1 < a.length ? a[i + 1].t : time) - Math.max(m.t, playbackStart || 0) }));
+  if (!opts.again) {
+    // A recording that ran on into the next map (the server changed map before it was stopped): when the first
+    // map lasted longest, read the file again up to the change. Otherwise the last map is used, as before.
+    const longest = maps.reduce((b, m, i) => (m.dur > maps[b].dur ? i : b), 0);
+    const stopAtMap = maps.length > 1 && longest === 0;
+    // No round markers but a round timer: a demo recorded by a player. Read it again, finding rounds from the timer.
+    const povRounds = !rounds.length && roundTimes.length > 0;
+    if (stopAtMap || povRounds) return parseDemo(buffer, onProgress, { again: true, stopAtMap, povRounds, maps });
+  }
+
   return {
-    header, serverInfo, maxClients,
+    header, serverInfo, maxClients, maps, pov: !!opts.povRounds,
     mapName: (serverInfo && serverInfo.mapFile) ? serverInfo.mapFile.replace(/^maps\//, '').replace(/\.bsp$/, '') : header.mapName,
     start: playbackStart || 0, end: time,
     players, kills, rounds, bomb, chat, nades, roundTimes, pauses, hp: new Float32Array(hp),

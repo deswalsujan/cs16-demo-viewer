@@ -6,7 +6,7 @@ Play Counter-Strike 1.6 HLTV demos in your browser. 2D radar, textured 3D replay
 > **You need your own legitimate copy of Counter-Strike 1.6, installed through [Steam](https://store.steampowered.com/app/10/CounterStrike/).**
 > The viewer uses the maps, textures, player models and sounds from your installation. It does not include, download or share any of the game's files, and it is not meant to be used with copies of the game obtained any other way.
 
-Everything runs locally in the browser. The page reads the files it needs from your own Half-Life folder (maps, textures, overviews, player models, sounds, demos). Nothing is uploaded. The only thing this project stores from the game is a short fingerprint of each stock model file, used to tell stock models from custom ones.
+Everything runs locally in the browser. The page reads the files it needs from your own Half-Life folder (maps, textures, overviews, player models, sounds, kill feed icons, demos). Nothing is uploaded. The only thing this project stores from the game is a short fingerprint of each stock model file, used to tell stock models from custom ones.
 
 This is an unofficial fan project. It is not affiliated with or endorsed by Valve. Counter-Strike, Half-Life and Steam are trademarks of Valve Corporation.
 
@@ -41,9 +41,11 @@ Custom maps work too, as long as the map's `.bsp` (and its `.wad` files if it us
 - Sound from your game files: gunshots, footsteps, reloads, hits, grenades, bomb beeps and radio lines, quieter with distance and panned left or right (M to mute)
 - Timeline with kill ticks, wallbangs, bomb plants and pauses; speeds from 0.25x to 8x
 - Round list, kill list, and player stats split by T side, CT side and overtime. Warmups, knife rounds and cancelled starts are left out, using the server's own "Live" and end-of-half announcements when the demo has them
-- Wallbang finder: kills where the victim was fully hidden and the crosshair was on the wall, with a copyable list of timestamps
+- Wallbang finder: kills where the victim was fully hidden and the crosshair was on the wall, with a copyable list of timestamps. Checked at the moment of the killing shot, and never for guns whose bullets stop at the first surface (pistols except the Deagle, SMGs, shotguns)
+- Kill lists that read like the game's kill feed: killer, the weapon's kill feed icon from your game files, victim
 - Kill markers on the crosshair (kill, headshot, wallbang) and a death cam
 - Health, weapons, grenades, smokes, heatmaps, a hold-Tab scoreboard with spectators and the HLTV audience count
+- Demos recorded by a player (POV) too, with limits: a player's game only receives the players near them, so others drop in and out of view
 - Old demos too. CS 1.6 recorded demos as protocol 47 until the update of 23 October 2008 ([announced](https://www.hltv.org/news/1779/cs-16-update-coming-soon) and [released](https://www.hltv.org/news/1787/cs-16-update-live) on HLTV.org). The Steam version only plays protocol 48, so it refuses those older demos unless they're converted. The viewer plays both as they are
 - Remembers your Half-Life folder between visits (Chrome and Edge) and tells you when demos, maps, models or sounds in it change
 - Breakable vents and windows disappear in 3D when they are shot out, and doors open and close as they did in the match (the wallbang finder uses where each door really was)

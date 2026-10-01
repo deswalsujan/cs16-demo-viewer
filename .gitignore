@@ -7,3 +7,5 @@ tests/*.log
 tests/__pycache__/
 tests/three.min.js
 tests/demo-probes/demo_probe.mjs
+tests/demo-probes/demo.mjs
+tests/demo-probes/bsp.mjs

@@ -14,7 +14,57 @@ What changed in the viewer, newest first. The version shows in the viewer's shor
 - The sniper scope is rebuilt from the zoom click sounds, since HLTV demos don't record zoom (see 0.10.0). A click the recorder didn't hear would put the zoom one step off until the player's next weapon switch, death or round. Clicks are timed to about a tenth of a second.
 - Theatre mode switches on by itself only with the viewer's own full screen (F or the Full screen button). The browser's full screen (F11 on Windows, the green window button or Ctrl+Cmd+F on a Mac) doesn't tell the page, so press T there.
 - "Quality: auto" lowers 3D sharpness at most once per visit and doesn't raise it again on its own. Pick "Quality: high" to go back.
+- Demos recorded by a player (POV demos) play, with two limits: the player's game only receives the players near them, so others drop in and out of view, and the wallbang finder is less reliable there than in HLTV demos. A recording that switched maps plays the map it spent longest on.
 - Keeping the Half-Life folder between visits works in Chrome and Edge (122 or later) on an https page such as GitHub Pages. Firefox and Safari don't have the browser feature it needs, and the claude.ai copy is an embedded page, where browsers don't allow it; those pick the folder on each visit. A copy of index.html opened from your own disk also keeps it (checked in Chrome by Sujan, 1 Oct 2026).
+
+## 0.13.0 (2026-10-02)
+
+Changes from Sujan's feedback on the 2006 NoA vs Pentagram Train demo and on a POV demo he recorded.
+
+### Fixed
+- Wrong wallbangs in the 2006 NoA vs Pentagram Train demo (R4 0:50 through a smoke, R15 1:31 hpx on kubenB in plain sight, R21 1:03 with a USP, R28 1:26 LUq on zonic from the front). Cause: in that demo the kill message arrives after the kill, by 0.11 seconds on average and up to 0.33. The viewer checked walls when the message arrived, and by then a peeking AWPer was back behind cover (zonic had moved 48 units, neo 105). The victim's death sound is recorded at the real moment, so a kill whose message trails it by more than 0.05 seconds is now moved back to the killing shot (the killer's last shot up to 0.3 seconds before the death sound), or to the death sound when the demo has no such shot (LUq's AWP shot at R28 isn't in the file). Kills that arrive on time are left exactly as they were.
+  - The kill feed, the crosshair marker, the timeline and the death cam use the corrected moment too. Sujan had noticed the marker lagging behind the death sound and death animation (R22 0:54).
+  - How often the message is late, measured as the gap between the death sound and the kill message:
+
+    | Demo | Average | Longest |
+    |---|---|---|
+    | NoA vs Pentagram, Train, 2006 (protocol 47) | 0.11 s | 0.33 s |
+    | SK vs WinFakt, Mirage, 2011 | 0.00 s | 0.42 s (a few kills) |
+    | Na`Vi vs FX, Train, 2011 | 0.00 s | 0.15 s |
+    | Na`Vi vs FX, Dust2, 2011 | 0.00 s | 0.00 s |
+    | mTw vs Lions, Nuke, 2011 | 0.00 s | 0.00 s |
+
+    So it's the 2006 recording, not the Train map: the 2011 Train demo is on time.
+- Guns that can't wallbang are never listed as wallbangs: USP, Glock, P228, Five-SeveN, Dual Elites, MAC-10, TMP, MP5, UMP45, P90, M3 and XM1014. From the game code (ReGameDLL, a reverse-engineered copy of CS 1.6's): these fire with a penetration count of 1, and the bullet code stops after the first surface (`wpn_<gun>.cpp`, `FireBullets3` in `cbase.cpp`). The Dual Elites pass the bullet type where the count goes, which works out to 1. The shotguns use `FireBullets`, which traces each pellet once with no penetration. Sujan also confirmed in the game that neo's USP kill (R21) wasn't possible.
+- Copy list in the Wallbangs tab showed "?" for every victim's name.
+- A demo recorded by a player (POV) was refused with "there are no player movements or rounds in it". Two causes, neither the file's fault: the viewer found rounds only through a marker that HLTV recordings carry, and it took the map from the last map the recording saw (Sujan's de_zovine demo ran 37:54 on de_zovine, then 0:04 on de_barcelona after the server changed map, so it opened as de_barcelona). Now rounds come from the round timer when there's no HLTV marker, and a recording that ran on into the next map plays the map it spent longest on. On a POV demo, every round played to a result counts (a public server has no "live on 3" to find).
+- Clear saved files with a demo open left the header, side panel and timeline showing the old match. It now closes the demo too, back to a first visit.
+- The countdown bar on the load summary moved in steps, 10 a second. It's now animated by the browser, smoothly.
+
+### Changed
+- Kills and Wallbangs lists: each kill on three lines, killer, then the gun, then the victim, so long clan tags are no longer cut off. The gun line has the kill feed icon from your own game files (`cstrike/sprites/hud.txt` and the `640hud*.spr` sheets it points to, read like maps and models, nothing bundled), the weapon's name, and the game's headshot icon. Without those files the row shows the name only.
+- Highlights you can see. The kill you clicked in Kills or Wallbangs keeps a sand tint, a thick bar and a bookmark until you click another or open another demo; a kill playback is passing gets a lighter tint. The round playing (Rounds) and the player you follow (Players) get the strong tint. Before, all of these were a 3-pixel bar on a background two shades from the panel's, which Sujan didn't notice at all.
+- The wall thickness ("Through 42 units of wall or crate") is gone from the Wallbangs rows and from the crosshair marker. It shows on hover over a row and in Copy list. Most viewers don't know what a unit is, and the number isn't something to trust on its own.
+- Error messages: a demo that can't be played says what was found and lists the likely reasons, the likeliest first. A demo that changed after the folder was read (for example one still being recorded) says so, instead of "no longer in your folder".
+- The load summary notes when a demo was recorded by a player, and when a recording switched maps.
+
+### How it was tested
+- The wallbang check was rebuilt outside the page and gives exactly the viewer's 12 results on the 2006 Train demo before the change. Wallbangs listed, before and after:
+
+  | Demo | Before | After | Changed |
+  |---|---|---|---|
+  | NoA vs Pentagram, Train, 2006 | 12 | 9 | Removed: R4 0:51 zonic AWP on neo, R12 1:01 Paddy M4 on kubenB, R15 1:31 hpx AWP on kubenB, R21 1:04 neo USP on MJE, R28 1:27 LUq AWP on zonic. Added: R18 1:22 MJE AK on kubenB (96 units), R21 1:09 neo M4 on zonic (50 units) |
+  | Na`Vi vs FX, Train, 2011 | 14 | 13 | Removed: R9 1:21 Zeus AK on PASHA (160 units) |
+  | SK vs WinFakt, Mirage, 2011 | 6 | 3 | Removed: R4 0:37 face M4 on JiGetus, R9 0:50 RobbaN M4 on JiGetus, R19 1:26 i'M(BA-SiC)K FAMAS on Delpan (one added in a warmup round, not listed) |
+  | Na`Vi vs FX, Dust2, 2011 | 10 | 10 | none |
+  | mTw vs Lions, Nuke, 2011 | 19 | 19 | none |
+
+  None of these is checked in the game yet; they're on the list in [IDEAS.md](IDEAS.md).
+- In the page, on Sujan's files: the 2006 Train demo gives the same 9 (135 kills moved earlier, none later), all 30 kill feed icons load, the clicked row keeps its bookmark (`tests/page/kill_timing_and_lists.js`). Dust2: no kills moved, the same 10 wallbangs; `modes_and_toggles.js` and `reset_view.js` pass. The POV demo opens on de_zovine with 27 rounds and both notes in the summary, and the summary bar runs as a browser animation (`tests/page/pov_demo.js`, `summary_open.js`, `summary_read.js`). Clear saved files with Dust2 open: no demo, empty header, panel and timeline, no "Back to the demo", no page errors (`clear_saved_open.js`, `clear_saved_check.js`; it first showed a sound loader still reading the closed demo, fixed). `folder_row_test.py` (20 of 20), `start_screen_check.py` and `prefs_check.py` pass.
+
+### Discussed, not changed
+- A wall thickness limit per gun (how far a bullet can travel inside a wall) was proposed and withdrawn: the numbers first given (15, 35, 39, 45 units) are how far a bullet skips ahead after a hit, not the thickest wall it gets through, which also depends on how the engine traces from inside a wall. Not used until that's checked.
+- Is it Train, the old demo or protocol 47? The late kill message is in the 2006 demo only; the 2011 Train demo is on time. Whether every protocol 47 demo does this needs a second old demo.
 
 ## 0.12.4 (2026-10-01)
 
