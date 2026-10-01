@@ -1262,7 +1262,7 @@ function showLoad(v) {
 }
 // Everything that needs a demo stays disabled until one is loaded (Shortcuts always works)
 function setControls(on) {
-  const ids = ['bPrevR', 'bBack', 'bPlay', 'bFwd', 'bNextR', 'bScope'];
+  const ids = ['bPrevR', 'bBack', 'bPlay', 'bFwd', 'bNextR', 'bScope', 'bTheatre', 'bFull'];
   for (const id of ids) $(id).disabled = !on;
   document.querySelectorAll('#speeds button, #viewSeg button, .tabs button').forEach((b) => b.disabled = !on);
   $('tl').classList.toggle('off', !on);

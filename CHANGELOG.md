@@ -13,6 +13,11 @@ What changed in the viewer, newest first. The version shows in the viewer's shor
 - Theatre mode switches on by itself only with the viewer's own full screen (F or the Full screen button). The browser's full screen (F11 on Windows, the green window button or Ctrl+Cmd+F on a Mac) doesn't tell the page, so press T there.
 - "Quality: auto" lowers 3D sharpness at most once per visit and doesn't raise it again on its own. Pick "Quality: high" to go back.
 
+## 0.9.3 (2026-10-01)
+
+### Fixed
+- Theatre and Full screen could be clicked on the start screen before any demo was open. They're now greyed out until a demo is open, like the other controls.
+
 ## 0.9.2 (2026-10-01)
 
 ### Changed
