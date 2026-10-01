@@ -16,6 +16,11 @@ What changed in the viewer, newest first. The version shows in the viewer's shor
 - "Quality: auto" lowers 3D sharpness at most once per visit and doesn't raise it again on its own. Pick "Quality: high" to go back.
 - Keeping the Half-Life folder between visits works in Chrome and Edge (122 or later) on an https page such as GitHub Pages. Firefox and Safari don't have the browser feature it needs, and the claude.ai copy is an embedded page, where browsers don't allow it; those pick the folder on each visit. A copy of index.html opened from your own disk also keeps it (checked in Chrome by Sujan, 1 Oct 2026).
 
+## 0.12.4 (2026-10-01)
+
+### Added
+- A line on the start screen, under "Everything stays on your computer": "Needs your own copy of Counter-Strike 1.6, installed through Steam." It matches the box at the top of the README.
+
 ## 0.12.3 (2026-10-01)
 
 ### Changed
