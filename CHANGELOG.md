@@ -21,6 +21,9 @@ What changed in the viewer, newest first. The version shows in the viewer's shor
 ### Added
 - A line on the start screen, under "Everything stays on your computer": "Needs your own copy of Counter-Strike 1.6, installed through Steam." It matches the box at the top of the README.
 
+### Checked
+- Sujan confirmed the line on the live page (1 Oct 2026). His Windows screenshot from the same day also shows the 0.12.1 folder row working on his Windows game folder: "Folder selected: Half-Life, Up to date, 13 demos found" (159 maps, 56 overviews, 58 player models, 3,191 sounds).
+
 ## 0.12.3 (2026-10-01)
 
 ### Changed

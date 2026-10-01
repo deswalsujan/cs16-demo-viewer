@@ -8,7 +8,7 @@ Everything raised in conversation that isn't finished, in one place. Each item s
 
 **Hand checks for Sujan** (things the headless test browser can't do)
 - [ ] **Reconnect and "Allow on every visit"** (0.12.0). In a normal (not incognito) Chrome window: open the GitHub Pages link, choose the folder, close every tab of the viewer, open the link again, click Reconnect and choose "Allow on every visit", close the tab again and reopen it. Expected: it goes straight to "Up to date" with no prompt. Not yet done: a reload doesn't show the prompt, because Chrome keeps the access until the last tab of the site closes.
-- [ ] **The 0.12.1 folder row on a real folder:** choose a wrong folder (for example `sprint-builds-review`), then the `cstrike` folder itself, then the right one; move demos in and out while the page is open (the list should update when you click back into the tab); click Clear saved files twice (should go straight back to "Choose your Half-Life folder").
+- [ ] **The 0.12.1 folder row on a real folder** (picking the right folder confirmed on Windows, 1 Oct 2026; the rest still to do): choose a wrong folder (for example `sprint-builds-review`), then the `cstrike` folder itself, then the right one; move demos in and out while the page is open (the list should update when you click back into the tab); click Clear saved files twice (should go straight back to "Choose your Half-Life folder").
 - [ ] **Reset view (0.12.2)** from Player's eyes in 3D: should go back to the starting overview.
 - [ ] **Settings carry over (0.12.3):** change view, speed and toggles, open another demo: settings kept, speed back to 1x and paused; reload the page: settings still there.
 - [ ] **The game's own demo player vs the viewer**, two checks on one demo (see "Open decisions"): does the in-game player show the AWP scope for an HLTV demo, and does it show the same small crosshair offset at a kill (CHANGELOG 0.10.0)?
@@ -27,6 +27,8 @@ Everything raised in conversation that isn't finished, in one place. Each item s
 **Tied to moving to sujandeswal.com** (not a dependency for anything else)
 - [ ] Remove the `noindex` tag that `build.py` adds to `index.html` (kept out of search results until then; indexing is fine on sujandeswal.com).
 - [ ] Privacy hardening (see "Other parked ideas").
+
+**Done since this list was written:** the start screen line "Needs your own copy of Counter-Strike 1.6, installed through Steam" (0.12.4, confirmed by Sujan).
 
 **Next on the roadmap:** item 2, the README Requirements list (below).
 
