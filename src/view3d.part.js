@@ -203,7 +203,7 @@ function resetCam3() {
   for (const e in D.slots) { const a = D.slots[e]; for (let i = 0; i < a.length; i += S * 40) if (!isNaN(a[i]) && a[i + 5] > 0) { sx += a[i]; sy += a[i + 1]; sz += a[i + 2]; n++; } }
   if (!n) return;
   cam3.pos = [sx / n - 1500, sy / n, sz / n + 1800]; cam3.yaw = 0; cam3.pitch = 48;
-  cam3.mode = 'free';
+  cam3.mode = 'free'; cam3.chase = null; cam3.cYaw = null;
   document.querySelectorAll('#cam3 [data-c]').forEach((x) => x.classList.toggle('on', x.dataset.c === 'free'));
 }
 function copyCamToFree() {

@@ -51,6 +51,7 @@ Page scripts in `page/`:
 | `sniper_kill_list.js` | Sniper kills in the live rounds (with `DEMO=tuscan MAP_NEEDED=0` for Tuscan) | 0.10.0 |
 | `aim_at_sniper_kills.js`, `aim_bias_headshots.js` | How far the crosshair is from the victim at kills, and whether misses lean one way | CHANGELOG 0.10.0, "Discussed, not changed" |
 | `see_through_walls.js`, then `team_colours.js`, then `figure_fallback.js` | Bodies through walls only for hidden players; Team colours on every model; plain figures when model files are missing. Run in this order, in one go: each picks up where the previous one left off. | 0.11.0 |
+| `reset_view.js` | Reset view from Player's eyes, Behind player and a moved free camera, in 2D, 3D and split view | 0.12.2 |
 
 Stand-alone checks:
 
@@ -60,7 +61,7 @@ Stand-alone checks:
 | `theatre_all_setups.sh` | The above for five setups: 14-inch and 13-inch MacBook (2x), Windows at 100%, 125% and 150% | about 45 minutes |
 | `theatre_side_panel_test.py`, `theatre_together_test.py` | The 0.9.1 and 0.9.2 checks: the side panel doesn't bring in the header; all panels come and go together | about 5 minutes each |
 | `start_screen_check.py` | Theatre and Full screen are greyed out before a demo is open (no Half-Life folder needed) | under a minute |
-| `folder_row_test.py` | The Half-Life folder row (0.12.0): first visit, up to date, changes found and Refresh, Reconnect, opening by itself on the next visit, the ordinary folder pick, and the page inside a frame from another site. Uses a stand-in for Chrome's folder access, since its picker and prompts can't be driven headless (no Half-Life folder needed) | about 1 minute |
+| `folder_row_test.py` | The Half-Life folder row (0.12.0, 0.12.1): first visit, picking, changes applied by themselves, Reconnect, opening by itself on the next visit, wrong folders and no demos, Clear saved files, dropping a demo with no folder, the ordinary folder pick, and the page inside a frame from another site. Uses a stand-in for Chrome's folder access, since its picker and prompts can't be driven headless (no Half-Life folder needed) | under a minute |
 
 ## Demo data probes (Node)
 

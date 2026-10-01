@@ -20,9 +20,11 @@ This is an unofficial fan project. It is not affiliated with or endorsed by Valv
 
 Three ways to watch: **Normal** shows everything. **Theatre** (`T`) fills the browser window with the view and hides the viewer's own controls until you move the mouse to the top, right or bottom edge. **Full screen** (`F`) is Theatre mode with the browser's tabs and address bar gone too.
 
-The start screen shows which folder is in use and whether it's up to date. When you add, replace or delete demos, maps, models or sounds, the viewer notices when you come back to the page and shows a summary like "3 new demos, 1 removed" with a **Refresh** button. Changes made between visits are picked up automatically when the page opens.
+The start screen shows which folder is selected and whether it's the right one. Choosing a folder without a `cstrike` folder inside, or the `cstrike` folder itself, says so and explains what to pick. When you add or remove demos, maps, models or sounds, the viewer picks up the changes by itself when you come back to the page. **Open .dem** works once the folder is chosen, for demos kept anywhere.
 
-Firefox, Safari and the claude.ai copy of the viewer can't keep folder access, so there you pick the folder on each visit (Chrome's prompt there says "upload", which is only its wording for picking a folder). The viewer still remembers the folder's name and its list of files, never their contents, so it can tell you what changed since last time.
+To start over as on a first visit, click **Clear saved files** on the start screen (it forgets the folder and the files this browser saved), then click the icon left of the address bar and choose **Remove access**.
+
+Firefox, Safari and the claude.ai copy of the viewer can't keep folder access, so there you pick the folder on each visit (Chrome's prompt there says "upload", which is only its wording for picking a folder). The viewer still remembers the folder's name and its list of files, never their contents, so it can show which folder you used last time.
 
 Custom maps work too, as long as the map's `.bsp` (and its `.wad` files if it uses any) are in `cstrike/maps` or `cstrike_downloads/maps`.
 

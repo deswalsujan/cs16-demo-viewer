@@ -421,7 +421,7 @@ body:has(.app.theatre) { overflow: hidden; }
       <button class="btn on" id="tgNades" type="button">Grenades</button>
       <button class="btn on" id="tgLines" type="button">Kill lines</button>
       <button class="btn" id="tgXray" type="button" title="Show players behind walls, and their names, in 3D (H)">See through walls</button>
-      <button class="btn" id="tgFit" type="button">Reset view</button>
+      <button class="btn" id="tgFit" type="button" title="Back to the starting view: the whole radar in 2D, the overview camera in 3D">Reset view</button>
     </div>
     <div class="heatbar" id="heatbar" hidden>
       <select id="hmMode" aria-label="Heatmap">
@@ -454,14 +454,14 @@ body:has(.app.theatre) { overflow: hidden; }
           <div class="step" id="stepDemo">
             <div class="k">2</div>
             <div class="tx"><b>Open a demo</b><small>An HLTV .dem file. Pick one below or open a file from anywhere. Also plays pre-2008 (protocol 47) demos the Steam game won't open.</small></div>
-            <button class="btn" id="btnDemo" type="button">Open .dem</button>
+            <button class="btn" id="btnDemo" type="button" disabled title="Choose your Half-Life folder first">Open .dem</button>
           </div>
         </div>
         <div class="demos" id="demoList"></div>
         <div class="drophint">Or drop a .dem file, or an overview .bmp and .txt pair, anywhere on this page</div>
         <div class="prog" id="prog" hidden><i id="progBar"></i></div>
         <div class="msg" id="msg"></div>
-        <div class="loadfoot"><span>Version __VERSION__</span><button class="btn" id="bClear" type="button" title="Deletes the maps, models, sounds and overviews this browser saved from your folder">Clear saved files</button></div>
+        <div class="loadfoot"><span>Version __VERSION__</span><button class="btn" id="bClear" type="button" title="Forgets your Half-Life folder and deletes the maps, models, sounds and overviews this browser saved from it, as on a first visit">Clear saved files</button></div>
       </div>
     </div>
   </section>
@@ -567,7 +567,7 @@ async function readPicked(blob, name) {
 
 // ---------------- file loading ----------------
 $('btnFolder').onclick = () => pickFolder();
-$('btnHlRefresh').onclick = () => hlRefreshClick();
+$('btnHlRefresh').onclick = () => hlReconnect();
 $('btnDemo').onclick = () => $('fDemo').click();
 $('btnOpen').onclick = () => { showLoad($('load').hidden); };
 $('fDemo').onchange = (e) => { const f = e.target.files[0]; if (f) loadDemoFile(f); e.target.value = ''; };
@@ -602,11 +602,9 @@ function indexFolder(list) {
     }
   }
   files.demos.sort((a, b) => b.lastModified - a.lastModified);
-  $('stepFolder').classList.add('done');
-  $('stepFolder').querySelector('.k').textContent = '✓';
   renderDemoList();
   const nPm = Object.keys(files.mdl).filter((k) => k.startsWith('models/player/')).length;
-  setMsg(`Found ${Object.keys(files.maps).length} maps, ${Object.keys(files.overviews).length} overviews, ${nPm} player models, ${Object.keys(files.snd).length} sounds and ${files.demos.length} demos.`);
+  if (list.length) setMsg(`Found ${Object.keys(files.maps).length} maps, ${Object.keys(files.overviews).length} overviews, ${nPm} player models, ${Object.keys(files.snd).length} sounds and ${files.demos.length} demos.`);
   retryMissingModels(); retryMissingSounds(); SND.sentences = null;
   if (D) preloadSounds();
   if (D && !MAP) loadMap(D.mapName);
@@ -637,118 +635,129 @@ window.addEventListener('focus', checkDemoList);
 document.addEventListener('visibilitychange', () => { if (!document.hidden) checkDemoList(); });
 
 // ---------------- the Half-Life folder, remembered between visits ----------------
-// In Chrome and Edge on an https page, the viewer keeps a handle to the folder (File System Access API).
-// On the next visit Chrome asks once more and offers "Allow on every visit" (Chrome 122+); after that the
-// folder opens by itself. Elsewhere (Firefox, Safari, the claude.ai artifact, which is an embedded page) the
-// folder is picked on every visit as before. Either way the viewer remembers the folder's name and its list
-// of files (names, sizes, dates, never contents), so it can say what changed since last time.
-const HL = { handle: null, snap: null, loaded: false, checking: false, lastCheck: 0, pending: null, fsaBroken: false };
+// In Chrome and Edge on an https page (or a copy opened from disk), the viewer keeps a handle to the folder
+// (File System Access API). On the next visit Chrome asks once more and offers "Allow on every visit"
+// (Chrome 122+); after that the folder opens by itself. Elsewhere (Firefox, Safari, the claude.ai artifact,
+// which is an embedded page) the folder is picked on every visit. Either way the viewer remembers the
+// folder's name and its list of files (names, sizes, dates, never contents) in this browser.
+// Changes in the folder (demos, maps, models, sounds added or removed) are picked up by themselves whenever
+// you come back to the page or to the start screen. A demo can only be opened once a folder is chosen: the
+// maps, overviews, models and sounds all come from it.
+const HL = { handle: null, snap: null, loaded: false, checking: false, lastCheck: 0, fsaBroken: false, ok: false };
+const HL_EXAMPLE = 'C:\\Program Files (x86)\\Steam\\steamapps\\common\\Half-Life';
+const HL_HELP = `The Half-Life folder from your Steam install, the one that contains cstrike and valve. On Windows that's usually ${HL_EXAMPLE}.`;
 const fsaOK = () => { try { return !HL.fsaBroken && typeof window.showDirectoryPicker === 'function' && window.isSecureContext && window.self === window.top; } catch (e) { return false; } };
 // the files the viewer reads; everything else in the folder is skipped
 const HL_WANT = /(?:^|\/)(?:cstrike|cstrike_downloads|valve)\/(?:maps\/[^/]+\.bsp|overviews\/[^/]+\.(?:bmp|txt)|models\/.+\.mdl|sound\/.+\.wav|sound\/sentences\.txt|[^/]+\.wad)$|\.dem$/;
-const HL_KINDS = [['demo', 'demo', 'demos'], ['map', 'map', 'maps'], ['model', 'model', 'models'], ['sound', 'sound', 'sounds'], ['overview', 'overview file', 'overview files'], ['wad', 'texture file', 'texture files']];
-function hlKind(p) {
-  if (p.endsWith('.dem')) return 'demo';
-  if (/\/maps\//.test(p)) return 'map';
-  if (/\/models\//.test(p)) return 'model';
-  if (/\/overviews\//.test(p)) return 'overview';
-  if (p.endsWith('.wad')) return 'wad';
-  return 'sound';
-}
 // path inside the chosen folder, lower case, without the folder's own name
 const hlKey = (f) => (f.relPath || f.webkitRelativePath || f.name).replace(/\\/g, '/').toLowerCase().split('/').slice(1).join('/');
-function hlSnap(list, name) {
+function hlSnap(list, name, gameDirs) {
   const out = {};
   for (const f of list) { const k = hlKey(f); if (HL_WANT.test('/' + k)) out[k] = [f.size, f.lastModified]; }
-  return { name, files: out, at: Date.now() };
+  return { name, files: out, at: Date.now(), gameDirs: gameDirs || [] };
 }
-// what changed between two file lists, with a short summary like "3 new demos, 1 removed; 2 models changed"
-function hlDiff(a, b) {
-  const by = {}, changed = [];
-  const add = (p, what) => { const k = hlKind(p); (by[k] || (by[k] = { add: 0, del: 0, chg: 0 }))[what]++; if (what !== 'add') changed.push(p); };
-  for (const p in b) { if (!a[p]) add(p, 'add'); else if (a[p][0] !== b[p][0] || a[p][1] !== b[p][1]) add(p, 'chg'); }
-  for (const p in a) if (!b[p]) add(p, 'del');
-  const parts = [];
-  for (const [k, one, many] of HL_KINDS) {
-    const c = by[k]; if (!c) continue;
-    const noun = (n) => (n === 1 ? one : many), bits = [];
-    if (c.add) bits.push(`${c.add} new ${noun(c.add)}`);
-    if (c.del) bits.push(bits.length ? `${c.del} removed` : `${c.del} ${noun(c.del)} removed`);
-    if (c.chg) bits.push(bits.length ? `${c.chg} changed` : `${c.chg} ${noun(c.chg)} changed`);
-    parts.push(bits.join(', '));
-  }
-  return { count: Object.values(by).reduce((s, c) => s + c.add + c.del + c.chg, 0), changed, text: parts.join('; ') };
-}
-// read the folder through its handle: the files the viewer uses, with their paths
-async function hlScanHandle(dir) {
+// paths that differ between two file lists (added, removed or replaced)
+function hlChanged(a, b) {
   const out = [];
+  for (const p in b) if (!a[p] || a[p][0] !== b[p][0] || a[p][1] !== b[p][1]) out.push(p);
+  for (const p in a) if (!b[p]) out.push(p);
+  return out;
+}
+// read the folder through its handle: the files the viewer uses, with their paths, plus the names of the
+// game folders directly inside it (to tell a Half-Life folder from some other folder)
+async function hlScanHandle(dir) {
+  const out = [], top = [];
   const walk = async (d, path, depth) => {
     if (depth > 10 || out.length > 200000) return;
     const subs = [], gets = [];
     for await (const [name, h] of d.entries()) {
       const p = path + '/' + name;
-      if (h.kind === 'directory') subs.push([h, p]);
+      if (h.kind === 'directory') { subs.push([h, p]); if (!depth) top.push(name.toLowerCase()); }
       else if (HL_WANT.test(p.toLowerCase())) gets.push(h.getFile().then((f) => { f.relPath = p; out.push(f); }, () => {}));
     }
     await Promise.all(gets);
     for (const [h, p] of subs) await walk(h, p, depth + 1);
   };
   await walk(dir, dir.name, 0);
+  out.gameDirs = top.filter((n) => /^(cstrike|cstrike_downloads|valve)$/.test(n));
   return out;
 }
-// the row on the start screen
+// Is this the Half-Life folder? null when it is, otherwise what's wrong with it
+function hlProblem(name, gameDirs) {
+  const n = (name || '').toLowerCase();
+  if (/^(cstrike|cstrike_downloads|valve)$/.test(n)) return `This is the ${name} folder inside Half-Life. Choose the folder one level up, Half-Life, which contains cstrike and valve.`;
+  if (!gameDirs.includes('cstrike')) return `It has no cstrike folder inside. Choose the Half-Life folder from your Steam install, which contains cstrike and valve. On Windows that's usually ${HL_EXAMPLE}.`;
+  return null;
+}
+// the row on the start screen, and whether a demo can be opened
 function hlRender(state, o = {}) {
-  const title = $('hlTitle'), st = $('hlStatus'), pick = $('btnFolder'), ref = $('btnHlRefresh');
+  const title = $('hlTitle'), st = $('hlStatus'), pick = $('btnFolder'), rec = $('btnHlRefresh');
   const name = o.name || (HL.snap && HL.snap.name) || '';
-  title.innerHTML = name ? `Half-Life folder: <span class="nm">${esc(name)}</span>` : 'Choose your Half-Life folder';
-  ref.hidden = true; pick.textContent = name ? 'Change' : 'Choose folder';
+  title.innerHTML = name ? `Folder selected: <span class="nm">${esc(name)}</span>` : 'Choose your Half-Life folder';
+  title.title = HL_HELP;
+  rec.hidden = true; pick.textContent = name ? 'Change' : 'Choose folder';
   const line = (cls, head, rest) => `<span class="hlst ${cls}">${esc(head)}</span>${rest ? ' ' + esc(rest) : ''}`;
-  const done = state === 'ok' || state === 'changes';
-  $('stepFolder').classList.toggle('done', done);
-  $('stepFolder').querySelector('.k').textContent = done ? '✓' : '1';
-  if (state === 'none') st.innerHTML = esc(o.note || 'The folder that contains cstrike and valve. It gives the viewer your maps, textures, player models, sounds and demos. Nothing leaves your computer.')
+  HL.ok = state === 'ok';
+  $('stepFolder').classList.toggle('done', HL.ok);
+  $('stepFolder').querySelector('.k').textContent = HL.ok ? '✓' : '1';
+  if (state === 'none') st.innerHTML = esc(o.note || HL_HELP) + ' ' + esc('Nothing leaves your computer.')
     + (fsaOK() ? '' : ' ' + esc('Chrome asks whether to "upload" the files: that is its standard wording for picking a folder.'));
-  else if (state === 'scanning') st.innerHTML = line('wait', 'Checking for changes…');
+  else if (state === 'scanning') st.innerHTML = line('wait', 'Reading the folder…');
   else if (state === 'reconnect') {
     st.innerHTML = line('wait', 'Chrome needs your OK again.', 'Click Reconnect, then choose "Allow on every visit" so it opens by itself next time.');
-    ref.textContent = 'Reconnect'; ref.hidden = false;
+    rec.textContent = 'Reconnect'; rec.hidden = false;
   } else if (state === 'remembered') {
     st.innerHTML = line('wait', 'Choose it again for this visit.', fsaOK() ? '' : 'This page can\'t keep folder access (Firefox, Safari and the claude.ai copy can\'t), so it\'s picked once per visit. Chrome or Edge at deswalsujan.github.io/cs16-demo-viewer remember it.');
     pick.textContent = 'Choose folder';
-  } else if (state === 'ok') st.innerHTML = line('ok', 'Up to date.', o.since ? `Picked up since last time: ${o.since}.` : '');
-  else if (state === 'changes') { st.innerHTML = line('chg', 'Changes found:', o.text + '. Refresh to use them.'); ref.textContent = 'Refresh'; ref.hidden = false; }
+  } else if (state === 'wrong') { st.innerHTML = line('bad', 'Not the Half-Life folder.', o.text); pick.textContent = 'Choose again'; }
+  else if (state === 'ok') {
+    const n = files.demos.length;
+    st.innerHTML = n ? line('ok', 'Up to date.', `${n} ${n === 1 ? 'demo' : 'demos'} found.`)
+      : line('chg', 'No demos found.', 'The folder is fine, but has no .dem files. Put demos in cstrike, or open one from anywhere with Open .dem.');
+  }
   else if (state === 'error') st.innerHTML = line('bad', o.head || 'Couldn\'t open the folder.', o.text || 'It may have been moved or renamed. Choose it again.');
+  $('btnDemo').disabled = !HL.ok;
+  $('btnDemo').title = HL.ok ? '' : 'Choose your Half-Life folder first';
 }
 // use a freshly read folder: index it, remember its file list, and drop anything cached from changed files
-async function hlApply(list, snap, d) {
-  if (d) for (const p of d.changed) {
+function hlApply(list, snap) {
+  const prev = HL.snap;
+  if (prev && prev.name === snap.name) for (const p of hlChanged(prev.files, snap.files)) {
     const m = /^(?:cstrike|cstrike_downloads|valve)\/(models\/.+\.mdl|sound\/(.+\.wav)|maps\/([^/]+)\.bsp)$/.exec(p);
     if (!m) continue;
     if (m[3]) { if (MAP && MAP.name === m[3]) { MAP = null; clear3d(); } }
     else if (m[2]) delete SND.bufs[m[2]];
     else delete MODELS[m[1]];
   }
-  HL.snap = snap; HL.loaded = true; HL.pending = null;
+  HL.snap = snap; HL.loaded = true;
   idb.put('hl:snap', snap);
   indexFolder(list);
 }
-// read the remembered folder. apply: use the result straight away (a new visit, or Refresh);
-// otherwise only say what changed and wait for Refresh.
-async function hlScan(apply) {
+// a folder was read (through the handle or the ordinary pick): check it's the Half-Life folder, then use it
+function hlUse(list, name, gameDirs) {
+  const bad = hlProblem(name, gameDirs);
+  if (bad) {
+    // keep nothing from a wrong folder: an earlier good folder's files stay out too, so it's clear what's loaded
+    HL.loaded = false; HL.snap = { name, files: {}, gameDirs };
+    indexFolder([]); hlRender('wrong', { name, text: bad }); return false;
+  }
+  hlApply(list, hlSnap(list, name, gameDirs));
+  hlRender('ok');
+  return true;
+}
+// read the remembered folder and use what's there now. quiet: a routine look on coming back (no "Reading" note)
+async function hlScan(quiet) {
   if (!HL.handle || HL.checking) return;
   HL.checking = true;
-  if (apply) hlRender('scanning');
+  if (!quiet) hlRender('scanning');
   try {
     const list = await hlScanHandle(HL.handle);
-    const snap = hlSnap(list, HL.handle.name);
-    const prev = HL.snap;
-    const d = prev ? hlDiff(prev.files, snap.files) : null;
-    if (apply || !HL.loaded) { await hlApply(list, snap, d); hlRender('ok', { since: d && d.count ? d.text : '' }); }
-    else if (d && d.count) {
-      HL.pending = { list, snap, d }; hlRender('changes', { text: d.text });
-      if (D && $('load').hidden) toast(`Your Half-Life folder changed: ${d.text}. Refresh it on the start screen (Open another demo).`, 7000);
-    } else hlRender('ok');
+    const snap = hlSnap(list, HL.handle.name, list.gameDirs);
+    // nothing changed since the last look: leave everything as it is
+    if (quiet && HL.loaded && HL.snap && HL.snap.name === snap.name && !hlChanged(HL.snap.files, snap.files).length) hlRender('ok');
+    else hlUse(list, HL.handle.name, list.gameDirs);
   } catch (e) {
+    HL.loaded = false;
     hlRender('error', e && e.name === 'NotFoundError' ? { head: 'The folder is gone.', text: 'It was moved, renamed or deleted. Choose it again.' } : {});
   } finally { HL.checking = false; HL.lastCheck = Date.now(); }
 }
@@ -759,52 +768,57 @@ async function pickFolder() {
   catch (e) {
     if (e && e.name === 'AbortError') return; // closed the picker
     // the browser won't show this picker here: use the ordinary folder pick from now on
-    HL.fsaBroken = true; hlRender('none', { note: 'Choose the folder again (this page can\'t keep folder access).' }); return;
+    HL.fsaBroken = true; hlRender('none', { note: 'Choose the folder again (this page can\'t keep folder access). ' + HL_HELP }); return;
   }
   HL.handle = h; idb.put('hl:handle', h);
-  if (HL.snap && HL.snap.name !== h.name) HL.snap = null; // a different folder: nothing to compare with
-  await hlScan(true);
+  await hlScan(false);
 }
-// the ordinary folder pick (no handle to keep): still say what changed since the last pick
-async function hlPicked(list) {
-  const name = ((list[0].webkitRelativePath || '').split('/')[0]) || 'Half-Life';
-  const snap = hlSnap(list, name);
-  const prev = HL.snap && HL.snap.name === name ? HL.snap : null;
-  const d = prev ? hlDiff(prev.files, snap.files) : null;
-  await hlApply(list, snap, d);
-  hlRender('ok', { since: d && d.count ? d.text : '' });
+// the ordinary folder pick (no handle to keep)
+function hlPicked(list) {
+  const name = ((list[0].webkitRelativePath || '').split('/')[0]) || 'folder';
+  const dirs = new Set();
+  for (const f of list) { const seg = (f.webkitRelativePath || '').split('/'); if (seg.length > 2) dirs.add(seg[1].toLowerCase()); }
+  hlUse(list, name, [...dirs].filter((n) => /^(cstrike|cstrike_downloads|valve)$/.test(n)));
 }
-async function hlRefreshClick() {
+// Reconnect: Chrome asks again (with "Allow on every visit"), then the folder is read
+async function hlReconnect() {
   if (!HL.handle) { pickFolder(); return; }
   let perm = 'granted';
   try { perm = await HL.handle.requestPermission({ mode: 'read' }); } catch (e) { perm = 'denied'; }
   if (perm !== 'granted') { hlRender('error', { head: 'Access wasn\'t allowed.', text: 'Click Reconnect and allow it, or choose the folder again.' }); $('btnHlRefresh').textContent = 'Reconnect'; $('btnHlRefresh').hidden = false; return; }
-  if (HL.pending) { const p = HL.pending; await hlApply(p.list, p.snap, p.d); hlRender('ok', { since: p.d.text }); }
-  else await hlScan(true);
+  await hlScan(false);
 }
-// "Choose Half-Life folder" buttons elsewhere (the 3D view, the load summary): refresh the remembered folder when there is one
-function refreshOrPick() { if (HL.handle && HL.loaded) hlScan(true); else if (HL.handle) hlRefreshClick(); else pickFolder(); }
-// coming back to the page, or to the start screen: look for changes (at most every 30 s, or 5 s on the start screen)
+// "Choose Half-Life folder" buttons elsewhere (the 3D view, the load summary): read the remembered folder again when there is one
+function refreshOrPick() { if (HL.handle && HL.loaded) hlScan(false); else if (HL.handle) hlReconnect(); else pickFolder(); }
+// coming back to the page, or to the start screen: pick up whatever changed in the folder
 async function hlCheck(minGap) {
   if (!HL.handle || !HL.loaded || HL.checking || document.hidden || Date.now() - HL.lastCheck < minGap) return;
   let perm = 'prompt';
   try { perm = await HL.handle.queryPermission({ mode: 'read' }); } catch (e) { }
-  if (perm !== 'granted') { hlRender('reconnect'); return; }
-  hlScan(false);
+  if (perm !== 'granted') { HL.loaded = false; hlRender('reconnect'); return; }
+  hlScan(true);
 }
-window.addEventListener('focus', () => hlCheck(30000));
-document.addEventListener('visibilitychange', () => hlCheck(30000));
+const HL_GAP = 2000; // at most one look every 2 seconds
+window.addEventListener('focus', () => hlCheck(HL_GAP));
+document.addEventListener('visibilitychange', () => hlCheck(HL_GAP));
 async function hlInit() {
   HL.snap = (await idb.get('hl:snap')) || null;
+  if (HL.snap && !HL.snap.files) HL.snap = null;
   const h = fsaOK() ? await idb.get('hl:handle') : null;
   if (h && typeof h.queryPermission === 'function') {
     HL.handle = h;
     let perm = 'prompt';
     try { perm = await h.queryPermission({ mode: 'read' }); } catch (e) { }
-    if (perm === 'granted') { await hlScan(true); return; }
+    if (perm === 'granted') { await hlScan(false); return; }
     hlRender('reconnect', { name: h.name }); return;
   }
-  hlRender(HL.snap ? 'remembered' : 'none');
+  hlRender(HL.snap && Object.keys(HL.snap.files).length ? 'remembered' : 'none');
+}
+// back to a first visit: forget the folder, its file list and everything loaded from it
+function hlForget() {
+  HL.handle = null; HL.snap = null; HL.loaded = false;
+  indexFolder([]); setMsg('');
+  hlRender('none');
 }
 hlInit();
 
@@ -828,7 +842,9 @@ document.addEventListener('drop', (e) => {
   }
   if (D && !MAP && list.some((f) => /\.(bsp|wad)$/i.test(f.name))) loadMap(D.mapName);
   const dem = list.find((f) => /\.dem$/i.test(f.name));
-  if (dem) loadDemoFile(dem);
+  // a demo needs the folder: the maps, overviews, models and sounds all come from it
+  if (dem && !HL.ok) { if ($('load').hidden) showLoad(true); setMsg('Choose your Half-Life folder first. The viewer takes the maps, overviews, models and sounds from it, then opens any demo.', true); }
+  else if (dem) loadDemoFile(dem);
   else if (ovs.length && D) tryLoadOverview(D.mapName).then(afterOverview);
 });
 
@@ -1515,7 +1531,7 @@ function toast(t, ms = 9000) {
 function showLoad(v) {
   $('load').hidden = !v;
   applyTheatre(); // the start screen needs the header, so Theatre mode pauses while it's open
-  if (v) { playing = false; setPlayIcon(); $('prog').hidden = true; hlCheck(5000); }
+  if (v) { playing = false; setPlayIcon(); $('prog').hidden = true; hlCheck(HL_GAP); }
   setControls(!v && !!D);
 }
 // Everything that needs a demo stays disabled until one is loaded (Shortcuts always works)
@@ -1860,7 +1876,10 @@ $('tgNames').onclick = () => toggleOpt('names', 'tgNames');
 $('tgNades').onclick = () => toggleOpt('nades', 'tgNades');
 $('tgLines').onclick = () => toggleOpt('lines', 'tgLines');
 $('tgXray').onclick = () => toggleOpt('xray', 'tgXray');
-$('tgFit').onclick = () => fitView();
+// Reset view: back to where the view starts. In 2D the whole radar (zoom and pan undone); in 3D the overview
+// camera the demo opens with, as a free camera, so it stops riding along with a followed player. That player
+// stays highlighted. In split view both reset.
+$('tgFit').onclick = () => { fitView(); if (viewMode !== '2d' && D) resetCam3(); };
 
 // Player state at time t, filled in between the demo's snapshots (HLTV stores about ten a second).
 // Movement and aim follow a smooth curve through the snapshots around t instead of straight lines,
@@ -2458,7 +2477,7 @@ async function loadSummary(sndDone) {
   }
   // files that were there when the folder was chosen but can't be read now (deleted, moved or replaced since)
   // listed first, since it's usually the reason for the misses below
-  if (STALE.size) rows.splice(1, 0, { s: 'warn', t: 'Your Half-Life folder changed after you chose it', n: `${STALE.size} ${STALE.size === 1 ? 'file' : 'files'} couldn't be read, for example ${few([...STALE].map((n) => n.split('/').pop()))}. ${HL.handle ? 'Refresh the Half-Life folder on the start screen' : 'Choose the folder again'} to pick up the changes.` });
+  if (STALE.size) rows.splice(1, 0, { s: 'warn', t: 'Your Half-Life folder changed after you chose it', n: `${STALE.size} ${STALE.size === 1 ? 'file' : 'files'} couldn't be read, for example ${few([...STALE].map((n) => n.split('/').pop()))}. ${HL.handle ? 'Go back to the start screen (Open another demo) to pick up the changes' : 'Choose the folder again to pick up the changes'}.` });
 
   const onlyDemo = !map && !OV && !players.found && !sounds.found;
   const anyBad = rows.some((r) => r.s === 'warn' || r.s === 'fail');
@@ -2554,14 +2573,16 @@ $('bClear').onclick = async () => {
   const b = $('bClear');
   if (!clearArmed) {
     const sz = await savedSize();
-    b.textContent = `Click again to delete ${sz == null ? '' : sz < 1048576 ? 'less than 1 MB of ' : Math.round(sz / 1048576) + ' MB of '}saved files`;
+    b.textContent = `Click again to forget the folder and delete ${sz == null ? 'saved files' : sz < 1048576 ? 'less than 1 MB of saved files' : Math.round(sz / 1048576) + ' MB of saved files'}`;
     clearArmed = setTimeout(() => { clearArmed = null; b.textContent = 'Clear saved files'; }, 4000);
     return;
   }
   clearTimeout(clearArmed); clearArmed = null;
   try { const db = await idb.open(); await new Promise((res) => { const q = db.transaction('overviews', 'readwrite').objectStore('overviews').clear(); q.onsuccess = res; q.onerror = res; }); } catch (e) { }
   b.textContent = 'Clear saved files';
-  setMsg('Saved files deleted. Anything already open keeps working until you reload the page.');
+  // back to a first visit straight away, without a reload
+  hlForget();
+  setMsg(`Done: the folder is forgotten and the saved files are deleted.${fsaOK() ? ' Chrome still remembers that it may read the folder; to remove that too, click the icon left of the address bar and choose Remove access.' : ''}${D ? ' The demo that\'s open keeps playing until you open another.' : ''}`);
 };
 })();
 </script>

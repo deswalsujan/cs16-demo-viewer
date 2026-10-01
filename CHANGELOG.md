@@ -16,13 +16,43 @@ What changed in the viewer, newest first. The version shows in the viewer's shor
 - "Quality: auto" lowers 3D sharpness at most once per visit and doesn't raise it again on its own. Pick "Quality: high" to go back.
 - Keeping the Half-Life folder between visits works in Chrome and Edge (122 or later) on an https page such as GitHub Pages. Firefox and Safari don't have the browser feature it needs, and the claude.ai copy is an embedded page, where browsers don't allow it; those pick the folder on each visit. A copy of index.html opened from your own disk also keeps it (checked in Chrome by Sujan, 1 Oct 2026).
 
+## 0.12.2 (2026-10-01)
+
+### Fixed
+- Reset view now works in 3D. It used to reset only the 2D radar's zoom and pan, so in 3D it did nothing. Now it goes back to the starting view everywhere: the whole radar in 2D, and in 3D the overview camera the demo opens with, as a free camera (it stops riding along in Player's eyes or Behind player; the player you were following stays highlighted). In split view both reset. Checked on Dust2 from Player's eyes, Behind player and a moved free camera, in 2D, 3D and split view (`tests/page/reset_view.js`).
+
+## 0.12.1 (2026-10-01)
+
+Changes from Sujan's first hands-on test of 0.12.0.
+
+### Changed
+- Changes in the folder are now picked up by themselves. Every time you come back to the page or to the start screen (at most once every 2 seconds), the viewer reads the folder again and the demo list updates. The "Changes found: 10 demos removed. Refresh to use them." note and its Refresh button are gone. Why: the note and the list disagreed (it said 10 demos were removed while all 16 were still listed), and the viewer only looked again after 30 seconds, so a second change made soon after the first wasn't seen and the note looked stuck.
+- The row says "Folder selected: <name>" instead of "Half-Life folder: <name>", so it doesn't claim the folder is right before it's checked. Before a folder is chosen it explains what's expected, with an example: the Half-Life folder from your Steam install, which contains cstrike and valve, usually `C:\Program Files (x86)\Steam\steamapps\common\Half-Life` on Windows (the default install path, as given in [this CS 1.6 setup guide](https://djdallmann.github.io/GamingPCSetup/CONTENT/DOCS/GAMECONFIGS/CS16/SETUPCONFIG.html)). The same text is the row title's tooltip.
+- A demo can only be opened once the folder is chosen. "Open .dem" is greyed out until then, and dropping a demo on the page asks for the folder first. Without the folder there's no map, overview, models or sound, so a demo showed players as dots on an empty grid.
+- "Clear saved files" now also forgets the folder, and the start screen goes straight back to how it looks on a first visit, without a reload. Its confirm click says so ("Click again to forget the folder and delete … of saved files"). Chrome's own permission to read the folder stays until you remove it (the icon left of the address bar, then Remove access); the note after clearing says so.
+
+### Added
+- Checks on the chosen folder:
+  - **Not the Half-Life folder** (red), when it has no cstrike folder inside, with what to choose instead and the example path. Nothing from it is loaded.
+  - The same when the cstrike, cstrike_downloads or valve folder itself was chosen, asking for the folder one level up.
+  - **No demos found** (orange), when it's the right folder but has no .dem files. Open .dem still works for demos kept elsewhere.
+  - **Up to date. 16 demos found.** (green) otherwise.
+
+### How it was tested
+`tests/folder_row_test.py`, now 20 checks, all passed: first visit with the example path and Open .dem greyed out; picking; changes applied by themselves, including a second change right after the first; Reconnect; opening by itself on the next visit; a wrong folder, the cstrike folder itself and a Half-Life folder without demos; Clear saved files back to the first-visit state, also after a reload; dropping a demo with no folder; the ordinary folder pick, including a wrong folder; and the page inside a frame from another site. Also run on Sujan's real files (Dust2): the demo, map and models load through the reworked folder code.
+
+### Discussed, not changed
+- Bundling the competitive maps' radar overviews so a demo could play in 2D without the folder: ruled out. The overviews are Valve's game files (`cstrike/overviews`, about 770 KB each as .bmp), and the project doesn't host Valve's files. Even with them, it would only be dots on a flat radar, with no 3D, models or sound.
+- Putting "Open a demo" first: no, the folder comes first and is now required, since everything but the demo itself comes from it.
+- A downloaded index.html opened from disk keeps the folder too (checked by Sujan).
+
 ## 0.12.0 (2026-10-01)
 
 ### Added
 - The viewer remembers your Half-Life folder between visits. In Chrome and Edge (122 or later) on an https page, pick it once; on the next visit Chrome asks once more, and choosing "Allow on every visit" means it opens by itself from then on ([Chrome's announcement](https://developer.chrome.com/blog/persistent-permissions-for-the-file-system-access-api)). The viewer only keeps the browser's permission to read the folder, plus the folder's name and its list of files (names, sizes and dates, never contents), in this browser.
 - A permanent "Half-Life folder" row on the start screen, in place of the old step 1. It shows the folder's name and its state:
   - **Up to date.** When the page opens, anything that changed since your last visit is picked up straight away and listed ("Picked up since last time: 3 new demos, 1 removed").
-  - **Changes found.** Coming back to the page (at most every 30 seconds) or to the start screen (at most every 5 seconds), the viewer reads the folder again. If demos, maps, models, sounds, overviews or texture files were added, removed or replaced, it lists them and offers **Refresh**. While a demo is open, a short note says so too. Refreshing reloads any changed model, sound or the current map.
+  - **Changes found** (replaced in 0.12.1: changes are now applied by themselves). Coming back to the page (at most every 30 seconds) or to the start screen (at most every 5 seconds), the viewer reads the folder again. If demos, maps, models, sounds, overviews or texture files were added, removed or replaced, it lists them and offers **Refresh**. While a demo is open, a short note says so too. Refreshing reloads any changed model, sound or the current map.
   - **Reconnect,** when Chrome wants your OK again (you chose "Allow this time" last visit).
   - Elsewhere (Firefox, Safari, the claude.ai copy), the row keeps the folder's name and asks you to choose it again for this visit; once chosen, it still says what changed since last time.
 - The "Choose Half-Life folder" buttons in the 3D view and the load summary become "Refresh Half-Life folder" when the folder is remembered.
