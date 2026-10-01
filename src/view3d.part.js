@@ -547,21 +547,33 @@ function drawHitMarker(lx, cx, cy) {
     // wallbang: a square frame around the strokes, i.e. "through something"
     if (k.wb) { const q = g1 + 4; lx.lineWidth = w === 5 ? 4 : 1.5; lx.strokeRect(cx - q, cy - q, q * 2, q * 2); }
   }
-  const sc = scopeTag(k);
-  const label = (k.wb ? `WALLBANG · ${k.wb.thick}u${k.hs ? ' · HS' : ''}` : k.hs ? 'HEADSHOT' : 'KILL') + (sc ? ' · ' + sc : '');
+  const label = k.wb ? `WALLBANG · ${k.wb.thick}u${k.hs ? ' · HS' : ''}` : k.hs ? 'HEADSHOT' : 'KILL';
   lx.font = `600 11px ${monoFont()}`; lx.textAlign = 'center';
   lx.lineWidth = 3; lx.strokeStyle = 'rgba(0,0,0,.7)'; lx.strokeText(label, cx, cy + 42); lx.fillStyle = col; lx.fillText(label, cx, cy + 42);
   lx.restore();
 }
-// The sniper scope over Player's eyes: black around a round lens, with thin crosshair lines across it
+// The sniper scope over Player's eyes. Three styles exist; the viewer uses SCOPE_STYLE and has no menu
+// option for it (decided 1 Oct 2026: a choice of scopes would clutter the menu). See IDEAS.md and
+// docs/scope-designs.png.
+//   'game':  like CS 1.6: thin lines, mil-dots along both lines, a red dot in the middle (used since 0.10.1)
+//   'clean': lines and the red dot, no mil-dots, so dark player models aren't covered by dots
+//   'lines': lines only, no dots (0.10.0)
+const SCOPE_STYLE = 'game';
 function drawScope(lx, W, H) {
-  const cx = W / 2, cy = H / 2, r = Math.min(W, H) * 0.46;
+  const cx = W / 2, cy = H / 2, r = Math.min(W, H) * 0.46, style = SCOPE_STYLE;
   lx.save();
   lx.fillStyle = '#000';
   lx.beginPath(); lx.rect(0, 0, W, H); lx.arc(cx, cy, r, 0, Math.PI * 2, true); lx.fill('evenodd');
-  lx.strokeStyle = '#000'; lx.lineWidth = 1.5;
+  lx.strokeStyle = '#000'; lx.lineWidth = style === 'game' ? 1 : 1.5;
   lx.beginPath(); lx.moveTo(cx - r, cy); lx.lineTo(cx + r, cy); lx.moveTo(cx, cy - r); lx.lineTo(cx, cy + r); lx.stroke();
   lx.lineWidth = 2; lx.beginPath(); lx.arc(cx, cy, r, 0, Math.PI * 2); lx.stroke();
+  if (style === 'game') {
+    // mil-dots: six along each half of both lines, evenly spaced from the middle
+    lx.fillStyle = '#000';
+    const step = r * 0.075, dot = Math.max(2, r * 0.0065);
+    for (let i = 1; i <= 6; i++) for (const [dx, dy] of [[1, 0], [-1, 0], [0, 1], [0, -1]]) { lx.beginPath(); lx.arc(cx + dx * i * step, cy + dy * i * step, dot, 0, Math.PI * 2); lx.fill(); }
+  }
+  if (style !== 'lines') { lx.fillStyle = '#ff2a1f'; lx.beginPath(); lx.arc(cx, cy, Math.max(2, r * 0.0065), 0, Math.PI * 2); lx.fill(); }
   lx.restore();
 }
 // A ring that bursts out from the victim in 3D, for every kill

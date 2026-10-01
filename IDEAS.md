@@ -19,9 +19,13 @@ Item 1, smoother playback, is done (0.8.0; Smooth aim later removed in 0.10.0). 
 
 **Decided:** never host Valve's game files. A "lite mode" made only from the project's own assets is an option for later.
 
+## Kept for later
+
+- **Scope styles** (1 Oct 2026). Three sniper scope styles are in the code; the viewer uses "game" (like CS 1.6: thin lines, mil-dots, red dot). "clean" (lines and red dot, no mil-dots) was the runner-up: mil-dots carry no information in CS 1.6 (there's no bullet drop) and can cover a dark player model. "lines" is the 0.10.0 look. Switch with `SCOPE_STYLE` in `src/view3d.part.js`; all three compared in [docs/scope-designs.png](docs/scope-designs.png) (A is "game", B is "clean"). A menu choice was ruled out for now as clutter.
+- **Quick-scope and no-scope labels** (built in 0.10.0, removed in 0.10.1). HLTV timing (about a tenth of a second) can't separate a real quick-scope from a slightly quicker normal scope, and no measured cut-off was found. Worth revisiting only with demos that carry finer timing (for example POV demos, which record the player's own zoom), or a well-sourced community definition.
+
 ## Open decisions
 
-- **Quick-scope cut-off** (open since 1 Oct 2026). A sniper kill counts as a quick-scope when the player zoomed in at most 0.3 seconds before the shot (`QUICK_S` in `src/template.html`). 0.3 s is a first guess. Sujan will watch labelled kills (no-scopes and quick-scopes on Dust2 and Tuscan) and confirm or change it.
 - **How the game's own demo player shows the scope** (open since 1 Oct 2026). Sujan has seen the scope in HLTV demos in-game. The viewer rebuilds it from the zoom click sounds, because no zoom field could be found in the demo (checked on Dust2 and Tuscan). If the game shows the scope for these exact demos, it gets it from somewhere still unread, which would be more reliable than the clicks. Worth checking one AWP kill in-game against the viewer.
 
 ## Wallbang hits that didn't kill

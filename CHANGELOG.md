@@ -15,6 +15,18 @@ What changed in the viewer, newest first. The version shows in the viewer's shor
 - Theatre mode switches on by itself only with the viewer's own full screen (F or the Full screen button). The browser's full screen (F11 on Windows, the green window button or Ctrl+Cmd+F on a Mac) doesn't tell the page, so press T there.
 - "Quality: auto" lowers 3D sharpness at most once per visit and doesn't raise it again on its own. Pick "Quality: high" to go back.
 
+## 0.10.1 (2026-10-01)
+
+### Changed
+- The sniper scope now looks like the game's: thin black lines, six mil-dots along each half of both lines, and a red dot in the middle. Two other styles stay in the code, unused, so either can be switched on later without a menu option: "clean" (lines and red dot, no mil-dots, so dots never cover a dark player model) and "lines" (lines only, as in 0.10.0). They're shown side by side in [docs/scope-designs.png](docs/scope-designs.png); the switch is `SCOPE_STYLE` in `src/view3d.part.js`.
+
+### Removed
+- The no-scope and quick-scope labels on sniper kills, added in 0.10.0. An HLTV demo stamps the zoom click and the shot to its snapshots, about a tenth of a second apart, so it can't tell a real quick-scope (right-click immediately followed by left-click) from a scope that was just a little quicker than usual. Karrigan's two "quick-scopes" on Tuscan (round 12) are a case in point: the zoom click and the shot landed in the same snapshot. A search for an established cut-off turned up nothing measured: no AMX Mod X plugin found that detects quick-scopes in CS 1.6 (the AlliedModders threads on quick-scope plugins are for CS:S and CS:GO and couldn't be opened), only config scripts and memes. Viewers judge for themselves by watching the scope come up before the shot.
+
+### Discussed, not changed
+- Accuracy over looks, for both the crosshair and the scope: the viewer shows what the demo recorded and what the game shows, even where a tidier version would read better (no snapping the crosshair onto the victim at a kill, and the game's own scope with mil-dots).
+- A choice of scope styles in the menu: decided against for now, as it would clutter the menu for little gain.
+
 ## 0.10.0 (2026-10-01)
 
 ### Added
@@ -22,7 +34,7 @@ What changed in the viewer, newest first. The version shows in the viewer's shor
   - HLTV demos don't record zoom: the only zoom messages in the file are for the HLTV recorder itself, and none of the player fields the demo stores changes when someone zooms (checked on Tuscan: of the 766 zoom clicks, the closest-matching field lines up with just 1). What the demo does record is the zoom click sound the game plays on every right-click with a sniper rifle, with the time and the player. The scope is rebuilt from those clicks.
   - The rules, as the game applies them and confirmed in the demos: each click steps the zoom (none, 1x, 2x, none). An AWP or Scout shot drops the zoom while the bolt cycles, and it comes back by itself at the same level: between consecutive AWP shots on Tuscan, 27 of 28 times there was no click and no weapon switch. Switching weapons drops the zoom: 18 of 19 single clicks between shots followed a weapon switch (the knife quick-switch). Dying and a new round drop it too.
   - Checked against kills: 20 of 24 sniper kills on Dust2 and 48 of 60 on Tuscan have a zoom click by the killer in the 3 seconds before; the rest were zoomed in earlier than that.
-- No-scope and quick-scope labels on sniper kills, in the Kills list and on the crosshair kill marker. No-scope: not zoomed in when the shot was fired. Quick-scope: zoomed in at most 0.3 seconds before the shot (a first guess, open in [IDEAS.md](IDEAS.md) until checked against real kills). Clicks and shots are stamped to the demo's snapshots, about a tenth of a second apart, so a zoom-in and its shot can land in the same snapshot; the scope then shows for 0.1 seconds before the shot, so a quick-scope is visible instead of lasting zero frames, and the kill still counts as a quick-scope.
+- No-scope and quick-scope labels on sniper kills (removed in 0.10.1, see there), in the Kills list and on the crosshair kill marker. No-scope: not zoomed in when the shot was fired. Quick-scope: zoomed in at most 0.3 seconds before the shot (a first guess, open in [IDEAS.md](IDEAS.md) until checked against real kills). Clicks and shots are stamped to the demo's snapshots, about a tenth of a second apart, so a zoom-in and its shot can land in the same snapshot; the scope then shows for 0.1 seconds before the shot, so a quick-scope is visible instead of lasting zero frames, and the kill still counts as a quick-scope.
 
 ### Removed
 - "Smooth aim". The whole story:

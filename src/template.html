@@ -187,7 +187,6 @@ kbd { font-family: var(--f-mono); font-size: 11px; background: var(--panel-2); b
 .kw { color: var(--muted); font-family: var(--f-mono); font-size: 12px; margin-inline: 5px; }
 .khs { color: var(--kill); font-family: var(--f-mono); font-size: 11px; margin-left: 4px; }
 .kwb { color: var(--wb); font-family: var(--f-mono); font-size: 11px; margin-left: 4px; }
-.ksc { color: var(--sand); font-family: var(--f-mono); font-size: 11px; margin-left: 4px; }
 .sechead { padding: 10px 14px 6px; font-size: 11px; text-transform: uppercase; letter-spacing: .08em; color: var(--muted); display: flex; justify-content: space-between; gap: 8px; }
 .prow { grid-template-columns: minmax(0, 1fr) auto; }
 .prow.sel { box-shadow: inset 3px 0 0 var(--sand); background: var(--panel-2); }
@@ -1071,13 +1070,10 @@ const SNIPERS = {
   g3sg1: { fov: [90, 40, 15], bolt: 0 },
   sg550: { fov: [90, 40, 15], bolt: 0 },
 };
-// A kill counts as a quick-scope when the player zoomed in at most this long before the shot.
-// Open point: 0.3 s is a first guess, to be confirmed against real kills (see IDEAS.md).
-const QUICK_S = 0.3;
 // A zoom-in and its shot can land in the same snapshot; the scope then shows for this long before the
 // shot, and stays for this long after it, so the moment is visible instead of lasting zero frames.
 const SCOPE_MIN_SHOW = 0.1;
-let ZOOM = {}; // slot -> { pts: [time, level, ...], shots: [[time, level, zoomedInAt], ...] }
+let ZOOM = {}; // slot -> { pts: [time, level, ...] }
 function buildZoom() {
   ZOOM = {};
   if (!D || !M) return;
@@ -1101,7 +1097,7 @@ function buildZoom() {
   const st = {};
   for (const [t, e, kind, extra] of ev) {
     const z = st[e] || (st[e] = { lvl: 0, w: '', resumeAt: null, resumeLvl: 0, inAt: null, inIdx: -1 });
-    const Z = ZOOM[e] || (ZOOM[e] = { pts: [], shots: [] });
+    const Z = ZOOM[e] || (ZOOM[e] = { pts: [] });
     const set = (time, lvl) => { if (lvl === z.lvl) return; z.lvl = lvl; Z.pts.push(time, lvl); };
     if (z.resumeAt != null && z.resumeAt <= t) { set(z.resumeAt, z.resumeLvl); z.resumeAt = null; z.inAt = null; }
     if (kind === 0) { set(t, 0); z.resumeAt = null; z.inAt = null; }
@@ -1115,7 +1111,6 @@ function buildZoom() {
       set(t, next);
     } else {
       const W = SNIPERS[extra]; if (!W) continue;
-      Z.shots.push([t, z.lvl, z.inAt]);
       if (z.lvl > 0) {
         // a zoom-in in the same snapshot as the shot: show the scope a moment before the shot
         if (z.inAt != null && t - z.inAt < SCOPE_MIN_SHOW && Z.pts[z.inIdx] === z.inAt) {
@@ -1127,17 +1122,6 @@ function buildZoom() {
     }
   }
   for (const e in st) { const z = st[e]; if (z.resumeAt != null) { ZOOM[e].pts.push(z.resumeAt, z.resumeLvl); } }
-  // label sniper kills: no-scope, quick-scope or scoped
-  for (const k of D.kills) {
-    k.scope = null;
-    if (!SNIPERS[k.weapon] || k.killer === k.victim) continue;
-    const Z = ZOOM[k.killer]; if (!Z) continue;
-    let shot = null;
-    for (let i = Z.shots.length - 1; i >= 0; i--) { const x = Z.shots[i]; if (x[0] <= k.t + 0.05) { if (x[0] >= k.t - 0.3) shot = x; break; } }
-    const lvl = shot ? shot[1] : zoomLevel(k.killer, k.t);
-    const kind = !lvl ? 'no' : shot && shot[2] != null && shot[0] - shot[2] <= QUICK_S ? 'quick' : 'scoped';
-    k.scope = { kind, lvl };
-  }
 }
 // zoom level (0 none, 1, 2) of a player at time t
 function zoomLevel(e, t) {
@@ -1146,7 +1130,6 @@ function zoomLevel(e, t) {
   while (lo <= hi) { const m = (lo + hi) >> 1; if (p[m * 2] <= t) { r = m; lo = m + 1; } else hi = m - 1; }
   return r < 0 ? 0 : p[r * 2 + 1];
 }
-const scopeTag = (k) => k.scope && k.scope.kind !== 'scoped' ? (k.scope.kind === 'no' ? 'NO-SCOPE' : 'QUICK-SCOPE') : '';
 
 // Player health over time (HLTV sends it to spectators whenever it changes)
 let hpIdx = null;
@@ -1380,7 +1363,7 @@ function killHtml(k) {
   const ks = k.kteam === 'TERRORIST' ? 1 : k.kteam === 'CT' ? 2 : 0;
   const vs = k.vteam === 'TERRORIST' ? 1 : k.vteam === 'CT' ? 2 : 0;
   if (k.killer === k.victim || !k.kp) return `${nameHtml(k.vp, vs)}<span class="kw">${esc(k.weapon || 'suicide')}</span>`;
-  return `${nameHtml(k.kp, ks)}<span class="kw">${esc(k.weapon)}</span>${nameHtml(k.vp, vs)}${k.hs ? '<span class="khs">HS</span>' : ''}${scopeTag(k) ? `<span class="ksc" title="${k.scope.kind === 'no' ? 'Not zoomed in when the shot was fired' : 'Zoomed in less than ' + QUICK_S + ' s before the shot'}">${scopeTag(k)}</span>` : ''}${k.wb ? `<span class="kwb" title="Every line of sight passed through ${k.wb.thick} units of ${k.wb.what}">WB ${k.wb.thick}u</span>` : ''}`;
+  return `${nameHtml(k.kp, ks)}<span class="kw">${esc(k.weapon)}</span>${nameHtml(k.vp, vs)}${k.hs ? '<span class="khs">HS</span>' : ''}${k.wb ? `<span class="kwb" title="Every line of sight passed through ${k.wb.thick} units of ${k.wb.what}">WB ${k.wb.thick}u</span>` : ''}`;
 }
 function renderPane() {
   if (!D) return;

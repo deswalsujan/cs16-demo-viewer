@@ -197,7 +197,6 @@ kbd { font-family: var(--f-mono); font-size: 11px; background: var(--panel-2); b
 .kw { color: var(--muted); font-family: var(--f-mono); font-size: 12px; margin-inline: 5px; }
 .khs { color: var(--kill); font-family: var(--f-mono); font-size: 11px; margin-left: 4px; }
 .kwb { color: var(--wb); font-family: var(--f-mono); font-size: 11px; margin-left: 4px; }
-.ksc { color: var(--sand); font-family: var(--f-mono); font-size: 11px; margin-left: 4px; }
 .sechead { padding: 10px 14px 6px; font-size: 11px; text-transform: uppercase; letter-spacing: .08em; color: var(--muted); display: flex; justify-content: space-between; gap: 8px; }
 .prow { grid-template-columns: minmax(0, 1fr) auto; }
 .prow.sel { box-shadow: inset 3px 0 0 var(--sand); background: var(--panel-2); }
@@ -367,7 +366,7 @@ body:has(.app.theatre) { overflow: hidden; }
     <div class="overlay sumwrap" id="sumCard" hidden></div>
     <div class="overlay keys" id="keys" hidden>
       <div class="keys-card">
-        <div class="keys-head"><b>Shortcuts and kill markers</b><div class="kh-r"><span class="ver">Version 0.10.0 · <a href="https://github.com/deswalsujan/cs16-demo-viewer/blob/main/CHANGELOG.md" target="_blank" rel="noopener">What's new</a> · <a href="https://github.com/deswalsujan/cs16-demo-viewer/issues/new/choose" target="_blank" rel="noopener">Report a bug</a></span><button class="btn" id="bDebug" type="button" title="Copies details for a bug report: browser, demo name, what loaded, errors. No file contents.">Copy debug info</button><button class="btn" id="bKeysClose" type="button">Close</button></div></div>
+        <div class="keys-head"><b>Shortcuts and kill markers</b><div class="kh-r"><span class="ver">Version 0.10.1 · <a href="https://github.com/deswalsujan/cs16-demo-viewer/blob/main/CHANGELOG.md" target="_blank" rel="noopener">What's new</a> · <a href="https://github.com/deswalsujan/cs16-demo-viewer/issues/new/choose" target="_blank" rel="noopener">Report a bug</a></span><button class="btn" id="bDebug" type="button" title="Copies details for a bug report: browser, demo name, what loaded, errors. No file contents.">Copy debug info</button><button class="btn" id="bKeysClose" type="button">Close</button></div></div>
         <textarea class="dbgbox" id="dbgBox" readonly hidden aria-label="Debug info"></textarea>
         <div class="keys-grid">
           <section><h3>Playback</h3>
@@ -462,7 +461,7 @@ body:has(.app.theatre) { overflow: hidden; }
         <div class="drophint">Or drop a .dem file, or an overview .bmp and .txt pair, anywhere on this page</div>
         <div class="prog" id="prog" hidden><i id="progBar"></i></div>
         <div class="msg" id="msg"></div>
-        <div class="loadfoot"><span>Version 0.10.0</span><button class="btn" id="bClear" type="button" title="Deletes the maps, models, sounds and overviews this browser saved from your folder">Clear saved files</button></div>
+        <div class="loadfoot"><span>Version 0.10.1</span><button class="btn" id="bClear" type="button" title="Deletes the maps, models, sounds and overviews this browser saved from your folder">Clear saved files</button></div>
       </div>
     </div>
   </section>
@@ -2097,13 +2096,10 @@ const SNIPERS = {
   g3sg1: { fov: [90, 40, 15], bolt: 0 },
   sg550: { fov: [90, 40, 15], bolt: 0 },
 };
-// A kill counts as a quick-scope when the player zoomed in at most this long before the shot.
-// Open point: 0.3 s is a first guess, to be confirmed against real kills (see IDEAS.md).
-const QUICK_S = 0.3;
 // A zoom-in and its shot can land in the same snapshot; the scope then shows for this long before the
 // shot, and stays for this long after it, so the moment is visible instead of lasting zero frames.
 const SCOPE_MIN_SHOW = 0.1;
-let ZOOM = {}; // slot -> { pts: [time, level, ...], shots: [[time, level, zoomedInAt], ...] }
+let ZOOM = {}; // slot -> { pts: [time, level, ...] }
 function buildZoom() {
   ZOOM = {};
   if (!D || !M) return;
@@ -2127,7 +2123,7 @@ function buildZoom() {
   const st = {};
   for (const [t, e, kind, extra] of ev) {
     const z = st[e] || (st[e] = { lvl: 0, w: '', resumeAt: null, resumeLvl: 0, inAt: null, inIdx: -1 });
-    const Z = ZOOM[e] || (ZOOM[e] = { pts: [], shots: [] });
+    const Z = ZOOM[e] || (ZOOM[e] = { pts: [] });
     const set = (time, lvl) => { if (lvl === z.lvl) return; z.lvl = lvl; Z.pts.push(time, lvl); };
     if (z.resumeAt != null && z.resumeAt <= t) { set(z.resumeAt, z.resumeLvl); z.resumeAt = null; z.inAt = null; }
     if (kind === 0) { set(t, 0); z.resumeAt = null; z.inAt = null; }
@@ -2141,7 +2137,6 @@ function buildZoom() {
       set(t, next);
     } else {
       const W = SNIPERS[extra]; if (!W) continue;
-      Z.shots.push([t, z.lvl, z.inAt]);
       if (z.lvl > 0) {
         // a zoom-in in the same snapshot as the shot: show the scope a moment before the shot
         if (z.inAt != null && t - z.inAt < SCOPE_MIN_SHOW && Z.pts[z.inIdx] === z.inAt) {
@@ -2153,17 +2148,6 @@ function buildZoom() {
     }
   }
   for (const e in st) { const z = st[e]; if (z.resumeAt != null) { ZOOM[e].pts.push(z.resumeAt, z.resumeLvl); } }
-  // label sniper kills: no-scope, quick-scope or scoped
-  for (const k of D.kills) {
-    k.scope = null;
-    if (!SNIPERS[k.weapon] || k.killer === k.victim) continue;
-    const Z = ZOOM[k.killer]; if (!Z) continue;
-    let shot = null;
-    for (let i = Z.shots.length - 1; i >= 0; i--) { const x = Z.shots[i]; if (x[0] <= k.t + 0.05) { if (x[0] >= k.t - 0.3) shot = x; break; } }
-    const lvl = shot ? shot[1] : zoomLevel(k.killer, k.t);
-    const kind = !lvl ? 'no' : shot && shot[2] != null && shot[0] - shot[2] <= QUICK_S ? 'quick' : 'scoped';
-    k.scope = { kind, lvl };
-  }
 }
 // zoom level (0 none, 1, 2) of a player at time t
 function zoomLevel(e, t) {
@@ -2172,7 +2156,6 @@ function zoomLevel(e, t) {
   while (lo <= hi) { const m = (lo + hi) >> 1; if (p[m * 2] <= t) { r = m; lo = m + 1; } else hi = m - 1; }
   return r < 0 ? 0 : p[r * 2 + 1];
 }
-const scopeTag = (k) => k.scope && k.scope.kind !== 'scoped' ? (k.scope.kind === 'no' ? 'NO-SCOPE' : 'QUICK-SCOPE') : '';
 
 // Player health over time (HLTV sends it to spectators whenever it changes)
 let hpIdx = null;
@@ -2406,7 +2389,7 @@ function killHtml(k) {
   const ks = k.kteam === 'TERRORIST' ? 1 : k.kteam === 'CT' ? 2 : 0;
   const vs = k.vteam === 'TERRORIST' ? 1 : k.vteam === 'CT' ? 2 : 0;
   if (k.killer === k.victim || !k.kp) return `${nameHtml(k.vp, vs)}<span class="kw">${esc(k.weapon || 'suicide')}</span>`;
-  return `${nameHtml(k.kp, ks)}<span class="kw">${esc(k.weapon)}</span>${nameHtml(k.vp, vs)}${k.hs ? '<span class="khs">HS</span>' : ''}${scopeTag(k) ? `<span class="ksc" title="${k.scope.kind === 'no' ? 'Not zoomed in when the shot was fired' : 'Zoomed in less than ' + QUICK_S + ' s before the shot'}">${scopeTag(k)}</span>` : ''}${k.wb ? `<span class="kwb" title="Every line of sight passed through ${k.wb.thick} units of ${k.wb.what}">WB ${k.wb.thick}u</span>` : ''}`;
+  return `${nameHtml(k.kp, ks)}<span class="kw">${esc(k.weapon)}</span>${nameHtml(k.vp, vs)}${k.hs ? '<span class="khs">HS</span>' : ''}${k.wb ? `<span class="kwb" title="Every line of sight passed through ${k.wb.thick} units of ${k.wb.what}">WB ${k.wb.thick}u</span>` : ''}`;
 }
 function renderPane() {
   if (!D) return;
@@ -4491,21 +4474,33 @@ function drawHitMarker(lx, cx, cy) {
     // wallbang: a square frame around the strokes, i.e. "through something"
     if (k.wb) { const q = g1 + 4; lx.lineWidth = w === 5 ? 4 : 1.5; lx.strokeRect(cx - q, cy - q, q * 2, q * 2); }
   }
-  const sc = scopeTag(k);
-  const label = (k.wb ? `WALLBANG · ${k.wb.thick}u${k.hs ? ' · HS' : ''}` : k.hs ? 'HEADSHOT' : 'KILL') + (sc ? ' · ' + sc : '');
+  const label = k.wb ? `WALLBANG · ${k.wb.thick}u${k.hs ? ' · HS' : ''}` : k.hs ? 'HEADSHOT' : 'KILL';
   lx.font = `600 11px ${monoFont()}`; lx.textAlign = 'center';
   lx.lineWidth = 3; lx.strokeStyle = 'rgba(0,0,0,.7)'; lx.strokeText(label, cx, cy + 42); lx.fillStyle = col; lx.fillText(label, cx, cy + 42);
   lx.restore();
 }
-// The sniper scope over Player's eyes: black around a round lens, with thin crosshair lines across it
+// The sniper scope over Player's eyes. Three styles exist; the viewer uses SCOPE_STYLE and has no menu
+// option for it (decided 1 Oct 2026: a choice of scopes would clutter the menu). See IDEAS.md and
+// docs/scope-designs.png.
+//   'game':  like CS 1.6: thin lines, mil-dots along both lines, a red dot in the middle (used since 0.10.1)
+//   'clean': lines and the red dot, no mil-dots, so dark player models aren't covered by dots
+//   'lines': lines only, no dots (0.10.0)
+const SCOPE_STYLE = 'game';
 function drawScope(lx, W, H) {
-  const cx = W / 2, cy = H / 2, r = Math.min(W, H) * 0.46;
+  const cx = W / 2, cy = H / 2, r = Math.min(W, H) * 0.46, style = SCOPE_STYLE;
   lx.save();
   lx.fillStyle = '#000';
   lx.beginPath(); lx.rect(0, 0, W, H); lx.arc(cx, cy, r, 0, Math.PI * 2, true); lx.fill('evenodd');
-  lx.strokeStyle = '#000'; lx.lineWidth = 1.5;
+  lx.strokeStyle = '#000'; lx.lineWidth = style === 'game' ? 1 : 1.5;
   lx.beginPath(); lx.moveTo(cx - r, cy); lx.lineTo(cx + r, cy); lx.moveTo(cx, cy - r); lx.lineTo(cx, cy + r); lx.stroke();
   lx.lineWidth = 2; lx.beginPath(); lx.arc(cx, cy, r, 0, Math.PI * 2); lx.stroke();
+  if (style === 'game') {
+    // mil-dots: six along each half of both lines, evenly spaced from the middle
+    lx.fillStyle = '#000';
+    const step = r * 0.075, dot = Math.max(2, r * 0.0065);
+    for (let i = 1; i <= 6; i++) for (const [dx, dy] of [[1, 0], [-1, 0], [0, 1], [0, -1]]) { lx.beginPath(); lx.arc(cx + dx * i * step, cy + dy * i * step, dot, 0, Math.PI * 2); lx.fill(); }
+  }
+  if (style !== 'lines') { lx.fillStyle = '#ff2a1f'; lx.beginPath(); lx.arc(cx, cy, Math.max(2, r * 0.0065), 0, Math.PI * 2); lx.fill(); }
   lx.restore();
 }
 // A ring that bursts out from the victim in 3D, for every kill
@@ -4807,7 +4802,7 @@ window.addEventListener('unhandledrejection', (e) => { ERRLOG.push('Promise: ' +
 function debugInfo() {
   let gpu = '';
   try { const gl = document.createElement('canvas').getContext('webgl'); const x = gl && gl.getExtension('WEBGL_debug_renderer_info'); gpu = gl ? (x ? gl.getParameter(x.UNMASKED_RENDERER_WEBGL) : 'WebGL available') : 'no WebGL'; } catch (e) { gpu = 'unknown'; }
-  const L = [`CS 1.6 Demo Viewer 0.10.0`, `Browser: ${navigator.userAgent}`, `Screen: ${screen.width}x${screen.height} at ${devicePixelRatio}x, window ${innerWidth}x${innerHeight}`, `Graphics: ${gpu}`];
+  const L = [`CS 1.6 Demo Viewer 0.10.1`, `Browser: ${navigator.userAgent}`, `Screen: ${screen.width}x${screen.height} at ${devicePixelRatio}x, window ${innerWidth}x${innerHeight}`, `Graphics: ${gpu}`];
   L.push(`Folder: ${Object.keys(files.maps).length} maps, ${Object.keys(files.overviews).length} overviews, ${Object.keys(files.mdl).length} models, ${Object.keys(files.snd).length} sounds, ${files.demos.length} demos`);
   if (D) {
     L.push(`Demo: ${D.fileName}, map ${D.mapName}, length ${fmt(D.end - D.start)}, ${M.liveR.length} live rounds, final ${M.liveR.length ? M.liveR[M.liveR.length - 1].scoreAfter.join(':') : '-'}`);
