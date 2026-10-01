@@ -40,6 +40,7 @@ Custom maps work too, as long as the map's `.bsp` (and its `.wad` files if it us
 - Wallbang finder: kills where the victim was fully hidden and the crosshair was on the wall, with a copyable list of timestamps
 - Kill markers on the crosshair (kill, headshot, wallbang) and a death cam
 - Health, weapons, grenades, smokes, heatmaps, a hold-Tab scoreboard with spectators and the HLTV audience count
+- Old demos too. CS 1.6 recorded demos as protocol 47 until the update of 23 October 2008 ([announced](https://www.hltv.org/news/1779/cs-16-update-coming-soon) and [released](https://www.hltv.org/news/1787/cs-16-update-live) on HLTV.org). The Steam version only plays protocol 48, so it refuses those older demos unless they're converted. The viewer plays both as they are
 - Breakable vents and windows disappear in 3D when they are shot out, and doors open and close as they did in the match (the wallbang finder uses where each door really was)
 
 ## Project layout

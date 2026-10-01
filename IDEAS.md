@@ -21,9 +21,8 @@ Item 1, smoother playback, is done (0.8.0; Smooth aim later removed in 0.10.0). 
 
 ## Next up (raised 1 Oct 2026, after 0.11.0)
 
-Five points Sujan raised, with the recommendations so far. Confirm with Sujan before starting each.
+Five points Sujan raised, with the recommendations so far. Confirm with Sujan before starting each. Point 1 (old protocol 47 demos) was done in 0.11.1.
 
-1. **Old protocol 47 demos.** Sujan finds the viewer also plays old protocol 47 demos (2005-2006 era), which today's Steam CS 1.6 demo player won't play (it expects protocol 48). Worth a line in the README as an unexpected benefit. Sujan confirmed on 1 Oct 2026 that a 2006 demo plays fine in the viewer. The parser doesn't check the protocol number, so it reads them the same way. No outside source was found for the in-game refusal (search results were about connecting to servers), so the README line rests on Sujan's own experience with the Steam version; word it that way.
 2. **Remember the Half-Life folder, with a folder field on the start screen.** Sujan picks the folder again on every visit, partly because each new version is downloaded from GitHub and opened as a local file. Plan:
    - Keep the folder between visits with Chrome's folder access (File System Access API, "Allow on every visit", Chrome 122+). See "Remember the Half-Life folder between visits" below.
    - A permanent folder field on the start screen showing the chosen folder's name (browsers show the name, never the full path), which doubles as the "pick your folder here" instruction.

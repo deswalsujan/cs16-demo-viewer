@@ -1,4 +1,5 @@
-from playwright.sync_api import os, sync_playwright
+import os
+from playwright.sync_api import sync_playwright
 import threading, http.server, functools
 h = functools.partial(http.server.SimpleHTTPRequestHandler, directory=os.path.join(os.path.dirname(os.path.abspath(__file__)), '..')); h.log_message = lambda *a: None
 srv = http.server.ThreadingHTTPServer(('127.0.0.1', 0), h); threading.Thread(target=srv.serve_forever, daemon=True).start()

@@ -15,6 +15,17 @@ What changed in the viewer, newest first. The version shows in the viewer's shor
 - Theatre mode switches on by itself only with the viewer's own full screen (F or the Full screen button). The browser's full screen (F11 on Windows, the green window button or Ctrl+Cmd+F on a Mac) doesn't tell the page, so press T there.
 - "Quality: auto" lowers 3D sharpness at most once per visit and doesn't raise it again on its own. Pick "Quality: high" to go back.
 
+## 0.11.1 (2026-10-01)
+
+### Added
+- A note on the start screen and in the README that the viewer plays old protocol 47 demos, which the Steam version of CS 1.6 won't open. Sujan confirmed it with a 2006 demo.
+  - CS 1.6 recorded demos as protocol 47 until the update of 23 October 2008, which moved the game to protocol 48. HLTV.org warned beforehand that all older demos would stop playing ([22 Oct 2008](https://www.hltv.org/news/1779/cs-16-update-coming-soon)), then reported on release day that a 47 demo can be converted by editing the protocol number in the file, and that it would convert its archive ([23 Oct 2008](https://www.hltv.org/news/1787/cs-16-update-live)). So "protocol 47" means anything recorded before late October 2008, not only 2005-2006 as first thought.
+  - That today's Steam version still refuses them rests on those posts and Sujan's own test; no recent source says so directly.
+  - The viewer reads the protocol number from the file header but doesn't check it, so it reads both kinds the same way.
+
+### Fixed
+- `tests/start_screen_check.py` had a broken first line and didn't run.
+
 ## 0.11.0 (2026-10-01)
 
 ### Added
