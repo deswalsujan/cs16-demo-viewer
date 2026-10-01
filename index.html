@@ -387,7 +387,7 @@ body:has(.app.theatre) { overflow: hidden; }
     <div class="overlay sumwrap" id="sumCard" hidden></div>
     <div class="overlay keys" id="keys" hidden>
       <div class="keys-card">
-        <div class="keys-head"><b>Shortcuts and kill markers</b><div class="kh-r"><span class="ver">Version 0.13.0 · <a href="https://github.com/deswalsujan/cs16-demo-viewer/blob/main/CHANGELOG.md" target="_blank" rel="noopener">What's new</a> · <a href="https://github.com/deswalsujan/cs16-demo-viewer/issues/new/choose" target="_blank" rel="noopener">Report a bug</a></span><button class="btn" id="bDebug" type="button" title="Copies details for a bug report: browser, demo name, what loaded, errors. No file contents.">Copy debug info</button><button class="btn" id="bKeysClose" type="button">Close</button></div></div>
+        <div class="keys-head"><b>Shortcuts and kill markers</b><div class="kh-r"><span class="ver">Version 0.13.1 · <a href="https://github.com/deswalsujan/cs16-demo-viewer/blob/main/CHANGELOG.md" target="_blank" rel="noopener">What's new</a> · <a href="https://github.com/deswalsujan/cs16-demo-viewer/issues/new/choose" target="_blank" rel="noopener">Report a bug</a></span><button class="btn" id="bDebug" type="button" title="Copies details for a bug report: browser, demo name, what loaded, errors. No file contents.">Copy debug info</button><button class="btn" id="bKeysClose" type="button">Close</button></div></div>
         <textarea class="dbgbox" id="dbgBox" readonly hidden aria-label="Debug info"></textarea>
         <div class="keys-grid">
           <section><h3>Playback</h3>
@@ -422,7 +422,7 @@ body:has(.app.theatre) { overflow: hidden; }
             <dl class="hmlist">
               <dt><svg class="hm" viewBox="0 0 40 40" aria-hidden="true"><g stroke="#000" stroke-opacity=".6" stroke-width="5" stroke-linecap="round"><path d="M27 27l6 6M27 13l6-6M13 27l-6 6M13 13l-6-6"/></g><g stroke="#ffffff" stroke-width="2.5" stroke-linecap="round"><path d="M27 27l6 6M27 13l6-6M13 27l-6 6M13 13l-6-6"/></g><g stroke="#5aff5a" stroke-width="1.5"><path d="M12 20h5M23 20h5M20 12v5M20 23v5"/></g></svg></dt><dd><b class="hmw">KILL</b><span>A normal kill. Example: an AK spray to the body in the open.</span></dd>
               <dt><svg class="hm" viewBox="0 0 40 40" aria-hidden="true"><g stroke="#000" stroke-opacity=".6" stroke-width="5" stroke-linecap="round"><path d="M27 27l6 6M27 13l6-6M13 27l-6 6M13 13l-6-6"/></g><g stroke="#ff9a3c" stroke-width="2.5" stroke-linecap="round"><path d="M27 27l6 6M27 13l6-6M13 27l-6 6M13 13l-6-6"/></g><g stroke="#5aff5a" stroke-width="1.5"><path d="M12 20h5M23 20h5M20 12v5M20 23v5"/></g></svg></dt><dd><b class="hmo">HEADSHOT</b><span>The killing bullet hit the head. Example: a one-tap with the AK.</span></dd>
-              <dt><svg class="hm" viewBox="0 0 40 40" aria-hidden="true"><g fill="none" stroke="#000" stroke-opacity=".6" stroke-width="5" stroke-linecap="round"><path d="M27 27l6 6M27 13l6-6M13 27l-6 6M13 13l-6-6"/><rect x="4" y="4" width="32" height="32" rx="2"/></g><g fill="none" stroke="#ff4fd8" stroke-width="2.5" stroke-linecap="round"><path d="M27 27l6 6M27 13l6-6M13 27l-6 6M13 13l-6-6"/></g><rect x="4" y="4" width="32" height="32" rx="2" fill="none" stroke="#ff4fd8" stroke-width="1.5"/><g stroke="#5aff5a" stroke-width="1.5"><path d="M12 20h5M23 20h5M20 12v5M20 23v5"/></g></svg></dt><dd><b class="hms">WALLBANG · HS</b><span>The victim was fully hidden and the bullet went through cover. Magenta, with a square frame around the strokes. HS is added when it was also a headshot.</span></dd>
+              <dt><svg class="hm" viewBox="0 0 40 40" aria-hidden="true"><g fill="none" stroke="#000" stroke-opacity=".6" stroke-width="5" stroke-linecap="round"><path d="M27 27l6 6M27 13l6-6M13 27l-6 6M13 13l-6-6"/></g><g fill="none" stroke="#ff4fd8" stroke-width="2.5" stroke-linecap="round"><path d="M27 27l6 6M27 13l6-6M13 27l-6 6M13 13l-6-6"/></g><g stroke="#5aff5a" stroke-width="1.5"><path d="M12 20h5M23 20h5M20 12v5M20 23v5"/></g></svg></dt><dd><b class="hms">WALLBANG · HS</b><span>The victim was fully hidden and the bullet went through cover. HS is added when it was also a headshot.</span></dd>
             </dl>
           </section>
           <section><h3>Radar (2D)</h3>
@@ -483,7 +483,7 @@ body:has(.app.theatre) { overflow: hidden; }
         <div class="drophint">Or drop a .dem file, or an overview .bmp and .txt pair, anywhere on this page</div>
         <div class="prog" id="prog" hidden><i id="progBar"></i></div>
         <div class="msg" id="msg"></div>
-        <div class="loadfoot"><span>Version 0.13.0</span><button class="btn" id="bClear" type="button" title="Forgets your Half-Life folder and deletes the maps, models, sounds and overviews this browser saved from it, as on a first visit">Clear saved files</button></div>
+        <div class="loadfoot"><span>Version 0.13.1</span><button class="btn" id="bClear" type="button" title="Forgets your Half-Life folder and deletes the maps, models, sounds and overviews this browser saved from it, as on a first visit">Clear saved files</button></div>
       </div>
     </div>
   </section>
@@ -4875,7 +4875,8 @@ function update3() {
   } else pov.hidden = true;
 }
 // Hit marker on the crosshair when the player you're watching gets a kill:
-// white for a kill, orange for a headshot, sand for a wallbang, with a short label underneath.
+// white for a kill, orange for a headshot, magenta for a wallbang, with a short label underneath
+// (the label says which, so colour isn't the only cue).
 function drawHitMarker(lx, cx, cy) {
   const f = flashes.filter((x) => x.k.killer === selected).pop();
   if (!f) return;
@@ -4890,8 +4891,6 @@ function drawHitMarker(lx, cx, cy) {
     lx.strokeStyle = c; lx.lineWidth = w; lx.beginPath();
     for (const [dx, dy] of [[1, 1], [1, -1], [-1, 1], [-1, -1]]) { lx.moveTo(cx + dx * g0, cy + dy * g0); lx.lineTo(cx + dx * g1, cy + dy * g1); }
     lx.stroke();
-    // wallbang: a square frame around the strokes, i.e. "through something"
-    if (k.wb) { const q = g1 + 4; lx.lineWidth = w === 5 ? 4 : 1.5; lx.strokeRect(cx - q, cy - q, q * 2, q * 2); }
   }
   const label = k.wb ? `WALLBANG${k.hs ? ' · HS' : ''}` : k.hs ? 'HEADSHOT' : 'KILL';
   lx.font = `600 11px ${monoFont()}`; lx.textAlign = 'center';
@@ -5250,7 +5249,7 @@ window.addEventListener('unhandledrejection', (e) => { ERRLOG.push('Promise: ' +
 function debugInfo() {
   let gpu = '';
   try { const gl = document.createElement('canvas').getContext('webgl'); const x = gl && gl.getExtension('WEBGL_debug_renderer_info'); gpu = gl ? (x ? gl.getParameter(x.UNMASKED_RENDERER_WEBGL) : 'WebGL available') : 'no WebGL'; } catch (e) { gpu = 'unknown'; }
-  const L = [`CS 1.6 Demo Viewer 0.13.0`, `Browser: ${navigator.userAgent}`, `Screen: ${screen.width}x${screen.height} at ${devicePixelRatio}x, window ${innerWidth}x${innerHeight}`, `Graphics: ${gpu}`];
+  const L = [`CS 1.6 Demo Viewer 0.13.1`, `Browser: ${navigator.userAgent}`, `Screen: ${screen.width}x${screen.height} at ${devicePixelRatio}x, window ${innerWidth}x${innerHeight}`, `Graphics: ${gpu}`];
   L.push(`Folder: ${Object.keys(files.maps).length} maps, ${Object.keys(files.overviews).length} overviews, ${Object.keys(files.mdl).length} models, ${Object.keys(files.snd).length} sounds, ${files.demos.length} demos`);
   if (D) {
     L.push(`Demo: ${D.fileName}, map ${D.mapName}, length ${fmt(D.end - D.start)}, ${M.liveR.length} live rounds, final ${M.liveR.length ? M.liveR[M.liveR.length - 1].scoreAfter.join(':') : '-'}`);

@@ -541,7 +541,8 @@ function update3() {
   } else pov.hidden = true;
 }
 // Hit marker on the crosshair when the player you're watching gets a kill:
-// white for a kill, orange for a headshot, sand for a wallbang, with a short label underneath.
+// white for a kill, orange for a headshot, magenta for a wallbang, with a short label underneath
+// (the label says which, so colour isn't the only cue).
 function drawHitMarker(lx, cx, cy) {
   const f = flashes.filter((x) => x.k.killer === selected).pop();
   if (!f) return;
@@ -556,8 +557,6 @@ function drawHitMarker(lx, cx, cy) {
     lx.strokeStyle = c; lx.lineWidth = w; lx.beginPath();
     for (const [dx, dy] of [[1, 1], [1, -1], [-1, 1], [-1, -1]]) { lx.moveTo(cx + dx * g0, cy + dy * g0); lx.lineTo(cx + dx * g1, cy + dy * g1); }
     lx.stroke();
-    // wallbang: a square frame around the strokes, i.e. "through something"
-    if (k.wb) { const q = g1 + 4; lx.lineWidth = w === 5 ? 4 : 1.5; lx.strokeRect(cx - q, cy - q, q * 2, q * 2); }
   }
   const label = k.wb ? `WALLBANG${k.hs ? ' · HS' : ''}` : k.hs ? 'HEADSHOT' : 'KILL';
   lx.font = `600 11px ${monoFont()}`; lx.textAlign = 'center';

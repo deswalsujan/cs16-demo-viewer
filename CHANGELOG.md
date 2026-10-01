@@ -17,6 +17,11 @@ What changed in the viewer, newest first. The version shows in the viewer's shor
 - Demos recorded by a player (POV demos) play, with two limits: the player's game only receives the players near them, so others drop in and out of view, and the wallbang finder is less reliable there than in HLTV demos. A recording that switched maps plays the map it spent longest on.
 - Keeping the Half-Life folder between visits works in Chrome and Edge (122 or later) on an https page such as GitHub Pages. Firefox and Safari don't have the browser feature it needs, and the claude.ai copy is an embedded page, where browsers don't allow it; those pick the folder on each visit. A copy of index.html opened from your own disk also keeps it (checked in Chrome by Sujan, 1 Oct 2026).
 
+## 0.13.1 (2026-10-02)
+
+### Changed
+- The wallbang marker on the crosshair no longer has a square frame around it, here and in the shortcuts panel. Sujan asked whether there was a reason to keep it: it was a second cue besides the colour, but the marker already says WALLBANG underneath, so the frame added nothing.
+
 ## 0.13.0 (2026-10-02)
 
 Changes from Sujan's feedback on the 2006 NoA vs Pentagram Train demo and on a POV demo he recorded.
