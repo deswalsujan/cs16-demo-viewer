@@ -62,9 +62,10 @@ src/audio.js        Sound: .wav decoding, positional playback, radio lines
 src/template.html   The page: layout, styles, 2D radar, timeline, panels
 build.py            Combines everything into one self-contained page
 CHANGELOG.md        What changed, newest first
-docs/               Design comparisons kept for later (scope styles)
+docs/               Design images: scope styles, and the approved side panel designs (0.13.0)
 tests/              Test and measurement scripts: browser checks, Theatre mode checks, demo data probes (see tests/README.md)
 IDEAS.md            Parked ideas and open decisions, with the discussion behind them
+CLAUDE.md           How Claude sessions work on this repo: workflow, checking facts, where the test files are
 VERSION             Current version, shown in the viewer
 src/stock.js        Fingerprints of the stock CS 1.6 models, to spot custom ones
 index.html          The built page (what GitHub Pages serves at https://deswalsujan.github.io/cs16-demo-viewer/, updated on every push to main)

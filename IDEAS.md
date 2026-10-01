@@ -11,7 +11,8 @@ Everything raised in conversation that isn't finished, in one place. Each item s
   - NoA vs Pentagram, Train 2006, newly listed: R18 1:22 MJE AK on kubenB, R21 1:09 neo M4 on zonic. No longer listed, not commented on yet: R12 1:01 Paddy M4 on kubenB. Still listed and not checked: R4 0:40 and R5 1:24 taz AK on zonic, R10 1:03 Paddy M4 on neo, R22 0:55 neo M4 on ave, R24 0:38 zonic AK on LoordB, R28 1:17 MJE AK on LoordB, R28 1:12 neo M4 on MJE.
   - Na`Vi vs FX, Train 2011, no longer listed: R9 1:21 Zeus AK on PASHA.
   - SK vs WinFakt, Mirage 2011, no longer listed: R4 0:37 face M4 on JiGetus, R9 0:50 RobbaN M4 on JiGetus, R19 1:26 i'M(BA-SiC)K FAMAS on Delpan.
-- [ ] **The GP Pub POV demo on your side** (0.13.0): it should open on de_zovine with 27 rounds and the two notes in the load summary.
+- [ ] **The GP Pub POV demo on your side** (0.13.0): it should open on de_zovine with 27 rounds and the two notes in the load summary. Then watch a minute of it in 3D: it was only checked loading in the test browser, never by eye. On the Mac, copy `cstrike/GP-[PuB]_M-[de_zovine]_D-[10_01_2026]_T-[19_08].dem` and `cstrike_downloads/maps/de_zovine.bsp` over from Windows first (the Mac's Half-Life copy predates them). No de_zovine overview exists, so the 2D radar shows a plain grid.
+- [ ] **The 0.13.0 side panel by eye**: Kills and Wallbangs on three lines with the kill feed icons, the clicked kill keeping its bookmark and tint, the lighter tint on the kill playback is passing, Rounds and Players highlights; Clear saved files with a demo open; the summary card's countdown bar moving smoothly. Approved designs: [docs/side-panel-designs.png](docs/side-panel-designs.png).
 - [ ] **Reconnect and "Allow on every visit"** (0.12.0). In a normal (not incognito) Chrome window: open the GitHub Pages link, choose the folder, close every tab of the viewer, open the link again, click Reconnect and choose "Allow on every visit", close the tab again and reopen it. Expected: it goes straight to "Up to date" with no prompt. Not yet done: a reload doesn't show the prompt, because Chrome keeps the access until the last tab of the site closes.
 - [ ] **The 0.12.1 folder row on a real folder** (picking the right folder confirmed on Windows, 1 Oct 2026; the rest still to do): choose a wrong folder (for example `sprint-builds-review`), then the `cstrike` folder itself, then the right one; move demos in and out while the page is open (the list should update when you click back into the tab); click Clear saved files twice (should go straight back to "Choose your Half-Life folder").
 - [ ] **Reset view (0.12.2)** from Player's eyes in 3D: should go back to the starting overview.
@@ -23,7 +24,6 @@ Everything raised in conversation that isn't finished, in one place. Each item s
 - [ ] Breakables on Nuke and Inferno (vents) and Tuscan (logs): do they disappear in 3D when shot out?
 - [ ] The 145 MB Moscow 5 vs Na`Vi Mirage demo (memory and load time on a laptop).
 - [ ] Re-check the Dust2 (Na`Vi vs FX, expected 17-11 because of the extra admin-mistake round) and Mirage (WinFakt vs Check-Six 16-6, M5 vs Na`Vi 16-9) scores with the 0.7.1 round counting.
-- [ ] Train in 3D on Sujan's side (it loads in the test browser: the 2006 Team3D vs Fnatic demo, 1 Oct 2026).
 
 **Small decisions not yet taken**
 - [ ] Show the demo's protocol (47 or 48) in "Copy debug info", so bug reports say which kind of demo it was. A one-line change; offered on 1 Oct 2026, not answered.
@@ -33,7 +33,7 @@ Everything raised in conversation that isn't finished, in one place. Each item s
 - [ ] Remove the `noindex` tag that `build.py` adds to `index.html` (kept out of search results until then; indexing is fine on sujandeswal.com).
 - [ ] Privacy hardening (see "Other parked ideas").
 
-**Done since this list was written:** 0.13.0 (kills timed from the real moment, the gun rule, POV demos, Clear saved files closing the demo, the smooth summary bar, the side panel lists); the start screen line "Needs your own copy of Counter-Strike 1.6, installed through Steam" (0.12.4, confirmed by Sujan).
+**Done since this list was written:** Train in 3D on Sujan's side (the 2006 NoA vs Pentagram demo, 1 Oct 2026, which led to 0.13.0); 0.13.0 (kills timed from the real moment, the gun rule, POV demos, Clear saved files closing the demo, the smooth summary bar, the side panel lists); the start screen line "Needs your own copy of Counter-Strike 1.6, installed through Steam" (0.12.4, confirmed by Sujan).
 
 **Next on the roadmap:** item 2, the README Requirements list (below).
 
