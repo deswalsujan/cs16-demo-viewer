@@ -13,6 +13,12 @@ What changed in the viewer, newest first. The version shows in the viewer's shor
 - Theatre mode switches on by itself only with the viewer's own full screen (F or the Full screen button). The browser's full screen (F11 on Windows, the green window button or Ctrl+Cmd+F on a Mac) doesn't tell the page, so press T there.
 - "Quality: auto" lowers 3D sharpness at most once per visit and doesn't raise it again on its own. Pick "Quality: high" to go back.
 
+## 0.9.2 (2026-10-01)
+
+### Changed
+- Theatre mode: the header, side panel and bottom bar now come in and go out together. Moving the mouse to the top, right or bottom edge brings back the normal layout; moving back to the middle hides it again. Before, each edge brought in only its own panel, which made the panels overlap and was one more thing to learn. Dragging to look around or pan the radar still never brings them in.
+- The score in the round pill is hidden while the header is showing, so it doesn't appear twice.
+
 ## 0.9.1 (2026-10-01)
 
 ### Fixed
@@ -21,7 +27,7 @@ What changed in the viewer, newest first. The version shows in the viewer's shor
 ## 0.9.0 (2026-10-01)
 
 ### Added
-- Theatre mode (T, or the Theatre button in the header): the view fills the whole window, with no header, side panel or bottom bar. Move the mouse to an edge for the controls on that side: the top brings in the header and camera buttons, the right the rounds, kills and players panel, the bottom the timeline, playback controls and display toggles.
+- Theatre mode (T, or the Theatre button in the header): the view fills the whole window, with no header, side panel or bottom bar. Move the mouse to an edge for the controls on that side (changed in 0.9.2: all of them come in together).
   - The controls float over the view, so the view never changes size when they come and go.
   - They stay while the mouse is on them (or a menu from them is open), even if the mouse stops moving, and hide shortly after it moves away. Near an edge but not on the bar, they hide after 2 seconds without the mouse moving.
   - Dragging to look around in 3D, or to pan the radar, never pulls them in, even when the drag ends at an edge.
