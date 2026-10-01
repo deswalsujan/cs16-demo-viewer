@@ -2375,11 +2375,23 @@ function derive() {
       total += rs.length;
     }
   }
+  // The half-time team swap: when teams switch sides, every player who changes team dies by "world" at
+  // once, and the server can score that as a round (the iFNG FX vs fnatic Dust2 demo, 27:07, all ten in two
+  // seconds). That round never counts, nor do the warmup rounds played on the new sides before the next
+  // restart, when a restart and more live rounds follow (some servers swap sides with no restart: there
+  // the second half goes on in the same stretch and only the swap round itself is dropped).
+  const swap = (r) => r.kills.filter((k) => k.killer === k.victim).length >= 3;
+  for (const r of rounds) {
+    if (!r.live || !swap(r)) continue;
+    r.live = false; r.swap = true;
+    const laterLive = rounds.some((x) => x.live && x.seg > r.seg);
+    if (laterLive) for (const x of rounds) if (x.seg === r.seg && x.start > r.start) x.live = false;
+  }
   if (!rounds.some((r) => r.live)) for (const r of rounds) r.live = r.dur > 5;
 
   // sides per player per live round (sample 5s into the round)
   const sideAt = (e, t) => { const a = D.slots[e]; if (!a) return 0; const i = idxAt(t) * S; return Math.abs(a[i + 5]); };
-  const liveR = rounds.filter((r) => r.live);
+  let liveR = rounds.filter((r) => r.live);
   // Each person's name: the one they used for most of the live rounds. Players rename for fun during
   // warmups (in the FX vs SK Inferno demo RobbaN was "SK.BobbaN" and f0rest "SK.iZnoGouD" for a few
   // seconds before the knife round). Without live rounds, the name they had last.
@@ -2458,7 +2470,15 @@ function derive() {
     r.tTeam = tVotes[0] >= tVotes[1] ? 0 : 1;
     if (r.winner) { r.winTeam = r.winner === 'T' ? r.tTeam : 1 - r.tTeam; sc[r.winTeam]++; }
     r.scoreAfter = sc.slice();
+    // The match is over once a team has won it: 16 with the other on 14 or less, or, from 15:15, an overtime
+    // won (MR3: 19 with the other on 17 or less, then 22 and 20, and so on). Servers often play on for a
+    // round or two (the iFNG FX vs fnatic Dust2 demo plays a 31st round after FX reach 16:13); those don't count.
+    const hi = Math.max(sc[0], sc[1]), lo = Math.min(sc[0], sc[1]);
+    if (hi >= 16 && (hi - 16) % 3 === 0 && lo <= hi - 2) {
+      for (const x of rounds) if (x.start > r.start && x.live) { x.live = false; x.afterMatch = true; }
+    }
   }
+  liveR = rounds.filter((r) => r.live);
   // live numbering
   let ln = 0; for (const r of rounds) if (r.live) r.ln = ++ln;
 
