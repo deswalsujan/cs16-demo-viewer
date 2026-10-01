@@ -24,10 +24,13 @@ Item 1, smoother playback, is done (0.8.0; Smooth aim later removed in 0.10.0). 
 Five points Sujan raised, with the recommendations so far. Confirm with Sujan before starting each. Point 1 (old protocol 47 demos) was done in 0.11.1, point 2 (remember the Half-Life folder, with a folder row on the start screen) in 0.12.0 and 0.12.1, point 3 (Reset view in 3D) in 0.12.2, point 4 (settings when opening another demo) in 0.12.3.
 
 5. **Bullet marks (decals).** For seeing where a spray actually lands while the crosshair is pulled down against recoil.
-   - Likely possible from real data: the demo's weapon fire events probably carry the shot's direction, the recoil (punch angle) and the spread for each bullet (in CS 1.6 the server sends the spread as two numbers and the recoil as two more). Not yet verified: the parser currently keeps only the silencer flag. Check that first on Dust2. If it holds, each bullet's mark is a line traced from the shooter's eye through the map, so the marks would be accurate.
-   - How long they stay: like the game, until the round ends. Marks are worked out from the time, so jumping between kills from the side panel always shows the marks made up to that moment in the round, with nothing to fade.
-   - Toggle: one "Bullet marks" button next to Grenades and Kill lines, on by default. Blood and grenade scorch marks could follow as a later "decals" step.
-   - Side benefit: the same data could mark where each shot actually went, which speaks to the crosshair-at-the-kill question in CHANGELOG 0.10.0.
+   - **Feasibility check, 1 Oct 2026 (Dust2, Na`Vi vs FX), waiting on Sujan's decision.**
+   - What the game sends with every shot (ReGameDLL source, `wpn_ak47.cpp` and `FireBullets3` in `cbase.cpp`): the spread already worked out from the random seed (two numbers, `fparam1` and `fparam2`), and the recoil at the moment of the shot (punch angle times 100, `iparam1` and `iparam2`). The shot's start point and view angles are left empty for the receiving game to fill in from the shooter.
+   - What the HLTV demo keeps: the spread (2,316 of 2,317 fire events, stored to 0.01, about half a degree) and the recoil (to 0.01 degrees). The view angles of the shot are missing (10 of 2,317 events), so the aim has to come from the player's snapshots, about ten a second, as everywhere else in the viewer.
+   - Accuracy, from 68 to 71 headshot kills: the rebuilt killing bullet passes a median of about 16 to 17 units from the head centre (a head is about 10 units across), so it hits the head in about 1 case in 10. Shifting the aim or the victim by a snapshot either way doesn't fix it. Recoil clearly helps in sprays (for example 38 units off without it, 13 with it; 35 and 10), so the recoil data is real; the error is the aim between snapshots, the same limit as the crosshair-at-kill finding in CHANGELOG 0.10.0 (1 to 2 degrees).
+   - So: the shape of a spray (how far each bullet lands from the crosshair) is exact, but where the whole spray lands in the world is off by about 1 to 2 degrees, about a body width at 600 units.
+   - Scripts: `tests/demo-probes/bullets.mjs` (what fire events carry), `bullets_hs.mjs` (headshot test), `bullets_sweep.mjs` (timing offsets).
+   - Untested: burst weapons (the FAMAS and Glock burst events seem to use the recoil numbers for something else), and how bullets go through walls (the game reduces penetration by material).
 
 ## Kept for later
 

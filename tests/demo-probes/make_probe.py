@@ -13,5 +13,10 @@ new = """            const before = num <= maxClients ? Object.assign({}, st) : 
 assert old in s, 'demo.js changed: update make_probe.py'
 s = s.replace(old, new)
 s = s.replace("export function parseDemo", "globalThis.UM = {}; globalThis.DF = {}; globalThis.CH = []; globalThis.WATCH = ['iuser4','spectator','body','skin','rendermode','renderamt','renderfx','effects','framerate','scale','colormap','friction','gravity','aiment','controller[0]','controller[1]','controller[2]','controller[3]','blending[0]','blending[1]','basevelocity[0]'];\nexport function parseDemo")
+# every event with its fields and the shooter's state at that frame (bullet marks check)
+old = "              shots.push(time, e, pendingEv[k], ev && ev.bparam1 ? 1 : 0);"
+assert old in s, 'demo.js changed: update make_probe.py'
+s = s.replace(old, old + "\n              (globalThis.EV = globalThis.EV || []).push({ t: time, e, ei: pendingEv[k], ev, ang: ents[e] ? [ents[e]['angles[0]'], ents[e]['angles[1]']] : null, pos: ents[e] ? [ents[e]['origin[0]'], ents[e]['origin[1]'], ents[e]['origin[2]']] : null });")
+s = s.replace("deltas[name] = fields; globalThis.DF[name] = fields.map((f) => f.name + ':' + f.bits);", "deltas[name] = fields; globalThis.DF[name] = fields.map((f) => f.name + ':' + f.bits + '/' + f.divisor + (f.flags & 0x80000000 ? 's' : ''));")
 open(os.path.join(here, 'demo_probe.mjs'), 'w').write(s)
 print('wrote demo_probe.mjs')

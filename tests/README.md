@@ -82,6 +82,7 @@ node zoom.mjs ~/Downloads/Half-Life/cstrike/<demo>.dem
 | `zoom.mjs` | Zoom click sounds and how many sniper kills have one just before |
 | `resume.mjs` | Clicks between consecutive AWP shots (does the scope come back by itself?) |
 | `qs.mjs` | Whether single clicks between shots follow a weapon switch (the knife quick-switch) |
+| `bullets.mjs`, `bullets_hs.mjs`, `bullets_sweep.mjs` | What weapon fire events carry (spread, recoil); how close a rebuilt killing bullet passes to the victim's head; whether shifting aim or victim by a snapshot helps. `make_probe.py` adds the event capture (bullet marks check, 1 Oct 2026) |
 
 ## Lessons
 
