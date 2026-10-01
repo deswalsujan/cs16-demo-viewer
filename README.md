@@ -12,7 +12,7 @@ This is an unofficial fan project. It is not affiliated with or endorsed by Valv
 
 ## How to use it
 
-1. Open the viewer page in Chrome or Edge.
+1. Open the viewer at **https://deswalsujan.github.io/cs16-demo-viewer/** in Chrome or Edge. It always has the latest version, so there's nothing to download.
 2. Click **Choose folder** and pick your `Half-Life` folder (the one that contains `cstrike` and `valve`).
    Chrome will ask whether to "upload" the files. That is Chrome's standard wording for picking a folder. The files stay on your computer.
 3. Pick a demo from the list, or open any `.dem` file.
@@ -60,7 +60,7 @@ tests/              Test and measurement scripts: browser checks, Theatre mode c
 IDEAS.md            Parked ideas and open decisions, with the discussion behind them
 VERSION             Current version, shown in the viewer
 src/stock.js        Fingerprints of the stock CS 1.6 models, to spot custom ones
-index.html          The built page (what GitHub Pages serves)
+index.html          The built page (what GitHub Pages serves at https://deswalsujan.github.io/cs16-demo-viewer/, updated on every push to main)
 ```
 
 ## Reporting a bug
