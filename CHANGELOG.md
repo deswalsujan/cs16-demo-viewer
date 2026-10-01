@@ -25,6 +25,19 @@ What changed in the viewer, newest first. The version shows in the viewer's shor
 ### How it was tested
 On Sujan's files: Dust2 switched to 3D at 0.25x, playing, with Names and Grenades off, See through walls on and the timeline on round; then the 2006 Train demo opened in 3D at 1x, paused, with all of those kept (`tests/page/new_demo_settings.js`). `tests/prefs_check.py`: the defaults on a first visit, saved settings restored after a reload, and damaged saved settings falling back to the defaults. The folder and start screen checks still pass.
 
+## 0.12.3 (2026-10-01)
+
+### Changed
+- Opening another demo keeps your viewing settings and starts playback fresh. Kept: the view (2D, 3D or 3D + radar), Names, Grenades, Kill lines, See through walls, Team colours, Quality, sound and volume, and the timeline's match or round setting. Reset: speed goes back to 1x and the demo opens paused. Before, the speed carried over too (a new demo could start at 0.25x).
+- Those settings are also remembered between visits, in this browser (Team colours, Quality and sound already were). "Clear saved files" leaves them alone, since they're preferences rather than files from your folder.
+
+### How it was tested
+On Sujan's files: Dust2 switched to 3D at 0.25x, playing, with Names and Grenades off, See through walls on and the timeline on round; then the 2006 Train demo opened in 3D at 1x, paused, with all of those kept (`tests/page/new_demo_settings.js`). `tests/prefs_check.py`: the defaults on a first visit, saved settings restored after a reload, and damaged saved settings falling back to the defaults. The folder and start screen checks still pass.
+
+### Discussed, not changed
+- Bullet marks: checked and parked. The demo stores each shot's spread and recoil exactly, but not where the player was aiming at the moment of the shot, so marks on walls would land 1 to 2 degrees off (a rebuilt killing bullet passes a median of about 17 units from the head on 71 headshot kills). Details, the numbers and the options considered are in [IDEAS.md](IDEAS.md) under "Kept for later"; the scripts are `tests/demo-probes/bullets*.mjs`.
+- Open loose ends from this round of work (hand checks, untested demos, small decisions) are now listed in one checklist at the top of [IDEAS.md](IDEAS.md).
+
 ## 0.12.2 (2026-10-01)
 
 ### Fixed

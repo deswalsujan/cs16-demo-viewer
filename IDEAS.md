@@ -2,6 +2,34 @@
 
 Parked ideas and features we've discussed but not built yet. Each entry keeps enough of the discussion that it can be picked up later without starting over. When something here gets built, it moves to the [changelog](CHANGELOG.md).
 
+## Open follow-ups (checklist, updated 1 Oct 2026)
+
+Everything raised in conversation that isn't finished, in one place. Each item says who does it. Ideas for new features are further down; this list is for loose ends.
+
+**Hand checks for Sujan** (things the headless test browser can't do)
+- [ ] **Reconnect and "Allow on every visit"** (0.12.0). In a normal (not incognito) Chrome window: open the GitHub Pages link, choose the folder, close every tab of the viewer, open the link again, click Reconnect and choose "Allow on every visit", close the tab again and reopen it. Expected: it goes straight to "Up to date" with no prompt. Not yet done: a reload doesn't show the prompt, because Chrome keeps the access until the last tab of the site closes.
+- [ ] **The 0.12.1 folder row on a real folder:** choose a wrong folder (for example `sprint-builds-review`), then the `cstrike` folder itself, then the right one; move demos in and out while the page is open (the list should update when you click back into the tab); click Clear saved files twice (should go straight back to "Choose your Half-Life folder").
+- [ ] **Reset view (0.12.2)** from Player's eyes in 3D: should go back to the starting overview.
+- [ ] **Settings carry over (0.12.3):** change view, speed and toggles, open another demo: settings kept, speed back to 1x and paused; reload the page: settings still there.
+- [ ] **The game's own demo player vs the viewer**, two checks on one demo (see "Open decisions"): does the in-game player show the AWP scope for an HLTV demo, and does it show the same small crosshair offset at a kill (CHANGELOG 0.10.0)?
+- [ ] **Windows 150% Theatre run.** Passed all 39 checks on the build before the last 0.9.x fix and wasn't rerun after it.
+
+**Not yet tested on real demos**
+- [ ] Breakables on Nuke and Inferno (vents) and Tuscan (logs): do they disappear in 3D when shot out?
+- [ ] The 145 MB Moscow 5 vs Na`Vi Mirage demo (memory and load time on a laptop).
+- [ ] Re-check the Dust2 (Na`Vi vs FX, expected 17-11 because of the extra admin-mistake round) and Mirage (WinFakt vs Check-Six 16-6, M5 vs Na`Vi 16-9) scores with the 0.7.1 round counting.
+- [ ] Train in 3D on Sujan's side (it loads in the test browser: the 2006 Team3D vs Fnatic demo, 1 Oct 2026).
+
+**Small decisions not yet taken**
+- [ ] Show the demo's protocol (47 or 48) in "Copy debug info", so bug reports say which kind of demo it was. A one-line change; offered on 1 Oct 2026, not answered.
+- [ ] Since 0.12.1 a demo can only be opened after the folder is chosen. Before, maps and models this browser had saved let a demo open without the folder. Fine for Chrome (the folder is remembered); in Firefox and Safari it means choosing the folder on every visit before opening a demo. Confirm this is acceptable.
+
+**Tied to moving to sujandeswal.com** (not a dependency for anything else)
+- [ ] Remove the `noindex` tag that `build.py` adds to `index.html` (kept out of search results until then; indexing is fine on sujandeswal.com).
+- [ ] Privacy hardening (see "Other parked ideas").
+
+**Next on the roadmap:** item 2, Requirements (below).
+
 ## Roadmap (agreed 1 Oct 2026, in this order)
 
 Item 1, smoother playback, is done (0.8.0; Smooth aim later removed in 0.10.0). Theatre mode (0.9.0 to 0.9.3), the sniper scope (0.10.0 and 0.10.1), See through walls and Team colours (0.11.0) were added along the way.
@@ -19,26 +47,33 @@ Item 1, smoother playback, is done (0.8.0; Smooth aim later removed in 0.10.0). 
 
 **Decided:** never host Valve's game files. A "lite mode" made only from the project's own assets is an option for later.
 
-## Next up (raised 1 Oct 2026, after 0.11.0)
+## Next up (raised 1 Oct 2026, after 0.11.0): all five settled
 
-Five points Sujan raised, with the recommendations so far. Confirm with Sujan before starting each. Point 1 (old protocol 47 demos) was done in 0.11.1, point 2 (remember the Half-Life folder, with a folder row on the start screen) in 0.12.0 and 0.12.1, point 3 (Reset view in 3D) in 0.12.2, point 4 (settings when opening another demo) in 0.12.3.
-
-5. **Bullet marks (decals).** For seeing where a spray actually lands while the crosshair is pulled down against recoil.
-   - **Feasibility check, 1 Oct 2026 (Dust2, Na`Vi vs FX), waiting on Sujan's decision.**
-   - What the game sends with every shot (ReGameDLL source, `wpn_ak47.cpp` and `FireBullets3` in `cbase.cpp`): the spread already worked out from the random seed (two numbers, `fparam1` and `fparam2`), and the recoil at the moment of the shot (punch angle times 100, `iparam1` and `iparam2`). The shot's start point and view angles are left empty for the receiving game to fill in from the shooter.
-   - What the HLTV demo keeps: the spread (2,316 of 2,317 fire events, stored to 0.01, about half a degree) and the recoil (to 0.01 degrees). The view angles of the shot are missing (10 of 2,317 events), so the aim has to come from the player's snapshots, about ten a second, as everywhere else in the viewer.
-   - Accuracy, from 68 to 71 headshot kills: the rebuilt killing bullet passes a median of about 16 to 17 units from the head centre (a head is about 10 units across), so it hits the head in about 1 case in 10. Shifting the aim or the victim by a snapshot either way doesn't fix it. Recoil clearly helps in sprays (for example 38 units off without it, 13 with it; 35 and 10), so the recoil data is real; the error is the aim between snapshots, the same limit as the crosshair-at-kill finding in CHANGELOG 0.10.0 (1 to 2 degrees).
-   - So: the shape of a spray (how far each bullet lands from the crosshair) is exact, but where the whole spray lands in the world is off by about 1 to 2 degrees, about a body width at 600 units.
-   - Scripts: `tests/demo-probes/bullets.mjs` (what fire events carry), `bullets_hs.mjs` (headshot test), `bullets_sweep.mjs` (timing offsets).
-   - Untested: burst weapons (the FAMAS and Glock burst events seem to use the recoil numbers for something else), and how bullets go through walls (the game reduces penetration by material).
+1. Old protocol 47 demos: done in 0.11.1.
+2. Remember the Half-Life folder, with a folder row on the start screen: done in 0.12.0 and 0.12.1.
+3. Reset view in 3D: done in 0.12.2.
+4. Settings when opening another demo: done in 0.12.3.
+5. Bullet marks: checked and parked (see "Kept for later").
 
 ## Kept for later
 
+- **Bullet marks (decals)** (parked 1 Oct 2026 by Sujan, after a feasibility check). For seeing where a spray actually lands while the crosshair is pulled down against recoil.
+  - **Why parked:** HLTV demos don't record where the player was aiming at the moment of each shot, so marks on walls would land 1 to 2 degrees off and partly be made up. That goes against showing only what the demo recorded.
+  - **Feasibility check, 1 Oct 2026 (Dust2, Na`Vi vs FX):**
+  - What the game sends with every shot (ReGameDLL source, `wpn_ak47.cpp` and `FireBullets3` in `cbase.cpp`): the spread already worked out from the random seed (two numbers, `fparam1` and `fparam2`), and the recoil at the moment of the shot (punch angle times 100, `iparam1` and `iparam2`). The shot's start point and view angles are left empty for the receiving game to fill in from the shooter.
+  - What the HLTV demo keeps: the spread (2,316 of 2,317 fire events, stored to 0.01, about half a degree) and the recoil (to 0.01 degrees). The view angles of the shot are missing (10 of 2,317 events), so the aim has to come from the player's snapshots, about ten a second, as everywhere else in the viewer.
+  - Accuracy, from 68 to 71 headshot kills: the rebuilt killing bullet passes a median of about 16 to 17 units from the head centre (a head is about 10 units across), so it hits the head in about 1 case in 10. Shifting the aim or the victim by a snapshot either way doesn't fix it. Recoil clearly helps in sprays (for example 38 units off without it, 13 with it; 35 and 10), so the recoil data is real; the error is the aim between snapshots, the same limit as the crosshair-at-kill finding in CHANGELOG 0.10.0 (1 to 2 degrees).
+  - So: the shape of a spray (how far each bullet lands from the crosshair) is exact, but where the whole spray lands in the world is off by about 1 to 2 degrees, about a body width at 600 units.
+  - Scripts: `tests/demo-probes/bullets.mjs` (what fire events carry), `bullets_hs.mjs` (headshot test), `bullets_sweep.mjs` (timing offsets).
+  - Untested: burst weapons (the FAMAS and Glock burst events seem to use the recoil numbers for something else), and how bullets go through walls (the game reduces penetration by material).
+  - **Options that were on the table:** (1) park, chosen; (2) a spray readout in Player's eyes, dots around the crosshair showing where each bullet went compared with the aim, which is exact data; (3) wall marks labelled as approximate, advised against.
+  - **Worth revisiting if:** POV demos (recorded by a player, not HLTV) turn out to store the exact aim for every shot. Not checked yet. Blood and grenade scorch marks were to follow bullet marks and are parked with them.
 - **Scope styles** (1 Oct 2026). Three sniper scope styles are in the code; the viewer uses "game" (like CS 1.6: thin lines, mil-dots, red dot). "clean" (lines and red dot, no mil-dots) was the runner-up: mil-dots carry no information in CS 1.6 (there's no bullet drop) and can cover a dark player model. "lines" is the 0.10.0 look. Switch with `SCOPE_STYLE` in `src/view3d.part.js`; all three compared in [docs/scope-designs.png](docs/scope-designs.png) (A is "game", B is "clean"). A menu choice was ruled out for now as clutter.
 - **Quick-scope and no-scope labels** (built in 0.10.0, removed in 0.10.1). HLTV timing (about a tenth of a second) can't separate a real quick-scope from a slightly quicker normal scope, and no measured cut-off was found. Worth revisiting only with demos that carry finer timing (for example POV demos, which record the player's own zoom), or a well-sourced community definition.
 
 ## Open decisions
 
+- **Crosshair at the moment of a kill** (open since 1 Oct 2026). The viewer shows the shooter's crosshair up to about 1.5 degrees off the victim at some kills (CHANGELOG 0.10.0, "Discussed, not changed"); the same limit sank bullet marks. Expected to look the same in the game's own demo player. Check one of the kills listed there in-game (for example markeloff's AWP kill on PASHA, Dust2 round 10).
 - **How the game's own demo player shows the scope** (open since 1 Oct 2026). Sujan has seen the scope in HLTV demos in-game. The viewer rebuilds it from the zoom click sounds, because no zoom field could be found in the demo (checked on Dust2 and Tuscan). If the game shows the scope for these exact demos, it gets it from somewhere still unread, which would be more reliable than the clicks. Worth checking one AWP kill in-game against the viewer.
 
 ## Wallbang hits that didn't kill
