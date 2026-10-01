@@ -16,6 +16,46 @@ What changed in the viewer, newest first. The version shows in the viewer's shor
 - "Quality: auto" lowers 3D sharpness at most once per visit and doesn't raise it again on its own. Pick "Quality: high" to go back.
 - Demos recorded by a player (POV demos) play, with two limits: the player's game only receives the players near them, so others drop in and out of view, and the wallbang finder is less reliable there than in HLTV demos. A recording that switched maps plays the map it spent longest on.
 - Keeping the Half-Life folder between visits works in Chrome and Edge (122 or later) on an https page such as GitHub Pages. Firefox and Safari don't have the browser feature it needs, and the claude.ai copy is an embedded page, where browsers don't allow it; those pick the folder on each visit. A copy of index.html opened from your own disk also keeps it (checked in Chrome by Sujan, 1 Oct 2026).
+- On maps with a lot of scenery (de_tuscan above all) the demo has no grenade in flight and no gun on the floor: the old engine sends at most 256 objects per snapshot and the map's own objects fill nearly all of them. Smokes, HE explosions and flashbang pops still show where and when they went off (see 0.14.0), but there's no flight path to draw.
+- A smoke cloud is drawn as one light green ball for as long as the smoke puffs (about 21 seconds, less when the round restarts). The game's own puffs drift and thin out unevenly, which the viewer doesn't copy.
+
+## 0.14.0 (2026-10-02)
+
+Changes from Sujan's feedback on two de_tuscan demos (Anexis vs fnatic, DreamHack Bucharest 2012, and Lions vs mousesports, 2011) and on the free camera.
+
+### Fixed
+- Smokes that never appeared, though you could hear them (Anexis vs fnatic at 10:39, Lions vs mousesports at about 15:16). Neither demo has the grenade objects at all: of 86 smokes thrown in Lions vs mousesports, the file has 1 smoke grenade object; Anexis vs fnatic has none of its 116, and no flashbangs, HE grenades or dropped guns either. The cause is the old engine's limit of 256 objects per snapshot ([the same limit hitting HLTV demos of another game](https://github.com/ccoventry/dod-studio/issues/207)). On de_tuscan the map's own objects fill it: every snapshot of the Anexis demo lists exactly 256, the Lions demo 254 on most, against about 50 on Dust2 (65 at most) and at most 127 on Mirage. The viewer reads every object each snapshot lists (checked: the count each packet states matches what's read, in all four demos), so the grenades aren't in the file.
+  - What every demo does have is the game's own smoke event, `createsmoke`. Per ReGameDLL (`CGrenade::SG_Detonate` and `SG_Smoke` in `ggrenade.cpp`) the server sends one when the smoke pops, with the cloud's centre, then one a second, 21 more, each with the same centre. That's what the game draws the cloud from. Every smoke now comes from these events: 116 of 116 on the Anexis demo, 87 on Lions vs mousesports.
+  - The recorder drops some of them (they're sent unreliably), so the moment a smoke pops comes from its pop sound (`weapons/sg_explode.wav`, which carries the place) when the first event is missing. The cloud lasts 21 seconds from the pop, or until the round restarts.
+  - Where the demo does have the grenade object, its flight path is drawn as before and the cloud now comes from the events: 105 of 106 smokes on Dust2 and 91 of 92 on Mirage (M5 vs Na`Vi) matched their events. On Mirage, 5 more smokes now show that were left out before because they were thrown less than 64 units.
+  - HE grenades and flashbangs the demo has no object for show as a burst where they went off: HEs from the explosion effect (the game sends two per HE, the second up to 64 units off, so they're merged; the C4's is left out), flashbangs from their pop sound. No flight path, since the file doesn't have one.
+- Smoke clouds were in the wrong place and sometimes started too early. The viewer put the cloud where the grenade came to rest, but after a smoke pops the game throws the can up and sideways (a random speed in `SG_Detonate`), so it lands 100 to 250 units from the cloud. On Dust2 the "came to rest" test also often fired at the moment of the throw. The cloud now sits where the smoke popped and starts when it popped.
+- Free camera chosen from Player's eyes or Behind player (the button or V) jumped back to wherever the free camera was last left. It now starts at the player: from Behind player it keeps the view exactly, from Player's eyes it steps back behind their shoulder (where Behind player would be) so the player is in view. Picking the player you follow again to let go does the same. Dragging, the mouse wheel and W A S D already carried on from the view on screen and still do.
+- A free camera inside a player's head (dragging out of Player's eyes) showed the inside of the model's face. A player the free camera sits inside is now hidden, as in Player's eyes.
+- The load summary card came back after being closed. Closing it while it still said "Checking your files…" (×, Esc, or pressing play) lasted only until the check finished. It now stays closed for that demo. A demo that can't be played still says so.
+
+### Changed
+- Smokes are light green, in 3D, on the radar and for the flight path, so they read apart from flashbangs (white) and HE grenades (orange).
+- Players tab: the clan tag most of a team shares is left off, since the team heading above already names the team. "fnaticRC kArRiG4N@$tY@" shows as "kArRiG4N@$tY@", "NoA.hpx" as "hpx", and a tag on both sides such as "Meet Neo, Your Maker" as "Neo". A tag counts when at least 3 in 5 players have it (so a stand-in doesn't stop it), and it's only cut where a space or symbol separates it from the name ("mouz|ninja" loses "mouz|", never part of the name). Players without the tag, and teams where two players would end up reading the same, keep their full names. The Kills and Wallbangs lists keep full names, since they mix both teams.
+- Players tab: hovering a row shows the player's full name.
+- Players tab: a dead player shows a red skull in place of their 1 to 0 key number (they can't be followed until the next round anyway), and the "dead" tag, which got cut off on long names, is gone. Hovering says "dead until the next round". Approved design: [docs/players-panel-designs.png](docs/players-panel-designs.png).
+
+### How it was tested
+- Demo data, outside the page (`tests/demo-probes`): objects per snapshot, stated against read, on the Anexis, Lions, Dust2 and M5 Mirage demos; createsmoke events, smoke pop sounds and explosion effects counted on each.
+
+  | Demo | Smoke objects | Smokes shown | From events only | HE / flash shown, from events only |
+  |---|---|---|---|---|
+  | Anexis vs fnatic, Tuscan, 2012 | 0 | 116 | 116 | 117 / 235 |
+  | Lions vs mousesports, Tuscan, 2011 | 1 (thrown under 64 units, so never drawn) | 87 | 87 | 109 / 261 |
+  | Na`Vi vs FX, Dust2, 2011 | 106 | 107 | 1 | 0 / 0 |
+  | M5 vs Na`Vi, Mirage, 2011 | 92 | 97 | 5 | 0 / 1 |
+
+- In the page, on Sujan's files (Tuscan and Dust2 maps, player models; no weapon models or sounds, which aren't needed for these checks): the smoke at 10:39 on the Anexis demo shows in 3D, light green, popping at 10:39.4 and lasting to 11:00.5 (`tests/page/smoke_from_events.js`); on Dust2 106 smokes take their cloud from the events. The Players tab on both demos: shortened names, full names on hover, skulls for exactly the dead players, nothing cut off (`players_names_dead.js`). Free camera from Player's eyes, Behind player and V, after leaving the free camera in a far corner: starts 115 units from the player, facing their way; dragging still takes over the exact view (`free_cam_start.js`). The summary card stays closed (`summary_stays_closed.js`). `modes_and_toggles.js` and `reset_view.js` pass. `folder_row_test.py` (20 of 20), `start_screen_check.py` and `prefs_check.py` pass.
+- Name shortening checked on made-up teams too: "Meet X, Your Maker" (MYM), "mousesports | x", "mouz|x" with a stand-in, "LIONS x * QPAD" with one "* KASPERSKY", and a team without tags.
+
+### Discussed, not changed
+- Flight paths for grenades the demo has no object for: not possible, the file doesn't have them. Fine by Sujan ("if the smoke does not appear in the demo then I'm fine with it not appearing").
+- Strike-through for dead players' names: the skull won, since a line through names full of symbols is hard to read.
 
 ## 0.13.1 (2026-10-02)
 

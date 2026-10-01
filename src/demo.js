@@ -167,6 +167,7 @@ export function parseDemo(buffer, onProgress, opts = {}) {
   const radio = [];     // { t, s: sentence name }
   const corpses = [];   // { t, start, model, pos, yaw, seq, team, e }
   const booms = [];     // time, x, y, z (grenade and C4 explosions)
+  const puffs = [];     // smoke grenade events (createsmoke): time, kind (1 = it pops, 4 = a puff every second after), cloud centre x, y, z
   let pendingEv = [];
   let scores = { T: 0, CT: 0 };
   let curRound = null;
@@ -688,6 +689,14 @@ export function parseDemo(buffer, onProgress, opts = {}) {
               const ev = pendingEv[k + 2]; let e = ev && ev.entindex ? ev.entindex : 0;
               if (!e && pendingEv[k + 1] >= 0) { if (!order) { order = []; for (let n = 0; n < ents.length; n++) if (ents[n]) order.push(n); } e = order[pendingEv[k + 1]] || 0; }
               shots.push(time, e, pendingEv[k], ev && ev.bparam1 ? 1 : 0);
+              // the smoke itself: the game sends createsmoke when a smoke pops (with the cloud's centre as origin)
+              // and then once a second while it smokes (with the centre in angles), from ReGameDLL's
+              // CGrenade::SG_Detonate and SG_Smoke. These arrive even when the grenade object isn't in the demo.
+              if (ev && /createsmoke/.test(resources.events[pendingEv[k]] || '')) {
+                const kind = ev.iparam2 || 0;
+                const c = kind === 1 ? [ev['origin[0]'], ev['origin[1]'], ev['origin[2]']] : [ev['angles[0]'], ev['angles[1]'], ev['angles[2]']];
+                if (kind === 1 || kind === 4) puffs.push(time, kind, c[0] || 0, c[1] || 0, c[2] || 0);
+              }
             }
             pendingEv = [];
           }
@@ -739,7 +748,7 @@ export function parseDemo(buffer, onProgress, opts = {}) {
     occupants, brushEvents: new Float32Array(brushEvents), brushPose: new Float32Array(brushPose), viewers: hltvStatus, notes,
     times: new Float32Array(samples.t), slots,
     finalScore: { ...scores }, models: resources.models, stride: STRIDE,
-    pmodels, sounds: resources.sounds, events: resources.events, snds: new Float32Array(snds), shots: new Float32Array(shots), booms: new Float32Array(booms), radio, corpses,
+    pmodels, sounds: resources.sounds, events: resources.events, snds: new Float32Array(snds), shots: new Float32Array(shots), booms: new Float32Array(booms), puffs: new Float32Array(puffs), radio, corpses,
     errors, errSamples,
   };
 }

@@ -9,3 +9,5 @@ tests/three.min.js
 tests/demo-probes/demo_probe.mjs
 tests/demo-probes/demo.mjs
 tests/demo-probes/bsp.mjs
+tests/demo-probes/demo_probe_count.mjs
+tests/demo-probes/nades_fn.mjs

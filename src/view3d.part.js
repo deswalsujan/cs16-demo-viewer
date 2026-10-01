@@ -45,7 +45,7 @@ function init3() {
     if (!dragging.moved && Math.hypot(e.clientX - dragging.sx, e.clientY - dragging.sy) < 5) return;
     dragging.moved = true;
     const dx = e.clientX - dragging.x, dy = e.clientY - dragging.y; dragging.x = e.clientX; dragging.y = e.clientY;
-    if (cam3.mode !== 'free') { copyCamToFree(); setCam('free'); }
+    if (cam3.mode !== 'free') { setCam('free', false, true); }
     cam3.yaw -= dx * 0.25; cam3.pitch = Math.max(-89, Math.min(89, cam3.pitch + dy * 0.25));
   });
   canvas.addEventListener('pointerup', (e) => {
@@ -56,7 +56,7 @@ function init3() {
   canvas.addEventListener('contextmenu', (e) => e.preventDefault());
   canvas.addEventListener('wheel', (e) => {
     e.preventDefault();
-    if (cam3.mode !== 'free') { copyCamToFree(); setCam('free'); }
+    if (cam3.mode !== 'free') { setCam('free', false, true); }
     const f = fwd(cam3.yaw, cam3.pitch); const d = -e.deltaY * 1.5;
     cam3.pos[0] += f[0] * d; cam3.pos[1] += f[1] * d; cam3.pos[2] += f[2] * d;
   }, { passive: false });
@@ -213,7 +213,25 @@ function copyCamToFree() {
   if (cam3.lastYaw != null) { cam3.yaw = cam3.lastYaw; cam3.pitch = cam3.lastPitch; }
 }
 document.querySelectorAll('#cam3 [data-c]').forEach((b) => b.onclick = () => setCam(b.dataset.c));
-function setCam(m, keepPlayer) {
+// Free camera chosen while following someone: start near that player instead of where the free camera was
+// last left. From Behind player it takes over the view exactly; from Player's eyes it steps back behind
+// their shoulder (the Behind player spot), so the player is in view. Dragging, the wheel and WASD keep the
+// exact view instead, since those carry on from what's on screen.
+function freeCamFromFollow() {
+  if (!R3 || !selected) { copyCamToFree(); return; }
+  const s = playerState(selected, T);
+  if (cam3.mode !== 'eyes' || !s || s.state <= 0) { copyCamToFree(); return; }
+  const head = [s.x, s.y, s.z + (s.duck ? 20 : 30)];
+  const pitch = Math.max(-30, Math.min(40, s.pitch * 0.6 + 6));
+  const back = fwd(s.yaw, pitch), FULL = 110;
+  const far = [head[0] - back[0] * FULL, head[1] - back[1] * FULL, head[2] - back[2] * FULL + 14];
+  let f = 1;
+  if (MAP) { const r = solidAlong(MAP.bsp, head, far, 2, R3.broken, R3.poses); if (r.hit.length) f = Math.max(0, r.hit[0].f0 * r.len - 10) / FULL; }
+  cam3.pos = head.map((v, i) => v + (far[i] - v) * f); cam3.yaw = s.yaw; cam3.pitch = pitch;
+}
+function setCam(m, keepPlayer, exact) {
+  // exact: dragging, the wheel, WASD, or nobody left to follow, which carry on from the view on screen
+  if (m === 'free' && cam3.mode !== 'free') { if (exact) copyCamToFree(); else freeCamFromFollow(); }
   // following needs a living player; keepPlayer = the caller just picked one (e.g. a kill), so don't swap them out
   if (m !== 'free' && !keepPlayer) { const s = selected && playerState(selected, T); if (!s || s.state < 0) nextPlayer(1); }
   if (m !== 'free' && !selected) nextPlayer(1);
@@ -233,7 +251,7 @@ const k3 = cam3.keys;
 document.addEventListener('keydown', (e) => {
   if (viewMode === '2d' || !D || !$('load').hidden || e.target.tagName === 'INPUT' || e.target.tagName === 'SELECT' || e.target.isContentEditable) return;
   const k = e.key.toLowerCase();
-  if (k.length === 1 && 'wasdqe'.includes(k)) { k3[k] = true; if (cam3.mode !== 'free') { copyCamToFree(); setCam('free'); } }
+  if (k.length === 1 && 'wasdqe'.includes(k)) { k3[k] = true; if (cam3.mode !== 'free') { setCam('free', false, true); } }
   if (e.key === 'Shift') k3.shift = true;
   if (k === 'v') setCam(cam3.mode === 'free' ? 'eyes' : cam3.mode === 'eyes' ? 'chase' : 'free');
 });
@@ -286,7 +304,9 @@ function update3() {
   for (const e in D.slots) {
     const s = playerState(+e, T);
     const f = R3.players[e];
-    const hideSelf = +e === selected && (cam3.mode === 'eyes' || (cam3.mode === 'chase' && cam3.chaseDist != null && cam3.chaseDist < 12));
+    // also hidden when the free camera sits inside someone's head (after dragging out of Player's eyes)
+    const hideSelf = (+e === selected && (cam3.mode === 'eyes' || (cam3.mode === 'chase' && cam3.chaseDist != null && cam3.chaseDist < 12)))
+      || (cam3.mode === 'free' && s && s.state > 0 && Math.hypot(cam3.pos[0] - s.x, cam3.pos[1] - s.y, cam3.pos[2] - s.z - 17) < 24);
     if (!s || s.state < 0) {
       if (f) f.g.visible = false;
       // falling down: the player's own death animation plays until the game swaps in the corpse
@@ -345,13 +365,14 @@ function update3() {
     const g = M.nades[gi];
     if (T < g.t0 || T > g.t1 + 1) continue;
     const p = g.pts;
-    const col = g.type === 'he' ? 0xff9a3c : g.type === 'flash' ? 0xf2f0e6 : 0x9aa3aa;
+    const col = g.type === 'he' ? 0xff9a3c : g.type === 'flash' ? 0xf2f0e6 : 0x9fd88a;
     if (g.type === 'smoke' && T >= g.stop) {
       const fade = Math.max(0, Math.min(1, (T - g.stop) / 1.5) * Math.min(1, (g.t1 - T) / 2 + 0.2));
       const sm = ov('sm:' + gi, () => {
         let k = 0; for (let i = 0; i < p.length; i += 4) if (p[i] >= g.stop) { k = i; break; }
-        const m = new THREE.Mesh(sphere(115), new THREE.MeshLambertMaterial({ color: 0xb4b9bc, transparent: true, opacity: 0, depthWrite: false }));
-        m.userData.shared = true; m.scale.y = 0.6; m.position.copy(g3(p[k + 1], p[k + 2], p[k + 3] + 40)); return m;
+        const c = g.cloud || [p[k + 1], p[k + 2], p[k + 3]];
+        const m = new THREE.Mesh(sphere(115), new THREE.MeshLambertMaterial({ color: 0xb2dca2, transparent: true, opacity: 0, depthWrite: false }));
+        m.userData.shared = true; m.scale.y = 0.6; m.position.copy(g3(c[0], c[1], c[2] + 40)); return m;
       });
       sm.material.opacity = 0.85 * fade;
       continue;
@@ -394,7 +415,7 @@ function update3() {
     placeCam(cam3.pos, cam3.yaw, cam3.pitch);
   } else if (!selected) {
     // nobody to follow any more: hand control back to the free camera where we are
-    copyCamToFree(); setCam('free');
+    setCam('free', false, true);
     placeCam(cam3.pos, cam3.yaw, cam3.pitch);
   } else {
     const s = selected && playerState(selected, T);

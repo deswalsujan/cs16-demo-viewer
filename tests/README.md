@@ -58,6 +58,10 @@ Page scripts in `page/`:
 | `lists_kills.js`, `lists_rounds.js`, `lists_players.js` | The clicked, playing-now, current-round and followed-player highlights, for screenshots | 0.13.0 |
 | `pov_demo.js`, then `summary_open.js`, `summary_read.js` | A POV demo that switched maps (`DEMO=gp-[pub]`): map, rounds, the notes in the load summary, the smooth countdown bar | 0.13.0 |
 | `clear_saved_open.js`, then `clear_saved_check.js` | Clear saved files with a demo open goes back to a first visit | 0.13.0 |
+| `smoke_from_events.js` | Grenades by source (objects or the game's events), and one smoke seen in 3D before and after it pops. Set `window.__smokeAt` (demo seconds) in a script run just before it to pick the smoke (run with `DEMO=anexis` and `DEMO=dust2`) | 0.14.0 |
+| `players_names_dead.js` | Players tab: shortened names, full names on hover, skulls for dead players, nothing cut off | 0.14.0 |
+| `free_cam_start.js` | Free camera from Player's eyes, Behind player and V starts at the player; dragging keeps the exact view. Moves the camera, so run `reset_view.js` in a separate run | 0.14.0 |
+| `summary_stays_closed.js` | The load summary card closed while checking stays closed | 0.14.0 |
 
 Stand-alone checks:
 
@@ -90,6 +94,14 @@ node zoom.mjs ~/Downloads/Half-Life/cstrike/<demo>.dem
 | `bullets.mjs`, `bullets_hs.mjs`, `bullets_sweep.mjs` | What weapon fire events carry (spread, recoil); how close a rebuilt killing bullet passes to the victim's head; whether shifting aim or victim by a snapshot helps. `make_probe.py` adds the event capture (bullet marks check, 1 Oct 2026) |
 | `kill_lag.mjs` | How late each kill message arrives after the victim's death sound, the killer's last shot and the victim's health reaching 0 (0.13.0). Needs `cp ../../src/demo.js demo.mjs` |
 | `wallbang_timing.mjs` | The viewer's wallbang rules rebuilt outside the page; lists the kills whose result changes when late kills are re-timed (0.13.0). Needs `demo.mjs` and `cp ../../src/bsp.js bsp.mjs`; run as `node wallbang_timing.mjs <demo> <map.bsp>` |
+
+0.14.0 probes (run `python3 make_probe.py` first; it also writes `demo_probe_count.mjs` and `nades_fn.mjs`, the page's grenade code):
+
+```
+node nade_events.mjs <demo>              # grenade objects, createsmoke events, pop and explosion sounds
+node entity_count.mjs <demo>             # objects each snapshot states vs. read (de_tuscan sits at the 256 limit)
+node nadecheck.mjs <demo> [from] [to]    # grenades as the page builds them, by source; lists those between two demo times
+```
 
 ## Lessons
 

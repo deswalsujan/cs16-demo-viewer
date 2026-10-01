@@ -7,6 +7,7 @@ Parked ideas and features we've discussed but not built yet. Each entry keeps en
 Everything raised in conversation that isn't finished, in one place. Each item says who does it. Ideas for new features are further down; this list is for loose ends.
 
 **Hand checks for Sujan** (things the headless test browser can't do)
+- [ ] **0.14.0 on your side:** the Lions vs mousesports smoke Threat throws at about 15:16 (it pops at 15:19) and the Anexis vs fnatic one at 10:39, both light green; the Players tab on the 2006 Train demo (PENTAGRAM rows should each show their own name) and on any MYM demo you have; the skull on dead players; Free camera from Player's eyes and Behind player starting at the player. Checked in the test browser only, with no weapon models or sounds loaded.
 - [ ] **The wallbangs that changed in 0.13.0**, in the game's demo player (round and round timer as the viewer shows them):
   - NoA vs Pentagram, Train 2006, newly listed: R18 1:22 MJE AK on kubenB, R21 1:09 neo M4 on zonic. No longer listed, not commented on yet: R12 1:01 Paddy M4 on kubenB. Still listed and not checked: R4 0:40 and R5 1:24 taz AK on zonic, R10 1:03 Paddy M4 on neo, R22 0:55 neo M4 on ave, R24 0:38 zonic AK on LoordB, R28 1:17 MJE AK on LoordB, R28 1:12 neo M4 on MJE.
   - Na`Vi vs FX, Train 2011, no longer listed: R9 1:21 Zeus AK on PASHA.
@@ -26,6 +27,7 @@ Everything raised in conversation that isn't finished, in one place. Each item s
 - [ ] Re-check the Dust2 (Na`Vi vs FX, expected 17-11 because of the extra admin-mistake round) and Mirage (WinFakt vs Check-Six 16-6, M5 vs Na`Vi 16-9) scores with the 0.7.1 round counting.
 
 **Small decisions not yet taken**
+- [ ] Free camera to Player's eyes or Behind player with nobody picked follows the first living player in the list, wherever the camera is. Following the player nearest the middle of the free camera's view would keep the place, the same way 0.14.0 does in the other direction. Offered on 2 Oct 2026.
 - [ ] Show the demo's protocol (47 or 48) in "Copy debug info", so bug reports say which kind of demo it was. A one-line change; offered on 1 Oct 2026, not answered.
 - [ ] Since 0.12.1 a demo can only be opened after the folder is chosen. Before, maps and models this browser had saved let a demo open without the folder. Fine for Chrome (the folder is remembered); in Firefox and Safari it means choosing the folder on every visit before opening a demo. Confirm this is acceptable.
 
@@ -33,7 +35,7 @@ Everything raised in conversation that isn't finished, in one place. Each item s
 - [ ] Remove the `noindex` tag that `build.py` adds to `index.html` (kept out of search results until then; indexing is fine on sujandeswal.com).
 - [ ] Privacy hardening (see "Other parked ideas").
 
-**Done since this list was written:** Train in 3D on Sujan's side (the 2006 NoA vs Pentagram demo, 1 Oct 2026, which led to 0.13.0); 0.13.0 (kills timed from the real moment, the gun rule, POV demos, Clear saved files closing the demo, the smooth summary bar, the side panel lists); the start screen line "Needs your own copy of Counter-Strike 1.6, installed through Steam" (0.12.4, confirmed by Sujan).
+**Done since this list was written:** 0.14.0 (smokes from the game's own smoke events, HE and flash bursts on maps where the demo has no grenade objects, light green smokes, shorter names and the skull in the Players tab, Free camera starting at the player); and earlier: Train in 3D on Sujan's side (the 2006 NoA vs Pentagram demo, 1 Oct 2026, which led to 0.13.0); 0.13.0 (kills timed from the real moment, the gun rule, POV demos, Clear saved files closing the demo, the smooth summary bar, the side panel lists); the start screen line "Needs your own copy of Counter-Strike 1.6, installed through Steam" (0.12.4, confirmed by Sujan).
 
 **Next on the roadmap:** item 2, the README Requirements list (below).
 
@@ -144,7 +146,6 @@ Checked on two demos:
 - **Play cut-off demos up to where they end.** A demo that was cut off (interrupted download, crashed recording) currently can't be opened at all, because the file's index sits at the end. Reading it frame by frame from the start would recover everything up to the cut.
 - **Shaded lighting on player models** so they darken in shadowed areas like in-game.
 - **Team names for demos without "-vs-" in the file name** (found 1 Oct 2026). `2006-07-02_15h00_Team3D_Fnatic-...-de_train.dem` names its teams "fnatic" and "o of 3D": the guess from clan tags picked up part of a name. Worth reading names like `Team3D_Fnatic` from the file name too.
-- **Players tab: long names are still cut off** (seen 2 Oct 2026, "PENTAGRAM G-Shoc…"). The Kills and Wallbangs lists moved to three lines in 0.13.0; the Players tab keeps one line per player because of its number columns. Options: drop the clan tag in that tab, or put the name on its own line above the numbers.
 - **A wall thickness limit per gun** (2 Oct 2026). How thick a wall each gun can shoot through would catch wrong wallbangs on its own, but the numbers need care: the game moves a bullet ahead by its "penetration power" (AWP 45, AK 39, M4 35 units, cut by the material: a quarter on concrete) after each hit, and the thickest wall it gets through also depends on how the engine traces from inside a wall. Not used until that's checked in the code and in the game.
 - **Late kill messages in other old demos** (2 Oct 2026). The 2006 NoA vs Pentagram demo is the only one so far where the kill message trails the kill (see CHANGELOG 0.13.0). A second protocol 47 demo would show whether all old demos do this.
 - **Left-hand option for first-person weapons** (discussed 1 Oct 2026). The viewer now shows weapons in the right hand like CS 1.6's default (cl_righthand 1). A toggle for people who play left-handed is a one-line change if anyone asks.

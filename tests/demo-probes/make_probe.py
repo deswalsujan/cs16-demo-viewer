@@ -20,3 +20,27 @@ s = s.replace(old, old + "\n              (globalThis.EV = globalThis.EV || []).
 s = s.replace("deltas[name] = fields; globalThis.DF[name] = fields.map((f) => f.name + ':' + f.bits);", "deltas[name] = fields; globalThis.DF[name] = fields.map((f) => f.name + ':' + f.bits + '/' + f.divisor + (f.flags & 0x80000000 ? 's' : ''));")
 open(os.path.join(here, 'demo_probe.mjs'), 'w').write(s)
 print('wrote demo_probe.mjs')
+
+# demo_probe_count.mjs: also records, for every delta packet, the object count the packet states and how many
+# objects are held after reading it (0.14.0: on de_tuscan every snapshot holds the engine's maximum of 256)
+c = s
+old = """        case 41: { // deltapacketentities
+          r.bitsStart();
+          r.bits(16);"""
+assert old in c, 'demo.js changed: update make_probe.py'
+c = c.replace(old, """        case 41: { // deltapacketentities
+          r.bitsStart();
+          const __n = r.bits(16); globalThis.__pending = __n;""")
+old = """            if (num > maxClients) trackNade(num);
+          }
+          r.bitsEnd();"""
+assert old in c, 'demo.js changed: update make_probe.py'
+c = c.replace(old, old + """
+          { let n = 0; for (let k = 1; k < ents.length; k++) if (ents[k]) n++; (globalThis.CMP = globalThis.CMP || []).push([globalThis.__pending, n]); }""")
+open(os.path.join(here, 'demo_probe_count.mjs'), 'w').write(c)
+
+# nades_fn.mjs: the page's addNadesFromEvents, for nadecheck.mjs
+t = open(os.path.join(here, '..', '..', 'src', 'template.html')).read()
+i, j = t.index('function addNadesFromEvents'), t.index('// ---------------- sniper zoom')
+open(os.path.join(here, 'nades_fn.mjs'), 'w').write('export ' + t[i:j])
+print('wrote demo_probe_count.mjs and nades_fn.mjs')
