@@ -1,1 +1,9 @@
 dist/
+_test_*.html
+_tt_*.html
+tests/_*.html
+tests/*.png
+tests/*.log
+tests/__pycache__/
+tests/three.min.js
+tests/demo-probes/demo_probe.mjs

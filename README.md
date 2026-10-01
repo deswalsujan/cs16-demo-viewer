@@ -55,7 +55,7 @@ src/template.html   The page: layout, styles, 2D radar, timeline, panels
 build.py            Combines everything into one self-contained page
 CHANGELOG.md        What changed, newest first
 docs/               Design comparisons kept for later (scope styles)
-tests/              Test and measurement scripts from 1 Oct 2026 (see tests/README.md)
+tests/              Test and measurement scripts: browser checks, Theatre mode checks, demo data probes (see tests/README.md)
 IDEAS.md            Parked ideas and open decisions, with the discussion behind them
 VERSION             Current version, shown in the viewer
 src/stock.js        Fingerprints of the stock CS 1.6 models, to spot custom ones

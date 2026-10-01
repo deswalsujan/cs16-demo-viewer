@@ -3,12 +3,12 @@ import os, threading, http.server, functools
 from playwright.sync_api import sync_playwright
 
 W, H, DPR = 1440, 900, 2
-THREE = '/tmp/claude-0/-home-claude/99ed9e8c-aead-50b9-bc48-61a8c8ebb34d/scratchpad/t/package/build/three.min.js'
-HL = '/mnt/user-data/uploads/Half-Life'
-html = open('/home/claude/th.html', encoding='utf-8').read()
+THREE = os.environ.get('THREE_JS', os.path.join(os.path.dirname(os.path.abspath(__file__)), 'three.min.js'))
+HL = os.environ['HALF_LIFE_DIR']
+html = open(os.environ.get('PAGE', os.path.join(os.path.dirname(os.path.abspath(__file__)), '..', 'index.html')), encoding='utf-8').read()
 i = html.rindex('})();'); html = html[:i] + 'window.__v = (c) => eval(c);\n' + html[i:]
-open('/home/claude/_all.html', 'w', encoding='utf-8').write(html)
-handler = functools.partial(http.server.SimpleHTTPRequestHandler, directory='/home/claude'); handler.log_message = lambda *a: None
+open(os.path.join(os.path.dirname(os.path.abspath(__file__)), '_all.html'), 'w', encoding='utf-8').write(html)
+handler = functools.partial(http.server.SimpleHTTPRequestHandler, directory=os.path.dirname(os.path.abspath(__file__))); handler.log_message = lambda *a: None
 srv = http.server.ThreadingHTTPServer(('127.0.0.1', 0), handler)
 threading.Thread(target=srv.serve_forever, daemon=True).start()
 res = []
@@ -47,7 +47,7 @@ with sync_playwright() as p:
     check('Clicking a panel tab works and everything stays', v('tab') == 'players' and v(allShown))
     btn = v("(() => { const r = $('btnOpen').getBoundingClientRect(); return [r.left + r.width / 2, r.top + r.height / 2]; })()")
     check('Header buttons on the right are not covered', v(f"(() => {{ const e = document.elementFromPoint({btn[0]}, {btn[1]}); return e && e.id; }})()") == 'btnOpen')
-    pg.screenshot(path='/home/claude/all_three.png')
+    pg.screenshot(path='all_three.png')
     # dragging across the view still never pulls them in
     pg.mouse.move(W / 2, H / 2, steps=6); wait(noneShown)
     pg.mouse.down(); pg.mouse.move(W - 5, H - 5, steps=12); pg.wait_for_timeout(300)

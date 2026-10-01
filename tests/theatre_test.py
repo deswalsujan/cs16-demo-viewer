@@ -2,12 +2,12 @@
 
 Usage: python3 theatre_test.py <page.html> <label> <width> <height> <scale>
 """
-import sys, json, os, threading, http.server, functools
+import os, sys, json, os, threading, http.server, functools
 from playwright.sync_api import sync_playwright
 
 src, label, W, H, DPR = sys.argv[1], sys.argv[2], int(sys.argv[3]), int(sys.argv[4]), float(sys.argv[5])
-THREE = '/tmp/claude-0/-home-claude/99ed9e8c-aead-50b9-bc48-61a8c8ebb34d/scratchpad/t/package/build/three.min.js'
-HL = '/mnt/user-data/uploads/Half-Life'
+THREE = os.environ.get('THREE_JS', os.path.join(os.path.dirname(os.path.abspath(__file__)), 'three.min.js'))
+HL = os.environ['HALF_LIFE_DIR']
 html = open(src, encoding='utf-8').read()
 i = html.rindex('})();')
 html = html[:i] + 'window.__v = (c) => eval(c);\n' + html[i:]
