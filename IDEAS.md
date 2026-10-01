@@ -19,6 +19,24 @@ Item 1, smoother playback, is done (0.8.0; Smooth aim later removed in 0.10.0). 
 
 **Decided:** never host Valve's game files. A "lite mode" made only from the project's own assets is an option for later.
 
+## Next up (raised 1 Oct 2026, after 0.11.0)
+
+Five points Sujan raised, with the recommendations so far. Confirm with Sujan before starting each.
+
+1. **Old protocol 47 demos.** Sujan finds the viewer also plays old protocol 47 demos (2005-2006 era), which today's Steam CS 1.6 demo player won't play (it expects protocol 48). Worth a line in the README as an unexpected benefit. Not yet checked here: the parser doesn't look at the protocol number at all, so it reads them the same way, but no protocol 47 demo has been tested in this repo, and no source was found that confirms the in-game refusal (search results were about connecting to servers). Get the name of a 47 demo Sujan has played, test it, then word the README line.
+2. **Remember the Half-Life folder, with a folder field on the start screen.** Sujan picks the folder again on every visit, partly because each new version is downloaded from GitHub and opened as a local file. Plan:
+   - Keep the folder between visits with Chrome's folder access (File System Access API, "Allow on every visit", Chrome 122+). See "Remember the Half-Life folder between visits" below.
+   - A permanent folder field on the start screen showing the chosen folder's name (browsers show the name, never the full path), which doubles as the "pick your folder here" instruction.
+   - A status icon: "up to date" or "changes found". The viewer rescans the folder when you come back to the page (new or deleted demos, changed models or maps) and a click refreshes it.
+   - Dependency: it needs one stable https address. The claude.ai artifact blocks this kind of folder access, and a downloaded file opened from disk is unreliable for it. GitHub Pages (https://deswalsujan.github.io/cs16-demo-viewer/) works today, so it doesn't have to wait for sujandeswal.com: Sujan enables Pages once (repo Settings, Pages, deploy from the main branch), then always opens that link instead of downloading new versions. The current folder pick stays as the fallback.
+3. **"Reset view" seems to do nothing.** It only resets the 2D radar's zoom and pan, so in 3D it has no effect. Fix: in 3D, put the free camera back at its starting overview; in 2D keep what it does now.
+4. **Settings carrying over to a new demo** (0.25x speed and 3D view stayed). Recommendation: keep the viewing choices (2D, 3D or split, Names, Grenades, Kill lines, See through walls, Team colours, Quality), since those are preferences; reset playback to paused at 1x speed. The camera and followed player already reset.
+5. **Bullet marks (decals).** For seeing where a spray actually lands while the crosshair is pulled down against recoil.
+   - Likely possible from real data: the demo's weapon fire events probably carry the shot's direction, the recoil (punch angle) and the spread for each bullet (in CS 1.6 the server sends the spread as two numbers and the recoil as two more). Not yet verified: the parser currently keeps only the silencer flag. Check that first on Dust2. If it holds, each bullet's mark is a line traced from the shooter's eye through the map, so the marks would be accurate.
+   - How long they stay: like the game, until the round ends. Marks are worked out from the time, so jumping between kills from the side panel always shows the marks made up to that moment in the round, with nothing to fade.
+   - Toggle: one "Bullet marks" button next to Grenades and Kill lines, on by default. Blood and grenade scorch marks could follow as a later "decals" step.
+   - Side benefit: the same data could mark where each shot actually went, which speaks to the crosshair-at-the-kill question in CHANGELOG 0.10.0.
+
 ## Kept for later
 
 - **Scope styles** (1 Oct 2026). Three sniper scope styles are in the code; the viewer uses "game" (like CS 1.6: thin lines, mil-dots, red dot). "clean" (lines and red dot, no mil-dots) was the runner-up: mil-dots carry no information in CS 1.6 (there's no bullet drop) and can cover a dark player model. "lines" is the 0.10.0 look. Switch with `SCOPE_STYLE` in `src/view3d.part.js`; all three compared in [docs/scope-designs.png](docs/scope-designs.png) (A is "game", B is "clean"). A menu choice was ruled out for now as clutter.
