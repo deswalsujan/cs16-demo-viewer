@@ -52,6 +52,7 @@ Page scripts in `page/`:
 | `aim_at_sniper_kills.js`, `aim_bias_headshots.js` | How far the crosshair is from the victim at kills, and whether misses lean one way | CHANGELOG 0.10.0, "Discussed, not changed" |
 | `see_through_walls.js`, then `team_colours.js`, then `figure_fallback.js` | Bodies through walls only for hidden players; Team colours on every model; plain figures when model files are missing. Run in this order, in one go: each picks up where the previous one left off. | 0.11.0 |
 | `reset_view.js` | Reset view from Player's eyes, Behind player and a moved free camera, in 2D, 3D and split view | 0.12.2 |
+| `new_demo_settings.js` | Opening another demo (needs the Dust2 and 2006 Train demos): viewing settings kept, speed back to 1x, paused | 0.12.3 |
 
 Stand-alone checks:
 
@@ -62,6 +63,7 @@ Stand-alone checks:
 | `theatre_side_panel_test.py`, `theatre_together_test.py` | The 0.9.1 and 0.9.2 checks: the side panel doesn't bring in the header; all panels come and go together | about 5 minutes each |
 | `start_screen_check.py` | Theatre and Full screen are greyed out before a demo is open (no Half-Life folder needed) | under a minute |
 | `folder_row_test.py` | The Half-Life folder row (0.12.0, 0.12.1): first visit, picking, changes applied by themselves, Reconnect, opening by itself on the next visit, wrong folders and no demos, Clear saved files, dropping a demo with no folder, the ordinary folder pick, and the page inside a frame from another site. Uses a stand-in for Chrome's folder access, since its picker and prompts can't be driven headless (no Half-Life folder needed) | under a minute |
+| `prefs_check.py` | Viewing settings restored on the next visit, and defaults when the saved ones are damaged (no Half-Life folder needed) | a few seconds |
 
 ## Demo data probes (Node)
 

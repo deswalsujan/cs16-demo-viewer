@@ -376,7 +376,7 @@ body:has(.app.theatre) { overflow: hidden; }
     <div class="overlay sumwrap" id="sumCard" hidden></div>
     <div class="overlay keys" id="keys" hidden>
       <div class="keys-card">
-        <div class="keys-head"><b>Shortcuts and kill markers</b><div class="kh-r"><span class="ver">Version 0.12.2 · <a href="https://github.com/deswalsujan/cs16-demo-viewer/blob/main/CHANGELOG.md" target="_blank" rel="noopener">What's new</a> · <a href="https://github.com/deswalsujan/cs16-demo-viewer/issues/new/choose" target="_blank" rel="noopener">Report a bug</a></span><button class="btn" id="bDebug" type="button" title="Copies details for a bug report: browser, demo name, what loaded, errors. No file contents.">Copy debug info</button><button class="btn" id="bKeysClose" type="button">Close</button></div></div>
+        <div class="keys-head"><b>Shortcuts and kill markers</b><div class="kh-r"><span class="ver">Version 0.12.3 · <a href="https://github.com/deswalsujan/cs16-demo-viewer/blob/main/CHANGELOG.md" target="_blank" rel="noopener">What's new</a> · <a href="https://github.com/deswalsujan/cs16-demo-viewer/issues/new/choose" target="_blank" rel="noopener">Report a bug</a></span><button class="btn" id="bDebug" type="button" title="Copies details for a bug report: browser, demo name, what loaded, errors. No file contents.">Copy debug info</button><button class="btn" id="bKeysClose" type="button">Close</button></div></div>
         <textarea class="dbgbox" id="dbgBox" readonly hidden aria-label="Debug info"></textarea>
         <div class="keys-grid">
           <section><h3>Playback</h3>
@@ -471,7 +471,7 @@ body:has(.app.theatre) { overflow: hidden; }
         <div class="drophint">Or drop a .dem file, or an overview .bmp and .txt pair, anywhere on this page</div>
         <div class="prog" id="prog" hidden><i id="progBar"></i></div>
         <div class="msg" id="msg"></div>
-        <div class="loadfoot"><span>Version 0.12.2</span><button class="btn" id="bClear" type="button" title="Forgets your Half-Life folder and deletes the maps, models, sounds and overviews this browser saved from it, as on a first visit">Clear saved files</button></div>
+        <div class="loadfoot"><span>Version 0.12.3</span><button class="btn" id="bClear" type="button" title="Forgets your Half-Life folder and deletes the maps, models, sounds and overviews this browser saved from it, as on a first visit">Clear saved files</button></div>
       </div>
     </div>
   </section>
@@ -2705,7 +2705,7 @@ function jumpRound(dir) {
 }
 $('bPrevR').onclick = () => jumpRound(-1);
 $('bNextR').onclick = () => jumpRound(1);
-$('bScope').onclick = () => { scope = scope === 'match' ? 'round' : 'match'; $('bScope').textContent = 'Timeline: ' + scope; drawTimeline(); };
+$('bScope').onclick = () => { scope = scope === 'match' ? 'round' : 'match'; $('bScope').textContent = 'Timeline: ' + scope; savePrefs(); drawTimeline(); };
 const spEl = $('speeds');
 for (const s of SPEEDS) {
   const b = document.createElement('button'); b.type = 'button'; b.className = 'btn' + (s === 1 ? ' on' : ''); b.textContent = s + '×';
@@ -2879,6 +2879,7 @@ function pickPlayer(e) {
 
 function toggleOpt(k, id) {
   opts[k] = !opts[k]; $(id).classList.toggle('on', opts[k]);
+  savePrefs();
 }
 // Jump to a moment before a kill and watch it through the shooter's eyes (in 3D)
 function watchKill(k, before) {
@@ -3303,7 +3304,7 @@ function status3(t, withButton) {
 }
 document.querySelectorAll('#viewSeg button').forEach((b) => b.onclick = () => setView(b.dataset.v));
 function setView(v) {
-  viewMode = v;
+  viewMode = v; savePrefs();
   document.querySelectorAll('#viewSeg button').forEach((x) => x.classList.toggle('on', x.dataset.v === v));
   const r = $('radar');
   r.classList.toggle('m2d', v === '2d'); r.classList.toggle('m3d', v === '3d'); r.classList.toggle('msplit', v === 'split');
@@ -3448,6 +3449,7 @@ function build3d() {
 // (when the map changes) the 3D level itself, so nothing from the old demo lingers on screen.
 function resetForNewDemo() {
   selected = null; playing = false; wbFocus = null;
+  setSpeed(1); setPlayIcon(); // every demo opens at normal speed, paused; viewing preferences stay
   flashes.length = 0; prevT = null;
   cam3.mode = 'free'; cam3.chase = null; cam3.cYaw = null;
   document.querySelectorAll('#cam3 [data-c]').forEach((x) => x.classList.toggle('on', x.dataset.c === 'free'));
@@ -4906,6 +4908,16 @@ const wake = () => { if (SND.on) audio(); };
 document.addEventListener('pointerdown', wake, true); document.addEventListener('keydown', wake, true);
 function isDeathSeq(e) { const a = D.slots[e], i = M.idxAt(T), sq = a ? a[i * D.stride + 9] : 0; return sq >= 101 && sq <= 110; }
 setSound(SND.on);
+// Viewing preferences carry over to the next demo and the next visit: the view (2D, 3D or split), Names,
+// Grenades, Kill lines, See through walls and the timeline's match or round. (Team colours, Quality and
+// sound are saved on their own above.) Playback speed is not a preference: every demo opens at 1x, paused.
+function savePrefs() { ls.set('prefs', { view: viewMode, names: opts.names, nades: opts.nades, lines: opts.lines, xray: opts.xray, scope }); }
+(() => {
+  const p = ls.get('prefs'); if (!p || typeof p !== 'object') return;
+  for (const [k, id] of [['names', 'tgNames'], ['nades', 'tgNades'], ['lines', 'tgLines'], ['xray', 'tgXray']]) if (typeof p[k] === 'boolean') { opts[k] = p[k]; $(id).classList.toggle('on', p[k]); }
+  if (p.scope === 'match' || p.scope === 'round') { scope = p.scope; $('bScope').textContent = 'Timeline: ' + scope; }
+  if (['2d', '3d', 'split'].includes(p.view)) viewMode = p.view; // applied when a demo opens (onDemo calls setView)
+})();
 
 // ---------------- what loaded ----------------
 // After a demo opens: which of the files it needs were found, which are custom and which are
@@ -5041,7 +5053,7 @@ window.addEventListener('unhandledrejection', (e) => { ERRLOG.push('Promise: ' +
 function debugInfo() {
   let gpu = '';
   try { const gl = document.createElement('canvas').getContext('webgl'); const x = gl && gl.getExtension('WEBGL_debug_renderer_info'); gpu = gl ? (x ? gl.getParameter(x.UNMASKED_RENDERER_WEBGL) : 'WebGL available') : 'no WebGL'; } catch (e) { gpu = 'unknown'; }
-  const L = [`CS 1.6 Demo Viewer 0.12.2`, `Browser: ${navigator.userAgent}`, `Screen: ${screen.width}x${screen.height} at ${devicePixelRatio}x, window ${innerWidth}x${innerHeight}`, `Graphics: ${gpu}`];
+  const L = [`CS 1.6 Demo Viewer 0.12.3`, `Browser: ${navigator.userAgent}`, `Screen: ${screen.width}x${screen.height} at ${devicePixelRatio}x, window ${innerWidth}x${innerHeight}`, `Graphics: ${gpu}`];
   L.push(`Folder: ${Object.keys(files.maps).length} maps, ${Object.keys(files.overviews).length} overviews, ${Object.keys(files.mdl).length} models, ${Object.keys(files.snd).length} sounds, ${files.demos.length} demos`);
   if (D) {
     L.push(`Demo: ${D.fileName}, map ${D.mapName}, length ${fmt(D.end - D.start)}, ${M.liveR.length} live rounds, final ${M.liveR.length ? M.liveR[M.liveR.length - 1].scoreAfter.join(':') : '-'}`);

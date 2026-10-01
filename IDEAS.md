@@ -21,9 +21,8 @@ Item 1, smoother playback, is done (0.8.0; Smooth aim later removed in 0.10.0). 
 
 ## Next up (raised 1 Oct 2026, after 0.11.0)
 
-Five points Sujan raised, with the recommendations so far. Confirm with Sujan before starting each. Point 1 (old protocol 47 demos) was done in 0.11.1, point 2 (remember the Half-Life folder, with a folder row on the start screen) in 0.12.0 and 0.12.1, point 3 (Reset view in 3D) in 0.12.2.
+Five points Sujan raised, with the recommendations so far. Confirm with Sujan before starting each. Point 1 (old protocol 47 demos) was done in 0.11.1, point 2 (remember the Half-Life folder, with a folder row on the start screen) in 0.12.0 and 0.12.1, point 3 (Reset view in 3D) in 0.12.2, point 4 (settings when opening another demo) in 0.12.3.
 
-4. **Settings carrying over to a new demo** (0.25x speed and 3D view stayed). Recommendation: keep the viewing choices (2D, 3D or split, Names, Grenades, Kill lines, See through walls, Team colours, Quality), since those are preferences; reset playback to paused at 1x speed. The camera and followed player already reset.
 5. **Bullet marks (decals).** For seeing where a spray actually lands while the crosshair is pulled down against recoil.
    - Likely possible from real data: the demo's weapon fire events probably carry the shot's direction, the recoil (punch angle) and the spread for each bullet (in CS 1.6 the server sends the spread as two numbers and the recoil as two more). Not yet verified: the parser currently keeps only the silencer flag. Check that first on Dust2. If it holds, each bullet's mark is a line traced from the shooter's eye through the map, so the marks would be accurate.
    - How long they stay: like the game, until the round ends. Marks are worked out from the time, so jumping between kills from the side panel always shows the marks made up to that moment in the round, with nothing to fade.

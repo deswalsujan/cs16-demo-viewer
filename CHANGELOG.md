@@ -16,6 +16,15 @@ What changed in the viewer, newest first. The version shows in the viewer's shor
 - "Quality: auto" lowers 3D sharpness at most once per visit and doesn't raise it again on its own. Pick "Quality: high" to go back.
 - Keeping the Half-Life folder between visits works in Chrome and Edge (122 or later) on an https page such as GitHub Pages. Firefox and Safari don't have the browser feature it needs, and the claude.ai copy is an embedded page, where browsers don't allow it; those pick the folder on each visit. A copy of index.html opened from your own disk also keeps it (checked in Chrome by Sujan, 1 Oct 2026).
 
+## 0.12.3 (2026-10-01)
+
+### Changed
+- Opening another demo keeps your viewing settings and starts playback fresh. Kept: the view (2D, 3D or 3D + radar), Names, Grenades, Kill lines, See through walls, Team colours, Quality, sound and volume, and the timeline's match or round setting. Reset: speed goes back to 1x and the demo opens paused. Before, the speed carried over too (a new demo could start at 0.25x).
+- Those settings are also remembered between visits, in this browser (Team colours, Quality and sound already were). "Clear saved files" leaves them alone, since they're preferences rather than files from your folder.
+
+### How it was tested
+On Sujan's files: Dust2 switched to 3D at 0.25x, playing, with Names and Grenades off, See through walls on and the timeline on round; then the 2006 Train demo opened in 3D at 1x, paused, with all of those kept (`tests/page/new_demo_settings.js`). `tests/prefs_check.py`: the defaults on a first visit, saved settings restored after a reload, and damaged saved settings falling back to the defaults. The folder and start screen checks still pass.
+
 ## 0.12.2 (2026-10-01)
 
 ### Fixed

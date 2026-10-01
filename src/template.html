@@ -1679,7 +1679,7 @@ function jumpRound(dir) {
 }
 $('bPrevR').onclick = () => jumpRound(-1);
 $('bNextR').onclick = () => jumpRound(1);
-$('bScope').onclick = () => { scope = scope === 'match' ? 'round' : 'match'; $('bScope').textContent = 'Timeline: ' + scope; drawTimeline(); };
+$('bScope').onclick = () => { scope = scope === 'match' ? 'round' : 'match'; $('bScope').textContent = 'Timeline: ' + scope; savePrefs(); drawTimeline(); };
 const spEl = $('speeds');
 for (const s of SPEEDS) {
   const b = document.createElement('button'); b.type = 'button'; b.className = 'btn' + (s === 1 ? ' on' : ''); b.textContent = s + '×';
@@ -1853,6 +1853,7 @@ function pickPlayer(e) {
 
 function toggleOpt(k, id) {
   opts[k] = !opts[k]; $(id).classList.toggle('on', opts[k]);
+  savePrefs();
 }
 // Jump to a moment before a kill and watch it through the shooter's eyes (in 3D)
 function watchKill(k, before) {
@@ -2406,6 +2407,16 @@ const wake = () => { if (SND.on) audio(); };
 document.addEventListener('pointerdown', wake, true); document.addEventListener('keydown', wake, true);
 function isDeathSeq(e) { const a = D.slots[e], i = M.idxAt(T), sq = a ? a[i * D.stride + 9] : 0; return sq >= 101 && sq <= 110; }
 setSound(SND.on);
+// Viewing preferences carry over to the next demo and the next visit: the view (2D, 3D or split), Names,
+// Grenades, Kill lines, See through walls and the timeline's match or round. (Team colours, Quality and
+// sound are saved on their own above.) Playback speed is not a preference: every demo opens at 1x, paused.
+function savePrefs() { ls.set('prefs', { view: viewMode, names: opts.names, nades: opts.nades, lines: opts.lines, xray: opts.xray, scope }); }
+(() => {
+  const p = ls.get('prefs'); if (!p || typeof p !== 'object') return;
+  for (const [k, id] of [['names', 'tgNames'], ['nades', 'tgNades'], ['lines', 'tgLines'], ['xray', 'tgXray']]) if (typeof p[k] === 'boolean') { opts[k] = p[k]; $(id).classList.toggle('on', p[k]); }
+  if (p.scope === 'match' || p.scope === 'round') { scope = p.scope; $('bScope').textContent = 'Timeline: ' + scope; }
+  if (['2d', '3d', 'split'].includes(p.view)) viewMode = p.view; // applied when a demo opens (onDemo calls setView)
+})();
 
 // ---------------- what loaded ----------------
 // After a demo opens: which of the files it needs were found, which are custom and which are

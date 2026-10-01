@@ -13,7 +13,7 @@ function status3(t, withButton) {
 }
 document.querySelectorAll('#viewSeg button').forEach((b) => b.onclick = () => setView(b.dataset.v));
 function setView(v) {
-  viewMode = v;
+  viewMode = v; savePrefs();
   document.querySelectorAll('#viewSeg button').forEach((x) => x.classList.toggle('on', x.dataset.v === v));
   const r = $('radar');
   r.classList.toggle('m2d', v === '2d'); r.classList.toggle('m3d', v === '3d'); r.classList.toggle('msplit', v === 'split');
@@ -158,6 +158,7 @@ function build3d() {
 // (when the map changes) the 3D level itself, so nothing from the old demo lingers on screen.
 function resetForNewDemo() {
   selected = null; playing = false; wbFocus = null;
+  setSpeed(1); setPlayIcon(); // every demo opens at normal speed, paused; viewing preferences stay
   flashes.length = 0; prevT = null;
   cam3.mode = 'free'; cam3.chase = null; cam3.cYaw = null;
   document.querySelectorAll('#cam3 [data-c]').forEach((x) => x.classList.toggle('on', x.dataset.c === 'free'));
