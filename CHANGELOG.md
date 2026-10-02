@@ -7,7 +7,7 @@ What changed in the viewer, newest first. The version shows in the viewer's shor
 - Player models get even lighting, so they don't darken in shaded spots the way they do in-game.
 - Custom models are named in the load summary but not checked further yet. One with an unusual skeleton may pose oddly; compressed or 24-bit sounds stay silent.
 - A demo that's cut off (interrupted download or recording) can't be opened at all yet, even though the part before the cut is readable. See [IDEAS.md](IDEAS.md).
-- Which rounds count is exact when the server's admin plugin announces "Live !" and the end of each half in chat. Demos without those messages fall back to a guess from the restarts, which can still count a warmup or miss a round.
+- Which rounds count is exact when the server's admin plugin announces the start ("Live !", "lo3", "3 restart and go !") and the end of each half in chat. Plugins word these differently, and a wording the viewer hasn't met yet falls back to a guess from the restarts, which can still count a warmup or miss a round. A file holding only a warmup, opened on its own, can show one round.
 - HLTV demos store about ten snapshots a second, so everything between two snapshots is an estimate. A flick that starts and ends between snapshots can't be recovered, and a sharp turn can look slightly rounder than it was. The view always passes exactly through every recorded snapshot.
 - At the moment of a kill, the shooter's crosshair can sit slightly off the victim, usually under 1.5° (through an AWP's 1x zoom that's up to about 60 pixels on a laptop screen). This comes from the demo, not the viewer: see 0.10.0, "Discussed, not changed".
 - The sniper scope is rebuilt from the zoom click sounds, since HLTV demos don't record zoom (see 0.10.0). A click the recorder didn't hear would put the zoom one step off until the player's next weapon switch, death or round. Clicks are timed to about a tenth of a second.
@@ -21,6 +21,35 @@ What changed in the viewer, newest first. The version shows in the viewer's shor
 - Whether rounds after 16 count can't be read from the demo, so the match stops at 16 unless Count them is switched on for that demo.
 - When neither the file name nor a shared clan tag names a team, the header says "Team 1" and "Team 2" (iFNG FX vs fnatic, `auto_ifng-...`). Click the name in the header to type it in; it's remembered for that demo. Left as it is for now (Sujan, 2 Oct 2026; parked in IDEAS.md).
 - A smoke cloud is drawn as one light green ball for as long as the smoke puffs (about 21 seconds, less when the round restarts). The game's own puffs drift and thin out unevenly, which the viewer doesn't copy.
+
+## 0.15.1 (2026-10-02)
+
+Round counting, from the accuracy check on a fresh batch of demos (IDEAS.md). The 15 new demos were compared with real results from HLTV.org; two overtime matches were counted wrong.
+
+### Fixed
+- **SK vs Na`Vi, Train, DreamHack Winter 2011 quarter-final** read SK 19:16. It now reads Na`Vi 25:23 after three overtimes, as HLTV.org reports. Two rounds were played at 15:15 on the overtime sides before the admin's "MR3 overtime is live", and they were counted as overtime; the viewer then ended the match in the first overtime. A stretch that ran past the end of a half is now cut there when the server announces a new start before the next stretch, as long as what was played past it is short of a whole new half.
+- **mTw vs Na`Vi, Tuscan, ESWC 2010 semi-final** (5 files) read Na`Vi 16:8, from file 2 alone. It now reads mTw 25:23 after three overtimes. This server's plugin starts a half with "3 restart and go !" and "Fight !!!", which weren't read as live, so rounds played between halves and before each start counted. Both now open the live window; it already closed on "End of 1st set" and "End of fight". Not confirmed online; it's what the server's own "Finale score" messages add up to (15 15, 3 3, 3 3, 2 4).
+- In a joined map, a later part that starts partway through a half now counts its rounds up to its first "End of 1st set" (only the first file did this before). The OT2 file of that Tuscan starts in the first half of the second overtime.
+- A round a recording starts partway into, before any player's side is recorded, now takes its sides from the next round of the same half. The OT2 file's first round went to mTw; Na`Vi won it on CT.
+- mTw vs Na`Vi, Train, ESWC 2010: still 16:1, but the round played between halves (27:47) no longer counts, and the real last round (29:37) does.
+
+### How it was tested
+- Every demo on Sujan's Windows PC (31), 0.15.0 against 0.15.1 (`compare_all.sh` with `match_detail.js`): 25 identical; the 6 that changed are the ESWC 2010 Tuscan and Train files and SK vs Na`Vi, as above. The warmup-only first Tuscan file (`-1007031520-`) still reads 1 round when opened alone (no live announcement in it); joined, it counts none.
+- Against real results (HLTV.org, and the demos' own end-of-match messages):
+
+  | Demo | 0.15.0 | 0.15.1 | Real |
+  |---|---|---|---|
+  | SK vs Na`Vi, Train, DreamHack Winter 2011 | SK 19:16; markeloff 32-23 | Na`Vi 25:23; markeloff 50-29 (T 16-18, CT 34-11, OT 20-11) | Na`Vi 25-23 ([HLTV.org](https://www.hltv.org/news/7849/navi-in-triple-overtime-sk-win)); markeloff 50-29 (Sujan) |
+  | mTw vs Na`Vi, Tuscan, ESWC 2010, 5 files joined | Na`Vi 16:8; markeloff 16-10 | mTw 25:23 in round 48; markeloff 44-29 (T 21-16, CT 23-13, OT 17-12) | markeloff 44-29 ([HLTV.org](https://www.hltv.org/news/6001/top-20-players-of-2010-markeloff-1)); score not found online |
+  | mTw vs Na`Vi, Train, ESWC 2010 | 16:1 | 16:1 | "Finale score: 16 1" in the demo |
+
+- Joined maps unchanged: Xperia Play 2011 FX vs mTw Inferno (mTw 19:17 in R36, NEO 33-28) and Nuke (FX 22:19 in R41, NEO 42-25); fnatic vs mousesports, Forge, IEM6 Global Challenge Guangzhou final (16:11, zonixx 32-17).
+- K-D against numbers Sujan has (2 Oct 2026), all matching except the last two: zonixx 32-17 (Forge, IEM6 GC Guangzhou), markeloff 50-29 (Train, DreamHack Winter 2011) and 44-29 (Tuscan, ESWC 2010), edzie 29-16 (Inferno, Moscow 5 vs Na`Vi, DreamHack Winter 2011; Sujan's list says "edward"), SeDaN 28-11 (Nuke, k1ck vs Earthquake, DreamHack Winter 2011), SpawN 28-16 (Train, Sweden vs Ukraine, ClanBase NationsCup XI), Delpan 38-16 (Dust2, Sweden vs Norway, ASUS ENC 2010), markeloff 20-6 (Tuscan, Adepto BH Open 2011 final); markeloff on the ESWC 2010 Train and karrigan on the GameGune 2012 Dust2 (see below).
+- `folder_row_test.py` (20 of 20), `start_screen_check.py`, `prefs_check.py` pass.
+
+### Discussed, not changed
+- markeloff, Train, ESWC 2010 semi-final: the viewer reads 22-4, Sujan's number (HLTV.org's 2010 article) is 21-4. All 22 kills are ordinary kills in live rounds (no team kills, none between rounds). Left as the demo shows it.
+- "kArRiG4N" (fnaticRC), Dust2, fnatic vs Na`Vi, GameGune 2012 final: the viewer reads 20-14, Sujan's number is 21-13. Every kill and death involving him in the 23 live rounds was listed; no choice of rounds gives 21-13. Left as the demo shows it.
 
 ## 0.15.0 (2026-10-02)
 

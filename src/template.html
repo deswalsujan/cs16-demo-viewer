@@ -1647,33 +1647,47 @@ function computeWallbangs() {
 // Stretches of the demo that the server announced as live: [start, end] pairs from its text messages.
 // Opens on "live", closes on the end of a half or the match, a warmup or knife round, or a pause
 // announcement; a "canceled" set throws away the stretch it was in.
-function liveWindows(notes) {
+// partStarts: where each part of a joined map starts (a part can begin partway through a half, see below).
+function liveWindows(notes, partStarts) {
   const clean = (s) => s.replace(/[\x00-\x1f]/g, ' ').trim();
   // short announcements only, so a player called "LiveWire" joining doesn't count
   const isLive = (s) => (/\blive\b/i.test(s) && (s.length < 60 || /\blive\b.*\blive\b/i.test(s)) && !/\b(not|until|before|going|goes)\b.{0,12}\blive\b|\blive\b.{0,12}\b(in|after|soon)\b/i.test(s))
     // "lo3" (live on three): the admin starting the three restarts, as in the FX vs SK Inferno demo (IEM5, 2011)
-    || (s.length < 60 && /(^|[\s>:])(lo3|l03|live on (3|three))\b/i.test(s));
+    || (s.length < 60 && /(^|[\s>:])(lo3|l03|live on (3|three))\b/i.test(s))
+    // the ESWC 2010 server plugin (VeryGames): "3 restart and go !", then "Fight !!!" when the half starts
+    // (mTw vs Na`Vi, Tuscan and Train, ESWC 2010 semi-final). It ends with "End of 1st set" and "End of fight".
+    || (s.length < 60 && (/\b3 restarts? and go\b/i.test(s) || /(^|>)\s*fight\s*!+\s*$/i.test(s)));
   // also the PGL plugin's "Neither team has a 6 point lead. The overtime process will now repeat." (an
   // overtime has ended; a warmup round can start before its "Warmup is commencing" line)
   const isHalfEnd = (s) => /end of (the )?(1st|2nd|first|second|set|half|fight|match|game|map)|half[\s-]?time|match (is )?over|final(e)? score|overtime process will|point lead/i.test(s);
   const isWarm = (s) => /\bwarm[\s-]?up|\bknife\b/i.test(s);
   const isCancel = (s) => /\b(canceled|cancelled|aborted)\b/i.test(s);
   const out = []; let open = null, seenLive = false;
+  // A file that starts partway through a half: everything before its first end of half counted, if no live
+  // announcement came first. For a joined map, the same holds for each later part (the OT2 file of mTw vs
+  // Na`Vi, Tuscan, ESWC 2010 starts in the first half of the second overtime). Warmup lines don't change it:
+  // that server prints "2nd Warmup" a second before "End of 1st set".
+  const ps = (partStarts || []).slice().sort((a, b) => a - b);
+  let pi = 0, fresh = true, freshFrom = -Infinity;
+  const starts = [];
   for (const n of notes) {
+    while (pi < ps.length && ps[pi] <= n.t) { if (open == null) { fresh = true; freshFrom = ps[pi]; } pi++; }
     const s = clean(n.s);
     if (isCancel(s)) { open = null; continue; }
     if (isHalfEnd(s) || isWarm(s)) {
       // the third value says why the window closed: 'end' (a half or overtime ended) or 'warmup'
       const why = isHalfEnd(s) ? 'end' : 'warmup';
       if (open != null) out.push([open, n.t, why]);
-      // the demo started partway through a half: everything before this end counted
-      else if (!seenLive && !out.length && isHalfEnd(s)) out.push([-Infinity, n.t, why]);
+      else if (fresh && isHalfEnd(s)) out.push([freshFrom, n.t, why]);
+      if (isHalfEnd(s)) fresh = false;
       open = null; continue;
     }
-    if (isLive(s)) { seenLive = true; if (open == null) open = n.t; }
+    if (isLive(s)) { seenLive = true; fresh = false; starts.push(n.t); if (open == null) open = n.t; }
   }
   if (open != null) out.push([open, Infinity, 'open']);
-  return seenLive ? out : [];
+  const res = seenLive ? out : [];
+  res.starts = starts; // every live announcement (used to cut a stretch that ran past the end of a half)
+  return res;
 }
 
 // ---------------- kills at the moment they happened ----------------
@@ -1851,7 +1865,7 @@ function derive() {
   // "LIVE LIVE LIVE") when a half starts, "End of 1st set" or "half time" when it ends, and "Current
   // set canceled" when a start is thrown away. When the demo has these, a round counts only if it
   // started while the match was announced live; otherwise the guess from restarts below decides.
-  const windows = liveWindows(D.notes || []);
+  const windows = liveWindows(D.notes || [], (D.parts || []).slice(1).map((p) => p.start));
   if (windows.length) {
     for (const r of rounds) r.live = counts(r) && windows.some(([a, b]) => r.start >= a - 10 && r.start < b - 1);
     // Inside the announced match, a restart before a half is complete throws away what was played since
@@ -1959,7 +1973,16 @@ function derive() {
       const rs = rounds.filter((r) => r.live && r.seg === segs[i]);
       const end = total + rs.length;
       const ends = [15, 30]; for (let x = 33; x < end; x += 3) ends.push(x);
-      const b = i < segs.length - 1 ? ends.find((x) => x > total && x < end && sameSides(rs[x - total - 1], rs[x - total])) : undefined;
+      let b = i < segs.length - 1 ? ends.find((x) => x > total && x < end && sameSides(rs[x - total - 1], rs[x - total])) : undefined;
+      // The server announced a new start before the next stretch: what was played past the last half end
+      // crossed, short of a whole new half, was played while waiting for it. In SK vs Na`Vi, Train, DreamHack
+      // Winter 2011 two rounds were played at 15:15 on the overtime sides, before "MR3 overtime is live".
+      if (b == null && i < segs.length - 1 && windows.starts) {
+        const last = rs[rs.length - 1], next = rounds.find((r) => r.live && r.seg === segs[i + 1]);
+        const announced = windows.starts.some((t) => t > last.start && t < next.start);
+        const x = announced ? ends.filter((x) => x > total && x < end).pop() : undefined;
+        if (x != null && end - x < (x >= 30 ? 3 : 15)) b = x;
+      }
       if (b != null) { for (const r of rs.slice(b - total)) { r.live = false; r.pastHalf = true; } total = b; }
       else total = end;
     }
@@ -2005,7 +2028,10 @@ function derive() {
       v[r.sides[ids[i]] === r.sides[ids[j]] ? 0 : 1]++;
     }
   }
-  for (const r of liveR) if (r.missing) { const nx = liveR.find((x) => x.start > r.start && !x.missing); r.sides = nx ? Object.assign({}, nx.sides) : {}; }
+  // A round with nobody on a side takes the sides of the next live round, the same half: a round in no file,
+  // or one a recording starts partway into before any side is recorded (the OT2 file of mTw vs Na`Vi, Tuscan,
+  // ESWC 2010, where Na`Vi win the first round on CT; it went to mTw).
+  for (const r of liveR) if (r.missing || !Object.keys(r.sides).length) { const nx = liveR.find((x) => x.start > r.start && !x.missing && Object.keys(x.sides || {}).length); r.sides = nx ? Object.assign({}, nx.sides) : {}; }
   // teammates: people who were on the same side more often than not
   const par = {}; const find = (x) => par[x] === x ? x : (par[x] = find(par[x]));
   const players = Object.keys(pl).filter((pid) => liveR.some((r) => r.sides[pid]));
