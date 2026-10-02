@@ -131,14 +131,14 @@ Item 1, smoother playback, is done (0.8.0; Smooth aim later removed in 0.10.0). 
 
 ## POV demos
 
-*Read from Sujan's seven public-server POV demos on 3 Oct 2026 (`tests/README.md`, "POV demos"), with a probe outside the page.*
+*Read from Sujan's seven public-server POV demos on 3 Oct 2026 (`tests/README.md`, "POV demos"), with a probe outside the page. Counts corrected the same day: the first probe counted each demo twice (the reader reads a POV demo twice, once to spot it and again to find its rounds).*
 
 What a demo recorded by a player holds, against an HLTV demo:
 - **The recorder's own view, about 100 times a second** (85 to 102 frames a second in these seven): where the camera was and where it pointed, the player's own mouse aim, the recoil kick (punch angle) and the buttons held, fire included. HLTV stores aim about 10 times a second. The viewer skips this block today (the 464 bytes before each frame's messages).
 - **The recorder's own state** (`clientdata`): health, zoom as exact values (90, 40, 10), weapon, speed. HLTV recordings leave it empty; the viewer rebuilds zoom from click sounds.
-- **First-person weapon animations**: 1,188 to 4,781 per demo. HLTV doesn't record them; the viewer rebuilds them from shots.
-- **Voice**: 40 to 54,923 voice packets per demo, 1 to 16 speakers. Announced as `voice_speex`, but the bytes are Steam voice (Steam ID, then 24 kHz, then Opus). Not tried yet.
-- **Other players about 24 times a second** (HLTV about 10), but only those near the recorder or the player he spectated: a median of 3 to 6 of 32 per snapshot, at most 15 to 20.
+- **First-person weapon animations**: 594 to 2,388 per demo. HLTV doesn't record them; the viewer rebuilds them from shots.
+- **Voice**: 20 to 27,364 voice packets per demo, 1 to 16 speakers. Announced as `voice_speex`, but the bytes are Steam voice (Steam ID, then 24 kHz, then Opus). Not tried yet.
+- **Other players about 24 times a second** (HLTV about 10), but only those near the recorder or the player he spectated: a median of 4 to 7 of 32 per snapshot, at most 16 to 21.
 - **After death**, the camera follows whoever the recorder spectated (in about 90% of dead frames the camera doesn't point where his own aim does), and the server sent the players near that person.
 
 What the viewer gets wrong today:

@@ -4,7 +4,8 @@
 s = open('../../src/demo.js').read()
 G = '(globalThis.__P ||= {cd:[],voice:[],wanim:0,wanimF:0,info:[],setview:0})'
 reps = [
-  ("export function parseDemo(buffer, onProgress, opts = {}) {", "export function parseDemo(buffer, onProgress, opts = {}) {\n  if (!opts.again) globalThis.__P = null;"),
+  # the reader runs twice on a POV demo (to spot it, then to find its rounds): keep only the last run
+  ("export function parseDemo(buffer, onProgress, opts = {}) {", "export function parseDemo(buffer, onProgress, opts = {}) {\n  globalThis.__P = null;"),
   ("readDelta(r, deltas.clientdata_t, {});", "{ const o = {}; readDelta(r, deltas.clientdata_t, o); " + G + ".cd.push([time, o]); }"),
   ("case 53: { r.ub(); const n = r.us(); r.skip(n); break; } // voicedata", "case 53: { const who = r.ub(); const n = r.us(); r.skip(n); " + G + ".voice.push([time, who, n]); break; } // voicedata"),
   ("case 35: r.skip(2); break; // weaponanim", "case 35: r.skip(2); " + G + ".wanim++; break; // weaponanim"),
