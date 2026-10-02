@@ -29,7 +29,7 @@ The test demos used so far are Na`Vi vs FX on Dust2 (SEC 2011 final) and Fnatic 
 
 ## Demos and their events
 
-Every demo used in testing, with the event it's from, so a lost demo can be found again. Notes in CHANGELOG.md and IDEAS.md name the event along with the demo (rule in CLAUDE.md). "Demo text" means the event's name is in the demo itself: the game server's name in admin messages, or the HLTV server's name (read 2 Oct 2026 with a probe over every demo on Sujan's Mac).
+Every demo used in testing, with the event it's from, so a lost demo can be found again. Some were deleted from Sujan's Mac on 2 Oct 2026 (the list is in CLAUDE.md, "Sujan's files"); they stay here so they can be found again. Notes in CHANGELOG.md and IDEAS.md name the event along with the demo (rule in CLAUDE.md). "Demo text" means the event's name is in the demo itself: the game server's name in admin messages, or the HLTV server's name (read 2 Oct 2026 with a probe over every demo on Sujan's Mac).
 
 | Demo file | Event | How we know |
 |---|---|---|
