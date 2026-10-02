@@ -54,6 +54,9 @@ Checked with `tests/page/match_detail.js`. Count them was switched on, then off 
 - Whether rounds after 16 count can't be read from the demo, so it's the default (stop at 16) unless switched per demo.
 
 ### Discussed, not changed
+- Count them mockup, Sujan's changes (2 Oct 2026): the load summary's first line reads "Demo read: 30 rounds, 27 counted", so the line under it ("3 rounds were played after…") has its context; the note uses the same team name as the header and the rows ("fnatic" everywhere in the mockup, which assumes the team name change below).
+- Rounds after the match stay faded in the Rounds tab with no round number and no running score (agreed 2 Oct 2026). Their numbers and scores show once Count them is clicked, so showing them before would only add clutter. The round time stays, so the rows can still be clicked and watched.
+- Team names (raised 2 Oct 2026, not built yet): the header, rows and notes should show the plain team name ("SK Gaming" for "SK", "SK.SWE.AMD" or "SK Gaming |"). Today the viewer takes it from, in order: a name typed in the header (click to rename, remembered per demo), the demo file name when it has "-vs-" in it (looked up in a list of known teams), then the clan tag most of the team shares, as written ("fnatic.MSI"). The fnatic vs EG file is named `fnatic_vs_EG_...`, with "_vs_", so it falls through to the clan tag. Proposed: also read "_vs_" file names, and look the clan tag up in the known teams list by its first part ("SK.SWE.AMD" gives "sk", so SK Gaming; "fnatic.MSI" gives fnatic). An unknown tag stays as written. Waiting for Sujan's OK.
 - Stop at 16 or play all 30: most demos Sujan has stop at 16, some events played all 30. Detecting it from the demo isn't reliable, so stopping at 16 is the default with a per-demo switch (agreed 2 Oct 2026). Sujan confirmed overtime must stay MR3 and never be treated as "play to 30".
 
 ## 0.14.1 (2026-10-02)
