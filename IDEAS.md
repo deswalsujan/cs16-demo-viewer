@@ -17,6 +17,10 @@ Everything raised in conversation that isn't finished, in one place. Each item s
 - [x] Sujan decided 3 Oct 2026: test Match 1 (both files, de_barcelona) and Match 3 (css_cache) first, then decide whether POV mode is worth building. Experimental: built on a `wip/pov-mode` branch, removed if it's more trouble than it's worth.
 - [x] Claude, 3 Oct 2026: the headless browser run on Match 1 (both files) and Match 3, results under "POV demos" below.
 - [ ] Sujan: `de_mirage_32.bsp` (Match 2) and `de_nuke32.bsp` (Match 4 and 5) for the Mac's `cstrike_downloads/maps`, if he has them. Without them those demos get no 3D.
+- [x] Sujan, 3 Oct 2026: build it ("we won't know if it'll work till we build it"), on `wip/pov-mode`.
+- [x] Claude, 3 Oct 2026, on `wip/pov-mode`: the recorder drawn where he really was (CHANGELOG, "In progress").
+- [ ] Sujan: by eye, on the branch build, Match 1 T at round 5, 1:01 in Player's eyes on "ac shadows optical mouse": N!njA_kachoRI should be under the crosshair, and you should be standing where you were.
+- [ ] Claude: next step, the recorder's own view at full rate (aim, recoil, zoom, gun animations).
 - [ ] Open (Sujan asked 3 Oct 2026): See through walls in POV mode, for checking other players' POVs for wallhacks, and a built-in aimbot catcher.
 
 **Demo search** (built in 0.15.2, 2 Oct 2026)

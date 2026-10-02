@@ -364,13 +364,14 @@ function update3() {
   const ov = (key, make) => { let o = OVL.m.get(key); if (!o) { o = make(); OVL.m.set(key, o); R3.scene.add(o); } o.visible = true; OVL.used.add(key); return o; };
   if (r) for (let ki = 0; ki < r.kills.length; ki++) {
     const k = r.kills[ki];
-    if (k.t > T || !k.vpos) continue;
+    // a position with a part missing (a player whose height the snapshot never sent) draws nothing rather than a line to nowhere
+    if (k.t > T || !k.vpos || !k.vpos.every(Number.isFinite)) continue;
     const age = T - k.t;
     const c = k.vteam === 'TERRORIST' ? 0xe8574d : 0x5ea3e8, z = k.vpos[2] - (k.vduck ? 16 : 34);
     ov('x1:' + ki, () => lineMesh(g3(k.vpos[0] - 10, k.vpos[1] - 10, z), g3(k.vpos[0] + 10, k.vpos[1] + 10, z), c));
     ov('x2:' + ki, () => lineMesh(g3(k.vpos[0] + 10, k.vpos[1] - 10, z), g3(k.vpos[0] - 10, k.vpos[1] + 10, z), c));
     const life = k.wb ? 6 : 2.5;
-    if (opts.lines && k.kpos && k.killer !== k.victim && age < life) {
+    if (opts.lines && k.kpos && k.kpos.every(Number.isFinite) && k.killer !== k.victim && age < life) {
       const eye = k.wb ? k.wb.eye : [k.kpos[0], k.kpos[1], k.kpos[2] + (k.kduck ? 12 : 17)];
       const l = ov('kl:' + ki, () => lineMesh(g3(eye[0], eye[1], eye[2]), g3(k.vpos[0], k.vpos[1], k.vpos[2] + (k.vduck ? 4 : 10)), k.wb ? 0xff4fd8 : 0xff9a3c, !!k.wb));
       l.material.opacity = 1 - age / life;

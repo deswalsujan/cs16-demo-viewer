@@ -6,7 +6,8 @@ G = '(globalThis.__P ||= {cd:[],voice:[],wanim:0,wanimF:0,info:[],setview:0})'
 reps = [
   # the reader runs twice on a POV demo (to spot it, then to find its rounds): keep only the last run
   ("export function parseDemo(buffer, onProgress, opts = {}) {", "export function parseDemo(buffer, onProgress, opts = {}) {\n  globalThis.__P = null;"),
-  ("readDelta(r, deltas.clientdata_t, {});", "{ const o = {}; readDelta(r, deltas.clientdata_t, o); " + G + ".cd.push([time, o]); }"),
+  # each clientdata message on its own (since wip/pov-mode the reader also builds them up into the recorder's state)
+  ("readDelta(r, deltas.clientdata_t, own);", "{ const before = { ...own }; readDelta(r, deltas.clientdata_t, own); const o = {}; for (const k in own) if (own[k] !== before[k] || !(k in before)) o[k] = own[k]; " + G + ".cd.push([time, o]); }"),
   ("case 53: { r.ub(); const n = r.us(); r.skip(n); break; } // voicedata", "case 53: { const who = r.ub(); const n = r.us(); r.skip(n); " + G + ".voice.push([time, who, n]); break; } // voicedata"),
   ("case 35: r.skip(2); break; // weaponanim", "case 35: r.skip(2); " + G + ".wanim++; break; // weaponanim"),
   ("case 7: r.skip(8); break;", "case 7: r.skip(8); " + G + ".wanimF++; break;"),

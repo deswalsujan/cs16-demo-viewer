@@ -2,6 +2,23 @@
 
 What changed in the viewer, newest first. The version shows in the viewer's shortcuts panel (press ?) and on the start screen.
 
+## In progress: POV mode (branch `wip/pov-mode`, from 3 Oct 2026)
+
+Experimental (Sujan, 3 Oct 2026): a demo recorded by a player opens in POV mode by itself, in the same viewer. Removed again if it's more trouble than it's worth. Background and findings: IDEAS.md, "POV demos".
+
+Built so far (not released, no version bump):
+- **The recording player is drawn where he really was.** The server never puts the recorder's position in the snapshots (his own game moves him), so the viewer drew him at the map's zero point for the whole demo. His position and crouch now come from the messages the server sends him about himself (`clientdata`), which the reader already read and threw away. His aim stays as the snapshots give it, as for everyone else.
+- **Kills by or on the recorder have his position**, so their kill lines, death marks and the wallbang check have a place to start from. Before, 40, 14 and 66 kills in the three files had no position (the cause of the "NaN" page error on Match 1).
+- Kill lines and death marks with part of a position missing (a player whose height the snapshot never sent, 2 kills in Match 1 CT) are skipped in 3D.
+
+How it was tested (on Sujan's Mac files, 3 Oct 2026):
+- The recorder's track against the camera block the game writes about 100 times a second (`tests/demo-probes/pov_own_check.mjs`): the two agree to a median of 0.5 to 3.3 units, 90% within 7, on Match 1 (both files) and Match 3; never at the zero point while alive; speeds of a running player. The crouch flag matches the camera height in 89 to 94% of messages (the rest are mid-crouch). Yaw matches his own mouse aim to a median of 0.1°.
+- At the recorder's own gun kills, his crosshair in Player's eyes sits a median of 0.86° (Match 1 T, 8 kills), 1.98° (Match 1 CT, 23) and 2.27° (Match 3, 33) from the victim's head (`tests/page/pov_own_kill.js`). Screenshot: round 5 at 1:01 of Match 1 T, N!njA_kachoRI under the crosshair.
+- The reader's output against main's on Na`Vi vs FX, Dust2, SEC 2011 final and NoA vs Pentagram, Train 2006: identical. On the POV demos only the recorder's track and kill positions change.
+- `folder_row_test.py` (20 of 20), `start_screen_check.py`, `prefs_check.py` and `late_kill_timing_check.py` pass. `demo_search_check.py` fails on the test folder (it holds none of the demos the check searches for) and fails the same way on main's build.
+
+Still to do, in order: the recorder's own view at full rate (aim, recoil, zoom and gun animations from his frames, about 100 a second), then POV mode itself (opens on the recorder in Player's eyes, the load summary line, which panels hide), then voice. Each step checked with Sujan.
+
 ## Known limits (current version)
 - HLTV demos don't record the first-person weapon's animation, so it's rebuilt from shots, weapon switches and the player's body animation. Timing can differ slightly from in-game, and idle variations won't match. If a `v_` model is missing, no gun is shown.
 - Player models get even lighting, so they don't darken in shaded spots the way they do in-game.
