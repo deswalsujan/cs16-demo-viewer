@@ -1344,27 +1344,53 @@ function derive() {
   const idxAt = (t) => { let lo = 0, hi = n - 1; while (lo < hi) { const mid = (lo + hi + 1) >> 1; if (times[mid] <= t) lo = mid; else hi = mid - 1; } return lo; };
   // ---- people ----
   // A slot can be reused when someone leaves and another person joins, so identity follows the
-  // connection (occupant), and reconnects under the same name are merged into one person.
+  // connection (occupant), and connections are merged into one person by Steam ID or by a shared name.
   const occ = (D.occupants || []).map((o) => Object.assign({}, o));
   const opar = occ.map((o, i) => i);
   const ofind = (x) => opar[x] === x ? x : (opar[x] = ofind(opar[x]));
-  const byName = {};
-  for (const o of occ) for (const nm of o.names) { if (byName[nm] != null) opar[ofind(o.id)] = ofind(byName[nm]); else byName[nm] = o.id; }
   // the same Steam ID is the same person, whatever name they used (and across the parts of a joined map).
   // Only a real one: on a LAN server every player can have "0" (Na`Vi vs FX, SEC 2011 final, Train and Dust2),
   // so "0", anything that isn't a number, and an ID two connections hold at the same time identify nobody.
   const sidBad = new Set();
   for (const o of occ) if (!o.sid || !/^\d+$/.test(o.sid) || /^0+$/.test(o.sid)) o.sid && sidBad.add(o.sid);
   for (const a of occ) for (const b of occ) if (a !== b && a.sid && a.sid === b.sid && a.from < (b.to != null ? b.to : D.end) && b.from < (a.to != null ? a.to : D.end)) sidBad.add(a.sid);
-  const bySid = {};
-  for (const o of occ) if (o.sid && !sidBad.has(o.sid)) { if (bySid[o.sid] != null) opar[ofind(o.id)] = ofind(bySid[o.sid]); else bySid[o.sid] = o.id; }
+  const nameSpans = (o) => { const nt = o.nameT && o.nameT.length ? o.nameT : o.names.map((nm) => [o.from, nm]); return nt.map(([a, nm], i) => [a, i + 1 < nt.length ? nt[i + 1][0] : (o.to != null ? o.to : D.end), nm]); };
   const pl = {};
-  for (const o of occ) {
-    const pid = 'p' + ofind(o.id); o.pid = pid;
-    const p = pl[pid] || (pl[pid] = { pid, name: '?', occs: [], hltv: true, lastFrom: -1 });
-    p.occs.push(o); p.hltv = p.hltv && o.hltv;
-    if (o.from >= p.lastFrom && o.names.length) { p.name = cleanName(o.names[o.names.length - 1]); p.lastFrom = o.from; }
-  }
+  // Group connections into people. By name, only names nameOK allows: the people are grouped twice, first by
+  // Steam ID alone (enough to find the live rounds), then again with the names used during the live rounds.
+  // A name used only in the warmup doesn't join two connections, so two players who both sat on a placeholder
+  // nick ("Player") before the match stay apart.
+  // the earliest connection stays the root, so a person keeps the same id however they were joined
+  const join = (x, y) => { const a = ofind(x), b = ofind(y); if (a !== b) opar[Math.max(a, b)] = Math.min(a, b); };
+  const group = (nameOK) => {
+    for (let i = 0; i < opar.length; i++) opar[i] = i;
+    const bySid = {};
+    for (const o of occ) if (o.sid && !sidBad.has(o.sid)) { if (bySid[o.sid] != null) join(o.id, bySid[o.sid]); else bySid[o.sid] = o.id; }
+    if (nameOK) {
+      // A name joins two connections when one of them used it during the live rounds (cehe4k reconnected in
+      // the warmup of Na`Vi vs FX, Train, SEC 2011 final). A name used only outside the live rounds joins them
+      // when at most one of them played live: Edward on the Dust2 map of that final reconnected in the warmup as
+      // "Na`Vi Edward /A/" both times and played as "EdwardwOw~", while two players who both sat on "Player"
+      // in the warmup and then played the match are two people.
+      const byName = {};
+      for (const o of occ) for (const [a, b, nm] of nameSpans(o)) { if (!nameOK(a, b)) continue; if (byName[nm] != null) join(o.id, byName[nm]); else byName[nm] = o.id; }
+      const played = (o) => nameSpans(o).some(([a, b]) => nameOK(a, b));
+      const other = {};
+      for (const o of occ) for (const [a, b, nm] of nameSpans(o)) if (!nameOK(a, b)) { if (byName[nm] != null) join(o.id, byName[nm]); else (other[nm] || (other[nm] = new Set())).add(o); }
+      for (const nm in other) { const L = [...other[nm]]; if (L.filter(played).length <= 1) for (const o of L) join(o.id, L[0].id); }
+    }
+    for (const k in pl) delete pl[k];
+    for (const o of occ) {
+      const pid = 'p' + ofind(o.id); o.pid = pid;
+      const p = pl[pid] || (pl[pid] = { pid, name: '?', occs: [], hltv: true, lastFrom: -1 });
+      p.occs.push(o); p.hltv = p.hltv && o.hltv;
+      if (o.from >= p.lastFrom && o.names.length) { p.name = cleanName(o.names[o.names.length - 1]); p.lastFrom = o.from; }
+    }
+    for (const k of D.kills) {
+      k.kp = k.kocc >= 0 && occ[k.kocc] ? occ[k.kocc].pid : (D.players[k.killer] ? personAt(k.killer, k.t) : null);
+      k.vp = k.vocc >= 0 && occ[k.vocc] ? occ[k.vocc].pid : personAt(k.victim, k.t);
+    }
+  };
   const occBySlot = {};
   for (const o of occ) (occBySlot[o.slot] || (occBySlot[o.slot] = [])).push(o);
   // Who is in a slot at time t. When the connection that held it has ended but someone is still playing in
@@ -1390,10 +1416,7 @@ function derive() {
     for (const o of p.occs) if (occAt(o.slot, t) === o) return o.slot;
     return null;
   };
-  for (const k of D.kills) {
-    k.kp = k.kocc >= 0 && occ[k.kocc] ? occ[k.kocc].pid : (D.players[k.killer] ? personAt(k.killer, k.t) : null);
-    k.vp = k.vocc >= 0 && occ[k.vocc] ? occ[k.vocc].pid : personAt(k.victim, k.t);
-  }
+  group(null);
 
   // rounds: mark restarts and live segments
   const restarts = D.bomb.filter((b) => b.type === 'restart').map((b) => b.t);
@@ -1544,6 +1567,11 @@ function derive() {
     }
   }
   if (!rounds.some((r) => r.live)) for (const r of rounds) r.live = r.dur > 5;
+  // people again, now merged by the names used during the live rounds (see group)
+  {
+    const lr = rounds.filter((r) => r.live);
+    group((a, b) => lr.some((r) => Math.min(b, r.end != null ? r.end : D.end) > Math.max(a, r.start)));
+  }
 
   // sides per player per live round (sample 5s into the round)
   const sideAt = (e, t) => { const a = D.slots[e]; if (!a) return 0; const i = idxAt(t) * S; return Math.abs(a[i + 5]); };

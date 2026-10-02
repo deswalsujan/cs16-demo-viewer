@@ -89,6 +89,7 @@ Page scripts in `page/`:
 | `aim_shown_at_kills.js` | How far the crosshair is from the victim's head at headshot kills, as Player's eyes draws them | 0.14.3 |
 | `match_summary.js` | Score, live rounds, first live round, starting sides and Players tab names, for comparing versions across all demos (run with `MAP_NEEDED=0`) | 0.14.1 |
 | `join_detail.js`, `join_rounds.js` | A map joined from its parts (set `window.__parts` to parts of the file names, in order, in a script run just before): score, rounds and K-D like `match_detail.js`; and every round with its part, stretch, scoreboard, kills, and whether it counts or why not (run with `MAP_NEEDED=0`) | split maps (wip) |
+| `placeholder_names.js` | Two players who used the same placeholder name in the warmup stay two people: gives two live players the warmup name "Player" and recounts (run with `DEMO=1110091449 MAP_NEEDED=0`, Na`Vi vs FX, Train, SEC 2011 final, whose Steam IDs are all "0") | split maps (wip) |
 
 Stand-alone checks:
 
