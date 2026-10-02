@@ -135,6 +135,7 @@ Page scripts in `page/`:
 | `split_missing.js`, then `split_missing_go.js` | A round in no file, made by removing Inferno part 2's kills before its first marker: the card's check, then the joined Rounds tab and score (`DEMO=1104240025`) | split maps (wip) |
 | `wallbang_list.js` | Every wallbang (round, timer, killer, gun, headshot, victim), waiting for the map to load even with `MAP_NEEDED=0`, for comparing two builds with `compare_all.sh` | 0.15.5 |
 | `summary_text.js` | The load summary's text, built afresh (for checking its lines across all demos) | split maps (wip) |
+| `pov_trial.js`, then `pov_2d.js` | A POV demo as the viewer handles it today: the load summary, the recorder (found by name) and whether his position is real, following him, how many players have a position through the match; then the 2D radar mid-demo for a screenshot (`DEMO=match-1_de_barcelona-ts`, `DEMO=match-3`) | POV trial, 3 Oct 2026 |
 | `late_kill_timing.js` | Late kills shown at the victim's death sound (NoA vs Pentagram, Train 2006); run through `late_kill_timing_check.py` | 0.16.0, guards 0.15.5 |
 | `free_cam_nearest.js` | Free camera to Player's eyes, Behind player and V with nobody picked follows the player nearest the middle of the view; a picked player stays (`DEMO=1110091531`, Dust2) | 0.16.0 |
 | `hp_line_far.js` | The "HP · weapon" line under every name with the camera over 2,500 units away (`DEMO=1110091531`) | 0.16.0 |
@@ -171,6 +172,7 @@ node zoom.mjs ~/Downloads/Half-Life/cstrike/<demo>.dem
 | `resume.mjs` | Clicks between consecutive AWP shots (does the scope come back by itself?) |
 | `qs.mjs` | Whether single clicks between shots follow a weapon switch (the knife quick-switch) |
 | `bullets.mjs`, `bullets_hs.mjs`, `bullets_sweep.mjs` | What weapon fire events carry (spread, recoil); how close a rebuilt killing bullet passes to the victim's head; whether shifting aim or victim by a snapshot helps. `make_probe.py` adds the event capture (bullet marks check, 1 Oct 2026) |
+| `pov_probe.mjs` (run `python3 make_pov_probe.py` first), `pov_raw.mjs` | What a POV demo stores beyond HLTV: the recorder's own view every frame (camera, aim, recoil, health, buttons), zoom from clientdata, weapon animations, voice packets, models listed, players per snapshot; `pov_raw.mjs <demo> <frame number>` prints the raw 464-byte view block, to check the field positions | POV trial, 3 Oct 2026 |
 | `kill_lag.mjs` | How late each kill message arrives after the victim's death sound, the killer's last shot and the victim's health reaching 0 (0.13.0). Needs `cp ../../src/demo.js demo.mjs` |
 | `wallbang_timing.mjs` | The viewer's wallbang rules rebuilt outside the page; lists the kills whose result changes when late kills are re-timed (0.13.0). Needs `demo.mjs` and `cp ../../src/bsp.js bsp.mjs`; run as `node wallbang_timing.mjs <demo> <map.bsp>` |
 

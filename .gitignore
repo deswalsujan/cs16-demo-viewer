@@ -11,3 +11,4 @@ tests/demo-probes/demo.mjs
 tests/demo-probes/bsp.mjs
 tests/demo-probes/demo_probe_count.mjs
 tests/demo-probes/nades_fn.mjs
+tests/demo-probes/pov_probe_demo.mjs

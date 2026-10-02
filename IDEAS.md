@@ -15,7 +15,7 @@ Everything raised in conversation that isn't finished, in one place. Each item s
 **POV demos** (3 Oct 2026; findings under "POV demos" below)
 - [x] Sujan decided 3 Oct 2026: a POV demo opens in POV mode by itself, in the same viewer (no separate POV viewer to pick).
 - [x] Sujan decided 3 Oct 2026: test Match 1 (both files, de_barcelona) and Match 3 (css_cache) first, then decide whether POV mode is worth building. Experimental: built on a `wip/pov-mode` branch, removed if it's more trouble than it's worth.
-- [ ] Claude: the headless browser run on Match 1 and Match 3 (what the viewer does with them today).
+- [x] Claude, 3 Oct 2026: the headless browser run on Match 1 (both files) and Match 3, results under "POV demos" below.
 - [ ] Sujan: `de_mirage_32.bsp` (Match 2) and `de_nuke32.bsp` (Match 4 and 5) for the Mac's `cstrike_downloads/maps`, if he has them. Without them those demos get no 3D.
 - [ ] Open (Sujan asked 3 Oct 2026): See through walls in POV mode, for checking other players' POVs for wallhacks, and a built-in aimbot catcher.
 
@@ -147,6 +147,15 @@ What the viewer gets wrong today:
 - Kill feed: the server sends every kill to everyone, so the kill list is complete (192 to 853 kills).
 
 Models: every player in the seven wears a stock player model. Custom files are weapon skins and plugin models (Match 3: about 40, e.g. `models/AKModels/v_cl2ak47.mdl`; Match 4 and 5: `models/backweapons.mdl`). The game refuses a demo when any listed file is missing; the viewer uses what it finds.
+
+The headless browser run, 3 Oct 2026 (0.16.0, `tests/page/pov_trial.js`), on Match 1 (both files, de_barcelona) and Match 3 (css_cache):
+- All three open and play, in 2D and 3D. The summary says "Recorded by a player (a POV demo)". Match 3 switched maps at the end and opens on css_cache, as 0.13.0 intended.
+- **The recorder is drawn at the map's zero point for the whole demo** (118 of 118, 118 of 118 and 137 of 137 moments checked while alive). His track has angles and a gun, but no position, since the server never sends it. So Player's eyes on him shows the right gun from the wrong place, and the 2D radar shows his dot fixed in one spot. This is what the 464-byte view block would fix.
+- Players with a position at 40 moments through the match: median 5 (Match 1) and 6 (Match 3) of 32, at most 16.
+- Custom models: Match 3 is missing 4 custom knives (p_ and v_), which are drawn without a gun, and 6 sounds (silent). Nothing stops it playing; the game itself refuses this demo for the same files.
+- Match 1's two files are offered as parts to join ("same players on de_barcelona"); not tried. The rounds and score on a public server mean little (Match 1 CT file shows 0:7 at its end), as expected.
+- de_barcelona: 1 texture missing, no overview in the Mac folder (plain grid in 2D). css_cache has its overview.
+- One page error on Match 1 CT: a 3D object with a NaN position (`computeBoundingSphere`). Not traced yet.
 
 Ideas from the discussion (3 Oct 2026, not decided):
 - POV mode: the recorder's own view at full frame rate with his exact recoil, scope and gun animations, the radar with whoever his game saw, the kill list, voice later. HLTV analysis that assumes everyone is seen (wallbang finder for all kills, heatmaps, per-side stats) hidden.
