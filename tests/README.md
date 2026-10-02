@@ -121,6 +121,7 @@ Page scripts in `page/`:
 | `split_summary.js`, `split_card_open.js`, `split_card_swap.js`, `split_card_fix.js`, `split_join_go.js`, `split_wrong_map.js`, in that order | The split map screens on a part opened alone (`DEMO=1104240112` for Inferno part 2): the summary line, the Join card, a wrong order and the suggested one, joining, adding another map. Add `shot` for screenshots | split maps (wip) |
 | `split_remember.js` | After `split_join_go.js`: opening a part opens the joined map, Split them opens the part playing alone and forgets the set | split maps (wip) |
 | `split_missing.js`, then `split_missing_go.js` | A round in no file, made by removing Inferno part 2's kills before its first marker: the card's check, then the joined Rounds tab and score (`DEMO=1104240025`) | split maps (wip) |
+| `wallbang_list.js` | Every wallbang (round, timer, killer, gun, headshot, victim), waiting for the map to load even with `MAP_NEEDED=0`, for comparing two builds with `compare_all.sh` | 0.15.5 |
 | `summary_text.js` | The load summary's text, built afresh (for checking its lines across all demos) | split maps (wip) |
 
 Stand-alone checks:
