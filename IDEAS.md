@@ -9,6 +9,10 @@ Everything raised in conversation that isn't finished, in one place. Each item s
 **Broken demos** (raised 2 Oct 2026)
 - [ ] Sujan: decide on "Tell exactly why a demo is broken" and "Play cut-off demos up to where they end" (below); a mockup comes first for the load summary wording.
 
+**Next: how accurate is the viewer, on a fresh batch of demos** (Sujan, 2 Oct 2026, to continue on his Windows PC)
+- [ ] Sujan: put the new demos in `cstrike`, ideally with known results (final score, and K-D of a few players from HLTV.org or memory), and name the event of each (CLAUDE.md rule). Keep the demos whose numbers are confirmed in CHANGELOG.md (0.14.2 table, 0.15.0 Xperia Play 2011 FX vs mTw) somewhere, even outside the folder: they're the regression set every counting change is checked against, and the 0.15.0 Steam ID "0" bug was only caught because Na`Vi vs FX (SEC 2011) was in it.
+- [ ] Claude: read the new batch with `tests/compare_all.sh` and `page/match_detail.js` (score, every round's winner, K-D overall, T and CT), and `page/summary_text.js` for the load summary; compare with Sujan's known results; list every mismatch round by round before changing anything; add the demos and their events to `tests/README.md`.
+
 **A map split over two or more demo files** (shipped in 0.15.0, 2 Oct 2026)
 - [ ] Sujan: 0.15.0 by eye on your side, with sounds: open `fx-vs-mtw-xperia2011-1104240112-de_inferno.dem` (Xperia Play 2011, Inferno part 2), Join the parts, then watch playback across the join at round 16 in 2D and 3D; open part 1 later and check it opens joined; Split them. Built screens next to the mockup: [docs/split-map-built.png](docs/split-map-built.png).
 - [ ] Parked: suggest the order of 3 or more parts whose file names carry no recording time (below, under "Join a map split over several demo files").
@@ -47,7 +51,7 @@ Everything raised in conversation that isn't finished, in one place. Each item s
 
 **Done since this list was written:** 0.15.0 (a map split over several demo files joined as one; players joined by live-round names only); 0.14.3 (players were drawn one snapshot late, fixed); Sujan confirmed the two 0.14.2 scores not found online (Na`Vi vs FX Train 11:16, mTw vs Lions Nuke 10:16); 0.14.2 (round counting: stop at 16 with Count them, team swap suicides, rounds past a half, the IOL false start, plain team names); the Count them mockup and the team name change, approved by Sujan (2 Oct 2026); 0.14.1 (FX vs SK Inferno: lo3, restarted halves, KUBEN twice, renamed players); 0.14.0 (smokes from the game's own smoke events, HE and flash bursts on maps where the demo has no grenade objects, light green smokes, shorter names and the skull in the Players tab, Free camera starting at the player); and earlier: Train in 3D on Sujan's side (the 2006 NoA vs Pentagram demo, 1 Oct 2026, which led to 0.13.0); 0.13.0 (kills timed from the real moment, the gun rule, POV demos, Clear saved files closing the demo, the smooth summary bar, the side panel lists); the start screen line "Needs your own copy of Counter-Strike 1.6, installed through Steam" (0.12.4, confirmed by Sujan).
 
-**Next on the roadmap:** item 2, the README Requirements list (below).
+**Next on the roadmap:** the accuracy check on a fresh batch (top of this list); then item 2, the README Requirements list (below).
 
 ## Roadmap (agreed 1 Oct 2026, in this order)
 

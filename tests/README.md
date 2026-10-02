@@ -105,6 +105,7 @@ Stand-alone checks:
 | `start_screen_check.py` | Theatre and Full screen are greyed out before a demo is open (no Half-Life folder needed) | under a minute |
 | `folder_row_test.py` | The Half-Life folder row (0.12.0, 0.12.1): first visit, picking, changes applied by themselves, Reconnect, opening by itself on the next visit, wrong folders and no demos, Clear saved files, dropping a demo with no folder, the ordinary folder pick, and the page inside a frame from another site. Uses a stand-in for Chrome's folder access, since its picker and prompts can't be driven headless (no Half-Life folder needed) | under a minute |
 | `prefs_check.py` | Viewing settings restored on the next visit, and defaults when the saved ones are damaged (no Half-Life folder needed) | a few seconds |
+| `compare_all.sh OUT PAGE_A [PAGE_B] [SCRIPT]` | A page script (default `page/match_summary.js`) on every demo in `HALF_LIFE_DIR`, 6 at a time. With two pages (main's build and a branch, say `git show origin/main:index.html > old.html`) it lists the demos whose results differ; with one it collects the results, for checking a fresh batch against known scores and K-D (`page/match_detail.js` gives round by round and T/CT). Needs no maps | about 4 minutes for 25 demos |
 
 ## Demo data probes (Node)
 
@@ -142,3 +143,5 @@ node rounds_and_people.mjs <demo>        # 0.14.1: server messages, every round 
 
 - The headless browser draws 3D without a graphics chip, so it's slow. Checks that wait a fixed time can fail there and pass on a real machine: wait for the outcome instead, and confirm timing failures by hand before chasing them. The one Theatre check that failed on the 14-inch setup worked on a real MacBook.
 - Give an estimate before long runs. One full Theatre round across five setups takes about 45 minutes.
+- Parallel runs of `harness.py` need a copy of the page each: it writes `_test_<page name>` beside the page and deletes it at the end, so two runs on one page name break each other (`compare_all.sh` does this). Found 2 Oct 2026.
+- A page script that opens another demo and waits for it must wait for a new demo object (`D !== old`), not just for `D.parts` or `M`: those still hold the previous demo's values until its counting has run, so the check passes early and reads old numbers. Found 2 Oct 2026, twice.
