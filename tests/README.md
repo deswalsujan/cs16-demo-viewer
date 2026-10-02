@@ -51,7 +51,7 @@ Page scripts in `page/`:
 | `sniper_kill_list.js` | Sniper kills in the live rounds (with `DEMO=tuscan MAP_NEEDED=0` for Tuscan) | 0.10.0 |
 | `aim_at_sniper_kills.js`, `aim_bias_headshots.js` | How far the crosshair is from the victim at kills, and whether misses lean one way | CHANGELOG 0.10.0, "Discussed, not changed" |
 | `see_through_walls.js`, then `team_colours.js`, then `figure_fallback.js` | Bodies through walls only for hidden players; Team colours on every model; plain figures when model files are missing. Run in this order, in one go: each picks up where the previous one left off. | 0.11.0 |
-| `reset_view.js` | Reset view from Player's eyes, Behind player and a moved free camera, in 2D, 3D and split view | 0.12.2 |
+| `reset_view.js` | Reset view from Player's eyes, Behind player and a moved free camera, in 2D, 3D and split view. Run it on its own: after `modes_and_toggles.js` it fails, since that leaves the view changed | 0.12.2 |
 | `new_demo_settings.js` | Opening another demo (needs the Dust2 and 2006 Train demos): viewing settings kept, speed back to 1x, paused | 0.12.3 |
 | `kill_timing_and_lists.js` | Kills moved to the killing shot, the 1-surface gun rule, the wallbang list, kill feed icons, the clicked row (run with `DEMO=noa.penta` and `DEMO=dust2`) | 0.13.0 |
 | `kill_labels.js` | Round and round timer of the kills whose wallbang result changed in 0.13.0 | 0.13.0 |
@@ -62,7 +62,8 @@ Page scripts in `page/`:
 | `players_names_dead.js` | Players tab: shortened names, full names on hover, skulls for dead players, nothing cut off | 0.14.0 |
 | `free_cam_start.js` | Free camera from Player's eyes, Behind player and V starts at the player; dragging keeps the exact view. Moves the camera, so run `reset_view.js` in a separate run | 0.14.0 |
 | `summary_stays_closed.js` | The load summary card closed while checking stays closed | 0.14.0 |
-| `match_detail.js` | Score, every live round with its winner, rounds dropped as team swaps or after the match, and every player's K-D overall, on T and on CT | wip |
+| `match_detail.js` | Score, every live round with its winner, rounds dropped as team swaps or after the match, and every player's K-D overall, on T and on CT | 0.14.2 |
+| `summary_and_teams.js` | The load summary's lines (rounds read and counted), team names, the Rounds tab note and faded rows, with Count them switched on and off again (run with `DEMO=fnatic_vs_eg MAP_NEEDED=0`) | 0.14.2 |
 | `match_summary.js` | Score, live rounds, first live round, starting sides and Players tab names, for comparing versions across all demos (run with `MAP_NEEDED=0`) | 0.14.1 |
 
 Stand-alone checks:
