@@ -51,8 +51,17 @@ Status values: **regression set** (kept on purpose: K-D and scores Sujan confirm
 | `de_nuke.dem_Fnatic-vs-ALTERNATE.dem` | ESWC 2011 | demo text, as above | Mac, Windows | regression set |
 | `1110241407--auto_de_inferno.dem_mousesports-vs-AGAIN.dem` | ESWC 2011, final | demo text, as above; the final by the teams and date | Mac, Windows | regression set |
 | `noa.penta-0610211800-de_train.dem` (NoA vs Pentagram, Train; protocol 47) | not known; recorded 21 Oct 2006 at 18:00 by the file name | file name (checked 2 Oct 2026, when Sujan copied it to the Mac) | Mac, Windows | regression set (protocol 47, late kill messages) |
+| `mtw-vs-navi-eswc2010semi-real-1007031520-de_tuscan.dem`, `-1007031530-`, `-1007031625-`, `-1007031645-`, `-1007031655-de_tuscan.dem` (Tuscan, 5 files), `-1007031710-de_train.dem` (Train) | ESWC 2010, semi-final (3 Jul 2010) | file name; HLTV server "HLTV.org - VeryGames.de" | Mac (Windows: Sujan) | new batch, 2 Oct 2026 |
+| `navi-vs-m5-dhwinter2011-1111250937-de_inferno.dem` (Na`Vi vs Moscow 5, Inferno) | DreamHack Winter 2011 (25 Nov 2011) | file name; demo text "DreamHack MSI BEAT IT" | Mac (Windows: Sujan) | new batch, 2 Oct 2026 |
+| `k1ck-vs-eq-dhwinter2011-1111260056-de_nuke.dem` (k1ck vs eq, Nuke) | DreamHack Winter 2011 (26 Nov 2011) | file name; demo text, as above | Mac (Windows: Sujan) | new batch, 2 Oct 2026 |
+| `sk-vs-navi-dhwinter2011-1111261019-de_train.dem` (SK vs Na`Vi, Train) | DreamHack Winter 2011 (26 Nov 2011) | file name; demo text, as above | Mac (Windows: Sujan) | new batch, 2 Oct 2026 |
+| `auto_ifng-1110042145-de_forge.dem`, `auto_ifng-1110042211-de_forge.dem` (fnatic vs mousesports, Forge, probably one map in 2 files) | Intel Extreme Masters, 4 Oct 2011; which stage isn't checked | demo text "Intel Extreme Masters #1"; team tags in player names; date from the file name | Mac (Windows: Sujan) | new batch, 2 Oct 2026 |
+| `auto-server1-1106262105-de_tuscan.dem` (Na`Vi vs fnatic, Tuscan) | Adepto BH Open 2011 (26 Jun 2011) | demo text "Adepto BH OPEN #1"; team tags in player names | Mac (Windows: Sujan) | new batch, 2 Oct 2026 |
+| `fnatic-vs-navi-gamegune2012-1207282133-de_dust2.dem` | GameGune 2012, grand final (28 Jul 2012) | demo text "GameGune 2012 Grand Final"; file name | Mac (Windows: Sujan) | new batch, 2 Oct 2026 |
+| `485.53.706623-0803162045-de_train.dem` (Sweden vs Ukraine, Train; protocol 47) | not known; 16 Mar 2008 by the file name | country tags in player names (SpawN, RobbaN, edzie); HLTV server "HLTV.org - VeryGames.de" | Mac (Windows: Sujan) | new batch, 2 Oct 2026 |
+| `53.52.1646548-1005272144-de_dust2.dem` (Sweden vs Norway, Dust2) | not known; 27 May 2010 by the file name | country tags in player names (Sweden: GeT_RiGhT, f0rest, alleN, Gux, Delpan; Norway: REAL, kalle, RashiE, KORN, tacky); admin "XpreZ [raven]", www.SpeedGaming.dk | Mac (Windows: Sujan) | new batch, 2 Oct 2026 |
 
-The Windows copies of the regression set are Sujan's copies from the Mac (2 Oct 2026). The new batch goes here as Sujan adds it.
+The Windows copies of the regression set are Sujan's copies from the Mac (2 Oct 2026). "Mac (Windows: Sujan)" means Sujan is adding it to Windows himself; change it to "Mac, Windows" once he confirms. The new batch rows were read from the demos on the Mac on 2 Oct 2026 (server and admin messages, player names); stages and the two unknown events aren't checked on the web yet.
 
 ### Deleted
 
