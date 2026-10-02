@@ -44,28 +44,28 @@ Round counting and player stats, from Sujan's checks of K-D numbers he knows fro
 
   | Demo | Viewer | Sujan's number |
   |---|---|---|
-  | IOL Final SK vs Dateam, Dust2 (`sk-vs-dateam-iolfinal4-1106181158`) | 16:4, f0rest 25-11 (T 8-3, CT 17-8) | f0rest correct |
-  | Xperia FX vs mTw Inferno, two files (`-1104240025`, then `-1104240112`) | file 1: 6:9, NEO 15-13; file 2: 13:8, NEO 18-15 (16-11 + overtime 2-4) | NEO 33-28, second half 16-11 |
-  | Xperia FX vs mTw Nuke, two files (`-1104240212`, `-1104240242`) | file 1: 8:7, NEO 19-9; file 2: 11:15, NEO 23-16 (12-9 + 4-4 + 7-3) | 42-25 |
-  | fnatic vs EG, Dust2 (`fnatic_vs_EG_EM3Global-0903061800`) | 11:16, f0rest (shows as iZnoGouD) 29-17 (T 15-9, CT 14-8); with Count them: 13:17, 32-19 (T 15-9, CT 17-10) | 32-19 (T 15-9, CT 17-10), all 30 rounds played |
-  | iFNG FX vs fnatic, Dust2 (`auto_ifng-1103030950`) | 16:13, NEO 30-17 (T 12-9, CT 18-8) | 30-17 (CT 18-8, T 12-9) |
+  | IOL Final4 2011, SK vs Dateam, Dust2 (`sk-vs-dateam-iolfinal4-1106181158`) | 16:4, f0rest 25-11 (T 8-3, CT 17-8) | f0rest correct |
+  | Xperia Play 2011, FX vs mTw Inferno, two files (`-1104240025`, then `-1104240112`) | file 1: 6:9, NEO 15-13; file 2: 13:8, NEO 18-15 (16-11 + overtime 2-4) | NEO 33-28, second half 16-11 |
+  | Xperia Play 2011, FX vs mTw Nuke, two files (`-1104240212`, `-1104240242`) | file 1: 8:7, NEO 19-9; file 2: 11:15, NEO 23-16 (12-9 + 4-4 + 7-3) | 42-25 |
+  | fnatic vs EG, Dust2, EM3 Global Finals 2009 (`fnatic_vs_EG_EM3Global-0903061800`) | 11:16, f0rest (shows as iZnoGouD) 29-17 (T 15-9, CT 14-8); with Count them: 13:17, 32-19 (T 15-9, CT 17-10) | 32-19 (T 15-9, CT 17-10), all 30 rounds played |
+  | iFNG FX vs fnatic, Dust2, Intel Extreme Masters, March 2011 (`auto_ifng-1103030950`) | 16:13, NEO 30-17 (T 12-9, CT 18-8) | 30-17 (CT 18-8, T 12-9) |
 
 - The load summary, team names, Rounds note and faded rows, Count them on and off again, on the EG demo (`tests/page/summary_and_teams.js`): "Demo read: 30 rounds, 27 counted", then "30 rounds" and 13:17 with Count them, then back to 11:16 with 3 faded rows.
 - Every demo on Sujan's Mac (25; the 102 MB mousesports vs Virus demo is left out, it doesn't load in the test browser), 0.14.1 against 0.14.2 (`tests/page/match_summary.js`):
 
   | Demo | 0.14.1 | 0.14.2 | Checked against |
   |---|---|---|---|
-  | fnatic vs EG, Dust2 | 13:17 | 11:16 (13:17 with Count them) | Sujan |
-  | Xperia FX vs mTw, Inferno, file 1 / file 2 | 7:9 / 10:8 | 6:9 / 13:8 | Sujan |
-  | Xperia FX vs mTw, Nuke, file 2 | 9:11 | 11:15 | Sujan |
-  | iFNG FX vs fnatic, Dust2 | 17:15 | 16:13 | Sujan |
-  | IOL SK vs Dateam, Dust2 | 16:5, from 11:48 | 16:4, from 17:23 | Sujan |
+  | fnatic vs EG, Dust2, EM3 Global Finals 2009 | 13:17 | 11:16 (13:17 with Count them) | Sujan |
+  | Xperia Play 2011, FX vs mTw, Inferno, file 1 / file 2 | 7:9 / 10:8 | 6:9 / 13:8 | Sujan |
+  | Xperia Play 2011, FX vs mTw, Nuke, file 2 | 9:11 | 11:15 | Sujan |
+  | iFNG FX vs fnatic, Dust2, Intel Extreme Masters, March 2011 | 17:15 | 16:13 | Sujan |
+  | IOL Final4 2011, SK vs Dateam, Dust2 | 16:5, from 11:48 | 16:4, from 17:23 | Sujan |
   | Na`Vi vs FX, Dust2, SEC 2011 | 12:16 | 11:16 | the official 16-11 (known since 0.7.1) |
   | SK vs WinFakt, Mirage, IEM6 New York | 17:9 | 16:8 | HLTV.org's report of the final: 10-5 at half, then 6 rounds to 3 ([HLTV.org](https://www.hltv.org/news/7636/sk-win-iem6-gc-new-york)) |
   | Na`Vi vs FX, Train, SEC 2011 | 12:19 | 11:16 | Sujan (2 Oct 2026); not found online |
   | mTw vs Lions, Nuke, DreamHack Summer 2011 | 11:17 | 10:16 | Sujan (2 Oct 2026); not found online |
-  | Moscow 5 vs Na`Vi Mirage, mouz vs SK Mirage, AGAiN vs ALTERNATE Nuke, Fnatic vs ALTERNATE Nuke | | same score, 1 to 3 players with one death less (team swap suicides) | |
-  | Anexis vs fnatic Tuscan, MYM vs SK Inferno | | team names only: fnatic, MeetYourMakers, SK Gaming | |
+  | ESWC 2011: Moscow 5 vs Na`Vi Mirage, mouz vs SK Mirage, AGAiN vs ALTERNATE Nuke, Fnatic vs ALTERNATE Nuke | | same score, 1 to 3 players with one death less (team swap suicides) | |
+  | Anexis vs fnatic Tuscan (DreamHack Bucuresti 2012), MYM vs SK Inferno (Kode5 2008) | | team names only: fnatic, MeetYourMakers, SK Gaming | |
   | The other 6 | | unchanged | |
 
 - `folder_row_test.py` (20 of 20), `start_screen_check.py`, `prefs_check.py`, and on Na`Vi vs FX Dust2 in 3D `modes_and_toggles.js`, `players_names_dead.js` and `reset_view.js` pass. `reset_view.js` fails when run straight after the other two (they leave the view changed) and passes on its own, on 0.14.1 too.
