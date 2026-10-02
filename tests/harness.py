@@ -41,7 +41,14 @@ with sync_playwright() as p:
     pg.set_input_files('#fFolder', HL)
     pg.wait_for_function('__v("files.demos.length > 0")', timeout=30000)
     pg.evaluate(f"""__v("loadDemoFile(files.demos.find(f => f.name.toLowerCase().includes('{DEMO}')))")""")
-    pg.wait_for_function('__v("!!(D && M && MAP && R3 && view3.map === MAP.name)")' if MAP_NEEDED else '__v("!!(D && M)")', timeout=240000)
+    # stop at once when the page says the demo can't be played (a broken or cut-off file), instead of waiting
+    # 4 minutes for a demo that will never load (the mousesports vs Virus demo looked "slow" this way)
+    failed = "$('sumCard') && !$('sumCard').hidden && !!$('sumCard').querySelector('.sum-top.fail')"
+    ready = '!!(D && M && MAP && R3 && view3.map === MAP.name)' if MAP_NEEDED else '!!(D && M)'
+    pg.wait_for_function(f'__v("({ready}) || ({failed})")', timeout=240000)
+    if pg.evaluate(f'__v("{failed}")'):
+        print(json.dumps({'cant_play': pg.evaluate('__v("$(\'sumCard\').innerText")')}))
+        b.close(); srv.shutdown(); os.remove(page_path); sys.exit(2)
     pg.evaluate('__v("closeSummary()")')
     t0 = time.time()
     for n, sc in enumerate(sys.argv[2].split(',')):

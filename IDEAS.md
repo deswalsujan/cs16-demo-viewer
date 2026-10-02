@@ -6,6 +6,9 @@ Parked ideas and features we've discussed but not built yet. Each entry keeps en
 
 Everything raised in conversation that isn't finished, in one place. Each item says who does it. Ideas for new features are further down; this list is for loose ends.
 
+**Broken demos** (raised 2 Oct 2026)
+- [ ] Sujan: decide on "Tell exactly why a demo is broken" and "Play cut-off demos up to where they end" (below); a mockup comes first for the load summary wording.
+
 **A map split over two or more demo files** (next, raised 2 Oct 2026; details under "Join a map split over several demo files" below)
 - [x] Mockup approved by Sujan (2 Oct 2026): [docs/split-map-mock.png](docs/split-map-mock.png).
 - [ ] Claude: build the first version (joined score, rounds and player stats; playback switches file at the marker), on a `wip/` branch, tested on the Xperia Play 2011 FX vs mTw files.
@@ -27,7 +30,7 @@ Everything raised in conversation that isn't finished, in one place. Each item s
 - [ ] **Windows 150% Theatre run.** Passed all 39 checks on the build before the last 0.9.x fix and wasn't rerun after it.
 
 **Not yet tested on real demos**
-- [ ] The 102 MB mousesports vs Virus Inferno demo (event not known): the demo reader stops on it with "Offset is outside the bounds" (found 2 Oct 2026), which is what a cut-off file does, so it never finished loading in the test browser. Sujan: does it open in the game, or in the viewer on your side? If it's cut off, "Play cut-off demos up to where they end" (below) is the fix.
+- [x] The 102 MB mousesports vs Virus Inferno demo (event not known): broken, confirmed by Sujan (2 Oct 2026; he knew, and had meant to delete it). See "Tell exactly why a demo is broken" below.
 - [ ] Breakables on Nuke and Inferno (vents) and Tuscan (logs): do they disappear in 3D when shot out?
 - [ ] The 145 MB Moscow 5 vs Na`Vi Mirage demo (memory and load time on a laptop).
 - [ ] Re-check WinFakt vs Check-Six Mirage (16-6): that demo isn't in the Mac's folder. Na`Vi vs FX Dust2 now reads the official 16-11 and M5 vs Na`Vi Mirage 16-9 (0.14.2).
@@ -169,7 +172,12 @@ Checked on two demos:
 - **Share a moment by link**, such as `#r12` to open round 12.
 - **Product basics still to do**: a compatibility note (browsers, HLTV vs POV demos) and a license.
 - **1.6-era look** (parked, not urgent) as an optional theme: VGUI-style panels, Verdana/Tahoma, orange HUD numbers, sprites read from the player's own `cstrike/sprites`.
-- **Play cut-off demos up to where they end.** A demo that was cut off (interrupted download, crashed recording) currently can't be opened at all, because the file's index sits at the end. Reading it frame by frame from the start would recover everything up to the cut.
+- **Tell exactly why a demo is broken** (raised 2 Oct 2026, from the mousesports vs Virus demo; Sujan: only if the viewer is 100% right). What a GoldSrc demo looks like: a header (the first 544 bytes) whose last field points to an index at the end of the file. The recorder writes the frames as it goes and writes the index, and that pointer, only when recording stops properly. Checked on all 26 demos on the Mac: in the 25 good ones the index ends exactly at the last byte of the file. In mousesports vs Virus the pointer is 0, so the index was never written, and the file also stops 274 bytes into its last frame. So it was never finished: HLTV crashed, or the file was copied or downloaded while still being written. Everything before that is readable: walked frame by frame from the start, 350,083 frames, about 150 minutes of game time.
+  - Three checks that are certain, from the file's own structure, before reading any game data: (1) the index pointer is 0: the recording was never finished; (2) the pointer is past the end of the file, or the index doesn't end at the last byte: the file was cut short or changed after recording; (3) the frames, read from the start, stop partway through one: cut off. Any one means the file isn't as a finished recording leaves it. None can be wrong about a file a recorder finished, since every finished demo has the index there.
+  - Today the viewer shows "This demo can't be played: the file ends partway through, so it may be cut off or still downloading", guessed from the wording of the reader's error, followed by "check that it was recorded in Counter-Strike 1.6", which doesn't fit this case. With the checks it could say plainly which of the three it is.
+  - Best of all with the next item: say what's wrong and play what's there.
+  - Lesson for testing: the test harness waited 4 minutes for this demo and timed out, so it looked slow. It now stops as soon as the page shows a can't-play card and prints its text (2 Oct 2026).
+- **Play cut-off demos up to where they end.** A demo that was cut off (interrupted download, crashed recording) currently can't be opened at all, because the file's index sits at the end. Reading it frame by frame from the start would recover everything up to the cut. Shown to work on the mousesports vs Virus demo (2 Oct 2026): every frame up to 274 bytes before the end reads cleanly, about 150 minutes. Needs a mockup of the load summary line ("This recording was never finished; it plays up to where it stops").
 - **Shaded lighting on player models** so they darken in shadowed areas like in-game.
 - **Team names for demos without "-vs-" in the file name** (found 1 Oct 2026). `2006-07-02_15h00_Team3D_Fnatic-...-de_train.dem` names its teams "fnatic" and "o of 3D": the guess from clan tags picked up part of a name. Worth reading names like `Team3D_Fnatic` from the file name too.
 - **A wall thickness limit per gun** (2 Oct 2026). How thick a wall each gun can shoot through would catch wrong wallbangs on its own, but the numbers need care: the game moves a bullet ahead by its "penetration power" (AWP 45, AK 39, M4 35 units, cut by the material: a quarter on concrete) after each hit, and the thickest wall it gets through also depends on how the engine traces from inside a wall. Not used until that's checked in the code and in the game.
