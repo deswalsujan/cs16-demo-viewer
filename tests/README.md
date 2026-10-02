@@ -88,6 +88,7 @@ Page scripts in `page/`:
 | `summary_and_teams.js` | The load summary's lines (rounds read and counted), team names, the Rounds tab note and faded rows, with Count them switched on and off again (run with `DEMO=fnatic_vs_eg MAP_NEEDED=0`) | 0.14.2 |
 | `aim_shown_at_kills.js` | How far the crosshair is from the victim's head at headshot kills, as Player's eyes draws them | 0.14.3 |
 | `match_summary.js` | Score, live rounds, first live round, starting sides and Players tab names, for comparing versions across all demos (run with `MAP_NEEDED=0`) | 0.14.1 |
+| `join_detail.js`, `join_rounds.js` | A map joined from its parts (set `window.__parts` to parts of the file names, in order, in a script run just before): score, rounds and K-D like `match_detail.js`; and every round with its part, stretch, scoreboard, kills, and whether it counts or why not (run with `MAP_NEEDED=0`) | split maps (wip) |
 
 Stand-alone checks:
 

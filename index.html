@@ -2584,16 +2584,22 @@ function derive() {
   // A stretch can't run past the end of a half when a restart and more play follow. Both Xperia Play FX vs mTw
   // matches played on for 5 (Inferno) and 6 (Nuke) rounds at 15:15 on the same sides, then the admins
   // restarted and played the overtime from its start. Half ends: 15, 30, then every 3 rounds of overtime.
+  // The stretch is cut at the first half end after which the teams stayed on the same sides. A stretch can
+  // cross a half end legitimately when the server swapped sides with no restart, so a half end where the
+  // sides did swap is passed over. (Cutting at the last half end crossed instead went wrong when the two
+  // Xperia parts were joined: part 2's stretch starts at 15 and runs to 35, crossing 30 and 33, so it was
+  // cut at 33 and 3 rounds played on at 15:15 became overtime.)
   {
+    const tSide = (r) => { const t = Math.min(r.start + 5, r.end), s = new Set(); for (const e in D.slots) { const a = D.slots[e]; if (Math.abs(a[idxAt(t) * S + 5]) === 1) s.add(personAt(+e, t)); } return s; };
+    const sameSides = (a, b) => { const x = tSide(a), y = tSide(b); let n = 0; for (const p of x) if (y.has(p)) n++; return n > Math.min(x.size, y.size) / 2; };
     const segs = [...new Set(rounds.filter((r) => r.live).map((r) => r.seg))].sort((a, b) => a - b);
     let total = 0;
     for (let i = 0; i < segs.length; i++) {
       const rs = rounds.filter((r) => r.live && r.seg === segs[i]);
       const end = total + rs.length;
-      let b = null;
-      for (const x of [15, 30]) if (x > total && x <= end) b = x;
-      for (let x = 33; x <= end; x += 3) if (x > total) b = x;
-      if (i < segs.length - 1 && b != null && b < end) { for (const r of rs.slice(b - total)) { r.live = false; r.pastHalf = true; } total = b; }
+      const ends = [15, 30]; for (let x = 33; x < end; x += 3) ends.push(x);
+      const b = i < segs.length - 1 ? ends.find((x) => x > total && x < end && sameSides(rs[x - total - 1], rs[x - total])) : undefined;
+      if (b != null) { for (const r of rs.slice(b - total)) { r.live = false; r.pastHalf = true; } total = b; }
       else total = end;
     }
   }

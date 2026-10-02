@@ -31,16 +31,19 @@ On the branch `wip/split-maps`, not on main or the claude.ai artifact yet. VERSI
 - Players are matched across files by Steam ID (the `*sid` in their player info, now kept on each connection in `src/demo.js`), whatever name they used.
 - `leadingRound`: the round a file starts partway into (kills before its first round marker) is shared by single demos and joined parts.
 - `M.wonAt`: the round where the map was won.
-- Test: `tests/page/join_detail.js` (set `window.__parts` to parts of the file names, in order, in a script run just before it).
+- Test: `tests/page/join_detail.js` (set `window.__parts` to parts of the file names, in order, in a script run just before it). `tests/page/join_rounds.js` lists every round of the joined map with its part, stretch, scoreboard, kills, and whether it counts or why not.
+- The joined count (step 1, done 2 Oct 2026). Cause: the "past the half" rule (0.14.2) cut a stretch at the last half end it crossed. Counted alone, Xperia part 2 only crosses 15. Joined, part 2's stretch starts at round 16 and runs to 35 (both maps played 15:15 and then 5 more rounds on the same sides without a restart), crossing 30 and 33, so it was cut at 33 and 3 of those rounds became overtime. On Nuke that gave mTw an early 19:15 win and dropped the real overtimes. Now a stretch is cut at the first half end after which the teams stayed on the same sides; a half end where the sides swapped is passed over, since some servers swap sides with no restart. Each of the four files counted alone reads exactly as in 0.14.2.
 
-### Numbers so far (all wrong, see "Still to do" 1)
+### Numbers (match Sujan's)
 | Map | Joined | Sujan's confirmed |
 |---|---|---|
-| Xperia Play 2011, FX vs mTw, Inferno (`-1104240025` then `-1104240112`) | mTw 21 : 18 FX, 39 rounds, no winner; NEO 34-29 | NEO 33-28 (second half 16-11) |
-| Xperia Play 2011, FX vs mTw, Nuke (`-1104240212` then `-1104240242`) | mTw 15 : 19 FX, FX win in round 34 (first overtime); NEO 31-19 | NEO 42-25 |
+| Xperia Play 2011, FX vs mTw, Inferno (`-1104240025` then `-1104240112`) | mTw 19 : 17 FX, mTw win in round 36 (second overtime); NEO 33-28 (T 18-13, CT 15-15, OT 2-4; regulation 31-24) | NEO 33-28 (second half 16-11) |
+| Xperia Play 2011, FX vs mTw, Nuke (`-1104240212` then `-1104240242`) | FX 22 : 19 mTw, FX win in round 41 (fourth overtime); NEO 42-25 | NEO 42-25 |
+
+Before the fix: Inferno mTw 21 : 18 FX, 39 rounds, no winner, NEO 34-29; Nuke mTw 15 : 19 FX with FX winning in round 34, NEO 31-19.
 
 ### Still to do before shipping
-1. The joined count. Both maps played on at 15:15 on the same sides (5 rounds on Inferno, 6 on Nuke) before a restart into overtime. Counted file by file those rounds are cut ("past the half", 0.14.2); joined, only 1 (Inferno) and 2 (Nuke) are cut, and the rest become overtime rounds, which on Nuke gives FX an early win and drops the real overtimes. Find why the half-end rule behaves differently on the joined list (the restart marked at each part's start, or the leading round of Inferno part 2, may shift its count), fix, and check that every number in the table above matches Sujan's.
+1. Done (above).
 2. The screens, from the approved mockup: the load summary line on a part opened alone ("This is probably part 2 of a map recorded in two or more files"), the Join card (parts in order with arrows and how the order was found, the checks, the wrong-map card, the wrong-order card), the Rounds tab marker with the part's full file name, the "2 files" chip, Split them, remembered per set of files, and "Join with another demo…".
 3. Correction to the approved mockup (agreed): Inferno part 2 starts partway into the second half's pistol round, so that round's kills are in the file and count. Show "1 round isn't in any file" only when the scoreboard shows a round with no kills in any file; for a part that starts partway into a round, say that.
 4. Single demos must not change: run `tests/page/match_summary.js` on every demo, 0.14.3 against the branch (about 6 minutes).
