@@ -63,6 +63,17 @@ Status values: **regression set** (kept on purpose: K-D and scores Sujan confirm
 
 The Windows copies of the regression set are Sujan's copies from the Mac (2 Oct 2026). The new batch was checked on Windows by listing `cstrike/*.dem` on 2 Oct 2026: all 31 demos in this table are there, none missing and none extra; listed again at the end of the session the same day, still 31. On 3 Oct 2026 the warmup-only Tuscan file was deleted on the Mac (30 demos there, listed); the Windows copy is Sujan's to delete. The new batch rows were read from the demos on the Mac on 2 Oct 2026 (server and admin messages, player names); stages and scores were looked up on 2 Oct 2026 (sources in the rows); no map score was found for Sweden vs Norway or for the ESWC 2010 maps.
 
+### POV demos (recorded by a player)
+
+Sujan's own recordings on 32-player public servers (16 vs 16), added to the Mac on 3 Oct 2026 for the POV trial (IDEAS.md, "POV demos"). Not regression demos: whether they stay depends on that trial. No event: the event column gives the server and date. Recorder names are as the demo shows them.
+
+| Demo file | Event | How we know | On | Status |
+|---|---|---|---|---|
+| `match-1_de_barcelona-Cts_27-03-2025_15.10.23.dem`, `match-1_de_barcelona-Ts_27-03-2025_15.32.54.dem` (Match 1, CT then T) | none: public server, 27 Mar 2025, de_barcelona; recorder "ac shadows optical mouse" | Sujan; file name; demo text | Mac | POV trial, 3 Oct 2026 |
+| `match-2_de_mirage_32[Cts]_27-03-2025_14.47.11.dem`, `match-2_de_mirage_32[Ts]_27-03-2025_14.23.27.dem` (Match 2) | none: public server, 27 Mar 2025, de_mirage_32 (map not in the Mac folder) | Sujan; file name | Mac | POV trial, 3 Oct 2026 |
+| `match-3_css_cache_00-23-35_28-07-2022.dem` (Match 3) | none: public server, 28 Jul 2022, css_cache; recorder "tp optical mouse"; custom weapon skins | Sujan; file name | Mac | POV trial, 3 Oct 2026 |
+| `match-4-[PuB]_M-[de_nuke32]_D-[08_24_2021]_T-[00_44].dem`, `match-5-[PuB]_M-[de_nuke32]_D-[08_25_2021]_T-[22_09].dem` (Match 4 and 5) | none: public server, 24 and 25 Aug 2021, de_nuke32 (map not in the Mac folder) | Sujan; file name | Mac | POV trial, 3 Oct 2026 |
+
 ### Deleted
 
 | Demo file | Event | How we know | Was on | Status |

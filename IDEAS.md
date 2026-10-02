@@ -12,6 +12,13 @@ Everything raised in conversation that isn't finished, in one place. Each item s
 - [x] Health under the names at long range: Sujan chose any distance, scoped or not (2 Oct 2026); built in 0.16.0.
 - [ ] Later (Sujan, 3 Oct 2026), parked: a denser check of the victim's body for "fully hidden" (every 2 units). On the two R9 kills it finds Delpan and f0rest partly visible through the gap. It would change other demos' lists, so each change needs Sujan's eye first.
 
+**POV demos** (3 Oct 2026; findings under "POV demos" below)
+- [x] Sujan decided 3 Oct 2026: a POV demo opens in POV mode by itself, in the same viewer (no separate POV viewer to pick).
+- [x] Sujan decided 3 Oct 2026: test Match 1 (both files, de_barcelona) and Match 3 (css_cache) first, then decide whether POV mode is worth building. Experimental: built on a `wip/pov-mode` branch, removed if it's more trouble than it's worth.
+- [ ] Claude: the headless browser run on Match 1 and Match 3 (what the viewer does with them today).
+- [ ] Sujan: `de_mirage_32.bsp` (Match 2) and `de_nuke32.bsp` (Match 4 and 5) for the Mac's `cstrike_downloads/maps`, if he has them. Without them those demos get no 3D.
+- [ ] Open (Sujan asked 3 Oct 2026): See through walls in POV mode, for checking other players' POVs for wallhacks, and a built-in aimbot catcher.
+
 **Demo search** (built in 0.15.2, 2 Oct 2026)
 - [x] confirmed by Sujan 3 Oct 2026: the search box by eye on your own folder (type "tu", "sk train", then Esc). Built screen next to the mockup: [docs/demo-search-built.png](docs/demo-search-built.png).
 - [x] confirmed by Sujan 3 Oct 2026: 0.15.3 by eye, Zalando Sans across the start screen, a demo, the side panel and the shortcuts list (press ?), and the "Your demos" heading now sitting by the list.
@@ -48,7 +55,7 @@ Everything raised in conversation that isn't finished, in one place. Each item s
   - (dropped, protocol 47) NoA vs Pentagram, Train 2006, newly listed: R18 1:22 MJE AK on kubenB, R21 1:09 neo M4 on zonic. No longer listed, not commented on yet: R12 1:01 Paddy M4 on kubenB. Still listed and not checked: R4 0:40 and R5 1:24 taz AK on zonic, R10 1:03 Paddy M4 on neo, R22 0:55 neo M4 on ave, R24 0:38 zonic AK on LoordB, R28 1:17 MJE AK on LoordB, R28 1:12 neo M4 on MJE.
   - Na`Vi vs FX, Train 2011, no longer listed: R9 1:21 Zeus AK on PASHA.
   - SK vs WinFakt, Mirage 2011, no longer listed: R4 0:37 face M4 on JiGetus, R9 0:50 RobbaN M4 on JiGetus, R19 1:26 i'M(BA-SiC)K FAMAS on Delpan.
-- [ ] **The GP Pub POV demo on your side** (0.13.0): it should open on de_zovine with 27 rounds and the two notes in the load summary. Then watch a minute of it in 3D: it was only checked loading in the test browser, never by eye. The demo was deleted on Windows by Sujan on 2 Oct 2026 and was never on the Mac, so no POV demo is on either machine now: this check needs a new POV demo (Sujan's next chat, from 3 Oct 2026, is about whether POV demos play). No de_zovine overview exists, so the 2D radar shows a plain grid.
+- [ ] **The GP Pub POV demo on your side** (0.13.0, superseded by the POV demos section above, 3 Oct 2026): it should open on de_zovine with 27 rounds and the two notes in the load summary. Then watch a minute of it in 3D: it was only checked loading in the test browser, never by eye. The demo was deleted on Windows by Sujan on 2 Oct 2026 and was never on the Mac, so no POV demo is on either machine now: this check needs a new POV demo (Sujan's next chat, from 3 Oct 2026, is about whether POV demos play). No de_zovine overview exists, so the 2D radar shows a plain grid.
 - [x] **The 0.13.0 side panel by eye**, confirmed by Sujan 3 Oct 2026: Kills and Wallbangs on three lines with the kill feed icons, the clicked kill keeping its bookmark and tint, the lighter tint on the kill playback is passing, Rounds and Players highlights; Clear saved files with a demo open; the summary card's countdown bar moving smoothly. Approved designs: [docs/side-panel-designs.png](docs/side-panel-designs.png).
 - [x] **Reconnect and "Allow on every visit"** (0.12.0): works in a normal window, Sujan, 2 Oct 2026. In an incognito window, with the window kept open (viewer tab closed, reopened in the same window), Reconnect works but Chrome skips the "Allow on every visit" choice. The page asks the same way in both windows, so this is Chrome's doing; Chrome's own write-up of the feature doesn't mention incognito, so not confirmed from a source. Nothing to change. Original check: In a normal (not incognito) Chrome window: open the GitHub Pages link, choose the folder, close every tab of the viewer, open the link again, click Reconnect and choose "Allow on every visit", close the tab again and reopen it. Expected: it goes straight to "Up to date" with no prompt. Not yet done: a reload doesn't show the prompt, because Chrome keeps the access until the last tab of the site closes.
 - [x] **The 0.12.1 folder row on a real folder**, all three checks confirmed by Sujan 2 Oct 2026: choose a wrong folder (for example `sprint-builds-review`), then the `cstrike` folder itself, then the right one; move demos in and out while the page is open (the list should update when you click back into the tab); click Clear saved files twice (should go straight back to "Choose your Half-Life folder").
@@ -121,6 +128,30 @@ Item 1, smoother playback, is done (0.8.0; Smooth aim later removed in 0.10.0). 
 
 - **Crosshair at the moment of a kill** (closed 3 Oct 2026: Sujan compared it in the game's demo player and asked for no change). The viewer shows the shooter's crosshair up to about 1.5 degrees off the victim at some kills (CHANGELOG 0.10.0, "Discussed, not changed"); the same limit sank bullet marks. Expected to look the same in the game's own demo player. Check one of the kills listed there in-game (for example markeloff's AWP kill on PASHA, Dust2 round 10).
 - **How the game's own demo player shows the scope** (closed 3 Oct 2026: Sujan compared it in the game's demo player and asked for no change). Sujan has seen the scope in HLTV demos in-game. The viewer rebuilds it from the zoom click sounds, because no zoom field could be found in the demo (checked on Dust2 and Tuscan). If the game shows the scope for these exact demos, it gets it from somewhere still unread, which would be more reliable than the clicks. Worth checking one AWP kill in-game against the viewer.
+
+## POV demos
+
+*Read from Sujan's seven public-server POV demos on 3 Oct 2026 (`tests/README.md`, "POV demos"), with a probe outside the page.*
+
+What a demo recorded by a player holds, against an HLTV demo:
+- **The recorder's own view, about 100 times a second** (85 to 102 frames a second in these seven): where the camera was and where it pointed, the player's own mouse aim, the recoil kick (punch angle) and the buttons held, fire included. HLTV stores aim about 10 times a second. The viewer skips this block today (the 464 bytes before each frame's messages).
+- **The recorder's own state** (`clientdata`): health, zoom as exact values (90, 40, 10), weapon, speed. HLTV recordings leave it empty; the viewer rebuilds zoom from click sounds.
+- **First-person weapon animations**: 1,188 to 4,781 per demo. HLTV doesn't record them; the viewer rebuilds them from shots.
+- **Voice**: 40 to 54,923 voice packets per demo, 1 to 16 speakers. Announced as `voice_speex`, but the bytes are Steam voice (Steam ID, then 24 kHz, then Opus). Not tried yet.
+- **Other players about 24 times a second** (HLTV about 10), but only those near the recorder or the player he spectated: a median of 3 to 6 of 32 per snapshot, at most 15 to 20.
+- **After death**, the camera follows whoever the recorder spectated (in about 90% of dead frames the camera doesn't point where his own aim does), and the server sent the players near that person.
+
+What the viewer gets wrong today:
+- **The recorder isn't drawn.** He's never in the server's snapshots (his game knows his position from its own frames), so he has no track: no model, no Player's eyes. The biggest gap.
+- The game's scoreboard reads 0:0 on five of the seven (rounds are found from the round timer).
+- Kill feed: the server sends every kill to everyone, so the kill list is complete (192 to 853 kills).
+
+Models: every player in the seven wears a stock player model. Custom files are weapon skins and plugin models (Match 3: about 40, e.g. `models/AKModels/v_cl2ak47.mdl`; Match 4 and 5: `models/backweapons.mdl`). The game refuses a demo when any listed file is missing; the viewer uses what it finds.
+
+Ideas from the discussion (3 Oct 2026, not decided):
+- POV mode: the recorder's own view at full frame rate with his exact recoil, scope and gun animations, the radar with whoever his game saw, the kill list, voice later. HLTV analysis that assumes everyone is seen (wallbang finder for all kills, heatmaps, per-side stats) hidden.
+- A wallbang check for the recorder's own kills only: with aim stored 100 times a second it could be more precise than on HLTV demos.
+- See through walls and an aimbot catcher, for checking a suspect's own POV (Sujan, 3 Oct 2026).
 
 ## Wallbang hits that didn't kill
 
