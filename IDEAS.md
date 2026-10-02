@@ -6,6 +6,9 @@ Parked ideas and features we've discussed but not built yet. Each entry keeps en
 
 Everything raised in conversation that isn't finished, in one place. Each item says who does it. Ideas for new features are further down; this list is for loose ends.
 
+**Demo search** (built in 0.15.2, 2 Oct 2026)
+- [ ] Sujan: the search box by eye on your own folder (type "tu", "sk train", then Esc). Built screen next to the mockup: [docs/demo-search-built.png](docs/demo-search-built.png).
+
 **Broken demos** (raised 2 Oct 2026)
 - [ ] Sujan: decide on "Tell exactly why a demo is broken" and "Play cut-off demos up to where they end" (below); a mockup comes first for the load summary wording.
 

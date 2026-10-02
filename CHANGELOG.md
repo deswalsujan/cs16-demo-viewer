@@ -22,6 +22,22 @@ What changed in the viewer, newest first. The version shows in the viewer's shor
 - When neither the file name nor a shared clan tag names a team, the header says "Team 1" and "Team 2" (iFNG FX vs fnatic, `auto_ifng-...`). Click the name in the header to type it in; it's remembered for that demo. Left as it is for now (Sujan, 2 Oct 2026; parked in IDEAS.md).
 - A smoke cloud is drawn as one light green ball for as long as the smoke puffs (about 21 seconds, less when the round restarts). The game's own puffs drift and thin out unevenly, which the viewer doesn't copy.
 
+## 0.15.2 (2026-10-02)
+
+A search box for the demo list on the start screen, asked for by Sujan once the folder held 31 demos.
+
+### Added
+- **Search your demos.** Once the Half-Life folder is chosen, a search box sits between "Open a demo" and the list. Typing narrows the list to the demos whose file names contain every word typed, in any order and any case: "tu" finds the Tuscan demos, "sk train" finds SK vs Na`Vi, Train (DreamHack Winter 2011), "eswc2010 tuscan" the five ESWC 2010 Tuscan files. The matched letters are lit in the names, and the line above the list says how many are shown ("1 of 31"). Esc or the Clear button empties the box. With no match the list says so, naming the words.
+- The box is a darker field with a sand outline and a search icon, and the list has its own "Your demos" heading, so the box doesn't read as one more demo row (Sujan's feedback on the first mockup). Approved mockup: [docs/demo-search-mock.png](docs/demo-search-mock.png); built: [docs/demo-search-built.png](docs/demo-search-built.png).
+
+### How it was tested
+- New `tests/demo_search_check.py`, on Sujan's 31 Windows demos: no box before a folder is chosen; the full list and count once it is; for "tu", "TU", "sk train", "eswc2010 tuscan" and "dhwinter", exactly the demos whose names hold every word, the right "N of 31", and every word lit in every row; the no-match line; Esc clears without opening the shortcuts list; Clear; a filtered row opens its demo. All passed.
+- `folder_row_test.py` (20 of 20), `start_screen_check.py` and `prefs_check.py` pass.
+
+### Discussed, not changed
+- It searches file names only. A demo whose name doesn't say the teams or map (`auto_ifng-...`, say) is found by scrolling, as before (Sujan: fine).
+- Also matching the map read from each demo's header, so "train" would find a Train demo with no map in its name, was offered and not taken: plain search was chosen.
+
 ## 0.15.1 (2026-10-02)
 
 Round counting, from the accuracy check on a fresh batch of demos (IDEAS.md). The 15 new demos were compared with real results from HLTV.org; two overtime matches were counted wrong.

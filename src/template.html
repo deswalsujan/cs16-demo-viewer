@@ -317,6 +317,20 @@ kbd { font-family: var(--f-mono); font-size: 11px; background: var(--panel-2); b
 .hlst.bad { color: var(--t); } .hlst.bad::before { background: var(--t); }
 @media (max-width: 520px) { .step { grid-template-columns: 28px minmax(0,1fr); } .step > .btn, .step > .hlbtns { grid-column: 2; justify-content: flex-start; } }
 .demos { display: grid; gap: 6px; max-height: 220px; overflow-y: auto; }
+/* search over the demo list (approved design: docs/demo-search-mock-2.png): an inset field, a "Your demos" heading
+   with the count, and the typed letters highlighted in each name */
+.dfind { display: grid; gap: 10px; }
+.dsearch { display: flex; align-items: center; gap: 10px; background: var(--radar); border: 1px solid color-mix(in srgb, var(--sand) 45%, var(--line)); border-radius: 6px; padding: 0 8px 0 12px; height: 42px; box-shadow: inset 0 1px 3px rgba(0,0,0,.5); cursor: text; }
+.dsearch:focus-within { border-color: var(--sand); box-shadow: inset 0 1px 3px rgba(0,0,0,.5), 0 0 0 2px color-mix(in srgb, var(--sand) 25%, transparent); }
+.dsearch svg { width: 16px; height: 16px; fill: none; stroke: var(--sand); stroke-width: 1.8; flex-shrink: 0; }
+.dsearch input { flex: 1; min-width: 0; background: none; border: 0; outline: 0; font-family: var(--f-body); font-size: 14px; color: var(--fg); }
+.dsearch input::placeholder { color: var(--faint); }
+.dsearch .x { background: var(--panel-2); border: 1px solid var(--line); border-radius: 4px; color: var(--muted); font-size: 12px; padding: 3px 8px; }
+.dsearch .x:hover { color: var(--fg); border-color: var(--faint); }
+.dhead { display: flex; justify-content: space-between; font-size: 11px; text-transform: uppercase; letter-spacing: .08em; color: var(--muted); padding: 0 2px; }
+.dhead b { color: var(--sand); font-weight: 600; }
+.demos mark { background: none; color: var(--sand); font-weight: 600; }
+.demos-none { color: var(--muted); font-size: 12px; font-family: var(--f-mono); padding: 8px 2px; }
 .demos button { text-align: left; background: var(--panel); border: 1px solid var(--line); border-radius: 4px; padding: 8px 10px; font-family: var(--f-mono); font-size: 12px; display: flex; justify-content: space-between; gap: 10px; }
 .demos button:hover { border-color: var(--sand); }
 .demos button span { color: var(--muted); flex-shrink: 0; }
@@ -505,6 +519,10 @@ body:has(.app.theatre) { overflow: hidden; }
             <div class="tx"><b>Open a demo</b><small>A .dem file, recorded by HLTV or by a player. Pick one below or open a file from anywhere. Also plays pre-2008 (protocol 47) demos the Steam game won't open.</small></div>
             <button class="btn" id="btnDemo" type="button" disabled title="Choose your Half-Life folder first">Open .dem</button>
           </div>
+        </div>
+        <div class="dfind" id="demoFind" hidden>
+          <label class="dsearch"><svg viewBox="0 0 16 16" aria-hidden="true"><circle cx="7" cy="7" r="4.5"/><path d="M10.5 10.5L14 14"/></svg><input id="demoQ" type="text" placeholder="Search your demos: tuscan, sk, dhwinter…" spellcheck="false" autocomplete="off" aria-label="Search your demos by file name"><button class="x" id="demoQx" type="button" title="Clear (Esc)" hidden>Clear</button></label>
+          <div class="dhead"><span>Your demos</span><span id="demoN"></span></div>
         </div>
         <div class="demos" id="demoList"></div>
         <div class="drophint">Or drop a .dem file, or an overview .bmp and .txt pair, anywhere on this page</div>
@@ -719,17 +737,39 @@ async function loadKillIcons() {
 // the kill feed icon for a weapon, or '' when the player's files don't have it
 const kicon = (w, cls = '') => (KICONS[w] ? `<span class="kico ki-${w}${cls ? ' ' + cls : ''}" aria-hidden="true"></span>` : '');
 
+// The demo list, narrowed by the search box: a demo stays when its file name contains every word typed
+// (upper or lower case), and the typed letters are highlighted. Only the file name is searched, so a demo
+// whose name doesn't say the map or the teams can only be found by scrolling.
 function renderDemoList() {
   const el = $('demoList');
   el.innerHTML = '';
+  const words = $('demoQ').value.toLowerCase().split(/\s+/).filter(Boolean);
+  const mark = (name) => {
+    const low = name.toLowerCase(), hit = new Array(name.length).fill(false);
+    for (const w of words) for (let i = low.indexOf(w); i >= 0; i = low.indexOf(w, i + 1)) for (let k = i; k < i + w.length; k++) hit[k] = true;
+    let h = '', on = false;
+    for (let i = 0; i < name.length; i++) { if (hit[i] !== on) { h += hit[i] ? '<mark>' : '</mark>'; on = hit[i]; } h += esc(name[i]); }
+    return h + (on ? '</mark>' : '');
+  };
+  let shown = 0;
   for (const f of files.demos) {
+    const low = f.name.toLowerCase();
+    if (!words.every((w) => low.includes(w))) continue;
+    shown++;
     const b = document.createElement('button');
     b.type = 'button';
-    b.innerHTML = `<em>${esc(f.name)}</em><span>${(f.size / 1048576).toFixed(0)} MB</span>`;
+    b.innerHTML = `<em>${words.length ? mark(f.name) : esc(f.name)}</em><span>${(f.size / 1048576).toFixed(0)} MB</span>`;
     b.onclick = () => loadDemoFile(f);
     el.appendChild(b);
   }
+  if (words.length && !shown) el.innerHTML = `<div class="demos-none">No demo names contain ${esc(words.map((w) => '"' + w + '"').join(' and '))}.</div>`;
+  $('demoFind').hidden = !files.demos.length;
+  $('demoN').innerHTML = words.length ? `<b>${shown}</b> of ${files.demos.length}` : String(files.demos.length);
+  $('demoQx').hidden = !words.length;
 }
+$('demoQ').oninput = () => { renderDemoList(); $('demoList').scrollTop = 0; };
+$('demoQ').onkeydown = (e) => { if (e.key === 'Escape' && $('demoQ').value) { e.preventDefault(); e.stopPropagation(); $('demoQ').value = ''; renderDemoList(); } };
+$('demoQx').onclick = () => { $('demoQ').value = ''; renderDemoList(); $('demoQ').focus(); };
 // Coming back to the page (for example after deleting demos in Finder or Explorer): check the listed
 // demos are still there, and take the ones that aren't off the list with a note, instead of failing later.
 async function checkDemoList() {
