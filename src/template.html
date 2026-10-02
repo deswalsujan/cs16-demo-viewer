@@ -1,7 +1,7 @@
 <title>CS 1.6 Demo Viewer</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Chakra+Petch:wght@500;700&family=IBM+Plex+Mono:wght@400;500&family=IBM+Plex+Sans:wght@400;500;600&display=swap">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500&family=Zalando+Sans:wght@400;500;600;700&display=swap">
 <style>
 /* Layout: one-screen observer desk. Radar fills the left, match log on the right, transport bar along the bottom. */
 :root {
@@ -20,8 +20,8 @@
   --kill: #ff9a3c;
   --radar: #0b0e10;
   --good: #8fc97a;
-  --f-display: "Chakra Petch", "Arial Narrow", system-ui, sans-serif;
-  --f-body: "IBM Plex Sans", system-ui, -apple-system, "Segoe UI", sans-serif;
+  --f-display: "Zalando Sans", system-ui, -apple-system, "Segoe UI", sans-serif;
+  --f-body: "Zalando Sans", system-ui, -apple-system, "Segoe UI", sans-serif;
   --f-mono: "IBM Plex Mono", ui-monospace, "SF Mono", Menlo, Consolas, monospace;
 }
 [hidden] { display: none !important; }
@@ -319,7 +319,8 @@ kbd { font-family: var(--f-mono); font-size: 11px; background: var(--panel-2); b
 .demos { display: grid; gap: 6px; max-height: 220px; overflow-y: auto; }
 /* search over the demo list (approved design: docs/demo-search-mock-2.png): an inset field, a "Your demos" heading
    with the count, and the typed letters highlighted in each name */
-.dfind { display: grid; gap: 10px; }
+.dfind { display: grid; gap: 24px; }
+.dfind:not([hidden]) + .demos { margin-top: -10px; }
 .dsearch { display: flex; align-items: center; gap: 10px; background: var(--radar); border: 1px solid color-mix(in srgb, var(--sand) 45%, var(--line)); border-radius: 6px; padding: 0 8px 0 12px; height: 42px; box-shadow: inset 0 1px 3px rgba(0,0,0,.5); cursor: text; }
 .dsearch:focus-within { border-color: var(--sand); box-shadow: inset 0 1px 3px rgba(0,0,0,.5), 0 0 0 2px color-mix(in srgb, var(--sand) 25%, transparent); }
 .dsearch svg { width: 16px; height: 16px; fill: none; stroke: var(--sand); stroke-width: 1.8; flex-shrink: 0; }

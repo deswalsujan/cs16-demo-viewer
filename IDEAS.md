@@ -8,6 +8,7 @@ Everything raised in conversation that isn't finished, in one place. Each item s
 
 **Demo search** (built in 0.15.2, 2 Oct 2026)
 - [ ] Sujan: the search box by eye on your own folder (type "tu", "sk train", then Esc). Built screen next to the mockup: [docs/demo-search-built.png](docs/demo-search-built.png).
+- [ ] Sujan: 0.15.3 by eye, Zalando Sans across the start screen, a demo, the side panel and the shortcuts list (press ?), and the "Your demos" heading now sitting by the list.
 
 **Broken demos** (raised 2 Oct 2026)
 - [ ] Sujan: decide on "Tell exactly why a demo is broken" and "Play cut-off demos up to where they end" (below); a mockup comes first for the load summary wording.

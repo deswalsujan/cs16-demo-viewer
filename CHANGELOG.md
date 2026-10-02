@@ -22,6 +22,22 @@ What changed in the viewer, newest first. The version shows in the viewer's shor
 - When neither the file name nor a shared clan tag names a team, the header says "Team 1" and "Team 2" (iFNG FX vs fnatic, `auto_ifng-...`). Click the name in the header to type it in; it's remembered for that demo. Left as it is for now (Sujan, 2 Oct 2026; parked in IDEAS.md).
 - A smoke cloud is drawn as one light green ball for as long as the smoke puffs (about 21 seconds, less when the round restarts). The game's own puffs drift and thin out unevenly, which the viewer doesn't copy.
 
+## 0.15.3 (2026-10-02)
+
+The viewer's font, and spacing on the demo search.
+
+### Changed
+- **Zalando Sans** for headings and text (Sujan, 2 Oct 2026). It replaces Chakra Petch (the start screen title, team names, score, card titles) and IBM Plex Sans (everything else). IBM Plex Mono stays for file names, timers, numbers and stats tables, where letters of equal width keep columns lined up. Served from Google Fonts like the fonts before it; the page now asks for two font families instead of three. Built screens: [start](docs/zalando-sans-start.png), [a demo open](docs/zalando-sans-demo.png).
+- The "Your demos" heading and the count beside it now sit close to the list, with more room above them, so they read as the list's heading rather than part of the search box.
+
+### How it was tested
+- Screenshots in the headless browser with the real font files (from Fontsource on npm, since the test machine can't reach Google): the start screen with a search, a demo open in 2D, and the Tab scoreboard. Nothing cut off or overlapping.
+- `demo_search_check.py`, `folder_row_test.py` (20 of 20), `start_screen_check.py` and `prefs_check.py` pass.
+
+### Discussed, not changed
+- Hosting the font files with the viewer instead of loading them from Google, as sujandeswal.com does since 29 Sept 2026. Left for the move to sujandeswal.com: the claude.ai copy is one file and can only load fonts from Google, and on GitHub Pages the gain is small. It stays in IDEAS.md under privacy hardening.
+- Zalando Sans for the mono text too: offered, not taken.
+
 ## 0.15.2 (2026-10-02)
 
 A search box for the demo list on the start screen, asked for by Sujan once the folder held 31 demos.
