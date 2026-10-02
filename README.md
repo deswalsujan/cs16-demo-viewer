@@ -15,7 +15,7 @@ This is an unofficial fan project. It is not affiliated with or endorsed by Valv
 1. Open the viewer at **https://deswalsujan.github.io/cs16-demo-viewer/** in Chrome or Edge. It always has the latest version, so there's nothing to download.
 2. Click **Choose folder** and pick your `Half-Life` folder (the one that contains `cstrike` and `valve`). Chrome asks whether to let the page view the folder; the files stay on your computer.
    On your next visit (after closing the tab) Chrome asks once more. Choose **Allow on every visit**, and from then on the folder opens by itself (Chrome and Edge 122 or later). This also works with a downloaded copy of `index.html` opened from your disk.
-3. Pick a demo from the list, or open any `.dem` file.
+3. Pick a demo from the list (type in the search box above it to narrow it down, for example "sk train"), or open any `.dem` file.
 4. Press `?` for keyboard shortcuts.
 
 Three ways to watch: **Normal** shows everything. **Theatre** (`T`) fills the browser window with the view and hides the viewer's own controls until you move the mouse to the top, right or bottom edge. **Full screen** (`F`) is Theatre mode with the browser's tabs and address bar gone too.
@@ -48,6 +48,7 @@ Custom maps work too, as long as the map's `.bsp` (and its `.wad` files if it us
 - Demos recorded by a player (POV) too, with limits: a player's game only receives the players near them, so others drop in and out of view
 - A map recorded in two or more demo files counted as one map: the viewer spots the other part in your folder (same map, same players), puts the parts in order and joins them, with one score, one round list and player stats over all of it. Split them undoes it
 - Old demos too. CS 1.6 recorded demos as protocol 47 until the update of 23 October 2008 ([announced](https://www.hltv.org/news/1779/cs-16-update-coming-soon) and [released](https://www.hltv.org/news/1787/cs-16-update-live) on HLTV.org). The Steam version only plays protocol 48, so it refuses those older demos unless they're converted. The viewer plays both as they are
+- Search your demos: type part of a file name ("tu", "sk train", "dhwinter") and the list keeps only the demos whose names contain every word
 - Remembers your Half-Life folder between visits (Chrome and Edge) and tells you when demos, maps, models or sounds in it change
 - Breakable vents and windows disappear in 3D when they are shot out, and doors open and close as they did in the match (the wallbang finder uses where each door really was)
 
@@ -63,7 +64,7 @@ src/audio.js        Sound: .wav decoding, positional playback, radio lines
 src/template.html   The page: layout, styles, 2D radar, timeline, panels
 build.py            Combines everything into one self-contained page
 CHANGELOG.md        What changed, newest first
-docs/               Design images: scope styles, the approved side panel designs (0.13.0), Count them and split maps
+docs/               Design images: scope styles, the approved side panel designs (0.13.0), Count them, split maps, demo search, the Zalando Sans screens
 tests/              Test and measurement scripts: browser checks, Theatre mode checks, demo data probes (see tests/README.md)
 IDEAS.md            Parked ideas and open decisions, with the discussion behind them
 CLAUDE.md           How Claude sessions work on this repo: workflow, checking facts, where the test files are
@@ -87,5 +88,6 @@ python3 build.py
 ## Credits
 
 - Demo message layouts were adapted from [hlviewer.js](https://github.com/skyrim/hlviewer.js) by Stefan Stojković (MIT license).
+- Fonts: [Zalando Sans](https://fonts.google.com/specimen/Zalando+Sans) and [IBM Plex Mono](https://fonts.google.com/specimen/IBM+Plex+Mono) (SIL Open Font License), loaded from Google Fonts.
 - 3D rendering uses [three.js](https://threejs.org/) r128 (MIT license), loaded from cdnjs.
 - Counter-Strike and Half-Life are trademarks of Valve. This project is unofficial and not affiliated with Valve.

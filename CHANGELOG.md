@@ -20,6 +20,7 @@ What changed in the viewer, newest first. The version shows in the viewer's shor
 - A round played between two recordings counts in the score from the game's scoreboard, but its kills are in no file, so player stats leave it out.
 - Whether rounds after 16 count can't be read from the demo, so the match stops at 16 unless Count them is switched on for that demo.
 - When neither the file name nor a shared clan tag names a team, the header says "Team 1" and "Team 2" (iFNG FX vs fnatic, `auto_ifng-...`). Click the name in the header to type it in; it's remembered for that demo. Left as it is for now (Sujan, 2 Oct 2026; parked in IDEAS.md).
+- The demo search looks at file names only. A demo whose name doesn't say the teams or map (`auto_ifng-...`) is found by scrolling.
 - A smoke cloud is drawn as one light green ball for as long as the smoke puffs (about 21 seconds, less when the round restarts). The game's own puffs drift and thin out unevenly, which the viewer doesn't copy.
 
 ## 0.15.3 (2026-10-02)
