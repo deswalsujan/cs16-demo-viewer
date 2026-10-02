@@ -10,7 +10,7 @@ Everything raised in conversation that isn't finished, in one place. Each item s
 - [x] Sujan, confirmed 2 Oct 2026: the five kills 0.15.5 no longer lists as wallbangs really aren't wallbangs: Sweden vs Norway, Dust2, ASUS ENC 2010 (`53.52.1646548-1005272144-de_dust2.dem`): R9 1:40, R9 1:34, R30 1:41; SK vs Na`Vi, Train, DreamHack Winter 2011 (`sk-vs-navi-dhwinter2011-1111261019-de_train.dem`): R46 C4 0:01 markeloff AWP on RobbaN, R47 1:37 Delpan AWP on edzie.
 - [x] Sujan, confirmed 2 Oct 2026: NoA vs Pentagram, Train 2006, R22 0:55 (neo on ave): the kill feed now appears as ave falls. Guarded by a test since 0.16.0 (`tests/late_kill_timing_check.py`).
 - [x] Health under the names at long range: Sujan chose any distance, scoped or not (2 Oct 2026); built in 0.16.0.
-- [ ] Parked: a denser check of the victim's body for "fully hidden" (every 2 units). On the two R9 kills it finds Delpan and f0rest partly visible through the gap. It would change other demos' lists, so each change needs Sujan's eye first.
+- [ ] Later (Sujan, 3 Oct 2026), parked: a denser check of the victim's body for "fully hidden" (every 2 units). On the two R9 kills it finds Delpan and f0rest partly visible through the gap. It would change other demos' lists, so each change needs Sujan's eye first.
 
 **Demo search** (built in 0.15.2, 2 Oct 2026)
 - [x] confirmed by Sujan 3 Oct 2026: the search box by eye on your own folder (type "tu", "sk train", then Esc). Built screen next to the mockup: [docs/demo-search-built.png](docs/demo-search-built.png).
@@ -19,7 +19,7 @@ Everything raised in conversation that isn't finished, in one place. Each item s
 **Broken demos** (raised 2 Oct 2026)
 - [x] Sujan: decided 2 Oct 2026, build both "Tell exactly why a demo is broken" and "Play cut-off demos up to where they end" (below).
 - [x] Claude: built in 0.16.0 (3 Oct 2026), no mockup. Tested on copies of Na`Vi vs FX, Dust2, SEC 2011 final, damaged by hand (CHANGELOG 0.16.0).
-- [ ] Sujan, when a broken demo turns up: open it and check the load summary's line and how far it plays. No real one is in the folders now; the line for mousesports vs Virus (ESWC 2011) would be "This recording was never finished".
+- [ ] Later (Sujan, 3 Oct 2026; he'll say when he has one): when a broken demo turns up, open it and check the load summary's line and how far it plays. No real one is in the folders now; the line for mousesports vs Virus (ESWC 2011) would be "This recording was never finished".
 
 **How accurate is the viewer, on a fresh batch of demos** (done 2 Oct 2026 on Windows; fixes in 0.15.1)
 - [x] Sujan: 15 new demos are on the Mac and Windows (2 Oct 2026; Windows checked by listing the folder: all 31 demos in the table, none missing or extra), listed with their events in `tests/README.md` ("new batch").
@@ -37,8 +37,8 @@ Everything raised in conversation that isn't finished, in one place. Each item s
 - [x] confirmed by Sujan 3 Oct 2026: the Count them note, faded rows and "Demo read: 30 rounds, 27 counted" on the fnatic vs EG demo, by eye (0.14.2).
 
 **0.16.0 by eye** (3 Oct 2026)
-- [ ] Sujan: in 3D, with nobody picked (just after opening a demo), aim the free camera at a player and press Player's eyes, Behind player or V: it should follow that player.
-- [ ] Sujan: the "HP · weapon" line under far names, through an AWP scope and from a free camera across the map. Checked in the test browser only.
+- [x] confirmed by Sujan 3 Oct 2026: in 3D, with nobody picked (just after opening a demo), aim the free camera at a player and press Player's eyes, Behind player or V: it should follow that player.
+- [x] confirmed by Sujan 3 Oct 2026: the "HP · weapon" line under far names shows whether the AWP is scoped in or not.
 - [ ] Sujan: delete `mtw-vs-navi-eswc2010semi-real-1007031520-de_tuscan.dem` (mTw vs Na`Vi, Tuscan, ESWC 2010 semi-final, warmup only) from the Windows `cstrike` folder too. Deleted on the Mac 3 Oct 2026.
 - [x] Deleted by Sujan, 3 Oct 2026: the `_claude_transfer` folder Claude left in `~/Downloads/Half-Life` on 3 Oct 2026 (a 227 MB copy of the game files, made to test on the Mac's files; the session can't delete files there). Nothing reads it.
 
@@ -49,7 +49,7 @@ Everything raised in conversation that isn't finished, in one place. Each item s
   - Na`Vi vs FX, Train 2011, no longer listed: R9 1:21 Zeus AK on PASHA.
   - SK vs WinFakt, Mirage 2011, no longer listed: R4 0:37 face M4 on JiGetus, R9 0:50 RobbaN M4 on JiGetus, R19 1:26 i'M(BA-SiC)K FAMAS on Delpan.
 - [ ] **The GP Pub POV demo on your side** (0.13.0): it should open on de_zovine with 27 rounds and the two notes in the load summary. Then watch a minute of it in 3D: it was only checked loading in the test browser, never by eye. On the Mac, copy `cstrike/GP-[PuB]_M-[de_zovine]_D-[10_01_2026]_T-[19_08].dem` and `cstrike_downloads/maps/de_zovine.bsp` over from Windows first (the Mac's Half-Life copy predates them). No de_zovine overview exists, so the 2D radar shows a plain grid.
-- [ ] **The 0.13.0 side panel by eye** (Sujan asked what this means, 3 Oct 2026; explained in chat, still to check): Kills and Wallbangs on three lines with the kill feed icons, the clicked kill keeping its bookmark and tint, the lighter tint on the kill playback is passing, Rounds and Players highlights; Clear saved files with a demo open; the summary card's countdown bar moving smoothly. Approved designs: [docs/side-panel-designs.png](docs/side-panel-designs.png).
+- [x] **The 0.13.0 side panel by eye**, confirmed by Sujan 3 Oct 2026: Kills and Wallbangs on three lines with the kill feed icons, the clicked kill keeping its bookmark and tint, the lighter tint on the kill playback is passing, Rounds and Players highlights; Clear saved files with a demo open; the summary card's countdown bar moving smoothly. Approved designs: [docs/side-panel-designs.png](docs/side-panel-designs.png).
 - [x] **Reconnect and "Allow on every visit"** (0.12.0): works in a normal window, Sujan, 2 Oct 2026. In an incognito window, with the window kept open (viewer tab closed, reopened in the same window), Reconnect works but Chrome skips the "Allow on every visit" choice. The page asks the same way in both windows, so this is Chrome's doing; Chrome's own write-up of the feature doesn't mention incognito, so not confirmed from a source. Nothing to change. Original check: In a normal (not incognito) Chrome window: open the GitHub Pages link, choose the folder, close every tab of the viewer, open the link again, click Reconnect and choose "Allow on every visit", close the tab again and reopen it. Expected: it goes straight to "Up to date" with no prompt. Not yet done: a reload doesn't show the prompt, because Chrome keeps the access until the last tab of the site closes.
 - [x] **The 0.12.1 folder row on a real folder**, all three checks confirmed by Sujan 2 Oct 2026: choose a wrong folder (for example `sprint-builds-review`), then the `cstrike` folder itself, then the right one; move demos in and out while the page is open (the list should update when you click back into the tab); click Clear saved files twice (should go straight back to "Choose your Half-Life folder").
 - [x] **Reset view (0.12.2)**, confirmed by Sujan 2 Oct 2026 from Player's eyes in 3D: should go back to the starting overview.
@@ -61,7 +61,7 @@ Everything raised in conversation that isn't finished, in one place. Each item s
 - [x] The 102 MB mousesports vs Virus Inferno demo (event not known): broken, confirmed by Sujan (2 Oct 2026; he knew, and had meant to delete it). See "Tell exactly why a demo is broken" below.
 - [x] Breakables on Nuke and Inferno (vents) and Tuscan (logs) disappear in 3D when shot out: confirmed by Sujan, 2 Oct 2026.
 - [ ] The 145 MB Moscow 5 vs Na`Vi Mirage demo, ESWC 2011 (memory and load time on a laptop). Deleted 2 Oct 2026; needs a big demo again.
-- [ ] Re-check WinFakt vs Check-Six Mirage (16-6): that demo isn't in the Mac's folder. Na`Vi vs FX Dust2 now reads the official 16-11 and M5 vs Na`Vi Mirage 16-9 (0.14.2).
+- [x] confirmed by Sujan 3 Oct 2026: WinFakt vs Check-Six Mirage (16-6): that demo isn't in the Mac's folder. Na`Vi vs FX Dust2 now reads the official 16-11 and M5 vs Na`Vi Mirage 16-9 (0.14.2).
 
 **Small decisions not yet taken**
 - [x] Free camera to Player's eyes or Behind player with nobody picked follows the living player nearest the middle of the view (decided by Sujan 2 Oct 2026): built in 0.16.0.
