@@ -90,6 +90,10 @@ Page scripts in `page/`:
 | `match_summary.js` | Score, live rounds, first live round, starting sides and Players tab names, for comparing versions across all demos (run with `MAP_NEEDED=0`) | 0.14.1 |
 | `join_detail.js`, `join_rounds.js` | A map joined from its parts (set `window.__parts` to parts of the file names, in order, in a script run just before): score, rounds and K-D like `match_detail.js`; and every round with its part, stretch, scoreboard, kills, and whether it counts or why not (run with `MAP_NEEDED=0`) | split maps (wip) |
 | `placeholder_names.js` | Two players who used the same placeholder name in the warmup stay two people: gives two live players the warmup name "Player" and recounts (run with `DEMO=1110091449 MAP_NEEDED=0`, Na`Vi vs FX, Train, SEC 2011 final, whose Steam IDs are all "0") | split maps (wip) |
+| `split_summary.js`, `split_card_open.js`, `split_card_swap.js`, `split_card_fix.js`, `split_join_go.js`, `split_wrong_map.js`, in that order | The split map screens on a part opened alone (`DEMO=1104240112` for Inferno part 2): the summary line, the Join card, a wrong order and the suggested one, joining, adding another map. Add `shot` for screenshots | split maps (wip) |
+| `split_remember.js` | After `split_join_go.js`: opening a part opens the joined map, Split them opens the part playing alone and forgets the set | split maps (wip) |
+| `split_missing.js`, then `split_missing_go.js` | A round in no file, made by removing Inferno part 2's kills before its first marker: the card's check, then the joined Rounds tab and score (`DEMO=1104240025`) | split maps (wip) |
+| `summary_text.js` | The load summary's text, built afresh (for checking its lines across all demos) | split maps (wip) |
 
 Stand-alone checks:
 

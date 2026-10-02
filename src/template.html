@@ -196,6 +196,34 @@ kbd { font-family: var(--f-mono); font-size: 11px; background: var(--panel-2); b
 .note16 { display: flex; gap: 10px; align-items: center; padding: 10px 14px; border-bottom: 1px solid var(--line); background: color-mix(in srgb, var(--sand) 8%, var(--panel)); font-size: 12px; line-height: 1.45; }
 .note16 span { flex: 1; }
 .btn.sm { padding: 3px 8px; font-size: 12px; flex: none; }
+/* a map joined from several files (docs/split-map-mock.png) */
+.chip { font-family: var(--f-mono); font-weight: 400; font-size: 12px; color: var(--sand); background: none; border: 1px solid color-mix(in srgb, var(--sand) 55%, transparent); border-radius: 4px; padding: 1px 7px; white-space: nowrap; cursor: pointer; }
+.chip:hover { border-color: var(--sand); }
+.nw { white-space: nowrap; }
+.partmark { padding: 9px 14px; border-bottom: 1px solid var(--line); background: color-mix(in srgb, var(--sand) 7%, var(--panel-2)); font-family: var(--f-mono); font-size: 12px; color: var(--sand); line-height: 1.5; overflow-wrap: normal; }
+.partmark small { display: block; font-family: var(--f-body); color: var(--muted); }
+.row.gap { background: repeating-linear-gradient(135deg, transparent 0 7px, color-mix(in srgb, var(--fg) 5%, transparent) 7px 9px); cursor: default; }
+.joinrow { display: flex; gap: 8px; align-items: center; justify-content: flex-end; padding: 10px 14px; border-bottom: 1px solid var(--line); font-size: 12px; color: var(--muted); }
+.joinrow span { flex: 1; }
+.sum.join { width: min(640px, 100%); max-height: calc(100% - 8px); overflow: auto; }
+.jparts { list-style: none; margin: 0; padding: 10px 16px; border-bottom: 1px solid var(--line); display: grid; gap: 12px; }
+.jparts li { display: grid; grid-template-columns: 52px minmax(0, 1fr) auto; gap: 10px; align-items: start; }
+.jn { font-family: var(--f-mono); font-size: 12px; color: var(--sand); padding-top: 2px; }
+.jname { font-family: var(--f-mono); font-size: 13px; overflow-wrap: normal; }
+.jf small { display: block; color: var(--muted); font-size: 12px; margin-top: 2px; }
+.ja { display: flex; gap: 6px; }
+.btn.sq { width: 30px; height: 30px; padding: 0; display: grid; place-items: center; font-size: 14px; }
+.jbar { display: inline-block; width: 120px; height: 3px; background: var(--panel-2); vertical-align: middle; margin-left: 6px; }
+.jbar i { display: block; height: 100%; width: 0; background: var(--sand); }
+.jorder { padding: 10px 16px; border-bottom: 1px solid var(--line); font-size: 13px; line-height: 1.5; color: var(--muted); }
+.jorder b { color: var(--good); font-weight: 500; }
+.jwrong { margin: 0; padding: 12px 16px; border-top: 1px solid var(--line); border-left: 4px solid var(--kill); }
+.jwrong h3 { margin: 0 0 4px; font-family: var(--f-display); font-size: 16px; color: var(--kill); }
+.jwrong p { margin: 0; font-size: 13px; line-height: 1.5; }
+.jbtns { display: flex; gap: 8px; justify-content: flex-end; margin-top: 10px; }
+.jpick { display: flex; flex-wrap: wrap; gap: 8px; align-items: center; padding: 10px 16px; border-top: 1px solid var(--line); font-size: 12px; color: var(--muted); }
+.sum.join .sum-foot .btn, .sum.join .jbtns .btn { font-family: var(--f-body); }
+.jpick select { flex: 1 1 260px; min-width: 0; background: var(--panel-2); color: var(--fg); border: 1px solid var(--line); border-radius: 4px; padding: 5px 6px; font-size: 12px; }
 .li-btn { margin-top: 6px; }
 .pill { display: inline-block; font-size: 11px; font-weight: 600; padding: 1px 6px; border-radius: 3px; margin-right: 6px; letter-spacing: .04em; }
 .pill.t { background: color-mix(in srgb, var(--t) 22%, transparent); color: var(--t); }
@@ -357,6 +385,7 @@ body:has(.app.theatre) { overflow: hidden; }
       <span class="num" id="scA">0</span><span class="sep">:</span><span class="num" id="scB">0</span>
       <span class="tn" id="tnB" title="Click to rename"></span>
       <span class="viewers" id="viewers" title="People watching the HLTV broadcast at this moment"></span>
+      <button class="chip" type="button" id="partsChip" hidden></button>
     </div>
     <div class="seg" id="viewSeg" role="group" aria-label="View"><button type="button" data-v="2d" class="on">2D</button><button type="button" data-v="3d">3D</button><button type="button" data-v="split">3D + radar</button></div>
     <div class="hbtns"><button class="btn" id="bTheatre" type="button" title="Theatre mode: the view fills the window, controls appear at the edges (T)">Theatre</button><button class="btn" id="bFull" type="button" title="Full screen, in Theatre mode (F)">Full screen</button><button class="btn" id="btnOpen" type="button">Open another demo</button></div>
@@ -943,7 +972,14 @@ self.onmessage = (e) => {
   return new Worker(URL.createObjectURL(new Blob([code], { type: 'text/javascript' })));
 }
 
-async function loadDemoFile(f) {
+async function loadDemoFile(f, opts = {}) {
+  // a part of a map joined before: open the joined map, when every part is still in the folder
+  const js = !opts.alone && joinedSetOf(f.name);
+  if (js) {
+    const list = js.set.map((n) => n === f.name ? f : (files && files.demos || []).find((x) => x.name === n));
+    if (list.every(Boolean)) { CUR_FILE = f; return openJoinedUI(list); }
+  }
+  CUR_FILE = f;
   setMsg(`Reading ${f.name}…`);
   $('prog').hidden = false; $('progBar').style.width = '2%';
   let buf;
@@ -1015,7 +1051,16 @@ function joinDemos(parts) {
     const lead = leadingRound(P.kills.filter((k) => k.round === 0), P.rounds[0], P.start, 0);
     const prs = lead ? [lead, ...P.rounds] : P.rounds;
     const firstRound = nRound + 1;
-    for (const r of prs) { roundMap[r.n] = ++nRound; out.rounds.push(Object.assign({}, r, { n: nRound, start: sh(r.start), end: r.end != null ? sh(r.end) : null, endT: r.endT != null ? sh(r.endT) : null, part: pi })); }
+    // Rounds played between two recordings, in neither file: a later part whose scoreboard already shows more
+    // rounds at its first marker than the round it starts partway into. They count in the score (the side
+    // that won each comes from the scoreboard), not in player stats, and sit just after the part's restart.
+    // (counted from the part's own live rounds by openJoined, see liveStart)
+    const missT = pi && P.joinMiss ? P.joinMiss.T : 0, missCT = pi && P.joinMiss ? P.joinMiss.CT : 0;
+    for (let i = 0; i < missT + missCT; i++) {
+      const t = sh(P.start) - 0.4 + i * 0.02;
+      out.rounds.push({ n: ++nRound, start: t, end: t + 0.01, endT: null, winner: i < missT ? 'T' : 'CT', reason: 'not in any file', scoreT: null, scoreCT: null, missing: true, part: pi });
+    }
+    for (const r of prs) { roundMap[r.n] = ++nRound; out.rounds.push(Object.assign({}, r, { n: nRound, start: sh(r.start), end: r.end != null ? sh(r.end) : null, endT: r.endT != null ? sh(r.endT) : null, part: pi, partFirst: pi > 0 && r === prs[0] })); }
     if (!lead) roundMap[0] = 0;
     for (const k of P.kills) out.kills.push(Object.assign({}, k, { t: sh(k.t), round: roundMap[k.round] != null ? roundMap[k.round] : 0, kocc: k.kocc >= 0 ? k.kocc + nOcc : -1, vocc: k.vocc >= 0 ? k.vocc + nOcc : -1, tMsg: undefined }));
     for (const o of P.occupants) out.occupants.push(Object.assign({}, o, { id: o.id + nOcc, from: sh(o.from), to: sh(o.to != null ? o.to : P.end), nameT: (o.nameT || []).map(([t, nm]) => [sh(t), nm]) }));
@@ -1052,7 +1097,7 @@ function joinDemos(parts) {
     nSamples += n;
     Object.assign(out.players, P.players);
     out.errors += P.errors || 0; out.errSamples.push(...(P.errSamples || []));
-    out.parts.push({ fileName: P.fileName, start: sh(P.start), end: sh(P.end), firstRound, startsLate: !!lead || (P.rounds[0] && (P.rounds[0].scoreT || 0) + (P.rounds[0].scoreCT || 0) > 0), scoreAtStart: P.rounds[0] ? [P.rounds[0].scoreT || 0, P.rounds[0].scoreCT || 0] : [0, 0] });
+    out.parts.push({ fileName: P.fileName, start: sh(P.start), end: sh(P.end), firstRound, missing: missT + missCT, partway: !!lead, startsLate: !!lead || (P.rounds[0] && (P.rounds[0].scoreT || 0) + (P.rounds[0].scoreCT || 0) > 0), scoreAtStart: P.rounds[0] ? [P.rounds[0].scoreT || 0, P.rounds[0].scoreCT || 0] : [0, 0] });
     out.end = sh(P.end);
   });
   const cat = (L) => { let len = 0; for (const a of L) len += a.length; const r = new Float32Array(len); let o = 0; for (const a of L) { r.set(a, o); o += a.length; } return r; };
@@ -1084,19 +1129,366 @@ function parseInWorker(f, onProgress) {
     w.postMessage(buf, [buf]);
   });
 }
-// Open the parts of a map as one demo, in the order given (a list of files from the folder).
-async function openJoined(list, onProgress) {
+// Open the parts of a map as one demo, in the order given (a list of files from the folder). parsed: the parts
+// already read (the Join card reads them to check them), in the same order, so they aren't read twice.
+async function openJoined(list, onProgress, parsed) {
   const parts = [];
   for (let i = 0; i < list.length; i++) {
     const f = list[i];
     // read afresh even if it's the demo already open: opening a demo adjusts its kills in place
-    parts.push(await parseInWorker(f, (p) => onProgress && onProgress((i + p) / list.length)));
+    parts.push(parsed && parsed[i] ? parsed[i] : await parseInWorker(f, (p) => onProgress && onProgress((i + p) / list.length)));
   }
+  // each part counted on its own first, for the rounds played between two recordings (see liveStart)
+  for (const P of parts) { const f = partFacts(P); P.joinMiss = { T: f.missT, CT: f.missCT }; }
   const J = joinDemos(parts);
+  J.partFiles = list.slice();
   resetForNewDemo();
   D = J;
   if (MAP && MAP.name !== (D.mapName || '').toLowerCase()) { MAP = null; clear3d(); }
   await onDemo();
+}
+
+// ---------------- finding the parts of a map, and the Join card ----------------
+// Approved design: docs/split-map-mock.png. Background and decisions: IDEAS.md, "Join a map split over several
+// demo files". Words: "map", never "match" (a match is often several maps, each its own demo or demos).
+const MON = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
+// The recording time in a file name, when it has one: "1104240025" is 24 Apr 2011 at 00:25 (yymmddhhmm),
+// "1110231216--auto_..." the same form, "2006-07-02_15h00_..." another. Names like FX-vs-sk-iem5-inf.dem have none.
+function fileTime(name) {
+  let m = /(\d{4})-(\d\d)-(\d\d)_(\d\d)h(\d\d)/.exec(name);
+  if (m) return Date.UTC(+m[1], +m[2] - 1, +m[3], +m[4], +m[5]);
+  m = /(?:^|\D)(\d\d)(\d\d)(\d\d)(\d\d)(\d\d)(?=\D|$)/.exec(name);
+  if (m && +m[2] >= 1 && +m[2] <= 12 && +m[3] >= 1 && +m[3] <= 31 && +m[4] < 24 && +m[5] < 60) return Date.UTC(2000 + +m[1], +m[2] - 1, +m[3], +m[4], +m[5]);
+  return null;
+}
+const hhmm = (d) => String(d.getUTCHours()).padStart(2, '0') + ':' + String(d.getUTCMinutes()).padStart(2, '0');
+const dayOf = (d) => `${d.getUTCDate()} ${MON[d.getUTCMonth()]} ${d.getUTCFullYear()}`;
+// "24 Apr 2011 at 00:25 and at 01:12"
+function fileTimesText(ts) {
+  const ds = ts.map((t) => new Date(t));
+  const bits = ds.map((d, i) => (i && dayOf(d) === dayOf(ds[i - 1]) ? '' : dayOf(d) + ' ') + 'at ' + hhmm(d));
+  return bits.length < 3 ? bits.join(' and ') : bits.slice(0, -1).join(', ') + ' and ' + bits[bits.length - 1];
+}
+// A file name shown in full, with .dem. It may wrap only after a - _ or . and never inside its last piece
+// ("de_inferno.dem"), since the part that tells two parts apart is often in the middle.
+function fileNameHtml(n) {
+  const m = /(?:[a-z0-9]+_)?[a-z0-9]+\.dem$/i.exec(n);
+  const tail = m ? m[0] : '', head = n.slice(0, n.length - tail.length);
+  return esc(head).replace(/([-_.])/g, '$1<wbr>') + `<span class="nw">${esc(tail)}</span>`;
+}
+// per-demo settings (team names, Count them) are kept per file, or per set of files for a joined map
+const demoKey = () => D.joinKey || D.fileName;
+// How the live rounds of a demo begin: partway into a round (kills before the first round marker, and that
+// round counts), and with how many rounds already on the game's scoreboard by side, played before the
+// recording started. Read at the first live round, never at the file's first marker, which is usually in
+// the warmup and carries the warmup's score.
+function liveStart(M) {
+  const f = M.liveR[0];
+  if (!f) return { partway: false, sbT: 0, sbCT: 0 };
+  if (f.partial) {
+    const nx = M.rounds[M.rounds.indexOf(f) + 1];
+    return { partway: true, sbT: Math.max(0, (nx ? nx.scoreT || 0 : 0) - (f.winner === 'T' ? 1 : 0)), sbCT: Math.max(0, (nx ? nx.scoreCT || 0 : 0) - (f.winner === 'CT' ? 1 : 0)) };
+  }
+  return { partway: false, sbT: f.scoreT || 0, sbCT: f.scoreCT || 0 };
+}
+const realSid = (s) => !!s && /^\d+$/.test(s) && !/^0+$/.test(s);
+const plural = (n, one, many) => `${n} ${n === 1 ? one : (many || one + 's')}`;
+// The map name and the real Steam IDs in the first 4 MB of a demo, without reading all of it. The players'
+// info comes early: all 12 to 13 Steam IDs of the Xperia Play 2011 FX vs mTw files are in the first 256 KB.
+const QUICK = new Map();
+async function quickInfo(f) {
+  const key = f.name + '|' + f.size + '|' + f.lastModified;
+  if (QUICK.has(key)) return QUICK.get(key);
+  let out = null;
+  try {
+    const txt = new TextDecoder('latin1').decode(new Uint8Array(await f.slice(0, 4 << 20).arrayBuffer()));
+    if (txt.startsWith('HLDEMO')) {
+      const sids = new Set();
+      for (const m of txt.matchAll(/\\\*sid\\(\d+)/g)) if (realSid(m[1])) sids.add(m[1]);
+      out = { map: txt.slice(16, 276).split('\0')[0].toLowerCase(), sids };
+    }
+  } catch (e) { out = null; }
+  QUICK.set(key, out);
+  return out;
+}
+// The real Steam IDs of the people who played the open demo's live rounds
+function liveSids() {
+  const s = new Set();
+  for (const g of M.teams) for (const pid of g) for (const o of (M.pl[pid] && M.pl[pid].occs) || []) if (realSid(o.sid)) s.add(o.sid);
+  return s;
+}
+// Other parts of the open demo's map in the folder: another demo on the same map with at least 8 of the same
+// Steam IDs. When both file names carry a recording time, only files recorded within 6 hours of this one.
+async function findOtherParts() {
+  const mine = liveSids();
+  if (mine.size < 8 || !files || !files.demos) return [];
+  const map = (D.mapName || '').toLowerCase(), t0 = fileTime(D.fileName), out = [];
+  for (const f of files.demos) {
+    if (f.name === D.fileName) continue;
+    const t = fileTime(f.name);
+    if (t0 != null && t != null && Math.abs(t - t0) > 6 * 3600e3) continue;
+    const q = await quickInfo(f);
+    if (!q || q.map !== map) continue;
+    let n = 0; for (const s of q.sids) if (mine.has(s)) n++;
+    if (n >= 8) out.push(f);
+  }
+  return out;
+}
+// What one part says on its own: counted by itself (a copy, so the part stays as read for joining), then the
+// facts the Join card needs.
+function partFacts(P) {
+  const keep = [D, M];
+  D = Object.assign({}, P, { kills: P.kills.map((k) => Object.assign({}, k)), _even: null });
+  try {
+    derive();
+    const live = M.liveR, first = live[0], last = live[live.length - 1];
+    const idOf = (pid) => { const o = ((M.pl[pid] && M.pl[pid].occs) || []).find((x) => realSid(x.sid)); return o ? o.sid : 'name:' + (M.pl[pid] ? M.pl[pid].name : pid); };
+    const players = new Set(); for (const g of M.teams) for (const pid of g) players.add(idOf(pid));
+    const onT = (r) => { const s = new Set(); if (r) for (const pid in r.sides) if (r.sides[pid] === 1) s.add(idOf(pid)); return s; };
+    const ls0 = liveStart(M), sb = [ls0.sbT, ls0.sbCT];
+    const lead = ls0.partway ? first : null;
+    const teamOnT = first ? M.tnames[first.tTeam] : null, teamOnCT = first ? M.tnames[1 - first.tTeam] : null;
+    const missT = sb[0], missCT = sb[1];
+    return {
+      fileName: P.fileName, map: (P.mapName || '').toLowerCase(), host: (P.serverInfo && P.serverInfo.hostName) || '', time: fileTime(P.fileName),
+      live: live.length, score: last ? last.scoreAfter.slice() : [0, 0], tnames: M.tnames.slice(),
+      won: !!M.wonAt, wonBy: M.wonAt && M.wonAt.winTeam != null ? M.tnames[M.wonAt.winTeam] : null,
+      sb, partway: !!lead, leadWinner: lead && lead.winner ? (lead.winner === 'T' ? teamOnT : teamOnCT) : null,
+      missT, missCT, teamOnT, teamOnCT, startsLate: missT + missCT > 0 || !!lead,
+      players, byName: [...players].every((p) => p.startsWith('name:')), firstT: onT(first), lastT: onT(last),
+    };
+  } finally { D = keep[0]; M = keep[1]; }
+}
+// Why the rounds don't allow this order (null when they do): the first part must start from 0:0, and only the
+// last part can have a winner.
+function orderProblem(F) {
+  const head = (f) => f.partway ? 'starts partway into a round' : `starts with ${plural(f.sb[0] + f.sb[1], 'round')} already on the scoreboard`;
+  if (F[0].startsLate) {
+    const fresh = F.findIndex((f, i) => i && !f.startsLate);
+    return `Part 1 ${head(F[0])}${fresh > 0 ? `, and part ${fresh + 1} starts from 0:0 with the first half` : ''}.`;
+  }
+  for (let i = 0; i < F.length - 1; i++) if (F[i].won) return `Part ${i + 1} ends with ${F[i].wonBy} winning the map, so no part can come after it.`;
+  return null;
+}
+const perms = (a) => a.length <= 1 ? [a] : a.flatMap((x, i) => perms([...a.slice(0, i), ...a.slice(i + 1)]).map((p) => [x, ...p]));
+// The order to suggest, in this order of trust: the recording times in the file names when every part has
+// one, then the rounds when exactly one order makes a map, else none.
+function suggestOrder(F) {
+  const idx = F.map((f, i) => i);
+  const valid = perms(idx).filter((p) => !orderProblem(p.map((i) => F[i])));
+  if (F.every((f) => f.time != null)) {
+    const o = idx.slice().sort((a, b) => F[a].time - F[b].time);
+    return { order: o, by: 'times', agree: !orderProblem(o.map((i) => F[i])), roundsOrder: valid.length === 1 ? valid[0] : null };
+  }
+  return valid.length === 1 ? { order: valid[0], by: 'rounds', agree: true, roundsOrder: valid[0] } : null;
+}
+
+// Joined sets are remembered per file, so opening any part opens the joined map; Split them forgets it.
+const joinedSetOf = (name) => { const v = ls.get('join:' + name); return v && Array.isArray(v.set) && v.set.length > 1 ? v : null; };
+function rememberJoin(names, keep, why) { for (const n of names) ls.set('join:' + n, { set: names, keep: !!keep, why: why || null }); }
+function forgetJoin(names) { for (const n of names) ls.set('join:' + n, null); }
+let CUR_FILE = null; // the file the open demo came from (one opened from elsewhere isn't in the folder list)
+const fileByName = (n) => (CUR_FILE && CUR_FILE.name === n ? CUR_FILE : null) || (files && files.demos || []).find((f) => f.name === n) || ((D && D.partFiles) || []).find((f) => f.name === n) || null;
+
+// Read the parts with the progress bar, then open them joined
+async function openJoinedUI(list, parsed) {
+  setMsg(`Reading ${list.length} files…`);
+  $('prog').hidden = false; $('progBar').style.width = '2%';
+  try { await openJoined(list, (p) => { $('progBar').style.width = (p * 100).toFixed(0) + '%'; }, parsed); }
+  catch (e) { $('prog').hidden = true; setMsg(`Could not join the parts: ${e.message || e}`, true); }
+}
+function splitJoined() {
+  if (!D || !D.parts) return;
+  const names = D.parts.map((p) => p.fileName);
+  const at = D.parts.slice().reverse().find((p) => p.start <= T) || D.parts[0];
+  forgetJoin(names);
+  const f = fileByName(at.fileName);
+  if (f) loadDemoFile(f, { alone: true });
+}
+
+// ---- the Join card ----
+const JOIN = { list: [], P: new Map(), F: new Map(), keep: false, moved: false, sugg: null, err: null, picking: false, reading: null };
+function joinEl() {
+  let el = $('joinCard');
+  if (!el) { el = document.createElement('div'); el.className = 'overlay sumwrap'; el.id = 'joinCard'; el.hidden = true; $('sumCard').after(el); }
+  return el;
+}
+function closeJoinCard() { joinEl().hidden = true; JOIN.picking = false; JOIN.err = null; }
+async function openJoinCard(list) {
+  closeSummary();
+  Object.assign(JOIN, { list: list.slice(), keep: false, moved: false, sugg: null, err: null, picking: false });
+  await readJoinParts();
+}
+// Add a demo to the parts: refused when it's another map or has different players
+async function addJoinPart(f) {
+  JOIN.picking = false;
+  if (JOIN.list.some((x) => x.name === f.name)) { renderJoinCard(); return; }
+  JOIN.list.push(f);
+  await readJoinParts(f);
+}
+async function readJoinParts(added) {
+  for (const f of JOIN.list) {
+    if (JOIN.F.has(f.name)) continue;
+    JOIN.reading = f.name; renderJoinCard();
+    try {
+      const P = await parseInWorker(f, (p) => { const b = $('jProg'); if (b) b.style.width = (p * 100).toFixed(0) + '%'; });
+      JOIN.P.set(f.name, P); JOIN.F.set(f.name, partFacts(P));
+    } catch (e) {
+      JOIN.list = JOIN.list.filter((x) => x !== f);
+      JOIN.err = { kind: 'read', name: f.name, why: e.message || String(e) };
+    }
+  }
+  JOIN.reading = null;
+  // checks that refuse a part outright: another map, or fewer than 8 of the same players
+  const F = JOIN.list.map((f) => JOIN.F.get(f.name));
+  const bad = (f) => {
+    const base = F[0];
+    if (f.map !== base.map) return { kind: 'map', name: f.fileName, map: f.map, base: base.map };
+    let n = 0; for (const p of f.players) if (base.players.has(p)) n++;
+    const of = Math.max(base.players.size, f.players.size);
+    if (n < 8) return { kind: 'players', name: f.fileName, n, of, byName: base.byName || f.byName };
+    return null;
+  };
+  for (let i = 1; i < F.length; i++) {
+    const e = bad(F[i]);
+    if (e) { JOIN.err = e; JOIN.list.splice(i, 1); F.splice(i, 1); i--; }
+  }
+  if (!JOIN.moved) {
+    JOIN.sugg = suggestOrder(F);
+    if (JOIN.sugg) JOIN.list = JOIN.sugg.order.map((i) => JOIN.list[i]);
+  }
+  renderJoinCard();
+}
+function joinMove(i, d) {
+  const j = i + d; if (j < 0 || j >= JOIN.list.length) return;
+  [JOIN.list[i], JOIN.list[j]] = [JOIN.list[j], JOIN.list[i]];
+  JOIN.moved = true; JOIN.keep = false; renderJoinCard();
+}
+function useSuggested() {
+  const F = JOIN.list.map((f) => JOIN.F.get(f.name));
+  const s = suggestOrder(F);
+  const o = s && (s.agree ? s.order : s.roundsOrder);
+  if (o) JOIN.list = o.map((i) => JOIN.list[i]);
+  JOIN.keep = false; JOIN.moved = false; renderJoinCard();
+}
+// one part's line under its file name
+function partLine(f, i) {
+  if (!f.live) return 'no rounds in it';
+  const [a, b] = f.score, [tA, tB] = f.tnames;
+  if (i === 0 && !f.startsLate) return `${plural(f.live, 'round')}, ends at ${tA} ${a} : ${b} ${tB}, ${f.won ? `${f.wonBy} won the map` : 'no winner'}`;
+  const how = f.partway ? `Starts partway into a round, then ${plural(f.live - 1, 'more round')}` : f.startsLate ? `Starts with ${plural(f.sb[0] + f.sb[1], 'round')} already played, then ${plural(f.live, 'round')}` : `Starts from 0:0, ${plural(f.live, 'round')}`;
+  return how + (f.won ? `, ${f.wonBy} won the map` : ', no winner');
+}
+function renderJoinCard() {
+  const el = joinEl();
+  const F = JOIN.list.map((f) => JOIN.F.get(f.name)).filter(Boolean);
+  const ic = { ok: '✓', warn: '!', info: 'i', fail: '✕' };
+  const x = '<button class="sum-x" type="button" id="jX" title="Close (Esc)" aria-label="Close">×</button>';
+  // a part that was refused: its own card first
+  if (JOIN.err) {
+    const e = JOIN.err;
+    const txt = e.kind === 'map' ? `${esc(e.name)} is on ${esc(e.map)}. The parts so far are on ${esc(e.base)}. Only the parts of one map can be joined; each map of a match stays its own demo.`
+      : e.kind === 'players' ? `${esc(e.name)} has only ${e.n} of the same ${e.of} players${e.byName ? ' (matched by name; these demos have no Steam IDs)' : ''}. It's probably another match on the same map, which stays its own demo.`
+      : `${esc(e.name)} couldn't be read: ${esc(e.why)}`;
+    const title = e.kind === 'map' ? 'This demo is from another map' : e.kind === 'players' ? 'These demos have different players' : "This demo can't be read";
+    el.innerHTML = `<div class="sum" role="dialog" aria-labelledby="jTitle"><div class="sum-top fail"><div class="ti"><h2 id="jTitle">${title}</h2><p>${txt}</p></div>${x}</div>
+      <div class="sum-foot"><span class="sp"></span><button class="btn" type="button" id="jPick">Pick another demo…</button><button class="btn" type="button" id="jOk">OK</button></div></div>`;
+    el.hidden = false;
+    $('jX').onclick = closeJoinCard;
+    $('jOk').onclick = () => { JOIN.err = null; if (JOIN.list.length > 1) renderJoinCard(); else closeJoinCard(); };
+    $('jPick').onclick = () => { JOIN.err = null; JOIN.picking = true; renderJoinCard(); };
+    return;
+  }
+  const problem = F.length === JOIN.list.length && F.length > 1 ? orderProblem(F) : null;
+  const rows = JOIN.list.map((f, i) => {
+    const fa = JOIN.F.get(f.name);
+    const meta = fa ? esc(partLine(fa, i)) : JOIN.reading === f.name ? `Reading… <span class="jbar"><i id="jProg"></i></span>` : 'Waiting to be read';
+    return `<li><span class="jn">Part ${i + 1}</span><span class="jf"><span class="jname">${fileNameHtml(f.name)}</span><small>${meta}</small></span>
+      <span class="ja"><button class="btn sq" type="button" data-mv="${i},-1" ${i ? '' : 'disabled'} title="Move up" aria-label="Move part ${i + 1} up">↑</button><button class="btn sq" type="button" data-mv="${i},1" ${i < JOIN.list.length - 1 ? '' : 'disabled'} title="Move down" aria-label="Move part ${i + 1} down">↓</button></span></li>`;
+  }).join('');
+  // how the order was found
+  let order = '';
+  if (F.length === JOIN.list.length && F.length > 1) {
+    const s = JOIN.sugg;
+    if (JOIN.moved) order = problem ? 'Your order.' : 'Your order. The rounds agree.';
+    else if (s && s.by === 'times') order = `from the recording times in the file names, ${fileTimesText(F.map((f) => f.time))}.${s.agree ? ' The rounds agree.' : ''}`;
+    else if (s) order = 'from the rounds: the first part starts from 0:0 and only the last one has a winner, and no other order does that.';
+    else order = "the files don't say. Put the parts in order with the arrows.";
+  }
+  // the checks
+  const checks = [];
+  if (F.length === JOIN.list.length && F.length > 1) {
+    const sameHost = F.every((f) => f.host && f.host === F[0].host);
+    checks.push({ s: 'ok', t: `Same map: ${F[0].map}${sameHost ? ', same server' : ''}` });
+    let common = [...F[0].players].filter((p) => F.every((f) => f.players.has(p))).length;
+    const of = Math.max(...F.map((f) => f.players.size));
+    const by = F.some((f) => f.byName) ? 'by name' : 'by Steam ID';
+    checks.push({ s: 'ok', t: common === of ? `Same ${of} players, ${by}` : `${common} of the same ${of} players, ${by}` });
+    for (let i = 0; i < F.length - 1; i++) {
+      const a = F[i], b = F[i + 1];
+      if (!a.live || !b.live) continue;
+      let same = 0; for (const p of a.lastT) if (b.firstT.has(p)) same++;
+      const between = F.length > 2 ? ` between parts ${i + 1} and ${i + 2}` : ' between the parts';
+      if (same <= Math.min(a.lastT.size, b.firstT.size) / 2) checks.push({ s: 'ok', t: `Teams swapped sides${between}` });
+      else checks.push({ s: 'info', t: `Teams on the same sides${between}`, n: `Part ${i + 2} probably picks up partway through a half.` });
+    }
+    F.forEach((f, i) => {
+      if (!i) return;
+      const miss = f.missT + f.missCT;
+      if (miss) {
+        const who = f.missT && f.missCT ? `${f.teamOnT} won ${f.missT} and ${f.teamOnCT} ${f.missCT}` : `${f.missT ? f.teamOnT : f.teamOnCT} won ${miss === 1 ? 'it' : 'them'}`;
+        checks.push({ s: 'warn', t: `${miss === 1 ? '1 round isn\'t' : miss + " rounds aren't"} in any file`, n: `${miss === 1 ? 'It was' : 'They were'} played between ${F.length > 2 ? `parts ${i} and ${i + 1}` : 'the two recordings'}. The scoreboard says ${who}, so ${miss === 1 ? 'it counts' : 'they count'} in the score; ${miss === 1 ? 'its' : 'their'} kills can't count in the stats.` });
+      }
+      if (f.partway) checks.push({ s: 'info', t: `Part ${i + 1} starts partway into a round`, n: `Its kills from where the recording starts are in the file and count.${f.leadWinner ? ` The scoreboard says ${f.leadWinner} won it.` : ''}` });
+    });
+    F.forEach((f, i) => { if (!f.live) checks.push({ s: 'info', t: `Part ${i + 1} has no rounds in it`, n: 'It adds nothing to the map.' }); });
+  }
+  // the wrong order: explained, with the order the files support one click away
+  let wrong = '';
+  if (problem && !JOIN.keep) {
+    const s = suggestOrder(F);
+    const better = s && (s.agree ? s.order : s.roundsOrder);
+    const timesNote = s && s.by === 'times' && JOIN.moved && s.agree && s.order.some((v, k) => v !== k) ? ` The file names' recording times put them ${F.length === 2 ? 'the other way round' : 'in another order'}.` : '';
+    wrong = `<div class="jwrong"><h3>This order doesn't add up</h3><p>${esc(problem)}${timesNote}</p>
+      <div class="jbtns"><button class="btn" type="button" id="jKeep">Keep my order</button>${better && better.some((v, k) => v !== k) ? '<button class="btn primary" type="button" id="jSugg">Use the suggested order</button>' : ''}</div></div>`;
+  }
+  // picking another part: the folder's demos, the same map first, or a file from elsewhere
+  let picker = '';
+  if (JOIN.picking) {
+    const map = F[0] ? F[0].map : '';
+    // the folder's demos, those with the map in their name first (the map in the file itself is checked once picked)
+    const opts = (files && files.demos || []).filter((f) => !JOIN.list.some((x) => x.name === f.name));
+    const onMap = (f) => !!map && f.name.toLowerCase().includes(map);
+    const grp = (label, L) => L.length ? `<optgroup label="${esc(label)}">${L.map((f) => `<option value="${esc(f.name)}">${esc(f.name)}</option>`).join('')}</optgroup>` : '';
+    picker = `<div class="jpick"><label for="jSel">Add a part from your folder</label><select id="jSel"><option value="">Pick a demo…</option>${grp(map ? `${map} in the name` : 'Demos', opts.filter(onMap))}${grp('Other demos', opts.filter((f) => !onMap(f)))}</select>
+      <button class="btn sm" type="button" id="jFile">A file from elsewhere…</button><input type="file" id="jFileIn" accept=".dem" hidden></div>`;
+  }
+  const busy = !!JOIN.reading || F.length < JOIN.list.length;
+  el.innerHTML = `<div class="sum join" role="dialog" aria-labelledby="jTitle">
+    <div class="sum-top"><div class="ti"><h2 id="jTitle">Count these demos as one map?</h2><p>Score, rounds and player stats will cover all parts. Playback runs straight on from one part to the next.</p></div>${x}</div>
+    <ol class="jparts">${rows}</ol>
+    ${order ? `<div class="jorder"><b>Order:</b> ${esc(order)}</div>` : ''}
+    ${checks.length ? `<ul class="sum-list">${checks.map((c) => `<li><span class="sum-ic ${c.s}" aria-hidden="true">${ic[c.s]}</span><span>${esc(c.t)}${c.n ? `<small>${esc(c.n)}</small>` : ''}</span></li>`).join('')}</ul>` : ''}
+    ${wrong}${picker}
+    <div class="sum-foot"><span class="sp"></span><button class="btn" type="button" id="jAdd" ${busy ? 'disabled' : ''}>Add another part…</button><button class="btn" type="button" id="jCancel">Cancel</button><button class="btn primary" type="button" id="jGo" ${busy || JOIN.list.length < 2 || (problem && !JOIN.keep) ? 'disabled' : ''}>Join them</button></div>
+  </div>`;
+  el.hidden = false;
+  $('jX').onclick = closeJoinCard; $('jCancel').onclick = closeJoinCard;
+  el.onclick = (e) => { if (e.target === el) closeJoinCard(); };
+  el.querySelectorAll('[data-mv]').forEach((b) => b.onclick = () => { const [i, d] = b.dataset.mv.split(',').map(Number); joinMove(i, d); });
+  $('jAdd').onclick = () => { JOIN.picking = !JOIN.picking; renderJoinCard(); };
+  if ($('jKeep')) $('jKeep').onclick = () => { JOIN.keep = true; renderJoinCard(); };
+  if ($('jSugg')) $('jSugg').onclick = useSuggested;
+  if ($('jSel')) $('jSel').onchange = (e) => { const f = (files.demos || []).find((x) => x.name === e.target.value); if (f) addJoinPart(f); };
+  if ($('jFile')) { $('jFile').onclick = () => $('jFileIn').click(); $('jFileIn').onchange = (e) => { const f = e.target.files[0]; if (f) addJoinPart(f); }; }
+  $('jGo').onclick = () => {
+    const names = JOIN.list.map((f) => f.name);
+    rememberJoin(names, JOIN.keep && !!problem, problem);
+    const parsed = JOIN.list.map((f) => JOIN.P.get(f.name));
+    closeJoinCard();
+    JOIN.P.clear(); JOIN.F.clear(); // the read parts go to the joined map; nothing else keeps them
+    openJoinedUI(JOIN.list.slice(), parsed);
+  };
 }
 
 // ---------------- overview ----------------
@@ -1442,8 +1834,11 @@ function derive() {
   // scoreboard (a proper "live on 3") and has at least 4 real rounds. Warmups, knife rounds and
   // scrapped attempts that carry on an old score are left out.
   const segInfo = {};
+  // In a joined map the stretch where a later part starts carries on the map, whatever its scoreboard shows
+  // (rounds played before that recording started); a round in neither file says nothing about it.
   for (const r of rounds) {
-    const g = segInfo[r.seg] || (segInfo[r.seg] = { fresh: r.scoreT === 0 && r.scoreCT === 0, real: 0 });
+    if (r.missing) continue;
+    const g = segInfo[r.seg] || (segInfo[r.seg] = { fresh: (r.scoreT === 0 && r.scoreCT === 0) || !!r.partFirst, real: 0 });
     if (r.kills.length >= 3 && r.winner) g.real++;
   }
   let liveSegs = Object.keys(segInfo).filter((k) => segInfo[k].fresh && segInfo[k].real >= 4);
@@ -1544,6 +1939,9 @@ function derive() {
     if (a.seg !== b.seg || a.kills.length || b.kills.length || !a.winner || !b.winner) continue;
     for (const x of rounds) if (x.seg === b.seg && x.start > b.start) x.live = false;
   }
+  // A round played between two recordings of a joined map (in neither file) counts when its part has live
+  // rounds. It's in the stretch of the part's start, often not the one the part's live rounds are in.
+  for (const r of rounds) if (r.missing) r.live = rounds.some((x) => x.part === r.part && x.live && !x.missing);
   // A stretch can't run past the end of a half when a restart and more play follow. Both Xperia Play FX vs mTw
   // matches played on for 5 (Inferno) and 6 (Nuke) rounds at 15:15 on the same sides, then the admins
   // restarted and played the overtime from its start. Half ends: 15, 30, then every 3 rounds of overtime.
@@ -1596,6 +1994,7 @@ function derive() {
   const slotsAll = Object.keys(D.slots).map(Number);
   const together = {};
   for (const r of liveR) {
+    if (r.missing) continue; // nobody to sample: takes the sides of the next round, below
     const t = Math.min(r.start + 5, r.end);
     r.sides = {};
     for (const e of slotsAll) { const sd = sideAt(e, t); if (sd) r.sides[personAt(e, t)] = sd; }
@@ -1606,6 +2005,7 @@ function derive() {
       v[r.sides[ids[i]] === r.sides[ids[j]] ? 0 : 1]++;
     }
   }
+  for (const r of liveR) if (r.missing) { const nx = liveR.find((x) => x.start > r.start && !x.missing); r.sides = nx ? Object.assign({}, nx.sides) : {}; }
   // teammates: people who were on the same side more often than not
   const par = {}; const find = (x) => par[x] === x ? x : (par[x] = find(par[x]));
   const players = Object.keys(pl).filter((pid) => liveR.some((r) => r.sides[pid]));
@@ -1640,13 +2040,13 @@ function derive() {
     const a = tryAffix(true) || tryAffix(false);
     return a && a.length >= 2 ? knownTeam(a) || a : 'Team ' + (i + 1);
   };
-  const saved = ls.get('names:' + D.fileName) || [];
+  const saved = ls.get('names:' + demoKey()) || [];
   const fromFile = teamsFromFileName(D.fileName, teams.map((g) => g.map((pid) => pl[pid].name)));
   const tnames = [saved[0] || fromFile[0] || autoName(teams[0], 0), saved[1] || fromFile[1] || autoName(teams[1], 1)];
 
   // per round: which team was T; winner team; running score
   let sc = [0, 0], played = 0, after16 = null, wonAt = null;
-  const count30 = ls.get('count30:' + D.fileName) === true;
+  const count30 = ls.get('count30:' + demoKey()) === true;
   for (const r of rounds) {
     r.scoreBefore = sc.slice();
     if (!r.live) {
@@ -1983,6 +2383,7 @@ function statsFor(bucket, uptoT) {
   const st = {};
   const get = (e) => st[e] || (st[e] = { k: 0, d: 0, hs: 0, tk: 0, rounds: 0 });
   for (const r of M.liveR) {
+    if (r.missing) continue; // a round in neither file: counts in the score, not in player stats
     if (bucket === 'ot' && !r.ot) continue;
     if (uptoT != null && r.start > uptoT) break;
     for (const e in r.sides) {
@@ -2059,7 +2460,7 @@ function roundAt(t) {
   for (const r of M.rounds) { if (r.start <= t + 0.001) cur = r; else break; }
   return cur;
 }
-function visibleRounds() { return showAll ? M.rounds.filter((r) => r.dur > 0.5) : M.liveR; }
+function visibleRounds() { return showAll ? M.rounds.filter((r) => r.dur > 0.5 || r.missing) : M.liveR; }
 let showAll = false;
 
 // ---------------- after load ----------------
@@ -2072,7 +2473,10 @@ async function onDemo() {
   const first = M.liveR[0];
   T = first ? first.start : D.start;
   playing = false; selected = null; pickedKill = null;
-  $('meta').textContent = `${D.mapName} · ${D.fileName} · ${fmt(D.end - D.start)}`;
+  $('meta').textContent = D.parts ? `${D.mapName} · ${D.parts[0].fileName} and ${plural(D.parts.length - 1, 'more file')} · ${fmt(D.end - D.start)}` : `${D.mapName} · ${D.fileName} · ${fmt(D.end - D.start)}`;
+  const chip = $('partsChip');
+  chip.onclick = () => { const b = document.querySelector('.tabs button[data-tab="rounds"]'); if (b) b.click(); $('pane').scrollTop = 0; };
+  chip.hidden = !D.parts; if (D.parts) { chip.textContent = `${D.parts.length} files`; chip.title = 'One map joined from ' + D.parts.map((p) => p.fileName).join(', then ') + '. Rounds tab: Split them to undo.'; }
   $('score').hidden = false; $('legend').hidden = false; $('heatbar').hidden = false; $('rclock').hidden = false;
   $('tnA').textContent = M.tnames[0]; $('tnB').textContent = M.tnames[1];
   heat = null; $('hmMode').value = 'off';
@@ -2108,7 +2512,7 @@ function closeDemo() {
   if (!D) return;
   if (worker) { worker.terminate(); worker = null; }
   sndPreload++; // stops a sound preload that's still running for this demo
-  resetForNewDemo(); clear3d(); closeSummary();
+  resetForNewDemo(); clear3d(); closeSummary(); if ($('joinCard')) closeJoinCard();
   D = null; M = null; MAP = null; OV = null; T = 0; prevT = null; pickedKill = null; heat = null;
   $('meta').textContent = 'CS 1.6 HLTV demos, played in your browser';
   for (const id of ['score', 'legend', 'heatbar', 'rclock', 'cam3', 'status3', 'pov', 'sb']) $(id).hidden = true;
@@ -2178,6 +2582,8 @@ function renderPane() {
   const cr = roundAt(T);
   if (tab === 'rounds') {
     let h = `<label class="opt"><input type="checkbox" id="optAll" ${showAll ? 'checked' : ''}> Show warmup, restarts and idle rounds</label>`;
+    if (D.parts) h += `<div class="joinrow"><span>One map, joined from ${D.parts.length} files.</span><button class="btn sm" type="button" id="bSplit">Split them</button></div>`;
+    let prevPart = D.parts ? 0 : null;
     // rounds played after a team reached 16: listed after a note, faded unless this demo counts them
     const A = M.after16, list = visibleRounds().slice();
     if (A && !showAll) for (const r of M.rounds) if (r.afterMatch && r.kills.length && r.start > A.at.start && !list.includes(r)) list.push(r);
@@ -2188,8 +2594,20 @@ function renderPane() {
         const who = esc(M.tnames[A.team]);
         h += `<div class="note16"><span>${M.count30 ? `Counting the ${A.extra} ${A.extra === 1 ? 'round' : 'rounds'} played after ${who} reached 16.` : `${A.extra} ${A.extra === 1 ? 'round was' : 'rounds were'} played after ${who} reached 16. Some events count them.`}</span><button class="btn sm" type="button" id="bCount30">${M.count30 ? 'Stop at 16' : 'Count them'}</button></div>`;
       }
+      // where the file changes: the part's full file name
+      if (prevPart != null && r.part != null && r.part !== prevPart) {
+        const P = D.parts[r.part];
+        if (P && r.part > prevPart) h += `<div class="partmark">Part ${r.part + 1} · ${fileNameHtml(P.fileName)}${P.partway ? '<small>The recording starts partway into the round below; its kills from then on count.</small>' : ''}</div>`;
+        prevPart = r.part;
+      }
       const wt = r.winTeam != null ? r.winTeam : null;
       const side = r.winner === 'T' ? 't' : r.winner === 'CT' ? 'ct' : 'x';
+      if (r.missing) {
+        h += `<div class="row gap" title="Played between two recordings: counted in the score from the scoreboard, not in player stats"><span class="n">${r.live ? 'R' + r.ln : '·'}</span>
+          <span class="main"><span class="pill ${side}">${r.winner}</span>${esc(wt != null ? M.tnames[wt] : r.winner + ' side')}<div class="sub">not in any file</div></span>
+          <span class="d">${r.live && r.scoreAfter ? r.scoreAfter.join(':') : ''}<br>–</span></div>`;
+        continue;
+      }
       const who = wt != null ? M.tnames[wt] : (r.winner ? r.winner + ' side' : 'No result');
       const sc = r.live && r.scoreAfter ? `${r.scoreAfter[0]}:${r.scoreAfter[1]}` : '';
       const after = r.afterMatch && !r.live;
@@ -2197,8 +2615,11 @@ function renderPane() {
         <span class="main"><span class="pill ${side}">${r.winner || '—'}</span>${esc(who)}${after ? '<span class="tag16">after the match</span>' : ''}<div class="sub">${esc(r.reason || (r.live ? '' : 'not counted'))} · ${r.kills.length} kills${r.sides ? ' · ' + Math.max(0, Object.keys(r.sides).length - new Set(r.kills.map((k) => k.victim)).size) + ' alive at end' : ''}</div></span>
         <span class="d">${sc}<br>${fmt(r.dur)}</span></div>`;
     }
+    h += `<div class="joinrow"><span>${D.parts ? 'Another part of this map in a file of its own?' : 'Is this map split over two or more demo files?'}</span><button class="btn sm" type="button" id="bJoinWith">Join with another demo…</button></div>`;
     p.innerHTML = h;
     $('optAll').onchange = (e) => { showAll = e.target.checked; renderPane(); drawTimeline(); };
+    if ($('bSplit')) $('bSplit').onclick = splitJoined;
+    $('bJoinWith').onclick = () => { const cur = D.parts ? D.parts.map((x) => fileByName(x.fileName)).filter(Boolean) : [CUR_FILE || fileByName(D.fileName)].filter(Boolean); JOIN.picking = true; openJoinCard(cur).then(() => { JOIN.picking = true; renderJoinCard(); }); };
     if ($('bCount30')) $('bCount30').onclick = () => setCount30(!M.count30);
   } else if (tab === 'kills') {
     const r = cr;
@@ -2276,7 +2697,7 @@ for (const [id, i] of [['tnA', 0], ['tnB', 1]]) {
     const el = $(id);
     el.contentEditable = 'true'; el.focus();
     const range = document.createRange(); range.selectNodeContents(el); const s = getSelection(); s.removeAllRanges(); s.addRange(range);
-    const done = () => { el.contentEditable = 'false'; const v = el.textContent.trim().slice(0, 30); if (v) M.tnames[i] = v; el.textContent = M.tnames[i]; ls.set('names:' + D.fileName, M.tnames); renderPane(); };
+    const done = () => { el.contentEditable = 'false'; const v = el.textContent.trim().slice(0, 30); if (v) M.tnames[i] = v; el.textContent = M.tnames[i]; ls.set('names:' + demoKey(), M.tnames); renderPane(); };
     el.onblur = done;
     el.onkeydown = (e) => { if (e.key === 'Enter') { e.preventDefault(); el.blur(); } e.stopPropagation(); };
   };
@@ -2340,7 +2761,7 @@ document.addEventListener('keydown', (e) => {
   }
   else if (k === 'Tab') { e.preventDefault(); if (!e.repeat) showScoreboard(true); }
   else if (k === '?') toggleKeys();
-  else if (k === 'Escape') { $('keys').hidden = true; showScoreboard(false); closeSummary(); }
+  else if (k === 'Escape') { $('keys').hidden = true; showScoreboard(false); closeSummary(); if ($('joinCard') && !$('joinCard').hidden) closeJoinCard(); }
 });
 document.addEventListener('keyup', (e) => { if (e.key === 'Tab') showScoreboard(false); });
 window.addEventListener('blur', () => showScoreboard(false));
@@ -3105,6 +3526,29 @@ async function loadSummary(sndDone) {
   }
   if (D.maps && D.maps.length > 1) rows.push({ s: 'info', t: `The recording switched maps. Showing ${D.mapName}, where it spent longest.`, n: D.maps.map((m) => `${m.map} ${fmt(m.dur)}`).join(', then ') });
   if (D.pov) rows.push({ s: 'info', t: 'Recorded by a player (a POV demo)', n: "A player's game only receives the players near them, so others drop in and out of view, and wallbangs are found less reliably than in HLTV demos." });
+  // A map recorded in two or more files. A part on its own says so when it starts with rounds already on the
+  // game's scoreboard, or ends before anyone won, and offers the other parts when they're in the folder.
+  if (D.parts) {
+    const js = joinedSetOf(D.parts[0].fileName);
+    rows.push({ s: 'info', t: `One map, joined from ${D.parts.length} files`, n: D.parts.map((x, i) => `Part ${i + 1}: ${x.fileName}`).join('. ') + '.' + (js && js.keep && js.why ? ` Joined in your order, which the rounds don't support: ${js.why}` : '') + ' Split them in the Rounds tab.' });
+  } else {
+    const st = liveStart(M), before = st.sbT + st.sbCT, partway = st.partway;
+    const last = M.liveR[M.liveR.length - 1], open = !!last && !M.wonAt, late = before > 0 || partway;
+    if (late || open) {
+      const others = await findOtherParts();
+      if (d !== D) return;
+      const ends = last ? `${last.scoreAfter[0]}:${last.scoreAfter[1]}` : '';
+      const lateText = (partway ? 'The recording starts partway into a round.' : '') + (before ? ` The game's scoreboard already shows ${plural(before, 'round')} played before ${partway ? 'that one' : 'the recording starts'}.` : '');
+      let t, n;
+      if (late && !open) { t = 'This is probably part 2 of a map recorded in two or more files'; n = lateText.trim(); }
+      else if (open && !late) { t = `This recording ends at ${ends}, before anyone won`; n = 'The rest of the map is probably in another file.'; }
+      else { t = 'This is probably one part of a map recorded in two or more files'; n = `${lateText.trim()} It ends before anyone won.`; } // this file's own score means nothing for the map
+      if (others.length) n += others.length === 1 ? ` ${others[0].name} has the same players on ${D.mapName}.` : ` ${others.length} other demos have the same players on ${D.mapName}: ${others.map((f) => f.name).join(', ')}.`;
+      else n += " The other parts aren't in your folder. If you have them, use Join with another demo in the Rounds tab.";
+      SUM.joinList = others.length ? [CUR_FILE || fileByName(D.fileName), ...others].filter(Boolean) : null;
+      rows.push(Object.assign({ s: 'info', t, n }, others.length ? { btn: { id: 'sumJoin', label: 'Join the parts' } } : {}));
+    }
+  }
   if (!map) rows.push({ s: 'fail', t: `Map ${D.mapName} not found`, n: 'No 3D view and no wallbang finder. Add the .bsp from cstrike\\maps or cstrike_downloads\\maps.' });
   else if (map.missingTex) rows.push({ s: 'warn', t: `Map loaded, ${map.missingTex} textures missing`, n: 'Those surfaces show a grey checkerboard in 3D.' });
   else rows.push({ s: 'ok', t: 'Map and textures', n: '' });
@@ -3150,7 +3594,7 @@ function openSummary(o) { renderSummary(Object.assign({ state: 'busy', title: 'C
 // Count the rounds played after a team reached 16 (up to round 30), or stop at 16: remembered per demo
 function setCount30(on) {
   if (!D) return;
-  ls.set('count30:' + D.fileName, on ? true : null);
+  ls.set('count30:' + demoKey(), on ? true : null);
   derive(); buildZoom(); heat = null;
   if (MAP && MAP.name === D.mapName.toLowerCase()) computeWallbangs();
   tlCache.key = ''; renderPane(); drawTimeline(); updateHud(true);
@@ -3181,6 +3625,7 @@ function renderSummary(r) {
   el.hidden = false;
   $('sumX').onclick = closeSummary;
   if ($('sumCount30')) $('sumCount30').onclick = () => setCount30(!M.count30);
+  if ($('sumJoin')) $('sumJoin').onclick = () => { if (SUM.joinList) openJoinCard(SUM.joinList); };
   if ($('sumFolder')) $('sumFolder').onclick = () => { closeSummary(); refreshOrPick(); };
   el.onclick = (e) => { if (e.target === el && r.state !== 'busy') closeSummary(); };
   clearInterval(SUM.timer); SUM.timer = null;
