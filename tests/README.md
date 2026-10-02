@@ -176,7 +176,7 @@ node rounds_and_people.mjs <demo>        # 0.14.1: server messages, every round 
 
 ## Testing on Sujan's Mac files from a cloud session
 
-The Claude session runs on a cloud machine, while the files are on the Mac. On 3 Oct 2026 the folder was reached through the linked desktop app: access granted to `~/Downloads/Half-Life` only, then everything but the demos packed into one archive (`_claude_transfer/assets.tar.zst`, 227 MB, made on the Mac with `tar` and `zstd`) and copied over together with the 31 demos, and unpacked on the test machine. The Mac's sandboxed shell can't download a browser, so the tests themselves run on the cloud machine. The `_claude_transfer` folder is left in the Half-Life folder (the session can't delete files there); Sujan can delete it.
+The Claude session runs on a cloud machine, while the files are on the Mac. On 3 Oct 2026 the folder was reached through the linked desktop app: access granted to `~/Downloads/Half-Life` only, then everything but the demos packed into one archive (`_claude_transfer/assets.tar.zst`, 227 MB, made on the Mac with `tar` and `zstd`) and copied over together with the 31 demos, and unpacked on the test machine. The Mac's sandboxed shell can't download a browser, so the tests themselves run on the cloud machine. The `_claude_transfer` folder was left in the Half-Life folder (the session couldn't delete files there without asking) and Sujan deleted it on 3 Oct 2026. Next time, ask for delete permission (the device's delete permission prompt) and remove it at the end of the session, or ask Sujan first.
 
 ## Lessons
 
