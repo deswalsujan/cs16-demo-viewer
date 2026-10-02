@@ -28,7 +28,7 @@ On the branch `wip/split-maps`, not on main or the claude.ai artifact yet. VERSI
 ### What's built
 - `joinDemos` (src/template.html, section "a map recorded in parts"): the parts go on one timeline, each part's times shifted to follow the one before with a 3 second gap. The files' own numbering of models, sounds and events is merged into one list, rounds and connections are renumbered, and a restart is marked where each later part starts. Playback, the 3D view, rounds and stats then work across the parts unchanged, so playback runs straight across the join.
 - `parseInWorker` and `openJoined(list)`: read each part in its own worker and open them joined, in the order given. No screens yet: only callable from tests.
-- Players are matched across files by Steam ID (the `*sid` in their player info, now kept on each connection in `src/demo.js`), whatever name they used.
+- Players are matched across files by Steam ID (the `*sid` in their player info, now kept on each connection in `src/demo.js`), whatever name they used. Only a real Steam ID counts: not "0", and not one two connections hold at the same time.
 - `leadingRound`: the round a file starts partway into (kills before its first round marker) is shared by single demos and joined parts.
 - `M.wonAt`: the round where the map was won.
 - Test: `tests/page/join_detail.js` (set `window.__parts` to parts of the file names, in order, in a script run just before it). `tests/page/join_rounds.js` lists every round of the joined map with its part, stretch, scoreboard, kills, and whether it counts or why not.
@@ -46,7 +46,7 @@ Before the fix: Inferno mTw 21 : 18 FX, 39 rounds, no winner, NEO 34-29; Nuke mT
 1. Done (above).
 2. The screens, from the approved mockup: the load summary line on a part opened alone ("This is probably part 2 of a map recorded in two or more files"), the Join card (parts in order with arrows and how the order was found, the checks, the wrong-map card, the wrong-order card), the Rounds tab marker with the part's full file name, the "2 files" chip, Split them, remembered per set of files, and "Join with another demo…".
 3. Correction to the approved mockup (agreed): Inferno part 2 starts partway into the second half's pistol round, so that round's kills are in the file and count. Show "1 round isn't in any file" only when the scoreboard shows a round with no kills in any file; for a part that starts partway into a round, say that.
-4. Single demos must not change: run `tests/page/match_summary.js` on every demo, 0.14.3 against the branch (about 6 minutes).
+4. Done 2 Oct 2026: `tests/page/match_summary.js` on all 25 demos on Sujan's Mac (mousesports vs Virus left out, as in 0.14.2), 0.14.3 from main against the branch. It found one regression, now fixed: on Na`Vi vs FX, Train and Dust2 (SEC 2011 final), every player's Steam ID is "0" (a LAN server; only the two HLTV relays have real ones), and matching by Steam ID merged all ten players into one ("742 0-181"). A Steam ID now identifies a person only when it's a number other than 0 and no two connections hold it at the same time. After the fix all 25 are identical to 0.14.3 (score, live rounds, first live round, starting sides, every player's K-D), and both joined Xperia maps still give Sujan's numbers.
 5. Tests, VERSION 0.15.0, a normal CHANGELOG entry, Known limits (drop the split map line), IDEAS.md, merge, push, republish the artifact.
 
 ## 0.14.3 (2026-10-02)

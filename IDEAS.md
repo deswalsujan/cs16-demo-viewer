@@ -15,7 +15,7 @@ Everything raised in conversation that isn't finished, in one place. Each item s
   1. Done 2 Oct 2026: the joined count matches Sujan's (Nuke NEO 42-25, Inferno NEO 33-28). The "past the half" rule cut at the last half end a stretch crossed; it now cuts at the first one where the teams stayed on the same sides. Details in CHANGELOG.md, "In progress: split maps".
   2. The screens from the approved mockup: the load summary line on a part opened alone, the Join card (order with arrows, the checks, wrong-map and wrong-order cards), the Rounds tab marker, the "2 files" chip, Split them, remembered per set of files, "Join with another demo…".
   3. Correction to the approved mockup (agreed to fix when building): Inferno part 2 starts partway into the second half's pistol round, so that round's kills are in the file and count (0.14.2 relies on them). "1 round isn't in any file" only shows when the scoreboard shows a round with no kills in any file; for a part that starts partway into a round, say that instead.
-  4. Test, then ship as 0.15.0 (CLAUDE.md, "How each change ships").
+  4. Test, then ship as 0.15.0 (CLAUDE.md, "How each change ships"). The check that single demos don't change is done (2 Oct 2026: all 25 identical to 0.14.3, after fixing Steam ID "0" merging every player on the Na`Vi vs FX SEC 2011 demos); it needs running again only if the counting changes.
 - [ ] Sujan: the Count them note, faded rows and "Demo read: 30 rounds, 27 counted" on the fnatic vs EG demo, by eye (0.14.2).
 
 **Hand checks for Sujan** (things the headless test browser can't do)

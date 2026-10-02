@@ -2415,9 +2415,14 @@ function derive() {
   const ofind = (x) => opar[x] === x ? x : (opar[x] = ofind(opar[x]));
   const byName = {};
   for (const o of occ) for (const nm of o.names) { if (byName[nm] != null) opar[ofind(o.id)] = ofind(byName[nm]); else byName[nm] = o.id; }
-  // the same Steam ID is the same person, whatever name they used (and across the parts of a joined map)
+  // the same Steam ID is the same person, whatever name they used (and across the parts of a joined map).
+  // Only a real one: on a LAN server every player can have "0" (Na`Vi vs FX, SEC 2011 final, Train and Dust2),
+  // so "0", anything that isn't a number, and an ID two connections hold at the same time identify nobody.
+  const sidBad = new Set();
+  for (const o of occ) if (!o.sid || !/^\d+$/.test(o.sid) || /^0+$/.test(o.sid)) o.sid && sidBad.add(o.sid);
+  for (const a of occ) for (const b of occ) if (a !== b && a.sid && a.sid === b.sid && a.from < (b.to != null ? b.to : D.end) && b.from < (a.to != null ? a.to : D.end)) sidBad.add(a.sid);
   const bySid = {};
-  for (const o of occ) if (o.sid) { if (bySid[o.sid] != null) opar[ofind(o.id)] = ofind(bySid[o.sid]); else bySid[o.sid] = o.id; }
+  for (const o of occ) if (o.sid && !sidBad.has(o.sid)) { if (bySid[o.sid] != null) opar[ofind(o.id)] = ofind(bySid[o.sid]); else bySid[o.sid] = o.id; }
   const pl = {};
   for (const o of occ) {
     const pid = 'p' + ofind(o.id); o.pid = pid;
