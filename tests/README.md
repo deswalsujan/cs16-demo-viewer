@@ -45,7 +45,7 @@ Every demo used in testing, with the event it's from, so a lost demo can be foun
 | `PGL.DreamHack_Bucuresti_2012.03-Winner.Anexis.vs.fnatic.HLTV.3.de_tuscan.dem` | DreamHack Bucuresti 2012 (PGL) | demo text (HLTV server "DreamHack Bucuresti 2012:3"); file name |
 | `1110231216--auto_de_tuscan.dem_Fnatic-vs-mousesports.dem`, `1110231453--auto_de_nuke.dem_AGAIN-vs-ALTERNATE.dem`, `1110231530--auto_de_tuscan.dem_Lions-vs-Mousesports.dem`, `1110231538--auto_de_inferno.dem_ALTERNATE-vs-AGAIN.dem`, `1110231614--auto_de_mirage.dem_Moscow-5-vs-NAVI.dem`, `1110231623--auto_de_dust2.dem_AGAIN-vs-ALTERNATE.dem`, `1110231835--auto_de_mirage.dem_Mousesports-vs-SK.dem`, `1110241407--auto_de_inferno.dem_mousesports-vs-AGAIN.dem`, `de_mirage.dem_Z-Antwerp-Aces-vs-LIONS-E-SPORT.dem`, `de_nuke.dem_Fnatic-vs-ALTERNATE.dem` | ESWC 2011 (Paris, 21 to 24 Oct 2011) | demo text "[AdminBot 9.1] ESWC 2011 Grand Final." The bot says "Grand Final" in every one of these, group games too, so it doesn't tell the stage. Moscow 5 vs Na`Vi also from [HLTV.org's match page](https://www.hltv.org/matches/1901911/natus-vincere-vs-moscow-five-eswc-2011); mousesports vs AGAiN Inferno is the final |
 | `2006-07-02_15h00_Team3D_Fnatic-0607021359-de_train.dem` | ESWC 2006, probably (2 Jul 2006) | HLTV server name "HLTV-ESWC" and the date in the file name; not checked further |
-| `de_inferno.dem_mousesports-vs-Virus-.dem` | not known | the demo reader stops with "Offset is outside the bounds" (likely a cut-off file), so its text couldn't be read |
+| `de_inferno.dem_mousesports-vs-Virus-.dem` | ESWC 2011 | demo text "CS 1.6 ESWC #2 by Verygames", read frame by frame (the file has no index, so the viewer can't open it yet; see IDEAS.md, "Tell exactly why a demo is broken") |
 | NoA vs Pentagram, Train, 2006 (Windows only) | not known | |
 | GP Pub de_zovine POV demo (Windows only, `GP-[PuB]_M-[de_zovine]_D-[10_01_2026]_T-[19_08].dem`) | none: a public server game Sujan recorded on 1 Oct 2026 | |
 
@@ -86,6 +86,7 @@ Page scripts in `page/`:
 | `summary_stays_closed.js` | The load summary card closed while checking stays closed | 0.14.0 |
 | `match_detail.js` | Score, every live round with its winner, rounds dropped as team swaps or after the match, and every player's K-D overall, on T and on CT | 0.14.2 |
 | `summary_and_teams.js` | The load summary's lines (rounds read and counted), team names, the Rounds tab note and faded rows, with Count them switched on and off again (run with `DEMO=fnatic_vs_eg MAP_NEEDED=0`) | 0.14.2 |
+| `aim_shown_at_kills.js` | How far the crosshair is from the victim's head at headshot kills, as Player's eyes draws them | 0.14.3 |
 | `match_summary.js` | Score, live rounds, first live round, starting sides and Players tab names, for comparing versions across all demos (run with `MAP_NEEDED=0`) | 0.14.1 |
 
 Stand-alone checks:

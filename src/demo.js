@@ -187,7 +187,10 @@ export function parseDemo(buffer, onProgress, opts = {}) {
   function slotArr(e) {
     if (!samples.slots[e]) {
       const a = [];
-      for (let k = 0; k < samples.t.length; k++) a.push(NaN, NaN, NaN, 0, 0, 0, 0, 0, 0, 0, 0);
+      // pad for the samples taken before this one: takeSample has already added the current time, and it adds
+      // this sample itself right after. Padding the current time too (as up to 0.14.2) put every player one
+      // sample behind the timeline: a tenth of a second on HLTV demos (checked 2 Oct 2026, see 0.14.3).
+      for (let k = 0; k < samples.t.length - 1; k++) a.push(NaN, NaN, NaN, 0, 0, 0, 0, 0, 0, 0, 0);
       samples.slots[e] = a;
     }
     return samples.slots[e];

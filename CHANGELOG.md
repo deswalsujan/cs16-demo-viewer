@@ -21,6 +21,18 @@ What changed in the viewer, newest first. The version shows in the viewer's shor
 - When neither the file name nor a shared clan tag names a team, the header says "Team 1" and "Team 2" (iFNG FX vs fnatic, `auto_ifng-...`). Click the name in the header to type it in; it's remembered for that demo. Left as it is for now (Sujan, 2 Oct 2026; parked in IDEAS.md).
 - A smoke cloud is drawn as one light green ball for as long as the smoke puffs (about 21 seconds, less when the round restarts). The game's own puffs drift and thin out unevenly, which the viewer doesn't copy.
 
+## 0.14.3 (2026-10-02)
+
+### Fixed
+- Every player was drawn one snapshot behind the demo's timeline, since the first version: about a tenth of a second on HLTV demos (0.107 s between snapshots on Na`Vi vs FX, Dust2, SEC 2011; 0.063 s on FX vs mTw, Nuke, Xperia Play 2011). Movement, aim, Player's eyes, the scoreboard's health and weapons, and the positions used to re-time late kill messages (0.13.0) all read the snapshot before. Cause: when a player was first recorded, the demo reader padded their track for every snapshot so far, including the one it was about to add, so each track held one snapshot more than the timeline and everything in it sat one place late. Found while joining the two parts of the Xperia Play 2011 Inferno demo, whose tracks didn't fit the joined timeline.
+
+### How it was tested
+- The demo stores where the killer stood at every kill. Compared with the killer's track at the kill's own snapshot: before the fix it matched only when the killer stood still (112 of 212 kills on the Dust2 demo, 37 of 55 on Nuke) and matched one snapshot later every time (212 of 212, 55 of 55); after the fix it matches at the kill's own snapshot every time (212 of 212, 55 of 55). Each track is now exactly as long as the timeline.
+- Every demo on Sujan's Mac (25; mousesports vs Virus left out, see 0.14.2's checklist), 0.14.2 against 0.14.3 (`tests/page/match_summary.js`): scores, live rounds, starting sides and every player's K-D identical on all 25.
+- Wallbang lists, 0.14.2 against 0.14.3, with the maps loaded: identical on Na`Vi vs FX Dust2 and Train (SEC 2011 final; 10 and 13), SK vs WinFakt Mirage (IEM6 Global Challenge New York final; 2, with 86 kills re-timed) and mTw vs Lions Nuke (DreamHack Summer 2011; 17). Not re-checked: NoA vs Pentagram Train (2006), whose list depends most on re-timed kills, since that demo is only on Sujan's Windows PC.
+- The crosshair at headshot kills from 300 units or more, as Player's eyes shows it (`tests/page/aim_shown_at_kills.js`, new): median distance to the victim's head before and after, Dust2 1.49° and 1.50°, Train 1.23° and 1.09°, Mirage 0.93° and 0.95°, Nuke 1.18° and 1.10°. So the offset described in 0.10.0 ("Discussed, not changed") comes from the demo, as said there, and not from this.
+- `folder_row_test.py` (20 of 20), `start_screen_check.py`, `prefs_check.py`, `modes_and_toggles.js` and `players_names_dead.js` pass.
+
 ## 0.14.2 (2026-10-02)
 
 Round counting and player stats, from Sujan's checks of K-D numbers he knows from the real matches.
