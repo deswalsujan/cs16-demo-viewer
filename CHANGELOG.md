@@ -21,6 +21,31 @@ What changed in the viewer, newest first. The version shows in the viewer's shor
 - When neither the file name nor a shared clan tag names a team, the header says "Team 1" and "Team 2" (iFNG FX vs fnatic, `auto_ifng-...`). Click the name in the header to type it in; it's remembered for that demo. Left as it is for now (Sujan, 2 Oct 2026; parked in IDEAS.md).
 - A smoke cloud is drawn as one light green ball for as long as the smoke puffs (about 21 seconds, less when the round restarts). The game's own puffs drift and thin out unevenly, which the viewer doesn't copy.
 
+## In progress: split maps (not shipped)
+
+On the branch `wip/split-maps`, not on main or the claude.ai artifact yet. VERSION still says 0.14.3. A map recorded in two or more demo files counted and played as one. Design approved by Sujan: [docs/split-map-mock.png](docs/split-map-mock.png); background, findings and decisions in IDEAS.md, "Join a map split over several demo files".
+
+### What's built
+- `joinDemos` (src/template.html, section "a map recorded in parts"): the parts go on one timeline, each part's times shifted to follow the one before with a 3 second gap. The files' own numbering of models, sounds and events is merged into one list, rounds and connections are renumbered, and a restart is marked where each later part starts. Playback, the 3D view, rounds and stats then work across the parts unchanged, so playback runs straight across the join.
+- `parseInWorker` and `openJoined(list)`: read each part in its own worker and open them joined, in the order given. No screens yet: only callable from tests.
+- Players are matched across files by Steam ID (the `*sid` in their player info, now kept on each connection in `src/demo.js`), whatever name they used.
+- `leadingRound`: the round a file starts partway into (kills before its first round marker) is shared by single demos and joined parts.
+- `M.wonAt`: the round where the map was won.
+- Test: `tests/page/join_detail.js` (set `window.__parts` to parts of the file names, in order, in a script run just before it).
+
+### Numbers so far (all wrong, see "Still to do" 1)
+| Map | Joined | Sujan's confirmed |
+|---|---|---|
+| Xperia Play 2011, FX vs mTw, Inferno (`-1104240025` then `-1104240112`) | mTw 21 : 18 FX, 39 rounds, no winner; NEO 34-29 | NEO 33-28 (second half 16-11) |
+| Xperia Play 2011, FX vs mTw, Nuke (`-1104240212` then `-1104240242`) | mTw 15 : 19 FX, FX win in round 34 (first overtime); NEO 31-19 | NEO 42-25 |
+
+### Still to do before shipping
+1. The joined count. Both maps played on at 15:15 on the same sides (5 rounds on Inferno, 6 on Nuke) before a restart into overtime. Counted file by file those rounds are cut ("past the half", 0.14.2); joined, only 1 (Inferno) and 2 (Nuke) are cut, and the rest become overtime rounds, which on Nuke gives FX an early win and drops the real overtimes. Find why the half-end rule behaves differently on the joined list (the restart marked at each part's start, or the leading round of Inferno part 2, may shift its count), fix, and check that every number in the table above matches Sujan's.
+2. The screens, from the approved mockup: the load summary line on a part opened alone ("This is probably part 2 of a map recorded in two or more files"), the Join card (parts in order with arrows and how the order was found, the checks, the wrong-map card, the wrong-order card), the Rounds tab marker with the part's full file name, the "2 files" chip, Split them, remembered per set of files, and "Join with another demo…".
+3. Correction to the approved mockup (agreed): Inferno part 2 starts partway into the second half's pistol round, so that round's kills are in the file and count. Show "1 round isn't in any file" only when the scoreboard shows a round with no kills in any file; for a part that starts partway into a round, say that.
+4. Single demos must not change: run `tests/page/match_summary.js` on every demo, 0.14.3 against the branch (about 6 minutes).
+5. Tests, VERSION 0.15.0, a normal CHANGELOG entry, Known limits (drop the split map line), IDEAS.md, merge, push, republish the artifact.
+
 ## 0.14.3 (2026-10-02)
 
 ### Fixed
