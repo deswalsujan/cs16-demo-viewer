@@ -123,6 +123,9 @@ Page scripts in `page/`:
 | `split_missing.js`, then `split_missing_go.js` | A round in no file, made by removing Inferno part 2's kills before its first marker: the card's check, then the joined Rounds tab and score (`DEMO=1104240025`) | split maps (wip) |
 | `wallbang_list.js` | Every wallbang (round, timer, killer, gun, headshot, victim), waiting for the map to load even with `MAP_NEEDED=0`, for comparing two builds with `compare_all.sh` | 0.15.5 |
 | `summary_text.js` | The load summary's text, built afresh (for checking its lines across all demos) | split maps (wip) |
+| `late_kill_timing.js` | Late kills shown at the victim's death sound (NoA vs Pentagram, Train 2006); run through `late_kill_timing_check.py` | 0.16.0, guards 0.15.5 |
+| `free_cam_nearest.js` | Free camera to Player's eyes, Behind player and V with nobody picked follows the player nearest the middle of the view; a picked player stays (`DEMO=1110091531`, Dust2) | 0.16.0 |
+| `hp_line_far.js` | The "HP · weapon" line under every name with the camera over 2,500 units away (`DEMO=1110091531`) | 0.16.0 |
 
 Stand-alone checks:
 
@@ -135,6 +138,7 @@ Stand-alone checks:
 | `folder_row_test.py` | The Half-Life folder row (0.12.0, 0.12.1): first visit, picking, changes applied by themselves, Reconnect, opening by itself on the next visit, wrong folders and no demos, Clear saved files, dropping a demo with no folder, the ordinary folder pick, and the page inside a frame from another site. Uses a stand-in for Chrome's folder access, since its picker and prompts can't be driven headless (no Half-Life folder needed) | under a minute |
 | `demo_search_check.py [page] [screenshot]` | The search box over the demo list (0.15.2): hidden before a folder is chosen, filtering by every word typed, the "N of M" count, highlighting, the no-match line, Esc and Clear, opening a filtered row. Needs `HALF_LIFE_DIR` (demos only, no maps) | under a minute |
 | `prefs_check.py` | Viewing settings restored on the next visit, and defaults when the saved ones are damaged (no Half-Life folder needed) | a few seconds |
+| `late_kill_timing_check.py [page]` | Fails (exit code 1) if late kills in NoA vs Pentagram, Train 2006, stop being shown at the victim's death sound (0.15.5): all 135, and R22 0:55 neo on ave with the kill feed at the shot, just before and at the death sound. Needs `HALF_LIFE_DIR` with that demo (no map). Run on every release | about a minute |
 | `compare_all.sh OUT PAGE_A [PAGE_B] [SCRIPT]` | A page script (default `page/match_summary.js`) on every demo in `HALF_LIFE_DIR`, 6 at a time. With two pages (main's build and a branch, say `git show origin/main:index.html > old.html`) it lists the demos whose results differ; with one it collects the results, for checking a fresh batch against known scores and K-D (`page/match_detail.js` gives round by round and T/CT). Needs no maps | about 4 minutes for 25 demos |
 
 ## Demo data probes (Node)
@@ -168,6 +172,10 @@ node per_round.mjs <demo> <player>       # every round: winner, the player's sid
 node sum_rounds.mjs <demo> <player> "label=1-15;label=16-30"   # the player's K-D and round wins over chosen rounds
 node rounds_and_people.mjs <demo>        # 0.14.1: server messages, every round with its winner and score, restarts, and each connection's names
 ```
+
+## Testing on Sujan's Mac files from a cloud session
+
+The Claude session runs on a cloud machine, while the files are on the Mac. On 3 Oct 2026 the folder was reached through the linked desktop app: access granted to `~/Downloads/Half-Life` only, then everything but the demos packed into one archive (`_claude_transfer/assets.tar.zst`, 227 MB, made on the Mac with `tar` and `zstd`) and copied over together with the 31 demos, and unpacked on the test machine. The Mac's sandboxed shell can't download a browser, so the tests themselves run on the cloud machine. The `_claude_transfer` folder is left in the Half-Life folder (the session can't delete files there); Sujan can delete it.
 
 ## Lessons
 

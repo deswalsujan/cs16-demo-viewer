@@ -232,11 +232,30 @@ function freeCamFromFollow() {
 function setCam(m, keepPlayer, exact) {
   // exact: dragging, the wheel, WASD, or nobody left to follow, which carry on from the view on screen
   if (m === 'free' && cam3.mode !== 'free') { if (exact) copyCamToFree(); else freeCamFromFollow(); }
+  // nobody picked, going from Free camera to Player's eyes or Behind player: follow the living player nearest
+  // the middle of the free camera's view, so the view stays on the same spot (Sujan, 2 Oct 2026). Before, it
+  // was the first living player in the list, wherever the camera was.
+  if (m !== 'free' && !selected && cam3.mode === 'free') { const e = nearestToView(); if (e != null) { selected = e; renderPane(); } }
   // following needs a living player; keepPlayer = the caller just picked one (e.g. a kill), so don't swap them out
   if (m !== 'free' && !keepPlayer) { const s = selected && playerState(selected, T); if (!s || s.state < 0) nextPlayer(1); }
   if (m !== 'free' && !selected) nextPlayer(1);
   cam3.mode = m; cam3.chase = null; cam3.cYaw = null;
   document.querySelectorAll('#cam3 [data-c]').forEach((x) => x.classList.toggle('on', x.dataset.c === m));
+}
+// The living player nearest the middle of the 3D view: the smallest angle between where the camera looks and
+// the player's chest. Players behind the camera only win when nobody is in front of it.
+function nearestToView() {
+  if (!R3 || !D) return null;
+  const c = R3.camera, f = new THREE.Vector3(); c.getWorldDirection(f);
+  let best = null, bestDot = -2;
+  for (const e of alivePlayers()) {
+    const s = playerState(e, T); if (!s) continue;
+    const v = new THREE.Vector3(s.x, s.z + 20, -s.y).sub(c.position);
+    if (v.lengthSq() < 1) return e;
+    const d = v.normalize().dot(f);
+    if (d > bestDot) { bestDot = d; best = e; }
+  }
+  return best;
 }
 function alivePlayers() { return Object.keys(D.slots).map(Number).filter((e) => { const s = playerState(e, T); return s && s.state > 0; }).sort((a, b) => ((teamOfSlot(a, T) ?? 9) - (teamOfSlot(b, T) ?? 9)) || a - b); }
 function nextPlayer(dir) {
@@ -523,7 +542,8 @@ function update3() {
     lx.strokeText(nm, sx, sy); lx.fillStyle = L.e === selected ? COL.sand : sideCol(L.s.state); lx.fillText(nm, sx, sy);
     const w = weaponShort(L.s.weapon), hpv = hpAt(L.e, T);
     const sub = [hpv != null ? hpv + ' hp' : '', w].filter(Boolean).join(' · ');
-    if (sub && dist < 2500) { lx.font = `400 10px ${mono}`; lx.strokeText(sub, sx, sy + 12); lx.fillStyle = '#d8d3c8'; lx.fillText(sub, sx, sy + 12); }
+    if (sub) { // at any distance, scoped or not (the 2500-unit limit was dropped in 0.16.0, Sujan)
+      lx.font = `400 10px ${mono}`; lx.strokeText(sub, sx, sy + 12); lx.fillStyle = '#d8d3c8'; lx.fillText(sub, sx, sy + 12); }
   }
   drawKillRings(lx, W, H, camera);
   const pov = $('pov');

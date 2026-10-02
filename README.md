@@ -47,6 +47,7 @@ Custom maps work too, as long as the map's `.bsp` (and its `.wad` files if it us
 - Health, weapons, grenades, smokes, heatmaps, a hold-Tab scoreboard with spectators and the HLTV audience count
 - Demos recorded by a player (POV) too, with limits: a player's game only receives the players near them, so others drop in and out of view
 - A map recorded in two or more demo files counted as one map: the viewer spots the other part in your folder (same map, same players), puts the parts in order and joins them, with one score, one round list and player stats over all of it. Split them undoes it
+- Cut-off and unfinished demos (an interrupted download, a recording that was never closed) play up to where the file stops, and the viewer says exactly what's wrong with the file, read from its own structure
 - Old demos too. CS 1.6 recorded demos as protocol 47 until the update of 23 October 2008 ([announced](https://www.hltv.org/news/1779/cs-16-update-coming-soon) and [released](https://www.hltv.org/news/1787/cs-16-update-live) on HLTV.org). The Steam version only plays protocol 48, so it refuses those older demos unless they're converted. The viewer plays both as they are
 - Search your demos: type part of a file name ("tu", "sk train", "dhwinter") and the list keeps only the demos whose names contain every word
 - Remembers your Half-Life folder between visits (Chrome and Edge) and tells you when demos, maps, models or sounds in it change

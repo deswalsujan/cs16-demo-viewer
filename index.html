@@ -439,7 +439,7 @@ body:has(.app.theatre) { overflow: hidden; }
     <div class="overlay sumwrap" id="sumCard" hidden></div>
     <div class="overlay keys" id="keys" hidden>
       <div class="keys-card">
-        <div class="keys-head"><b>Shortcuts and kill markers</b><div class="kh-r"><span class="ver">Version 0.15.5 · <a href="https://github.com/deswalsujan/cs16-demo-viewer/blob/main/CHANGELOG.md" target="_blank" rel="noopener">What's new</a> · <a href="https://github.com/deswalsujan/cs16-demo-viewer/issues/new/choose" target="_blank" rel="noopener">Report a bug</a></span><button class="btn" id="bDebug" type="button" title="Copies details for a bug report: browser, demo name, what loaded, errors. No file contents.">Copy debug info</button><button class="btn" id="bKeysClose" type="button">Close</button></div></div>
+        <div class="keys-head"><b>Shortcuts and kill markers</b><div class="kh-r"><span class="ver">Version 0.16.0 · <a href="https://github.com/deswalsujan/cs16-demo-viewer/blob/main/CHANGELOG.md" target="_blank" rel="noopener">What's new</a> · <a href="https://github.com/deswalsujan/cs16-demo-viewer/issues/new/choose" target="_blank" rel="noopener">Report a bug</a></span><button class="btn" id="bDebug" type="button" title="Copies details for a bug report: browser, demo name, what loaded, errors. No file contents.">Copy debug info</button><button class="btn" id="bKeysClose" type="button">Close</button></div></div>
         <textarea class="dbgbox" id="dbgBox" readonly hidden aria-label="Debug info"></textarea>
         <div class="keys-grid">
           <section><h3>Playback</h3>
@@ -539,7 +539,7 @@ body:has(.app.theatre) { overflow: hidden; }
         <div class="drophint">Or drop a .dem file, or an overview .bmp and .txt pair, anywhere on this page</div>
         <div class="prog" id="prog" hidden><i id="progBar"></i></div>
         <div class="msg" id="msg"></div>
-        <div class="loadfoot"><span>Version 0.15.5</span><button class="btn" id="bClear" type="button" title="Forgets your Half-Life folder and deletes the maps, models, sounds and overviews this browser saved from it, as on a first visit">Clear saved files</button></div>
+        <div class="loadfoot"><span>Version 0.16.0</span><button class="btn" id="bClear" type="button" title="Forgets your Half-Life folder and deletes the maps, models, sounds and overviews this browser saved from it, as on a first visit">Clear saved files</button></div>
       </div>
     </div>
   </section>
@@ -701,6 +701,73 @@ const TE_SIZES = {
 const SAMPLE_HZ = 30;
 const STRIDE = 11; // x, y, z, yaw, pitch, state, weaponModel, ducked, playerModel (index into pmodels), sequence, gaitsequence
 
+// ---- is the file as a finished recording leaves it? ----
+// A GoldSrc demo is a header (the first 544 bytes), then the frames as they were recorded, then an index of
+// its segments (loading, then playback). The recorder writes the index, and the header's pointer to it
+// (dirOffset), only when the recording stops properly. On all 31 demos on Sujan's Mac (3 Oct 2026) the index
+// ends exactly at the last byte of the file, and the frames read from the start end exactly where it begins. Three checks come from that structure alone, before any game
+// data is read, and none can be wrong about a file a recorder finished:
+//   1. the pointer is 0: the recording was never finished (index 'never')
+//   2. the pointer is past the end of the file, or the index runs past it: the file was cut short ('past',
+//      'short'); the index ends before the last byte: something was added after recording ('extra')
+//   3. the frames, read from the start, stop partway through one: the file is cut off (cutInFrame > 0)
+// Without a usable index, the frames are read one by one from the start, up to where the file stops.
+const HEADER_LEN = 544, DIR_ENTRY_LEN = 92;
+// Walks the frames from the end of the header without reading what's in them. Returns the segments (a frame
+// of type 5 ends one; the next starts right after it), where the readable frames stop, and how far into a
+// frame the file stops (0 when it stops between two frames). A demo has two segments, loading and playback,
+// and the index follows the second, so the walk stops there.
+function walkFrames(u8, dv) {
+  const len = u8.length, segs = [];
+  let p = HEADER_LEN, segStart = p, cutInFrame = 0, badType = -1;
+  while (p < len) {
+    if (p + 9 > len) { cutInFrame = len - p; break; }
+    const t = u8[p];
+    let size = 9;
+    if (t === 0 || t === 1) { if (p + 9 + 468 > len) { cutInFrame = len - p; break; } size += 468 + dv.getUint32(p + 9 + 464, true); }
+    else if (t === 2 || t === 5) size += 0;
+    else if (t === 3) size += 64;
+    else if (t === 4) size += 32;
+    else if (t === 6) size += 84;
+    else if (t === 7) size += 8;
+    else if (t === 8) { if (p + 17 > len) { cutInFrame = len - p; break; } size += 24 + dv.getUint32(p + 13, true); }
+    else if (t === 9) { if (p + 13 > len) { cutInFrame = len - p; break; } size += 4 + dv.getUint32(p + 9, true); }
+    else { badType = t; break; }
+    if (p + size > len) { cutInFrame = len - p; break; }
+    p += size;
+    if (t === 5) { segs.push({ offset: segStart, length: p - segStart }); segStart = p; if (segs.length === 2) break; }
+  }
+  if (p > segStart) segs.push({ offset: segStart, length: p - segStart });
+  return { segs, stopAt: p, cutInFrame, badType };
+}
+function readIndex(u8, r, header) {
+  const len = u8.length, off = header.dirOffset;
+  const health = { index: 'ok', fileLen: len };
+  let dirs = null;
+  if (off === 0) health.index = 'never';
+  else if (off < HEADER_LEN || off + 4 > len) health.index = 'past';
+  else {
+    r.p = off;
+    const n = r.ui(), end = off + 4 + n * DIR_ENTRY_LEN;
+    if (n === 0 || n > 1024) health.index = 'damaged';
+    else if (end > len) health.index = 'short';
+    else {
+      dirs = [];
+      for (let k = 0; k < n; k++) dirs.push({ id: r.ui(), name: r.nstr(64), flags: r.ui(), cdTrack: r.i(), time: r.f(), frames: r.ui(), offset: r.ui(), length: r.ui() });
+      if (dirs.some((d) => d.offset < HEADER_LEN || d.offset + d.length > off)) { health.index = 'damaged'; dirs = null; }
+      else if (end < len) { health.index = 'extra'; health.extra = len - end; }
+    }
+  }
+  if (!dirs) {
+    // no usable index: read the frames from the start, up to where the file stops
+    const w = walkFrames(u8, r.dv);
+    dirs = w.segs;
+    health.walked = true; health.stopAt = w.stopAt; health.cutInFrame = w.cutInFrame;
+    if (w.badType >= 0) health.badFrame = w.badType;
+  }
+  return { dirs, health };
+}
+
 // opts (used when the reader runs a second time on the same file, see the end):
 //   stopAtMap: stop at the first map change, for a recording that ran on into the next map
 //   povRounds: start rounds from the round timer, for demos without the HLTV round marker
@@ -712,12 +779,7 @@ export function parseDemo(buffer, onProgress, opts = {}) {
     demoProtocol: r.i(), netProtocol: r.i(), mapName: r.nstr(260), gameDir: r.nstr(260),
     mapCrc: r.i() >>> 0, dirOffset: r.ui(),
   };
-  r.p = header.dirOffset;
-  const dirCount = r.ui();
-  const dirs = [];
-  for (let k = 0; k < dirCount; k++) {
-    dirs.push({ id: r.ui(), name: r.nstr(64), flags: r.ui(), cdTrack: r.i(), time: r.f(), frames: r.ui(), offset: r.ui(), length: r.ui() });
-  }
+  const { dirs, health } = readIndex(u8, r, header);
 
   // ---- state ----
   const deltas = { delta_description_t: DELTA_DESC };
@@ -1295,7 +1357,10 @@ export function parseDemo(buffer, onProgress, opts = {}) {
         case 7: r.skip(8); break;
         case 8: { r.skip(4); const n = r.ui(); r.skip(n + 16); break; }
         case 9: { const n = r.ui(); r.skip(n); break; }
-        default: throw new Error('bad frame type ' + ftype + ' at ' + (r.p - 9));
+        default:
+          // a damaged frame: once the match is under way, keep what was read and stop here (like a cut-off file)
+          if (playbackStart == null) throw new Error('bad frame type ' + ftype + ' at ' + (r.p - 9));
+          health.badFrame = ftype; health.stopAt = r.p - 9; stopNow = true; break;
       }
       if (onProgress) {
         const prog = (doneLen + (r.p - d.offset)) / totalLen;
@@ -1332,7 +1397,7 @@ export function parseDemo(buffer, onProgress, opts = {}) {
     times: new Float32Array(samples.t), slots,
     finalScore: { ...scores }, models: resources.models, stride: STRIDE,
     pmodels, sounds: resources.sounds, events: resources.events, snds: new Float32Array(snds), shots: new Float32Array(shots), booms: new Float32Array(booms), puffs: new Float32Array(puffs), radio, corpses,
-    errors, errSamples,
+    errors, errSamples, health,
   };
 }
 </script>
@@ -2133,7 +2198,7 @@ function joinDemos(parts) {
   const out = Object.assign({}, parts[0], {
     kills: [], rounds: [], bomb: [], chat: [], nades: [], roundTimes: [], pauses: [], occupants: [], notes: [], radio: [], corpses: [], viewers: [],
     models: Object.assign({}, parts[0].models), sounds: Object.assign({}, parts[0].sounds), events: Object.assign({}, parts[0].events), pmodels: parts[0].pmodels.slice(),
-    players: {}, errors: 0, errSamples: [], parts: [], maps: parts[0].maps,
+    players: {}, errors: 0, errSamples: [], parts: [], maps: parts[0].maps, health: null,
   });
   // one shared numbering for a file's resource list ({ index: name }): same name, same number
   const unify = (dst, src) => {
@@ -2203,7 +2268,7 @@ function joinDemos(parts) {
     nSamples += n;
     Object.assign(out.players, P.players);
     out.errors += P.errors || 0; out.errSamples.push(...(P.errSamples || []));
-    out.parts.push({ fileName: P.fileName, start: sh(P.start), end: sh(P.end), firstRound, missing: missT + missCT, partway: !!lead, startsLate: !!lead || (P.rounds[0] && (P.rounds[0].scoreT || 0) + (P.rounds[0].scoreCT || 0) > 0), scoreAtStart: P.rounds[0] ? [P.rounds[0].scoreT || 0, P.rounds[0].scoreCT || 0] : [0, 0] });
+    out.parts.push({ fileName: P.fileName, health: P.health, dur: P.end - P.start, start: sh(P.start), end: sh(P.end), firstRound, missing: missT + missCT, partway: !!lead, startsLate: !!lead || (P.rounds[0] && (P.rounds[0].scoreT || 0) + (P.rounds[0].scoreCT || 0) > 0), scoreAtStart: P.rounds[0] ? [P.rounds[0].scoreT || 0, P.rounds[0].scoreCT || 0] : [0, 0] });
     out.end = sh(P.end);
   });
   const cat = (L) => { let len = 0; for (const a of L) len += a.length; const r = new Float32Array(len); let o = 0; for (const a of L) { r.set(a, o); o += a.length; } return r; };
@@ -4711,11 +4776,30 @@ function freeCamFromFollow() {
 function setCam(m, keepPlayer, exact) {
   // exact: dragging, the wheel, WASD, or nobody left to follow, which carry on from the view on screen
   if (m === 'free' && cam3.mode !== 'free') { if (exact) copyCamToFree(); else freeCamFromFollow(); }
+  // nobody picked, going from Free camera to Player's eyes or Behind player: follow the living player nearest
+  // the middle of the free camera's view, so the view stays on the same spot (Sujan, 2 Oct 2026). Before, it
+  // was the first living player in the list, wherever the camera was.
+  if (m !== 'free' && !selected && cam3.mode === 'free') { const e = nearestToView(); if (e != null) { selected = e; renderPane(); } }
   // following needs a living player; keepPlayer = the caller just picked one (e.g. a kill), so don't swap them out
   if (m !== 'free' && !keepPlayer) { const s = selected && playerState(selected, T); if (!s || s.state < 0) nextPlayer(1); }
   if (m !== 'free' && !selected) nextPlayer(1);
   cam3.mode = m; cam3.chase = null; cam3.cYaw = null;
   document.querySelectorAll('#cam3 [data-c]').forEach((x) => x.classList.toggle('on', x.dataset.c === m));
+}
+// The living player nearest the middle of the 3D view: the smallest angle between where the camera looks and
+// the player's chest. Players behind the camera only win when nobody is in front of it.
+function nearestToView() {
+  if (!R3 || !D) return null;
+  const c = R3.camera, f = new THREE.Vector3(); c.getWorldDirection(f);
+  let best = null, bestDot = -2;
+  for (const e of alivePlayers()) {
+    const s = playerState(e, T); if (!s) continue;
+    const v = new THREE.Vector3(s.x, s.z + 20, -s.y).sub(c.position);
+    if (v.lengthSq() < 1) return e;
+    const d = v.normalize().dot(f);
+    if (d > bestDot) { bestDot = d; best = e; }
+  }
+  return best;
 }
 function alivePlayers() { return Object.keys(D.slots).map(Number).filter((e) => { const s = playerState(e, T); return s && s.state > 0; }).sort((a, b) => ((teamOfSlot(a, T) ?? 9) - (teamOfSlot(b, T) ?? 9)) || a - b); }
 function nextPlayer(dir) {
@@ -5866,7 +5950,8 @@ function update3() {
     lx.strokeText(nm, sx, sy); lx.fillStyle = L.e === selected ? COL.sand : sideCol(L.s.state); lx.fillText(nm, sx, sy);
     const w = weaponShort(L.s.weapon), hpv = hpAt(L.e, T);
     const sub = [hpv != null ? hpv + ' hp' : '', w].filter(Boolean).join(' · ');
-    if (sub && dist < 2500) { lx.font = `400 10px ${mono}`; lx.strokeText(sub, sx, sy + 12); lx.fillStyle = '#d8d3c8'; lx.fillText(sub, sx, sy + 12); }
+    if (sub) { // at any distance, scoped or not (the 2500-unit limit was dropped in 0.16.0, Sujan)
+      lx.font = `400 10px ${mono}`; lx.strokeText(sub, sx, sy + 12); lx.fillStyle = '#d8d3c8'; lx.fillText(sub, sx, sy + 12); }
   }
   drawKillRings(lx, W, H, camera);
   const pov = $('pov');
@@ -6142,6 +6227,12 @@ async function loadSummary(sndDone) {
     const game = String((D.header && D.header.gameDir) || '').toLowerCase();
     const other = game && game !== 'cstrike';
     const why = other ? [`It's from another game: the file says "${game}", and the viewer only plays Counter-Strike 1.6.`] : [];
+    const hr = fileHealthRow(D.health, D.end - D.start);
+    if (hr && hr.s === 'warn') {
+      // the file's own structure says what's wrong: that's the reason, not a guess
+      renderSummary({ state: 'fail', title: "This demo can't be played", text: !moved ? 'The file stops before any player moved, so there is nothing to show.' : 'The file stops before the first round started, so there is nothing to show.', rows: [Object.assign({}, hr, { s: 'fail', n: hr.n.replace(/ It plays up to where the file stops: .*$/, '') + ` What's readable is ${fmt(D.end - D.start)} of recording.` })] });
+      return;
+    }
     if (!moved) why.push('It was stopped right after it started, before anyone moved.', 'It was cut off: the download or the recording was interrupted.');
     else why.push("It's from a game mode without rounds, like deathmatch or a training map.", 'It was stopped before the first round started.');
     if (!other) why.push("It's from another game: the viewer only plays Counter-Strike 1.6.");
@@ -6184,6 +6275,9 @@ async function loadSummary(sndDone) {
   const readText = notCounted ? `Demo read: ${live + notCounted} rounds, ${live} counted` : `Demo read: ${live} rounds`;
   if (!D.errors) rows.push({ s: 'ok', t: readText, n: '' });
   else rows.push({ s: 'warn', t: `${readText}, ${D.errors} damaged ${D.errors === 1 ? 'packet' : 'packets'}`, n: 'A few moments may skip or show players in the wrong spot.' });
+  // the file itself: never finished, cut short, extra bytes, damaged index (one row per part of a joined map)
+  const healthRows = (D.parts ? D.parts.map((P, i) => fileHealthRow(P.health, P.dur, `Part ${i + 1}: `)) : [fileHealthRow(D.health, D.end - D.start)]).filter(Boolean);
+  rows.push(...healthRows);
   if (M.after16) {
     const A = M.after16, n = A.extra, who = M.tnames[A.team], sc = `${Math.max(...A.score)}:${Math.min(...A.score)}`;
     rows.push({ s: 'info', t: `${n} ${n === 1 ? 'round was' : 'rounds were'} played after ${who} reached 16 (${sc})`, n: M.count30 ? 'Counted, as chosen for this demo (up to round 30).' : `Some events played all 30 rounds and count them. Not counted now: the match ends at ${sc}.`, btn: { id: 'sumCount30', label: M.count30 ? 'Stop at 16' : 'Count them' } });
@@ -6251,9 +6345,28 @@ async function loadSummary(sndDone) {
     rows.splice(STALE.size ? 2 : 1, rows.length, { s: 'warn', t: 'Map, overview, models and sounds: none loaded yet', n: 'The radar uses a plain grid, there is no 3D view, and the demo plays silently.' });
     res = { state: 'warn', title: 'The demo will play, in 2D only', text: 'Only the demo file is loaded. Choose your Half-Life folder to add the map, player models and sounds.', folder: true };
   }
+  // the only problem is the file stopping early: say that plainly in the title
+  else if (healthRows.some((r) => r.s === 'warn') && !rows.some((r) => (r.s === 'warn' || r.s === 'fail') && !healthRows.includes(r))) res = { state: 'warn', title: 'The demo will play up to where the file stops', text: 'Everything it needs loaded. The file itself is incomplete; what follows says exactly how.' };
   else if (!anyBad) res = { state: 'ok', title: 'Ready to watch', text: rows.some((r) => r.s === 'info') ? 'Everything loaded. The demo will play in full; a note on it below.' : 'Everything loaded. The demo will play in full.' };
   else res = { state: 'warn', title: 'The demo will play, with a few gaps', text: 'Some files are missing or damaged. Playback works; the parts marked below will look or sound different.', folder: !map || STALE.size > 0 };
   renderSummary(Object.assign(res, { rows }));
+}
+
+// What the file itself says about how it was recorded (demo.js, readIndex): a recording never closed, a
+// file cut short, extra bytes after the end, or a damaged index. Only things read from the file's own
+// structure, so each line is certain. Returns a summary row, or null for a file as a recorder leaves it.
+// lead: "Part 2: " in a joined map. dur: how long what's readable plays.
+function fileHealthRow(h, dur, lead = '') {
+  if (!h || (h.index === 'ok' && h.badFrame == null)) return null;
+  const mb = (n) => (n / 1048576).toFixed(n < 10485760 ? 1 : 0) + ' MB';
+  const plays = `It plays up to where the file stops: ${fmt(dur)} of recording.`;
+  const tail = h.cutInFrame ? ` The file also stops ${plural(h.cutInFrame, 'byte')} into its last frame.` : '';
+  const bad = h.badFrame != null ? ` Past ${mb(h.stopAt)} of ${mb(h.fileLen)} the frames can't be read (a damaged stretch), so the rest is left out.` : '';
+  if (h.index === 'ok' || (h.index === 'extra' && h.badFrame != null)) return { s: 'warn', t: `${lead}Part of this file is damaged`, n: `Past ${mb(h.stopAt)} of ${mb(h.fileLen)} the frames can't be read, so the rest is left out. ${plays.replace('the file stops', 'the damage starts')}` };
+  if (h.index === 'extra') return { s: 'info', t: `${lead}This file has ${plural(h.extra, 'extra byte')} after its end`, n: 'They come after the index the recorder writes when it stops, so they were added later (by a download or copy, say). The demo is complete and plays in full; the extra bytes are left out.' };
+  if (h.index === 'never') return { s: 'warn', t: `${lead}This recording was never finished`, n: `When a recording stops properly, the recorder writes an index at the end of the file, and this file has none: HLTV or the game stopped without closing the file, or it was copied or downloaded while still being written.${tail}${bad} ${plays}` };
+  if (h.index === 'past' || h.index === 'short') return { s: 'warn', t: `${lead}This file was cut short`, n: `The recording was finished, but ${h.index === 'past' ? "the index it ends with isn't in the file" : "the index it ends with is only partly in the file"}: the end of the file is missing, usually from an interrupted download or copy.${tail}${bad} ${plays}` };
+  return { s: 'warn', t: `${lead}This file's index is damaged`, n: `The index at the end of the file doesn't fit the file, so the frames were read one by one from the start instead.${tail}${bad} ${plays}` };
 }
 
 // the card itself: opens in the middle of the view, closes on its own (not when it reports a failure)
@@ -6273,10 +6386,13 @@ function setCount30(on) {
 function closeSummary() { const el = $('sumCard'); if (el) el.hidden = true; clearInterval(SUM.timer); SUM.timer = null; SUM.closedFor = D; }
 function showFailCard(name, err) {
   ERRLOG.push('Demo read failed: ' + err);
-  const why = /not a half-life demo/i.test(err) ? "It isn't a Half-Life demo file."
-    : /bounds|overrun|outside/i.test(err) ? 'The file ends partway through, so it may be cut off or still downloading.'
-    : 'Part of the file is damaged.';
-  renderSummary({ state: 'fail', title: "This demo can't be played", text: `${name} couldn't be opened. ${why} Try another copy of the demo, or check that it was recorded in Counter-Strike 1.6.`, rows: [] });
+  // A file that isn't cut off or unfinished (those open and play up to where they stop, see fileHealthRow)
+  // but still can't be read: say what the reader met, and only suggest checking the game when the file
+  // isn't a Half-Life demo at all.
+  const why = /not a half-life demo/i.test(err) ? "It isn't a Half-Life demo file: it doesn't start the way every demo does. Check that it's a .dem recorded in Counter-Strike 1.6."
+    : /bad frame type/i.test(err) ? `It's damaged near its start, ${(+((err.match(/at (\d+)/) || [])[1] || 0) / 1024).toFixed(0)} KB in, before the match begins, so nothing after that can be read. Try another copy of the demo.`
+    : `Part of it is damaged in a way the reader can't get past (it stopped with "${err}"). Try another copy of the demo.`;
+  renderSummary({ state: 'fail', title: "This demo can't be played", text: `${name} couldn't be opened. ${why}`, rows: [] });
 }
 function renderSummary(r) {
   // closed while it was still checking (×, Esc, or pressing play): don't bring it back for this demo
@@ -6329,10 +6445,12 @@ window.addEventListener('unhandledrejection', (e) => { ERRLOG.push('Promise: ' +
 function debugInfo() {
   let gpu = '';
   try { const gl = document.createElement('canvas').getContext('webgl'); const x = gl && gl.getExtension('WEBGL_debug_renderer_info'); gpu = gl ? (x ? gl.getParameter(x.UNMASKED_RENDERER_WEBGL) : 'WebGL available') : 'no WebGL'; } catch (e) { gpu = 'unknown'; }
-  const L = [`CS 1.6 Demo Viewer 0.15.5`, `Browser: ${navigator.userAgent}`, `Screen: ${screen.width}x${screen.height} at ${devicePixelRatio}x, window ${innerWidth}x${innerHeight}`, `Graphics: ${gpu}`];
+  const L = [`CS 1.6 Demo Viewer 0.16.0`, `Browser: ${navigator.userAgent}`, `Screen: ${screen.width}x${screen.height} at ${devicePixelRatio}x, window ${innerWidth}x${innerHeight}`, `Graphics: ${gpu}`];
   L.push(`Folder: ${Object.keys(files.maps).length} maps, ${Object.keys(files.overviews).length} overviews, ${Object.keys(files.mdl).length} models, ${Object.keys(files.snd).length} sounds, ${files.demos.length} demos`);
   if (D) {
     L.push(`Demo: ${D.fileName}, protocol ${(D.header && D.header.netProtocol) || '?'}, ${D.pov ? 'POV (recorded by a player)' : 'HLTV'}, map ${D.mapName}, length ${fmt(D.end - D.start)}, ${M.liveR.length} live rounds, final ${M.liveR.length ? M.liveR[M.liveR.length - 1].scoreAfter.join(':') : '-'}`);
+    const hs = (D.parts ? D.parts.map((P) => P.health) : [D.health]).map((h) => !h ? '?' : h.index + (h.walked ? `, read frame by frame to byte ${h.stopAt} of ${h.fileLen}` : '') + (h.cutInFrame ? `, stops ${h.cutInFrame} bytes into a frame` : '') + (h.badFrame != null ? `, damaged frame (type ${h.badFrame}) at byte ${h.stopAt}` : '') + (h.extra ? `, ${h.extra} bytes after the index` : ''));
+    L.push(`File: index ${hs.join('; ')}`);
     L.push(`Read errors: ${D.errors}${D.errSamples && D.errSamples.length ? ' (' + D.errSamples.join('; ') + ')' : ''}`);
     L.push(`Now: ${fmt(T - D.start)}, view ${viewMode}, camera ${cam3.mode}, speed ${speed}x, sound ${SND.on ? Math.round(SND.vol * 100) + '%' : 'off'}`);
   } else L.push('Demo: none open');

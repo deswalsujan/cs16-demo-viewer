@@ -11,7 +11,7 @@ Notes for Claude sessions, so nothing is lost between chats and machines.
 1. Change `src/`, then `python3 build.py` (writes `index.html` and `dist/artifact.html`).
 2. Bump `VERSION` for anything user-facing; add a CHANGELOG entry (Fixed / Changed / Added, "How it was tested", "Discussed, not changed") and update "Known limits" at the top.
 3. Move built items out of IDEAS.md and add new loose ends to its checklist.
-4. Test in the headless browser on Sujan's real files (`tests/README.md`), and run `folder_row_test.py`, `start_screen_check.py`, `prefs_check.py` and `demo_search_check.py`.
+4. Test in the headless browser on Sujan's real files (`tests/README.md`), and run `folder_row_test.py`, `start_screen_check.py`, `prefs_check.py`, `demo_search_check.py` and `late_kill_timing_check.py` (guards the 0.15.5 late-kill timing, added 3 Oct 2026).
 5. Commit, push to main (GitHub Pages deploys from it), and republish the claude.ai artifact https://claude.ai/artifact/KHjQXfeVe17XXPrqarFDrS from `dist/artifact.html`.
 
 ## Facts

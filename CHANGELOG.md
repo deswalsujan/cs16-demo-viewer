@@ -6,7 +6,7 @@ What changed in the viewer, newest first. The version shows in the viewer's shor
 - HLTV demos don't record the first-person weapon's animation, so it's rebuilt from shots, weapon switches and the player's body animation. Timing can differ slightly from in-game, and idle variations won't match. If a `v_` model is missing, no gun is shown.
 - Player models get even lighting, so they don't darken in shaded spots the way they do in-game.
 - Custom models are named in the load summary but not checked further yet. One with an unusual skeleton may pose oddly; compressed or 24-bit sounds stay silent.
-- A demo that's cut off (interrupted download or recording) can't be opened at all yet, even though the part before the cut is readable. See [IDEAS.md](IDEAS.md).
+- A demo that's cut off, never finished or damaged partway plays up to where its readable frames end (0.16.0). Anything after a damaged stretch is left out, even if readable frames follow it. A file damaged in its first frames, before the match begins, still can't be played.
 - Which rounds count is exact when the server's admin plugin announces the start ("Live !", "lo3", "3 restart and go !") and the end of each half in chat. Plugins word these differently, and a wording the viewer hasn't met yet falls back to a guess from the restarts, which can still count a warmup or miss a round. A file holding only a warmup, opened on its own, can show one round.
 - HLTV demos store about ten snapshots a second, so everything between two snapshots is an estimate. A flick that starts and ends between snapshots can't be recovered, and a sharp turn can look slightly rounder than it was. The view always passes exactly through every recorded snapshot.
 - At the moment of a kill, the shooter's crosshair can sit slightly off the victim, usually under 1.5° (through an AWP's 1x zoom that's up to about 60 pixels on a laptop screen). This comes from the demo, not the viewer: see 0.10.0, "Discussed, not changed".
@@ -22,8 +22,46 @@ What changed in the viewer, newest first. The version shows in the viewer's shor
 - When neither the file name nor a shared clan tag names a team, the header says "Team 1" and "Team 2" (iFNG FX vs fnatic, `auto_ifng-...`). Click the name in the header to type it in; it's remembered for that demo. Left as it is for now (Sujan, 2 Oct 2026; parked in IDEAS.md).
 - The demo search looks at file names only. A demo whose name doesn't say the teams or map (`auto_ifng-...`) is found by scrolling.
 - The wallbang finder rules out a kill that needed more damage than any shot through a wall can do (0.15.5). It needs the killer's shots in the demo; around a jump in the recording it can't tell, and the kill stays as the walls alone say.
-- Health under the names in 3D shows only for players within 2500 units of the camera, also through a scope.
+- Health and weapon under the names in 3D show at any distance (0.16.0). With many players far away, the labels can overlap.
 - A smoke cloud is drawn as one light green ball for as long as the smoke puffs (about 21 seconds, less when the round restarts). The game's own puffs drift and thin out unevenly, which the viewer doesn't copy.
+
+## 0.16.0 (2026-10-03)
+
+Broken demos, the camera when nobody is picked, and health under far names. All three asked for by Sujan on 2 Oct 2026 (IDEAS.md), built with no mockup at his request.
+
+### Added
+- **Cut-off and unfinished demos play up to where they stop.** A GoldSrc demo ends with an index of its segments that the recorder writes only when the recording stops properly. Without it the viewer refused the file. It now reads the frames one by one from the start instead and plays everything up to where the file stops. The same happens for a file damaged partway through: it plays up to the damage.
+- **The load summary says exactly why.** Each line comes from the file's own structure, never a guess:
+  - "This recording was never finished": the header's pointer to the index is 0, so the recorder never wrote it (HLTV or the game stopped without closing the file, or it was copied or downloaded while still being written).
+  - "This file was cut short": the recording was finished, but the index it points to is past the end of the file, or only partly in it.
+  - "This file has N extra bytes after its end": something was added after the index. Nothing is missing, so it plays in full.
+  - "This file's index is damaged" and "Part of this file is damaged": the index doesn't fit the file, or the frames stop being readable partway.
+  - Each also says when the file stops partway through its last frame, and how much recording is readable ("It plays up to where the file stops: 35:42 of recording."). When the only problem is the file stopping early, the card's title says so: "The demo will play up to where the file stops".
+  - A file that stops before anyone moved still can't be played, and now says why with the same line instead of a list of likely reasons. In a joined map each part gets its own line ("Part 2: This file was cut short").
+  - "Copy debug info" has a "File:" line with the same facts in bytes.
+
+### Changed
+- **Free camera to Player's eyes or Behind player, with nobody picked**, now follows the living player nearest the middle of the free camera's view, so the view stays where it was. Before, it was the first living player in the list, wherever the camera was. The button, the V key and both cameras work this way; a player already picked stays picked.
+- **The "HP · weapon" line under names shows at any distance**, scoped or not. It stopped at 2,500 units before, so through a scope at long range only the names showed (the Dust2 kills in 0.15.5 were 2,700 to 3,300 units away).
+- The can't-play message for a file that isn't a demo at all, or is damaged before the match begins, no longer ends with "check that it was recorded in Counter-Strike 1.6" unless the file isn't a Half-Life demo.
+
+### Tests
+- New `tests/late_kill_timing_check.py` (with `page/late_kill_timing.js`): fails if late kills in NoA vs Pentagram, Train 2006, stop being shown at the victim's death sound (0.15.5), so the fix can't be undone by accident. It re-reads the death sounds from the demo itself and checks all 135 late kills, then the kill Sujan confirmed (R22 0:55, neo's M4 on ave): shown 0.22 s before the message, positions 0.22 s before that, round timer 0:55, the kill feed empty at the shot and just before the death sound and showing the kill at it, ave on 9 HP just before. Run on a build with the fix undone (kills put back at the shot), 4 of its 11 checks fail.
+- New `page/free_cam_nearest.js` and `page/hp_line_far.js` for the two changes above.
+
+### How it was tested
+- On Sujan's Mac files (`~/Downloads/Half-Life`, 31 demos), copied into the test machine on 3 Oct 2026.
+- The file checks on all 31 demos: every index ends exactly at the last byte of its file, and reading the frames from the start ends exactly where the index begins, so the frame-by-frame reading finds the same segments as the index. Every demo reads exactly as in 0.15.5 (kills, rounds, snapshots, shots, health, map, errors: 31 of 31 identical, compared in Node).
+- Five damaged copies of Na`Vi vs FX, Dust2, SEC 2011 final, opened in the test browser: cut at 60% (no index in the file, stops 600 bytes into a frame): "This file was cut short", 16 rounds, 35:42 of recording; the same with the pointer set to 0: "This recording was never finished"; 100 bytes added: "100 extra bytes", 27 rounds, plays in full; cut at 20 KB, in the loading part: can't be played, with the cut-short line; a damaged frame halfway: "Part of this file is damaged", 13 rounds, 29:56. A whole file with the pointer set to 0 (NoA vs Pentagram, Train 2006) reads identically to the original.
+- Xperia Play 2011 FX vs mTw, Inferno, joined from its two files: mTw 19:17 in R36, as before.
+- Free camera: on Na`Vi vs FX, Dust2, with the camera aimed at the last and the middle player of the list, Player's eyes, Behind player and V followed that player (0.15.5 followed the first in the list, starix, in all five). A picked player stays picked.
+- HP line: with the camera over 2,500 units from all 10 players, every name drawn had its HP line (0.15.5: 0 of 10).
+- `late_kill_timing_check.py` passes. `folder_row_test.py` (20 of 20), `start_screen_check.py`, `prefs_check.py` and `demo_search_check.py` pass.
+
+### Discussed, not changed
+- No real broken demo is in either folder now (mousesports vs Virus, ESWC 2011, was deleted 2 Oct 2026), so the cases above were tested on copies damaged by hand. The "never finished" case matches what was read from mousesports vs Virus on 2 Oct 2026 (pointer 0, stops 199 bytes into its last frame).
+- "Say when a recording stops partway through its last round" (IDEAS.md) is separate and still needs a mockup.
+- At long range many HP lines can overlap each other; nothing is hidden to make room.
 
 ## 0.15.5 (2026-10-02)
 

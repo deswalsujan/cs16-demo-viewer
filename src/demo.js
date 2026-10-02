@@ -125,6 +125,73 @@ const TE_SIZES = {
 const SAMPLE_HZ = 30;
 const STRIDE = 11; // x, y, z, yaw, pitch, state, weaponModel, ducked, playerModel (index into pmodels), sequence, gaitsequence
 
+// ---- is the file as a finished recording leaves it? ----
+// A GoldSrc demo is a header (the first 544 bytes), then the frames as they were recorded, then an index of
+// its segments (loading, then playback). The recorder writes the index, and the header's pointer to it
+// (dirOffset), only when the recording stops properly. On all 31 demos on Sujan's Mac (3 Oct 2026) the index
+// ends exactly at the last byte of the file, and the frames read from the start end exactly where it begins. Three checks come from that structure alone, before any game
+// data is read, and none can be wrong about a file a recorder finished:
+//   1. the pointer is 0: the recording was never finished (index 'never')
+//   2. the pointer is past the end of the file, or the index runs past it: the file was cut short ('past',
+//      'short'); the index ends before the last byte: something was added after recording ('extra')
+//   3. the frames, read from the start, stop partway through one: the file is cut off (cutInFrame > 0)
+// Without a usable index, the frames are read one by one from the start, up to where the file stops.
+const HEADER_LEN = 544, DIR_ENTRY_LEN = 92;
+// Walks the frames from the end of the header without reading what's in them. Returns the segments (a frame
+// of type 5 ends one; the next starts right after it), where the readable frames stop, and how far into a
+// frame the file stops (0 when it stops between two frames). A demo has two segments, loading and playback,
+// and the index follows the second, so the walk stops there.
+function walkFrames(u8, dv) {
+  const len = u8.length, segs = [];
+  let p = HEADER_LEN, segStart = p, cutInFrame = 0, badType = -1;
+  while (p < len) {
+    if (p + 9 > len) { cutInFrame = len - p; break; }
+    const t = u8[p];
+    let size = 9;
+    if (t === 0 || t === 1) { if (p + 9 + 468 > len) { cutInFrame = len - p; break; } size += 468 + dv.getUint32(p + 9 + 464, true); }
+    else if (t === 2 || t === 5) size += 0;
+    else if (t === 3) size += 64;
+    else if (t === 4) size += 32;
+    else if (t === 6) size += 84;
+    else if (t === 7) size += 8;
+    else if (t === 8) { if (p + 17 > len) { cutInFrame = len - p; break; } size += 24 + dv.getUint32(p + 13, true); }
+    else if (t === 9) { if (p + 13 > len) { cutInFrame = len - p; break; } size += 4 + dv.getUint32(p + 9, true); }
+    else { badType = t; break; }
+    if (p + size > len) { cutInFrame = len - p; break; }
+    p += size;
+    if (t === 5) { segs.push({ offset: segStart, length: p - segStart }); segStart = p; if (segs.length === 2) break; }
+  }
+  if (p > segStart) segs.push({ offset: segStart, length: p - segStart });
+  return { segs, stopAt: p, cutInFrame, badType };
+}
+function readIndex(u8, r, header) {
+  const len = u8.length, off = header.dirOffset;
+  const health = { index: 'ok', fileLen: len };
+  let dirs = null;
+  if (off === 0) health.index = 'never';
+  else if (off < HEADER_LEN || off + 4 > len) health.index = 'past';
+  else {
+    r.p = off;
+    const n = r.ui(), end = off + 4 + n * DIR_ENTRY_LEN;
+    if (n === 0 || n > 1024) health.index = 'damaged';
+    else if (end > len) health.index = 'short';
+    else {
+      dirs = [];
+      for (let k = 0; k < n; k++) dirs.push({ id: r.ui(), name: r.nstr(64), flags: r.ui(), cdTrack: r.i(), time: r.f(), frames: r.ui(), offset: r.ui(), length: r.ui() });
+      if (dirs.some((d) => d.offset < HEADER_LEN || d.offset + d.length > off)) { health.index = 'damaged'; dirs = null; }
+      else if (end < len) { health.index = 'extra'; health.extra = len - end; }
+    }
+  }
+  if (!dirs) {
+    // no usable index: read the frames from the start, up to where the file stops
+    const w = walkFrames(u8, r.dv);
+    dirs = w.segs;
+    health.walked = true; health.stopAt = w.stopAt; health.cutInFrame = w.cutInFrame;
+    if (w.badType >= 0) health.badFrame = w.badType;
+  }
+  return { dirs, health };
+}
+
 // opts (used when the reader runs a second time on the same file, see the end):
 //   stopAtMap: stop at the first map change, for a recording that ran on into the next map
 //   povRounds: start rounds from the round timer, for demos without the HLTV round marker
@@ -136,12 +203,7 @@ export function parseDemo(buffer, onProgress, opts = {}) {
     demoProtocol: r.i(), netProtocol: r.i(), mapName: r.nstr(260), gameDir: r.nstr(260),
     mapCrc: r.i() >>> 0, dirOffset: r.ui(),
   };
-  r.p = header.dirOffset;
-  const dirCount = r.ui();
-  const dirs = [];
-  for (let k = 0; k < dirCount; k++) {
-    dirs.push({ id: r.ui(), name: r.nstr(64), flags: r.ui(), cdTrack: r.i(), time: r.f(), frames: r.ui(), offset: r.ui(), length: r.ui() });
-  }
+  const { dirs, health } = readIndex(u8, r, header);
 
   // ---- state ----
   const deltas = { delta_description_t: DELTA_DESC };
@@ -719,7 +781,10 @@ export function parseDemo(buffer, onProgress, opts = {}) {
         case 7: r.skip(8); break;
         case 8: { r.skip(4); const n = r.ui(); r.skip(n + 16); break; }
         case 9: { const n = r.ui(); r.skip(n); break; }
-        default: throw new Error('bad frame type ' + ftype + ' at ' + (r.p - 9));
+        default:
+          // a damaged frame: once the match is under way, keep what was read and stop here (like a cut-off file)
+          if (playbackStart == null) throw new Error('bad frame type ' + ftype + ' at ' + (r.p - 9));
+          health.badFrame = ftype; health.stopAt = r.p - 9; stopNow = true; break;
       }
       if (onProgress) {
         const prog = (doneLen + (r.p - d.offset)) / totalLen;
@@ -756,6 +821,6 @@ export function parseDemo(buffer, onProgress, opts = {}) {
     times: new Float32Array(samples.t), slots,
     finalScore: { ...scores }, models: resources.models, stride: STRIDE,
     pmodels, sounds: resources.sounds, events: resources.events, snds: new Float32Array(snds), shots: new Float32Array(shots), booms: new Float32Array(booms), puffs: new Float32Array(puffs), radio, corpses,
-    errors, errSamples,
+    errors, errSamples, health,
   };
 }
