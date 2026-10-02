@@ -18,7 +18,7 @@ What changed in the viewer, newest first. The version shows in the viewer's shor
 - On maps with a lot of scenery (de_tuscan above all) the demo has no grenade in flight and no gun on the floor: the old engine sends at most 256 objects per snapshot and the map's own objects fill nearly all of them. Smokes, HE explosions and flashbang pops still show where and when they went off (see 0.14.0), but there's no flight path to draw.
 - A match split over two demo files can't be joined into one: each file is scored on its own, and the overtime split in player stats is per file. A second file that starts at 0:0 can't be told apart from a new match (see [IDEAS.md](IDEAS.md)).
 - Whether rounds after 16 count can't be read from the demo, so the match stops at 16 unless Count them is switched on for that demo.
-- When neither the file name nor a shared clan tag names a team, the header says "Team 1" and "Team 2" (iFNG FX vs fnatic, `auto_ifng-...`). Click the name in the header to type it in; it's remembered for that demo.
+- When neither the file name nor a shared clan tag names a team, the header says "Team 1" and "Team 2" (iFNG FX vs fnatic, `auto_ifng-...`). Click the name in the header to type it in; it's remembered for that demo. Left as it is for now (Sujan, 2 Oct 2026; parked in IDEAS.md).
 - A smoke cloud is drawn as one light green ball for as long as the smoke puffs (about 21 seconds, less when the round restarts). The game's own puffs drift and thin out unevenly, which the viewer doesn't copy.
 
 ## 0.14.2 (2026-10-02)
@@ -62,8 +62,8 @@ Round counting and player stats, from Sujan's checks of K-D numbers he knows fro
   | IOL SK vs Dateam, Dust2 | 16:5, from 11:48 | 16:4, from 17:23 | Sujan |
   | Na`Vi vs FX, Dust2, SEC 2011 | 12:16 | 11:16 | the official 16-11 (known since 0.7.1) |
   | SK vs WinFakt, Mirage, IEM6 New York | 17:9 | 16:8 | HLTV.org's report of the final: 10-5 at half, then 6 rounds to 3 ([HLTV.org](https://www.hltv.org/news/7636/sk-win-iem6-gc-new-york)) |
-  | Na`Vi vs FX, Train, SEC 2011 | 12:19 | 11:16 | not found online; 19 isn't possible without overtime |
-  | mTw vs Lions, Nuke, DreamHack Summer 2011 | 11:17 | 10:16 | not found online; 17 isn't possible without overtime |
+  | Na`Vi vs FX, Train, SEC 2011 | 12:19 | 11:16 | Sujan (2 Oct 2026); not found online |
+  | mTw vs Lions, Nuke, DreamHack Summer 2011 | 11:17 | 10:16 | Sujan (2 Oct 2026); not found online |
   | Moscow 5 vs Na`Vi Mirage, mouz vs SK Mirage, AGAiN vs ALTERNATE Nuke, Fnatic vs ALTERNATE Nuke | | same score, 1 to 3 players with one death less (team swap suicides) | |
   | Anexis vs fnatic Tuscan, MYM vs SK Inferno | | team names only: fnatic, MeetYourMakers, SK Gaming | |
   | The other 6 | | unchanged | |

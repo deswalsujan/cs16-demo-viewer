@@ -1,0 +1,102 @@
+<!doctype html><html><head><meta charset="utf-8">
+<style>
+:root{--bg:#111417;--panel:#171b1f;--panel-2:#1d2227;--line:#2a3137;--fg:#e7e3d9;--muted:#8d959c;--faint:#5b636a;--sand:#cbb47e;--t:#e8574d;--ct:#5ea3e8;--kill:#ff9a3c;--good:#8fc97a;
+--f-display:"Chakra Petch","Arial Narrow",system-ui,sans-serif;--f-body:"IBM Plex Sans",system-ui,sans-serif;--f-mono:"IBM Plex Mono",Menlo,monospace}
+body{margin:0;background:#0b0d0f;color:var(--fg);font-family:var(--f-body);font-size:14px;padding:24px;display:flex;gap:26px;align-items:flex-start}
+.col{width:340px}.col.wide{width:440px}
+.cap{font-size:15px;font-weight:600;margin:0 0 4px}.sub0{color:var(--muted);font-size:12px;margin:0 0 12px;line-height:1.45;min-height:52px}
+.panel{background:var(--panel);border:1px solid var(--line);border-radius:6px;overflow:hidden}
+.btn{background:var(--panel-2);border:1px solid var(--line);border-radius:4px;padding:5px 10px;font-size:12px;color:var(--fg);font-family:var(--f-body);white-space:nowrap}
+.btn.sm{padding:3px 8px}
+/* summary */
+.sum-top{display:flex;gap:12px;padding:14px 16px;border-bottom:1px solid var(--line);border-left:4px solid var(--good)}
+.sum-top h2{margin:0 0 4px;font-family:var(--f-display);font-size:18px;color:var(--good)}.sum-top p{margin:0;font-size:13px;line-height:1.5}
+.sum-list{list-style:none;margin:0;padding:8px 16px;display:grid;gap:2px}
+.sum-list li{display:grid;grid-template-columns:22px minmax(0,1fr);gap:8px;padding:5px 0;font-size:13px;line-height:1.4}
+.sum-list li small{display:block;color:var(--muted);font-size:12px}
+.ic{font-family:var(--f-mono);font-weight:600;text-align:center;border-radius:50%;width:20px;height:20px;line-height:20px;font-size:12px}
+.ic.ok{color:var(--good);background:#8fc97a29}.ic.info{color:var(--sand);background:#cbb47e29}
+.li-btn{margin-top:6px}
+.sum-foot{display:flex;padding:10px 16px 12px;border-top:1px solid var(--line);color:var(--muted);font-size:12px;font-family:var(--f-mono);justify-content:flex-end}
+/* rounds */
+.tabs{display:flex;border-bottom:1px solid var(--line)}.tabs span{flex:1;text-align:center;padding:10px 4px;font-size:12px;letter-spacing:.08em;color:var(--muted)}.tabs .on{color:var(--fg);border-bottom:2px solid var(--sand)}
+.opt{padding:8px 14px;color:var(--muted);font-size:12px;border-bottom:1px solid var(--line)}
+.row{display:grid;grid-template-columns:44px minmax(0,1fr) auto;gap:8px;align-items:center;padding:8px 14px;border-bottom:1px solid var(--line);font-size:13px}
+.n{font-family:var(--f-mono);color:var(--muted);font-size:12px}
+.d{color:var(--muted);font-size:12px;font-family:var(--f-mono);text-align:right}
+.sub{color:var(--muted);font-size:12px}
+.pill{display:inline-block;font-size:11px;font-weight:600;padding:1px 6px;border-radius:3px;margin-right:6px}
+.pill.t{background:#e8574d38;color:var(--t)}.pill.ct{background:#5ea3e838;color:var(--ct)}
+.after{opacity:.5}
+.after .tag{font-family:var(--f-mono);font-size:10px;color:var(--muted);border:1px solid var(--line);border-radius:3px;padding:0 4px;margin-left:6px}
+.note{display:flex;gap:10px;align-items:center;padding:10px 14px;border-bottom:1px solid var(--line);background:#cbb47e14;font-size:12px;line-height:1.45;color:var(--fg)}
+.note span{flex:1}
+.callout{color:var(--muted);font-size:11.5px;margin-top:10px;line-height:1.5}
+
+.col.w3{width:420px}
+.ic.warn{color:#ff9a3c;background:#ff9a3c29}
+.card{background:var(--panel);border:1px solid var(--line);border-radius:6px;overflow:hidden}
+.card h3{margin:0;padding:14px 16px 4px;font-family:var(--f-display);font-size:17px}
+.card .lead{margin:0;padding:0 16px 10px;color:var(--muted);font-size:12.5px;line-height:1.5;border-bottom:1px solid var(--line)}
+.parts{padding:10px 16px;display:grid;gap:8px;border-bottom:1px solid var(--line)}
+.part{display:grid;grid-template-columns:52px minmax(0,1fr);gap:8px;font-size:12.5px;line-height:1.45}
+.part b{font-family:var(--f-mono);font-size:11px;color:var(--sand);font-weight:500;padding-top:1px}
+.part .fn{font-family:var(--f-mono);font-size:11.5px;color:var(--fg);word-break:break-all}
+.part small{display:block;color:var(--muted);font-size:12px}
+.checks{list-style:none;margin:0;padding:8px 16px;display:grid;gap:2px;border-bottom:1px solid var(--line)}
+.checks li{display:grid;grid-template-columns:22px minmax(0,1fr);gap:8px;padding:4px 0;font-size:12.5px;line-height:1.4}
+.checks li small{display:block;color:var(--muted);font-size:12px}
+.btns{display:flex;gap:8px;padding:12px 16px;justify-content:flex-end}
+.btn.pri{background:var(--sand);color:#1b1a16;border-color:var(--sand);font-weight:600}
+.divider{padding:7px 14px;font-family:var(--f-mono);font-size:11px;color:var(--sand);background:#cbb47e10;border-bottom:1px solid var(--line);letter-spacing:.02em}
+.row.gap .sub{color:var(--muted)}
+.row.gap{background:repeating-linear-gradient(135deg,transparent 0 6px,#ffffff06 6px 12px)}
+.hdr{display:flex;align-items:center;gap:10px;padding:10px 14px;border-bottom:1px solid var(--line);font-family:var(--f-display);font-weight:700}
+.hdr .num{font-size:20px}.hdr .chip{margin-left:auto;font-family:var(--f-mono);font-weight:500;font-size:11px;color:var(--sand);border:1px solid #cbb47e66;border-radius:3px;padding:1px 6px}
+</style></head><body>
+<div class="col w3"><p class="cap">1. Part 2 opened on its own</p><p class="sub0">Shown when a demo starts with rounds already on the scoreboard, or ends before anyone won. When the other part is in the folder (same map, same 10 players by Steam ID), it's named and offered.</p>
+<div class="panel">
+<div class="sum-top"><div><h2>Ready to watch</h2><p>Everything loaded. The demo will play in full; a note on it below.</p></div></div>
+<ul class="sum-list">
+<li><span class="ic ok">✓</span><span>Demo read: 21 rounds</span></li>
+<li><span class="ic info">i</span><span>This is probably part 2 of a match recorded in two files<small>The game's scoreboard already shows 1 round played when the recording starts. fx-vs-mtw-xperia2011-1104240025-de_inferno.dem has the same 10 players on this map and ends at 6:9 with no winner.</small><div class="li-btn"><span class="btn sm">Join them</span></div></span></li>
+<li><span class="ic ok">✓</span><span>Map and textures</span></li>
+<li><span class="ic ok">✓</span><span>Player models: 10 of 10</span></li>
+</ul>
+<div class="sum-foot">Closes in 14 s</div>
+</div>
+<p class="callout">No other part in the folder: the line reads "The other part isn't in your folder. If you have it, use Join with another demo in the Rounds tab." Opening part 1 alone gives the mirror line: "This recording ends at 6:9, before anyone won."</p>
+</div>
+
+<div class="col w3"><p class="cap">2. Join them</p><p class="sub0">The viewer finds the match, you confirm it. The same card opens from "Join with another demo…", where you pick the file yourself; a file that fails the checks can't be joined.</p>
+<div class="card">
+<h3>Count these two demos as one match?</h3>
+<p class="lead">Score, rounds and player stats will cover both. Playback switches file where one part ends.</p>
+<div class="parts">
+<div class="part"><b>Part 1</b><span><span class="fn">fx-vs-mtw-xperia2011-1104240025-de_inferno.dem</span><small>15 rounds, ends at mTw 6 : 9 Frag eXecutors</small></span></div>
+<div class="part"><b>Part 2</b><span><span class="fn">fx-vs-mtw-xperia2011-1104240112-de_inferno.dem</span><small>Starts with 1 round already played, then 21 rounds</small></span></div>
+</div>
+<ul class="checks">
+<li><span class="ic ok">✓</span><span>Same map: de_inferno, same server</span></li>
+<li><span class="ic ok">✓</span><span>Same 10 players, by Steam ID</span></li>
+<li><span class="ic ok">✓</span><span>Teams swapped sides between the parts</span></li>
+<li><span class="ic warn">!</span><span>1 round isn't in either file<small>It was played between the two recordings. The scoreboard says mTw won it, so it counts in the score; its kills can't count in the stats.</small></span></li>
+</ul>
+<div class="btns"><span class="btn">Pick another demo…</span><span class="btn">Cancel</span><span class="btn pri">Join them</span></div>
+</div>
+</div>
+
+<div class="col w3"><p class="cap">3. After joining</p><p class="sub0">One match: numbered straight through, a marker where the file changes, and the missing round shown as a gap. Remembered for these two files.</p>
+<div class="panel">
+<div class="hdr"><span style="color:var(--ct)">mTw</span><span class="num">8</span><span style="color:var(--faint)">:</span><span class="num">11</span><span style="color:var(--t)">Frag eXecutors</span><span class="chip">2 files</span></div>
+<div class="tabs"><span class="on">ROUNDS</span><span>KILLS</span><span>PLAYERS</span><span>WALLBANGS</span></div>
+<div class="row"><span class="n">R15</span><span><span class="pill ct">CT</span>Frag eXecutors<div class="sub">time ran out · 9 kills</div></span><span class="d">6:9<br>2:04</span></div>
+<div class="divider">Part 2 · fx-vs-mtw-xperia2011-1104240112</div>
+<div class="row gap"><span class="n">R16</span><span><span class="pill ct">CT</span>mTw<div class="sub">not in either file</div></span><span class="d">7:9<br>—</span></div>
+<div class="row"><span class="n">R17</span><span><span class="pill ct">CT</span>mTw<div class="sub">bomb defused · 8 kills</div></span><span class="d">8:9<br>1:41</span></div>
+<div class="row"><span class="n">R18</span><span><span class="pill t">T</span>Frag eXecutors<div class="sub">bomb exploded · 5 kills</div></span><span class="d">8:10<br>1:39</span></div>
+<div class="row"><span class="n">R19</span><span><span class="pill t">T</span>Frag eXecutors<div class="sub">elimination · 7 kills</div></span><span class="d">8:11<br>1:46</span></div>
+</div>
+<p class="callout">Header and Players tab cover both files. "Split them" in the Rounds tab undoes it. Scores on this panel are what the viewer reads from these files today; the joined count is worked out again over both parts once built.</p>
+</div>
+</body></html>
