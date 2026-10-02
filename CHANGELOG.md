@@ -23,6 +23,15 @@ What changed in the viewer, newest first. The version shows in the viewer's shor
 - The demo search looks at file names only. A demo whose name doesn't say the teams or map (`auto_ifng-...`) is found by scrolling.
 - A smoke cloud is drawn as one light green ball for as long as the smoke puffs (about 21 seconds, less when the round restarts). The game's own puffs drift and thin out unevenly, which the viewer doesn't copy.
 
+## 0.15.4 (2026-10-02)
+
+### Changed
+- "Copy debug info" now says which kind of demo is open: its protocol (47 for demos recorded before the 23 October 2008 update, 48 after) and whether HLTV or a player recorded it (POV). Old demos and POV demos each have known quirks (late kill messages in the 2006 NoA vs Pentagram demo, players dropping in and out of view in POV demos), so a bug report can be read with that in mind. Agreed by Sujan, 2 Oct 2026.
+
+### How it was tested
+- The debug text on NoA vs Pentagram, Train 2006 ("protocol 47, HLTV") and Na`Vi vs FX, Dust2, SEC 2011 final ("protocol 48, HLTV").
+- `demo_search_check.py`, `folder_row_test.py` (20 of 20), `start_screen_check.py` and `prefs_check.py` pass.
+
 ## 0.15.3 (2026-10-02)
 
 The viewer's font, and spacing on the demo search.

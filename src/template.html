@@ -3735,7 +3735,7 @@ function debugInfo() {
   const L = [`CS 1.6 Demo Viewer __VERSION__`, `Browser: ${navigator.userAgent}`, `Screen: ${screen.width}x${screen.height} at ${devicePixelRatio}x, window ${innerWidth}x${innerHeight}`, `Graphics: ${gpu}`];
   L.push(`Folder: ${Object.keys(files.maps).length} maps, ${Object.keys(files.overviews).length} overviews, ${Object.keys(files.mdl).length} models, ${Object.keys(files.snd).length} sounds, ${files.demos.length} demos`);
   if (D) {
-    L.push(`Demo: ${D.fileName}, map ${D.mapName}, length ${fmt(D.end - D.start)}, ${M.liveR.length} live rounds, final ${M.liveR.length ? M.liveR[M.liveR.length - 1].scoreAfter.join(':') : '-'}`);
+    L.push(`Demo: ${D.fileName}, protocol ${(D.header && D.header.netProtocol) || '?'}, ${D.pov ? 'POV (recorded by a player)' : 'HLTV'}, map ${D.mapName}, length ${fmt(D.end - D.start)}, ${M.liveR.length} live rounds, final ${M.liveR.length ? M.liveR[M.liveR.length - 1].scoreAfter.join(':') : '-'}`);
     L.push(`Read errors: ${D.errors}${D.errSamples && D.errSamples.length ? ' (' + D.errSamples.join('; ') + ')' : ''}`);
     L.push(`Now: ${fmt(T - D.start)}, view ${viewMode}, camera ${cam3.mode}, speed ${speed}x, sound ${SND.on ? Math.round(SND.vol * 100) + '%' : 'off'}`);
   } else L.push('Demo: none open');
