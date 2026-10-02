@@ -46,6 +46,7 @@ Custom maps work too, as long as the map's `.bsp` (and its `.wad` files if it us
 - Kill markers on the crosshair (kill, headshot, wallbang) and a death cam
 - Health, weapons, grenades, smokes, heatmaps, a hold-Tab scoreboard with spectators and the HLTV audience count
 - Demos recorded by a player (POV) too, with limits: a player's game only receives the players near them, so others drop in and out of view
+- A map recorded in two or more demo files counted as one map: the viewer spots the other part in your folder (same map, same players), puts the parts in order and joins them, with one score, one round list and player stats over all of it. Split them undoes it
 - Old demos too. CS 1.6 recorded demos as protocol 47 until the update of 23 October 2008 ([announced](https://www.hltv.org/news/1779/cs-16-update-coming-soon) and [released](https://www.hltv.org/news/1787/cs-16-update-live) on HLTV.org). The Steam version only plays protocol 48, so it refuses those older demos unless they're converted. The viewer plays both as they are
 - Remembers your Half-Life folder between visits (Chrome and Edge) and tells you when demos, maps, models or sounds in it change
 - Breakable vents and windows disappear in 3D when they are shot out, and doors open and close as they did in the match (the wallbang finder uses where each door really was)
@@ -62,7 +63,7 @@ src/audio.js        Sound: .wav decoding, positional playback, radio lines
 src/template.html   The page: layout, styles, 2D radar, timeline, panels
 build.py            Combines everything into one self-contained page
 CHANGELOG.md        What changed, newest first
-docs/               Design images: scope styles, and the approved side panel designs (0.13.0)
+docs/               Design images: scope styles, the approved side panel designs (0.13.0), Count them and split maps
 tests/              Test and measurement scripts: browser checks, Theatre mode checks, demo data probes (see tests/README.md)
 IDEAS.md            Parked ideas and open decisions, with the discussion behind them
 CLAUDE.md           How Claude sessions work on this repo: workflow, checking facts, where the test files are

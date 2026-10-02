@@ -3526,8 +3526,10 @@ async function loadSummary(sndDone) {
   }
   if (D.maps && D.maps.length > 1) rows.push({ s: 'info', t: `The recording switched maps. Showing ${D.mapName}, where it spent longest.`, n: D.maps.map((m) => `${m.map} ${fmt(m.dur)}`).join(', then ') });
   if (D.pov) rows.push({ s: 'info', t: 'Recorded by a player (a POV demo)', n: "A player's game only receives the players near them, so others drop in and out of view, and wallbangs are found less reliably than in HLTV demos." });
-  // A map recorded in two or more files. A part on its own says so when it starts with rounds already on the
-  // game's scoreboard, or ends before anyone won, and offers the other parts when they're in the folder.
+  // A map recorded in two or more files. A part on its own says so only when another part is in the folder
+  // (same map, at least 8 of the same Steam IDs) and this one starts late or ends before anyone won. Those two
+  // alone were wrong on all four demos on Sujan's Mac that showed them with no other part (2 Oct 2026): a draw
+  // the server announced, two recordings cut off in their last round, and an overtime-only file.
   if (D.parts) {
     const js = joinedSetOf(D.parts[0].fileName);
     rows.push({ s: 'info', t: `One map, joined from ${D.parts.length} files`, n: D.parts.map((x, i) => `Part ${i + 1}: ${x.fileName}`).join('. ') + '.' + (js && js.keep && js.why ? ` Joined in your order, which the rounds don't support: ${js.why}` : '') + ' Split them in the Rounds tab.' });
@@ -3543,10 +3545,12 @@ async function loadSummary(sndDone) {
       if (late && !open) { t = 'This is probably part 2 of a map recorded in two or more files'; n = lateText.trim(); }
       else if (open && !late) { t = `This recording ends at ${ends}, before anyone won`; n = 'The rest of the map is probably in another file.'; }
       else { t = 'This is probably one part of a map recorded in two or more files'; n = `${lateText.trim()} It ends before anyone won.`; } // this file's own score means nothing for the map
-      if (others.length) n += others.length === 1 ? ` ${others[0].name} has the same players on ${D.mapName}.` : ` ${others.length} other demos have the same players on ${D.mapName}: ${others.map((f) => f.name).join(', ')}.`;
-      else n += " The other parts aren't in your folder. If you have them, use Join with another demo in the Rounds tab.";
-      SUM.joinList = others.length ? [CUR_FILE || fileByName(D.fileName), ...others].filter(Boolean) : null;
-      rows.push(Object.assign({ s: 'info', t, n }, others.length ? { btn: { id: 'sumJoin', label: 'Join the parts' } } : {}));
+      SUM.joinList = null;
+      if (others.length) {
+        n += others.length === 1 ? ` ${others[0].name} has the same players on ${D.mapName}.` : ` ${others.length} other demos have the same players on ${D.mapName}: ${others.map((f) => f.name).join(', ')}.`;
+        SUM.joinList = [CUR_FILE || fileByName(D.fileName), ...others].filter(Boolean);
+        rows.push({ s: 'info', t, n, btn: { id: 'sumJoin', label: 'Join the parts' } });
+      }
     }
   }
   if (!map) rows.push({ s: 'fail', t: `Map ${D.mapName} not found`, n: 'No 3D view and no wallbang finder. Add the .bsp from cstrike\\maps or cstrike_downloads\\maps.' });
