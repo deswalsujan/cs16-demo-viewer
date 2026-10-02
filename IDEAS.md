@@ -7,8 +7,6 @@ Parked ideas and features we've discussed but not built yet. Each entry keeps en
 Everything raised in conversation that isn't finished, in one place. Each item says who does it. Ideas for new features are further down; this list is for loose ends.
 
 **0.14.2, built on the branch `wip/team-swap-and-match-end`, not shipped** (details in CHANGELOG.md, "In progress")
-- [ ] Sujan: approve or change the Count them mockup, [docs/proposed/count-after-16-mock.png](docs/proposed/count-after-16-mock.png). Move it to `docs/` once approved. Updated 2 Oct 2026 with his two changes ("30 rounds, 27 counted", one team name throughout).
-- [ ] Sujan: OK the team name change (CHANGELOG.md, 0.14.2 "Discussed, not changed"): read "_vs_" file names, and look clan tags up in the known teams list so "SK.SWE.AMD" shows as SK Gaming.
 - [ ] Claude: warn, then run the old vs new comparison on every demo (about 25 minutes) and report score changes.
 - [ ] Claude: the three test scripts and page checks, then ship (VERSION, CHANGELOG, Known limits, merge, push, artifact).
 - [ ] Sujan: check the shipped numbers against the matches he knows.
@@ -43,7 +41,7 @@ Everything raised in conversation that isn't finished, in one place. Each item s
 - [ ] Remove the `noindex` tag that `build.py` adds to `index.html` (kept out of search results until then; indexing is fine on sujandeswal.com).
 - [ ] Privacy hardening (see "Other parked ideas").
 
-**Done since this list was written:** 0.14.1 (FX vs SK Inferno: lo3, restarted halves, KUBEN twice, renamed players); 0.14.0 (smokes from the game's own smoke events, HE and flash bursts on maps where the demo has no grenade objects, light green smokes, shorter names and the skull in the Players tab, Free camera starting at the player); and earlier: Train in 3D on Sujan's side (the 2006 NoA vs Pentagram demo, 1 Oct 2026, which led to 0.13.0); 0.13.0 (kills timed from the real moment, the gun rule, POV demos, Clear saved files closing the demo, the smooth summary bar, the side panel lists); the start screen line "Needs your own copy of Counter-Strike 1.6, installed through Steam" (0.12.4, confirmed by Sujan).
+**Done since this list was written:** the Count them mockup and the team name change, approved by Sujan (2 Oct 2026); 0.14.1 (FX vs SK Inferno: lo3, restarted halves, KUBEN twice, renamed players); 0.14.0 (smokes from the game's own smoke events, HE and flash bursts on maps where the demo has no grenade objects, light green smokes, shorter names and the skull in the Players tab, Free camera starting at the player); and earlier: Train in 3D on Sujan's side (the 2006 NoA vs Pentagram demo, 1 Oct 2026, which led to 0.13.0); 0.13.0 (kills timed from the real moment, the gun rule, POV demos, Clear saved files closing the demo, the smooth summary bar, the side panel lists); the start screen line "Needs your own copy of Counter-Strike 1.6, installed through Steam" (0.12.4, confirmed by Sujan).
 
 **Next on the roadmap:** item 2, the README Requirements list (below).
 

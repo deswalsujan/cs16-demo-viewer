@@ -30,7 +30,8 @@ Built on the branch `wip/team-swap-and-match-end`, not on main or the claude.ai 
 - **The IOL false start** (SK vs Dateam Dust2): the false-start rule is stricter, so a stretch is only thrown away when the next stretch is in the same announced window or its window wasn't closed by an end-of-half message. Two rounds in a row with no kills also end a stretch (idle server).
 - **Overtime after a restart, with no admin messages:** after the last live stretch, new stretches of 1 to 3 real rounds count as overtime.
 - **Stop at 16 by default.** The match ends when a team reaches 16 with the other on 14 or less, or in overtime (MR3) at 19, 22 and so on with a 2-round lead. Rounds played after that are listed in the Rounds tab faded, tagged "after the match", with no number, and don't count anywhere.
-- **"Count them", per demo.** Some events played all 30 rounds and counted them. A note in the Rounds tab and a line in the load summary say how many rounds were played after the match ended, with a "Count them" button (then "Stop at 16"). Counting goes up to round 30 at most and never changes overtime. The choice is remembered per demo file (`count30:<file name>` in saved settings). Mockup, not yet approved by Sujan: [docs/proposed/count-after-16-mock.png](docs/proposed/count-after-16-mock.png).
+- **"Count them", per demo.** Some events played all 30 rounds and counted them. A note in the Rounds tab and a line in the load summary say how many rounds were played after the match ended, with a "Count them" button (then "Stop at 16"). Counting goes up to round 30 at most and never changes overtime. The choice is remembered per demo file (`count30:<file name>` in saved settings). The load summary's first line gives both numbers ("Demo read: 30 rounds, 27 counted") while the extra rounds aren't counted. Approved by Sujan (2 Oct 2026): [docs/count-after-16-mock.png](docs/count-after-16-mock.png).
+- **Team names.** File names with "_vs_" or ".vs." are now read as well as "-vs-" (fnatic vs EG is `fnatic_vs_EG_...`, which wasn't). A shared clan tag is looked up in the list of known teams, whole and then by its first part, so "SK.SWE.AMD" and "SK Gaming |" read as SK Gaming and "fnatic.MSI" as fnatic. An unknown tag stays as written, and a name typed in the header still wins. On the EG demo the header now reads "fnatic" and "Evil Geniuses" (EG's full name in the list). Approved by Sujan (2 Oct 2026).
 
 ### Numbers checked so far (all match what Sujan confirmed)
 | Demo | Viewer on the branch | Sujan's number |
@@ -44,7 +45,7 @@ Built on the branch `wip/team-swap-and-match-end`, not on main or the claude.ai 
 Checked with `tests/page/match_detail.js`. Count them was switched on, then off again, on the EG demo: it goes back to 11:16 and 29-17.
 
 ### Still to do before shipping
-1. Sujan's approval of the Count them mockup.
+1. Page checks on the new summary line and team names (needs Sujan's files).
 2. The old vs new comparison on every demo (`tests/page/match_summary.js`, about 25 minutes; warn first). Expected change: Na`Vi vs FX Dust2 may drop the extra first-half round and read the official 16-11.
 3. `folder_row_test.py`, `start_screen_check.py`, `prefs_check.py` and the page checks.
 4. VERSION, this entry turned into a normal 0.14.2 entry, Known limits (below), IDEAS.md, merge into main, push, republish the artifact.
@@ -54,9 +55,8 @@ Checked with `tests/page/match_detail.js`. Count them was switched on, then off 
 - Whether rounds after 16 count can't be read from the demo, so it's the default (stop at 16) unless switched per demo.
 
 ### Discussed, not changed
-- Count them mockup, Sujan's changes (2 Oct 2026): the load summary's first line reads "Demo read: 30 rounds, 27 counted", so the line under it ("3 rounds were played after…") has its context; the note uses the same team name as the header and the rows ("fnatic" everywhere in the mockup, which assumes the team name change below).
+- Count them mockup, Sujan's changes (2 Oct 2026): the load summary's first line reads "Demo read: 30 rounds, 27 counted", so the line under it ("3 rounds were played after…") has its context; the note uses the same team name as the header and the rows. Sujan asked for the plain team name ("SK Gaming", whether players wear "SK", "SK.SWE.AMD" or "SK Gaming |"), which became the team name change above.
 - Rounds after the match stay faded in the Rounds tab with no round number and no running score (agreed 2 Oct 2026). Their numbers and scores show once Count them is clicked, so showing them before would only add clutter. The round time stays, so the rows can still be clicked and watched.
-- Team names (raised 2 Oct 2026, not built yet): the header, rows and notes should show the plain team name ("SK Gaming" for "SK", "SK.SWE.AMD" or "SK Gaming |"). Today the viewer takes it from, in order: a name typed in the header (click to rename, remembered per demo), the demo file name when it has "-vs-" in it (looked up in a list of known teams), then the clan tag most of the team shares, as written ("fnatic.MSI"). The fnatic vs EG file is named `fnatic_vs_EG_...`, with "_vs_", so it falls through to the clan tag. Proposed: also read "_vs_" file names, and look the clan tag up in the known teams list by its first part ("SK.SWE.AMD" gives "sk", so SK Gaming; "fnatic.MSI" gives fnatic). An unknown tag stays as written. Waiting for Sujan's OK.
 - Stop at 16 or play all 30: most demos Sujan has stop at 16, some events played all 30. Detecting it from the demo isn't reliable, so stopping at 16 is the default with a per-demo switch (agreed 2 Oct 2026). Sujan confirmed overtime must stay MR3 and never be treated as "play to 30".
 
 ## 0.14.1 (2026-10-02)

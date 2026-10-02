@@ -2532,7 +2532,7 @@ function derive() {
       return top ? top.replace(/^[\s\W]+|[\s\W]+$/g, '').trim() : null;
     };
     const a = tryAffix(true) || tryAffix(false);
-    return a && a.length >= 2 ? a : 'Team ' + (i + 1);
+    return a && a.length >= 2 ? knownTeam(a) || a : 'Team ' + (i + 1);
   };
   const saved = ls.get('names:' + D.fileName) || [];
   const fromFile = teamsFromFileName(D.fileName, teams.map((g) => g.map((pid) => pl[pid].name)));
@@ -2837,11 +2837,21 @@ const KNOWN_TEAMS = {
   essential: 'eSsential', vs: null,
 };
 const norm = (x) => (x || '').toLowerCase().replace(/[^a-z0-9]/g, '');
+// A shared clan tag looked up in the known teams: the whole tag first, then its first part,
+// so "SK.SWE.AMD" and "SK Gaming |" read as SK Gaming and "fnatic.MSI" as fnatic. Unknown tags stay as written.
+function knownTeam(tag) {
+  const whole = norm(tag);
+  if (KNOWN_TEAMS[whole]) return KNOWN_TEAMS[whole];
+  const first = norm((tag || '').split(/[^A-Za-z0-9]+/).find((w) => w) || '');
+  return first && KNOWN_TEAMS[first] || null;
+}
 const EVENT_WORDS = /^(final|finals|grand|semi|semifinal|quarter|group|bo\d|map\d?|match|part\d?|half\d?|de|cs|auto|hltv|demo|lan|online|playoff|playoffs|upper|lower|round|day\d?)$/i;
 function teamsFromFileName(file, rosters) {
   const base = (file || '').replace(/\.dem$/i, '');
-  const i = base.toLowerCase().indexOf('-vs-');
-  if (i < 0) return [null, null];
+  // "a-vs-b", "a_vs_b" or "a.vs.b"
+  const vs = /[-_.]vs[-_.]/i.exec(base);
+  if (!vs) return [null, null];
+  const i = vs.index;
   let left = base.slice(0, i), right = base.slice(i + 4);
   left = left.split(/[_.]/).pop();
   left = left.replace(/^\d+-*/, '');
@@ -5473,8 +5483,11 @@ async function loadSummary(sndDone) {
   const rows = [];
   const few = (list) => list.slice(0, 3).join(', ') + (list.length > 3 ? ` and ${list.length - 3} more` : '');
   const live = M.liveR.length;
-  if (!D.errors) rows.push({ s: 'ok', t: `Demo read: ${live} rounds`, n: '' });
-  else rows.push({ s: 'warn', t: `Demo read: ${live} rounds, ${D.errors} damaged ${D.errors === 1 ? 'packet' : 'packets'}`, n: 'A few moments may skip or show players in the wrong spot.' });
+  // rounds played after the match ended and not counted: say both numbers, so the line below has its context
+  const notCounted = M.after16 && !M.count30 ? M.after16.extra : 0;
+  const readText = notCounted ? `Demo read: ${live + notCounted} rounds, ${live} counted` : `Demo read: ${live} rounds`;
+  if (!D.errors) rows.push({ s: 'ok', t: readText, n: '' });
+  else rows.push({ s: 'warn', t: `${readText}, ${D.errors} damaged ${D.errors === 1 ? 'packet' : 'packets'}`, n: 'A few moments may skip or show players in the wrong spot.' });
   if (M.after16) {
     const A = M.after16, n = A.extra, who = M.tnames[A.team], sc = `${Math.max(...A.score)}:${Math.min(...A.score)}`;
     rows.push({ s: 'info', t: `${n} ${n === 1 ? 'round was' : 'rounds were'} played after ${who} reached 16 (${sc})`, n: M.count30 ? 'Counted, as chosen for this demo (up to round 30).' : `Some events played all 30 rounds and count them. Not counted now: the match ends at ${sc}.`, btn: { id: 'sumCount30', label: M.count30 ? 'Stop at 16' : 'Count them' } });
