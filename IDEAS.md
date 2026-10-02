@@ -10,8 +10,10 @@ Everything raised in conversation that isn't finished, in one place. Each item s
 - [ ] Sujan: decide on "Tell exactly why a demo is broken" and "Play cut-off demos up to where they end" (below); a mockup comes first for the load summary wording.
 
 **Next: how accurate is the viewer, on a fresh batch of demos** (Sujan, 2 Oct 2026, to continue on his Windows PC)
-- [ ] Sujan: put the new demos in `cstrike`, ideally with known results (final score, and K-D of a few players from HLTV.org or memory), and name the event of each (CLAUDE.md rule). Keep the demos whose numbers are confirmed in CHANGELOG.md (0.14.2 table, 0.15.0 Xperia Play 2011 FX vs mTw) somewhere, even outside the folder: they're the regression set every counting change is checked against, and the 0.15.0 Steam ID "0" bug was only caught because Na`Vi vs FX (SEC 2011) was in it.
-- [ ] Claude: read the new batch with `tests/compare_all.sh` and `page/match_detail.js` (score, every round's winner, K-D overall, T and CT), and `page/summary_text.js` for the load summary; compare with Sujan's known results; list every mismatch round by round before changing anything; add the demos and their events to `tests/README.md`.
+- [x] Sujan: 15 new demos are on the Mac (2 Oct 2026), listed with their events in `tests/README.md` ("new batch"); Sujan is copying the same files to Windows. Two maps come in several files, good tests for joining: mTw vs Na`Vi Tuscan, ESWC 2010 semi-final (5 files), and fnatic vs mousesports Forge, Intel Extreme Masters Oct 2011 (2 files).
+- [ ] Sujan: known results where you have them (final score, K-D of a few players, from HLTV.org or memory). Claude can look up final scores on the web and say which are found and which aren't.
+- [ ] Earlier wording of the first step, kept for the rule in it: put the new demos in `cstrike`, ideally with known results (final score, and K-D of a few players from HLTV.org or memory), and name the event of each (CLAUDE.md rule). Keep the demos whose numbers are confirmed in CHANGELOG.md (0.14.2 table, 0.15.0 Xperia Play 2011 FX vs mTw) somewhere, even outside the folder: they're the regression set every counting change is checked against, and the 0.15.0 Steam ID "0" bug was only caught because Na`Vi vs FX (SEC 2011) was in it.
+- [ ] Claude: read the new batch with `tests/compare_all.sh` and `page/match_detail.js` (score, every round's winner, K-D overall, T and CT), and `page/summary_text.js` for the load summary; compare with Sujan's known results; list every mismatch round by round before changing anything. Also run the regression set (16 demos) with `compare_all.sh` to confirm Windows gives the same numbers as the Mac. Warn Sujan before the full run (about 4 minutes for 25 demos).
 
 **A map split over two or more demo files** (shipped in 0.15.0, 2 Oct 2026)
 - [ ] Sujan: 0.15.0 by eye on your side, with sounds: open `fx-vs-mtw-xperia2011-1104240112-de_inferno.dem` (Xperia Play 2011, Inferno part 2), Join the parts, then watch playback across the join at round 16 in 2D and 3D; open part 1 later and check it opens joined; Split them. Built screens next to the mockup: [docs/split-map-built.png](docs/split-map-built.png).
@@ -19,7 +21,7 @@ Everything raised in conversation that isn't finished, in one place. Each item s
 
 - [ ] Sujan: the Count them note, faded rows and "Demo read: 30 rounds, 27 counted" on the fnatic vs EG demo, by eye (0.14.2).
 
-**Hand checks for Sujan** (things the headless test browser can't do)
+**Hand checks for Sujan** (things the headless test browser can't do). Several name demos deleted on 2 Oct 2026 (Lions vs mousesports and Moscow 5 vs Na`Vi from ESWC 2011, Anexis vs fnatic from DreamHack Bucuresti 2012, Team3D vs Fnatic Train 2006, MYM vs SK from Kode5 2008, the GP Pub de_zovine POV demo); those checks need the demo back, or can be dropped. `tests/README.md` keeps their events.
 - [ ] **0.14.0 on your side:** the Lions vs mousesports smoke Threat throws at about 15:16 (it pops at 15:19) and the Anexis vs fnatic one at 10:39, both light green; the Players tab on the 2006 Train demo (PENTAGRAM rows should each show their own name) and on any MYM demo you have; the skull on dead players; Free camera from Player's eyes and Behind player starting at the player. Checked in the test browser only, with no weapon models or sounds loaded.
 - [ ] **The wallbangs that changed in 0.13.0**, in the game's demo player (round and round timer as the viewer shows them):
   - NoA vs Pentagram, Train 2006, newly listed: R18 1:22 MJE AK on kubenB, R21 1:09 neo M4 on zonic. No longer listed, not commented on yet: R12 1:01 Paddy M4 on kubenB. Still listed and not checked: R4 0:40 and R5 1:24 taz AK on zonic, R10 1:03 Paddy M4 on neo, R22 0:55 neo M4 on ave, R24 0:38 zonic AK on LoordB, R28 1:17 MJE AK on LoordB, R28 1:12 neo M4 on MJE.
@@ -37,7 +39,7 @@ Everything raised in conversation that isn't finished, in one place. Each item s
 **Not yet tested on real demos**
 - [x] The 102 MB mousesports vs Virus Inferno demo (event not known): broken, confirmed by Sujan (2 Oct 2026; he knew, and had meant to delete it). See "Tell exactly why a demo is broken" below.
 - [ ] Breakables on Nuke and Inferno (vents) and Tuscan (logs): do they disappear in 3D when shot out?
-- [ ] The 145 MB Moscow 5 vs Na`Vi Mirage demo (memory and load time on a laptop).
+- [ ] The 145 MB Moscow 5 vs Na`Vi Mirage demo, ESWC 2011 (memory and load time on a laptop). Deleted 2 Oct 2026; needs a big demo again.
 - [ ] Re-check WinFakt vs Check-Six Mirage (16-6): that demo isn't in the Mac's folder. Na`Vi vs FX Dust2 now reads the official 16-11 and M5 vs Na`Vi Mirage 16-9 (0.14.2).
 
 **Small decisions not yet taken**
