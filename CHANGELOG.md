@@ -21,7 +21,28 @@ What changed in the viewer, newest first. The version shows in the viewer's shor
 - Whether rounds after 16 count can't be read from the demo, so the match stops at 16 unless Count them is switched on for that demo.
 - When neither the file name nor a shared clan tag names a team, the header says "Team 1" and "Team 2" (iFNG FX vs fnatic, `auto_ifng-...`). Click the name in the header to type it in; it's remembered for that demo. Left as it is for now (Sujan, 2 Oct 2026; parked in IDEAS.md).
 - The demo search looks at file names only. A demo whose name doesn't say the teams or map (`auto_ifng-...`) is found by scrolling.
+- The wallbang finder rules out a kill that needed more damage than any shot through a wall can do (0.15.5). It needs the killer's shots in the demo; around a jump in the recording it can't tell, and the kill stays as the walls alone say.
+- Health under the names in 3D shows only for players within 2500 units of the camera, also through a scope.
 - A smoke cloud is drawn as one light green ball for as long as the smoke puffs (about 21 seconds, less when the round restarts). The game's own puffs drift and thin out unevenly, which the viewer doesn't copy.
+
+## 0.15.5 (2026-10-02)
+
+Two wallbang and kill timing fixes from Sujan's checks on Sweden vs Norway, Dust2 (ASUS ENC 2010) and NoA vs Pentagram, Train 2006.
+
+### Fixed
+- **Wallbangs that the damage rules out.** Sweden vs Norway, Dust2, ASUS ENC 2010 listed three AWP kills as wallbangs that Sujan saw were clear shots: R9 1:40 RashiE on Delpan, R9 1:34 RashiE on f0rest, R30 1:41 Delpan on kalle. All three were body shots (no headshot) on players at 100 HP. From the game code (ReGameDLL): after a bullet goes through a wall, what's left of its damage is multiplied by at most 0.6 (wood; 0.5 for concrete and most walls, 0.2 for metal; `FireBullets3` in `cbase.cpp`), and a hit short of the head by at most 1.25 (stomach; `CBasePlayer::TraceAttack` in `player.cpp`); range and armour only take more off. So an AWP (115 damage) body shot through any wall does at most 86, which can't kill a player on 100 HP. The finder now drops a kill when every shot the killer fired just before it, each at that best case through a wall, couldn't have done the damage the victim took. The health comes from the demo (HLTV sends it whenever it changes); the shots counted are the killer's from the victim's last health reading, and at most 0.6 s before the kill. Each gun's damage is from ReGameDLL `weapons.h` (AK 36, M4A1 33, AWP 115, Scout 75, Deagle 54, and the rest). When the demo has no shot from the killer around the kill (a jump in the recording), the kill is left as it was. Delpan's AWP headshot on RashiE (R24 1:40), which Sujan confirmed as a real wallbang, stays: a headshot through a wall can do up to 115 x 0.6 x 4 = 276.
+- **The kill feed ahead of the death in the 2006 NoA vs Pentagram Train demo.** At R22 0:55 the kill feed said neo had killed ave while ave was still running on 9 HP. That demo's kill messages arrive late (0.13.0), and 0.13.0 moved each late kill back to the killer's last shot. But in that demo the gun's fire events come about 0.2 s ahead of the hits they cause: neo's last shot is at 27:43.99, ave's last hit and death sound at 27:44.21 (his death animation starts then too), the message at 27:44.43. A late kill is now shown (kill feed, kill markers, death cam, timeline) at the victim's death sound, and the wallbang check still uses where everyone was at the shot, as before. Only kills whose message trails the death sound are moved: 135 in that demo, none of the 2011 demos' wallbangs.
+
+### How it was tested
+- Wallbang lists on all 31 demos, 0.15.4 against 0.15.5, with the maps loaded: 29 identical. Sweden vs Norway, Dust2, ASUS ENC 2010: the three above removed, the other 9 unchanged. SK vs Na`Vi, Train, DreamHack Winter 2011: two removed, both AWP body shots on players at 100 HP (R46 C4 0:01 markeloff on RobbaN, R47 1:37 Delpan on edzie). Not yet checked by eye.
+- A first version also removed 7 kills in four other demos that sit at a jump in the recording (kills shown in "freeze" time, the dead player's health and his respawn arriving at the same instant, no shot from the killer); requiring the killer's shots put them back.
+- NoA vs Pentagram, Train 2006: score, every round and every player's K-D identical (`match_detail.js`); wallbang list identical; neo's kill on ave now shown at 27:44.21, positions from 27:43.99.
+- `demo_search_check.py`, `folder_row_test.py` (20 of 20), `start_screen_check.py` and `prefs_check.py` pass.
+
+### Discussed, not changed
+- Health under the names in 3D is shown only for players within 2500 units of the camera, so through a scope at long range (the Dust2 kills above were 2,700 to 3,300 units) only the names show. Scaling that distance with the zoom was offered to Sujan; not changed yet.
+- A denser check of the victim's body (every 2 units instead of 15 points) finds Delpan and f0rest partly visible in the two R9 kills above, which the current check misses (the damage rule catches them anyway). It would change other demos' lists too, so it's parked in IDEAS.md for Sujan.
+- Sujan asked whether this was a demo quirk. Partly: the late kill messages and the fire events coming early are how that 2006 demo was recorded (protocol 47; the 2011 demos don't do it). The wrong wallbangs on the Dust2 demo were the viewer's own limit: at 3,000 units the aim, read from snapshots about ten times a second, is too rough to tell a gap between doors from the doors themselves.
 
 ## 0.15.4 (2026-10-02)
 

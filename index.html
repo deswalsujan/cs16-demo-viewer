@@ -439,7 +439,7 @@ body:has(.app.theatre) { overflow: hidden; }
     <div class="overlay sumwrap" id="sumCard" hidden></div>
     <div class="overlay keys" id="keys" hidden>
       <div class="keys-card">
-        <div class="keys-head"><b>Shortcuts and kill markers</b><div class="kh-r"><span class="ver">Version 0.15.4 · <a href="https://github.com/deswalsujan/cs16-demo-viewer/blob/main/CHANGELOG.md" target="_blank" rel="noopener">What's new</a> · <a href="https://github.com/deswalsujan/cs16-demo-viewer/issues/new/choose" target="_blank" rel="noopener">Report a bug</a></span><button class="btn" id="bDebug" type="button" title="Copies details for a bug report: browser, demo name, what loaded, errors. No file contents.">Copy debug info</button><button class="btn" id="bKeysClose" type="button">Close</button></div></div>
+        <div class="keys-head"><b>Shortcuts and kill markers</b><div class="kh-r"><span class="ver">Version 0.15.5 · <a href="https://github.com/deswalsujan/cs16-demo-viewer/blob/main/CHANGELOG.md" target="_blank" rel="noopener">What's new</a> · <a href="https://github.com/deswalsujan/cs16-demo-viewer/issues/new/choose" target="_blank" rel="noopener">Report a bug</a></span><button class="btn" id="bDebug" type="button" title="Copies details for a bug report: browser, demo name, what loaded, errors. No file contents.">Copy debug info</button><button class="btn" id="bKeysClose" type="button">Close</button></div></div>
         <textarea class="dbgbox" id="dbgBox" readonly hidden aria-label="Debug info"></textarea>
         <div class="keys-grid">
           <section><h3>Playback</h3>
@@ -539,7 +539,7 @@ body:has(.app.theatre) { overflow: hidden; }
         <div class="drophint">Or drop a .dem file, or an overview .bmp and .txt pair, anywhere on this page</div>
         <div class="prog" id="prog" hidden><i id="progBar"></i></div>
         <div class="msg" id="msg"></div>
-        <div class="loadfoot"><span>Version 0.15.4</span><button class="btn" id="bClear" type="button" title="Forgets your Half-Life folder and deletes the maps, models, sounds and overviews this browser saved from it, as on a first visit">Clear saved files</button></div>
+        <div class="loadfoot"><span>Version 0.15.5</span><button class="btn" id="bClear" type="button" title="Forgets your Half-Life folder and deletes the maps, models, sounds and overviews this browser saved from it, as on a first visit">Clear saved files</button></div>
       </div>
     </div>
   </section>
@@ -2168,7 +2168,7 @@ function joinDemos(parts) {
     }
     for (const r of prs) { roundMap[r.n] = ++nRound; out.rounds.push(Object.assign({}, r, { n: nRound, start: sh(r.start), end: r.end != null ? sh(r.end) : null, endT: r.endT != null ? sh(r.endT) : null, part: pi, partFirst: pi > 0 && r === prs[0] })); }
     if (!lead) roundMap[0] = 0;
-    for (const k of P.kills) out.kills.push(Object.assign({}, k, { t: sh(k.t), round: roundMap[k.round] != null ? roundMap[k.round] : 0, kocc: k.kocc >= 0 ? k.kocc + nOcc : -1, vocc: k.vocc >= 0 ? k.vocc + nOcc : -1, tMsg: undefined }));
+    for (const k of P.kills) out.kills.push(Object.assign({}, k, { t: sh(k.t), round: roundMap[k.round] != null ? roundMap[k.round] : 0, kocc: k.kocc >= 0 ? k.kocc + nOcc : -1, vocc: k.vocc >= 0 ? k.vocc + nOcc : -1, tMsg: undefined, tPos: undefined }));
     for (const o of P.occupants) out.occupants.push(Object.assign({}, o, { id: o.id + nOcc, from: sh(o.from), to: sh(o.to != null ? o.to : P.end), nameT: (o.nameT || []).map(([t, nm]) => [sh(t), nm]) }));
     nOcc += P.occupants.length;
     for (const b of P.bomb) out.bomb.push(Object.assign({}, b, { t: sh(b.t), round: b.round != null ? (roundMap[b.round] || 0) : b.round }));
@@ -2715,7 +2715,36 @@ const NO_WB = new Set(['grenade', 'knife', 'world', '']);
 // (wpn_<gun>.cpp, FireBullets3 in cbase.cpp, which stops when the count reaches 0 after the first hit).
 // The Dual Elites pass BULLET_PLAYER_9MM (= 1) where the count goes. The shotguns use FireBullets,
 // which traces each pellet once with no penetration. Checked 1-2 Oct 2026.
+// The most damage each gun's bullet does (ReGameDLL weapons.h: *_DAMAGE, M4A1_DAMAGE_SIL, FAMAS_DAMAGE_BURST).
+// After passing through a wall, FireBullets3 (cbase.cpp) multiplies what's left by at most 0.6 (wood; 0.5 for
+// concrete and most walls, 0.2 metal), and a player's TraceAttack (player.cpp) by at most 1.25 short of a
+// headshot (stomach) or 4 for a headshot. Range and armour only take more off. So a kill that needed more
+// damage than that from the shots fired can't have gone through a wall: an AWP body shot through any wall
+// does at most 115 x 0.6 x 1.25 = 86, too little for a player on 100 HP (Sweden vs Norway, Dust2,
+// ASUS ENC 2010: three AWP body-shot kills on players at 100 HP were listed as wallbangs; Sujan saw clear shots).
+const MAX_DMG = { ak47: 36, aug: 32, awp: 115, deagle: 54, famas: 34, g3sg1: 80, galil: 30, m249: 32, m4a1: 33, scout: 75, sg550: 70, sg552: 33 };
 const ONE_SURFACE = new Set(['usp', 'glock18', 'p228', 'fiveseven', 'elite', 'mac10', 'tmp', 'mp5navy', 'ump45', 'p90', 'm3', 'xm1014']);
+// The victim's health just before the killing hit, and the killer's shots that could have done the damage.
+// HLTV sends a player's health whenever it changes, so an earlier hit would show as a lower reading; only
+// bullets landing after the last reading count: the killer's shots from that reading, and at most 0.6 s before
+// the kill (two bullets can land between two readings, and in the 2006 NoA vs Pentagram demo fire events come
+// about 0.2 s ahead of their hits, with the kill message 0.2 s after).
+// True when even every one of those shots, each through a wall at the best case, couldn't have done it.
+function tooMuchDamage(k) {
+  const per = MAX_DMG[k.weapon]; if (!per) return false;
+  const a = hpIdx && hpIdx[k.victim]; if (!a || !a.length) return false;
+  const tEnd = k.tMsg != null ? k.tMsg : k.t, r = M.rounds && M.rounds.find((x) => x.n === k.round);
+  let hp = null, at = null;
+  for (let i = 0; i < a.length; i += 2) { if (a[i] > tEnd + 0.001) break; if (a[i + 1] > 0) { hp = a[i + 1]; at = a[i]; } }
+  if (r && (at == null || at < r.start - 0.5)) { hp = 100; at = r.start; }
+  if (hp == null) return false;
+  let shots = 0; const sh = D.shots || [];
+  for (let i = 0; i < sh.length; i += 4) if (sh[i + 1] === k.killer && sh[i] >= Math.max(at - 0.3, tEnd - 0.6) && sh[i] <= tEnd + 0.001) shots++;
+  // no shot of the killer's recorded around the kill (a jump in the recording, where the dead player's
+  // health and his respawn arrive at the same instant): the number of bullets isn't known, so leave it
+  if (!shots) return false;
+  return per * 0.6 * (k.hs ? 4 : 1.25) * shots < hp;
+}
 function computeWallbangs() {
   if (!MAP || !D) return;
   const bsp = MAP.bsp;
@@ -2732,9 +2761,11 @@ function computeWallbangs() {
     k.wb = null;
     if (!k.kpos || !k.vpos || k.killer === k.victim || NO_WB.has(k.weapon) || ONE_SURFACE.has(k.weapon)) continue;
     const kNow = [...k.kpos, k.kduck], vNow = [...k.vpos, k.vduck];
-    skip = brokenSet(k.t - 0.05);
-    poses = posesAt(k.t - 0.05);
+    const tP = k.tPos != null ? k.tPos : k.t;
+    skip = brokenSet(tP - 0.05);
+    poses = posesAt(tP - 0.05);
     if (bodyVisible(eyeOf(kNow), vNow)) continue;
+    if (tooMuchDamage(k)) continue;
     const eye = eyeOf(kNow);
     let raw = k.kang ? k.kang[0] : 0; if (raw > 180) raw -= 360;
     const pitch = -raw * 3 * Math.PI / 180, yaw = (k.kang ? k.kang[1] : 0) * Math.PI / 180;
@@ -2804,6 +2835,11 @@ function liveWindows(notes, partStarts) {
 // moved back to the killing shot (the killer's last shot up to 0.3 s before the death sound), or to the
 // death sound itself when the demo has no such shot, and its positions and aim are read from that moment.
 // Kills that arrive on time are left exactly as they were. k.tMsg keeps when the message arrived.
+// The kill itself (kill feed, markers, death cam, timeline) is shown at the death sound, when the victim's
+// death animation starts and his health drops. The positions and aim stay those of the killing shot
+// (k.tPos), for the wallbang check. In that demo the gun's fire events come about 0.2 s ahead of the hits
+// they cause (neo's M4 on ave, round 22: last shot 27:43.99, hit and death sound 27:44.21, message
+// 27:44.43), so showing the kill at the shot had the kill feed say "dead" while ave still ran on 9 HP (0.15.5).
 function retimeKills() {
   const sn = (i) => String((D.sounds && D.sounds[i]) || '').toLowerCase();
   const dieAt = {}, shotAt = {};
@@ -2826,7 +2862,7 @@ function retimeKills() {
     const a = D.slots[k.killer], v = D.slots[k.victim], i = idx(tA) * S;
     if (a && !isNaN(a[i])) { k.kpos = [a[i], a[i + 1], a[i + 2]]; k.kang = [a[i + 4], a[i + 3]]; k.kduck = a[i + 7]; }
     if (v && !isNaN(v[i])) { k.vpos = [v[i], v[i + 1], v[i + 2]]; k.vduck = v[i + 7]; }
-    k.t = tA; k.retimed = st != null ? 'shot' : 'sound'; moved++;
+    k.t = ds; k.tPos = tA; k.retimed = st != null ? 'shot' : 'sound'; moved++;
   }
   D.kills.sort((x, y) => x.t - y.t);
   D.killsRetimed = moved;
@@ -6293,7 +6329,7 @@ window.addEventListener('unhandledrejection', (e) => { ERRLOG.push('Promise: ' +
 function debugInfo() {
   let gpu = '';
   try { const gl = document.createElement('canvas').getContext('webgl'); const x = gl && gl.getExtension('WEBGL_debug_renderer_info'); gpu = gl ? (x ? gl.getParameter(x.UNMASKED_RENDERER_WEBGL) : 'WebGL available') : 'no WebGL'; } catch (e) { gpu = 'unknown'; }
-  const L = [`CS 1.6 Demo Viewer 0.15.4`, `Browser: ${navigator.userAgent}`, `Screen: ${screen.width}x${screen.height} at ${devicePixelRatio}x, window ${innerWidth}x${innerHeight}`, `Graphics: ${gpu}`];
+  const L = [`CS 1.6 Demo Viewer 0.15.5`, `Browser: ${navigator.userAgent}`, `Screen: ${screen.width}x${screen.height} at ${devicePixelRatio}x, window ${innerWidth}x${innerHeight}`, `Graphics: ${gpu}`];
   L.push(`Folder: ${Object.keys(files.maps).length} maps, ${Object.keys(files.overviews).length} overviews, ${Object.keys(files.mdl).length} models, ${Object.keys(files.snd).length} sounds, ${files.demos.length} demos`);
   if (D) {
     L.push(`Demo: ${D.fileName}, protocol ${(D.header && D.header.netProtocol) || '?'}, ${D.pov ? 'POV (recorded by a player)' : 'HLTV'}, map ${D.mapName}, length ${fmt(D.end - D.start)}, ${M.liveR.length} live rounds, final ${M.liveR.length ? M.liveR[M.liveR.length - 1].scoreAfter.join(':') : '-'}`);
