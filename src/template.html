@@ -978,6 +978,127 @@ async function loadDemoFile(f) {
   worker.postMessage(buf, [buf]);
 }
 
+// ---------------- a map recorded in parts ----------------
+// HLTV often splits one map into two or three files (Xperia Play 2011 FX vs mTw: Inferno and Nuke, two
+// files each). Joining puts them on one timeline: each part's times are shifted to follow the one before,
+// with a short gap; the files' own numbering of models, sounds and events is translated into one list;
+// rounds and connections are renumbered. A restart is marked where each file starts, so the counting rules
+// see a new stretch there. Everything downstream (rounds, stats, the 3D view, playback) then works across
+// the parts unchanged. Players are matched across files by Steam ID (see derive).
+const JOIN_GAP = 3; // seconds of nothing between two parts on the joined timeline
+function joinDemos(parts) {
+  const S = parts[0].stride;
+  const out = Object.assign({}, parts[0], {
+    kills: [], rounds: [], bomb: [], chat: [], nades: [], roundTimes: [], pauses: [], occupants: [], notes: [], radio: [], corpses: [], viewers: [],
+    models: Object.assign({}, parts[0].models), sounds: Object.assign({}, parts[0].sounds), events: Object.assign({}, parts[0].events), pmodels: parts[0].pmodels.slice(),
+    players: {}, errors: 0, errSamples: [], parts: [], maps: parts[0].maps,
+  });
+  // one shared numbering for a file's resource list ({ index: name }): same name, same number
+  const unify = (dst, src) => {
+    const byName = {}; let next = 0;
+    for (const k in dst) { byName[dst[k]] = +k; next = Math.max(next, +k + 1); }
+    const map = {};
+    for (const k in src) { const nm = src[k]; if (byName[nm] == null) { byName[nm] = next; dst[next++] = nm; } map[k] = byName[nm]; }
+    return (i) => (map[i] != null ? map[i] : i);
+  };
+  const timesL = [], slotsL = {}, hpL = [], brushEvL = [], brushPoseL = [], sndsL = [], shotsL = [], boomsL = [], puffsL = [];
+  let shift = 0, nRound = 0, nOcc = 0, nSamples = 0;
+  parts.forEach((P, pi) => {
+    if (pi) shift = (out.end) + JOIN_GAP - P.start;
+    const sh = (t) => t + shift;
+    const mM = pi ? unify(out.models, P.models) : (i) => i;
+    const mS = pi ? unify(out.sounds, P.sounds) : (i) => i;
+    const mE = pi ? unify(out.events, P.events) : (i) => i;
+    const pmMap = P.pmodels.map((nm) => { let k = out.pmodels.indexOf(nm); if (k < 0) { k = out.pmodels.length; out.pmodels.push(nm); } return k; });
+    // rounds: a round the file starts partway into (kills before its first marker) becomes a round of its own
+    const roundMap = {};
+    const lead = leadingRound(P.kills.filter((k) => k.round === 0), P.rounds[0], P.start, 0);
+    const prs = lead ? [lead, ...P.rounds] : P.rounds;
+    const firstRound = nRound + 1;
+    for (const r of prs) { roundMap[r.n] = ++nRound; out.rounds.push(Object.assign({}, r, { n: nRound, start: sh(r.start), end: r.end != null ? sh(r.end) : null, endT: r.endT != null ? sh(r.endT) : null, part: pi })); }
+    if (!lead) roundMap[0] = 0;
+    for (const k of P.kills) out.kills.push(Object.assign({}, k, { t: sh(k.t), round: roundMap[k.round] != null ? roundMap[k.round] : 0, kocc: k.kocc >= 0 ? k.kocc + nOcc : -1, vocc: k.vocc >= 0 ? k.vocc + nOcc : -1, tMsg: undefined }));
+    for (const o of P.occupants) out.occupants.push(Object.assign({}, o, { id: o.id + nOcc, from: sh(o.from), to: sh(o.to != null ? o.to : P.end), nameT: (o.nameT || []).map(([t, nm]) => [sh(t), nm]) }));
+    nOcc += P.occupants.length;
+    for (const b of P.bomb) out.bomb.push(Object.assign({}, b, { t: sh(b.t), round: b.round != null ? (roundMap[b.round] || 0) : b.round }));
+    // a new file is a new stretch: mark a restart just before it starts
+    if (pi) out.bomb.push({ t: sh(P.start) - 0.5, type: 'restart', partStart: pi });
+    const tl = (a) => a.map((x) => Object.assign({}, x, { t: sh(x.t) }));
+    out.chat.push(...tl(P.chat)); out.roundTimes.push(...tl(P.roundTimes)); out.pauses.push(...tl(P.pauses)); out.notes.push(...tl(P.notes)); out.radio.push(...tl(P.radio));
+    out.corpses.push(...P.corpses.map((c) => Object.assign({}, c, { t: sh(c.t), start: sh(c.start) })));
+    out.nades.push(...P.nades.map((g) => { const pts = g.pts.slice(); for (let i = 0; i < pts.length; i += 4) pts[i] = sh(pts[i]); return Object.assign({}, g, { pts }); }));
+    for (let i = 0; i < (P.viewers || []).length; i += 2) out.viewers.push(sh(P.viewers[i]), P.viewers[i + 1]);
+    const flat = (src, stride, fix, dst) => { const a = new Float32Array(src.length); for (let i = 0; i < src.length; i += stride) { for (let j = 0; j < stride; j++) a[i + j] = src[i + j]; fix(a, i); } dst.push(a); };
+    flat(P.hp, 3, (a, i) => { a[i] = sh(a[i]); }, hpL);
+    flat(P.brushEvents, 3, (a, i) => { a[i] = sh(a[i]); }, brushEvL);
+    flat(P.brushPose, 8, (a, i) => { a[i] = sh(a[i]); }, brushPoseL);
+    flat(P.snds, 10, (a, i) => { a[i] = sh(a[i]); a[i + 1] = mS(a[i + 1]); }, sndsL);
+    flat(P.shots, 4, (a, i) => { a[i] = sh(a[i]); a[i + 2] = mE(a[i + 2]); }, shotsL);
+    flat(P.booms, 4, (a, i) => { a[i] = sh(a[i]); }, boomsL);
+    flat(P.puffs, 5, (a, i) => { a[i] = sh(a[i]); }, puffsL);
+    // player samples: every slot gets an entry for every sample time (empty where the slot isn't in this part)
+    const n = P.times.length, tt = new Float32Array(n);
+    for (let i = 0; i < n; i++) tt[i] = sh(P.times[i]);
+    timesL.push(tt);
+    const allSlots = new Set([...Object.keys(slotsL), ...Object.keys(P.slots)]);
+    for (const e of allSlots) {
+      if (!slotsL[e]) { slotsL[e] = []; if (nSamples) { const pad = new Float32Array(nSamples * S); for (let i = 0; i < nSamples; i++) pad[i * S] = pad[i * S + 1] = pad[i * S + 2] = NaN; slotsL[e].push(pad); } }
+      const src = P.slots[e];
+      const a = new Float32Array(n * S);
+      if (src) { a.set(src); for (let i = 0; i < n; i++) { const o = i * S; if (a[o + 6]) a[o + 6] = mM(a[o + 6]); a[o + 8] = pmMap[a[o + 8]] != null ? pmMap[a[o + 8]] : a[o + 8]; } }
+      else for (let i = 0; i < n; i++) a[i * S] = a[i * S + 1] = a[i * S + 2] = NaN;
+      slotsL[e].push(a);
+    }
+    nSamples += n;
+    Object.assign(out.players, P.players);
+    out.errors += P.errors || 0; out.errSamples.push(...(P.errSamples || []));
+    out.parts.push({ fileName: P.fileName, start: sh(P.start), end: sh(P.end), firstRound, startsLate: !!lead || (P.rounds[0] && (P.rounds[0].scoreT || 0) + (P.rounds[0].scoreCT || 0) > 0), scoreAtStart: P.rounds[0] ? [P.rounds[0].scoreT || 0, P.rounds[0].scoreCT || 0] : [0, 0] });
+    out.end = sh(P.end);
+  });
+  const cat = (L) => { let len = 0; for (const a of L) len += a.length; const r = new Float32Array(len); let o = 0; for (const a of L) { r.set(a, o); o += a.length; } return r; };
+  out.times = cat(timesL);
+  out.slots = {}; for (const e in slotsL) out.slots[e] = cat(slotsL[e]);
+  out.hp = cat(hpL); out.brushEvents = cat(brushEvL); out.brushPose = cat(brushPoseL); out.snds = cat(sndsL); out.shots = cat(shotsL); out.booms = cat(boomsL); out.puffs = cat(puffsL);
+  out.bomb.sort((a, b) => a.t - b.t);
+  out.start = parts[0].start;
+  out.fileName = parts[0].fileName;
+  out.joinKey = parts.map((P) => P.fileName).join('|');
+  out._even = null;
+  return out;
+}
+
+// Read a demo file in a worker of its own and hand back the parsed demo (for joining parts; the demo being
+// opened normally goes through loadDemoFile). onProgress gets 0..1.
+function parseInWorker(f, onProgress) {
+  return new Promise(async (res, rej) => {
+    let buf;
+    try { buf = await f.arrayBuffer(); } catch (e) { rej(e); return; }
+    const w = makeWorker();
+    w.onmessage = (e) => {
+      const m = e.data;
+      if (m.progress != null) { if (onProgress) onProgress(m.progress); return; }
+      w.terminate();
+      if (m.error) rej(new Error(m.error)); else { m.done.fileName = f.name; res(m.done); }
+    };
+    w.onerror = (e) => { w.terminate(); rej(new Error(e.message || 'the demo reader crashed')); };
+    w.postMessage(buf, [buf]);
+  });
+}
+// Open the parts of a map as one demo, in the order given (a list of files from the folder).
+async function openJoined(list, onProgress) {
+  const parts = [];
+  for (let i = 0; i < list.length; i++) {
+    const f = list[i];
+    // read afresh even if it's the demo already open: opening a demo adjusts its kills in place
+    parts.push(await parseInWorker(f, (p) => onProgress && onProgress((i + p) / list.length)));
+  }
+  const J = joinDemos(parts);
+  resetForNewDemo();
+  D = J;
+  if (MAP && MAP.name !== (D.mapName || '').toLowerCase()) { MAP = null; clear3d(); }
+  await onDemo();
+}
+
 // ---------------- overview ----------------
 function parseOverviewTxt(txt) {
   const g = (re) => { const m = re.exec(txt); return m ? m : null; };
@@ -1200,6 +1321,23 @@ function retimeKills() {
 }
 
 // ---------------- derive match structure ----------------
+// A demo that starts partway into a round: its kills come before the first round marker. The second FX
+// vs mTw Inferno file (Xperia Play 2011) starts in the second half's pistol round, where mTw kill all five
+// FX before the marker at 0:27. That round counts. Its winner comes from the scoreboard at the next
+// marker (one side on 1, the other on 0), or failing that from one side losing five players.
+// kills0: the kills before the first marker; r1: the first round; returns the round, or null.
+function leadingRound(kills0, r1, start, n) {
+  const k0 = kills0.filter((k) => k.killer !== k.victim);
+  if (!k0.length || !r1) return null;
+  let winner = null;
+  if ((r1.scoreT || 0) + (r1.scoreCT || 0) === 1) winner = r1.scoreT ? 'T' : 'CT';
+  else {
+    const dead = { TERRORIST: new Set(), CT: new Set() };
+    for (const k of k0) if (dead[k.vteam]) dead[k.vteam].add(k.victim);
+    if (dead.CT.size >= 5) winner = 'T'; else if (dead.TERRORIST.size >= 5) winner = 'CT';
+  }
+  return { n, start, end: r1.start, endT: kills0[kills0.length - 1].t, winner, reason: winner ? 'elimination' : null, scoreT: 0, scoreCT: 0, partial: true };
+}
 function derive() {
   retimeKills();
   const S = D.stride, times = D.times, n = times.length;
@@ -1212,6 +1350,9 @@ function derive() {
   const ofind = (x) => opar[x] === x ? x : (opar[x] = ofind(opar[x]));
   const byName = {};
   for (const o of occ) for (const nm of o.names) { if (byName[nm] != null) opar[ofind(o.id)] = ofind(byName[nm]); else byName[nm] = o.id; }
+  // the same Steam ID is the same person, whatever name they used (and across the parts of a joined map)
+  const bySid = {};
+  for (const o of occ) if (o.sid) { if (bySid[o.sid] != null) opar[ofind(o.id)] = ofind(bySid[o.sid]); else bySid[o.sid] = o.id; }
   const pl = {};
   for (const o of occ) {
     const pid = 'p' + ofind(o.id); o.pid = pid;
@@ -1255,23 +1396,9 @@ function derive() {
     const kills = D.kills.filter((k) => k.round === r.n);
     return Object.assign({}, r, { kills, dur: r.end - r.start });
   });
-  // A demo that starts partway into a round: its kills come before the first round marker. The second FX
-  // vs mTw Inferno file (Xperia Play 2011) starts in the second half's pistol round, where mTw kill all five
-  // FX before the marker at 0:27. That round counts. Its winner comes from the scoreboard at the next
-  // marker (one side on 1, the other on 0), or failing that from one side losing five players.
-  const k0 = D.kills.filter((k) => k.round === 0 && k.killer !== k.victim);
-  if (k0.length && rounds.length) {
-    const r1 = rounds[0];
-    let winner = null;
-    if ((r1.scoreT || 0) + (r1.scoreCT || 0) === 1) winner = r1.scoreT ? 'T' : 'CT';
-    else {
-      const dead = { TERRORIST: new Set(), CT: new Set() };
-      for (const k of k0) if (dead[k.vteam]) dead[k.vteam].add(k.victim);
-      if (dead.CT.size >= 5) winner = 'T'; else if (dead.TERRORIST.size >= 5) winner = 'CT';
-    }
-    const kills = D.kills.filter((k) => k.round === 0);
-    rounds.unshift({ n: 0, start: D.start, end: r1.start, endT: kills[kills.length - 1].t, winner, reason: winner ? 'elimination' : null, scoreT: 0, scoreCT: 0, kills, dur: r1.start - D.start, partial: true });
-  }
+  // kills before the first round marker: see leadingRound
+  const lead = leadingRound(D.kills.filter((k) => k.round === 0), rounds[0], D.start, 0);
+  if (lead) { lead.kills = D.kills.filter((k) => k.round === 0); lead.dur = lead.end - lead.start; rounds.unshift(lead); }
   // segments split by restarts: any restart between two rounds starts a new stretch (the three restarts of a
   // "live on 3" each start a round of a second or two, which never count). Restarts used to be grouped
   // when less than 60 s apart, which joined two "lo3" starts 59 s apart in the FX vs SK Inferno demo.
@@ -1479,7 +1606,7 @@ function derive() {
   const tnames = [saved[0] || fromFile[0] || autoName(teams[0], 0), saved[1] || fromFile[1] || autoName(teams[1], 1)];
 
   // per round: which team was T; winner team; running score
-  let sc = [0, 0], played = 0, after16 = null;
+  let sc = [0, 0], played = 0, after16 = null, wonAt = null;
   const count30 = ls.get('count30:' + D.fileName) === true;
   for (const r of rounds) {
     r.scoreBefore = sc.slice();
@@ -1507,6 +1634,7 @@ function derive() {
     if (regWin && !after16) after16 = { team: sc[0] > sc[1] ? 0 : 1, score: sc.slice(), at: r };
     const stop = count30 && after16 && played < 30 && !otWin ? false : (regWin || otWin || (count30 && after16 && played >= 30));
     if (stop) {
+      if (!wonAt) wonAt = r;
       for (const x of rounds) if (x.start > r.start && x.live) { x.live = false; x.afterMatch = true; }
     }
   }
@@ -1541,7 +1669,7 @@ function derive() {
   const k = Math.min(960 / (x1 - x0 || 1), 700 / (y1 - y0 || 1));
   const bounds = { x0, y1, k, px: (1024 - (x1 - x0) * k) / 2, py: (768 - (y1 - y0) * k) / 2 };
 
-  M = { idxAt, pl, rounds, liveR, teams, teamOf, tnames, nades, bounds, reg, hasOT: liveR.some((r) => r.ot), personAt, slotOf, specs, wbs: [], after16: after16 && after16.extra ? after16 : null, count30 };
+  M = { idxAt, pl, rounds, liveR, teams, teamOf, tnames, nades, bounds, reg, hasOT: liveR.some((r) => r.ot), personAt, slotOf, specs, wbs: [], after16: after16 && after16.extra ? after16 : null, count30, wonAt: wonAt || (after16 && after16.at) || null };
 }
 
 // ---------------- shorter names in the Players tab ----------------
