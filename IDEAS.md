@@ -20,14 +20,20 @@ Everything raised in conversation that isn't finished, in one place. Each item s
 - [x] Sujan, 3 Oct 2026: build it ("we won't know if it'll work till we build it"), on `wip/pov-mode`.
 - [x] Claude, 3 Oct 2026, on `wip/pov-mode`: the recorder drawn where he really was (CHANGELOG, "In progress").
 - [ ] Sujan: by eye, on the branch build, Match 1 T at round 5, 1:01 in Player's eyes on "ac shadows optical mouse": N!njA_kachoRI should be under the crosshair, and you should be standing where you were.
+  - 3 Oct 2026: Sujan said yes, but his screenshots were of round 1 (1:01 to 1:06 of the match) in shizznit's eyes, and round 3 in DON's: the recorder had died at 0:42 of round 1, and Player's eyes had moved on to other players and stayed there. Not ticked; to redo on round 5 with the bottom label reading "ac shadows optical mouse".
 - [ ] Claude: next step, the recorder's own view at full rate (aim, recoil, zoom, gun animations).
 - [ ] Open (Sujan asked 3 Oct 2026): See through walls in POV mode, for checking other players' POVs for wallhacks, and a built-in aimbot catcher.
-- [ ] To discuss (Sujan's first look at the branch build on Windows, 3 Oct 2026; no code changed yet). He's seeing "quite a few mistakes":
-  - Free camera works in a POV demo, though the server only lets a player watch others after dying. Question: lock POV mode to the recorder's view (and whoever he spectates after death)?
-  - Opponents' HP doesn't show. Checked: Match 1 T (de_barcelona, 27 Mar 2025) holds 0 HP updates. The viewer reads everyone's HP from a message the server sends only to HLTV, so a player's recording doesn't have it.
-  - See through walls is inconsistent, worst on enemies. Expected cause: the server only sends players near the recorder (median 4 to 7 of 32), so the others aren't in the file at those moments.
-  - Most important: it doesn't feel like a POV demo yet, which is "a lot more richer and real". Missing so far: his view at about 100 frames a second, recoil kick, crosshair that opens up while firing, his own gun animations, his HUD (HP, armor, ammo, money), voice. Sujan to say which matter most.
-  - Not answered yet: whether the R5 1:01 check itself (position, N!njA_kachoRI under the crosshair) passed.
+- [x] Sujan's first look at the branch build on Windows, 3 Oct 2026, and his decisions the same day:
+  - **A separate copy for POV.** The main viewer stays as it is. POV mode is built on a copy of the viewer on `wip/pov-mode`, and goes back into main only if it works as intended.
+  - **Free camera goes**, along with any way to watch players the recorder couldn't: POV playback follows the game's own controls. Reason: the file only holds players near the recorder (or near whoever he spectated), so free view can't show the rest of the map.
+  - **Opponents' HP goes** in POV mode. Match 1 T (de_barcelona, 27 Mar 2025) holds 0 HP updates; the viewer reads HP from a message the server sends only to HLTV.
+  - **See through walls stays**, for admins checking a suspect's POV for wallhacks. It can only show players the recorder's game received (median 4 to 7 of 32).
+  - **Player numbers** in front of names in the right panel go (made for 10 players, not 32).
+  - **Bug:** Player's eyes leaves the recorder when he dies and stays on other players into later rounds (round 3 in DON's eyes while the recorder was alive). The game goes back to the recorder at each respawn.
+  - **Bug (checked):** 2,590 of the 3,440 shots in Match 1 T come from players the file has no position for at that moment. The viewer plays those at full volume with no distance, which is why far CTs sound close. The recorder's own shots aren't in the shot list at all (0 of 3,440).
+- [ ] Claude, next step in this order (Sujan, 3 Oct 2026): the recorder's view at about 100 a second with real recoil; his gun animations and the crosshair spread; his HUD. Plus the weapon sound fix above.
+- [ ] Parked (Sujan, 3 Oct 2026): voice from other players.
+- [ ] Parked (Sujan, 3 Oct 2026): in-game chat messages, while alive and dead.
 
 **Demo search** (built in 0.15.2, 2 Oct 2026)
 - [x] confirmed by Sujan 3 Oct 2026: the search box by eye on your own folder (type "tu", "sk train", then Esc). Built screen next to the mockup: [docs/demo-search-built.png](docs/demo-search-built.png).
