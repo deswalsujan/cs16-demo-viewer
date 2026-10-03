@@ -123,6 +123,15 @@ const TE_SIZES = {
 };
 
 const SAMPLE_HZ = 30;
+// POV mode, one frame of the recording player's view: the camera his game drew, about 100 times a second.
+// Offsets in the 464-byte block (the engine's ref_params_t, then his last user command), checked on Match 1 T
+// (de_barcelona, public server, 27 Mar 2025) on 3 Oct 2026: time; camera position (4: his position plus eye
+// height, about 17 units standing); view angles pitch, yaw, roll (16: his mouse aim plus the recoil kick, also
+// while dead, when they're the spectator camera's); recoil kick, the punch angle (164); his position (simorg, 104);
+// his mouse aim pitch, yaw (cl_viewangles, 132); health (144, stays at its last value after death, so not an alive
+// flag); view entity (180, always his own); player number (184, his entity minus 1); buttons (266); on ground
+// (84); the user command's view angles pitch, yaw (240, the same as 132).
+const VIEW_STRIDE = 22;
 const FL_DUCKING = 1 << 14; // entity flag for a crouched player (the game's FL_DUCKING)
 const STRIDE = 11; // x, y, z, yaw, pitch, state, weaponModel, ducked, playerModel (index into pmodels), sequence, gaitsequence
 
@@ -213,6 +222,9 @@ export function parseDemo(buffer, onProgress, opts = {}) {
   let serverInfo = null;
   const resources = { models: {}, sounds: {}, events: {} };
   const own = {}; // the recording player's own state in a POV demo (clientdata), built up message by message
+  // POV mode: the recording player's own view, from the block his game writes before every frame's messages
+  // (about 100 a second). See VIEW_STRIDE for what each frame holds.
+  const view = [];
   const baseline = [];
   const instBaseline = [];
   let ents = [];
@@ -228,6 +240,13 @@ export function parseDemo(buffer, onProgress, opts = {}) {
   // sounds heard in the demo: server sounds, weapon fire events, explosions, radio lines and corpses
   const snds = [];      // time, sound resource index, entity, volume, attenuation, pitch, channel, x, y, z (NaN when not sent)
   const shots = [];     // time, entity, event resource index, bparam1
+  // where each shot was fired, when the message says (x, y, z, else NaN). The server adds it when the shooter
+  // isn't in the receiving game's snapshot: in a POV demo that's most shots (2,579 of 3,440 in Match 1 T), and
+  // without it those played at full volume with no distance (Sujan, 3 Oct 2026: far CTs sounded close).
+  const shotOrg = [];
+  // POV mode only: the recording player's zoom (time, field of view) and his gun (time, weapon id, rounds in it)
+  const fovs = [], ownAmmo = [], wanims = []; // wanims: time, sequence of his gun model (demo frame type 7)
+  const vmodels = []; // the gun model in his hands (clientdata viewmodel): time, model index, each time it changes
   const radio = [];     // { t, s: sentence name }
   const corpses = [];   // { t, start, model, pos, yaw, seq, team, e }
   const booms = [];     // time, x, y, z (grenade and C4 explosions)
@@ -386,6 +405,18 @@ export function parseDemo(buffer, onProgress, opts = {}) {
           if (!players[id]) players[id] = { name: '?', team };
           players[id].team = team;
           if (team === 'TERRORIST' || team === 'CT') players[id].lastTeam = team;
+          break;
+        }
+        // POV mode: what the server sends the recording player about himself and his team
+        case 'HealthInfo': { // a teammate's health (the server sends -1 for opponents); not in HLTV recordings
+          const id = m.ub(), v = m.i();
+          if (opts.povRounds && inPlayback && v >= 0 && v <= 255) hp.push(time, id, v);
+          break;
+        }
+        case 'SetFOV': { if (opts.povRounds && inPlayback) fovs.push(time, m.ub()); break; }
+        case 'CurWeapon': {
+          const on = m.ub(), id = m.ub(), clip = m.b8();
+          if (opts.povRounds && inPlayback && on) ownAmmo.push(time, id, clip);
           break;
         }
         case 'TeamScore': {
@@ -568,6 +599,7 @@ export function parseDemo(buffer, onProgress, opts = {}) {
           // the server leaves it out of his entity in the snapshots, since his game moves him itself (POV trial,
           // 3 Oct 2026: the recorder was drawn at the map's zero point). Each message changes only what changed.
           readDelta(r, deltas.clientdata_t, own);
+          if (opts.povRounds && inPlayback && own.viewmodel != null && own.viewmodel !== vmodels.last) { vmodels.push(time, own.viewmodel); vmodels.last = own.viewmodel; }
           while (r.bits(1)) { r.bits(6); readDelta(r, deltas.weapon_data_t, {}); }
           r.bitsEnd();
           break;
@@ -763,6 +795,14 @@ export function parseDemo(buffer, onProgress, opts = {}) {
       }
       switch (ftype) {
         case 0: case 1: {
+          // the frame's view block: the engine's ref_params_t, then the player's last user command. Read only
+          // for a demo recorded by a player (on HLTV demos this is the HLTV camera, which nothing here uses).
+          if (opts.povRounds && inPlayback) {
+            const dv = r.dv, b = r.p, f = (o) => dv.getFloat32(b + o, true);
+            view.push(ftime, f(4), f(8), f(12), f(16), f(20), f(24), f(164), f(168), f(172),
+              f(104), f(108), f(112), f(132), f(136), dv.getInt32(b + 144, true), dv.getInt32(b + 180, true),
+              dv.getInt32(b + 184, true), dv.getUint16(b + 266, true), dv.getInt32(b + 84, true), f(240), f(244));
+          }
           r.skip(464);
           const len = r.ui();
           const end = r.p + len;
@@ -775,6 +815,7 @@ export function parseDemo(buffer, onProgress, opts = {}) {
               const ev = pendingEv[k + 2]; let e = ev && ev.entindex ? ev.entindex : 0;
               if (!e && pendingEv[k + 1] >= 0) { if (!order) { order = []; for (let n = 0; n < ents.length; n++) if (ents[n]) order.push(n); } e = order[pendingEv[k + 1]] || 0; }
               shots.push(time, e, pendingEv[k], ev && ev.bparam1 ? 1 : 0);
+              if (ev && ev['origin[0]'] != null) shotOrg.push(ev['origin[0]'], ev['origin[1]'] || 0, ev['origin[2]'] || 0); else shotOrg.push(NaN, NaN, NaN);
               // the smoke itself: the game sends createsmoke when a smoke pops (with the cloud's centre as origin)
               // and then once a second while it smokes (with the centre in angles), from ReGameDLL's
               // CGrenade::SG_Detonate and SG_Smoke. These arrive even when the grenade object isn't in the demo.
@@ -795,7 +836,8 @@ export function parseDemo(buffer, onProgress, opts = {}) {
         case 4: r.skip(32); break;
         case 5: done = true; break;
         case 6: r.skip(84); break;
-        case 7: r.skip(8); break;
+        // the recorder's gun animation, written by his own game (POV demos): sequence, then body
+        case 7: { if (opts.povRounds && inPlayback) wanims.push(time, r.dv.getInt32(r.p, true)); r.skip(8); break; }
         case 8: { r.skip(4); const n = r.ui(); r.skip(n + 16); break; }
         case 9: { const n = r.ui(); r.skip(n); break; }
         default:
@@ -838,6 +880,7 @@ export function parseDemo(buffer, onProgress, opts = {}) {
     times: new Float32Array(samples.t), slots,
     finalScore: { ...scores }, models: resources.models, stride: STRIDE,
     pmodels, sounds: resources.sounds, events: resources.events, snds: new Float32Array(snds), shots: new Float32Array(shots), booms: new Float32Array(booms), puffs: new Float32Array(puffs), radio, corpses,
-    errors, errSamples, health,
+    errors, errSamples, health, view: new Float32Array(view), viewStride: VIEW_STRIDE,
+    shotOrg: new Float32Array(shotOrg), fovs: new Float32Array(fovs), ownAmmo: new Float32Array(ownAmmo), wanims: new Float32Array(wanims), vmodels: new Float32Array(vmodels),
   };
 }

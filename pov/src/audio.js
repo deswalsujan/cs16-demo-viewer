@@ -17,6 +17,8 @@ function fireSound(ev, silenced, k) {
   const list = Array.isArray(f) ? f : silenced ? f.on : f.off;
   return 'weapons/' + list[k % list.length] + '.wav';
 }
+// CS 1.6 weapon ids (as CurWeapon gives them) -> the fire event names FIRE uses
+const WEAPON_EVENT = { 1: 'p228', 3: 'scout', 5: 'xm1014', 7: 'mac10', 8: 'aug', 10: 'elite_left', 11: 'fiveseven', 12: 'ump45', 13: 'sg550', 14: 'galil', 15: 'famas', 16: 'usp', 17: 'glock18', 18: 'awp', 19: 'mp5n', 20: 'm249', 21: 'm3', 22: 'm4a1', 23: 'tmp', 24: 'g3sg1', 26: 'deagle', 27: 'sg552', 28: 'ak47', 30: 'p90' };
 const eventName = (idx) => ((D.events && D.events[idx]) || '').replace(/^events\//, '').replace(/\.sc$/, '');
 const sndName = (idx) => (D.sounds && D.sounds[idx] ? D.sounds[idx].replace(/^\*/, '').replace(/\\/g, '/').toLowerCase() : '');
 
@@ -28,6 +30,7 @@ function demoSoundList() {
   const sh = D.shots || [];
   const seen = new Set();
   for (let i = 0; i < sh.length; i += 4) seen.add(eventName(sh[i + 2]));
+  for (let i = 1; i < (D.ownAmmo || []).length; i += 3) seen.add(WEAPON_EVENT[D.ownAmmo[i]]); // POV: his own guns
   for (const ev of seen) { const f = FIRE[ev]; if (!f) continue; for (const x of Array.isArray(f) ? f : [...f.on, ...f.off]) need.add('weapons/' + x + '.wav'); }
   if (D.booms && D.booms.length) for (const x of ['explode3', 'explode4', 'explode5']) need.add('weapons/' + x + '.wav');
   if (SND.sentences) for (const r of D.radio || []) { const p = SND.sentences[r.s.toUpperCase()]; if (p) need.add(p); }
@@ -172,10 +175,22 @@ function soundTick(t0, t1) {
     const pos = !isNaN(s[o + 7]) ? [s[o + 7], s[o + 8], s[o + 9]] : entPos(e, s[o]);
     playSound(name, pos, s[o + 3], s[o + 4], s[o + 5], s[o + 6] ? e + ':' + s[o + 6] : null, L);
   }
-  const sh = D.shots || [];
+  const sh = D.shots || [], so = D.shotOrg;
   for (let i = firstAfter(sh, 4, t0); i * 4 < sh.length && sh[i * 4] <= t1; i++) {
     const o = i * 4, name = fireSound(eventName(sh[o + 2]), sh[o + 3], i); if (!name) continue;
-    playSound(name, entPos(sh[o + 1], sh[o]), 1, 0.64, 94 + (i * 7) % 16, sh[o + 1] + ':w', L);
+    // where it was fired: the message's own position when it has one (the shooter wasn't in the snapshot,
+    // most shots in a POV demo), else the shooter's. With neither, it isn't played: before, it played at full
+    // volume as if next to you (Sujan, 3 Oct 2026)
+    const org = so && !isNaN(so[i * 3]) ? [so[i * 3], so[i * 3 + 1], so[i * 3 + 2]] : entPos(sh[o + 1], sh[o]);
+    if (!org && D.pov) continue;
+    playSound(name, org, 1, 0.64, 94 + (i * 7) % 16, sh[o + 1] + ':w', L);
+  }
+  // POV mode: the recorder's own shots. The server never sends a player his own fire (his game plays it
+  // itself), so they come from his gun's round count going down (CurWeapon), and play at the listener.
+  const os = D.ownShots; // see povShots
+  if (os && os.length) for (let i = firstAfter(os, 3, t0); i * 3 < os.length && os[i * 3] <= t1; i++) {
+    const o = i * 3, name = fireSound(WEAPON_EVENT[os[o + 1]], os[o + 2], i); if (!name) continue;
+    playSound(name, null, 1, 0, 94 + (i * 7) % 16, 'own:w', L);
   }
   const b = D.booms || [];
   for (let i = firstAfter(b, 4, t0); i * 4 < b.length && b[i * 4] <= t1; i++) {

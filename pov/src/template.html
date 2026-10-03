@@ -1079,6 +1079,7 @@ function joinDemos(parts) {
     return (i) => (map[i] != null ? map[i] : i);
   };
   const timesL = [], slotsL = {}, hpL = [], brushEvL = [], brushPoseL = [], sndsL = [], shotsL = [], boomsL = [], puffsL = [];
+  const shotOrgL = [], viewL = [], fovsL = [], ownAmmoL = [], wanimsL = [], vmodelsL = []; // POV mode
   let shift = 0, nRound = 0, nOcc = 0, nSamples = 0;
   parts.forEach((P, pi) => {
     if (pi) shift = (out.end) + JOIN_GAP - P.start;
@@ -1122,6 +1123,12 @@ function joinDemos(parts) {
     flat(P.shots, 4, (a, i) => { a[i] = sh(a[i]); a[i + 2] = mE(a[i + 2]); }, shotsL);
     flat(P.booms, 4, (a, i) => { a[i] = sh(a[i]); }, boomsL);
     flat(P.puffs, 5, (a, i) => { a[i] = sh(a[i]); }, puffsL);
+    flat(P.shotOrg || new Float32Array(P.shots.length / 4 * 3).fill(NaN), 3, () => {}, shotOrgL);
+    if (P.view) flat(P.view, P.viewStride, (a, i) => { a[i] = sh(a[i]); }, viewL);
+    if (P.fovs) flat(P.fovs, 2, (a, i) => { a[i] = sh(a[i]); }, fovsL);
+    if (P.ownAmmo) flat(P.ownAmmo, 3, (a, i) => { a[i] = sh(a[i]); }, ownAmmoL);
+    if (P.wanims) flat(P.wanims, 2, (a, i) => { a[i] = sh(a[i]); }, wanimsL);
+    if (P.vmodels) flat(P.vmodels, 2, (a, i) => { a[i] = sh(a[i]); a[i + 1] = mM(a[i + 1]); }, vmodelsL);
     // player samples: every slot gets an entry for every sample time (empty where the slot isn't in this part)
     const n = P.times.length, tt = new Float32Array(n);
     for (let i = 0; i < n; i++) tt[i] = sh(P.times[i]);
@@ -1145,6 +1152,7 @@ function joinDemos(parts) {
   out.times = cat(timesL);
   out.slots = {}; for (const e in slotsL) out.slots[e] = cat(slotsL[e]);
   out.hp = cat(hpL); out.brushEvents = cat(brushEvL); out.brushPose = cat(brushPoseL); out.snds = cat(sndsL); out.shots = cat(shotsL); out.booms = cat(boomsL); out.puffs = cat(puffsL);
+  out.shotOrg = cat(shotOrgL); out.view = cat(viewL); out.fovs = cat(fovsL); out.ownAmmo = cat(ownAmmoL); out.wanims = cat(wanimsL); out.vmodels = cat(vmodelsL);
   out.bomb.sort((a, b) => a.t - b.t);
   out.start = parts[0].start;
   out.fileName = parts[0].fileName;
@@ -2591,6 +2599,7 @@ async function onDemo() {
   if (MAP && MAP.name === D.mapName.toLowerCase()) computeWallbangs();
   else { MAP = null; clear3d(); loadMap(D.mapName); }
   resetCam3();
+  povInit();
   setView(viewMode);
   loadSummary(sndDone);
 }
@@ -2772,10 +2781,10 @@ function renderPane() {
         const pm = x.k - x.d;
         const slot = M.slotOf(e, T), dead = slot != null && isDeadNow(slot);
         const full = M.pl[e].name, nm = short[e] || full;
-        h += `<div class="row prow${selected != null && slot === selected ? ' sel' : ''}${slot == null ? ' gone' : ''}${dead ? ' dead' : ''}" data-p="${e}" title="${esc(full)}${dead ? ' · dead until the next round' : ''}"><span class="main">${dead ? `<span class="pnum skull" aria-label="dead">${SKULL}</span>` : `<span class="pnum">${(playerOrder().indexOf(e) + 1) % 10}</span>`}<span class="nm">${esc(nm)}</span>${x.tk ? `<span class="sub"> · ${x.tk} TK</span>` : ''}</span><span class="sc">${x.k}</span><span class="sc">${x.d}</span><span class="sc ${pm > 0 ? 'pos' : pm < 0 ? 'neg' : ''}">${pm > 0 ? '+' : ''}${pm}</span><span class="sc">${x.k ? Math.round(x.hs / x.k * 100) : 0}%</span></div>`;
+        h += `<div class="row prow${selected != null && slot === selected ? ' sel' : ''}${slot == null ? ' gone' : ''}${dead ? ' dead' : ''}" data-p="${e}" title="${esc(full)}${dead ? ' · dead until the next round' : ''}"><span class="main">${dead ? `<span class="pnum skull" aria-label="dead">${SKULL}</span>` : (D.pov ? '' : `<span class="pnum">${(playerOrder().indexOf(e) + 1) % 10}</span>`)}<span class="nm">${esc(nm)}</span>${x.tk ? `<span class="sub"> · ${x.tk} TK</span>` : ''}</span><span class="sc">${x.k}</span><span class="sc">${x.d}</span><span class="sc ${pm > 0 ? 'pos' : pm < 0 ? 'neg' : ''}">${pm > 0 ? '+' : ''}${pm}</span><span class="sc">${x.k ? Math.round(x.hs / x.k * 100) : 0}%</span></div>`;
       }
     }
-    h += `<div class="opt">Kills and deaths from the kill feed only: no bonus points for bomb plants or defuses, and team kills (TK) are not counted as kills. Only live rounds count${M.hasOT ? `; overtime is every round after round ${M.reg}` : ''}. Click a player to highlight them. The number is their 1 to 0 key.</div>`;
+    h += `<div class="opt">Kills and deaths from the kill feed only: no bonus points for bomb plants or defuses, and team kills (TK) are not counted as kills. Only live rounds count${M.hasOT ? `; overtime is every round after round ${M.reg}` : ''}. ${D.pov ? 'The highlighted player is the one whose eyes the 3D view shows.' : 'Click a player to highlight them. The number is their 1 to 0 key.'}</div>`;
     p.innerHTML = h;
     p.querySelectorAll('[data-b]').forEach((b) => b.onclick = () => { statBucket = b.dataset.b; renderPane(); });
   }
@@ -2857,7 +2866,7 @@ document.addEventListener('keydown', (e) => {
   else if (k === 't' || k === 'T') setTheatre(!TH.on);
   else if (k === 'x' || k === 'X') { nextPlayer(1); if (viewMode !== '2d' && cam3.mode === 'free') setCam('eyes'); }
   else if (k === 'z' || k === 'Z') { nextPlayer(-1); if (viewMode !== '2d' && cam3.mode === 'free') setCam('eyes'); }
-  else if (/^[0-9]$/.test(k)) {
+  else if (/^[0-9]$/.test(k) && !POV.on) {
     const pid = playerOrder()[(+k + 9) % 10]; const e = pid && M.slotOf(pid, T);
     if (e && isDeadNow(e)) toast(`${M.pl[pid].name} is dead until the next round.`, 2500);
     else if (e) { selected = e; renderPane(); if (viewMode !== '2d' && cam3.mode === 'free') setCam('eyes'); }

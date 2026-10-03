@@ -13,13 +13,25 @@ Built so far (not released, no version bump):
 - **Kills by or on the recorder have his position**, so their kill lines, death marks and the wallbang check have a place to start from. Before, 40, 14 and 66 kills in the three files had no position (the cause of the "NaN" page error on Match 1).
 - Kill lines and death marks with part of a position missing (a player whose height the snapshot never sent, 2 kills in Match 1 CT) are skipped in 3D.
 
-How it was tested (on Sujan's Mac files, 3 Oct 2026):
+How part 1 was tested (on Sujan's Windows files, staged one by one: Match 1 CT and T, de_barcelona with its textures, player and gun models; 3 Oct 2026):
+- `tests/page/pov_view.js`: view frames 82 a second (both files). At his own gun kills, the middle of the screen is a median 0.91° (Match 1 T, 8 kills) and 1.45° (Match 1 CT, 23 kills; 1.98° with the old snapshot aim) from the victim's head. The camera buttons are hidden and setCam and nextPlayer do nothing. While alive the view is on him in 752 of 752 and 1,604 of 1,604 samples; while dead, in a player's eyes in 490 of 611 and 919 of 1,089 (the rest his spectator camera). Shots by others: 2,582 and 6,806 play from the message's spot, 847 and 1,667 from the shooter, 11 and 25 skipped. His own shots: 361 (ak47 357, deagle 4) and 1,143 (m4a1 1,052 all silenced, ak47 76, usp 14, deagle 1). HP for 16 and 17 teammates.
+- `tests/page/pov_kill_lag.js`: drawing other players later (as if the game showed them in the past) doesn't line up better (Match 1 CT: 1.49° with no delay, 1.95° at 0.2 s), so they're drawn at demo time as before.
+- Screenshots: round 5 at 1:01 of Match 1 T, N!njA_kachoRI under the crosshair, a teammate with "19 hp", a CT with his gun only; and 0:46, after his death, in shizznit's eyes.
+- The reader on an HLTV demo (Na`Vi vs FX, Dust2, SEC 2011 final): all 39 fields identical to main's reader.
+
+How the recorder's track was tested (on Sujan's Mac files, 3 Oct 2026):
 - The recorder's track against the camera block the game writes about 100 times a second (`tests/demo-probes/pov_own_check.mjs`): the two agree to a median of 0.5 to 3.3 units, 90% within 7, on Match 1 (both files) and Match 3; never at the zero point while alive; speeds of a running player. The crouch flag matches the camera height in 89 to 94% of messages (the rest are mid-crouch). Yaw matches his own mouse aim to a median of 0.1°.
 - At the recorder's own gun kills, his crosshair in Player's eyes sits a median of 0.86° (Match 1 T, 8 kills), 1.98° (Match 1 CT, 23) and 2.27° (Match 3, 33) from the victim's head (`tests/page/pov_own_kill.js`). Screenshot: round 5 at 1:01 of Match 1 T, N!njA_kachoRI under the crosshair.
 - The reader's output against main's on Na`Vi vs FX, Dust2, SEC 2011 final and NoA vs Pentagram, Train 2006: identical. On the POV demos only the recorder's track and kill positions change.
 - `folder_row_test.py` (20 of 20), `start_screen_check.py`, `prefs_check.py` and `late_kill_timing_check.py` pass. `demo_search_check.py` fails on the test folder (it holds none of the demos the check searches for) and fails the same way on main's build.
 
-Still to do, in order: the recorder's own view at full rate (aim, recoil, zoom and gun animations from his frames, about 100 a second), then POV mode itself (opens on the recorder in Player's eyes, the load summary line, which panels hide), then voice. Each step checked with Sujan.
+**Part 1, built 3 Oct 2026 (Sujan's order: view and recoil, then gun animations and crosshair, then HUD):**
+- **His own view, about 80 times a second.** The 3D view is the camera his game drew, read from the block written before every frame (camera position, and view angles with the recoil kick already in them). Before, it was rebuilt from the server's snapshots (about 24 a second) with no recoil. Zoom comes from his SetFOV messages, exact, so the scope no longer depends on click sounds.
+- **Locked to his view, as the game plays a POV demo.** Free camera, Player's eyes, Behind player, Prev and Next player, and the keys for them (V, X, Z, 1 to 0, WASD) are gone in POV mode. After he dies, the view is what his game showed: the player he spectated in first person (their gun in hand, their name at the bottom), or the spectator camera he flew; at the respawn it's back on him. The death screen's red wash only flashes, and "press X" is gone.
+- **Weapon sounds by distance.** A shot by a player who isn't in his game's snapshot now plays from where it was fired (the shot message carries the spot then); with no spot at all it's skipped. Before, those played at full volume as if next to him. His own shots, which the server never sends him, play from his gun's round count going down (CurWeapon), with the M4A1's and USP's silencer from his gun animations.
+- **Teammates' HP** under their names and at the bottom, from HealthInfo (the server hides opponents'), and no player numbers in the right panel.
+
+Still to do, in order: part 2, his gun animations from his own frames (draw, reload, silencer, shots) and the crosshair opening with shots; part 3, the HUD (approved mockup, `docs/pov-hud-mock.png`). Then voice and chat (parked). Each part checked with Sujan.
 
 ## Known limits (current version)
 - HLTV demos don't record the first-person weapon's animation, so it's rebuilt from shots, weapon switches and the player's body animation. Timing can differ slightly from in-game, and idle variations won't match. If a `v_` model is missing, no gun is shown.

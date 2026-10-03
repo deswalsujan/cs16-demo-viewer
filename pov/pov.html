@@ -699,6 +699,15 @@ const TE_SIZES = {
 };
 
 const SAMPLE_HZ = 30;
+// POV mode, one frame of the recording player's view: the camera his game drew, about 100 times a second.
+// Offsets in the 464-byte block (the engine's ref_params_t, then his last user command), checked on Match 1 T
+// (de_barcelona, public server, 27 Mar 2025) on 3 Oct 2026: time; camera position (4: his position plus eye
+// height, about 17 units standing); view angles pitch, yaw, roll (16: his mouse aim plus the recoil kick, also
+// while dead, when they're the spectator camera's); recoil kick, the punch angle (164); his position (simorg, 104);
+// his mouse aim pitch, yaw (cl_viewangles, 132); health (144, stays at its last value after death, so not an alive
+// flag); view entity (180, always his own); player number (184, his entity minus 1); buttons (266); on ground
+// (84); the user command's view angles pitch, yaw (240, the same as 132).
+const VIEW_STRIDE = 22;
 const FL_DUCKING = 1 << 14; // entity flag for a crouched player (the game's FL_DUCKING)
 const STRIDE = 11; // x, y, z, yaw, pitch, state, weaponModel, ducked, playerModel (index into pmodels), sequence, gaitsequence
 
@@ -789,6 +798,9 @@ export function parseDemo(buffer, onProgress, opts = {}) {
   let serverInfo = null;
   const resources = { models: {}, sounds: {}, events: {} };
   const own = {}; // the recording player's own state in a POV demo (clientdata), built up message by message
+  // POV mode: the recording player's own view, from the block his game writes before every frame's messages
+  // (about 100 a second). See VIEW_STRIDE for what each frame holds.
+  const view = [];
   const baseline = [];
   const instBaseline = [];
   let ents = [];
@@ -804,6 +816,13 @@ export function parseDemo(buffer, onProgress, opts = {}) {
   // sounds heard in the demo: server sounds, weapon fire events, explosions, radio lines and corpses
   const snds = [];      // time, sound resource index, entity, volume, attenuation, pitch, channel, x, y, z (NaN when not sent)
   const shots = [];     // time, entity, event resource index, bparam1
+  // where each shot was fired, when the message says (x, y, z, else NaN). The server adds it when the shooter
+  // isn't in the receiving game's snapshot: in a POV demo that's most shots (2,579 of 3,440 in Match 1 T), and
+  // without it those played at full volume with no distance (Sujan, 3 Oct 2026: far CTs sounded close).
+  const shotOrg = [];
+  // POV mode only: the recording player's zoom (time, field of view) and his gun (time, weapon id, rounds in it)
+  const fovs = [], ownAmmo = [], wanims = []; // wanims: time, sequence of his gun model (demo frame type 7)
+  const vmodels = []; // the gun model in his hands (clientdata viewmodel): time, model index, each time it changes
   const radio = [];     // { t, s: sentence name }
   const corpses = [];   // { t, start, model, pos, yaw, seq, team, e }
   const booms = [];     // time, x, y, z (grenade and C4 explosions)
@@ -962,6 +981,18 @@ export function parseDemo(buffer, onProgress, opts = {}) {
           if (!players[id]) players[id] = { name: '?', team };
           players[id].team = team;
           if (team === 'TERRORIST' || team === 'CT') players[id].lastTeam = team;
+          break;
+        }
+        // POV mode: what the server sends the recording player about himself and his team
+        case 'HealthInfo': { // a teammate's health (the server sends -1 for opponents); not in HLTV recordings
+          const id = m.ub(), v = m.i();
+          if (opts.povRounds && inPlayback && v >= 0 && v <= 255) hp.push(time, id, v);
+          break;
+        }
+        case 'SetFOV': { if (opts.povRounds && inPlayback) fovs.push(time, m.ub()); break; }
+        case 'CurWeapon': {
+          const on = m.ub(), id = m.ub(), clip = m.b8();
+          if (opts.povRounds && inPlayback && on) ownAmmo.push(time, id, clip);
           break;
         }
         case 'TeamScore': {
@@ -1144,6 +1175,7 @@ export function parseDemo(buffer, onProgress, opts = {}) {
           // the server leaves it out of his entity in the snapshots, since his game moves him itself (POV trial,
           // 3 Oct 2026: the recorder was drawn at the map's zero point). Each message changes only what changed.
           readDelta(r, deltas.clientdata_t, own);
+          if (opts.povRounds && inPlayback && own.viewmodel != null && own.viewmodel !== vmodels.last) { vmodels.push(time, own.viewmodel); vmodels.last = own.viewmodel; }
           while (r.bits(1)) { r.bits(6); readDelta(r, deltas.weapon_data_t, {}); }
           r.bitsEnd();
           break;
@@ -1339,6 +1371,14 @@ export function parseDemo(buffer, onProgress, opts = {}) {
       }
       switch (ftype) {
         case 0: case 1: {
+          // the frame's view block: the engine's ref_params_t, then the player's last user command. Read only
+          // for a demo recorded by a player (on HLTV demos this is the HLTV camera, which nothing here uses).
+          if (opts.povRounds && inPlayback) {
+            const dv = r.dv, b = r.p, f = (o) => dv.getFloat32(b + o, true);
+            view.push(ftime, f(4), f(8), f(12), f(16), f(20), f(24), f(164), f(168), f(172),
+              f(104), f(108), f(112), f(132), f(136), dv.getInt32(b + 144, true), dv.getInt32(b + 180, true),
+              dv.getInt32(b + 184, true), dv.getUint16(b + 266, true), dv.getInt32(b + 84, true), f(240), f(244));
+          }
           r.skip(464);
           const len = r.ui();
           const end = r.p + len;
@@ -1351,6 +1391,7 @@ export function parseDemo(buffer, onProgress, opts = {}) {
               const ev = pendingEv[k + 2]; let e = ev && ev.entindex ? ev.entindex : 0;
               if (!e && pendingEv[k + 1] >= 0) { if (!order) { order = []; for (let n = 0; n < ents.length; n++) if (ents[n]) order.push(n); } e = order[pendingEv[k + 1]] || 0; }
               shots.push(time, e, pendingEv[k], ev && ev.bparam1 ? 1 : 0);
+              if (ev && ev['origin[0]'] != null) shotOrg.push(ev['origin[0]'], ev['origin[1]'] || 0, ev['origin[2]'] || 0); else shotOrg.push(NaN, NaN, NaN);
               // the smoke itself: the game sends createsmoke when a smoke pops (with the cloud's centre as origin)
               // and then once a second while it smokes (with the centre in angles), from ReGameDLL's
               // CGrenade::SG_Detonate and SG_Smoke. These arrive even when the grenade object isn't in the demo.
@@ -1371,7 +1412,8 @@ export function parseDemo(buffer, onProgress, opts = {}) {
         case 4: r.skip(32); break;
         case 5: done = true; break;
         case 6: r.skip(84); break;
-        case 7: r.skip(8); break;
+        // the recorder's gun animation, written by his own game (POV demos): sequence, then body
+        case 7: { if (opts.povRounds && inPlayback) wanims.push(time, r.dv.getInt32(r.p, true)); r.skip(8); break; }
         case 8: { r.skip(4); const n = r.ui(); r.skip(n + 16); break; }
         case 9: { const n = r.ui(); r.skip(n); break; }
         default:
@@ -1414,7 +1456,8 @@ export function parseDemo(buffer, onProgress, opts = {}) {
     times: new Float32Array(samples.t), slots,
     finalScore: { ...scores }, models: resources.models, stride: STRIDE,
     pmodels, sounds: resources.sounds, events: resources.events, snds: new Float32Array(snds), shots: new Float32Array(shots), booms: new Float32Array(booms), puffs: new Float32Array(puffs), radio, corpses,
-    errors, errSamples, health,
+    errors, errSamples, health, view: new Float32Array(view), viewStride: VIEW_STRIDE,
+    shotOrg: new Float32Array(shotOrg), fovs: new Float32Array(fovs), ownAmmo: new Float32Array(ownAmmo), wanims: new Float32Array(wanims), vmodels: new Float32Array(vmodels),
   };
 }
 </script>
@@ -2226,6 +2269,7 @@ function joinDemos(parts) {
     return (i) => (map[i] != null ? map[i] : i);
   };
   const timesL = [], slotsL = {}, hpL = [], brushEvL = [], brushPoseL = [], sndsL = [], shotsL = [], boomsL = [], puffsL = [];
+  const shotOrgL = [], viewL = [], fovsL = [], ownAmmoL = [], wanimsL = [], vmodelsL = []; // POV mode
   let shift = 0, nRound = 0, nOcc = 0, nSamples = 0;
   parts.forEach((P, pi) => {
     if (pi) shift = (out.end) + JOIN_GAP - P.start;
@@ -2269,6 +2313,12 @@ function joinDemos(parts) {
     flat(P.shots, 4, (a, i) => { a[i] = sh(a[i]); a[i + 2] = mE(a[i + 2]); }, shotsL);
     flat(P.booms, 4, (a, i) => { a[i] = sh(a[i]); }, boomsL);
     flat(P.puffs, 5, (a, i) => { a[i] = sh(a[i]); }, puffsL);
+    flat(P.shotOrg || new Float32Array(P.shots.length / 4 * 3).fill(NaN), 3, () => {}, shotOrgL);
+    if (P.view) flat(P.view, P.viewStride, (a, i) => { a[i] = sh(a[i]); }, viewL);
+    if (P.fovs) flat(P.fovs, 2, (a, i) => { a[i] = sh(a[i]); }, fovsL);
+    if (P.ownAmmo) flat(P.ownAmmo, 3, (a, i) => { a[i] = sh(a[i]); }, ownAmmoL);
+    if (P.wanims) flat(P.wanims, 2, (a, i) => { a[i] = sh(a[i]); }, wanimsL);
+    if (P.vmodels) flat(P.vmodels, 2, (a, i) => { a[i] = sh(a[i]); a[i + 1] = mM(a[i + 1]); }, vmodelsL);
     // player samples: every slot gets an entry for every sample time (empty where the slot isn't in this part)
     const n = P.times.length, tt = new Float32Array(n);
     for (let i = 0; i < n; i++) tt[i] = sh(P.times[i]);
@@ -2292,6 +2342,7 @@ function joinDemos(parts) {
   out.times = cat(timesL);
   out.slots = {}; for (const e in slotsL) out.slots[e] = cat(slotsL[e]);
   out.hp = cat(hpL); out.brushEvents = cat(brushEvL); out.brushPose = cat(brushPoseL); out.snds = cat(sndsL); out.shots = cat(shotsL); out.booms = cat(boomsL); out.puffs = cat(puffsL);
+  out.shotOrg = cat(shotOrgL); out.view = cat(viewL); out.fovs = cat(fovsL); out.ownAmmo = cat(ownAmmoL); out.wanims = cat(wanimsL); out.vmodels = cat(vmodelsL);
   out.bomb.sort((a, b) => a.t - b.t);
   out.start = parts[0].start;
   out.fileName = parts[0].fileName;
@@ -3738,6 +3789,7 @@ async function onDemo() {
   if (MAP && MAP.name === D.mapName.toLowerCase()) computeWallbangs();
   else { MAP = null; clear3d(); loadMap(D.mapName); }
   resetCam3();
+  povInit();
   setView(viewMode);
   loadSummary(sndDone);
 }
@@ -3919,10 +3971,10 @@ function renderPane() {
         const pm = x.k - x.d;
         const slot = M.slotOf(e, T), dead = slot != null && isDeadNow(slot);
         const full = M.pl[e].name, nm = short[e] || full;
-        h += `<div class="row prow${selected != null && slot === selected ? ' sel' : ''}${slot == null ? ' gone' : ''}${dead ? ' dead' : ''}" data-p="${e}" title="${esc(full)}${dead ? ' · dead until the next round' : ''}"><span class="main">${dead ? `<span class="pnum skull" aria-label="dead">${SKULL}</span>` : `<span class="pnum">${(playerOrder().indexOf(e) + 1) % 10}</span>`}<span class="nm">${esc(nm)}</span>${x.tk ? `<span class="sub"> · ${x.tk} TK</span>` : ''}</span><span class="sc">${x.k}</span><span class="sc">${x.d}</span><span class="sc ${pm > 0 ? 'pos' : pm < 0 ? 'neg' : ''}">${pm > 0 ? '+' : ''}${pm}</span><span class="sc">${x.k ? Math.round(x.hs / x.k * 100) : 0}%</span></div>`;
+        h += `<div class="row prow${selected != null && slot === selected ? ' sel' : ''}${slot == null ? ' gone' : ''}${dead ? ' dead' : ''}" data-p="${e}" title="${esc(full)}${dead ? ' · dead until the next round' : ''}"><span class="main">${dead ? `<span class="pnum skull" aria-label="dead">${SKULL}</span>` : (D.pov ? '' : `<span class="pnum">${(playerOrder().indexOf(e) + 1) % 10}</span>`)}<span class="nm">${esc(nm)}</span>${x.tk ? `<span class="sub"> · ${x.tk} TK</span>` : ''}</span><span class="sc">${x.k}</span><span class="sc">${x.d}</span><span class="sc ${pm > 0 ? 'pos' : pm < 0 ? 'neg' : ''}">${pm > 0 ? '+' : ''}${pm}</span><span class="sc">${x.k ? Math.round(x.hs / x.k * 100) : 0}%</span></div>`;
       }
     }
-    h += `<div class="opt">Kills and deaths from the kill feed only: no bonus points for bomb plants or defuses, and team kills (TK) are not counted as kills. Only live rounds count${M.hasOT ? `; overtime is every round after round ${M.reg}` : ''}. Click a player to highlight them. The number is their 1 to 0 key.</div>`;
+    h += `<div class="opt">Kills and deaths from the kill feed only: no bonus points for bomb plants or defuses, and team kills (TK) are not counted as kills. Only live rounds count${M.hasOT ? `; overtime is every round after round ${M.reg}` : ''}. ${D.pov ? 'The highlighted player is the one whose eyes the 3D view shows.' : 'Click a player to highlight them. The number is their 1 to 0 key.'}</div>`;
     p.innerHTML = h;
     p.querySelectorAll('[data-b]').forEach((b) => b.onclick = () => { statBucket = b.dataset.b; renderPane(); });
   }
@@ -4004,7 +4056,7 @@ document.addEventListener('keydown', (e) => {
   else if (k === 't' || k === 'T') setTheatre(!TH.on);
   else if (k === 'x' || k === 'X') { nextPlayer(1); if (viewMode !== '2d' && cam3.mode === 'free') setCam('eyes'); }
   else if (k === 'z' || k === 'Z') { nextPlayer(-1); if (viewMode !== '2d' && cam3.mode === 'free') setCam('eyes'); }
-  else if (/^[0-9]$/.test(k)) {
+  else if (/^[0-9]$/.test(k) && !POV.on) {
     const pid = playerOrder()[(+k + 9) % 10]; const e = pid && M.slotOf(pid, T);
     if (e && isDeadNow(e)) toast(`${M.pl[pid].name} is dead until the next round.`, 2500);
     else if (e) { selected = e; renderPane(); if (viewMode !== '2d' && cam3.mode === 'free') setCam('eyes'); }
@@ -4791,6 +4843,7 @@ function freeCamFromFollow() {
   cam3.pos = head.map((v, i) => v + (far[i] - v) * f); cam3.yaw = s.yaw; cam3.pitch = pitch;
 }
 function setCam(m, keepPlayer, exact) {
+  if (POV.on) return; // POV mode always shows the recorder's own view
   // exact: dragging, the wheel, WASD, or nobody left to follow, which carry on from the view on screen
   if (m === 'free' && cam3.mode !== 'free') { if (exact) copyCamToFree(); else freeCamFromFollow(); }
   // nobody picked, going from Free camera to Player's eyes or Behind player: follow the living player nearest
@@ -4820,6 +4873,7 @@ function nearestToView() {
 }
 function alivePlayers() { return Object.keys(D.slots).map(Number).filter((e) => { const s = playerState(e, T); return s && s.state > 0; }).sort((a, b) => ((teamOfSlot(a, T) ?? 9) - (teamOfSlot(b, T) ?? 9)) || a - b); }
 function nextPlayer(dir) {
+  if (POV.on) return;
   const list = alivePlayers(); if (!list.length) return;
   const i = list.indexOf(selected);
   selected = list[(i + dir + list.length) % list.length];
@@ -4831,6 +4885,7 @@ const k3 = cam3.keys;
 document.addEventListener('keydown', (e) => {
   if (viewMode === '2d' || !D || !$('load').hidden || e.target.tagName === 'INPUT' || e.target.tagName === 'SELECT' || e.target.isContentEditable) return;
   const k = e.key.toLowerCase();
+  if (POV.on) return;
   if (k.length === 1 && 'wasdqe'.includes(k)) { k3[k] = true; if (cam3.mode !== 'free') { setCam('free', false, true); } }
   if (e.key === 'Shift') k3.shift = true;
   if (k === 'v') setCam(cam3.mode === 'free' ? 'eyes' : cam3.mode === 'eyes' ? 'chase' : 'free');
@@ -5518,6 +5573,8 @@ function fireSound(ev, silenced, k) {
   const list = Array.isArray(f) ? f : silenced ? f.on : f.off;
   return 'weapons/' + list[k % list.length] + '.wav';
 }
+// CS 1.6 weapon ids (as CurWeapon gives them) -> the fire event names FIRE uses
+const WEAPON_EVENT = { 1: 'p228', 3: 'scout', 5: 'xm1014', 7: 'mac10', 8: 'aug', 10: 'elite_left', 11: 'fiveseven', 12: 'ump45', 13: 'sg550', 14: 'galil', 15: 'famas', 16: 'usp', 17: 'glock18', 18: 'awp', 19: 'mp5n', 20: 'm249', 21: 'm3', 22: 'm4a1', 23: 'tmp', 24: 'g3sg1', 26: 'deagle', 27: 'sg552', 28: 'ak47', 30: 'p90' };
 const eventName = (idx) => ((D.events && D.events[idx]) || '').replace(/^events\//, '').replace(/\.sc$/, '');
 const sndName = (idx) => (D.sounds && D.sounds[idx] ? D.sounds[idx].replace(/^\*/, '').replace(/\\/g, '/').toLowerCase() : '');
 
@@ -5529,6 +5586,7 @@ function demoSoundList() {
   const sh = D.shots || [];
   const seen = new Set();
   for (let i = 0; i < sh.length; i += 4) seen.add(eventName(sh[i + 2]));
+  for (let i = 1; i < (D.ownAmmo || []).length; i += 3) seen.add(WEAPON_EVENT[D.ownAmmo[i]]); // POV: his own guns
   for (const ev of seen) { const f = FIRE[ev]; if (!f) continue; for (const x of Array.isArray(f) ? f : [...f.on, ...f.off]) need.add('weapons/' + x + '.wav'); }
   if (D.booms && D.booms.length) for (const x of ['explode3', 'explode4', 'explode5']) need.add('weapons/' + x + '.wav');
   if (SND.sentences) for (const r of D.radio || []) { const p = SND.sentences[r.s.toUpperCase()]; if (p) need.add(p); }
@@ -5673,10 +5731,22 @@ function soundTick(t0, t1) {
     const pos = !isNaN(s[o + 7]) ? [s[o + 7], s[o + 8], s[o + 9]] : entPos(e, s[o]);
     playSound(name, pos, s[o + 3], s[o + 4], s[o + 5], s[o + 6] ? e + ':' + s[o + 6] : null, L);
   }
-  const sh = D.shots || [];
+  const sh = D.shots || [], so = D.shotOrg;
   for (let i = firstAfter(sh, 4, t0); i * 4 < sh.length && sh[i * 4] <= t1; i++) {
     const o = i * 4, name = fireSound(eventName(sh[o + 2]), sh[o + 3], i); if (!name) continue;
-    playSound(name, entPos(sh[o + 1], sh[o]), 1, 0.64, 94 + (i * 7) % 16, sh[o + 1] + ':w', L);
+    // where it was fired: the message's own position when it has one (the shooter wasn't in the snapshot,
+    // most shots in a POV demo), else the shooter's. With neither, it isn't played: before, it played at full
+    // volume as if next to you (Sujan, 3 Oct 2026)
+    const org = so && !isNaN(so[i * 3]) ? [so[i * 3], so[i * 3 + 1], so[i * 3 + 2]] : entPos(sh[o + 1], sh[o]);
+    if (!org && D.pov) continue;
+    playSound(name, org, 1, 0.64, 94 + (i * 7) % 16, sh[o + 1] + ':w', L);
+  }
+  // POV mode: the recorder's own shots. The server never sends a player his own fire (his game plays it
+  // itself), so they come from his gun's round count going down (CurWeapon), and play at the listener.
+  const os = D.ownShots; // see povShots
+  if (os && os.length) for (let i = firstAfter(os, 3, t0); i * 3 < os.length && os[i * 3] <= t1; i++) {
+    const o = i * 3, name = fireSound(WEAPON_EVENT[os[o + 1]], os[o + 2], i); if (!name) continue;
+    playSound(name, null, 1, 0, 94 + (i * 7) % 16, 'own:w', L);
   }
   const b = D.booms || [];
   for (let i = firstAfter(b, 4, t0); i * 4 < b.length && b[i * 4] <= t1; i++) {
@@ -5847,7 +5917,13 @@ function update3() {
   for (const [key, o] of OVL.m) if (!OVL.used.has(key)) o.visible = false;
 
   // camera
-  if (cam3.mode === 'free') {
+  if (POV.on) {
+    // POV mode: the camera exactly as the recorder's game drew it, zoom included (his scope from SetFOV)
+    const v = povFollow(T);
+    const fov = POV.who === v.rec ? povFov(T) : 90;
+    camera.fov = 2 * Math.atan(Math.tan(fov * Math.PI / 360) / camera.aspect) * 180 / Math.PI;
+    placeCam(v.pos, v.yaw, v.pitch);
+  } else if (cam3.mode === 'free') {
     const sp = (k3.shift ? 1500 : 550) * dt;
     const ff = fwd(cam3.yaw, cam3.pitch), rt = [Math.sin(cam3.yaw * Math.PI / 180), -Math.cos(cam3.yaw * Math.PI / 180)];
     if (k3.w) for (let i = 0; i < 3; i++) cam3.pos[i] += ff[i] * sp;
@@ -5925,8 +6001,10 @@ function update3() {
   camera.updateProjectionMatrix();
   renderer.render(R3.scene, camera);
   // the gun in hand isn't shown while looking through the scope, as in the game
-  const scoped = cam3.mode === 'eyes' && selected && zoomLevel(selected, T) > 0 && (() => { const ss = playerState(selected, T); return ss && ss.state > 0 && SNIPERS[weaponShort(ss.weapon)]; })();
-  if (cam3.mode === 'eyes' && selected && !scoped) drawViewModel(renderer, camera, selected, playerState(selected, T));
+  const scoped = POV.on ? (POV.who != null && POV.who === POV.v.rec && povFov(T) < 90 && (() => { const ss = playerState(POV.who, T); return ss && SNIPERS[weaponShort(ss.weapon)]; })())
+    : cam3.mode === 'eyes' && selected && zoomLevel(selected, T) > 0 && (() => { const ss = playerState(selected, T); return ss && ss.state > 0 && SNIPERS[weaponShort(ss.weapon)]; })();
+  // POV mode: no gun in hand while watching from a free or chase spectator camera
+  if (cam3.mode === 'eyes' && selected && !scoped && (!POV.on || POV.who != null)) drawViewModel(renderer, camera, selected, playerState(selected, T));
 
   // name labels on a 2D overlay
   const lc = $('lbl'), lx = lc.getContext('2d');
@@ -5986,7 +6064,8 @@ function update3() {
     if (death) {
       // red wash over the view that fades to a steady tint, like taking the final hit
       const age = Math.max(0, T - death.t);
-      const a = Math.max(0.3, 0.8 - age * 0.35);
+      // POV mode: the view is the spectator camera he watched through, so the wash only flashes at the death
+      const a = POV.on ? Math.max(0, 0.6 - age * 0.6) : Math.max(0.3, 0.8 - age * 0.35);
       const g = lx.createRadialGradient(W / 2, H / 2, Math.min(W, H) * 0.15, W / 2, H / 2, Math.max(W, H) * 0.7);
       g.addColorStop(0, `rgba(120,0,0,${a * 0.35})`); g.addColorStop(1, `rgba(150,0,0,${a})`);
       lx.fillStyle = g; lx.fillRect(0, 0, W, H);
@@ -5996,8 +6075,8 @@ function update3() {
         ? `killed by <span class="${kside}">${esc(M.pl[death.kp].name)}</span> · ${esc(death.weapon)}${death.hs ? ' · <span class="khs">HS</span>' : ''}${death.wb ? ' · <span class="kwb">wallbang</span>' : ''}`
         : (death.weapon === 'world' ? 'died' : 'killed themselves');
       pov.hidden = false; pov.classList.add('dead');
-      pov.innerHTML = `<b>${esc(nameAt(selected, T))}</b> ${kn} <span class="kw">· ${playing && age < 2.5 ? 'switching to a teammate' : 'press X for the next player'}</span>`;
-    } else { pov.hidden = false; pov.classList.add('dead'); pov.innerHTML = `<span class="kw">${esc(nameAt(selected, T))} is dead. Press X for the next player.</span>`; }
+      pov.innerHTML = `<b>${esc(nameAt(selected, T))}</b> ${kn}${POV.on ? '' : ` <span class="kw">· ${playing && age < 2.5 ? 'switching to a teammate' : 'press X for the next player'}</span>`}`;
+    } else { pov.hidden = false; pov.classList.add('dead'); pov.innerHTML = `<span class="kw">${esc(nameAt(selected, T))} is dead.${POV.on ? '' : ' Press X for the next player.'}</span>`; }
     // like CS spectating: after a moment, follow a living teammate (or anyone alive)
     if (death && T - death.t > 2.5 && playing) {
       const alive = alivePlayers();
@@ -6075,6 +6154,92 @@ function placeCam(p, yaw, pitch) {
   c.up.set(0, 1, 0);
   c.lookAt(g3(p[0] + f[0], p[1] + f[1], p[2] + f[2]));
   cam3.lastYaw = yaw; cam3.lastPitch = pitch;
+}
+
+// ---------------- POV mode (wip/pov-mode) ----------------
+// A demo recorded by a player plays through his own eyes, the way the game plays it back: the camera his game
+// drew, read from the view block written before every frame (about 100 a second, D.view, see VIEW_STRIDE in the
+// reader). It holds his exact aim with the recoil kick in it, and after he dies, the spectator camera he
+// watched through. No free camera and no other players' eyes: the file only has players near him (Sujan, 3 Oct 2026).
+const POV = { on: false, i: 0 };
+// The recorder's own shots, in order: time, weapon id, silenced (1 or 0). A shot is his gun's round count going
+// down by 1 to 3 with the same gun in hand (CurWeapon). Whether an M4A1 or USP had its silencer on comes from
+// the last animation his game played on it (demo frame type 7): the silenced and unsilenced versions are
+// separate sequences in v_m4a1.mdl and v_usp.mdl. Each animation belongs to the gun model in his hands 0.05 s
+// after it (his own state's viewmodel; the animation comes a moment before the model at a switch). Checked on
+// Match 1 CT (de_barcelona, 27 Mar 2025), 3 Oct 2026: 25 of 989 animations land on a model without that
+// sequence (97.5% fit, against 154 wrong when credited 0.1 s earlier). A gun with neither yet: unsilenced, as the
+// game hands them out.
+const SIL_SEQ = { v_m4a1: { id: 22, on: [0, 1, 2, 3, 4, 5, 6], off: [7, 8, 9, 10, 11, 12, 13] }, v_usp: { id: 16, on: [0, 1, 2, 3, 4, 5, 6, 7], off: [8, 9, 10, 11, 12, 13, 14, 15] } };
+function povShots() {
+  const A = D.ownAmmo || [], W = D.wanims || [], VM = D.vmodels || [], out = [];
+  const vmName = (t) => { let lo = 0, hi = VM.length / 2 - 1, r = -1; while (lo <= hi) { const m = (lo + hi) >> 1; if (VM[m * 2] <= t) { r = m; lo = m + 1; } else hi = m - 1; } return r < 0 ? '' : (D.models[VM[r * 2 + 1]] || '').replace(/^models\//, '').replace(/\.mdl$/, ''); };
+  const sil = {}; let w = 0;
+  for (let i = 0; i < A.length; i += 3) {
+    const t = A[i], id = A[i + 1], clip = A[i + 2];
+    for (; w < W.length && W[w] <= t; w += 2) {
+      const sq = SIL_SEQ[vmName(W[w] + 0.05)];
+      if (sq) { if (sq.on.includes(W[w + 1])) sil[sq.id] = 1; else if (sq.off.includes(W[w + 1])) sil[sq.id] = 0; }
+    }
+    if (i && A[i - 2] === id && clip < A[i - 1] && A[i - 1] - clip <= 3) out.push(t, id, sil[id] || 0);
+  }
+  return new Float32Array(out);
+}
+function povInit() {
+  POV.on = !!(D && D.pov && D.view && D.view.length >= D.viewStride * 2);
+  POV.i = 0;
+  D.ownShots = POV.on ? povShots() : null;
+  // the camera buttons that pick another view or player go; Team colours and Quality stay
+  for (const id of ['free', 'eyes', 'chase']) { const b = document.querySelector(`#cam3 [data-c="${id}"]`); if (b) b.hidden = POV.on; }
+  $('bPrevP').hidden = POV.on; $('bNextP').hidden = POV.on;
+  if (POV.on) { cam3.mode = 'eyes'; cam3.chase = null; cam3.cYaw = null; povFollow(T); }
+}
+// The view at time t, between the two frames around it. Angles turn the short way round. Across a jump (a
+// respawn, a teleport, the gap between two joined files) there's nothing to blend, so the earlier frame is kept.
+function povView(t) {
+  const V = D.view, n = D.viewStride, N = V.length / n;
+  let i = Math.min(POV.i, N - 1);
+  if (V[i * n] > t) { let lo = 0, hi = i; while (lo < hi) { const m = (lo + hi + 1) >> 1; if (V[m * n] <= t) lo = m; else hi = m - 1; } i = lo; }
+  else while (i < N - 1 && V[(i + 1) * n] <= t) i++;
+  POV.i = i;
+  const a = i * n, b = Math.min(i + 1, N - 1) * n;
+  const span = V[b] - V[a];
+  let f = span > 0 && span < 0.25 ? Math.max(0, Math.min(1, (t - V[a]) / span)) : 0;
+  if (Math.hypot(V[b + 1] - V[a + 1], V[b + 2] - V[a + 2], V[b + 3] - V[a + 3]) > 64) f = 0;
+  const L = (k) => V[a + k] + (V[b + k] - V[a + k]) * f;
+  const LA = (k) => { let d = V[b + k] - V[a + k]; d = ((d % 360) + 540) % 360 - 180; return V[a + k] + d * f; };
+  return { pos: [L(1), L(2), L(3)], pitch: LA(4), yaw: LA(5), punch: [V[a + 7], V[a + 8]], rec: V[a + 17] + 1, t: V[a] };
+}
+// Whose eyes the view is: the recorder while he's alive; after he dies, the player he spectated in first
+// person (the camera sits at that player's eyes, looking his way), or nobody when he watched from a free or
+// chase spectator camera. Kept in `selected`, so the gun in hand, the name at the bottom and the hidden body
+// all follow the right player, and the right panel highlights him.
+function povFollow(t) {
+  const v = povView(t);
+  const rs = playerState(v.rec, t);
+  let who = null;
+  if (rs && rs.state > 0) who = v.rec;
+  else {
+    let best = 40;
+    for (const e in D.slots) {
+      const s = playerState(+e, t); if (!s || !(s.state > 0)) continue;
+      const d = Math.hypot(s.x - v.pos[0], s.y - v.pos[1], s.z + (s.duck ? 12 : 17) - v.pos[2]);
+      const dy = Math.abs(((s.yaw - v.yaw) % 360 + 540) % 360 - 180);
+      if (d < best && dy < 25) { best = d; who = +e; }
+    }
+  }
+  POV.who = who; POV.v = v;
+  const sel = who != null ? who : v.rec;
+  if (selected !== sel) { selected = sel; if (typeof renderPane === 'function') renderPane(); }
+  return v;
+}
+// The recorder's zoom at time t (field of view, 90 when not zoomed), from the SetFOV messages
+function povFov(t) {
+  const F = D.fovs; if (!F || !F.length) return 90;
+  let lo = 0, hi = F.length / 2 - 1, r = -1;
+  while (lo <= hi) { const m = (lo + hi) >> 1; if (F[m * 2] <= t) { r = m; lo = m + 1; } else hi = m - 1; }
+  const v = r >= 0 ? F[r * 2 + 1] : 90;
+  return v > 0 && v < 90 ? v : 90;
 }
 
 // ---------------- loop ----------------

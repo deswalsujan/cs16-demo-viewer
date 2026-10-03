@@ -230,6 +230,7 @@ function freeCamFromFollow() {
   cam3.pos = head.map((v, i) => v + (far[i] - v) * f); cam3.yaw = s.yaw; cam3.pitch = pitch;
 }
 function setCam(m, keepPlayer, exact) {
+  if (POV.on) return; // POV mode always shows the recorder's own view
   // exact: dragging, the wheel, WASD, or nobody left to follow, which carry on from the view on screen
   if (m === 'free' && cam3.mode !== 'free') { if (exact) copyCamToFree(); else freeCamFromFollow(); }
   // nobody picked, going from Free camera to Player's eyes or Behind player: follow the living player nearest
@@ -259,6 +260,7 @@ function nearestToView() {
 }
 function alivePlayers() { return Object.keys(D.slots).map(Number).filter((e) => { const s = playerState(e, T); return s && s.state > 0; }).sort((a, b) => ((teamOfSlot(a, T) ?? 9) - (teamOfSlot(b, T) ?? 9)) || a - b); }
 function nextPlayer(dir) {
+  if (POV.on) return;
   const list = alivePlayers(); if (!list.length) return;
   const i = list.indexOf(selected);
   selected = list[(i + dir + list.length) % list.length];
@@ -270,6 +272,7 @@ const k3 = cam3.keys;
 document.addEventListener('keydown', (e) => {
   if (viewMode === '2d' || !D || !$('load').hidden || e.target.tagName === 'INPUT' || e.target.tagName === 'SELECT' || e.target.isContentEditable) return;
   const k = e.key.toLowerCase();
+  if (POV.on) return;
   if (k.length === 1 && 'wasdqe'.includes(k)) { k3[k] = true; if (cam3.mode !== 'free') { setCam('free', false, true); } }
   if (e.key === 'Shift') k3.shift = true;
   if (k === 'v') setCam(cam3.mode === 'free' ? 'eyes' : cam3.mode === 'eyes' ? 'chase' : 'free');
@@ -422,7 +425,13 @@ function update3() {
   for (const [key, o] of OVL.m) if (!OVL.used.has(key)) o.visible = false;
 
   // camera
-  if (cam3.mode === 'free') {
+  if (POV.on) {
+    // POV mode: the camera exactly as the recorder's game drew it, zoom included (his scope from SetFOV)
+    const v = povFollow(T);
+    const fov = POV.who === v.rec ? povFov(T) : 90;
+    camera.fov = 2 * Math.atan(Math.tan(fov * Math.PI / 360) / camera.aspect) * 180 / Math.PI;
+    placeCam(v.pos, v.yaw, v.pitch);
+  } else if (cam3.mode === 'free') {
     const sp = (k3.shift ? 1500 : 550) * dt;
     const ff = fwd(cam3.yaw, cam3.pitch), rt = [Math.sin(cam3.yaw * Math.PI / 180), -Math.cos(cam3.yaw * Math.PI / 180)];
     if (k3.w) for (let i = 0; i < 3; i++) cam3.pos[i] += ff[i] * sp;
@@ -500,8 +509,10 @@ function update3() {
   camera.updateProjectionMatrix();
   renderer.render(R3.scene, camera);
   // the gun in hand isn't shown while looking through the scope, as in the game
-  const scoped = cam3.mode === 'eyes' && selected && zoomLevel(selected, T) > 0 && (() => { const ss = playerState(selected, T); return ss && ss.state > 0 && SNIPERS[weaponShort(ss.weapon)]; })();
-  if (cam3.mode === 'eyes' && selected && !scoped) drawViewModel(renderer, camera, selected, playerState(selected, T));
+  const scoped = POV.on ? (POV.who != null && POV.who === POV.v.rec && povFov(T) < 90 && (() => { const ss = playerState(POV.who, T); return ss && SNIPERS[weaponShort(ss.weapon)]; })())
+    : cam3.mode === 'eyes' && selected && zoomLevel(selected, T) > 0 && (() => { const ss = playerState(selected, T); return ss && ss.state > 0 && SNIPERS[weaponShort(ss.weapon)]; })();
+  // POV mode: no gun in hand while watching from a free or chase spectator camera
+  if (cam3.mode === 'eyes' && selected && !scoped && (!POV.on || POV.who != null)) drawViewModel(renderer, camera, selected, playerState(selected, T));
 
   // name labels on a 2D overlay
   const lc = $('lbl'), lx = lc.getContext('2d');
@@ -561,7 +572,8 @@ function update3() {
     if (death) {
       // red wash over the view that fades to a steady tint, like taking the final hit
       const age = Math.max(0, T - death.t);
-      const a = Math.max(0.3, 0.8 - age * 0.35);
+      // POV mode: the view is the spectator camera he watched through, so the wash only flashes at the death
+      const a = POV.on ? Math.max(0, 0.6 - age * 0.6) : Math.max(0.3, 0.8 - age * 0.35);
       const g = lx.createRadialGradient(W / 2, H / 2, Math.min(W, H) * 0.15, W / 2, H / 2, Math.max(W, H) * 0.7);
       g.addColorStop(0, `rgba(120,0,0,${a * 0.35})`); g.addColorStop(1, `rgba(150,0,0,${a})`);
       lx.fillStyle = g; lx.fillRect(0, 0, W, H);
@@ -571,8 +583,8 @@ function update3() {
         ? `killed by <span class="${kside}">${esc(M.pl[death.kp].name)}</span> · ${esc(death.weapon)}${death.hs ? ' · <span class="khs">HS</span>' : ''}${death.wb ? ' · <span class="kwb">wallbang</span>' : ''}`
         : (death.weapon === 'world' ? 'died' : 'killed themselves');
       pov.hidden = false; pov.classList.add('dead');
-      pov.innerHTML = `<b>${esc(nameAt(selected, T))}</b> ${kn} <span class="kw">· ${playing && age < 2.5 ? 'switching to a teammate' : 'press X for the next player'}</span>`;
-    } else { pov.hidden = false; pov.classList.add('dead'); pov.innerHTML = `<span class="kw">${esc(nameAt(selected, T))} is dead. Press X for the next player.</span>`; }
+      pov.innerHTML = `<b>${esc(nameAt(selected, T))}</b> ${kn}${POV.on ? '' : ` <span class="kw">· ${playing && age < 2.5 ? 'switching to a teammate' : 'press X for the next player'}</span>`}`;
+    } else { pov.hidden = false; pov.classList.add('dead'); pov.innerHTML = `<span class="kw">${esc(nameAt(selected, T))} is dead.${POV.on ? '' : ' Press X for the next player.'}</span>`; }
     // like CS spectating: after a moment, follow a living teammate (or anyone alive)
     if (death && T - death.t > 2.5 && playing) {
       const alive = alivePlayers();
@@ -650,4 +662,90 @@ function placeCam(p, yaw, pitch) {
   c.up.set(0, 1, 0);
   c.lookAt(g3(p[0] + f[0], p[1] + f[1], p[2] + f[2]));
   cam3.lastYaw = yaw; cam3.lastPitch = pitch;
+}
+
+// ---------------- POV mode (wip/pov-mode) ----------------
+// A demo recorded by a player plays through his own eyes, the way the game plays it back: the camera his game
+// drew, read from the view block written before every frame (about 100 a second, D.view, see VIEW_STRIDE in the
+// reader). It holds his exact aim with the recoil kick in it, and after he dies, the spectator camera he
+// watched through. No free camera and no other players' eyes: the file only has players near him (Sujan, 3 Oct 2026).
+const POV = { on: false, i: 0 };
+// The recorder's own shots, in order: time, weapon id, silenced (1 or 0). A shot is his gun's round count going
+// down by 1 to 3 with the same gun in hand (CurWeapon). Whether an M4A1 or USP had its silencer on comes from
+// the last animation his game played on it (demo frame type 7): the silenced and unsilenced versions are
+// separate sequences in v_m4a1.mdl and v_usp.mdl. Each animation belongs to the gun model in his hands 0.05 s
+// after it (his own state's viewmodel; the animation comes a moment before the model at a switch). Checked on
+// Match 1 CT (de_barcelona, 27 Mar 2025), 3 Oct 2026: 25 of 989 animations land on a model without that
+// sequence (97.5% fit, against 154 wrong when credited 0.1 s earlier). A gun with neither yet: unsilenced, as the
+// game hands them out.
+const SIL_SEQ = { v_m4a1: { id: 22, on: [0, 1, 2, 3, 4, 5, 6], off: [7, 8, 9, 10, 11, 12, 13] }, v_usp: { id: 16, on: [0, 1, 2, 3, 4, 5, 6, 7], off: [8, 9, 10, 11, 12, 13, 14, 15] } };
+function povShots() {
+  const A = D.ownAmmo || [], W = D.wanims || [], VM = D.vmodels || [], out = [];
+  const vmName = (t) => { let lo = 0, hi = VM.length / 2 - 1, r = -1; while (lo <= hi) { const m = (lo + hi) >> 1; if (VM[m * 2] <= t) { r = m; lo = m + 1; } else hi = m - 1; } return r < 0 ? '' : (D.models[VM[r * 2 + 1]] || '').replace(/^models\//, '').replace(/\.mdl$/, ''); };
+  const sil = {}; let w = 0;
+  for (let i = 0; i < A.length; i += 3) {
+    const t = A[i], id = A[i + 1], clip = A[i + 2];
+    for (; w < W.length && W[w] <= t; w += 2) {
+      const sq = SIL_SEQ[vmName(W[w] + 0.05)];
+      if (sq) { if (sq.on.includes(W[w + 1])) sil[sq.id] = 1; else if (sq.off.includes(W[w + 1])) sil[sq.id] = 0; }
+    }
+    if (i && A[i - 2] === id && clip < A[i - 1] && A[i - 1] - clip <= 3) out.push(t, id, sil[id] || 0);
+  }
+  return new Float32Array(out);
+}
+function povInit() {
+  POV.on = !!(D && D.pov && D.view && D.view.length >= D.viewStride * 2);
+  POV.i = 0;
+  D.ownShots = POV.on ? povShots() : null;
+  // the camera buttons that pick another view or player go; Team colours and Quality stay
+  for (const id of ['free', 'eyes', 'chase']) { const b = document.querySelector(`#cam3 [data-c="${id}"]`); if (b) b.hidden = POV.on; }
+  $('bPrevP').hidden = POV.on; $('bNextP').hidden = POV.on;
+  if (POV.on) { cam3.mode = 'eyes'; cam3.chase = null; cam3.cYaw = null; povFollow(T); }
+}
+// The view at time t, between the two frames around it. Angles turn the short way round. Across a jump (a
+// respawn, a teleport, the gap between two joined files) there's nothing to blend, so the earlier frame is kept.
+function povView(t) {
+  const V = D.view, n = D.viewStride, N = V.length / n;
+  let i = Math.min(POV.i, N - 1);
+  if (V[i * n] > t) { let lo = 0, hi = i; while (lo < hi) { const m = (lo + hi + 1) >> 1; if (V[m * n] <= t) lo = m; else hi = m - 1; } i = lo; }
+  else while (i < N - 1 && V[(i + 1) * n] <= t) i++;
+  POV.i = i;
+  const a = i * n, b = Math.min(i + 1, N - 1) * n;
+  const span = V[b] - V[a];
+  let f = span > 0 && span < 0.25 ? Math.max(0, Math.min(1, (t - V[a]) / span)) : 0;
+  if (Math.hypot(V[b + 1] - V[a + 1], V[b + 2] - V[a + 2], V[b + 3] - V[a + 3]) > 64) f = 0;
+  const L = (k) => V[a + k] + (V[b + k] - V[a + k]) * f;
+  const LA = (k) => { let d = V[b + k] - V[a + k]; d = ((d % 360) + 540) % 360 - 180; return V[a + k] + d * f; };
+  return { pos: [L(1), L(2), L(3)], pitch: LA(4), yaw: LA(5), punch: [V[a + 7], V[a + 8]], rec: V[a + 17] + 1, t: V[a] };
+}
+// Whose eyes the view is: the recorder while he's alive; after he dies, the player he spectated in first
+// person (the camera sits at that player's eyes, looking his way), or nobody when he watched from a free or
+// chase spectator camera. Kept in `selected`, so the gun in hand, the name at the bottom and the hidden body
+// all follow the right player, and the right panel highlights him.
+function povFollow(t) {
+  const v = povView(t);
+  const rs = playerState(v.rec, t);
+  let who = null;
+  if (rs && rs.state > 0) who = v.rec;
+  else {
+    let best = 40;
+    for (const e in D.slots) {
+      const s = playerState(+e, t); if (!s || !(s.state > 0)) continue;
+      const d = Math.hypot(s.x - v.pos[0], s.y - v.pos[1], s.z + (s.duck ? 12 : 17) - v.pos[2]);
+      const dy = Math.abs(((s.yaw - v.yaw) % 360 + 540) % 360 - 180);
+      if (d < best && dy < 25) { best = d; who = +e; }
+    }
+  }
+  POV.who = who; POV.v = v;
+  const sel = who != null ? who : v.rec;
+  if (selected !== sel) { selected = sel; if (typeof renderPane === 'function') renderPane(); }
+  return v;
+}
+// The recorder's zoom at time t (field of view, 90 when not zoomed), from the SetFOV messages
+function povFov(t) {
+  const F = D.fovs; if (!F || !F.length) return 90;
+  let lo = 0, hi = F.length / 2 - 1, r = -1;
+  while (lo <= hi) { const m = (lo + hi) >> 1; if (F[m * 2] <= t) { r = m; lo = m + 1; } else hi = m - 1; }
+  const v = r >= 0 ? F[r * 2 + 1] : 90;
+  return v > 0 && v < 90 ? v : 90;
 }
