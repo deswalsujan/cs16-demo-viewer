@@ -6,6 +6,8 @@ What changed in the viewer, newest first. The version shows in the viewer's shor
 
 Experimental (Sujan, 3 Oct 2026): a demo recorded by a player opens in POV mode by itself, in the same viewer. Removed again if it's more trouble than it's worth. Background and findings: IDEAS.md, "POV demos".
 
+**Where it lives (Sujan, 3 Oct 2026):** in its own copy of the viewer, `pov/src/`, built with `python3 pov/build.py` into `pov/pov.html`. The main viewer (`src/`, `index.html`) on this branch is exactly as on main, and nothing here is deployed. POV mode goes back into main only once it works as intended.
+
 Built so far (not released, no version bump):
 - **The recording player is drawn where he really was.** The server never puts the recorder's position in the snapshots (his own game moves him), so the viewer drew him at the map's zero point for the whole demo. His position and crouch now come from the messages the server sends him about himself (`clientdata`), which the reader already read and threw away. His aim stays as the snapshots give it, as for everyone else.
 - **Kills by or on the recorder have his position**, so their kill lines, death marks and the wallbang check have a place to start from. Before, 40, 14 and 66 kills in the three files had no position (the cause of the "NaN" page error on Match 1).

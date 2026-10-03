@@ -135,7 +135,7 @@ Page scripts in `page/`:
 | `split_missing.js`, then `split_missing_go.js` | A round in no file, made by removing Inferno part 2's kills before its first marker: the card's check, then the joined Rounds tab and score (`DEMO=1104240025`) | split maps (wip) |
 | `wallbang_list.js` | Every wallbang (round, timer, killer, gun, headshot, victim), waiting for the map to load even with `MAP_NEEDED=0`, for comparing two builds with `compare_all.sh` | 0.15.5 |
 | `summary_text.js` | The load summary's text, built afresh (for checking its lines across all demos) | split maps (wip) |
-| `pov_own_kill.js` | At the recorder's own gun kills in a POV demo: how far the victim's head is from his aim in Player's eyes, then the view left on the median kill (`window.__killN` picks another) | POV mode (wip) |
+| `pov_own_kill.js` (run with `PAGE=../pov/pov.html`) | At the recorder's own gun kills in a POV demo: how far the victim's head is from his aim in Player's eyes, then the view left on the median kill (`window.__killN` picks another) | POV mode (wip) |
 | `pov_trial.js`, then `pov_2d.js` | A POV demo as the viewer handles it today: the load summary, the recorder (found by name) and whether his position is real, following him, how many players have a position through the match; then the 2D radar mid-demo for a screenshot (`DEMO=match-1_de_barcelona-ts`, `DEMO=match-3`) | POV trial, 3 Oct 2026 |
 | `late_kill_timing.js` | Late kills shown at the victim's death sound (NoA vs Pentagram, Train 2006); run through `late_kill_timing_check.py` | 0.16.0, guards 0.15.5 |
 | `free_cam_nearest.js` | Free camera to Player's eyes, Behind player and V with nobody picked follows the player nearest the middle of the view; a picked player stays (`DEMO=1110091531`, Dust2) | 0.16.0 |

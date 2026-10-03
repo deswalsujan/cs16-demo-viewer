@@ -123,6 +123,7 @@ const TE_SIZES = {
 };
 
 const SAMPLE_HZ = 30;
+const FL_DUCKING = 1 << 14; // entity flag for a crouched player (the game's FL_DUCKING)
 const STRIDE = 11; // x, y, z, yaw, pitch, state, weaponModel, ducked, playerModel (index into pmodels), sequence, gaitsequence
 
 // ---- is the file as a finished recording leaves it? ----
@@ -211,6 +212,7 @@ export function parseDemo(buffer, onProgress, opts = {}) {
   let maxClients = 32;
   let serverInfo = null;
   const resources = { models: {}, sounds: {}, events: {} };
+  const own = {}; // the recording player's own state in a POV demo (clientdata), built up message by message
   const baseline = [];
   const instBaseline = [];
   let ents = [];
@@ -273,6 +275,11 @@ export function parseDemo(buffer, onProgress, opts = {}) {
       }
       const a = slotArr(e);
       const state = dead.has(e) ? -side : side;
+      // the recording player in a POV demo: position and crouch from his own state (clientdata), see case 15
+      if (st && opts.povRounds && serverInfo && e === serverInfo.playerIndex + 1 && own['origin[0]'] != null) {
+        a.push(own['origin[0]'], own['origin[1]'], own['origin[2]'] || 0, st['angles[1]'] || 0, st['angles[0]'] || 0, state, st.weaponmodel || 0, (own.flags || 0) & FL_DUCKING ? 1 : 0, pmIndex(p, st), st.sequence || 0, st.gaitsequence || 0);
+        continue;
+      }
       if (st) a.push(st['origin[0]'] || 0, st['origin[1]'] || 0, st['origin[2]'] || 0, st['angles[1]'] || 0, st['angles[0]'] || 0, state, st.weaponmodel || 0, st.usehull || 0, pmIndex(p, st), st.sequence || 0, st.gaitsequence || 0);
       else a.push(NaN, NaN, NaN, 0, 0, state, 0, 0, 0, 0, 0);
     }
@@ -304,6 +311,12 @@ export function parseDemo(buffer, onProgress, opts = {}) {
     return pmSeen[name];
   }
 
+  // an entity as the kill messages read it; for the recording player in a POV demo, with his own position and crouch
+  function ownEnt(e) {
+    const st = ents[e];
+    if (!st || !opts.povRounds || !serverInfo || e !== serverInfo.playerIndex + 1 || own['origin[0]'] == null) return st;
+    return { ...st, 'origin[0]': own['origin[0]'], 'origin[1]': own['origin[1]'], 'origin[2]': own['origin[2]'] || 0, usehull: (own.flags || 0) & FL_DUCKING ? 1 : 0 };
+  }
   function isProxy() {
     if (!serverInfo) return false;
     const p = players[serverInfo.playerIndex + 1];
@@ -353,7 +366,8 @@ export function parseDemo(buffer, onProgress, opts = {}) {
         case 'DeathMsg': {
           const killer = m.ub(), victim = m.ub(), hs = m.ub(), weapon = m.str();
           dead.add(victim);
-          const kp = ents[killer], vp = ents[victim];
+          // the recording player's position in a POV demo is in his own state, not his entity (see case 15)
+          const kp = ownEnt(killer), vp = ownEnt(victim);
           if (inPlayback) kills.push({
             t: time, killer, victim, hs: !!hs, weapon,
             kocc: curOcc[killer] ? curOcc[killer].id : -1, vocc: curOcc[victim] ? curOcc[victim].id : -1,
@@ -550,7 +564,10 @@ export function parseDemo(buffer, onProgress, opts = {}) {
           if (isProxy()) break;
           r.bitsStart();
           if (r.bits(1)) r.bits(8);
-          readDelta(r, deltas.clientdata_t, {});
+          // the recording player's own state, sent only to him. It's the one place a POV demo has his position:
+          // the server leaves it out of his entity in the snapshots, since his game moves him itself (POV trial,
+          // 3 Oct 2026: the recorder was drawn at the map's zero point). Each message changes only what changed.
+          readDelta(r, deltas.clientdata_t, own);
           while (r.bits(1)) { r.bits(6); readDelta(r, deltas.weapon_data_t, {}); }
           r.bitsEnd();
           break;

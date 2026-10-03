@@ -1,7 +1,7 @@
-# Writes pov_probe_demo.mjs for pov_probe.mjs (POV trial, 3 Oct 2026): a copy of src/demo.js that also records,
+# Writes pov_probe_demo.mjs for pov_probe.mjs (POV trial, 3 Oct 2026): a copy of pov/src/demo.js that also records,
 # per frame, the recording player's own view (camera, angles, recoil, health, buttons), the clientdata messages
 # (zoom, recoil, weapon), weapon animations and voice packets. Run from tests/demo-probes.
-s = open('../../src/demo.js').read()
+s = open('../../pov/src/demo.js').read()
 G = '(globalThis.__P ||= {cd:[],voice:[],wanim:0,wanimF:0,info:[],setview:0})'
 reps = [
   # the reader runs twice on a POV demo (to spot it, then to find its rounds): keep only the last run
