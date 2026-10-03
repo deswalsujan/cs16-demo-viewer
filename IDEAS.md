@@ -26,12 +26,13 @@ Everything raised in conversation that isn't finished, in one place. Each item s
 - [x] Sujan's first look at the branch build on Windows, 3 Oct 2026, and his decisions the same day:
   - **A separate copy for POV.** The main viewer stays as it is. POV mode is built on a copy of the viewer on `wip/pov-mode`, and goes back into main only if it works as intended.
   - **Free camera goes**, along with any way to watch players the recorder couldn't: POV playback follows the game's own controls. Reason: the file only holds players near the recorder (or near whoever he spectated), so free view can't show the rest of the map.
-  - **Opponents' HP goes** in POV mode. Match 1 T (de_barcelona, 27 Mar 2025) holds 0 HP updates; the viewer reads HP from a message the server sends only to HLTV.
+  - **Opponents' HP goes** in POV mode; **teammates' HP stays**. Match 1 T (de_barcelona, 27 Mar 2025) holds none of the HLTV health messages the viewer reads today, but the server's HealthInfo message gives every T teammate's HP (about 350 to 400 updates each, at any distance) and hides every CT's (-1). Corrected the same day: Claude first told Sujan no HP was in the file.
   - **See through walls stays**, for admins checking a suspect's POV for wallhacks. It can only show players the recorder's game received (median 4 to 7 of 32).
   - **Player numbers** in front of names in the right panel go (made for 10 players, not 32).
   - **Bug:** Player's eyes leaves the recorder when he dies and stays on other players into later rounds (round 3 in DON's eyes while the recorder was alive). The game goes back to the recorder at each respawn.
   - **Bug (checked):** 2,590 of the 3,440 shots in Match 1 T come from players the file has no position for at that moment. The viewer plays those at full volume with no distance, which is why far CTs sound close. The recorder's own shots aren't in the shot list at all (0 of 3,440).
 - [ ] Claude, next step in this order (Sujan, 3 Oct 2026): the recorder's view at about 100 a second with real recoil; his gun animations and the crosshair spread; his HUD. Plus the weapon sound fix above.
+  - [ ] Sujan: approve the HUD and crosshair mockup first ([docs/proposed/pov-hud-mock.png](docs/proposed/pov-hud-mock.png)): health and armor bottom left, round timer bottom middle, money and ammo bottom right, his own crosshair from config.cfg (50 250 50, translucent, `cl_dynamiccrosshair 0`, so it only opens with shots). Every HUD number is in his file (Health, Battery, RoundTime, Money, CurWeapon, AmmoX).
 - [ ] Parked (Sujan, 3 Oct 2026): voice from other players.
 - [ ] Parked (Sujan, 3 Oct 2026): in-game chat messages, while alive and dead.
 
