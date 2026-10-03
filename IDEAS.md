@@ -22,6 +22,12 @@ Everything raised in conversation that isn't finished, in one place. Each item s
 - [ ] Sujan: by eye, on the branch build, Match 1 T at round 5, 1:01 in Player's eyes on "ac shadows optical mouse": N!njA_kachoRI should be under the crosshair, and you should be standing where you were.
 - [ ] Claude: next step, the recorder's own view at full rate (aim, recoil, zoom, gun animations).
 - [ ] Open (Sujan asked 3 Oct 2026): See through walls in POV mode, for checking other players' POVs for wallhacks, and a built-in aimbot catcher.
+- [ ] To discuss (Sujan's first look at the branch build on Windows, 3 Oct 2026; no code changed yet). He's seeing "quite a few mistakes":
+  - Free camera works in a POV demo, though the server only lets a player watch others after dying. Question: lock POV mode to the recorder's view (and whoever he spectates after death)?
+  - Opponents' HP doesn't show. Checked: Match 1 T (de_barcelona, 27 Mar 2025) holds 0 HP updates. The viewer reads everyone's HP from a message the server sends only to HLTV, so a player's recording doesn't have it.
+  - See through walls is inconsistent, worst on enemies. Expected cause: the server only sends players near the recorder (median 4 to 7 of 32), so the others aren't in the file at those moments.
+  - Most important: it doesn't feel like a POV demo yet, which is "a lot more richer and real". Missing so far: his view at about 100 frames a second, recoil kick, crosshair that opens up while firing, his own gun animations, his HUD (HP, armor, ammo, money), voice. Sujan to say which matter most.
+  - Not answered yet: whether the R5 1:01 check itself (position, N!njA_kachoRI under the crosshair) passed.
 
 **Demo search** (built in 0.15.2, 2 Oct 2026)
 - [x] confirmed by Sujan 3 Oct 2026: the search box by eye on your own folder (type "tu", "sk train", then Esc). Built screen next to the mockup: [docs/demo-search-built.png](docs/demo-search-built.png).
