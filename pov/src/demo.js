@@ -247,6 +247,7 @@ export function parseDemo(buffer, onProgress, opts = {}) {
   // POV mode only: the recording player's zoom (time, field of view) and his gun (time, weapon id, rounds in it)
   const fovs = [], ownAmmo = [], wanims = []; // wanims: time, sequence of his gun model (demo frame type 7)
   const vmodels = []; // the gun model in his hands (clientdata viewmodel): time, model index, each time it changes
+  const obs = []; // his spectator mode and target (clientdata iuser1, iuser2): time, mode, entity, each time they change
   const radio = [];     // { t, s: sentence name }
   const corpses = [];   // { t, start, model, pos, yaw, seq, team, e }
   const booms = [];     // time, x, y, z (grenade and C4 explosions)
@@ -600,6 +601,10 @@ export function parseDemo(buffer, onProgress, opts = {}) {
           // 3 Oct 2026: the recorder was drawn at the map's zero point). Each message changes only what changed.
           readDelta(r, deltas.clientdata_t, own);
           if (opts.povRounds && inPlayback && own.viewmodel != null && own.viewmodel !== vmodels.last) { vmodels.push(time, own.viewmodel); vmodels.last = own.viewmodel; }
+          // how his game showed things after a death: spectator mode (iuser1: 0 playing, 2 chase, 3 free, 4 first
+          // person) and whom (iuser2). Match 1 T, 3 Oct 2026: at each death, chase on himself for about 4 to 5 s (the
+          // death camera behind his body), then first person on teammates.
+          if (opts.povRounds && inPlayback) { const k = (own.iuser1 || 0) * 256 + (own.iuser2 || 0); if (k !== obs.last) { obs.push(time, own.iuser1 || 0, own.iuser2 || 0); obs.last = k; } }
           while (r.bits(1)) { r.bits(6); readDelta(r, deltas.weapon_data_t, {}); }
           r.bitsEnd();
           break;
@@ -881,6 +886,6 @@ export function parseDemo(buffer, onProgress, opts = {}) {
     finalScore: { ...scores }, models: resources.models, stride: STRIDE,
     pmodels, sounds: resources.sounds, events: resources.events, snds: new Float32Array(snds), shots: new Float32Array(shots), booms: new Float32Array(booms), puffs: new Float32Array(puffs), radio, corpses,
     errors, errSamples, health, view: new Float32Array(view), viewStride: VIEW_STRIDE,
-    shotOrg: new Float32Array(shotOrg), fovs: new Float32Array(fovs), ownAmmo: new Float32Array(ownAmmo), wanims: new Float32Array(wanims), vmodels: new Float32Array(vmodels),
+    shotOrg: new Float32Array(shotOrg), fovs: new Float32Array(fovs), ownAmmo: new Float32Array(ownAmmo), wanims: new Float32Array(wanims), vmodels: new Float32Array(vmodels), obs: new Float32Array(obs),
   };
 }

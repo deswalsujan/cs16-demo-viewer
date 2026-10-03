@@ -261,7 +261,7 @@ function drawCorpses(r) {
     if (c.t < r.start || c.t > T || c.t > end) return;
     lying.add(c.e);
     // the camera sits on this body during the death cam, so leave it out then
-    if (c.e === selected && cam3.mode !== 'free') return;
+    if (hidesBody(c.e)) return;
     // same model the player had when they died (the corpse message can name a different one)
     const sl = D.slots[c.e], pn = sl ? playerModelName(sl[M.idxAt(Math.max(r.start, c.start)) * D.stride + 8]) : '';
     const name = /^models\/player\//i.test(pn) ? pn : `models/player/${c.model}/${c.model}.mdl`;

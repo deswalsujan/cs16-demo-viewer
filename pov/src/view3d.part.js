@@ -327,12 +327,12 @@ function update3() {
     const s = playerState(+e, T);
     const f = R3.players[e];
     // also hidden when the free camera sits inside someone's head (after dragging out of Player's eyes)
-    const hideSelf = (+e === selected && (cam3.mode === 'eyes' || (cam3.mode === 'chase' && cam3.chaseDist != null && cam3.chaseDist < 12)))
+    const hideSelf = POV.on ? +e === POV.who : (+e === selected && (cam3.mode === 'eyes' || (cam3.mode === 'chase' && cam3.chaseDist != null && cam3.chaseDist < 12)))
       || (cam3.mode === 'free' && s && s.state > 0 && Math.hypot(cam3.pos[0] - s.x, cam3.pos[1] - s.y, cam3.pos[2] - s.z - 17) < 24);
     if (!s || s.state < 0) {
       if (f) f.g.visible = false;
       // falling down: the player's own death animation plays until the game swaps in the corpse
-      if (s && !lying.has(+e) && isDeathSeq(+e) && !(+e === selected && cam3.mode !== 'free')) drawModelPlayer(+e, s, false);
+      if (s && !lying.has(+e) && isDeathSeq(+e) && !hidesBody(+e)) drawModelPlayer(+e, s, false);
       continue;
     }
     // behind a wall, as last checked (about 10 times a second, in the labels pass below)
@@ -565,8 +565,9 @@ function update3() {
     const hpv = hpAt(selected, T);
     pov.innerHTML = `<span class="${s.state === 1 ? 'kt' : 'kct'}">${esc(nameAt(selected, T))}</span>${hpv != null ? ` <b>(${hpv})</b>` : ''}<span class="kw">${esc(weaponShort(s.weapon))}</span>`;
     if (scoped) drawScope(lx, W, H);
-    if (cam3.mode === 'eyes') drawHitMarker(lx, W / 2, H / 2);
-    if (cam3.mode === 'eyes' && !scoped) { lx.strokeStyle = 'rgba(90,255,90,.85)'; lx.lineWidth = 1.5; const cx = W / 2, cy = H / 2; lx.beginPath(); lx.moveTo(cx - 12, cy); lx.lineTo(cx - 4, cy); lx.moveTo(cx + 4, cy); lx.lineTo(cx + 12, cy); lx.moveTo(cx, cy - 12); lx.lineTo(cx, cy - 4); lx.moveTo(cx, cy + 4); lx.lineTo(cx, cy + 12); lx.stroke(); }
+    if (cam3.mode === 'eyes' && (!POV.on || POV.who != null)) drawHitMarker(lx, W / 2, H / 2);
+    if (POV.on) { if (!scoped) drawPovCrosshair(lx, W, H); }
+    else if (cam3.mode === 'eyes' && !scoped) { lx.strokeStyle = 'rgba(90,255,90,.85)'; lx.lineWidth = 1.5; const cx = W / 2, cy = H / 2; lx.beginPath(); lx.moveTo(cx - 12, cy); lx.lineTo(cx - 4, cy); lx.moveTo(cx + 4, cy); lx.lineTo(cx + 12, cy); lx.moveTo(cx, cy - 12); lx.lineTo(cx, cy - 4); lx.moveTo(cx, cy + 4); lx.lineTo(cx, cy + 12); lx.stroke(); }
   } else if (cam3.mode !== 'free' && selected) {
     const death = D.kills.filter((k) => k.victim === selected && k.t <= T + 0.05).pop();
     if (death) {
@@ -718,29 +719,92 @@ function povView(t) {
   const LA = (k) => { let d = V[b + k] - V[a + k]; d = ((d % 360) + 540) % 360 - 180; return V[a + k] + d * f; };
   return { pos: [L(1), L(2), L(3)], pitch: LA(4), yaw: LA(5), punch: [V[a + 7], V[a + 8]], rec: V[a + 17] + 1, t: V[a] };
 }
-// Whose eyes the view is: the recorder while he's alive; after he dies, the player he spectated in first
-// person (the camera sits at that player's eyes, looking his way), or nobody when he watched from a free or
-// chase spectator camera. Kept in `selected`, so the gun in hand, the name at the bottom and the hidden body
-// all follow the right player, and the right panel highlights him.
+// Whose eyes the view is, from his spectator mode (D.obs, his own state): playing, the recorder; first person
+// (mode 4), the player he spectated. In chase (2, the death camera behind his own body for a few seconds after
+// each death, as in the game) and free (3) modes the camera is outside anyone, so nobody's eyes: no gun in hand,
+// no crosshair, and every body is drawn, his own included. Kept in `selected` (the player watched) so the name at
+// the bottom and the right panel follow; POV.who is the one whose eyes the camera is in, or null.
+function povObs(t) {
+  const O = D.obs; if (!O || !O.length) return [0, 0];
+  let lo = 0, hi = O.length / 3 - 1, r = -1;
+  while (lo <= hi) { const m = (lo + hi) >> 1; if (O[m * 3] <= t) { r = m; lo = m + 1; } else hi = m - 1; }
+  return r < 0 ? [0, 0] : [O[r * 3 + 1], O[r * 3 + 2]];
+}
 function povFollow(t) {
   const v = povView(t);
-  const rs = playerState(v.rec, t);
-  let who = null;
-  if (rs && rs.state > 0) who = v.rec;
-  else {
-    let best = 40;
-    for (const e in D.slots) {
-      const s = playerState(+e, t); if (!s || !(s.state > 0)) continue;
-      const d = Math.hypot(s.x - v.pos[0], s.y - v.pos[1], s.z + (s.duck ? 12 : 17) - v.pos[2]);
-      const dy = Math.abs(((s.yaw - v.yaw) % 360 + 540) % 360 - 180);
-      if (d < best && dy < 25) { best = d; who = +e; }
-    }
-  }
-  POV.who = who; POV.v = v;
-  const sel = who != null ? who : v.rec;
-  if (selected !== sel) { selected = sel; if (typeof renderPane === 'function') renderPane(); }
+  const [mode, target] = povObs(t);
+  const alive = (e) => { const s = e && playerState(e, t); return !!(s && s.state > 0); };
+  let who = null, watched = v.rec;
+  if (mode === 0) { if (alive(v.rec)) who = v.rec; }
+  else if (target && D.slots[target]) { watched = target; if (mode === 4 && alive(target)) who = target; }
+  POV.who = who; POV.v = v; POV.mode = mode;
+  if (selected !== watched) { selected = watched; if (typeof renderPane === 'function') renderPane(); }
   return v;
 }
+// Hidden from the 3D view: the body whose eyes the camera is in (POV mode), else the followed player in
+// Player's eyes and Behind player as before
+function hidesBody(e) { return POV.on ? e === POV.who : e === selected && cam3.mode !== 'free'; }
+
+// The recorder's crosshair, as the game draws it (CS 1.6 client, CHudAmmo::DrawCrosshair, from the rebuilt
+// client code at github.com/Velaron/cs16-client, cl_dll/ammo.cpp, read 3 Oct 2026). Each gun has a resting gap
+// and a step (XHAIR, by weapon id). In every frame of his game where he fired, the gap grows by the step, to at
+// most 15; in every other frame it shrinks by 1.3% plus 0.1, never below the resting gap. Arms are
+// (gap - rest) / 2 + 5 long. Both scale with the screen: width / 800 at cl_crosshair_size 2 or "medium" (640 for
+// large or 3, 1024 for small or 1). No crosshair with the AWP, Scout, SG550 or G3SG1, or while spectating from
+// outside a player. Running and jumping only change it with cl_dynamiccrosshair 1 (Sujan's is 0; not copied).
+const XHAIR = [[8, 3], [4, 3], [5, 3], [8, 3], [9, 4], [6, 3], [9, 3], [3, 3], [8, 3], [4, 3], [8, 3], [6, 3], [5, 3], [4, 3], [4, 3], [8, 3], [8, 3], [8, 3], [6, 3], [6, 3], [8, 6], [4, 3], [7, 3], [6, 4], [8, 3], [8, 3], [5, 3], [4, 4], [7, 3], [7, 3]];
+const NO_XHAIR = { 3: 1, 13: 1, 18: 1, 24: 1 };
+// weapon ids by the p_ model name the snapshots give (CS 1.6 weapon numbering, as CurWeapon uses)
+const P_WEAPON_ID = { p228: 1, scout: 3, hegrenade: 4, xm1014: 5, c4: 6, mac10: 7, aug: 8, smokegrenade: 9, elite: 10, fiveseven: 11, ump45: 12, sg550: 13, galil: 14, famas: 15, usp: 16, glock18: 17, awp: 18, mp5: 19, m249: 20, m3: 21, m4a1: 22, tmp: 23, g3sg1: 24, flashbang: 25, deagle: 26, sg552: 27, ak47: 28, knife: 29, p90: 30 };
+const XCFG = { r: 50, g: 250, b: 50, base: 800, additive: true, read: false };
+async function readCrosshairCfg() {
+  if (XCFG.read || !files.cfg) return; XCFG.read = true;
+  try {
+    const txt = await files.cfg.text(), get = (k) => { const m = new RegExp('^\\s*' + k + '\\s+"?([^"\\n]*)"?', 'mi').exec(txt); return m ? m[1].trim() : null; };
+    const col = get('cl_crosshair_color'); if (col) { const c = col.split(/\s+/).map(Number); if (c.length === 3 && c.every(Number.isFinite)) [XCFG.r, XCFG.g, XCFG.b] = c.map((x) => Math.max(0, Math.min(255, x))); }
+    const sz = (get('cl_crosshair_size') || '').toLowerCase();
+    XCFG.base = sz === 'small' || sz === '1' ? 1024 : sz === 'large' || sz === '3' ? 640 : 800;
+    const tr = get('cl_crosshair_translucent'); if (tr != null) XCFG.additive = tr !== '0';
+  } catch (e) { }
+}
+// the gun in his hands at t (weapon id), from CurWeapon
+function povGun(t) {
+  const A = D.ownAmmo; if (!A || !A.length) return 0;
+  let lo = 0, hi = A.length / 3 - 1, r = -1;
+  while (lo <= hi) { const m = (lo + hi) >> 1; if (A[m * 3] <= t) { r = m; lo = m + 1; } else hi = m - 1; }
+  return r < 0 ? 0 : A[r * 3 + 1];
+}
+// the gap and arm length at t, played forward through his own frames from 1.5 s before (long enough to close
+// fully from 15), with his shots (D.ownShots) landing in the frames they fall in
+function povCrosshairAt(t) {
+  const id = povGun(t); if (!id || NO_XHAIR[id]) return null;
+  const [rest, step] = XHAIR[id - 1] || [4, 3];
+  const V = D.view, n = D.viewStride, S = D.ownShots || [];
+  let i = POV.i; while (i > 0 && V[i * n] > t - 1.5) i--;
+  let j = 0; { let lo = 0, hi = S.length / 3; while (lo < hi) { const m = (lo + hi) >> 1; if (S[m * 3] <= V[i * n]) lo = m + 1; else hi = m; } j = lo; }
+  let d = rest, alpha = 255;
+  for (; i * n < V.length && V[i * n] <= t; i++) {
+    let fired = false; while (j * 3 < S.length && S[j * 3] <= V[i * n]) { fired = true; j++; }
+    if (fired) { d = Math.min(d + step, 15); alpha = Math.max(alpha - 40, 120); } else { d -= d * 0.013 + 0.1; alpha = Math.min(255, alpha + 2); }
+    d = Math.max(d, rest);
+  }
+  return { gap: d, len: (d - rest) * 0.5 + 5, alpha };
+}
+function drawPovCrosshair(lx, W, H) {
+  readCrosshairCfg();
+  let c = null;
+  if (POV.who === POV.v.rec) c = povCrosshairAt(T);
+  else if (POV.who != null) { const s = playerState(POV.who, T), id = s && P_WEAPON_ID[weaponShort(s.weapon)]; if (id && !NO_XHAIR[id]) c = { gap: XHAIR[id - 1][0], len: 5, alpha: 255 }; } // spectating a teammate: his gun's resting crosshair
+  if (!c) return;
+  const k = W / XCFG.base, g = c.gap * k, L = Math.max(1, c.len * k), cx = Math.round(W / 2), cy = Math.round(H / 2);
+  lx.save();
+  lx.globalCompositeOperation = XCFG.additive ? 'lighter' : 'source-over';
+  lx.fillStyle = `rgba(${XCFG.r},${XCFG.g},${XCFG.b},${(c.alpha / 255).toFixed(3)})`;
+  const w = Math.max(1, Math.round(W / 1280));
+  lx.fillRect(cx - g - L, cy, L, w); lx.fillRect(cx + g, cy, L, w); lx.fillRect(cx, cy - g - L, w, L); lx.fillRect(cx, cy + g, w, L);
+  lx.restore();
+}
+
 // The recorder's zoom at time t (field of view, 90 when not zoomed), from the SetFOV messages
 function povFov(t) {
   const F = D.fovs; if (!F || !F.length) return 90;

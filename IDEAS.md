@@ -35,7 +35,9 @@ Everything raised in conversation that isn't finished, in one place. Each item s
 - [ ] Claude, next step in this order (Sujan, 3 Oct 2026): the recorder's view at about 100 a second with real recoil; his gun animations and the crosshair spread; his HUD. Plus the weapon sound fix above.
   - [x] Claude, 3 Oct 2026: part 1 built on `wip/pov-mode` (CHANGELOG, "In progress"): his own view about 80 a second with the recoil kick, exact zoom, locked to his view (and to whoever he spectated after dying), shot sounds by distance, his own shots with the silencer, teammates' HP, no player numbers.
   - [ ] Sujan: by eye, part 1 in `pov.html` on Match 1 (both files): does it feel like your POV now (aim, recoil, scope)? After you die, does the view follow who you spectated? Do far CTs now sound far, and do your own shots sound right (M4 silenced)?
-  - [ ] Claude, after Sujan's check: part 2 (gun animations from his frames, crosshair opening with shots), then part 3 (HUD).
+  - [x] Sujan, 3 Oct 2026, on part 1: the crosshair was static, and after dying the view should go behind his body in third person, as in the game. Both fixed the same day (CHANGELOG, "In progress").
+  - [ ] Sujan: by eye, the crosshair through a spray, and the death camera then first person on a teammate.
+  - [ ] Claude, after Sujan's check: part 2 (gun animations from his frames), then part 3 (HUD).
   - [x] Approved by Sujan 3 Oct 2026 ("Go ahead"): the HUD and crosshair mockup ([docs/pov-hud-mock.png](docs/pov-hud-mock.png)): health and armor bottom left, round timer bottom middle, money and ammo bottom right, his own crosshair from config.cfg (50 250 50, translucent, `cl_dynamiccrosshair 0`, so it only opens with shots). Every HUD number is in his file (Health, Battery, RoundTime, Money, CurWeapon, AmmoX).
 - [ ] Parked (Sujan, 3 Oct 2026): voice from other players.
 - [ ] Parked (Sujan, 3 Oct 2026): in-game chat messages, while alive and dead.

@@ -18,6 +18,7 @@ How part 1 was tested (on Sujan's Windows files, staged one by one: Match 1 CT a
 - `tests/page/pov_kill_lag.js`: drawing other players later (as if the game showed them in the past) doesn't line up better (Match 1 CT: 1.49° with no delay, 1.95° at 0.2 s), so they're drawn at demo time as before.
 - Screenshots: round 5 at 1:01 of Match 1 T, N!njA_kachoRI under the crosshair, a teammate with "19 hp", a CT with his gun only; and 0:46, after his death, in shizznit's eyes.
 - The reader on an HLTV demo (Na`Vi vs FX, Dust2, SEC 2011 final): all 39 fields identical to main's reader.
+- The fixes after Sujan's feedback: `tests/page/pov_crosshair.js` on his longest spray (Match 1 CT, 30 shots of the M4A1 at 0:28): gap 4 at rest, 12.1 after 4 shots, 15 at the last, 4.9 half a second later. His ammo messages land in the same frame as his recoil kick (median 0 s, 90% within 0.11 s), so his shots are timed right for it. `tests/page/pov_death_cam.js`: 2 s after his first death, chase on himself with his body drawn (both files), first person on shizznit 4.4 s (T) and 5.2 s (CT) after. config.cfg read checked on his file and on a changed copy. Screenshots: mid-spray, and the death camera behind his body (Match 1 CT, round 3).
 
 How the recorder's track was tested (on Sujan's Mac files, 3 Oct 2026):
 - The recorder's track against the camera block the game writes about 100 times a second (`tests/demo-probes/pov_own_check.mjs`): the two agree to a median of 0.5 to 3.3 units, 90% within 7, on Match 1 (both files) and Match 3; never at the zero point while alive; speeds of a running player. The crouch flag matches the camera height in 89 to 94% of messages (the rest are mid-crouch). Yaw matches his own mouse aim to a median of 0.1°.
@@ -31,7 +32,11 @@ How the recorder's track was tested (on Sujan's Mac files, 3 Oct 2026):
 - **Weapon sounds by distance.** A shot by a player who isn't in his game's snapshot now plays from where it was fired (the shot message carries the spot then); with no spot at all it's skipped. Before, those played at full volume as if next to him. His own shots, which the server never sends him, play from his gun's round count going down (CurWeapon), with the M4A1's and USP's silencer from his gun animations.
 - **Teammates' HP** under their names and at the bottom, from HealthInfo (the server hides opponents'), and no player numbers in the right panel.
 
-Still to do, in order: part 2, his gun animations from his own frames (draw, reload, silencer, shots) and the crosshair opening with shots; part 3, the HUD (approved mockup, `docs/pov-hud-mock.png`). Then voice and chat (parked). Each part checked with Sujan.
+**Sujan's feedback on part 1, fixed the same day:**
+- **The crosshair opens with shots** (it was static). As the game's client draws it (CHudAmmo::DrawCrosshair in the rebuilt client code, github.com/Velaron/cs16-client): each gun's resting gap and step; in every one of his frames where he fired, the gap grows by the step to at most 15, and otherwise closes by 1.3% plus 0.1; arms grow with it. Scaled by `cl_crosshair_size`, in his colour and translucency, all read from `cstrike/config.cfg` in the picked folder. No crosshair with the AWP, Scout, SG550 or G3SG1, as in the game. Spectating a teammate in first person shows that gun's resting crosshair.
+- **The death camera.** For a few seconds after each death the game shows his body from behind (spectator mode 2, chase, on himself), then first person on a teammate. Both now come from his own state (iuser1, iuser2) instead of a guess from where the camera sat, and his body is drawn while the camera is outside him.
+
+Still to do, in order: part 2, his gun animations from his own frames (draw, reload, silencer, shots); part 3, the HUD (approved mockup, `docs/pov-hud-mock.png`). Then voice and chat (parked). Each part checked with Sujan.
 
 ## Known limits (current version)
 - HLTV demos don't record the first-person weapon's animation, so it's rebuilt from shots, weapon switches and the player's body animation. Timing can differ slightly from in-game, and idle variations won't match. If a `v_` model is missing, no gun is shown.

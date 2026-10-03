@@ -644,7 +644,7 @@ $('fFolder').onchange = (e) => { const list = [...e.target.files]; e.target.valu
 // The whole folder is read again each time, so files deleted since the last pick drop out
 function indexFolder(list) {
   let nOv = 0;
-  files.demos = []; files.overviews = {}; files.maps = {}; files.wads = {}; files.mdl = {}; files.snd = {}; files.sentences = null; files.hud = { txt: null, spr: {} };
+  files.demos = []; files.overviews = {}; files.maps = {}; files.wads = {}; files.mdl = {}; files.snd = {}; files.sentences = null; files.hud = { txt: null, spr: {} }; files.cfg = null;
   STALE.clear();
   for (const f of list) {
     const p = (f.relPath || f.webkitRelativePath || f.name).replace(/\\/g, '/').toLowerCase();
@@ -667,6 +667,7 @@ function indexFolder(list) {
       const sm = /(?:^|\/)(cstrike|cstrike_downloads|valve)\/sound\/(.+\.wav)$/.exec(p);
       if (sm) { const o = files.snd[sm[2]]; if (!o || rank(sm[1]) > o.rank) { f.rank = rank(sm[1]); files.snd[sm[2]] = f; } continue; }
       if (/(?:^|\/)cstrike\/sound\/sentences\.txt$/.test(p)) files.sentences = f;
+      if (/(?:^|\/)cstrike\/config\.cfg$/.test(p)) files.cfg = f; // POV mode: the crosshair settings
       // the kill feed's weapon icons: where they sit (hud.txt) and the sprite sheets they're on
       if (/(?:^|\/)cstrike\/sprites\/hud\.txt$/.test(p)) files.hud.txt = f;
       const hm = /(?:^|\/)cstrike\/sprites\/(640hud\d+)\.spr$/.exec(p);
@@ -1079,7 +1080,7 @@ function joinDemos(parts) {
     return (i) => (map[i] != null ? map[i] : i);
   };
   const timesL = [], slotsL = {}, hpL = [], brushEvL = [], brushPoseL = [], sndsL = [], shotsL = [], boomsL = [], puffsL = [];
-  const shotOrgL = [], viewL = [], fovsL = [], ownAmmoL = [], wanimsL = [], vmodelsL = []; // POV mode
+  const shotOrgL = [], viewL = [], fovsL = [], ownAmmoL = [], wanimsL = [], vmodelsL = [], obsL = []; // POV mode
   let shift = 0, nRound = 0, nOcc = 0, nSamples = 0;
   parts.forEach((P, pi) => {
     if (pi) shift = (out.end) + JOIN_GAP - P.start;
@@ -1128,6 +1129,7 @@ function joinDemos(parts) {
     if (P.fovs) flat(P.fovs, 2, (a, i) => { a[i] = sh(a[i]); }, fovsL);
     if (P.ownAmmo) flat(P.ownAmmo, 3, (a, i) => { a[i] = sh(a[i]); }, ownAmmoL);
     if (P.wanims) flat(P.wanims, 2, (a, i) => { a[i] = sh(a[i]); }, wanimsL);
+    if (P.obs) flat(P.obs, 3, (a, i) => { a[i] = sh(a[i]); }, obsL);
     if (P.vmodels) flat(P.vmodels, 2, (a, i) => { a[i] = sh(a[i]); a[i + 1] = mM(a[i + 1]); }, vmodelsL);
     // player samples: every slot gets an entry for every sample time (empty where the slot isn't in this part)
     const n = P.times.length, tt = new Float32Array(n);
@@ -1152,7 +1154,7 @@ function joinDemos(parts) {
   out.times = cat(timesL);
   out.slots = {}; for (const e in slotsL) out.slots[e] = cat(slotsL[e]);
   out.hp = cat(hpL); out.brushEvents = cat(brushEvL); out.brushPose = cat(brushPoseL); out.snds = cat(sndsL); out.shots = cat(shotsL); out.booms = cat(boomsL); out.puffs = cat(puffsL);
-  out.shotOrg = cat(shotOrgL); out.view = cat(viewL); out.fovs = cat(fovsL); out.ownAmmo = cat(ownAmmoL); out.wanims = cat(wanimsL); out.vmodels = cat(vmodelsL);
+  out.shotOrg = cat(shotOrgL); out.view = cat(viewL); out.fovs = cat(fovsL); out.ownAmmo = cat(ownAmmoL); out.wanims = cat(wanimsL); out.vmodels = cat(vmodelsL); out.obs = cat(obsL);
   out.bomb.sort((a, b) => a.t - b.t);
   out.start = parts[0].start;
   out.fileName = parts[0].fileName;
