@@ -16,7 +16,7 @@ Everything raised in conversation that isn't finished, in one place. Each item s
 - [x] Sujan decided 3 Oct 2026: a POV demo opens in POV mode by itself, in the same viewer (no separate POV viewer to pick).
 - [x] Sujan decided 3 Oct 2026: test Match 1 (both files, de_barcelona) and Match 3 (css_cache) first, then decide whether POV mode is worth building. Experimental: built on a `wip/pov-mode` branch, removed if it's more trouble than it's worth.
 - [x] Claude, 3 Oct 2026: the headless browser run on Match 1 (both files) and Match 3, results under "POV demos" below.
-- [ ] Sujan: `de_mirage_32.bsp` (Match 2) and `de_nuke32.bsp` (Match 4 and 5) for the Mac's `cstrike_downloads/maps`, if he has them. Without them those demos get no 3D.
+- [x] Sujan, 3 Oct 2026: de_nuke32, de_zovine, de_forge, de_mirage_32 and css_cache added to the Mac (checked by listing), so every POV demo has its map on both machines. The seven POV demos are on Windows too.
 - [ ] Open (Sujan asked 3 Oct 2026): See through walls in POV mode, for checking other players' POVs for wallhacks, and a built-in aimbot catcher.
 
 **Demo search** (built in 0.15.2, 2 Oct 2026)
@@ -46,7 +46,7 @@ Everything raised in conversation that isn't finished, in one place. Each item s
 **0.16.0 by eye** (3 Oct 2026)
 - [x] confirmed by Sujan 3 Oct 2026: in 3D, with nobody picked (just after opening a demo), aim the free camera at a player and press Player's eyes, Behind player or V: it should follow that player.
 - [x] confirmed by Sujan 3 Oct 2026: the "HP · weapon" line under far names shows whether the AWP is scoped in or not.
-- [ ] Sujan: delete `mtw-vs-navi-eswc2010semi-real-1007031520-de_tuscan.dem` (mTw vs Na`Vi, Tuscan, ESWC 2010 semi-final, warmup only) from the Windows `cstrike` folder too. Deleted on the Mac 3 Oct 2026.
+- [x] Deleted by Sujan on Windows, 3 Oct 2026: `mtw-vs-navi-eswc2010semi-real-1007031520-de_tuscan.dem` (mTw vs Na`Vi, Tuscan, ESWC 2010 semi-final, warmup only). Deleted on the Mac the same day.
 - [x] Deleted by Sujan, 3 Oct 2026: the `_claude_transfer` folder Claude left in `~/Downloads/Half-Life` on 3 Oct 2026 (a 227 MB copy of the game files, made to test on the Mac's files; the session can't delete files there). Nothing reads it.
 
 **Hand checks for Sujan** (things the headless test browser can't do). Every feature named here is built and shipped; an open box means Sujan hasn't yet confirmed it on his own machine, or (Theatre 150%) a test run wasn't repeated. Sujan confirmed several on 2 Oct 2026, ticked below. Several name demos deleted on 2 Oct 2026 (Lions vs mousesports and Moscow 5 vs Na`Vi from ESWC 2011, Anexis vs fnatic from DreamHack Bucuresti 2012, Team3D vs Fnatic Train 2006, MYM vs SK from Kode5 2008, the GP Pub de_zovine POV demo); those checks need the demo back, or can be dropped. `tests/README.md` keeps their events.
