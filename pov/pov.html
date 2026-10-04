@@ -5993,7 +5993,8 @@ function update3() {
   if (POV.on) {
     // POV mode: the camera exactly as the recorder's game drew it, zoom included (his scope from SetFOV)
     const v = povFollow(T);
-    const fov = POV.who === v.rec ? povFov(T) : 90;
+    // his zoom, or while he spectates someone in first person, theirs (the server sends him the watched player's)
+    const fov = POV.who != null ? povFov(T) : 90;
     camera.fov = 2 * Math.atan(Math.tan(fov * Math.PI / 360) / camera.aspect) * 180 / Math.PI;
     placeCam(v.pos, v.yaw, v.pitch);
   } else if (cam3.mode === 'free') {
@@ -6074,7 +6075,7 @@ function update3() {
   camera.updateProjectionMatrix();
   renderer.render(R3.scene, camera);
   // the gun in hand isn't shown while looking through the scope, as in the game
-  const scoped = POV.on ? (POV.who != null && POV.who === POV.v.rec && povFov(T) < 90 && (() => { const ss = playerState(POV.who, T); return ss && SNIPERS[weaponShort(ss.weapon)]; })())
+  const scoped = POV.on ? (POV.who != null && povFov(T) < 90 && (() => { const ss = playerState(POV.who, T); return ss && SNIPERS[weaponShort(ss.weapon)]; })())
     : cam3.mode === 'eyes' && selected && zoomLevel(selected, T) > 0 && (() => { const ss = playerState(selected, T); return ss && ss.state > 0 && SNIPERS[weaponShort(ss.weapon)]; })();
   // POV mode: no gun in hand while watching from a free or chase spectator camera
   if (cam3.mode === 'eyes' && selected && !scoped && (!POV.on || POV.who != null)) drawViewModel(renderer, camera, selected, playerState(selected, T));
@@ -6505,27 +6506,29 @@ function drawPovHud(lx, W, H) {
 
 // ---------------- POV mode: spectator bars ----------------
 // As the game's spectator view (cstrike/resource/UI/Spectator.res): a translucent black bar at the top and at the
-// bottom, each 66/480 of the view, while he watches someone else after dying (not during the death camera behind
+// bottom (see SPEC_BAR), while he watches someone else after dying (not during the death camera behind
 // his own body). Top right: the score and the round clock; bottom: whose view it is, with his HP when the server
-// sends it, and the camera mode at the left. The kill feed moves below the top bar; the name box goes.
+// sends it (no camera mode label: Sujan, 4 Oct 2026). The kill feed moves below the top bar; the name box goes.
 // Approved design: docs/pov-spectator-bars-mock.png. The bars' darkness (60% black) is a guess: the file doesn't say.
-const SPEC_MODE = { 1: 'Locked chase camera', 2: 'Free chase camera', 3: 'Free look', 4: 'First person', 5: 'Free overview', 6: 'Chase overview' };
+// Each bar is 40/480 of the view: the game's are 66/480 (they hold its camera and player menus, which the viewer
+// doesn't have), trimmed to what they show (Sujan, 4 Oct 2026).
+const SPEC_BAR = 40 / 480;
 function povBarsOn() { if (!POV.on || POV.mode === 0) return false; const [, tg] = povObs(T); return !(tg === POV.v.rec && POV.mode !== 4) || false; }
 function drawSpecBars(lx, W, H) {
   const on = povBarsOn();
-  $('feed').style.top = on ? Math.round(H * 66 / 480 + 8) + 'px' : '';
+  $('feed').style.top = on ? Math.round(H * SPEC_BAR + 8) + 'px' : '';
   if (!on) return false;
-  const bh = Math.round(H * 66 / 480), mono = monoFont();
+  const bh = Math.round(H * SPEC_BAR), mono = monoFont();
   lx.save();
   lx.fillStyle = 'rgba(0,0,0,.6)'; lx.fillRect(0, 0, W, bh); lx.fillRect(0, H - bh, W, bh);
   // score and clock
   const done = M.liveR.filter((r) => r.end != null && r.end <= T), sc = done.length ? done[done.length - 1].scoreAfter : [0, 0];
   const c = clockAt(T), clock = c ? c.text.replace(/^freeze /, '') : '';
-  const xr = W - W * 80 / 640 - 14, y1 = bh * 0.3, y2 = bh * 0.3 + 20;
+  const xr = W - W * 80 / 640 - 14, y1 = bh / 2 - 9, y2 = bh / 2 + 9;
   lx.font = `600 14px ${mono}`; lx.textAlign = 'right'; lx.textBaseline = 'middle';
   lx.fillStyle = '#e8e6e1'; lx.fillText('Counter-Terrorists : ', xr - 14, y1); lx.fillText('Terrorists : ', xr - 14, y2);
   lx.fillStyle = '#5ea3e8'; lx.fillText(String(sc[1]), xr, y1); lx.fillStyle = '#e8574d'; lx.fillText(String(sc[0]), xr, y2);
-  lx.fillStyle = 'rgba(232,230,225,.6)'; lx.fillRect(W - W * 64 / 640, bh * 0.18, 1, bh * 0.45);
+  lx.fillStyle = 'rgba(232,230,225,.6)'; lx.fillRect(W - W * 64 / 640, bh * 0.2, 1, bh * 0.6);
   lx.textAlign = 'left'; lx.fillStyle = '#e8e6e1'; lx.font = `600 15px ${mono}`; lx.fillText('◷ ' + clock, W - W * 56 / 640, (y1 + y2) / 2);
   // whose view, and the camera mode
   const [, tg] = povObs(T), who = POV.who != null ? POV.who : tg;
@@ -6533,9 +6536,8 @@ function drawSpecBars(lx, W, H) {
     const s = playerState(who, T), hp = hpAt(who, T);
     lx.textAlign = 'center'; lx.font = `600 16px ${mono}`;
     const nm = nameAt(who, T), txt = nm + (hp != null ? ` (${hp})` : '');
-    lx.fillStyle = s && s.state === 1 || s && s.state === -1 ? '#e8574d' : '#5ea3e8'; lx.fillText(txt, W / 2, H - bh * 0.55);
+    lx.fillStyle = s && s.state === 1 || s && s.state === -1 ? '#e8574d' : '#5ea3e8'; lx.fillText(txt, W / 2, H - bh / 2);
   }
-  lx.textAlign = 'left'; lx.font = `500 13px ${mono}`; lx.fillStyle = '#b9b6ad'; lx.fillText(SPEC_MODE[POV.mode] || '', 16, H - bh * 0.55);
   lx.restore();
   return true;
 }
