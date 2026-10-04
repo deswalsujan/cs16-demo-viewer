@@ -35,14 +35,15 @@
   out.cameraAfterTryingFreeAndNext = cam3.mode + ' (was ' + before + ')';
   out.playerNumbersInPanel = document.querySelectorAll('#pane .pnum:not(.skull)').length;
   // after death: who the view follows, sampled every half second through the demo
-  let alive = 0, aliveOnRec = 0, dead = 0, deadEyes = 0, deadFree = 0;
+  let alive = 0, aliveOnRec = 0, dead = 0, deadEyes = 0, deadFree = 0, preSpawn = 0, preSpawnHidden = 0;
   for (let t = D.start + 1; t < D.end; t += 0.5) {
     POV.i = 0; povFollow(t);
     const r = POV.v.rec, s = playerState(r, t);
-    if (s && s.state > 0) { alive++; if (selected === r && POV.who === r) aliveOnRec++; }
+    if (s && s.state > 0 && POV.mode !== 0) { preSpawn++; if (povHidesLiving(r)) preSpawnHidden++; }
+    else if (s && s.state > 0) { alive++; if (selected === r && POV.who === r) aliveOnRec++; }
     else if (s && s.state < 0) { dead++; if (POV.who != null) deadEyes++; else deadFree++; }
   }
-  out.follow = { aliveSamples: alive, onRecorderWhileAlive: aliveOnRec, deadSamples: dead, deadInAPlayersEyes: deadEyes, deadSpectatorCamera: deadFree };
+  out.follow = { aliveSamples: alive, onRecorderWhileAlive: aliveOnRec, deadSamples: dead, deadInAPlayersEyes: deadEyes, deadSpectatorCamera: deadFree, spectatingBeforeSpawn: preSpawn, hisBodyHiddenThen: preSpawnHidden };
   // sounds
   const sh = D.shots, so = D.shotOrg; let fromMsg = 0, fromShooter = 0, none = 0;
   for (let i = 0; i < sh.length / 4; i++) {

@@ -5826,7 +5826,7 @@ function update3() {
     const s = playerState(+e, T);
     const f = R3.players[e];
     // also hidden when the free camera sits inside someone's head (after dragging out of Player's eyes)
-    const hideSelf = POV.on ? +e === POV.who : (+e === selected && (cam3.mode === 'eyes' || (cam3.mode === 'chase' && cam3.chaseDist != null && cam3.chaseDist < 12)))
+    const hideSelf = POV.on ? povHidesLiving(+e) : (+e === selected && (cam3.mode === 'eyes' || (cam3.mode === 'chase' && cam3.chaseDist != null && cam3.chaseDist < 12)))
       || (cam3.mode === 'free' && s && s.state > 0 && Math.hypot(cam3.pos[0] - s.x, cam3.pos[1] - s.y, cam3.pos[2] - s.z - 17) < 24);
     if (!s || s.state < 0) {
       if (f) f.g.visible = false;
@@ -6026,7 +6026,7 @@ function update3() {
   // through the map, so each player is re-checked about 10 times a second (and at once after a camera switch
   // or a jump in time), not on every frame.
   if (opts.names || opts.xray) for (const L of lab) {
-    if (cam3.mode === 'eyes' && L.e === selected) continue;
+    if (POV.on ? povHidesLiving(L.e) : cam3.mode === 'eyes' && L.e === selected) continue;
     const v = L.p.clone().project(camera);
     if (v.z > 1 || v.z < -1) continue;
     let hidden = false;
@@ -6244,6 +6244,10 @@ function povFollow(t) {
 // Hidden from the 3D view: the body whose eyes the camera is in (POV mode), else the followed player in
 // Player's eyes and Behind player as before
 function hidesBody(e) { return POV.on ? e === POV.who : e === selected && cam3.mode !== 'free'; }
+// POV mode, a living player left out of the 3D view: the one whose eyes the camera is in, and the recorder while
+// he's spectating though not dead (before his first spawn after joining; the GP css_cache demo of 3 Oct 2026
+// starts this way, and he was drawn standing there)
+function povHidesLiving(e) { return e === POV.who || (e === POV.v.rec && POV.mode !== 0); }
 
 // The recorder's crosshair, as the game draws it (CS 1.6 client, CHudAmmo::DrawCrosshair, from the rebuilt
 // client code at github.com/Velaron/cs16-client, cl_dll/ammo.cpp, read 3 Oct 2026). Each gun has a resting gap
