@@ -695,6 +695,7 @@ function povShots() {
   return new Float32Array(out);
 }
 function povInit() {
+  POV.shotsBy = null;
   POV.on = !!(D && D.pov && D.view && D.view.length >= D.viewStride * 2);
   POV.i = 0;
   D.ownShots = POV.on ? povShots() : null;
@@ -756,7 +757,7 @@ const XHAIR = [[8, 3], [4, 3], [5, 3], [8, 3], [9, 4], [6, 3], [9, 3], [3, 3], [
 const NO_XHAIR = { 3: 1, 13: 1, 18: 1, 24: 1 };
 // weapon ids by the p_ model name the snapshots give (CS 1.6 weapon numbering, as CurWeapon uses)
 const P_WEAPON_ID = { p228: 1, scout: 3, hegrenade: 4, xm1014: 5, c4: 6, mac10: 7, aug: 8, smokegrenade: 9, elite: 10, fiveseven: 11, ump45: 12, sg550: 13, galil: 14, famas: 15, usp: 16, glock18: 17, awp: 18, mp5: 19, m249: 20, m3: 21, m4a1: 22, tmp: 23, g3sg1: 24, flashbang: 25, deagle: 26, sg552: 27, ak47: 28, knife: 29, p90: 30 };
-const XCFG = { r: 50, g: 250, b: 50, base: 800, additive: true, read: false };
+const XCFG = { r: 50, g: 250, b: 50, base: 800, additive: true, read: false, scale: 1 }; // scale: Sujan's size choice (4 Oct 2026: 100% looked large; mockup at 80, 70, 60%)
 async function readCrosshairCfg() {
   if (XCFG.read || !files.cfg) return; XCFG.read = true;
   try {
@@ -774,12 +775,22 @@ function povGun(t) {
   while (lo <= hi) { const m = (lo + hi) >> 1; if (A[m * 3] <= t) { r = m; lo = m + 1; } else hi = m - 1; }
   return r < 0 ? 0 : A[r * 3 + 1];
 }
-// the gap and arm length at t, played forward through his own frames from 1.5 s before (long enough to close
-// fully from 15), with his shots (D.ownShots) landing in the frames they fall in
-function povCrosshairAt(t) {
-  const id = povGun(t); if (!id || NO_XHAIR[id]) return null;
+// Shot times of one player, for the crosshair of a teammate he spectates in first person: from the fire
+// messages the server sent him about that player (D.shots), kept per player once worked out
+function shotTimesOf(e) {
+  const C = POV.shotsBy || (POV.shotsBy = {});
+  if (C[e]) return C[e];
+  const sh = D.shots, out = [];
+  for (let i = 0; i < sh.length; i += 4) if (sh[i + 1] === e && FIRE[eventName(sh[i + 2])]) out.push(sh[i], 0, 0);
+  return C[e] = new Float32Array(out);
+}
+// the gap and arm length at t for a gun (weapon id) and its shots (stride 3, time first), played forward
+// through the recorder's own frames from 1.5 s before (long enough to close fully from 15), with the shots
+// landing in the frames they fall in
+function povCrosshairAt(t, id, S) {
+  if (!id || NO_XHAIR[id]) return null;
   const [rest, step] = XHAIR[id - 1] || [4, 3];
-  const V = D.view, n = D.viewStride, S = D.ownShots || [];
+  const V = D.view, n = D.viewStride;
   let i = POV.i; while (i > 0 && V[i * n] > t - 1.5) i--;
   let j = 0; { let lo = 0, hi = S.length / 3; while (lo < hi) { const m = (lo + hi) >> 1; if (S[m * 3] <= V[i * n]) lo = m + 1; else hi = m; } j = lo; }
   let d = rest, alpha = 255;
@@ -793,10 +804,11 @@ function povCrosshairAt(t) {
 function drawPovCrosshair(lx, W, H) {
   readCrosshairCfg();
   let c = null;
-  if (POV.who === POV.v.rec) c = povCrosshairAt(T);
-  else if (POV.who != null) { const s = playerState(POV.who, T), id = s && P_WEAPON_ID[weaponShort(s.weapon)]; if (id && !NO_XHAIR[id]) c = { gap: XHAIR[id - 1][0], len: 5, alpha: 255 }; } // spectating a teammate: his gun's resting crosshair
+  if (POV.who === POV.v.rec) c = povCrosshairAt(T, povGun(T), D.ownShots || []);
+  // spectating a teammate in first person: his gun, opening with his shots (Sujan, 4 Oct 2026: it was static)
+  else if (POV.who != null) { const s = playerState(POV.who, T); c = povCrosshairAt(T, s && P_WEAPON_ID[weaponShort(s.weapon)], shotTimesOf(POV.who)); }
   if (!c) return;
-  const k = W / XCFG.base, g = c.gap * k, L = Math.max(1, c.len * k), cx = Math.round(W / 2), cy = Math.round(H / 2);
+  const k = W / XCFG.base * XCFG.scale, g = c.gap * k, L = Math.max(1, c.len * k), cx = Math.round(W / 2), cy = Math.round(H / 2);
   lx.save();
   lx.globalCompositeOperation = XCFG.additive ? 'lighter' : 'source-over';
   lx.fillStyle = `rgba(${XCFG.r},${XCFG.g},${XCFG.b},${(c.alpha / 255).toFixed(3)})`;
