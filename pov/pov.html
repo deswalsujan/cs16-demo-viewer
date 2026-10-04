@@ -6260,7 +6260,7 @@ const XHAIR = [[8, 3], [4, 3], [5, 3], [8, 3], [9, 4], [6, 3], [9, 3], [3, 3], [
 const NO_XHAIR = { 3: 1, 13: 1, 18: 1, 24: 1 };
 // weapon ids by the p_ model name the snapshots give (CS 1.6 weapon numbering, as CurWeapon uses)
 const P_WEAPON_ID = { p228: 1, scout: 3, hegrenade: 4, xm1014: 5, c4: 6, mac10: 7, aug: 8, smokegrenade: 9, elite: 10, fiveseven: 11, ump45: 12, sg550: 13, galil: 14, famas: 15, usp: 16, glock18: 17, awp: 18, mp5: 19, m249: 20, m3: 21, m4a1: 22, tmp: 23, g3sg1: 24, flashbang: 25, deagle: 26, sg552: 27, ak47: 28, knife: 29, p90: 30 };
-const XCFG = { r: 50, g: 250, b: 50, base: 800, additive: true, read: false, scale: 1 }; // scale: Sujan's size choice (4 Oct 2026: 100% looked large; mockup at 80, 70, 60%)
+const XCFG = { r: 50, g: 250, b: 50, base: 800, additive: true, read: false, scale: 0.7 }; // scale: 70%, Sujan's pick from docs/pov-crosshair-size-mock.png (4 Oct 2026: 100%, the game's own size, looked large)
 async function readCrosshairCfg() {
   if (XCFG.read || !files.cfg) return; XCFG.read = true;
   try {
