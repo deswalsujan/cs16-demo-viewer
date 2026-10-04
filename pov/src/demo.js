@@ -247,6 +247,9 @@ export function parseDemo(buffer, onProgress, opts = {}) {
   // POV mode only: the recording player's zoom (time, field of view) and his gun (time, weapon id, rounds in it)
   const fovs = [], ownAmmo = [], wanims = []; // wanims: time, sequence of his gun model (demo frame type 7)
   const vmodels = []; // the gun model in his hands (clientdata viewmodel): time, model index, each time it changes
+  // POV mode, his HUD (what the server told his game about himself): health, armor, helmet (time, value each),
+  // money, spare ammo (time, ammo type, count), and which ammo type each gun takes (weapon id -> ammo type)
+  const hud = { hp: [], ap: [], helmet: [], money: [], ammox: [], gunAmmo: {} };
   const obs = []; // his spectator mode and target (clientdata iuser1, iuser2): time, mode, entity, each time they change
   const radio = [];     // { t, s: sentence name }
   const corpses = [];   // { t, start, model, pos, yaw, seq, team, e }
@@ -412,6 +415,16 @@ export function parseDemo(buffer, onProgress, opts = {}) {
         case 'HealthInfo': { // a teammate's health (the server sends -1 for opponents); not in HLTV recordings
           const id = m.ub(), v = m.i();
           if (opts.povRounds && inPlayback && v >= 0 && v <= 255) hp.push(time, id, v);
+          break;
+        }
+        case 'Health': { if (opts.povRounds && inPlayback) hud.hp.push(time, m.ub()); break; }
+        case 'Battery': { if (opts.povRounds && inPlayback) hud.ap.push(time, m.s()); break; }
+        case 'ArmorType': { if (opts.povRounds && inPlayback) hud.helmet.push(time, m.ub()); break; }
+        case 'Money': { if (opts.povRounds && inPlayback) hud.money.push(time, m.i()); break; }
+        case 'AmmoX': { const ty = m.ub(), n = m.ub(); if (opts.povRounds && inPlayback) hud.ammox.push(time, ty, n); break; }
+        case 'WeaponList': { // name, primary ammo type, max, secondary ammo type, max, slot, position, weapon id, flags
+          m.str(); const ty = m.b8(); m.ub(); m.b8(); m.ub(); m.ub(); m.ub(); const id = m.ub();
+          if (opts.povRounds) hud.gunAmmo[id] = ty;
           break;
         }
         case 'SetFOV': { if (opts.povRounds && inPlayback) fovs.push(time, m.ub()); break; }
@@ -886,6 +899,6 @@ export function parseDemo(buffer, onProgress, opts = {}) {
     finalScore: { ...scores }, models: resources.models, stride: STRIDE,
     pmodels, sounds: resources.sounds, events: resources.events, snds: new Float32Array(snds), shots: new Float32Array(shots), booms: new Float32Array(booms), puffs: new Float32Array(puffs), radio, corpses,
     errors, errSamples, health, view: new Float32Array(view), viewStride: VIEW_STRIDE,
-    shotOrg: new Float32Array(shotOrg), fovs: new Float32Array(fovs), ownAmmo: new Float32Array(ownAmmo), wanims: new Float32Array(wanims), vmodels: new Float32Array(vmodels), obs: new Float32Array(obs),
+    shotOrg: new Float32Array(shotOrg), fovs: new Float32Array(fovs), ownAmmo: new Float32Array(ownAmmo), wanims: new Float32Array(wanims), vmodels: new Float32Array(vmodels), obs: new Float32Array(obs), hud: opts.povRounds ? { hp: new Float32Array(hud.hp), ap: new Float32Array(hud.ap), helmet: new Float32Array(hud.helmet), money: new Float32Array(hud.money), ammox: new Float32Array(hud.ammox), gunAmmo: hud.gunAmmo } : null,
   };
 }

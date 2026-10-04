@@ -672,6 +672,8 @@ function indexFolder(list) {
       if (/(?:^|\/)cstrike\/sprites\/hud\.txt$/.test(p)) files.hud.txt = f;
       const hm = /(?:^|\/)cstrike\/sprites\/(640hud\d+)\.spr$/.exec(p);
       if (hm) files.hud.spr[hm[1]] = f;
+      const wt = /(?:^|\/)cstrike\/sprites\/(weapon_\w+)\.txt$/.exec(p); // POV HUD: each gun's ammo icon
+      if (wt) (files.hud.wtxt ||= {})[wt[1]] = f;
     }
   }
   files.demos.sort((a, b) => b.lastModified - a.lastModified);
@@ -1081,6 +1083,7 @@ function joinDemos(parts) {
   };
   const timesL = [], slotsL = {}, hpL = [], brushEvL = [], brushPoseL = [], sndsL = [], shotsL = [], boomsL = [], puffsL = [];
   const shotOrgL = [], viewL = [], fovsL = [], ownAmmoL = [], wanimsL = [], vmodelsL = [], obsL = []; // POV mode
+  const hudL = { hp: [], ap: [], helmet: [], money: [], ammox: [] }, gunAmmo = {};
   let shift = 0, nRound = 0, nOcc = 0, nSamples = 0;
   parts.forEach((P, pi) => {
     if (pi) shift = (out.end) + JOIN_GAP - P.start;
@@ -1129,6 +1132,7 @@ function joinDemos(parts) {
     if (P.fovs) flat(P.fovs, 2, (a, i) => { a[i] = sh(a[i]); }, fovsL);
     if (P.ownAmmo) flat(P.ownAmmo, 3, (a, i) => { a[i] = sh(a[i]); }, ownAmmoL);
     if (P.wanims) flat(P.wanims, 2, (a, i) => { a[i] = sh(a[i]); }, wanimsL);
+    if (P.hud) { for (const k in hudL) flat(P.hud[k], k === 'ammox' ? 3 : 2, (a, i) => { a[i] = sh(a[i]); }, hudL[k]); Object.assign(gunAmmo, P.hud.gunAmmo); }
     if (P.obs) flat(P.obs, 3, (a, i) => { a[i] = sh(a[i]); }, obsL);
     if (P.vmodels) flat(P.vmodels, 2, (a, i) => { a[i] = sh(a[i]); a[i + 1] = mM(a[i + 1]); }, vmodelsL);
     // player samples: every slot gets an entry for every sample time (empty where the slot isn't in this part)
@@ -1155,6 +1159,7 @@ function joinDemos(parts) {
   out.slots = {}; for (const e in slotsL) out.slots[e] = cat(slotsL[e]);
   out.hp = cat(hpL); out.brushEvents = cat(brushEvL); out.brushPose = cat(brushPoseL); out.snds = cat(sndsL); out.shots = cat(shotsL); out.booms = cat(boomsL); out.puffs = cat(puffsL);
   out.shotOrg = cat(shotOrgL); out.view = cat(viewL); out.fovs = cat(fovsL); out.ownAmmo = cat(ownAmmoL); out.wanims = cat(wanimsL); out.vmodels = cat(vmodelsL); out.obs = cat(obsL);
+  out.hud = parts[0].hud ? Object.assign(Object.fromEntries(Object.keys(hudL).map((k) => [k, cat(hudL[k])])), { gunAmmo }) : null;
   out.bomb.sort((a, b) => a.t - b.t);
   out.start = parts[0].start;
   out.fileName = parts[0].fileName;
@@ -3009,6 +3014,7 @@ function pickPlayer(e) {
 
 function toggleOpt(k, id) {
   opts[k] = !opts[k]; $(id).classList.toggle('on', opts[k]);
+  if (k === 'xray' && opts.xray && typeof showHiddenEnemiesNote === 'function') showHiddenEnemiesNote(); // POV mode
   savePrefs();
 }
 // Jump to a moment before a kill and watch it through the shooter's eyes (in 3D)

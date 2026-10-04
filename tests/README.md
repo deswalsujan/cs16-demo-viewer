@@ -140,6 +140,8 @@ Page scripts in `page/`:
 | `pov_death_cam.js` (on `../pov/pov.html`) | 2 s after his first death: spectator mode, whose eyes, whether his body is hidden; when first person on a teammate starts. Leaves the view on the death camera | POV mode (wip) |
 | `pov_xray_check.js` (on `../pov/pov.html`) | See through walls on a POV demo: every 0.25 s while the recorder is alive, enemies and teammates in the file, and how many are behind walls from his eyes; how far enemies are when they first appear. Shows whether the server hides enemies (anti-wallhack) | POV mode (wip) |
 | `pov_spec_crosshair.js` (on `../pov/pov.html`) | A teammate's crosshair while the recorder spectates him in first person: gap just after his shots and a second later | POV mode (wip) |
+| `pov_hud_anim.js` (on `../pov/pov.html`) | POV parts 2 and 3: HUD sprites read, HUD values at a few moments, his gun's animation around his first reload and silencer fitting; leaves the HUD on screen | POV mode (wip) |
+| `pov_bars_note.js` (on `../pov/pov.html`) | The spectator bars while he watches a teammate, and the hidden-enemies note with See through walls switched on | POV mode (wip) |
 | `pov_kill_lag.js` (on `../pov/pov.html`) | At his own kills, the aim against the victim drawn 0 to 0.2 s in the past (does the game's interpolation delay need copying? It doesn't) | POV mode (wip) |
 | `pov_dead_view.js` (on `../pov/pov.html`) | After his first death, the view in the eyes of the player he spectated, for a screenshot | POV mode (wip) |
 | `pov_own_kill.js` (run with `PAGE=../pov/pov.html`) | At the recorder's own gun kills in a POV demo: how far the victim's head is from his aim in Player's eyes, then the view left on the median kill (`window.__killN` picks another) | POV mode (wip) |

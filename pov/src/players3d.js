@@ -345,10 +345,57 @@ function vmAnim(mdl, e, t) {
   }
   return idle >= 0 ? { seq: idle, frame: t * mdl.seqs[idle].fps } : { seq: 0, frame: 0 };
 }
+// POV mode: the recorder's gun model at t (his own state's viewmodel), as a file name
+function povViewModel(t) {
+  const VM = D.vmodels; let lo = 0, hi = VM.length / 2 - 1, r = -1;
+  while (lo <= hi) { const m = (lo + hi) >> 1; if (VM[m * 2] <= t) { r = m; lo = m + 1; } else hi = m - 1; }
+  return r < 0 ? null : (D.models[VM[r * 2 + 1]] || null);
+}
+// POV mode: which animation the recorder's own gun plays at t. His game wrote each animation it played on his
+// gun (draw, reload, silencer on or off, grenade pull and throw, some shots: demo frame type 7, D.wanims), each
+// counted for the gun model in his hands 0.05 s after it (see povShots). Most shot animations aren't written
+// (Match 1 CT: about 75 for 1,052 M4A1 shots), so each of his shots (D.ownShots) also starts a shot animation,
+// silenced or not as that shot was. The latest wins; when it ends, the gun idles, as the HLTV rebuild does.
+function povVmAnim(mdl, name, t) {
+  const W = D.wanims || [], S = D.ownShots || [];
+  const cands = [];
+  // the gun's own recorded animations, latest first (only a few seconds back are needed)
+  let lo = 0, hi = W.length / 2; while (lo < hi) { const m = (lo + hi) >> 1; if (W[m * 2] <= t) lo = m + 1; else hi = m; }
+  let since = -Infinity;
+  for (let k = lo - 1; k >= 0 && W[k * 2] > t - 8; k--) {
+    if (povViewModel(W[k * 2] + 0.05) !== name) { since = W[k * 2]; break; } // an animation of the previous gun: this one came out after it
+    if (W[k * 2 + 1] >= 0 && W[k * 2 + 1] < mdl.seqs.length) { cands.push({ t: W[k * 2], seq: W[k * 2 + 1] }); break; }
+  }
+  // his latest shot with this gun
+  const id = P_WEAPON_ID[(/v_(\w+)\.mdl/i.exec(name) || [])[1]] || 0;
+  let lo2 = 0, hi2 = S.length / 3; while (lo2 < hi2) { const m = (lo2 + hi2) >> 1; if (S[m * 3] <= t) lo2 = m + 1; else hi2 = m; }
+  const k = lo2 - 1;
+  if (k >= 0 && S[k * 3 + 1] === id && S[k * 3] > since && t - S[k * 3] < 3) {
+    const unsil = (id === 22 || id === 16) && !S[k * 3 + 2];
+    const pick = (n) => { let j = unsil ? vmSeq(mdl, n + '_unsil') : -1; if (j < 0) j = vmSeq(mdl, n); return j; };
+    const opts = [1, 2, 3].map((n) => pick('shoot' + n)).filter((j) => j >= 0);
+    const seq = id === 29 ? pick(k % 2 ? 'midslash2' : 'midslash1') : opts.length ? opts[k % opts.length] : pick('shoot');
+    if (seq >= 0) cands.push({ t: S[k * 3], seq });
+  }
+  let cur = null;
+  for (const c of cands) if (!cur || c.t >= cur.t) cur = c;
+  // idle: the silenced or unsilenced idle, as the gun is now
+  const unsilNow = cur && /_unsil|detach/.test(mdl.seqs[cur.seq].name.toLowerCase());
+  let idle = unsilNow ? vmSeq(mdl, 'idle_unsil') : -1; if (idle < 0) idle = vmSeq(mdl, 'idle'); if (idle < 0) idle = vmSeq(mdl, 'idle1'); if (idle < 0) idle = 0;
+  if (cur) {
+    const q = mdl.seqs[cur.seq], f = (t - cur.t) * q.fps;
+    if ((q.flags & 1) || f < q.numframes - 1) return { seq: cur.seq, frame: f };
+    return { seq: idle, frame: (t - cur.t - q.numframes / q.fps) * mdl.seqs[idle].fps };
+  }
+  return { seq: idle, frame: t * mdl.seqs[idle].fps };
+}
 // draw the held weapon over the finished frame (called right after the world is rendered)
 function drawViewModel(renderer, camera, e, s) {
   if (!s || s.state <= 0 || !s.weapon) return;
-  const M2 = getModel(vName(s.weapon)); if (!M2) return;
+  // POV mode, the recorder's own gun: the model his own state says is in his hands
+  const own = POV.on && e === POV.v.rec && D.vmodels && D.vmodels.length;
+  const name = own ? povViewModel(T) : vName(s.weapon);
+  const M2 = name && getModel(name); if (!M2) return;
   const V = vmScene();
   if (!V.rig || V.rig.M !== M2) {
     if (V.rig) { V.scene.remove(V.rig.g); V.rig.g.traverse((o) => { if (o.geometry) o.geometry.dispose(); if (o.material) o.material.dispose(); }); }
@@ -359,7 +406,7 @@ function drawViewModel(renderer, camera, e, s) {
     // default (cl_righthand 1), so do the same: flip the model's left/right axis.
     V.rig.g.scale.set(1, 1, -1);
   }
-  const an = vmAnim(M2.mdl, e, T); if (!an) return;
+  const an = own ? povVmAnim(M2.mdl, name, T) : vmAnim(M2.mdl, e, T); if (!an) return;
   mdlPose(M2.mdl, an.seq, an.frame, 0.5, 0.5, V.rig.p, V.rig.q);
   mdlBoneMats(M2.mdl, V.rig.p, V.rig.q, V.rig.mats);
   skinRig(V.rig);

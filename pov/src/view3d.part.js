@@ -566,7 +566,7 @@ function update3() {
     pov.innerHTML = `<span class="${s.state === 1 ? 'kt' : 'kct'}">${esc(nameAt(selected, T))}</span>${hpv != null ? ` <b>(${hpv})</b>` : ''}<span class="kw">${esc(weaponShort(s.weapon))}</span>`;
     if (scoped) drawScope(lx, W, H);
     if (cam3.mode === 'eyes' && (!POV.on || POV.who != null)) drawHitMarker(lx, W / 2, H / 2);
-    if (POV.on) { if (!scoped) drawPovCrosshair(lx, W, H); }
+    if (POV.on) { if (!scoped) drawPovCrosshair(lx, W, H); if (POV.who === POV.v.rec && POV.mode === 0) drawPovHud(lx, W, H); }
     else if (cam3.mode === 'eyes' && !scoped) { lx.strokeStyle = 'rgba(90,255,90,.85)'; lx.lineWidth = 1.5; const cx = W / 2, cy = H / 2; lx.beginPath(); lx.moveTo(cx - 12, cy); lx.lineTo(cx - 4, cy); lx.moveTo(cx + 4, cy); lx.lineTo(cx + 12, cy); lx.moveTo(cx, cy - 12); lx.lineTo(cx, cy - 4); lx.moveTo(cx, cy + 4); lx.lineTo(cx, cy + 12); lx.stroke(); }
   } else if (cam3.mode !== 'free' && selected) {
     const death = D.kills.filter((k) => k.victim === selected && k.t <= T + 0.05).pop();
@@ -587,13 +587,17 @@ function update3() {
       pov.innerHTML = `<b>${esc(nameAt(selected, T))}</b> ${kn}${POV.on ? '' : ` <span class="kw">· ${playing && age < 2.5 ? 'switching to a teammate' : 'press X for the next player'}</span>`}`;
     } else { pov.hidden = false; pov.classList.add('dead'); pov.innerHTML = `<span class="kw">${esc(nameAt(selected, T))} is dead.${POV.on ? '' : ' Press X for the next player.'}</span>`; }
     // like CS spectating: after a moment, follow a living teammate (or anyone alive)
-    if (death && T - death.t > 2.5 && playing) {
+    if (!POV.on && death && T - death.t > 2.5 && playing) {
       const alive = alivePlayers();
       const mates = alive.filter((e) => teamOfSlot(e, T) === teamOfSlot(selected, T));
       const pick = (mates.length ? mates : alive)[0];
       if (pick) { selected = pick; renderPane(); }
     }
   } else pov.hidden = true;
+  // POV mode: the game's spectator bars while he watches someone else; they name the player, so the box goes
+  if (POV.on && drawSpecBars(lx, W, H)) pov.hidden = true;
+  // ...and while he's playing the game shows no name box, his HUD sits there
+  else if (POV.on && POV.mode === 0 && POV.who === POV.v.rec) pov.hidden = true;
 }
 // Hit marker on the crosshair when the player you're watching gets a kill:
 // white for a kill, orange for a headshot, magenta for a wallbang, with a short label underneath
@@ -695,14 +699,14 @@ function povShots() {
   return new Float32Array(out);
 }
 function povInit() {
-  POV.shotsBy = null;
+  POV.shotsBy = null; POV.hidden = null; { const n = $('povNote'); if (n) n.hidden = true; } $('feed').style.top = '';
   POV.on = !!(D && D.pov && D.view && D.view.length >= D.viewStride * 2);
   POV.i = 0;
   D.ownShots = POV.on ? povShots() : null;
   // the camera buttons that pick another view or player go; Team colours and Quality stay
   for (const id of ['free', 'eyes', 'chase']) { const b = document.querySelector(`#cam3 [data-c="${id}"]`); if (b) b.hidden = POV.on; }
   $('bPrevP').hidden = POV.on; $('bNextP').hidden = POV.on;
-  if (POV.on) { cam3.mode = 'eyes'; cam3.chase = null; cam3.cYaw = null; povFollow(T); }
+  if (POV.on) { cam3.mode = 'eyes'; cam3.chase = null; cam3.cYaw = null; povFollow(T); if (opts.xray) setTimeout(showHiddenEnemiesNote, 1500); }
 }
 // The view at time t, between the two frames around it. Angles turn the short way round. Across a jump (a
 // respawn, a teleport, the gap between two joined files) there's nothing to blend, so the earlier frame is kept.
@@ -828,4 +832,184 @@ function povFov(t) {
   while (lo <= hi) { const m = (lo + hi) >> 1; if (F[m * 2] <= t) { r = m; lo = m + 1; } else hi = m - 1; }
   const v = r >= 0 ? F[r * 2 + 1] : 90;
   return v > 0 && v < 90 ? v : 90;
+}
+
+// ---------------- POV mode: his HUD ----------------
+// Approved design: docs/pov-hud-mock.png. Health and armor bottom left, round timer bottom middle, money and ammo
+// bottom right, drawn with the game's own HUD sprites from the player's folder (cstrike/sprites/hud.txt and its
+// 640hud*.spr sheets, each gun's ammo icon from sprites/weapon_*.txt), in the game's HUD colour (255 160 0, the
+// HL SDK's RGB_YELLOWISH), additive like the game. Health 25 or less turns red, as in CS. The values are what
+// the server told his game: Health, Battery, ArmorType, Money, CurWeapon and AmmoX (D.hud). Only while he's
+// playing (the game shows the spectator bars instead when he spectates). Without the sprites, plain text.
+// HUD_SCALE: sprite pixels per 768 pixels of view height (the game draws its 640 sprites unscaled, so their size
+// on screen depends on the resolution he played at, which the demo doesn't say).
+const HUD_SCALE = 1;
+const HUD_COL = [255, 160, 0], HUD_RED = [250, 0, 0];
+const W_NAME = { 1: 'p228', 3: 'scout', 4: 'hegrenade', 5: 'xm1014', 6: 'c4', 7: 'mac10', 8: 'aug', 9: 'smokegrenade', 10: 'elite', 11: 'fiveseven', 12: 'ump45', 13: 'sg550', 14: 'galil', 15: 'famas', 16: 'usp', 17: 'glock18', 18: 'awp', 19: 'mp5navy', 20: 'm249', 21: 'm3', 22: 'm4a1', 23: 'tmp', 24: 'g3sg1', 25: 'flashbang', 26: 'deagle', 27: 'sg552', 28: 'ak47', 29: 'knife', 30: 'p90' };
+const HUDS = { from: null, spr: {}, ammo: {}, loading: false };
+// one sprite from a sheet as two canvases, yellow and red: the sheet's brightness is how solid each pixel is
+function hudSprite(sheet, r) {
+  if (!sheet || r.w <= 0 || r.h <= 0 || r.x + r.w > sheet.w || r.y + r.h > sheet.h) return null;
+  const mk = (col) => {
+    const cv = document.createElement('canvas'); cv.width = r.w; cv.height = r.h;
+    const g = cv.getContext('2d'), img = g.createImageData(r.w, r.h);
+    for (let j = 0; j < r.h; j++) for (let i = 0; i < r.w; i++) {
+      const c = sheet.px[(r.y + j) * sheet.w + r.x + i], o = (j * r.w + i) * 4;
+      const a = c < sheet.n ? Math.max(sheet.pal[c * 3], sheet.pal[c * 3 + 1], sheet.pal[c * 3 + 2]) : 0;
+      img.data[o] = col[0]; img.data[o + 1] = col[1]; img.data[o + 2] = col[2]; img.data[o + 3] = a;
+    }
+    g.putImageData(img, 0, 0); return cv;
+  };
+  return { y: mk(HUD_COL), r: mk(HUD_RED), w: r.w, h: r.h };
+}
+async function loadHudSprites() {
+  const txt = files.hud && files.hud.txt;
+  if (!txt || HUDS.from === txt || HUDS.loading) return;
+  HUDS.loading = true;
+  try {
+    const sheets = {};
+    const sheet = async (nm) => { if (!(nm in sheets)) { const f = files.hud.spr[nm]; sheets[nm] = f ? decodeSpr(await readPicked(f, `sprites/${nm}.spr`) || new Uint8Array(0)) : null; } return sheets[nm]; };
+    const want = new Set(['cross', 'suit_full', 'suit_empty', 'suithelmet_full', 'suithelmet_empty', 'dollar', 'stopwatch', 'divider', ...Array.from({ length: 10 }, (_, i) => 'number_' + i)]);
+    for (const line of (await txt.text()).split(/\r?\n/)) {
+      const f = line.trim().split(/\s+/);
+      if (f.length === 7 && want.has(f[0]) && f[1] === '640') { const sp = hudSprite(await sheet(f[2].toLowerCase()), { x: +f[3], y: +f[4], w: +f[5], h: +f[6] }); if (sp) HUDS.spr[f[0]] = sp; }
+    }
+    // ammo icons, for the guns he used
+    const ids = new Set(); for (let i = 1; i < (D.ownAmmo || []).length; i += 3) ids.add(D.ownAmmo[i]);
+    for (const id of ids) {
+      const nm = W_NAME[id], f = nm && files.hud.wtxt && files.hud.wtxt['weapon_' + nm]; if (!f) continue;
+      for (const line of (await f.text()).split(/\r?\n/)) {
+        const g = line.trim().split(/\s+/);
+        if (g.length === 7 && g[0] === 'ammo' && g[1] === '640') { const sp = hudSprite(await sheet(g[2].toLowerCase()), { x: +g[3], y: +g[4], w: +g[5], h: +g[6] }); if (sp) HUDS.ammo[id] = sp; }
+      }
+    }
+  } catch (e) { }
+  HUDS.from = txt; HUDS.loading = false;
+}
+// the last value at or before t in a flat (time, value...) array of stride n, column k
+function lastAt(a, n, t, k = 1, from = 0) {
+  if (!a || !a.length) return null;
+  let lo = 0, hi = a.length / n - 1, r = -1;
+  while (lo <= hi) { const m = (lo + hi) >> 1; if (a[m * n] <= t) { r = m; lo = m + 1; } else hi = m - 1; }
+  return r < 0 || a[r * n] < from ? null : a[r * n + k];
+}
+function povHudValues(t) {
+  const H = D.hud; if (!H) return null;
+  const A = D.ownAmmo, id = povGun(t);
+  let clip = null; { let lo = 0, hi = A.length / 3 - 1, r = -1; while (lo <= hi) { const m = (lo + hi) >> 1; if (A[m * 3] <= t) { r = m; lo = m + 1; } else hi = m - 1; } if (r >= 0) clip = A[r * 3 + 2]; }
+  const ty = H.gunAmmo[id];
+  let spare = null;
+  if (ty != null && ty >= 0) for (let i = H.ammox.length - 3; i >= 0; i -= 3) if (H.ammox[i] <= t && H.ammox[i + 1] === ty) { spare = H.ammox[i + 2]; break; }
+  const c = clockAt(t);
+  return { hp: lastAt(H.hp, 2, t), ap: lastAt(H.ap, 2, t), helmet: lastAt(H.helmet, 2, t), money: lastAt(H.money, 2, t), id, clip, spare, clock: c && c.phase !== 'bomb' ? c.text.replace(/^freeze /, '') : null };
+}
+function drawPovHud(lx, W, H) {
+  loadHudSprites();
+  const v = povHudValues(T); if (!v) return;
+  const s = H / 768 * HUD_SCALE, haveSpr = !!HUDS.spr.number_0;
+  const dh = haveSpr ? HUDS.spr.number_0.h * s : 25 * s, dw = haveSpr ? HUDS.spr.number_0.w * s : 20 * s;
+  const base = H - 46 - dh; // the bottom buttons sit below
+  lx.save(); lx.globalCompositeOperation = 'lighter'; lx.globalAlpha = 0.8;
+  const spr = (nm, x, y, red) => { const p = HUDS.spr[nm] || HUDS.ammo[nm]; if (!p) return 0; lx.drawImage(red ? p.r : p.y, x, y, p.w * s, p.h * s); return p.w * s; };
+  const num = (n, x, y, red, rightAlign) => {
+    const str = String(Math.max(0, Math.round(n)));
+    if (!haveSpr) { lx.font = `700 ${Math.round(dh)}px ${monoFont()}`; lx.fillStyle = `rgb(${(red ? HUD_RED : HUD_COL).join(',')})`; lx.textBaseline = 'top'; lx.textAlign = rightAlign ? 'right' : 'left'; lx.fillText(str, x, y); return lx.measureText(str).width; }
+    let w = str.length * dw, x0 = rightAlign ? x - w : x;
+    for (const ch of str) { spr('number_' + ch, x0, y, red); x0 += dw; }
+    return w;
+  };
+  const icon = (nm, x, y, red) => { const p = HUDS.spr[nm]; if (!p) return 0; return spr(nm, x, y + (dh - p.h * s) / 2, red); };
+  // health and armor
+  let x = W * 0.02;
+  if (v.hp != null) { const red = v.hp <= 25; x += icon('cross', x, base, red) + 6 * s; x += num(v.hp, x, base, red) + 24 * s; }
+  if (v.ap != null) { x += icon(v.helmet ? (v.ap > 0 ? 'suithelmet_full' : 'suithelmet_empty') : v.ap > 0 ? 'suit_full' : 'suit_empty', x, base) + 6 * s; num(v.ap, x, base); }
+  // round timer
+  if (v.clock) { const tw = dw * v.clock.length; let cx = W / 2 - tw / 2; cx += icon('stopwatch', cx - 30 * s, base); const [m, sec] = v.clock.split(':'); let xx = W / 2 - tw / 2; xx += num(+m, xx, base); if (haveSpr) { lx.fillStyle = `rgba(${HUD_COL.join(',')},1)`; lx.fillRect(xx + dw * 0.3, base + dh * 0.3, 3 * s, 3 * s); lx.fillRect(xx + dw * 0.3, base + dh * 0.65, 3 * s, 3 * s); } xx += dw * 0.8; num(+sec < 10 ? 0 : Math.floor(+sec / 10), xx, base); num(+sec % 10, xx + dw, base); }
+  // money, above the ammo
+  const R = W * 0.98;
+  if (v.money != null) { const w = num(v.money, R, base - dh * 1.5, false, true); icon('dollar', R - w - (HUDS.spr.dollar ? HUDS.spr.dollar.w * s : 0) - 4 * s, base - dh * 1.5); }
+  // ammo: rounds in the gun | spare rounds, then the ammo icon; grenades show their count
+  if (v.id && v.id !== 29) {
+    let r = R; const ic = HUDS.ammo[v.id];
+    if (ic) { r -= ic.w * s; spr(v.id, r, base + (dh - ic.h * s) / 2); r -= 8 * s; }
+    if (v.spare != null && v.spare >= 0) r -= num(v.spare, r, base, false, true) + 10 * s;
+    if (v.clip != null && v.clip >= 0) { if (HUDS.spr.divider) { r -= 2 * s; spr('divider', r, base - dh * 0.25); r -= 12 * s; } num(v.clip, r, base, false, true); }
+  }
+  lx.restore();
+}
+
+// ---------------- POV mode: spectator bars ----------------
+// As the game's spectator view (cstrike/resource/UI/Spectator.res): a translucent black bar at the top and at the
+// bottom, each 66/480 of the view, while he watches someone else after dying (not during the death camera behind
+// his own body). Top right: the score and the round clock; bottom: whose view it is, with his HP when the server
+// sends it, and the camera mode at the left. The kill feed moves below the top bar; the name box goes.
+// Approved design: docs/pov-spectator-bars-mock.png. The bars' darkness (60% black) is a guess: the file doesn't say.
+const SPEC_MODE = { 1: 'Locked chase camera', 2: 'Free chase camera', 3: 'Free look', 4: 'First person', 5: 'Free overview', 6: 'Chase overview' };
+function povBarsOn() { if (!POV.on || POV.mode === 0) return false; const [, tg] = povObs(T); return !(tg === POV.v.rec && POV.mode !== 4) || false; }
+function drawSpecBars(lx, W, H) {
+  const on = povBarsOn();
+  $('feed').style.top = on ? Math.round(H * 66 / 480 + 8) + 'px' : '';
+  if (!on) return false;
+  const bh = Math.round(H * 66 / 480), mono = monoFont();
+  lx.save();
+  lx.fillStyle = 'rgba(0,0,0,.6)'; lx.fillRect(0, 0, W, bh); lx.fillRect(0, H - bh, W, bh);
+  // score and clock
+  const done = M.liveR.filter((r) => r.end != null && r.end <= T), sc = done.length ? done[done.length - 1].scoreAfter : [0, 0];
+  const c = clockAt(T), clock = c ? c.text.replace(/^freeze /, '') : '';
+  const xr = W - W * 80 / 640 - 14, y1 = bh * 0.3, y2 = bh * 0.3 + 20;
+  lx.font = `600 14px ${mono}`; lx.textAlign = 'right'; lx.textBaseline = 'middle';
+  lx.fillStyle = '#e8e6e1'; lx.fillText('Counter-Terrorists : ', xr - 14, y1); lx.fillText('Terrorists : ', xr - 14, y2);
+  lx.fillStyle = '#5ea3e8'; lx.fillText(String(sc[1]), xr, y1); lx.fillStyle = '#e8574d'; lx.fillText(String(sc[0]), xr, y2);
+  lx.fillStyle = 'rgba(232,230,225,.6)'; lx.fillRect(W - W * 64 / 640, bh * 0.18, 1, bh * 0.45);
+  lx.textAlign = 'left'; lx.fillStyle = '#e8e6e1'; lx.font = `600 15px ${mono}`; lx.fillText('◷ ' + clock, W - W * 56 / 640, (y1 + y2) / 2);
+  // whose view, and the camera mode
+  const [, tg] = povObs(T), who = POV.who != null ? POV.who : tg;
+  if (who) {
+    const s = playerState(who, T), hp = hpAt(who, T);
+    lx.textAlign = 'center'; lx.font = `600 16px ${mono}`;
+    const nm = nameAt(who, T), txt = nm + (hp != null ? ` (${hp})` : '');
+    lx.fillStyle = s && s.state === 1 || s && s.state === -1 ? '#e8574d' : '#5ea3e8'; lx.fillText(txt, W / 2, H - bh * 0.55);
+  }
+  lx.textAlign = 'left'; lx.font = `500 13px ${mono}`; lx.fillStyle = '#b9b6ad'; lx.fillText(SPEC_MODE[POV.mode] || '', 16, H - bh * 0.55);
+  lx.restore();
+  return true;
+}
+
+// ---------------- POV mode: "this server held back enemies" ----------------
+// Some servers only send an enemy when he's about to come into view (an anti-wallhack plugin), so See through
+// walls has little to show (Match 1 CT: 223 enemy sightings against 21,065 for teammates). Worked out once per
+// demo, once a second while he's playing. Shown as a note above the See through walls button when it's switched
+// on, and once when the demo opens with it already on; it fades after 8 s or on a click. Option B of
+// docs/pov-hidden-enemies-mock.png (Sujan, 4 Oct 2026), kept at the left so it can't cover the name box.
+function povHidesEnemies() {
+  if (POV.hidden != null) return POV.hidden;
+  let en = 0, tm = 0;
+  for (let t = D.start + 1; t < D.end; t += 1) {
+    POV.i = 0; const v = povView(t); const rs = playerState(v.rec, t);
+    if (!rs || !(rs.state > 0) || povObs(t)[0] !== 0) continue;
+    for (const e in D.slots) {
+      if (+e === v.rec) continue; const s = playerState(+e, t);
+      if (!(s && s.state > 0 && Number.isFinite(s.x) && (s.x || s.y))) continue;
+      if (s.state !== rs.state) en++; else tm++;
+    }
+  }
+  POV.i = 0;
+  return POV.hidden = { on: tm > 200 && en < tm * 0.1, en, tm };
+}
+function showHiddenEnemiesNote() {
+  if (!POV.on) return;
+  const h = povHidesEnemies(); if (!h.on) return;
+  let d = $('povNote');
+  const b = $('tgXray'), host = $('gl').parentElement; if (!b || !host) return;
+  if (!d) {
+    d = document.createElement('div'); d.id = 'povNote'; d.setAttribute('role', 'status');
+    d.style.cssText = 'position:absolute;z-index:4;max-width:300px;background:rgba(10,12,14,.92);border:1px solid var(--sand, #f2b84b);border-radius:4px;padding:8px 11px;font-size:12.5px;line-height:1.45;color:#e8e6e1;cursor:pointer;transition:opacity .4s';
+    d.onclick = () => { d.style.opacity = '0'; setTimeout(() => { d.hidden = true; }, 400); };
+    host.appendChild(d);
+  }
+  const hr = host.getBoundingClientRect(), br = b.parentElement.getBoundingClientRect();
+  d.style.left = (br.left - hr.left) + 'px'; d.style.bottom = (hr.bottom - br.top + 8) + 'px';
+  d.innerHTML = `<b style="color:var(--sand, #f2b84b)">This server held back enemies</b><br>It only sent enemies about to come into view, so See through walls can show just the few it sent (${h.en.toLocaleString()} enemy sightings against ${h.tm.toLocaleString()} for teammates).`;
+  d.hidden = false; d.style.opacity = '1';
+  clearTimeout(POV.noteT); POV.noteT = setTimeout(() => { d.style.opacity = '0'; setTimeout(() => { d.hidden = true; }, 400); }, 8000);
 }
