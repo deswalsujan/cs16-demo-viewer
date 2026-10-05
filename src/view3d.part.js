@@ -583,25 +583,28 @@ function update3() {
 }
 // Hit marker on the crosshair when the player you're watching gets a kill:
 // white for a kill, orange for a headshot, magenta for a wallbang, with a short label underneath
-// (the label says which, so colour isn't the only cue).
+// (the label says which, so colour isn't the only cue). Thin ticks that start past the crosshair's arms
+// (they end 12 px out), so the crosshair stays readable, shown for MARK_MS (option A, Sujan 5 Oct 2026;
+// before 0.17.0 they were thick, sat on the crosshair and lasted 0.75 s).
+const MARK_MS = 450;
 function drawHitMarker(lx, cx, cy) {
   const f = flashes.filter((x) => x.k.killer === selected).pop();
   if (!f) return;
-  const a = (performance.now() - f.at) / FLASH_MS; if (a >= 1) return;
+  const a = (performance.now() - f.at) / MARK_MS; if (a >= 1) return;
   const k = f.k;
   const col = k.wb ? '#ff4fd8' : k.hs ? '#ff9a3c' : '#ffffff';
-  const g0 = 7 + a * 5, g1 = g0 + 9;
+  const g0 = 11, g1 = 16;
   lx.save();
   lx.globalAlpha = a < 0.6 ? 1 : 1 - (a - 0.6) / 0.4;
   lx.lineCap = 'round';
-  for (const [w, c] of [[5, 'rgba(0,0,0,.6)'], [2.5, col]]) {
+  for (const [w, c] of [[3, 'rgba(0,0,0,.45)'], [1.5, col]]) {
     lx.strokeStyle = c; lx.lineWidth = w; lx.beginPath();
     for (const [dx, dy] of [[1, 1], [1, -1], [-1, 1], [-1, -1]]) { lx.moveTo(cx + dx * g0, cy + dy * g0); lx.lineTo(cx + dx * g1, cy + dy * g1); }
     lx.stroke();
   }
   const label = k.wb ? `WALLBANG${k.hs ? ' · HS' : ''}` : k.hs ? 'HEADSHOT' : 'KILL';
-  lx.font = `600 11px ${monoFont()}`; lx.textAlign = 'center';
-  lx.lineWidth = 3; lx.strokeStyle = 'rgba(0,0,0,.7)'; lx.strokeText(label, cx, cy + 42); lx.fillStyle = col; lx.fillText(label, cx, cy + 42);
+  lx.font = `500 10px ${monoFont()}`; lx.textAlign = 'center';
+  lx.lineWidth = 2.5; lx.strokeStyle = 'rgba(0,0,0,.6)'; lx.strokeText(label, cx, cy + 32); lx.fillStyle = col; lx.fillText(label, cx, cy + 32);
   lx.restore();
 }
 // The sniper scope over Player's eyes. Three styles exist; the viewer uses SCOPE_STYLE and has no menu
@@ -628,8 +631,10 @@ function drawScope(lx, W, H) {
   if (style !== 'lines') { lx.fillStyle = '#ff2a1f'; lx.beginPath(); lx.arc(cx, cy, Math.max(2, r * 0.0065), 0, Math.PI * 2); lx.fill(); }
   lx.restore();
 }
-// A ring that bursts out from the victim in 3D, for every kill
+// A ring that bursts out from the victim in 3D, for every kill. Not in Player's eyes: there the victim is
+// usually at the crosshair, so the ring covered it (0.17.0); the crosshair marker says it instead.
 function drawKillRings(lx, W, H, camera) {
+  if (cam3.mode === 'eyes') return;
   for (const f of flashes) {
     const k = f.k; if (!k.vpos) continue;
     const a = (performance.now() - f.at) / FLASH_MS; if (a >= 1) continue;

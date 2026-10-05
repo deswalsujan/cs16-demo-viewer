@@ -43,8 +43,10 @@ Custom maps work too, as long as the map's `.bsp` (and its `.wad` files if it us
 - Round list, kill list, and player stats split by T side, CT side and overtime. Warmups, knife rounds and cancelled starts are left out, using the server's own "Live" and end-of-half announcements when the demo has them
 - Wallbang finder: kills where the victim was fully hidden and the crosshair was on the wall, with a copyable list of timestamps. Checked at the moment of the killing shot, and never for guns whose bullets stop at the first surface (pistols except the Deagle, SMGs, shotguns)
 - Kill lists that read like the game's kill feed: killer, the weapon's kill feed icon from your game files, victim
-- Kill markers on the crosshair (kill, headshot, wallbang) and a death cam
+- Kill markers around the crosshair (kill, headshot, wallbang) and a death cam
+- The game's round announcements in the middle of the screen, in 2D and 3D: "Terrorists Win!", "The bomb has been planted!" and the rest, worded as in your game's own files
 - Health, weapons, grenades, smokes, heatmaps, a hold-Tab scoreboard with spectators and the HLTV audience count
+- The C4 on the carrier's back and the defusal kits on the Counter-Terrorists, on the 3D models and in the Tab scoreboard
 - Demos recorded by a player (POV) too, with limits: a player's game only receives the players near them, so others drop in and out of view
 - A map recorded in two or more demo files counted as one map: the viewer spots the other part in your folder (same map, same players), puts the parts in order and joins them, with one score, one round list and player stats over all of it. Split them undoes it
 - Cut-off and unfinished demos (an interrupted download, a recording that was never closed) play up to where the file stops, and the viewer says exactly what's wrong with the file, read from its own structure
@@ -65,7 +67,7 @@ src/audio.js        Sound: .wav decoding, positional playback, radio lines
 src/template.html   The page: layout, styles, 2D radar, timeline, panels
 build.py            Combines everything into one self-contained page
 CHANGELOG.md        What changed, newest first
-docs/               Design images: scope styles, the approved side panel designs (0.13.0), Count them, split maps, demo search, the Zalando Sans screens
+docs/               Design images: scope styles, the approved side panel designs (0.13.0), Count them, split maps, demo search, the Zalando Sans screens, crosshair kill markers (0.17.0)
 tests/              Test and measurement scripts: browser checks, Theatre mode checks, demo data probes (see tests/README.md)
 IDEAS.md            Parked ideas and open decisions, with the discussion behind them
 CLAUDE.md           How Claude sessions work on this repo: workflow, checking facts, where the test files are

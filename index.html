@@ -108,6 +108,7 @@ button { cursor: pointer; }
 .hint3 { position: absolute; right: 12px; bottom: 12px; font-family: var(--f-mono); font-size: 11px; color: var(--muted); background: rgba(10,12,14,.82); border: 1px solid var(--line); padding: 4px 8px; border-radius: 3px; white-space: nowrap; }
 .radar.m2d .hint3, .radar.msplit .hint3 { display: none; }
 @media (max-width: 1100px) { .hint3 { display: none; } }
+.cmsg { position: absolute; left: 50%; top: 25%; transform: translate(-50%, -50%); z-index: 3; pointer-events: none; max-width: calc(100% - 32px); text-align: center; font-family: var(--f-body); font-weight: 600; font-size: 20px; color: #f2efe6; text-shadow: 0 1px 2px rgba(0,0,0,.95), 0 0 6px rgba(0,0,0,.7); white-space: pre-line; }
 .pov { white-space: nowrap; max-width: calc(100% - 24px); overflow: hidden; text-overflow: ellipsis; }
 .pov { position: absolute; left: 50%; bottom: 56px; transform: translateX(-50%); font-family: var(--f-mono); font-size: 12px; background: rgba(10,12,14,.82); border: 1px solid var(--line); padding: 4px 10px; border-radius: 3px; }
 .pov.dead { border-color: #8a2b2b; background: rgba(40,6,6,.9); padding: 6px 12px; font-size: 13px; }
@@ -158,7 +159,11 @@ button { cursor: pointer; }
 .sbtag { font-family: var(--f-mono); font-size: 10px; color: var(--muted); border: 1px solid var(--line); border-radius: 3px; padding: 0 4px; }
 .sbv { margin-left: auto; color: var(--muted); font-family: var(--f-mono); }
 .viewers { font-family: var(--f-mono); font-size: 12px; color: var(--muted); white-space: nowrap; }
-.sbrow .nm { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.sbrow .nm { display: flex; align-items: center; gap: 6px; min-width: 0; }
+.sbrow .nmt { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; min-width: 0; }
+.sbpack { flex-shrink: 0; font-size: 10px; line-height: 14px; padding: 0 4px; border-radius: 3px; border: 1px solid; }
+.sbpack.c4 { color: var(--kill, #ff9a3c); border-color: rgba(255,154,60,.55); }
+.sbpack.kit { color: #5ea3e8; border-color: rgba(94,163,232,.55); }
 .sbrow.dead { color: var(--faint); }
 .sbrow span:nth-child(n+3) { text-align: right; }
 .keys-card { width: min(860px, 100%); max-height: 100%; overflow-y: auto; background: var(--panel); border: 1px solid var(--line); border-radius: 6px; padding: 16px 18px; display: grid; gap: 12px; }
@@ -421,6 +426,7 @@ body:has(.app.theatre) { overflow: hidden; }
     <canvas id="lbl"></canvas>
     <div class="status3" id="status3" hidden></div>
     <div class="pov" id="pov" hidden></div>
+    <div class="cmsg" id="cmsg" hidden></div>
     <div class="cam3" id="cam3" hidden>
       <button class="btn on" data-c="free" type="button">Free camera</button>
       <button class="btn" data-c="eyes" type="button">Player's eyes</button>
@@ -439,7 +445,7 @@ body:has(.app.theatre) { overflow: hidden; }
     <div class="overlay sumwrap" id="sumCard" hidden></div>
     <div class="overlay keys" id="keys" hidden>
       <div class="keys-card">
-        <div class="keys-head"><b>Shortcuts and kill markers</b><div class="kh-r"><span class="ver">Version 0.16.0 · <a href="https://github.com/deswalsujan/cs16-demo-viewer/blob/main/CHANGELOG.md" target="_blank" rel="noopener">What's new</a> · <a href="https://github.com/deswalsujan/cs16-demo-viewer/issues/new/choose" target="_blank" rel="noopener">Report a bug</a></span><button class="btn" id="bDebug" type="button" title="Copies details for a bug report: browser, demo name, what loaded, errors. No file contents.">Copy debug info</button><button class="btn" id="bKeysClose" type="button">Close</button></div></div>
+        <div class="keys-head"><b>Shortcuts and kill markers</b><div class="kh-r"><span class="ver">Version 0.17.0 · <a href="https://github.com/deswalsujan/cs16-demo-viewer/blob/main/CHANGELOG.md" target="_blank" rel="noopener">What's new</a> · <a href="https://github.com/deswalsujan/cs16-demo-viewer/issues/new/choose" target="_blank" rel="noopener">Report a bug</a></span><button class="btn" id="bDebug" type="button" title="Copies details for a bug report: browser, demo name, what loaded, errors. No file contents.">Copy debug info</button><button class="btn" id="bKeysClose" type="button">Close</button></div></div>
         <textarea class="dbgbox" id="dbgBox" readonly hidden aria-label="Debug info"></textarea>
         <div class="keys-grid">
           <section><h3>Playback</h3>
@@ -470,11 +476,11 @@ body:has(.app.theatre) { overflow: hidden; }
             <dt>Mouse wheel</dt><dd>Fly forward or back</dd></dl>
           </section>
           <section class="hmsec"><h3>Kill markers</h3>
-            <p class="hmnote">In Player's eyes, the crosshair flashes when the player you're watching gets a kill. In every view, a ring in the same colour bursts out from the victim.</p>
+            <p class="hmnote">In Player's eyes, small ticks flash around the crosshair when the player you're watching gets a kill. In the other views, a ring in the same colour bursts out from the victim.</p>
             <dl class="hmlist">
-              <dt><svg class="hm" viewBox="0 0 40 40" aria-hidden="true"><g stroke="#000" stroke-opacity=".6" stroke-width="5" stroke-linecap="round"><path d="M27 27l6 6M27 13l6-6M13 27l-6 6M13 13l-6-6"/></g><g stroke="#ffffff" stroke-width="2.5" stroke-linecap="round"><path d="M27 27l6 6M27 13l6-6M13 27l-6 6M13 13l-6-6"/></g><g stroke="#5aff5a" stroke-width="1.5"><path d="M12 20h5M23 20h5M20 12v5M20 23v5"/></g></svg></dt><dd><b class="hmw">KILL</b><span>A normal kill. Example: an AK spray to the body in the open.</span></dd>
-              <dt><svg class="hm" viewBox="0 0 40 40" aria-hidden="true"><g stroke="#000" stroke-opacity=".6" stroke-width="5" stroke-linecap="round"><path d="M27 27l6 6M27 13l6-6M13 27l-6 6M13 13l-6-6"/></g><g stroke="#ff9a3c" stroke-width="2.5" stroke-linecap="round"><path d="M27 27l6 6M27 13l6-6M13 27l-6 6M13 13l-6-6"/></g><g stroke="#5aff5a" stroke-width="1.5"><path d="M12 20h5M23 20h5M20 12v5M20 23v5"/></g></svg></dt><dd><b class="hmo">HEADSHOT</b><span>The killing bullet hit the head. Example: a one-tap with the AK.</span></dd>
-              <dt><svg class="hm" viewBox="0 0 40 40" aria-hidden="true"><g fill="none" stroke="#000" stroke-opacity=".6" stroke-width="5" stroke-linecap="round"><path d="M27 27l6 6M27 13l6-6M13 27l-6 6M13 13l-6-6"/></g><g fill="none" stroke="#ff4fd8" stroke-width="2.5" stroke-linecap="round"><path d="M27 27l6 6M27 13l6-6M13 27l-6 6M13 13l-6-6"/></g><g stroke="#5aff5a" stroke-width="1.5"><path d="M12 20h5M23 20h5M20 12v5M20 23v5"/></g></svg></dt><dd><b class="hms">WALLBANG · HS</b><span>The victim was fully hidden and the bullet went through cover. HS is added when it was also a headshot.</span></dd>
+              <dt><svg class="hm" viewBox="0 0 40 40" aria-hidden="true"><g stroke="#000" stroke-opacity=".45" stroke-width="3" stroke-linecap="round"><path d="M28 28l4 4M28 12l4-4M12 28l-4 4M12 12l-4-4"/></g><g stroke="#ffffff" stroke-width="1.5" stroke-linecap="round"><path d="M28 28l4 4M28 12l4-4M12 28l-4 4M12 12l-4-4"/></g><g stroke="#5aff5a" stroke-width="1.5"><path d="M12 20h5M23 20h5M20 12v5M20 23v5"/></g></svg></dt><dd><b class="hmw">KILL</b><span>A normal kill. Example: an AK spray to the body in the open.</span></dd>
+              <dt><svg class="hm" viewBox="0 0 40 40" aria-hidden="true"><g stroke="#000" stroke-opacity=".45" stroke-width="3" stroke-linecap="round"><path d="M28 28l4 4M28 12l4-4M12 28l-4 4M12 12l-4-4"/></g><g stroke="#ff9a3c" stroke-width="1.5" stroke-linecap="round"><path d="M28 28l4 4M28 12l4-4M12 28l-4 4M12 12l-4-4"/></g><g stroke="#5aff5a" stroke-width="1.5"><path d="M12 20h5M23 20h5M20 12v5M20 23v5"/></g></svg></dt><dd><b class="hmo">HEADSHOT</b><span>The killing bullet hit the head. Example: a one-tap with the AK.</span></dd>
+              <dt><svg class="hm" viewBox="0 0 40 40" aria-hidden="true"><g stroke="#000" stroke-opacity=".45" stroke-width="3" stroke-linecap="round"><path d="M28 28l4 4M28 12l4-4M12 28l-4 4M12 12l-4-4"/></g><g stroke="#ff4fd8" stroke-width="1.5" stroke-linecap="round"><path d="M28 28l4 4M28 12l4-4M12 28l-4 4M12 12l-4-4"/></g><g stroke="#5aff5a" stroke-width="1.5"><path d="M12 20h5M23 20h5M20 12v5M20 23v5"/></g></svg></dt><dd><b class="hms">WALLBANG · HS</b><span>The victim was fully hidden and the bullet went through cover. HS is added when it was also a headshot.</span></dd>
             </dl>
           </section>
           <section><h3>Radar (2D)</h3>
@@ -539,7 +545,7 @@ body:has(.app.theatre) { overflow: hidden; }
         <div class="drophint">Or drop a .dem file, or an overview .bmp and .txt pair, anywhere on this page</div>
         <div class="prog" id="prog" hidden><i id="progBar"></i></div>
         <div class="msg" id="msg"></div>
-        <div class="loadfoot"><span>Version 0.16.0</span><button class="btn" id="bClear" type="button" title="Forgets your Half-Life folder and deletes the maps, models, sounds and overviews this browser saved from it, as on a first visit">Clear saved files</button></div>
+        <div class="loadfoot"><span>Version 0.17.0</span><button class="btn" id="bClear" type="button" title="Forgets your Half-Life folder and deletes the maps, models, sounds and overviews this browser saved from it, as on a first visit">Clear saved files</button></div>
       </div>
     </div>
   </section>
@@ -581,6 +587,11 @@ body:has(.app.theatre) { overflow: hidden; }
 const DT_BYTE = 1, DT_SHORT = 2, DT_FLOAT = 4, DT_INTEGER = 8, DT_ANGLE = 16,
   DT_TIMEWINDOW_8 = 32, DT_TIMEWINDOW_BIG = 64, DT_STRING = 128, DT_SIGNED = 0x80000000;
 
+// Centre-screen messages the viewer shows (round results, bomb planted, game restarts). Names as the game sends them
+// in TextMsg; ReGameDLL sends each with HUD_PRINTCENTER.
+const CENTRE_MSGS = new Set(['#Terrorists_Win', '#CTs_Win', '#Round_Draw', '#Target_Bombed', '#Target_Saved', '#Bomb_Defused',
+  '#Bomb_Planted', '#Hostages_Not_Rescued', '#All_Hostages_Rescued', '#VIP_Escaped', '#VIP_Assassinated', '#VIP_Not_Escaped',
+  '#Terrorists_Escaped', '#CTs_PreventEscape', '#Escaping_Terrorists_Neutralized', '#Game_Commencing', '#Game_will_restart_in']);
 class Reader {
   constructor(u8) {
     this.u8 = u8;
@@ -803,6 +814,7 @@ export function parseDemo(buffer, onProgress, opts = {}) {
   const snds = [];      // time, sound resource index, entity, volume, attenuation, pitch, channel, x, y, z (NaN when not sent)
   const shots = [];     // time, entity, event resource index, bparam1
   const radio = [];     // { t, s: sentence name }
+  const centre = [];    // { t, s: '#Terrorists_Win' and the like, a: its arguments } (centre-screen messages)
   const corpses = [];   // { t, start, model, pos, yaw, seq, team, e }
   const booms = [];     // time, x, y, z (grenade and C4 explosions)
   const puffs = [];     // smoke grenade events (createsmoke): time, kind (1 = it pops, 4 = a puff every second after), cloud centre x, y, z
@@ -821,6 +833,7 @@ export function parseDemo(buffer, onProgress, opts = {}) {
   // position samples
   const samples = { t: [], slots: {} }; // slots[ent] = number[] of x,y,z,yaw,pitch,alive
   let lastSampleT = -1;
+  const pack = [], packNow = {}; // changes of each player's body value: time, slot, value
 
   function slotArr(e) {
     if (!samples.slots[e]) {
@@ -849,6 +862,9 @@ export function parseDemo(buffer, onProgress, opts = {}) {
       }
       const a = slotArr(e);
       const state = dead.has(e) ? -side : side;
+      // the body value: 1 shows the C4 backpack on a T, the defusal kit on a CT (ReGameDLL sets pev->body in
+      // GiveDefuser and when a T picks up the C4, and back to 0 when it's planted, dropped or the round resets)
+      if (st && packNow[e] !== (st.body | 0)) { packNow[e] = st.body | 0; pack.push(time, e, packNow[e]); }
       if (st) a.push(st['origin[0]'] || 0, st['origin[1]'] || 0, st['origin[2]'] || 0, st['angles[1]'] || 0, st['angles[0]'] || 0, state, st.weaponmodel || 0, st.usehull || 0, pmIndex(p, st), st.sequence || 0, st.gaitsequence || 0);
       else a.push(NaN, NaN, NaN, 0, 0, state, 0, 0, 0, 0, 0);
     }
@@ -963,8 +979,14 @@ export function parseDemo(buffer, onProgress, opts = {}) {
           break;
         }
         case 'TextMsg': {
-          m.ub();
+          const dest = m.ub();
           const msg = m.str();
+          // the game's centre-screen announcements (HUD_PRINTCENTER = 4): round results, bomb planted, restarts.
+          // Shown by the viewer as the game shows them (0.17.0); the words come from the player's own game files.
+          if (dest === 4 && inPlayback && CENTRE_MSGS.has(msg)) {
+            const args = []; while (m.p < m.u8.length && args.length < 4) args.push(m.str());
+            centre.push({ t: time, s: msg, a: args });
+          }
           const ends = {
             '#Terrorists_Win': ['T', 'elimination'], '#CTs_Win': ['CT', 'elimination'],
             '#Target_Bombed': ['T', 'bomb exploded'], '#Bomb_Defused': ['CT', 'bomb defused'],
@@ -1392,11 +1414,11 @@ export function parseDemo(buffer, onProgress, opts = {}) {
     header, serverInfo, maxClients, maps, pov: !!opts.povRounds,
     mapName: (serverInfo && serverInfo.mapFile) ? serverInfo.mapFile.replace(/^maps\//, '').replace(/\.bsp$/, '') : header.mapName,
     start: playbackStart || 0, end: time,
-    players, kills, rounds, bomb, chat, nades, roundTimes, pauses, hp: new Float32Array(hp),
+    players, kills, rounds, bomb, chat, nades, roundTimes, pauses, hp: new Float32Array(hp), pack: new Float32Array(pack),
     occupants, brushEvents: new Float32Array(brushEvents), brushPose: new Float32Array(brushPose), viewers: hltvStatus, notes,
     times: new Float32Array(samples.t), slots,
     finalScore: { ...scores }, models: resources.models, stride: STRIDE,
-    pmodels, sounds: resources.sounds, events: resources.events, snds: new Float32Array(snds), shots: new Float32Array(shots), booms: new Float32Array(booms), puffs: new Float32Array(puffs), radio, corpses,
+    pmodels, sounds: resources.sounds, events: resources.events, snds: new Float32Array(snds), shots: new Float32Array(shots), booms: new Float32Array(booms), puffs: new Float32Array(puffs), radio, centre, corpses,
     errors, errSamples, health,
   };
 }
@@ -1718,7 +1740,7 @@ const opts = { names: true, nades: true, lines: true, xray: false, teamColours: 
 const flashes = [];
 let prevT = null;
 const FLASH_MS = 750;
-const files = { overviews: {}, demos: [], maps: {}, wads: {}, mdl: {}, snd: {}, sentences: null, hud: { txt: null, spr: {} } }; // from folder pick
+const files = { overviews: {}, demos: [], maps: {}, wads: {}, mdl: {}, snd: {}, sentences: null, lang: null, hud: { txt: null, spr: {} } }; // from folder pick
 let M = null;            // derived match data
 // Theatre mode state (see the Theatre mode section)
 const TH = { on: false, before: false, hint: false, timers: {}, idle: null, drag: false, x: -1, y: -1 };
@@ -1774,7 +1796,7 @@ $('fFolder').onchange = (e) => { const list = [...e.target.files]; e.target.valu
 // The whole folder is read again each time, so files deleted since the last pick drop out
 function indexFolder(list) {
   let nOv = 0;
-  files.demos = []; files.overviews = {}; files.maps = {}; files.wads = {}; files.mdl = {}; files.snd = {}; files.sentences = null; files.hud = { txt: null, spr: {} };
+  files.demos = []; files.overviews = {}; files.maps = {}; files.wads = {}; files.mdl = {}; files.snd = {}; files.sentences = null; files.lang = null; files.hud = { txt: null, spr: {} };
   STALE.clear();
   for (const f of list) {
     const p = (f.relPath || f.webkitRelativePath || f.name).replace(/\\/g, '/').toLowerCase();
@@ -1797,6 +1819,7 @@ function indexFolder(list) {
       const sm = /(?:^|\/)(cstrike|cstrike_downloads|valve)\/sound\/(.+\.wav)$/.exec(p);
       if (sm) { const o = files.snd[sm[2]]; if (!o || rank(sm[1]) > o.rank) { f.rank = rank(sm[1]); files.snd[sm[2]] = f; } continue; }
       if (/(?:^|\/)cstrike\/sound\/sentences\.txt$/.test(p)) files.sentences = f;
+      if (/(?:^|\/)cstrike\/resource\/cstrike_english\.txt$/.test(p)) files.lang = f;
       // the kill feed's weapon icons: where they sit (hud.txt) and the sprite sheets they're on
       if (/(?:^|\/)cstrike\/sprites\/hud\.txt$/.test(p)) files.hud.txt = f;
       const hm = /(?:^|\/)cstrike\/sprites\/(640hud\d+)\.spr$/.exec(p);
@@ -1807,10 +1830,54 @@ function indexFolder(list) {
   renderDemoList();
   const nPm = Object.keys(files.mdl).filter((k) => k.startsWith('models/player/')).length;
   if (list.length) setMsg(`Found ${Object.keys(files.maps).length} maps, ${Object.keys(files.overviews).length} overviews, ${nPm} player models, ${Object.keys(files.snd).length} sounds and ${files.demos.length} demos.`);
-  retryMissingModels(); retryMissingSounds(); SND.sentences = null;
+  retryMissingModels(); retryMissingSounds(); SND.sentences = null; LANG.map = null; loadLang();
   if (D) preloadSounds();
   if (D && !MAP) loadMap(D.mapName);
   loadKillIcons();
+}
+
+// ---------------- centre-screen messages ----------------
+// "Terrorists Win!", "The bomb has been planted!" and the rest, shown where the game shows them: centred, a quarter
+// of the way down, for 2.5 seconds of demo time, a newer one replacing an older (0.17.0). Placement and time from
+// Xash3D, a reimplementation of the GoldSrc engine (CL_CenterPrint at 0.25, scr_centertime 2.5). The words come
+// from the player's own cstrike/resource/cstrike_english.txt (UTF-16, "Cstrike_TitlesTXT_<name>"), like everything
+// else from the game; without that file the same English lines are used.
+const LANG = { map: null };
+const CENTRE_EN = { Terrorists_Win: 'Terrorists Win!', CTs_Win: 'Counter-Terrorists Win!', Round_Draw: 'Round Draw!', Target_Bombed: 'Target Successfully Bombed!',
+  Target_Saved: 'Target has been saved!', Bomb_Defused: 'The bomb has been defused!', Bomb_Planted: 'The bomb has been planted!',
+  Hostages_Not_Rescued: 'Hostages have not been rescued!', All_Hostages_Rescued: 'All Hostages have been rescued!', VIP_Escaped: 'The VIP has escaped!',
+  VIP_Assassinated: 'VIP has been assassinated!', VIP_Not_Escaped: 'VIP has not escaped!', Terrorists_Escaped: 'The terrorists have escaped!',
+  CTs_PreventEscape: 'The CTs have prevented most of the terrorists from escaping!', Escaping_Terrorists_Neutralized: 'Escaping terrorists have all been neutralized!',
+  Game_Commencing: 'Game Commencing!', Game_will_restart_in: 'The game will restart in %s1 %s2' };
+const CENTRE_SECS = 2.5;
+async function loadLang() {
+  let txt = null;
+  try {
+    if (files.lang) { const b = new Uint8Array(await files.lang.arrayBuffer()); txt = (b[0] === 0xff && b[1] === 0xfe) ? new TextDecoder('utf-16le').decode(b) : new TextDecoder().decode(b); idb.put('lang', txt); }
+    else txt = await idb.get('lang');
+  } catch (e) { txt = null; }
+  if (!txt) return;
+  const out = {}, re = /"(Cstrike_TitlesTXT_[A-Za-z0-9_]+)"\s+"([^"]*)"/g; let m;
+  while ((m = re.exec(txt))) out[m[1].slice(18)] = m[2].replace(/\s*\n\s*/g, ' ');
+  LANG.map = out;
+}
+function centreText(c) {
+  const key = c.s.replace(/^#/, '');
+  let t = (LANG.map && LANG.map[key]) || CENTRE_EN[key]; if (!t) return '';
+  return t.replace(/%s(\d)/g, (_, n) => c.a[+n - 1] != null ? c.a[+n - 1] : '');
+}
+loadLang(); // from the copy saved on an earlier visit, until the folder is read
+// the message on screen at time T: the latest one from the last 2.5 seconds
+function updateCentre() {
+  const el = $('cmsg'); if (!el) return;
+  let txt = '';
+  const list = D && D.centre;
+  if (list && list.length) {
+    let lo = 0, hi = list.length; while (lo < hi) { const m = (lo + hi) >> 1; if (list[m].t <= T) lo = m + 1; else hi = m; }
+    const c = list[lo - 1]; if (c && T - c.t < CENTRE_SECS) txt = centreText(c);
+  }
+  if (el.textContent !== txt) el.textContent = txt;
+  el.hidden = !txt;
 }
 
 // ---------------- kill feed weapon icons ----------------
@@ -1928,7 +1995,7 @@ const HL_EXAMPLE = 'C:\\Program Files (x86)\\Steam\\steamapps\\common\\Half-Life
 const HL_HELP = `The Half-Life folder from your Steam install, the one that contains cstrike and valve. On Windows that's usually ${HL_EXAMPLE}.`;
 const fsaOK = () => { try { return !HL.fsaBroken && typeof window.showDirectoryPicker === 'function' && window.isSecureContext && window.self === window.top; } catch (e) { return false; } };
 // the files the viewer reads; everything else in the folder is skipped
-const HL_WANT = /(?:^|\/)(?:cstrike|cstrike_downloads|valve)\/(?:maps\/[^/]+\.bsp|overviews\/[^/]+\.(?:bmp|txt)|models\/.+\.mdl|sound\/.+\.wav|sound\/sentences\.txt|sprites\/hud\.txt|sprites\/640hud\d+\.spr|[^/]+\.wad)$|\.dem$/;
+const HL_WANT = /(?:^|\/)(?:cstrike|cstrike_downloads|valve)\/(?:maps\/[^/]+\.bsp|overviews\/[^/]+\.(?:bmp|txt)|models\/.+\.mdl|sound\/.+\.wav|sound\/sentences\.txt|resource\/cstrike_english\.txt|sprites\/hud\.txt|sprites\/640hud\d+\.spr|[^/]+\.wad)$|\.dem$/;
 // path inside the chosen folder, lower case, without the folder's own name
 const hlKey = (f) => (f.relPath || f.webkitRelativePath || f.name).replace(/\\/g, '/').toLowerCase().split('/').slice(1).join('/');
 function hlSnap(list, name, gameDirs) {
@@ -2196,7 +2263,7 @@ const JOIN_GAP = 3; // seconds of nothing between two parts on the joined timeli
 function joinDemos(parts) {
   const S = parts[0].stride;
   const out = Object.assign({}, parts[0], {
-    kills: [], rounds: [], bomb: [], chat: [], nades: [], roundTimes: [], pauses: [], occupants: [], notes: [], radio: [], corpses: [], viewers: [],
+    kills: [], rounds: [], bomb: [], chat: [], nades: [], roundTimes: [], pauses: [], occupants: [], notes: [], radio: [], centre: [], corpses: [], viewers: [],
     models: Object.assign({}, parts[0].models), sounds: Object.assign({}, parts[0].sounds), events: Object.assign({}, parts[0].events), pmodels: parts[0].pmodels.slice(),
     players: {}, errors: 0, errSamples: [], parts: [], maps: parts[0].maps, health: null,
   });
@@ -2208,7 +2275,7 @@ function joinDemos(parts) {
     for (const k in src) { const nm = src[k]; if (byName[nm] == null) { byName[nm] = next; dst[next++] = nm; } map[k] = byName[nm]; }
     return (i) => (map[i] != null ? map[i] : i);
   };
-  const timesL = [], slotsL = {}, hpL = [], brushEvL = [], brushPoseL = [], sndsL = [], shotsL = [], boomsL = [], puffsL = [];
+  const timesL = [], slotsL = {}, hpL = [], packL = [], brushEvL = [], brushPoseL = [], sndsL = [], shotsL = [], boomsL = [], puffsL = [];
   let shift = 0, nRound = 0, nOcc = 0, nSamples = 0;
   parts.forEach((P, pi) => {
     if (pi) shift = (out.end) + JOIN_GAP - P.start;
@@ -2240,12 +2307,13 @@ function joinDemos(parts) {
     // a new file is a new stretch: mark a restart just before it starts
     if (pi) out.bomb.push({ t: sh(P.start) - 0.5, type: 'restart', partStart: pi });
     const tl = (a) => a.map((x) => Object.assign({}, x, { t: sh(x.t) }));
-    out.chat.push(...tl(P.chat)); out.roundTimes.push(...tl(P.roundTimes)); out.pauses.push(...tl(P.pauses)); out.notes.push(...tl(P.notes)); out.radio.push(...tl(P.radio));
+    out.chat.push(...tl(P.chat)); out.roundTimes.push(...tl(P.roundTimes)); out.pauses.push(...tl(P.pauses)); out.notes.push(...tl(P.notes)); out.radio.push(...tl(P.radio)); out.centre.push(...tl(P.centre || []));
     out.corpses.push(...P.corpses.map((c) => Object.assign({}, c, { t: sh(c.t), start: sh(c.start) })));
     out.nades.push(...P.nades.map((g) => { const pts = g.pts.slice(); for (let i = 0; i < pts.length; i += 4) pts[i] = sh(pts[i]); return Object.assign({}, g, { pts }); }));
     for (let i = 0; i < (P.viewers || []).length; i += 2) out.viewers.push(sh(P.viewers[i]), P.viewers[i + 1]);
     const flat = (src, stride, fix, dst) => { const a = new Float32Array(src.length); for (let i = 0; i < src.length; i += stride) { for (let j = 0; j < stride; j++) a[i + j] = src[i + j]; fix(a, i); } dst.push(a); };
     flat(P.hp, 3, (a, i) => { a[i] = sh(a[i]); }, hpL);
+    flat(P.pack || [], 3, (a, i) => { a[i] = sh(a[i]); }, packL);
     flat(P.brushEvents, 3, (a, i) => { a[i] = sh(a[i]); }, brushEvL);
     flat(P.brushPose, 8, (a, i) => { a[i] = sh(a[i]); }, brushPoseL);
     flat(P.snds, 10, (a, i) => { a[i] = sh(a[i]); a[i + 1] = mS(a[i + 1]); }, sndsL);
@@ -2274,7 +2342,7 @@ function joinDemos(parts) {
   const cat = (L) => { let len = 0; for (const a of L) len += a.length; const r = new Float32Array(len); let o = 0; for (const a of L) { r.set(a, o); o += a.length; } return r; };
   out.times = cat(timesL);
   out.slots = {}; for (const e in slotsL) out.slots[e] = cat(slotsL[e]);
-  out.hp = cat(hpL); out.brushEvents = cat(brushEvL); out.brushPose = cat(brushPoseL); out.snds = cat(sndsL); out.shots = cat(shotsL); out.booms = cat(boomsL); out.puffs = cat(puffsL);
+  out.pack = cat(packL); out.hp = cat(hpL); out.brushEvents = cat(brushEvL); out.brushPose = cat(brushPoseL); out.snds = cat(sndsL); out.shots = cat(shotsL); out.booms = cat(boomsL); out.puffs = cat(puffsL);
   out.bomb.sort((a, b) => a.t - b.t);
   out.start = parts[0].start;
   out.fileName = parts[0].fileName;
@@ -3539,6 +3607,19 @@ function buildHp() {
     else if (hpIdx[e]) hpIdx[e].push(t, v);
   }
 }
+// The C4 backpack (T) or defusal kit (CT) a player carries: the body value the game sets on the player (0.17.0)
+let packIdx = null;
+function buildPack() {
+  packIdx = {};
+  const h = D.pack || [];
+  for (let i = 0; i < h.length; i += 3) (packIdx[h[i + 1]] || (packIdx[h[i + 1]] = [])).push(h[i], h[i + 2]);
+}
+function packAt(e, t) {
+  const a = packIdx && packIdx[e]; if (!a || !a.length) return 0;
+  let lo = 0, hi = a.length / 2 - 1, res = -1;
+  while (lo <= hi) { const mid = (lo + hi) >> 1; if (a[mid * 2] <= t) { res = mid; lo = mid + 1; } else hi = mid - 1; }
+  return res < 0 ? 0 : a[res * 2 + 1];
+}
 function hpAt(e, t) {
   const a = hpIdx && hpIdx[e]; if (!a || !a.length) return null;
   let lo = 0, hi = a.length / 2 - 1, res = -1;
@@ -3715,7 +3796,7 @@ async function onDemo() {
   heat = null; $('hmMode').value = 'off';
   afterOverview(ok, true);
   M.wbs = [];
-  buildHp(); buildBrk(); buildPose(); prepAnim(); buildZoom();
+  buildHp(); buildPack(); buildBrk(); buildPose(); prepAnim(); buildZoom();
   const sndDone = preloadSounds();
   renderPane(); fitView(); drawTimeline(); updateHud(true);
   if (MAP && MAP.name === D.mapName.toLowerCase()) computeWallbangs();
@@ -3743,6 +3824,7 @@ function toast(t, ms = 9000) {
 // showing a match that's no longer open.
 function closeDemo() {
   if (!D) return;
+  $('cmsg').hidden = true;
   if (worker) { worker.terminate(); worker = null; }
   sndPreload++; // stops a sound preload that's still running for this demo
   resetForNewDemo(); clear3d(); closeSummary(); if ($('joinCard')) closeJoinCard();
@@ -4027,7 +4109,9 @@ function showScoreboard(v) {
       const rows = M.teams[ti].map((pid) => { const e = M.slotOf(pid, T); return { pid, e, s: st[pid] || { k: 0, d: 0 }, p: e ? playerState(e, T) : null }; }).filter((x) => x.e != null).sort((a, b) => b.s.k - a.s.k || a.s.d - b.s.d);
       for (const x of rows) {
         const alive = x.p && x.p.state > 0;
-        h += `<div class="sbrow${alive ? '' : ' dead'}"><span>${(playerOrder().indexOf(x.pid) + 1) % 10}</span><span class="nm">${esc(M.pl[x.pid].name)}</span><span>${alive ? (hpAt(x.e, T) ?? '') : 0}</span><span>${x.s.k}</span><span>${x.s.d}</span><span>${alive ? esc(weaponShort(x.p.weapon)) : 'dead'}</span></div>`;
+        // what the game shows on the player's back: the C4 on a T, the defusal kit on a CT (0.17.0)
+        const pk = alive && packAt(x.e, T) ? (x.p.state === 1 ? '<span class="sbpack c4" title="Carrying the bomb">C4</span>' : '<span class="sbpack kit" title="Has a defusal kit">Kit</span>') : '';
+        h += `<div class="sbrow${alive ? '' : ' dead'}"><span>${(playerOrder().indexOf(x.pid) + 1) % 10}</span><span class="nm"><span class="nmt">${esc(M.pl[x.pid].name)}</span>${pk}</span><span>${alive ? (hpAt(x.e, T) ?? '') : 0}</span><span>${x.s.k}</span><span>${x.s.d}</span><span>${alive ? esc(weaponShort(x.p.weapon)) : 'dead'}</span></div>`;
       }
       h += '</div>';
     }
@@ -5174,8 +5258,9 @@ function retryMissingModels() { for (const k in MODELS) if (MODELS[k].status !==
 // one posed instance of a model in the scene
 function makeRig(M, parent) {
   const mdl = M.mdl, g = new THREE.Group(), parts = [];
-  for (const bp of mdl.bodyparts) {
-    const sub = bp.models[0]; if (!sub) continue;
+  // every submodel of every body part is built; setBody shows the one the player's body value picks (the C4
+  // backpack on a T or the defusal kit on a CT is the second submodel of the "backpack" part; 0.17.0)
+  mdl.bodyparts.forEach((bp, bpi) => bp.models.forEach((sub, si) => {
     for (const me of sub.meshes) {
       const geo = new THREE.BufferGeometry();
       const pos = new THREE.BufferAttribute(new Float32Array(me.pos.length), 3), nrm = new THREE.BufferAttribute(new Float32Array(me.nrm.length), 3);
@@ -5183,23 +5268,36 @@ function makeRig(M, parent) {
       geo.setAttribute('position', pos); geo.setAttribute('normal', nrm); geo.setAttribute('uv', new THREE.BufferAttribute(me.uv, 2));
       const t = mdl.textures[me.tex];
       const mat = new THREE.MeshLambertMaterial({ map: M.tex[me.tex] || null, side: THREE.DoubleSide, alphaTest: t && (t.flags & 64) ? 0.5 : 0 });
-      const mesh = new THREE.Mesh(geo, mat); mesh.frustumCulled = false;
-      g.add(mesh); parts.push({ me, pos, nrm, mat, mesh, map0: mat.map });
+      const mesh = new THREE.Mesh(geo, mat); mesh.frustumCulled = false; mesh.visible = si === 0;
+      g.add(mesh); parts.push({ me, pos, nrm, mat, mesh, map0: mat.map, bp: bpi, sub: si });
     }
-  }
+  }));
   (parent || R3.dyn).add(g);
   const n = mdl.numbones;
-  return { M, g, parts, p: new Float32Array(n * 3), q: new Float32Array(n * 4), p2: new Float32Array(n * 3), q2: new Float32Array(n * 4), mats: new Float32Array(n * 12), used: true, tint: null };
+  return { M, g, parts, body: 0, p: new Float32Array(n * 3), q: new Float32Array(n * 4), p2: new Float32Array(n * 3), q2: new Float32Array(n * 4), mats: new Float32Array(n * 12), used: true, tint: null };
 }
 function disposeRig(r) {
   R3.dyn.remove(r.g);
   for (const x of r.parts) { x.mesh && x.mesh.geometry.dispose(); x.mat.dispose(); }
   r.g.traverse((o) => o.geometry && o.geometry.dispose());
 }
+// Which submodel of each body part is shown, from the entity's body value, as the engine picks it:
+// (body / base) % number of submodels (StudioModel SetupModel). On the stock player models, body 1 shows the
+// "backpack" part's second submodel: the C4 on a Terrorist, the defusal kit on a Counter-Terrorist.
+function setBody(r, body) {
+  body = body | 0; if (r.body === body) return; r.body = body;
+  const bps = r.M.mdl.bodyparts;
+  for (const pt of r.parts) {
+    const bp = bps[pt.bp], n = bp.models.length;
+    const vis = n <= 1 || Math.floor(body / (bp.base || 1)) % n === pt.sub;
+    pt.mesh.visible = vis; if (pt.ghost) pt.ghost.visible = vis;
+  }
+}
 // move every vertex with its bone (model space -> three space: x, z, -y)
 function skinRig(r) {
   const M = r.mats;
   for (const pt of r.parts) {
+    if (!pt.mesh.visible) continue;
     const me = pt.me, P = pt.pos.array, N = pt.nrm.array, sp = me.pos, sn = me.nrm, bo = me.bone, nb = me.nbone;
     for (let i = 0, n = bo.length; i < n; i++) {
       const b = bo[i] * 12, x = sp[i * 3], y = sp[i * 3 + 1], z = sp[i * 3 + 2];
@@ -5335,7 +5433,7 @@ function ghostRig(r, team, on) {
   if (!on) { if (r.ghost) r.ghost.visible = false; return; }
   if (!r.ghost) {
     r.ghost = new THREE.Group();
-    for (const pt of r.parts) { const m = new THREE.Mesh(pt.mesh.geometry, ghostMat(team)); m.frustumCulled = false; m.renderOrder = 5; r.ghost.add(m); }
+    for (const pt of r.parts) { const m = new THREE.Mesh(pt.mesh.geometry, ghostMat(team)); m.frustumCulled = false; m.renderOrder = 5; m.visible = pt.mesh.visible; pt.ghost = m; r.ghost.add(m); }
     r.g.add(r.ghost); r.ghostTeam = team;
   }
   if (r.ghostTeam !== team) { r.ghostTeam = team; for (const m of r.ghost.children) m.material = ghostMat(team); }
@@ -5352,6 +5450,7 @@ function drawModelPlayer(e, s, hide, ghost) {
   const r = rigFor('p' + e, pname);
   if (!r) return false;
   if (hide) { r.used = true; r.g.visible = false; const w = R3.rigs['w' + e]; if (w) { w.used = true; w.g.visible = false; } return true; }
+  setBody(r, s.state > 0 ? packAt(e, T) : 0);
   const yaw = posePlayer(r, e, s, T);
   if (yaw === false) return false;
   const tint = e === selected && cam3.mode === 'free' ? SEL_TINT : 0;
@@ -5991,25 +6090,28 @@ function update3() {
 }
 // Hit marker on the crosshair when the player you're watching gets a kill:
 // white for a kill, orange for a headshot, magenta for a wallbang, with a short label underneath
-// (the label says which, so colour isn't the only cue).
+// (the label says which, so colour isn't the only cue). Thin ticks that start past the crosshair's arms
+// (they end 12 px out), so the crosshair stays readable, shown for MARK_MS (option A, Sujan 5 Oct 2026;
+// before 0.17.0 they were thick, sat on the crosshair and lasted 0.75 s).
+const MARK_MS = 450;
 function drawHitMarker(lx, cx, cy) {
   const f = flashes.filter((x) => x.k.killer === selected).pop();
   if (!f) return;
-  const a = (performance.now() - f.at) / FLASH_MS; if (a >= 1) return;
+  const a = (performance.now() - f.at) / MARK_MS; if (a >= 1) return;
   const k = f.k;
   const col = k.wb ? '#ff4fd8' : k.hs ? '#ff9a3c' : '#ffffff';
-  const g0 = 7 + a * 5, g1 = g0 + 9;
+  const g0 = 11, g1 = 16;
   lx.save();
   lx.globalAlpha = a < 0.6 ? 1 : 1 - (a - 0.6) / 0.4;
   lx.lineCap = 'round';
-  for (const [w, c] of [[5, 'rgba(0,0,0,.6)'], [2.5, col]]) {
+  for (const [w, c] of [[3, 'rgba(0,0,0,.45)'], [1.5, col]]) {
     lx.strokeStyle = c; lx.lineWidth = w; lx.beginPath();
     for (const [dx, dy] of [[1, 1], [1, -1], [-1, 1], [-1, -1]]) { lx.moveTo(cx + dx * g0, cy + dy * g0); lx.lineTo(cx + dx * g1, cy + dy * g1); }
     lx.stroke();
   }
   const label = k.wb ? `WALLBANG${k.hs ? ' · HS' : ''}` : k.hs ? 'HEADSHOT' : 'KILL';
-  lx.font = `600 11px ${monoFont()}`; lx.textAlign = 'center';
-  lx.lineWidth = 3; lx.strokeStyle = 'rgba(0,0,0,.7)'; lx.strokeText(label, cx, cy + 42); lx.fillStyle = col; lx.fillText(label, cx, cy + 42);
+  lx.font = `500 10px ${monoFont()}`; lx.textAlign = 'center';
+  lx.lineWidth = 2.5; lx.strokeStyle = 'rgba(0,0,0,.6)'; lx.strokeText(label, cx, cy + 32); lx.fillStyle = col; lx.fillText(label, cx, cy + 32);
   lx.restore();
 }
 // The sniper scope over Player's eyes. Three styles exist; the viewer uses SCOPE_STYLE and has no menu
@@ -6036,8 +6138,10 @@ function drawScope(lx, W, H) {
   if (style !== 'lines') { lx.fillStyle = '#ff2a1f'; lx.beginPath(); lx.arc(cx, cy, Math.max(2, r * 0.0065), 0, Math.PI * 2); lx.fill(); }
   lx.restore();
 }
-// A ring that bursts out from the victim in 3D, for every kill
+// A ring that bursts out from the victim in 3D, for every kill. Not in Player's eyes: there the victim is
+// usually at the crosshair, so the ring covered it (0.17.0); the crosshair marker says it instead.
 function drawKillRings(lx, W, H, camera) {
+  if (cam3.mode === 'eyes') return;
   for (const f of flashes) {
     const k = f.k; if (!k.vpos) continue;
     const a = (performance.now() - f.at) / FLASH_MS; if (a >= 1) continue;
@@ -6080,7 +6184,7 @@ function frame(now) {
       if (s && s.state > 0) { const [px, py] = w2i(s.x, s.y); const S = base.s * view.s; view.x += ((cw / 2 - (base.x * view.s + px * S)) - view.x) * 0.08; view.y += ((ch / 2 - (base.y * view.s + py * S)) - view.y) * 0.08; }
     }
     if (viewMode !== '3d') draw();
-    drawPlayhead();
+    drawPlayhead(); updateCentre();
     if (viewMode !== '2d') { if (MAP && view3.map !== MAP.name) build3d(); update3(); }
     hudAcc += dt; if (hudAcc > 0.1) { hudAcc = 0; updateHud(false); }
   }
@@ -6445,7 +6549,7 @@ window.addEventListener('unhandledrejection', (e) => { ERRLOG.push('Promise: ' +
 function debugInfo() {
   let gpu = '';
   try { const gl = document.createElement('canvas').getContext('webgl'); const x = gl && gl.getExtension('WEBGL_debug_renderer_info'); gpu = gl ? (x ? gl.getParameter(x.UNMASKED_RENDERER_WEBGL) : 'WebGL available') : 'no WebGL'; } catch (e) { gpu = 'unknown'; }
-  const L = [`CS 1.6 Demo Viewer 0.16.0`, `Browser: ${navigator.userAgent}`, `Screen: ${screen.width}x${screen.height} at ${devicePixelRatio}x, window ${innerWidth}x${innerHeight}`, `Graphics: ${gpu}`];
+  const L = [`CS 1.6 Demo Viewer 0.17.0`, `Browser: ${navigator.userAgent}`, `Screen: ${screen.width}x${screen.height} at ${devicePixelRatio}x, window ${innerWidth}x${innerHeight}`, `Graphics: ${gpu}`];
   L.push(`Folder: ${Object.keys(files.maps).length} maps, ${Object.keys(files.overviews).length} overviews, ${Object.keys(files.mdl).length} models, ${Object.keys(files.snd).length} sounds, ${files.demos.length} demos`);
   if (D) {
     L.push(`Demo: ${D.fileName}, protocol ${(D.header && D.header.netProtocol) || '?'}, ${D.pov ? 'POV (recorded by a player)' : 'HLTV'}, map ${D.mapName}, length ${fmt(D.end - D.start)}, ${M.liveR.length} live rounds, final ${M.liveR.length ? M.liveR[M.liveR.length - 1].scoreAfter.join(':') : '-'}`);

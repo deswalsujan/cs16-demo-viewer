@@ -62,8 +62,9 @@ function retryMissingModels() { for (const k in MODELS) if (MODELS[k].status !==
 // one posed instance of a model in the scene
 function makeRig(M, parent) {
   const mdl = M.mdl, g = new THREE.Group(), parts = [];
-  for (const bp of mdl.bodyparts) {
-    const sub = bp.models[0]; if (!sub) continue;
+  // every submodel of every body part is built; setBody shows the one the player's body value picks (the C4
+  // backpack on a T or the defusal kit on a CT is the second submodel of the "backpack" part; 0.17.0)
+  mdl.bodyparts.forEach((bp, bpi) => bp.models.forEach((sub, si) => {
     for (const me of sub.meshes) {
       const geo = new THREE.BufferGeometry();
       const pos = new THREE.BufferAttribute(new Float32Array(me.pos.length), 3), nrm = new THREE.BufferAttribute(new Float32Array(me.nrm.length), 3);
@@ -71,23 +72,36 @@ function makeRig(M, parent) {
       geo.setAttribute('position', pos); geo.setAttribute('normal', nrm); geo.setAttribute('uv', new THREE.BufferAttribute(me.uv, 2));
       const t = mdl.textures[me.tex];
       const mat = new THREE.MeshLambertMaterial({ map: M.tex[me.tex] || null, side: THREE.DoubleSide, alphaTest: t && (t.flags & 64) ? 0.5 : 0 });
-      const mesh = new THREE.Mesh(geo, mat); mesh.frustumCulled = false;
-      g.add(mesh); parts.push({ me, pos, nrm, mat, mesh, map0: mat.map });
+      const mesh = new THREE.Mesh(geo, mat); mesh.frustumCulled = false; mesh.visible = si === 0;
+      g.add(mesh); parts.push({ me, pos, nrm, mat, mesh, map0: mat.map, bp: bpi, sub: si });
     }
-  }
+  }));
   (parent || R3.dyn).add(g);
   const n = mdl.numbones;
-  return { M, g, parts, p: new Float32Array(n * 3), q: new Float32Array(n * 4), p2: new Float32Array(n * 3), q2: new Float32Array(n * 4), mats: new Float32Array(n * 12), used: true, tint: null };
+  return { M, g, parts, body: 0, p: new Float32Array(n * 3), q: new Float32Array(n * 4), p2: new Float32Array(n * 3), q2: new Float32Array(n * 4), mats: new Float32Array(n * 12), used: true, tint: null };
 }
 function disposeRig(r) {
   R3.dyn.remove(r.g);
   for (const x of r.parts) { x.mesh && x.mesh.geometry.dispose(); x.mat.dispose(); }
   r.g.traverse((o) => o.geometry && o.geometry.dispose());
 }
+// Which submodel of each body part is shown, from the entity's body value, as the engine picks it:
+// (body / base) % number of submodels (StudioModel SetupModel). On the stock player models, body 1 shows the
+// "backpack" part's second submodel: the C4 on a Terrorist, the defusal kit on a Counter-Terrorist.
+function setBody(r, body) {
+  body = body | 0; if (r.body === body) return; r.body = body;
+  const bps = r.M.mdl.bodyparts;
+  for (const pt of r.parts) {
+    const bp = bps[pt.bp], n = bp.models.length;
+    const vis = n <= 1 || Math.floor(body / (bp.base || 1)) % n === pt.sub;
+    pt.mesh.visible = vis; if (pt.ghost) pt.ghost.visible = vis;
+  }
+}
 // move every vertex with its bone (model space -> three space: x, z, -y)
 function skinRig(r) {
   const M = r.mats;
   for (const pt of r.parts) {
+    if (!pt.mesh.visible) continue;
     const me = pt.me, P = pt.pos.array, N = pt.nrm.array, sp = me.pos, sn = me.nrm, bo = me.bone, nb = me.nbone;
     for (let i = 0, n = bo.length; i < n; i++) {
       const b = bo[i] * 12, x = sp[i * 3], y = sp[i * 3 + 1], z = sp[i * 3 + 2];
@@ -223,7 +237,7 @@ function ghostRig(r, team, on) {
   if (!on) { if (r.ghost) r.ghost.visible = false; return; }
   if (!r.ghost) {
     r.ghost = new THREE.Group();
-    for (const pt of r.parts) { const m = new THREE.Mesh(pt.mesh.geometry, ghostMat(team)); m.frustumCulled = false; m.renderOrder = 5; r.ghost.add(m); }
+    for (const pt of r.parts) { const m = new THREE.Mesh(pt.mesh.geometry, ghostMat(team)); m.frustumCulled = false; m.renderOrder = 5; m.visible = pt.mesh.visible; pt.ghost = m; r.ghost.add(m); }
     r.g.add(r.ghost); r.ghostTeam = team;
   }
   if (r.ghostTeam !== team) { r.ghostTeam = team; for (const m of r.ghost.children) m.material = ghostMat(team); }
@@ -240,6 +254,7 @@ function drawModelPlayer(e, s, hide, ghost) {
   const r = rigFor('p' + e, pname);
   if (!r) return false;
   if (hide) { r.used = true; r.g.visible = false; const w = R3.rigs['w' + e]; if (w) { w.used = true; w.g.visible = false; } return true; }
+  setBody(r, s.state > 0 ? packAt(e, T) : 0);
   const yaw = posePlayer(r, e, s, T);
   if (yaw === false) return false;
   const tint = e === selected && cam3.mode === 'free' ? SEL_TINT : 0;

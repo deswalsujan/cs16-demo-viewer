@@ -5,6 +5,11 @@
 const DT_BYTE = 1, DT_SHORT = 2, DT_FLOAT = 4, DT_INTEGER = 8, DT_ANGLE = 16,
   DT_TIMEWINDOW_8 = 32, DT_TIMEWINDOW_BIG = 64, DT_STRING = 128, DT_SIGNED = 0x80000000;
 
+// Centre-screen messages the viewer shows (round results, bomb planted, game restarts). Names as the game sends them
+// in TextMsg; ReGameDLL sends each with HUD_PRINTCENTER.
+const CENTRE_MSGS = new Set(['#Terrorists_Win', '#CTs_Win', '#Round_Draw', '#Target_Bombed', '#Target_Saved', '#Bomb_Defused',
+  '#Bomb_Planted', '#Hostages_Not_Rescued', '#All_Hostages_Rescued', '#VIP_Escaped', '#VIP_Assassinated', '#VIP_Not_Escaped',
+  '#Terrorists_Escaped', '#CTs_PreventEscape', '#Escaping_Terrorists_Neutralized', '#Game_Commencing', '#Game_will_restart_in']);
 class Reader {
   constructor(u8) {
     this.u8 = u8;
@@ -227,6 +232,7 @@ export function parseDemo(buffer, onProgress, opts = {}) {
   const snds = [];      // time, sound resource index, entity, volume, attenuation, pitch, channel, x, y, z (NaN when not sent)
   const shots = [];     // time, entity, event resource index, bparam1
   const radio = [];     // { t, s: sentence name }
+  const centre = [];    // { t, s: '#Terrorists_Win' and the like, a: its arguments } (centre-screen messages)
   const corpses = [];   // { t, start, model, pos, yaw, seq, team, e }
   const booms = [];     // time, x, y, z (grenade and C4 explosions)
   const puffs = [];     // smoke grenade events (createsmoke): time, kind (1 = it pops, 4 = a puff every second after), cloud centre x, y, z
@@ -245,6 +251,7 @@ export function parseDemo(buffer, onProgress, opts = {}) {
   // position samples
   const samples = { t: [], slots: {} }; // slots[ent] = number[] of x,y,z,yaw,pitch,alive
   let lastSampleT = -1;
+  const pack = [], packNow = {}; // changes of each player's body value: time, slot, value
 
   function slotArr(e) {
     if (!samples.slots[e]) {
@@ -273,6 +280,9 @@ export function parseDemo(buffer, onProgress, opts = {}) {
       }
       const a = slotArr(e);
       const state = dead.has(e) ? -side : side;
+      // the body value: 1 shows the C4 backpack on a T, the defusal kit on a CT (ReGameDLL sets pev->body in
+      // GiveDefuser and when a T picks up the C4, and back to 0 when it's planted, dropped or the round resets)
+      if (st && packNow[e] !== (st.body | 0)) { packNow[e] = st.body | 0; pack.push(time, e, packNow[e]); }
       if (st) a.push(st['origin[0]'] || 0, st['origin[1]'] || 0, st['origin[2]'] || 0, st['angles[1]'] || 0, st['angles[0]'] || 0, state, st.weaponmodel || 0, st.usehull || 0, pmIndex(p, st), st.sequence || 0, st.gaitsequence || 0);
       else a.push(NaN, NaN, NaN, 0, 0, state, 0, 0, 0, 0, 0);
     }
@@ -387,8 +397,14 @@ export function parseDemo(buffer, onProgress, opts = {}) {
           break;
         }
         case 'TextMsg': {
-          m.ub();
+          const dest = m.ub();
           const msg = m.str();
+          // the game's centre-screen announcements (HUD_PRINTCENTER = 4): round results, bomb planted, restarts.
+          // Shown by the viewer as the game shows them (0.17.0); the words come from the player's own game files.
+          if (dest === 4 && inPlayback && CENTRE_MSGS.has(msg)) {
+            const args = []; while (m.p < m.u8.length && args.length < 4) args.push(m.str());
+            centre.push({ t: time, s: msg, a: args });
+          }
           const ends = {
             '#Terrorists_Win': ['T', 'elimination'], '#CTs_Win': ['CT', 'elimination'],
             '#Target_Bombed': ['T', 'bomb exploded'], '#Bomb_Defused': ['CT', 'bomb defused'],
@@ -816,11 +832,11 @@ export function parseDemo(buffer, onProgress, opts = {}) {
     header, serverInfo, maxClients, maps, pov: !!opts.povRounds,
     mapName: (serverInfo && serverInfo.mapFile) ? serverInfo.mapFile.replace(/^maps\//, '').replace(/\.bsp$/, '') : header.mapName,
     start: playbackStart || 0, end: time,
-    players, kills, rounds, bomb, chat, nades, roundTimes, pauses, hp: new Float32Array(hp),
+    players, kills, rounds, bomb, chat, nades, roundTimes, pauses, hp: new Float32Array(hp), pack: new Float32Array(pack),
     occupants, brushEvents: new Float32Array(brushEvents), brushPose: new Float32Array(brushPose), viewers: hltvStatus, notes,
     times: new Float32Array(samples.t), slots,
     finalScore: { ...scores }, models: resources.models, stride: STRIDE,
-    pmodels, sounds: resources.sounds, events: resources.events, snds: new Float32Array(snds), shots: new Float32Array(shots), booms: new Float32Array(booms), puffs: new Float32Array(puffs), radio, corpses,
+    pmodels, sounds: resources.sounds, events: resources.events, snds: new Float32Array(snds), shots: new Float32Array(shots), booms: new Float32Array(booms), puffs: new Float32Array(puffs), radio, centre, corpses,
     errors, errSamples, health,
   };
 }

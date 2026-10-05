@@ -23,7 +23,29 @@ What changed in the viewer, newest first. The version shows in the viewer's shor
 - The demo search looks at file names only. A demo whose name doesn't say the teams or map (`auto_ifng-...`) is found by scrolling.
 - The wallbang finder rules out a kill that needed more damage than any shot through a wall can do (0.15.5). It needs the killer's shots in the demo; around a jump in the recording it can't tell, and the kill stays as the walls alone say.
 - Health and weapon under the names in 3D show at any distance (0.16.0). With many players far away, the labels can overlap.
+- Round announcements show a quarter of the way down for 2.5 seconds, as a reimplementation of the engine places them (0.17.0); not yet compared with the game by eye.
 - A smoke cloud is drawn as one light green ball for as long as the smoke puffs (about 21 seconds, less when the round restarts). The game's own puffs drift and thin out unevenly, which the viewer doesn't copy.
+
+## 0.17.0 (2026-10-05)
+
+Round announcements, the C4 and defusal kits, and quieter kill markers. All three asked for by Sujan on 5 Oct 2026.
+
+### Added
+- **Round announcements on screen.** "Terrorists Win!", "Counter-Terrorists Win!", "Round Draw!", "The bomb has been planted!", "The bomb has been defused!", "Target Successfully Bombed!", "Target has been saved!", "Game Commencing!", "The game will restart in 1 SECOND" and the hostage and VIP ones, in the middle of the view a quarter of the way down, for 2.5 seconds of demo time, in 2D, 3D, 3D + radar and Theatre mode. The voices already played; the text didn't. The demo records each one as the game's centre-screen message (TextMsg sent to the centre of the screen) at the moment it happened: 60 in Na`Vi vs FX, Dust2, SEC 2011 final. The words come from your own `cstrike/resource/cstrike_english.txt`, like everything else from the game, with the same English lines when that file isn't there.
+- **The C4 and defusal kits on the players.** The game marks a Terrorist carrying the bomb and a Counter-Terrorist with a kit with one value on the player (`body` 1; ReGameDLL `GiveDefuser` and the C4 pickup in `player.cpp`), and every stock player model carries the pack as a second piece of its "backpack" part: a C4 backpack on the T models, a kit pouch on the CT models. The viewer now reads that value and draws the pack, as the game does. The hold-Tab scoreboard tags the carrier "C4" and each kit holder "Kit". Not on the radar: the game's radar doesn't show them either (Sujan, 5 Oct 2026).
+
+### Changed
+- **Kill markers around the crosshair are quieter** (option A of the mockup, [docs/crosshair-markers-mock.png](docs/crosshair-markers-mock.png)). Four thin ticks now start just past the crosshair's arms instead of sitting on them, the label underneath is smaller, and the marker lasts 0.45 s instead of 0.75 s. In Player's eyes the ring that bursts from the victim is gone: the victim is usually at the crosshair there, so it covered it too. Other views keep the ring.
+
+### How it was tested
+- In the test browser on Sujan's Windows files (30 HLTV demos, the maps, player and weapon models), on Na`Vi vs FX, Dust2, SEC 2011 final: the "Counter-Terrorists Win!" at R6 in 3D and 2D, "The bomb has been planted!" in Player's eyes, each in the middle a quarter of the way down; 320 lines read from the game's `cstrike_english.txt`. One Terrorist with the C4 20 seconds into each live round checked, never two in any round; the C4 backpack on markeloff and the kit pouch on KUBEN in 3D (R6); the Tab scoreboard with "C4" on markeloff and "Kit" on 742, PASHA and KUBEN.
+- Scores, every round's winner and every player's K-D on all 30 demos, 0.16.0 against 0.17.0 (`compare_all.sh` with `match_detail.js`): identical on all 30.
+- `folder_row_test.py` (20 of 20), `start_screen_check.py`, `prefs_check.py`, `demo_search_check.py` and `late_kill_timing_check.py` pass.
+
+### Discussed, not changed
+- Where the game puts the round text: a quarter of the way down and 2.5 seconds are from Xash3D, a reimplementation of the GoldSrc engine (`CL_CenterPrint` with 0.25, `scr_centertime` 2.5). Not checked against the real game yet; Sujan's eye decides.
+- The kit pouch on the CT models is small (a pouch at the waist), as the stock models draw it. The scoreboard tag is the easier place to read it.
+- A denser check for "fully hidden" in the wallbang finder is on `wip/denser-hidden-check`, waiting for Sujan's checks (IDEAS.md).
 
 ## 0.16.0 (2026-10-03)
 
