@@ -2,6 +2,15 @@
 
 What changed in the viewer, newest first. The version shows in the viewer's shortcuts panel (press ?) and on the start screen.
 
+## In progress: denser "fully hidden" check (`wip/denser-hidden-check`, from 5 Oct 2026)
+
+Built, waiting for Sujan's checks before it goes to main. The wallbang finder lists a kill only when no part of the victim could be seen from the killer's eye. Up to 0.17.0 it traced 15 lines (5 heights, 3 across a 24-unit box from feet to head), which could miss a player seen through a narrow gap and also tested empty air beside the head and legs. Now it traces to a point every 2 units over the body itself: legs 16 wide, body 22 wide, head 10 wide (standing, 342 points; crouching, 184), the middle first so a player in plain view is found after a trace or two.
+
+- On all 30 HLTV demos (244 wallbangs on 0.17.0; `compare_all.sh` with `wallbang_list.js`, main against the branch): 4 removed (part of the victim in plain view), 10 added (the old box's only clear lines went to empty air beside the body), 19 demos unchanged. Sweden vs Norway, Dust2, ASUS ENC 2010, R9 1:40 and 1:34: Delpan and f0rest are seen (51 and 38 points), as found on 2 Oct; the damage rule already removed both.
+- Two of the four removals see only a thin column of the legs, through a crack between two pieces of cover (FX vs mTw, Nuke, Xperia Play 2011, R26 1:22 KUBEN on ave; fnatic vs Na`Vi, Dust2, GameGune 2012, R12 C4 0:04 starix on f0rest). Whether a crack that size counts as seen is Sujan's call.
+- The 14 kills, with the killer's view of each and the traced points, are on a review page Sujan answers on (https://claude.ai/artifact/Q9dNFKwNrF37utKP3fGJaM; answers in its `verdicts` store). Script: `tests/page/dense_compare.js`.
+- Left: Sujan's answers; then ship as a version on main, or change the outline.
+
 ## Known limits (current version)
 - HLTV demos don't record the first-person weapon's animation, so it's rebuilt from shots, weapon switches and the player's body animation. Timing can differ slightly from in-game, and idle variations won't match. If a `v_` model is missing, no gun is shown.
 - Player models get even lighting, so they don't darken in shaded spots the way they do in-game.

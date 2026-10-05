@@ -1694,7 +1694,7 @@ async function loadMap(map) {
 
 // ---------------- wallbang detection ----------------
 // A kill counts as a wallbang when, from the shooter's eye, every point of the victim's body
-// (feet to top of head, left to right) is behind solid map geometry AND the shooter's
+// (feet to top of head, left to right, every 2 units) is behind solid map geometry AND the shooter's
 // crosshair line also passes through that geometry.
 const NO_WB = new Set(['grenade', 'knife', 'world', '']);
 // Guns whose bullet stops at the first surface it hits, so they can never wallbang. From the game code
@@ -1737,10 +1737,27 @@ function computeWallbangs() {
   const bsp = MAP.bsp;
   let skip = null; // breakables already broken when this kill happened (e.g. a shot-out vent)
   let poses = null; // doors where they were when this kill happened (open either way, or closed)
+  // Is any of the victim's body in plain view from the shooter's eye? Points every 2 units over the body, shaped
+  // like it (legs, body, head, each at its own width, around the middle of the player's box), so a gap as narrow
+  // as a door crack is found. Before (up to 0.17.0) it was 15 points (5 heights x 3 across a 24-unit box), which
+  // could miss a player seen through a narrow gap: Delpan and f0rest in Sweden vs Norway, Dust2, ASUS ENC 2010, R9
+  // (wip/denser-hidden-check, 5 Oct 2026; waiting for Sujan's checks).
+  const BODY = (duck) => duck ? [[-16, 4, 10], [4, 8, 10], [8, 16, 5]] : [[-34, -8, 8], [-8, 18, 11], [18, 32, 5]];
+  const bodyPts = { 0: null, 1: null };
+  const ptsFor = (duck) => {
+    const key = duck ? 1 : 0;
+    if (!bodyPts[key]) {
+      const pts = [];
+      for (const [z0, z1, w] of BODY(duck)) for (let z = z0; z <= z1; z += 2) for (let sd = -w; sd <= w; sd += 2) pts.push([z, sd]);
+      // the middle of the body first, so a player in plain view is found after a trace or two
+      pts.sort((a, b) => Math.hypot(a[0] - 6, a[1]) - Math.hypot(b[0] - 6, b[1]));
+      bodyPts[key] = pts;
+    }
+    return bodyPts[key];
+  };
   const bodyVisible = (eye, v) => {
     const dx = v[0] - eye[0], dy = v[1] - eye[1]; const hl = Math.hypot(dx, dy) || 1; const px = -dy / hl, py = dx / hl;
-    const zs = v[3] ? [-12, 0, 10, 16] : [-30, -12, 6, 22, 30];
-    for (const z of zs) for (const sd of [-12, 0, 12]) if (solidAlong(bsp, eye, [v[0] + px * sd, v[1] + py * sd, v[2] + z], 2, skip, poses).solid === 0) return true;
+    for (const [z, sd] of ptsFor(v[3])) if (solidAlong(bsp, eye, [v[0] + px * sd, v[1] + py * sd, v[2] + z], 2, skip, poses).solid === 0) return true;
     return false;
   };
   const eyeOf = (p) => [p[0], p[1], p[2] + (p[3] ? 12 : 17)];
