@@ -23,7 +23,6 @@ What changed in the viewer, newest first. The version shows in the viewer's shor
 - The demo search looks at file names only. A demo whose name doesn't say the teams or map (`auto_ifng-...`) is found by scrolling.
 - The wallbang finder rules out a kill that needed more damage than any shot through a wall can do (0.15.5). It needs the killer's shots in the demo; around a jump in the recording it can't tell, and the kill stays as the walls alone say.
 - Health and weapon under the names in 3D show at any distance (0.16.0). With many players far away, the labels can overlap.
-- Round announcements show a quarter of the way down for 2.5 seconds, as a reimplementation of the engine places them (0.17.0); not yet compared with the game by eye.
 - A smoke cloud is drawn as one light green ball for as long as the smoke puffs (about 21 seconds, less when the round restarts). The game's own puffs drift and thin out unevenly, which the viewer doesn't copy.
 
 ## 0.17.0 (2026-10-05)
@@ -43,7 +42,7 @@ Round announcements, the C4 and defusal kits, and quieter kill markers. All thre
 - `folder_row_test.py` (20 of 20), `start_screen_check.py`, `prefs_check.py`, `demo_search_check.py` and `late_kill_timing_check.py` pass.
 
 ### Discussed, not changed
-- Where the game puts the round text: a quarter of the way down and 2.5 seconds are from Xash3D, a reimplementation of the GoldSrc engine (`CL_CenterPrint` with 0.25, `scr_centertime` 2.5). Not checked against the real game yet; Sujan's eye decides.
+- Where the game puts the round text: a quarter of the way down and 2.5 seconds are from Xash3D, a reimplementation of the GoldSrc engine (`CL_CenterPrint` with 0.25, `scr_centertime` 2.5). Sujan compared it with the game on 5 Oct 2026: it matches.
 - The kit pouch on the CT models is small (a pouch at the waist), as the stock models draw it. The scoreboard tag is the easier place to read it.
 - A denser check for "fully hidden" in the wallbang finder (a point every 2 units over the body). Sujan checked its 14 changes on 5 Oct 2026: the 4 removals were right, but 6 of the 10 additions showed an arm, elbow or gloved hand. Tracing to the player model's own points got 12 of 14, and drawing the killer's view and counting the victim's pixels got all 14 only at one moment before the shot and not at others, and called face on JiGetus (SK vs WinFakt, Mirage, IEM6 New York, R4 0:37) hidden, which Sujan ruled out in game. Not conclusive, so the finder stays as it is (Sujan, 5 Oct 2026). The branch was deleted unmerged. Details in IDEAS.md.
 
