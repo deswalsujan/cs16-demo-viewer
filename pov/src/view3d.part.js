@@ -1011,7 +1011,9 @@ function showHiddenEnemiesNote() {
   }
   const hr = host.getBoundingClientRect(), br = b.parentElement.getBoundingClientRect();
   d.style.left = (br.left - hr.left) + 'px'; d.style.bottom = (hr.bottom - br.top + 8) + 'px';
-  d.innerHTML = `<b style="color:var(--sand, #f2b84b)">This server held back enemies</b><br>It only sent enemies about to come into view, so See through walls can show just the few it sent (${h.en.toLocaleString()} enemy sightings against ${h.tm.toLocaleString()} for teammates).`;
+  // Wording (Sujan, 5 Oct 2026): a headline anyone understands, the detail and the numbers below, feature names in
+  // single quotes. "Seems": the demo shows the effect, not the plugin itself.
+  d.innerHTML = `<b style="color:var(--sand, #f2b84b)">This server seems to use an anti-wallhack plugin</b><br>It only sent the recording player enemies who were about to come into view, so 'See through walls' can show just those few (${h.en.toLocaleString()} enemy sightings against ${h.tm.toLocaleString()} for teammates). Once he was dead, it sent them all.`;
   d.hidden = false; d.style.opacity = '1';
   clearTimeout(POV.noteT); POV.noteT = setTimeout(() => { d.style.opacity = '0'; setTimeout(() => { d.hidden = true; }, 400); }, 8000);
 }
