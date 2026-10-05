@@ -12,7 +12,12 @@ Everything raised in conversation that isn't finished, in one place. Each item s
 - [x] Health under the names at long range: Sujan chose any distance, scoped or not (2 Oct 2026); built in 0.16.0.
 - [ ] Later (Sujan, 3 Oct 2026), parked: a denser check of the victim's body for "fully hidden" (every 2 units). On the two R9 kills it finds Delpan and f0rest partly visible through the gap. It would change other demos' lists, so each change needs Sujan's eye first.
 
+**Across both viewers** (raised during the POV work, 4 and 5 Oct 2026; the same block is on main and on `wip/pov-mode`)
+- [ ] Parked (Sujan, 4 Oct 2026), for the HLTV viewer too: the kill, headshot and wallbang markers that flash at the crosshair overpower the crosshair itself. Make them subtler, so the crosshair stays readable and the markers still clearly show. To discuss later.
+- [ ] Parked (Sujan, 5 Oct 2026), for the HLTV viewer too: feature names in single quotes across all the viewer's text (e.g. 'See through walls'), applied in the spirit intended (where text names a button or feature) and not overdone.
+
 **POV demos** (3 Oct 2026; findings under "POV demos" below)
+- Since 3 Oct 2026 the POV work goes on in `wip/pov-mode` (a copy of the viewer in `pov/`); the current POV checklist is in that branch's IDEAS.md. The items below are as they stood when it started.
 - [x] Sujan decided 3 Oct 2026: a POV demo opens in POV mode by itself, in the same viewer (no separate POV viewer to pick).
 - [x] Sujan decided 3 Oct 2026: test Match 1 (both files, de_barcelona) and Match 3 (css_cache) first, then decide whether POV mode is worth building. Experimental: built on a `wip/pov-mode` branch, removed if it's more trouble than it's worth.
 - [x] Claude, 3 Oct 2026: the headless browser run on Match 1 (both files) and Match 3, results under "POV demos" below.
