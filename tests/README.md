@@ -146,6 +146,7 @@ Page scripts in `page/`:
 | `pov_trial.js`, then `pov_2d.js` | A POV demo as the viewer handles it today: the load summary, the recorder (found by name) and whether his position is real, following him, how many players have a position through the match; then the 2D radar mid-demo for a screenshot (`DEMO=match-1_de_barcelona-ts`, `DEMO=match-3`) | POV trial, 3 Oct 2026 |
 | `late_kill_timing.js` | Late kills shown at the victim's death sound (NoA vs Pentagram, Train 2006); run through `late_kill_timing_check.py` | 0.16.0, guards 0.15.5 |
 | `free_cam_nearest.js` | Free camera to Player's eyes, Behind player and V with nobody picked follows the player nearest the middle of the view; a picked player stays (`DEMO=1110091531`, Dust2) | 0.16.0 |
+| `model_hidden_compare.js`, `pixel_hidden_compare.js` | Whether a victim was fully hidden at a wallbang candidate: traced to every point of his posed model, and the killer's view drawn with the victim in one colour and his pixels counted (set `window.__want` first, see the script) | denser hidden check, IDEAS.md (not conclusive, 5 Oct 2026) |
 | `hp_line_far.js` | The "HP · weapon" line under every name with the camera over 2,500 units away (`DEMO=1110091531`) | 0.16.0 |
 
 Stand-alone checks:

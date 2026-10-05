@@ -45,7 +45,7 @@ Round announcements, the C4 and defusal kits, and quieter kill markers. All thre
 ### Discussed, not changed
 - Where the game puts the round text: a quarter of the way down and 2.5 seconds are from Xash3D, a reimplementation of the GoldSrc engine (`CL_CenterPrint` with 0.25, `scr_centertime` 2.5). Not checked against the real game yet; Sujan's eye decides.
 - The kit pouch on the CT models is small (a pouch at the waist), as the stock models draw it. The scoreboard tag is the easier place to read it.
-- A denser check for "fully hidden" in the wallbang finder is on `wip/denser-hidden-check`, waiting for Sujan's checks (IDEAS.md).
+- A denser check for "fully hidden" in the wallbang finder (a point every 2 units over the body). Sujan checked its 14 changes on 5 Oct 2026: the 4 removals were right, but 6 of the 10 additions showed an arm, elbow or gloved hand. Tracing to the player model's own points got 12 of 14, and drawing the killer's view and counting the victim's pixels got all 14 only at one moment before the shot and not at others, and called face on JiGetus (SK vs WinFakt, Mirage, IEM6 New York, R4 0:37) hidden, which Sujan ruled out in game. Not conclusive, so the finder stays as it is (Sujan, 5 Oct 2026). The branch was deleted unmerged. Details in IDEAS.md.
 
 ## 0.16.0 (2026-10-03)
 
