@@ -69,7 +69,7 @@ Everything raised in conversation that isn't finished, in one place. Each item s
 - [x] **Reset view (0.12.2)**, confirmed by Sujan 2 Oct 2026 from Player's eyes in 3D: should go back to the starting overview.
 - [x] **Settings carry over (0.12.3)**, confirmed by Sujan 2 Oct 2026: change view, speed and toggles, open another demo: settings kept, speed back to 1x and paused; reload the page: settings still there.
 - [x] **The game's own demo player vs the viewer**, confirmed by Sujan 3 Oct 2026 (the scope and the crosshair themselves are built and confirmed; this is only the comparison with the game, and Sujan may drop it), two checks on one demo (see "Open decisions"): does the in-game player show the AWP scope for an HLTV demo, and does it show the same small crosshair offset at a kill (CHANGELOG 0.10.0)?
-- [ ] **Later (Sujan, 2 Oct 2026): Windows 150% Theatre run** (Claude's automated test, not a hand check). Passed all 39 checks on the build before the last 0.9.x fix and wasn't rerun after it. A rerun takes about 10 minutes; Theatre mode itself is shipped and in use.
+- [x] **Windows 150% Theatre run** (Claude's automated test, not a hand check), rerun 5 Oct 2026 on 0.16.0: 39 of 39 passed (`theatre_test.py`, 1707x960 at 1.5x, on Sujan's Windows copy of Na`Vi vs FX, Dust2, SEC 2011 final, with the de_dust2 map). Earlier it had passed on the build before the last 0.9.x fix and wasn't rerun after it.
 
 **Not yet tested on real demos**
 - [x] The 102 MB mousesports vs Virus Inferno demo (event not known): broken, confirmed by Sujan (2 Oct 2026; he knew, and had meant to delete it). See "Tell exactly why a demo is broken" below.
