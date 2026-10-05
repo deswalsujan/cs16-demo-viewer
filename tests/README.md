@@ -74,13 +74,13 @@ Sujan's own recordings on 32-player public servers (16 vs 16), added to the Mac 
 | `match-3_css_cache_00-23-35_28-07-2022.dem` (Match 3) | none: public server, 28 Jul 2022, css_cache; recorder "tp optical mouse"; custom weapon skins | Sujan; file name | Mac, Windows | POV trial, 3 Oct 2026 |
 | `match-4-[PuB]_M-[de_nuke32]_D-[08_24_2021]_T-[00_44].dem`, `match-5-[PuB]_M-[de_nuke32]_D-[08_25_2021]_T-[22_09].dem` (Match 4 and 5) | none: public server, 24 and 25 Aug 2021, de_nuke32 | Sujan; file name | Mac, Windows | POV trial, 3 Oct 2026 |
 
-### Bot wallbang tests (bullet path proof of concept)
+### Bot wallbang tests
 
-Recorded by Sujan on his own server with a bot he placed, 5 Oct 2026, for the 'Bullet path' proof of concept (IDEAS.md, "Across both viewers"). M4A1 only, unsilenced. The POV file has his chat labels for each spot; the HLTV file has none, and its clock runs 7.462 s ahead of the POV file's (815 of 818 shots matched).
+Recorded by Sujan on his own server with a bot he placed, 5 Oct 2026, for the 'Bullet path' proof of concept (IDEAS.md, "Across both viewers"). Sujan dropped 'Bullet path' the same day; what the test found about wallbangs is kept in that IDEAS.md item. M4A1 only, unsilenced. The POV file has his chat labels for each spot; the HLTV file has none, and its clock runs 7.462 s ahead of the POV file's (815 of 818 shots matched).
 
 | Demo file | Event | How we know | On | Status |
 |---|---|---|---|---|
-| `bangtest.dem` (POV, recorder "suckopticalmouse") and `full_match_demo-2610050843-de_train.dem` (HLTV of the same session), de_train | none: Sujan's bot test, 5 Oct 2026 | Sujan | Windows | bullet path proof of concept, 5 Oct 2026 |
+| `bangtest.dem` (POV, recorder "suckopticalmouse") and `full_match_demo-2610050843-de_train.dem` (HLTV of the same session), de_train | none: Sujan's bot test, 5 Oct 2026 | Sujan | Windows | bullet path proof of concept, 5 Oct 2026 (feature dropped the same day) |
 
 ### Deleted
 
