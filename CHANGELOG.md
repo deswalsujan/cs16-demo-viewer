@@ -49,7 +49,9 @@ How the recorder's track was tested (on Sujan's Mac files, 3 Oct 2026):
 - **Spectator bars** (approved `docs/pov-spectator-bars-mock.png`) while he watches someone else after dying: the game's sizes from its Spectator.res, score and round clock top right, the player's name and HP and the camera mode at the bottom, the kill feed moved below the top bar. Not during the death camera behind his own body (Claude's call, to iterate).
 - **"This server held back enemies"** (option B of `docs/pov-hidden-enemies-mock.png`): a note above See through walls, at the left so it can't cover the name box, when it's switched on in such a demo, and once at the start if it's already on. Fades after 8 s or on a click. A demo counts when, once a second while he's playing, enemies in the file are under a tenth of teammates (Match 1 CT: 50 against 5,266).
 
-Still to do: Sujan's look at parts 2 and 3. Then voice and chat (parked), and making the kill markers subtler (parked, HLTV viewer too).
+Sujan's look at parts 2 and 3, done 5 Oct 2026: the crosshair at 70%, the HUD, the trimmed spectator bars, gun draws (the M4A1 silencer going on) and the hidden-enemies note all confirmed (IDEAS.md, "POV demos").
+
+Still to do: a weapon-by-weapon check of his gun animations (parked); whether to make the hidden-enemies note easier to spot (to decide); the aimbot catcher (not started); voice and chat (parked); and making the kill markers subtler (parked, HLTV viewer too).
 
 ## Known limits (current version)
 - HLTV demos don't record the first-person weapon's animation, so it's rebuilt from shots, weapon switches and the player's body animation. Timing can differ slightly from in-game, and idle variations won't match. If a `v_` model is missing, no gun is shown.
