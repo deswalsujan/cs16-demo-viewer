@@ -149,6 +149,7 @@ button { cursor: pointer; }
 .kill3 .main { white-space: normal; }
 .kill3 .kname { display: block; line-height: 1.35; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
 .kill3 .gun { display: flex; align-items: center; gap: 8px; margin: 3px 0; font-family: var(--f-mono); font-size: 12px; color: var(--muted); }
+.kill3 .ktags { display: flex; flex-wrap: wrap; gap: 6px; margin: 1px 0 4px; }
 .kico { display: inline-block; height: 16px; flex-shrink: 0; background: #c9cdd0; -webkit-mask-size: 100% 100%; mask-size: 100% 100%; -webkit-mask-repeat: no-repeat; mask-repeat: no-repeat; }
 .kico.hs { background: var(--kill); }
 .wbtag { font: 600 10px var(--f-mono); color: var(--wb); border: 1px solid color-mix(in srgb, var(--wb) 55%, transparent); border-radius: 3px; padding: 0 4px; letter-spacing: .06em; }
@@ -506,7 +507,7 @@ body:has(.app.theatre) { overflow: hidden; }
     <div class="overlay sumwrap" id="sumCard" hidden></div>
     <div class="overlay keys" id="keys" hidden>
       <div class="keys-card">
-        <div class="keys-head"><b>Shortcuts and kill markers</b><div class="kh-r"><span class="ver">Version 0.20.0 · <a href="https://github.com/deswalsujan/cs16-demo-viewer/blob/main/CHANGELOG.md" target="_blank" rel="noopener">What's new</a> · <a href="https://github.com/deswalsujan/cs16-demo-viewer/issues/new/choose" target="_blank" rel="noopener">Report a bug</a></span><button class="btn" id="bDebug" type="button" title="Copies details for a bug report: browser, demo name, what loaded, errors. No file contents.">Copy debug info</button><button class="btn" id="bKeysClose" type="button">Close</button></div></div>
+        <div class="keys-head"><b>Shortcuts and kill markers</b><div class="kh-r"><span class="ver">Version 0.21.0 · <a href="https://github.com/deswalsujan/cs16-demo-viewer/blob/main/CHANGELOG.md" target="_blank" rel="noopener">What's new</a> · <a href="https://github.com/deswalsujan/cs16-demo-viewer/issues/new/choose" target="_blank" rel="noopener">Report a bug</a></span><button class="btn" id="bDebug" type="button" title="Copies details for a bug report: browser, demo name, what loaded, errors. No file contents.">Copy debug info</button><button class="btn" id="bKeysClose" type="button">Close</button></div></div>
         <textarea class="dbgbox" id="dbgBox" readonly hidden aria-label="Debug info"></textarea>
         <div class="keys-grid">
           <section><h3>Playback</h3>
@@ -608,7 +609,7 @@ body:has(.app.theatre) { overflow: hidden; }
         <div class="drophint">Or drop a .dem file, or an overview .bmp and .txt pair, anywhere on this page</div>
         <div class="prog" id="prog" hidden><i id="progBar"></i></div>
         <div class="msg" id="msg"></div>
-        <div class="loadfoot"><span>Version 0.20.0</span><button class="btn" id="bClear" type="button" title="Forgets your Half-Life folder and deletes the maps, models, sounds and overviews this browser saved from it, as on a first visit">Clear saved files</button></div>
+        <div class="loadfoot"><span>Version 0.21.0</span><button class="btn" id="bClear" type="button" title="Forgets your Half-Life folder and deletes the maps, models, sounds and overviews this browser saved from it, as on a first visit">Clear saved files</button></div>
       </div>
     </div>
   </section>
@@ -3536,8 +3537,8 @@ function derive() {
 // and no grenade blast. None within 1.5 s of a round start (respawns). Checked 14 Oct 2026 on 47 demos against the
 // bomb's fixed fuse: the 7 bombs that went off early (25 to 30 s instead of 35) all had a skip in their fuse, and
 // none of the 118 that took the full time did. Players snap across a skip instead of sliding, the timeline marks
-// it (//), a note says so from 2 s before to 1 s after, a wallbang on one is tagged UNSURE and any other kill on
-// one gets // in the Kills list (approved mockup, docs/recording-skip-mock.png; 0.19.0 and 0.20.0).
+// it (//), a note says so from 2 s before to 1 s after, a wallbang on one is tagged UNSURE and every kill on
+// one gets // in the Kills list (approved mockups, docs/recording-skip-mock.png and docs/skip-tags-mock.png; 0.19.0 to 0.21.0).
 function findSkips() {
   const S = D.stride, tt = D.times, n = tt.length, starts = D.rounds.map((r) => r.start).concat(M.rounds.map((r) => r.start));
   const nearStart = (t) => starts.some((st) => Math.abs(t - st) < 1.5);
@@ -3850,7 +3851,21 @@ function gameTime(t) { let g = t; const L = D && D.slow; if (L) for (const [a, b
 const gameSpan = (a, b) => gameTime(b) - gameTime(a);
 
 // The in-game round timer: freeze time counting down, then the round time counting down.
-function clockAt(t) {
+// After a plant, two readings. The lists (Kills, Wallbangs, Copy list, the timeline's hover) give the time since
+// the plant ("C4 0:15"), which places a kill in the bomb's 35 s. The timer above the view (countdown = true)
+// counts down from 0:35 to 0:00 as the game does, holds 0:00 from the explosion until the next round, and stops
+// where it was when the bomb is defused (Sujan, 15 Oct 2026). 35 s is the fuse in every demo measured (118 of 125
+// bombs in 47 demos took 35.1 to 35.5 s of game time, the other 7 went off early at a skip; 0.20.0). The game's own
+// default, mp_c4timer in ReGameDLL game.cpp, is 45, so a server left on the default would read wrong.
+const C4_FUSE = 35;
+function c4Countdown(plant, r, t) {
+  const end = (re) => D.centre.find((c) => c.t >= plant.t && c.t <= r.end + 0.5 && re.test(c.s));
+  const boom = end(/Target_Bombed/), defused = end(/Bomb_Defused/);
+  if (boom && t >= boom.t) return 0;
+  const stop = defused && t >= defused.t ? defused.t : t;
+  return Math.max(0, Math.floor(C4_FUSE - gameSpan(plant.t, stop) + 0.001));
+}
+function clockAt(t, countdown) {
   const r = roundAt(t);
   if (!r || !D.roundTimes) return null;
   let rt = null;
@@ -3858,11 +3873,11 @@ function clockAt(t) {
   if (!rt) return null;
   const freeze = Math.abs(rt.t - r.start) < 1 && D.roundTimes.some((x) => x.t > rt.t && x.t < r.end + 0.5);
   const plant = D.bomb.find((b) => b.type === 'plantpos' && b.t >= r.start && b.t <= r.end);
-  if (plant && t >= plant.t) return { text: 'C4 ' + fmt(gameSpan(plant.t, t)), phase: 'bomb' };
+  if (plant && t >= plant.t) return { text: 'C4 ' + fmt(countdown ? c4Countdown(plant, r, t) : gameSpan(plant.t, t)), phase: 'bomb' };
   const rem = Math.max(0, Math.floor(rt.secs - gameSpan(rt.t, t) + 0.001));
   return { text: (freeze ? 'freeze ' : '') + fmt(rem), phase: freeze ? 'freeze' : 'round' };
 }
-const clockText = (t) => { const c = clockAt(t); return c ? c.text : ''; };
+const clockText = (t, countdown) => { const c = clockAt(t, countdown); return c ? c.text : ''; };
 // ---- team names ----
 // Well-known CS 1.6 team names, keyed by how they tend to appear in demo file names and clan tags.
 const KNOWN_TEAMS = {
@@ -4103,7 +4118,10 @@ function killRow3(k, wbTag) {
   const vs = k.vteam === 'TERRORIST' ? 1 : k.vteam === 'CT' ? 2 : 0;
   const w = k.weapon || 'suicide';
   const hs = k.hs ? (KICONS.headshot ? kicon('headshot', 'hs') : '<span class="khs">HS</span>') : '';
-  const gun = `<span class="gun">${kicon(w)}${esc(w)}${hs}${wbTag && k.wb ? '<span class="wbtag">WALLBANG</span>' : ''}${unsureTag(k)}</span>`;
+  // WALLBANG and UNSURE on a line of their own under the gun, so they always fit the panel (Sujan, 15 Oct 2026,
+  // docs/skip-tags-mock.png; side by side after the gun, UNSURE was cut off at the right edge)
+  const tags = (wbTag && k.wb ? '<span class="wbtag">WALLBANG</span>' : '') + unsureTag(k);
+  const gun = `<span class="gun">${kicon(w)}${esc(w)}${hs}</span>${tags ? `<span class="ktags">${tags}</span>` : ''}`;
   if (k.killer === k.victim || !k.kp) return `<span class="kname">${nameHtml(k.vp, vs)}</span>${gun}`;
   return `<span class="kname">${nameHtml(k.kp, ks)}</span>${gun}<span class="kname">${nameHtml(k.vp, vs)}</span>`;
 }
@@ -4186,8 +4204,8 @@ function renderPane() {
     const r = cr;
     let h = `<div class="sechead"><span>${r && r.live ? 'Round ' + r.ln : 'This round'}</span><span>${r ? r.kills.length : 0} kills</span></div>`;
     if (r) for (const k of r.kills) {
-      // a kill inside a skip in the recording (0.20.0): // by its time; a wallbang there says UNSURE instead
-      const sk = skipNear(k.t) && !k.wb ? `<span class="skipk" title="Happened inside a skip in the recording: you won't see it happen">//</span>` : '';
+      // a kill inside a skip in the recording: // by its time (0.20.0), wallbangs included since 0.21.0, which keep UNSURE too
+      const sk = skipNear(k.t) ? `<span class="skipk" title="Happened inside a skip in the recording: you won't see it happen">//</span>` : '';
       h += `<div class="row krow kill3${killState(k)}" data-kill="${k.t}"><span class="n" title="Round timer as shown in game">${k === pickedKill ? MARK : ''}${clockText(k.t) || '+' + fmt(k.t - r.start)}${sk}</span><span class="main">${killRow3(k, true)}</span></div>`;
     }
     if (!r || !r.kills.length) h += `<div class="opt">No kills in this round.</div>`;
@@ -4388,7 +4406,7 @@ function updateHud(force) {
   // Theatre mode hides the header, so the round pill also carries the score (hidden otherwise)
   const scSide = (i) => side(i) === 'side-t' ? 'kt' : side(i) === 'side-ct' ? 'kct' : '';
   const thsc = `<span class="thsc"><span class="${scSide(0)}">${esc(M.tnames[0])}</span> <b>${sc[0]} : ${sc[1]}</b> <span class="${scSide(1)}">${esc(M.tnames[1])}</span> · </span>`;
-  $('rclock').innerHTML = thsc + (r ? `${r.live ? 'Round <b>' + r.ln + (r.ot ? ' (OT)' : '') + '</b>' : '<b>Not counted</b>'} · <b>${clockText(T) || fmt(T - r.start)}</b>` : '') + (paused ? ' · <b>match paused</b>' : '');
+  $('rclock').innerHTML = thsc + (r ? `${r.live ? 'Round <b>' + r.ln + (r.ot ? ' (OT)' : '') + '</b>' : '<b>Not counted</b>'} · <b>${clockText(T, true) || fmt(T - r.start)}</b>`: '') + (paused ? ' · <b>match paused</b>' : '');
   // kill feed
   const feed = D.kills.filter((k) => k.t <= T && k.t > T - 6).slice(-5);
   const key = feed.map((k) => k.t).join();
@@ -6854,7 +6872,7 @@ window.addEventListener('unhandledrejection', (e) => { ERRLOG.push('Promise: ' +
 function debugInfo() {
   let gpu = '';
   try { const gl = document.createElement('canvas').getContext('webgl'); const x = gl && gl.getExtension('WEBGL_debug_renderer_info'); gpu = gl ? (x ? gl.getParameter(x.UNMASKED_RENDERER_WEBGL) : 'WebGL available') : 'no WebGL'; } catch (e) { gpu = 'unknown'; }
-  const L = [`CS 1.6 Demo Viewer 0.20.0`, `Browser: ${navigator.userAgent}`, `Screen: ${screen.width}x${screen.height} at ${devicePixelRatio}x, window ${innerWidth}x${innerHeight}`, `Graphics: ${gpu}`];
+  const L = [`CS 1.6 Demo Viewer 0.21.0`, `Browser: ${navigator.userAgent}`, `Screen: ${screen.width}x${screen.height} at ${devicePixelRatio}x, window ${innerWidth}x${innerHeight}`, `Graphics: ${gpu}`];
   L.push(`Folder: ${Object.keys(files.maps).length} maps, ${Object.keys(files.overviews).length} overviews, ${Object.keys(files.mdl).length} models, ${Object.keys(files.snd).length} sounds, ${files.demos.length} demos`);
   if (D) {
     L.push(`Demo: ${D.fileName}, protocol ${(D.header && D.header.netProtocol) || '?'}, ${D.pov ? 'POV (recorded by a player)' : 'HLTV'}, map ${D.mapName}, length ${fmt(D.end - D.start)}, ${M.liveR.length} live rounds, final ${M.liveR.length ? M.liveR[M.liveR.length - 1].scoreAfter.join(':') : '-'}`);

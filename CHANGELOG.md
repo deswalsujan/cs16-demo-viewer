@@ -27,8 +27,27 @@ What changed in the viewer, newest first. The version shows in the viewer's shor
 - Some HLTV recordings skip ahead: at a few moments every player jumps far between two snapshots while the demo's game clock runs on as if 0.1 s passed (FX vs Lions, Nuke, DreamHack Winter 2010: 7 times). What happened in between isn't in the file, so no viewer can show it. Since 0.19.0 the viewer marks each skip and tags a wallbang that lands on one UNSURE, since the finder can only judge it from where everyone stood after the skip. A skip is found from what it does to the game (players moving faster than anyone can, health lost with no hit), so one where nobody moved or got hurt can't be found; checked against the bomb's fuse on 47 demos, none was missed (0.20.0).
 - The dropped bomb on the radar needs the bomb object in the demo, so on de_tuscan it's often missing (the 256-object limit above).
 - Round announcements use Verdana, the game's font; where it isn't installed (most Linux machines) the browser picks a similar one.
-- The C4 timer counts up from the plant (0:00 to 0:35 at the explosion, then on until the next round); the game counts down from 0:35. Raised by Sujan 15 Oct 2026; the countdown is decided and listed in IDEAS.md.
-- In the Kills list a wallbang on a skip shows WALLBANG and UNSURE side by side, and the UNSURE tag can be cut off at the panel's right edge (FX vs Lions, Nuke, DreamHack Winter 2010, R2, 742 on Xizt). Raised by Sujan 15 Oct 2026, open in IDEAS.md.
+- The C4 timer above the view counts down from a fixed 35 s, the fuse every tournament demo measured so far uses (0.21.0). A demo from a server with another fuse (the game's own default is 45 s) would read wrong; the time since the plant in the Kills and Wallbangs lists is right either way.
+
+## 0.21.0 (2026-10-15)
+
+Two fixes from Sujan's feedback of 14 and 15 Oct 2026, decided 15 Oct 2026, in one release.
+
+### Changed
+- **The C4 timer above the view counts down**, as the game's does: 0:35 at the plant, down to 0:00, and it stays at 0:00 from the explosion until the next round. When the bomb is defused it stops where it was (mTw vs Lions, Nuke, DreamHack Summer 2011: plant at 20:00, defused at C4 0:26). It counted up before, from 0:00 at the plant, and ran on past 0:35 until the new round (0:40 at R24, plant at 38:22). It counts game time, so HLTV slow motion doesn't stretch it (0.18.0). The times in the Kills and Wallbangs lists, Copy list and the timeline's hover stay as they were: "C4 0:15" is 15 seconds after the plant, which places a kill in the bomb's 35 s.
+- **Skip tags in the Kills list**, from the approved mockup ([docs/skip-tags-mock.png](docs/skip-tags-mock.png)): WALLBANG and UNSURE sit on their own line under the gun, so they always fit the panel (UNSURE used to be cut off after WALLBANG, "UNSUF" in Sujan's screenshot), and the // by the time now shows on every kill that lands on a skip, wallbangs included; a wallbang there keeps UNSURE as well (FX vs Lions, Nuke, DreamHack Winter 2010, R2: 742's Deagle wallbang on Xizt at C4 0:16). The Wallbangs list puts the tags on their own line too, since it draws kills the same way.
+
+### How it was tested
+- `v021_c4_countdown.js` (new) on mTw vs Lions, Nuke, DreamHack Summer 2011, all 13 plants: 0:35 at every plant; 10 s of game time later 0:24 on the timer and C4 0:10 in the lists; the four bombs that went off (7:13, 9:37, 13:10, 38:22; fuse 35.11 to 35.25 s of game time) read 0:00 just before the explosion, at it and up to the next round, which then shows freeze time; the defused bomb (20:00) holds 0:26 after the defuse. The timer itself at R24 (plant at 38:22): "C4 0:34" just after the plant, "C4 0:21" 15 s of demo time later (slow motion), "C4 0:00" after the explosion; the lists there still read C4 0:00, 0:05, 0:29 and 0:38.
+- `v021_skip_tags.js` (new) on FX vs Lions, Nuke, DreamHack Winter 2010, with the map: in R2, 742 on Xizt (C4 0:16) shows // with WALLBANG and UNSURE on the line under the gun, both inside the panel and not cut; the other five kills show neither. 6 kills land on a skip in the live rounds, 2 of them wallbangs, all with //. Screenshot of the panel checked against the mockup.
+- `folder_row_test.py` (20 of 20), `start_screen_check.py`, `prefs_check.py`, `demo_search_check.py` (on the names of the 31 demos in the Mac's folder), `late_kill_timing_check.py` and `panel_click_check.py` pass.
+- Run on a copy of Sujan's Mac folder (`~/Downloads/Half-Life`), brought over through the linked desktop app; the temporary `_claude_transfer` folder was deleted from the Mac at once, with his permission.
+
+### Discussed, not changed
+- The countdown assumes a 35 s fuse. Every bomb measured in 47 demos took 35.1 to 35.5 s of game time unless a skip cut it short (0.20.0), so 35 fits the tournament servers in the folder. The game's own default (`mp_c4timer` in ReGameDLL `game.cpp`) is 45, so a demo from a server left on the default would count down too fast. Reading the fuse from the demo isn't possible: the server's settings aren't in an HLTV recording.
+- The timer drops whole seconds as the game's round timer does, so it reads 0:34 a moment after the plant and 0:00 for the last part of a second before the explosion.
+- A bomb that is still ticking when the round ends (the Terrorists killed every CT) keeps counting down until the next round, as it does in the game.
+- The // stays out of the Wallbangs list, where UNSURE already says the same, as in the mockup.
 
 ## 0.20.0 (2026-10-14)
 
