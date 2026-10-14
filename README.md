@@ -49,9 +49,10 @@ Custom maps work too, as long as the map's `.bsp` (and its `.wad` files if it us
 - Health, weapons, grenades, smokes, heatmaps, a hold-Tab scoreboard with spectators and the HLTV audience count
 - The C4 on the carrier's back and the defusal kits on the Counter-Terrorists, on the 3D models and in the Tab scoreboard. On the radar: the carrier, the dropped bomb and the planted bomb
 - HLTV's slow motion (some broadcasts slowed to half speed for a few seconds around a kill) plays at real speed, and the round and C4 timers count game time, as the game's do
+- The C4 timer above the view counts down from 0:35 to 0:00 as in the game, stays at 0:00 from the explosion until the next round, and stops where it was at a defuse. The Kills and Wallbangs lists give the time since the plant ("C4 0:15"), which places a kill in the bomb's 35 seconds
 - Demos recorded by a player (POV) too, with limits: a player's game only receives the players near them, so others drop in and out of view
 - A map recorded in two or more demo files counted as one map: the viewer spots the other part in your folder (same map, same players), puts the parts in order and joins them, with one score, one round list and player stats over all of it. Split them undoes it
-- Skips in the recording (HLTV sometimes left a second or more of the game out of the file): marked on the timeline and on screen, players don't slide through walls across them, and a wallbang that lands on one is tagged UNSURE
+- Skips in the recording (HLTV sometimes left a second or more of the game out of the file): marked on the timeline and on screen, players don't slide through walls across them, every kill that lands on one gets // in the Kills list, and a wallbang there is also tagged UNSURE
 - Cut-off and unfinished demos (an interrupted download, a recording that was never closed) play up to where the file stops, and the viewer says exactly what's wrong with the file, read from its own structure
 - Old demos too. CS 1.6 recorded demos as protocol 47 until the update of 23 October 2008 ([announced](https://www.hltv.org/news/1779/cs-16-update-coming-soon) and [released](https://www.hltv.org/news/1787/cs-16-update-live) on HLTV.org). The Steam version only plays protocol 48, so it refuses those older demos unless they're converted. The viewer plays both as they are
 - Search your demos: type part of a file name ("tu", "sk train", "dhwinter") and the list keeps only the demos whose names contain every word
@@ -70,7 +71,7 @@ src/audio.js        Sound: .wav decoding, positional playback, radio lines
 src/template.html   The page: layout, styles, 2D radar, timeline, panels
 build.py            Combines everything into one self-contained page
 CHANGELOG.md        What changed, newest first
-docs/               Design images: scope styles, the approved side panel designs (0.13.0), Count them, split maps, demo search, the Zalando Sans screens, crosshair kill markers (0.17.0), the start screen once the folder is chosen (0.18.0)
+docs/               Design images: scope styles, the approved side panel designs (0.13.0), Count them, split maps, demo search, the Zalando Sans screens, crosshair kill markers (0.17.0), the start screen once the folder is chosen (0.18.0), skips in the recording (0.19.0) and the skip tags in the Kills list (0.21.0)
 tests/              Test and measurement scripts: browser checks, Theatre mode checks, demo data probes (see tests/README.md)
 IDEAS.md            Parked ideas and open decisions, with the discussion behind them
 CLAUDE.md           How Claude sessions work on this repo: workflow, checking facts, where the test files are
