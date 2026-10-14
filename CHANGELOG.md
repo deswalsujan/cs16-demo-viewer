@@ -28,13 +28,22 @@ What changed in the viewer, newest first. The version shows in the viewer's shor
 - The dropped bomb on the radar needs the bomb object in the demo, so on de_tuscan it's often missing (the 256-object limit above).
 - Round announcements use Verdana, the game's font; where it isn't installed (most Linux machines) the browser picks a similar one.
 
+## 0.19.1 (2026-10-14)
+
+### Changed
+- **"// Recording skips here" now comes before the skip**: from 2 seconds of game time before it to 1 second after, so there's time to read it and then watch the jump happen (Sujan, 14 Oct 2026). In 0.19.0 it showed only after the skip, for 2 seconds, when the jump had already gone by.
+
+### How it was tested
+- `v019_skips.js` on FX vs Lions, Nuke, DreamHack Winter 2010 and Na`Vi vs FX, Dust2, SEC 2011: the note is off 3 s before the first skip, on 1.5 s before and 0.5 s after, off 1.5 s after. The skip times and UNSURE kills are as in 0.19.0.
+- `folder_row_test.py` (20 of 20), `start_screen_check.py`, `prefs_check.py` and `late_kill_timing_check.py` pass.
+
 ## 0.19.0 (2026-10-14)
 
 Skips in the recording, from the approved mockup ([docs/recording-skip-mock.png](docs/recording-skip-mock.png); Sujan, 14 Oct 2026: build it and judge it by eye in the viewer).
 
 ### Added
 - **The viewer finds skips in the recording**: snapshots where at least 3 living players, and at least 60% of them, moved over 60 units from the snapshot before (running covers at most about 25), away from round starts. HLTV left that stretch of game out of the file (see 0.18.0, "Discussed, not changed"). FX vs Lions, Nuke, DreamHack Winter 2010: 7 (5:46, 11:17, 16:15, 21:05, 26:54, 31:33, 37:26); Sweden vs Norway, Dust2, ASUS ENC 2010: 3; mTw vs Lions, Nuke, DreamHack Summer 2011: 3; Na`Vi vs FX, Dust2, SEC 2011: 1 (45:46); k1ck vs eq, Nuke, DreamHack Winter 2011: none. The same counts as the measurement of 14 Oct.
-- **"// Recording skips here"** above the name bar for 2 seconds after a skip, in 2D and 3D, and a // break mark on the timeline at each skip. Hovering the mark says what it means.
+- **"// Recording skips here"** above the name bar for 2 seconds after a skip (from 2 s before to 1 s after since 0.19.1), in 2D and 3D, and a // break mark on the timeline at each skip. Hovering the mark says what it means.
 - **UNSURE** on a wallbang that lands within 0.3 s of a skip, in the Wallbangs and Kills lists (hover: the recording skips at this kill, so the wallbang was judged from where everyone stood after the skip) and at the end of its line in Copy list. Three in the test demos: 742 on Xizt (R2) and kHRYSTAL on PASHA (R8), FX vs Lions; ArcadioN on SNAJDINHO (R15), mTw vs Lions.
 
 ### Changed

@@ -14,8 +14,9 @@
       if (Math.hypot(s.x - a[(k - 1) * S], s.y - a[(k - 1) * S + 1]) < 0.5) held++;
     }
     out.snap = `${held} of ${n} players still at the snapshot before, 0.01 s before the first skip`;
-    seek(M.skipT[0] + 0.5); updateCentre(); out.noteHalfSecondAfter = !$('skipnote').hidden;
-    seek(M.skipT[0] + 3); updateCentre(); out.noteThreeSecondsAfter = !$('skipnote').hidden;
+    // the note: from 2 s before the skip to 1 s after it (0.19.1)
+    const at = (dt) => { seek(M.skipT[0] + dt); updateCentre(); return !$('skipnote').hidden; };
+    out.note = { '-3 s': at(-3), '-1.5 s': at(-1.5), '+0.5 s': at(0.5), '+1.5 s': at(1.5) };
   }
   out.unsure = (M.wbs || []).filter((x) => skipNear(x.t)).map((x) => `${clockText(x.t)} ${M.pl[x.kp].name} -> ${M.pl[x.vp].name}`);
   return out;
