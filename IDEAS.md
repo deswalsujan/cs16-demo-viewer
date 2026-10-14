@@ -6,6 +6,19 @@ Parked ideas and features we've discussed but not built yet. Each entry keeps en
 
 Everything raised in conversation that isn't finished, in one place. Each item says who does it. Ideas for new features are further down; this list is for loose ends.
 
+**Sujan's feedback of 14 Oct 2026** (HLTV viewer; decided by Sujan the same day)
+- [ ] Clan tags off the names over players in 2D and 3D, and in the Kills and Wallbangs lists (Copy list must keep working). Also per-player sponsors after the name ("LIONS Xizt * MAXFPS", FX vs Lions, Nuke, DreamHack Winter 2010) and web addresses ("MYM|REAL www.steelseries.com", mym vs fnatic, Train, 20 Dec 2006). Personal notes stay ("fnatic.Archi *Bday 19!"). The kill feed at the top right keeps full names, as in the game.
+- [ ] Kill feed at the top right: the weapon's kill feed icon and the headshot icon in place of the words "ak47" and "HS".
+- [ ] C4 on the 2D radar (the carrier, and the dropped bomb if the demo has it). Changes the 5 Oct decision to leave it off the radar.
+- [ ] Round announcements in the game's look, copied from Sujan's two in-game screenshots (FX vs ALTERNATE aTTaX, Nuke: "Counter-Terrorists Win!", "The bomb has been planted!"). His `cstrike/resource` folder is now on the Mac.
+- [ ] Crosshair size: small, medium and large to choose from, if there's room; if it would be clutter, leave it as it is. The kill markers stay the same size.
+- [ ] The hold-Tab scoreboard wider, so names aren't cut (clan tags stay there).
+- [ ] HLTV slow motion: play it at real speed. Then render the two FX vs Lions, Nuke, DreamHack Winter 2010 kills frame by frame (742 on Xizt, R2 11:17; kHRYSTAL on PASHA, 21:05), since players seem to teleport, as if moves between snapshots were cut.
+- [ ] Clicks on the side panel that need two or three tries (the list is rebuilt during playback): fix, and any similar bug.
+- [ ] Start screen: once the Half-Life folder is fine, "Open a demo" should take the eye, not the folder row. Mockup first.
+- [ ] The load summary closes at once on "Open another demo".
+- [ ] Behind player: no name label over the followed player (the name bar under the view already says it).
+
 **Wallbangs and kill timing** (0.15.5, 2 Oct 2026)
 - [x] Sujan, confirmed 2 Oct 2026: the five kills 0.15.5 no longer lists as wallbangs really aren't wallbangs: Sweden vs Norway, Dust2, ASUS ENC 2010 (`53.52.1646548-1005272144-de_dust2.dem`): R9 1:40, R9 1:34, R30 1:41; SK vs Na`Vi, Train, DreamHack Winter 2011 (`sk-vs-navi-dhwinter2011-1111261019-de_train.dem`): R46 C4 0:01 markeloff AWP on RobbaN, R47 1:37 Delpan AWP on edzie.
 - [x] Sujan, confirmed 2 Oct 2026: NoA vs Pentagram, Train 2006, R22 0:55 (neo on ave): the kill feed now appears as ave falls. Guarded by a test since 0.16.0 (`tests/late_kill_timing_check.py`).
