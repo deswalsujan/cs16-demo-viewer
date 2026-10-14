@@ -27,7 +27,7 @@ What changed in the viewer, newest first. The version shows in the viewer's shor
 - Some HLTV recordings skip ahead: at a few moments every player jumps far between two snapshots while the demo's game clock runs on as if 0.1 s passed (FX vs Lions, Nuke, DreamHack Winter 2010: 7 times). What happened in between isn't in the file, so no viewer can show it. Since 0.19.0 the viewer marks each skip and tags a wallbang that lands on one UNSURE, since the finder can only judge it from where everyone stood after the skip. A skip is found from what it does to the game (players moving faster than anyone can, health lost with no hit), so one where nobody moved or got hurt can't be found; checked against the bomb's fuse on 47 demos, none was missed (0.20.0).
 - The dropped bomb on the radar needs the bomb object in the demo, so on de_tuscan it's often missing (the 256-object limit above).
 - Round announcements use Verdana, the game's font; where it isn't installed (most Linux machines) the browser picks a similar one.
-- The C4 timer counts up from the plant (0:00 to 0:35 at the explosion, then on until the next round); the game counts down from 0:35. Raised by Sujan 15 Oct 2026, open in IDEAS.md.
+- The C4 timer counts up from the plant (0:00 to 0:35 at the explosion, then on until the next round); the game counts down from 0:35. Raised by Sujan 15 Oct 2026; the countdown is decided and listed in IDEAS.md.
 - In the Kills list a wallbang on a skip shows WALLBANG and UNSURE side by side, and the UNSURE tag can be cut off at the panel's right edge (FX vs Lions, Nuke, DreamHack Winter 2010, R2, 742 on Xizt). Raised by Sujan 15 Oct 2026, open in IDEAS.md.
 
 ## 0.20.0 (2026-10-14)
