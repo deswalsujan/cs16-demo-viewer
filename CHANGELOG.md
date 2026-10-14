@@ -24,9 +24,34 @@ What changed in the viewer, newest first. The version shows in the viewer's shor
 - The wallbang finder rules out a kill that needed more damage than any shot through a wall can do (0.15.5). It needs the killer's shots in the demo; around a jump in the recording it can't tell, and the kill stays as the walls alone say.
 - Health and weapon under the names in 3D show at any distance (0.16.0). With many players far away, the labels can overlap.
 - A smoke cloud is drawn as one light green ball for as long as the smoke puffs (about 21 seconds, less when the round restarts). The game's own puffs drift and thin out unevenly, which the viewer doesn't copy.
-- Some HLTV recordings skip ahead: at a few moments every player jumps far between two snapshots while the demo's game clock runs on as if 0.1 s passed (FX vs Lions, Nuke, DreamHack Winter 2010: 7 times). What happened in between isn't in the file, so no viewer can show it. Since 0.19.0 the viewer marks each skip and tags a wallbang that lands on one UNSURE, since the finder can only judge it from where everyone stood after the skip. A skip is found by its jump, so one where few players moved far (most standing still) isn't marked.
+- Some HLTV recordings skip ahead: at a few moments every player jumps far between two snapshots while the demo's game clock runs on as if 0.1 s passed (FX vs Lions, Nuke, DreamHack Winter 2010: 7 times). What happened in between isn't in the file, so no viewer can show it. Since 0.19.0 the viewer marks each skip and tags a wallbang that lands on one UNSURE, since the finder can only judge it from where everyone stood after the skip. A skip is found from what it does to the game (players moving faster than anyone can, health lost with no hit), so one where nobody moved or got hurt can't be found; checked against the bomb's fuse on 47 demos, none was missed (0.20.0).
 - The dropped bomb on the radar needs the bomb object in the demo, so on de_tuscan it's often missing (the 256-object limit above).
 - Round announcements use Verdana, the game's font; where it isn't installed (most Linux machines) the browser picks a similar one.
+
+## 0.20.0 (2026-10-14)
+
+Skips in the recording, found more reliably, and marked on every kill that lands on one (Sujan, 14 Oct 2026: build both).
+
+### Changed
+- **How a skip is found.** A player counts as moving too fast when he moved over 60 units and over 400 units a second, measured over the actual time since the snapshot before and over the last two snapshots (the game caps running at 260 a second, ReGameDLL `weapons.h`; 400 allows for bunny hopping). 0.19.0 assumed snapshots 0.1 s apart, so a gap in the snapshots (0.34 s at mym vs fnatic, Train, 2006, 45:10.9; 0.6 s at roccat vs fnatic, Inferno, Extreme Masters II, 25:52.6, followed by a stale snapshot) looked like a skip. A skip needs at least 3 living players, and 60% of them, too fast at once, as before.
+
+### Added
+- **Skips with only 1 or 2 alive**: all of them too fast, and silent damage at the same moment: health down 20 or more with no hit, pain, death or fall sound and no grenade blast (742 went from 100 to 36 HP at FX vs Lions 11:17.9 with no hit). 9 in the 47 demos checked.
+- **Skips with players standing still**: silent damage to 3 or more players at once. 1 in the 47 demos (SK vs Dateam, Dust2, IOL Final4 2011, 9:36.8).
+- **// in the Kills list** by the time of any kill that lands on a skip ("Happened inside a skip in the recording: you won't see it happen"). A wallbang there keeps UNSURE instead. 141 kills in the 47 demos (fnatic vs Na`Vi, Dust2, GameGune 2012: MODDII's three MAC-10 kills at 12:44 all land in one snapshot).
+
+### How it was tested
+- **The bomb's fuse**, 47 demos (the 31 regression demos and 16 from Sujan's `test-demos-2` and `test demos` folders, listed in `tests/README.md`): the fuse is a fixed 35 s in game time, so a skip between plant and explosion makes the bomb go off early. 7 bombs went off early (25.1 to 30.1 s against each demo's usual 35.1 to 35.4) and every one has a skip in its fuse; none of the 118 bombs that took the full time has one. With 0.19.0's rule, 1 of the 118 had a false skip (roccat vs fnatic 25:52.6).
+- The file has no marker of its own: packet numbers, update numbering and full snapshots run on without a gap through every skip (checked on FX vs Lions and fnatic vs EG).
+- 121 skips in the 47 demos (111 by the jump rule, 9 with 1 or 2 alive, 1 standing still); none in 19 of them.
+- `v019_skips.js` in the viewer: FX vs Lions 7 skips, Sweden vs Norway 3, SK vs Dateam 5 (including 9:36 and 24:54), k1ck vs eq none; players held at the snapshot before just ahead of a skip.
+- Wallbang lists with the maps, 0.19.1 against 0.20.0, 31 regression demos: identical.
+- The Kills list on fnatic vs Na`Vi, GameGune 2012, round of 12:44: // on the three kills in the skip, not on the others.
+- `folder_row_test.py` (20 of 20), `start_screen_check.py`, `prefs_check.py`, `demo_search_check.py`, `late_kill_timing_check.py` and `panel_click_check.py` pass.
+
+### Discussed, not changed
+- Why HLTV skips is still not known. The bomb's fuse shows how much is missing: 5 to 10 s of game each time.
+- 2 lone cases of silent damage (one player, nothing else) aren't treated as skips: one signal on one player is too little.
 
 ## 0.19.1 (2026-10-14)
 
