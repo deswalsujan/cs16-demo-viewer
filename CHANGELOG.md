@@ -29,6 +29,15 @@ What changed in the viewer, newest first. The version shows in the viewer's shor
 - Round announcements use Verdana, the game's font; where it isn't installed (most Linux machines) the browser picks a similar one.
 - The C4 timer above the view counts down from a fixed 35 s, the fuse every tournament demo measured so far uses (0.21.0). A demo from a server with another fuse (the game's own default is 45 s) would read wrong; the time since the plant in the Kills and Wallbangs lists is right either way.
 
+## 0.21.1 (2026-10-15)
+
+### Fixed
+- **The time in the Wallbangs list reads the same on every row**: the round ("R2 ·"), then the round timer in one piece ("C4 0:16"), then the demo time, each on its own line (Sujan, 15 Oct 2026, on FX vs Lions, Nuke, DreamHack Winter 2010). It used to wrap wherever the narrow column ran out, so an unclicked row read "R2 · C4" with "0:16" below, and a clicked one, with its bookmark, read "R2 ·" with "C4 0:16" below. The Kills list keeps "C4 0:16" in one piece too: clicked, it used to split after "C4".
+
+### How it was tested
+- `v021_time_cells.js` (new) on FX vs Lions, R2, 742 on Xizt: Wallbangs list "R2 ·", "C4 0:16", "11:17" and Kills list "C4 0:16", "//", clicked and not, with nothing running into the kill beside it; every time cell in R2's Kills list fits its column (clicked). Screenshot of both lists checked.
+- `v021_c4_countdown.js` and `v021_skip_tags.js` as in 0.21.0; `folder_row_test.py` (20 of 20), `start_screen_check.py`, `prefs_check.py`, `demo_search_check.py`, `late_kill_timing_check.py` and `panel_click_check.py` pass.
+
 ## 0.21.0 (2026-10-15)
 
 Two fixes from Sujan's feedback of 14 and 15 Oct 2026, decided 15 Oct 2026, in one release.

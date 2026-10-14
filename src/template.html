@@ -3033,7 +3033,7 @@ function renderPane() {
     if (r) for (const k of r.kills) {
       // a kill inside a skip in the recording: // by its time (0.20.0), wallbangs included since 0.21.0, which keep UNSURE too
       const sk = skipNear(k.t) ? `<span class="skipk" title="Happened inside a skip in the recording: you won't see it happen">//</span>` : '';
-      h += `<div class="row krow kill3${killState(k)}" data-kill="${k.t}"><span class="n" title="Round timer as shown in game">${k === pickedKill ? MARK : ''}${clockText(k.t) || '+' + fmt(k.t - r.start)}${sk}</span><span class="main">${killRow3(k, true)}</span></div>`;
+      h += `<div class="row krow kill3${killState(k)}" data-kill="${k.t}"><span class="n" title="Round timer as shown in game">${k === pickedKill ? MARK : ''}<span class="nw">${clockText(k.t) || '+' + fmt(k.t - r.start)}</span>${sk}</span><span class="main">${killRow3(k, true)}</span></div>`;
     }
     if (!r || !r.kills.length) h += `<div class="opt">No kills in this round.</div>`;
     p.innerHTML = h;
@@ -3043,8 +3043,9 @@ function renderPane() {
     else {
       h = `<div class="copyrow"><span>${M.wbs.length} kills where the victim was fully hidden from the shooter and the crosshair was on the wall. Times: round and in-game round timer, then demo time.</span><button class="btn" id="bCopyWb" type="button">Copy list</button></div>`;
       for (const k of M.wbs) {
+        // the round, the round timer and the demo time on three lines; "C4 0:16" never splits (0.21.1, Sujan 15 Oct 2026)
         const r = M.rounds.find((x) => x.n === k.round);
-        h += `<div class="row krow wbrow kill3${killState(k)}" data-wb="${k.t}" title="Through ${k.wb.thick} units of ${k.wb.what === 'object' ? 'a breakable or door' : 'wall or crate'}"><span class="n">${k === pickedKill ? MARK : ''}R${r ? r.ln : '?'} · ${clockText(k.t)}<br>${fmt(k.t - D.start)}</span><span class="main">${killRow3(k, false)}</span></div>`;
+        h += `<div class="row krow wbrow kill3${killState(k)}" data-wb="${k.t}" title="Through ${k.wb.thick} units of ${k.wb.what === 'object' ? 'a breakable or door' : 'wall or crate'}"><span class="n">${k === pickedKill ? MARK : ''}R${r ? r.ln : '?'} ·<br><span class="nw">${clockText(k.t)}</span><br>${fmt(k.t - D.start)}</span><span class="main">${killRow3(k, false)}</span></div>`;
       }
       if (!M.wbs.length) h += `<div class="opt">No wallbang kills found in the live rounds.</div>`;
     }

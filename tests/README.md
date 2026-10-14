@@ -169,6 +169,7 @@ Page scripts in `page/`:
 | `v018_c4_game_time.js` | Plant to explosion for every bomb that went off, on the demo's clock and in game time, and the C4 timer at the explosion: game time must be the same for every one, slow motion or not (`DEMO=mtw-vs-lions MAP_NEEDED=0`, mTw vs Lions, Nuke, DreamHack Summer 2011, where the bomb planted at 38:22 has slow motion before it goes off) | 0.18.0 |
 | `v021_c4_countdown.js` | The C4 timer above the view (0.21.0): at every plant, 10 s of game time later, just before and after the explosion, up to the next round, and at a defuse; the timer element itself at the 38:22 plant; the Kills list times there still counting up (`DEMO=mtw-vs-lions MAP_NEEDED=0`, mTw vs Lions, Nuke, DreamHack Summer 2011) | 0.21.0 |
 | `v021_skip_tags.js` | The Kills list of R2 with 742's wallbang on Xizt clicked: WALLBANG and UNSURE on their own line under the gun and inside the panel, // on every kill on a skip, wallbangs included. Waits for the map; add `shot` for a screenshot of the panel (`DEMO=fx-vs-lions`, FX vs Lions, Nuke, DreamHack Winter 2010) | 0.21.0 |
+| `v021_time_cells.js` | The time cells of 742's wallbang on Xizt in the Kills and Wallbangs lists, clicked and not: "C4 0:16" in one piece, under "R2 ·" in the Wallbangs list, nothing running into the kill beside it. Waits for the map (`DEMO=fx-vs-lions`) | 0.21.1 |
 
 Stand-alone checks:
 
