@@ -534,9 +534,11 @@ function update3() {
       hidden = c.hidden;
     }
     if (!opts.names || (hidden && !opts.xray)) continue;
+    // Behind player: the followed player's name is in the name bar under the view already (Sujan, 14 Oct 2026)
+    if (cam3.mode === 'chase' && L.e === selected) continue;
     const sx = (v.x + 1) / 2 * W, sy = (1 - v.y) / 2 * H;
     const dist = camera.position.distanceTo(L.p);
-    const nm = nameAt(L.e, T);
+    const nm = labelAt(L.e, T); // without the clan tag (0.18.0); the name bar below keeps the full name
     lx.font = `500 ${dist < 1500 ? 12 : 10}px ${mono}`; lx.textAlign = 'center';
     lx.lineWidth = 3; lx.strokeStyle = 'rgba(8,10,12,.85)';
     lx.strokeText(nm, sx, sy); lx.fillStyle = L.e === selected ? COL.sand : sideCol(L.s.state); lx.fillText(nm, sx, sy);
@@ -546,6 +548,7 @@ function update3() {
       lx.font = `400 10px ${mono}`; lx.strokeText(sub, sx, sy + 12); lx.fillStyle = '#d8d3c8'; lx.fillText(sub, sx, sy + 12); }
   }
   drawKillRings(lx, W, H, camera);
+  { const xs = $('xh3'), off = cam3.mode !== 'eyes'; if (xs.hidden !== off) xs.hidden = off; } // the crosshair size only matters in Player's eyes
   const pov = $('pov');
   const s = selected && playerState(selected, T);
   if (cam3.mode !== 'free' && s && s.state > 0) {
@@ -553,8 +556,9 @@ function update3() {
     const hpv = hpAt(selected, T);
     pov.innerHTML = `<span class="${s.state === 1 ? 'kt' : 'kct'}">${esc(nameAt(selected, T))}</span>${hpv != null ? ` <b>(${hpv})</b>` : ''}<span class="kw">${esc(weaponShort(s.weapon))}</span>`;
     if (scoped) drawScope(lx, W, H);
-    if (cam3.mode === 'eyes') drawHitMarker(lx, W / 2, H / 2);
-    if (cam3.mode === 'eyes' && !scoped) { lx.strokeStyle = 'rgba(90,255,90,.85)'; lx.lineWidth = 1.5; const cx = W / 2, cy = H / 2; lx.beginPath(); lx.moveTo(cx - 12, cy); lx.lineTo(cx - 4, cy); lx.moveTo(cx + 4, cy); lx.lineTo(cx + 12, cy); lx.moveTo(cx, cy - 12); lx.lineTo(cx, cy - 4); lx.moveTo(cx, cy + 4); lx.lineTo(cx, cy + 12); lx.stroke(); }
+    const xh = XHAIR[$('xh3').value] || XHAIR.medium;
+    if (cam3.mode === 'eyes') drawHitMarker(lx, W / 2, H / 2, xh);
+    if (cam3.mode === 'eyes' && !scoped) { lx.strokeStyle = 'rgba(90,255,90,.85)'; lx.lineWidth = xh.w; const cx = W / 2, cy = H / 2, g = xh.gap, e = xh.end; lx.beginPath(); lx.moveTo(cx - e, cy); lx.lineTo(cx - g, cy); lx.moveTo(cx + g, cy); lx.lineTo(cx + e, cy); lx.moveTo(cx, cy - e); lx.lineTo(cx, cy - g); lx.moveTo(cx, cy + g); lx.lineTo(cx, cy + e); lx.stroke(); }
   } else if (cam3.mode !== 'free' && selected) {
     const death = D.kills.filter((k) => k.victim === selected && k.t <= T + 0.05).pop();
     if (death) {
@@ -587,13 +591,17 @@ function update3() {
 // (they end 12 px out), so the crosshair stays readable, shown for MARK_MS (option A, Sujan 5 Oct 2026;
 // before 0.17.0 they were thick, sat on the crosshair and lasted 0.75 s).
 const MARK_MS = 450;
-function drawHitMarker(lx, cx, cy) {
+// Crosshair sizes (0.18.0): gap from the middle to each arm, where the arm ends, line width, in CSS pixels.
+// small is the crosshair before 0.18.0. The kill marker keeps its size and moves out with the arms, so it
+// always starts just past them (option A of 5 Oct 2026).
+const XHAIR = { small: { gap: 4, end: 12, w: 1.5 }, medium: { gap: 5, end: 17, w: 2 }, large: { gap: 6, end: 23, w: 2.5 } };
+function drawHitMarker(lx, cx, cy, xh = XHAIR.small) {
   const f = flashes.filter((x) => x.k.killer === selected).pop();
   if (!f) return;
   const a = (performance.now() - f.at) / MARK_MS; if (a >= 1) return;
   const k = f.k;
   const col = k.wb ? '#ff4fd8' : k.hs ? '#ff9a3c' : '#ffffff';
-  const g0 = 11, g1 = 16;
+  const g0 = Math.round(xh.end * 11 / 12), g1 = g0 + 5; // 11 to 16 with the small crosshair, as before
   lx.save();
   lx.globalAlpha = a < 0.6 ? 1 : 1 - (a - 0.6) / 0.4;
   lx.lineCap = 'round';
@@ -604,7 +612,7 @@ function drawHitMarker(lx, cx, cy) {
   }
   const label = k.wb ? `WALLBANG${k.hs ? ' · HS' : ''}` : k.hs ? 'HEADSHOT' : 'KILL';
   lx.font = `500 10px ${monoFont()}`; lx.textAlign = 'center';
-  lx.lineWidth = 2.5; lx.strokeStyle = 'rgba(0,0,0,.6)'; lx.strokeText(label, cx, cy + 32); lx.fillStyle = col; lx.fillText(label, cx, cy + 32);
+  lx.lineWidth = 2.5; lx.strokeStyle = 'rgba(0,0,0,.6)'; lx.strokeText(label, cx, cy + xh.end + 20); lx.fillStyle = col; lx.fillText(label, cx, cy + xh.end + 20);
   lx.restore();
 }
 // The sniper scope over Player's eyes. Three styles exist; the viewer uses SCOPE_STYLE and has no menu

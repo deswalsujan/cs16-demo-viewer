@@ -24,6 +24,48 @@ What changed in the viewer, newest first. The version shows in the viewer's shor
 - The wallbang finder rules out a kill that needed more damage than any shot through a wall can do (0.15.5). It needs the killer's shots in the demo; around a jump in the recording it can't tell, and the kill stays as the walls alone say.
 - Health and weapon under the names in 3D show at any distance (0.16.0). With many players far away, the labels can overlap.
 - A smoke cloud is drawn as one light green ball for as long as the smoke puffs (about 21 seconds, less when the round restarts). The game's own puffs drift and thin out unevenly, which the viewer doesn't copy.
+- Some HLTV recordings skip ahead: at a few moments every player jumps far between two snapshots while the demo's game clock runs on as if 0.1 s passed (FX vs Lions, Nuke, DreamHack Winter 2010: 7 times). What happened in between isn't in the file. Players slide to the new spot over 0.1 s, and a kill that lands on a jump is judged by the wallbang finder from where everyone stood after it. How to show these is open (IDEAS.md).
+- The dropped bomb on the radar needs the bomb object in the demo, so on de_tuscan it's often missing (the 256-object limit above).
+- Round announcements use Verdana, the game's font; where it isn't installed (most Linux machines) the browser picks a similar one.
+
+## 0.18.0 (2026-10-14)
+
+From Sujan's feedback of 14 Oct 2026, on FX vs Lions, Nuke, DreamHack Winter 2010, Sweden vs Norway, Dust2, ASUS ENC 2010, and mym vs fnatic, Train, 2006. Built without a mockup at his request, except the start screen (option A of [docs/start-screen-step2-mock.png](docs/start-screen-step2-mock.png)).
+
+### Fixed
+- **Clicks on the side panel needing two or three tries.** While a demo played, the Kills and Wallbangs lists were rebuilt every half second (every frame at 8x), the Players tab on every death and every list at each new round. A click is a press and a release on the same row, so a row replaced in between lost it. Now the "playback is passing" tint moves in place without a rebuild, and a rebuild that comes while a mouse button is held on the panel waits until the click has gone through. The demo list on the start screen redraws only when demos change, so it didn't have the problem.
+- **HLTV slow motion.** Some HLTV broadcasts slowed to half speed for a few seconds around a kill (svc_timescale 0.5): 15 of the 31 test demos do it, 6 to 62 times each. Inside those stretches the demo's clock runs twice as fast as the game's (a snapshot every 0.2 s of demo time for 0.1 s of game, checked against the demo's own game clock in every stretch of 7 demos, all within 0.12 s). Playback now runs through them at double speed, so the match plays at real speed. The timeline and "demo time" stay on the demo's clock.
+- **Round and C4 timers counted slow motion as game time.** They count game time now, as the game's do. A kill after a slow stretch in the same round showed a timer 1 to 5 seconds off from the game (Sweden vs Ukraine, Train, ClanBase NationsCup XI, R19: 0:49, now 0:54), which matters when finding a wallbang in the game's demo player. The C4 timer now reads 0:35 at every explosion (mTw vs Lions, Nuke, DreamHack Summer 2011, plant at 38:22: 0:36 before, 36.94 s on the demo's clock and 35.19 s in game time).
+- **The load summary kept counting down behind the start screen** after "Open another demo". It closes at once.
+- **Behind player showed the followed player's name twice**: over the player and in the name bar under the view. The label over the player is gone in Behind player, as in Player's eyes.
+- In-between movement no longer averages snapshot times across the start or end of a slow-motion stretch, where the gaps between snapshots double or halve.
+
+### Changed
+- **Names without clan tags** over the players in 2D and 3D and in the Kills and Wallbangs lists, as the Players tab has had since 0.14.0, worked out once over each whole team so a name reads the same everywhere. Two more things go: a web address as a word of its own ("MYM|REAL www.steelseries.com" reads "REAL", mym vs fnatic, Train, 2006) and a sponsor after a separator most of the team uses ("LIONS Xizt * MAXFPS" reads "Xizt", FX vs Lions). A note only one player has stays ("fnatic.Archi *Bday 19!"). Hovering a name in the lists shows the full one. The kill feed, the name bar under the view, the Tab scoreboard and Copy list keep the full names, as the game shows them.
+- **Kill feed icons.** The kill feed at the top right shows the weapon's kill feed icon and the headshot icon from your own `cstrike/sprites`, in orange as in the game, in place of the words "ak47" and "HS". Without those files it shows the words.
+- **Round announcements in the game's look.** Drawn in the game's own "Default" font from `cstrike/resource/ClientScheme.res` (Verdana, weight 600, 12 to 24 px tall by screen height: 14 px from 768 to 1023 lines), orange (about rgb 250, 188, 80) with a one-pixel dark shadow, the top of the text 35% of the way down, all measured from Sujan's two in-game screenshots (FX vs ALTERNATE aTTaX, Nuke, 1024 x 768: text at 271 of 768). 0.17.0 had them centred at 25%, from Xash3D's code, in the viewer's own font. Shown for 2.5 seconds of game time.
+- **The hold-Tab scoreboard is wider**: up to 1,080 px (was 760), so long names fit.
+- **The start screen, once the Half-Life folder is fine:** the folder step shrinks to one quiet line (folder name, status, Change), and "Open a demo" becomes the outlined card holding the search box and your demos. Its button reads "Open .dem from elsewhere". Before the folder is fine (first visit, wrong folder, Reconnect) both steps look as before. Option A of the mockup, chosen by Sujan.
+
+### Added
+- **Crosshair size**: "Crosshair: small / medium / large" in the 3D bar, shown in Player's eyes. Small is the crosshair before 0.18.0; medium (the default) and large are longer and thicker. The kill markers keep their size and move out with the arms, so they still start just past them. Remembered in this browser.
+- **The C4 on the radar**: a "C4" tag on the carrier's dot, and the dropped bomb where it lies, from the moment it falls until it's picked up or the round resets. The game sends a bomb lying still only when it changes, so the reader keeps it from its last update until the object goes (Na`Vi vs FX, Dust2, SEC 2011: 59 drops; FX vs Lions: 57; Fnatic vs mousesports, Tuscan, ESWC 2011: 5; the ESWC 2010 Tuscan files: none). The planted bomb was there already. The game's radar shows neither to spectators; this changes the decision of 5 Oct 2026, at Sujan's request.
+
+### How it was tested
+- On Sujan's Mac files (`~/Downloads/Half-Life` with the `cstrike/resource` and `cstrike/sprites` folders he added on 14 Oct 2026, 31 demos), copied into the test machine.
+- Scores, every round's winner and every player's K-D overall, on T and on CT, 0.17.0 against 0.18.0 (`compare_all.sh` with `match_detail.js`): identical on all 31.
+- Wallbang lists with the maps loaded, 0.17.0 against 0.18.0 (`wallbang_list.js`): the same kills on all 31; 20 identical, and on 11 slow-motion demos only the round timers of kills after a slow stretch changed (by 1 to 5 seconds).
+- Game time: `v018_c4_game_time.js` on mTw vs Lions, Nuke: 35.25, 35.11, 35.16 and 35.22 s from plant to explosion, the C4 timer at 0:35 for all four. Each slow stretch's lost time against the demo's own game clock (svc_time) on 7 demos: within 0.12 s.
+- New `tests/panel_click_check.py`: at 8x, aim at a row, press, play on while it's held 0.3 s, release; three times on the Kills tab, once on the Players tab across deaths. 0.18.0 passes 4 of 4 in 5 runs out of 5; 0.17.0 fails 4 of 4 every time.
+- Names (`v018_basics.js`): FX vs Lions reads 742, KUB3N, NEO, PASHA, LoordB and THREAT, NIKO DA PANDA, kHRYSTAL, FYRR73, Xizt. Copy list's text is unchanged apart from the timers.
+- Screens in the test browser on FX vs Lions: the kill feed's icons, "Terrorists Win!" at 35% in 14 px orange, the three crosshairs, Behind player without the label, the carrier's tag (THREAT, R2) and a dropped bomb on the radar, the Tab scoreboard with full names, the Wallbangs list, the start screen. No page errors.
+- `folder_row_test.py` (20 of 20), `start_screen_check.py`, `prefs_check.py`, `demo_search_check.py` and `late_kill_timing_check.py` pass.
+
+### Discussed, not changed
+- **Players teleporting in FX vs Lions** (742 on Xizt, R2 11:17.9; kHRYSTAL on PASHA, R8 21:05.7). Rendered frame by frame following 742: at 11:17.82 he's on the roof with 100 HP, one snapshot later on another rooftop with 36 HP, and every other living player jumps at the same moment (3,329 units in total against about 40 normally). The file has every frame and its game clock runs on in steady steps, so HLTV left that stretch out of the recording; no viewer can show it. 7 such jumps in FX vs Lions, 3 in Sweden vs Norway, 3 in mTw vs Lions, 1 in Na`Vi vs FX, Dust2; none in three demos without slow motion. Every bomb that exploded took 35 s on the demo's clock, so there is no skipping outside these moments. Why HLTV does it isn't known (no source found). How the viewer should show them is open in IDEAS.md.
+- The kill feed keeps full names, as in the game (Sujan). So do the name bar under the view and Copy list, so a pasted list matches the game's names.
+- The round announcement stays above the middle of the screen: in Player's eyes the middle is the crosshair, and the game puts it at 35%.
+- The heatmap's "where players stand" samples on the demo's clock, so a slow-motion stretch counts its few seconds twice. Small next to a whole match; left as it is.
 
 ## 0.17.0 (2026-10-05)
 

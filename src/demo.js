@@ -247,6 +247,14 @@ export function parseDemo(buffer, onProgress, opts = {}) {
   let errors = 0, errSamples = [];
   const nadeEnts = {}; // ent index -> {type, pts:[]}
   const nades = [];
+  // The C4 lying on the floor after its carrier dropped it or died (w_backpack.mdl), from the moment it appears
+  // until it's picked up (the object goes) or the round resets. The game re-sends an object only when it
+  // changes, so a bomb lying still is kept from its last update until the object is removed (0.18.0).
+  const bombEnts = {}; // ent index -> {t0, x, y, z}
+  const c4drops = []; // time dropped, time gone, x, y, z
+  // HLTV's slow motion: svc_timescale messages, the time each took effect and its value (0.5 = half speed).
+  // Inside a slow stretch the demo's clock runs 1 / value times faster than the game's (0.18.0).
+  const timescale = [];
 
   // position samples
   const samples = { t: [], slots: {} }; // slots[ent] = number[] of x,y,z,yaw,pitch,alive
@@ -332,6 +340,11 @@ export function parseDemo(buffer, onProgress, opts = {}) {
     const st = ents[num];
     if (!st) return;
     const m = modelName(st.modelindex);
+    if (m.includes('w_backpack')) {
+      const b = bombEnts[num];
+      if (!b) bombEnts[num] = { t0: time, x: st['origin[0]'], y: st['origin[1]'], z: st['origin[2]'] };
+      else { b.x = st['origin[0]']; b.y = st['origin[1]']; b.z = st['origin[2]']; }
+    } else if (bombEnts[num]) finishBomb(num);
     let type = null;
     if (m.includes('w_hegrenade')) type = 'he';
     else if (m.includes('w_flashbang')) type = 'flash';
@@ -341,6 +354,11 @@ export function parseDemo(buffer, onProgress, opts = {}) {
       if (nadeEnts[num]) finishNade(num);
       nadeEnts[num] = { type, owner: st.owner || 0, pts: [time, st['origin[0]'], st['origin[1]'], st['origin[2]']] };
     }
+  }
+  function finishBomb(num) {
+    const b = bombEnts[num];
+    delete bombEnts[num];
+    if (b && inPlayback) c4drops.push(b.t0, time, b.x, b.y, b.z);
   }
   function finishNade(num) {
     const n = nadeEnts[num];
@@ -668,6 +686,7 @@ export function parseDemo(buffer, onProgress, opts = {}) {
           ents = next;
           for (let k = maxClients + 1; k < ents.length; k++) if (ents[k]) trackNade(k);
           for (const k in nadeEnts) if (!ents[k]) finishNade(k);
+          for (const k in bombEnts) if (!ents[k]) finishBomb(k);
           break;
         }
         case 41: { // deltapacketentities
@@ -679,7 +698,7 @@ export function parseDemo(buffer, onProgress, opts = {}) {
             if (r.peekBits(16) === 0) { r.bits(16); break; }
             const remove = r.bits(1);
             if (r.bits(1)) num = r.bits(11); else num += r.bits(6);
-            if (remove) { ents[num] = undefined; if (nadeEnts[num]) finishNade(num); continue; }
+            if (remove) { ents[num] = undefined; if (nadeEnts[num]) finishNade(num); if (bombEnts[num]) finishBomb(num); continue; }
             const custom = r.bits(1);
             let st = ents[num];
             if (!st) { st = Object.assign({}, baseline[num] || {}); ents[num] = st; }
@@ -733,7 +752,7 @@ export function parseDemo(buffer, onProgress, opts = {}) {
         case 52: r.str(); r.ub(); break; // voiceinit
         case 53: { r.ub(); const n = r.us(); r.skip(n); break; } // voicedata
         case 54: r.str(); r.ub(); break; // sendextrainfo
-        case 55: r.f(); break; // timescale
+        case 55: { const v = r.f(); if (inPlayback && v > 0) timescale.push(time, v); break; } // timescale (HLTV slow motion)
         case 56: r.str(); break; // resourcelocation
         case 57: r.str(); break; // sendcvarvalue
         case 58: r.ui(); r.str(); break; // sendcvarvalue2
@@ -828,6 +847,14 @@ export function parseDemo(buffer, onProgress, opts = {}) {
     if (stopAtMap || povRounds) return parseDemo(buffer, onProgress, { again: true, stopAtMap, povRounds, maps });
   }
 
+  for (const k in bombEnts) finishBomb(k);
+  // slow-motion stretches: [start, end, value], each from a timescale below 1 to the next message
+  const slow = [];
+  for (let i = 0; i < timescale.length; i += 2) {
+    const v = timescale[i + 1]; if (v >= 0.999) continue;
+    const t1 = i + 2 < timescale.length ? timescale[i + 2] : time;
+    if (t1 > timescale[i]) slow.push([timescale[i], t1, v]);
+  }
   return {
     header, serverInfo, maxClients, maps, pov: !!opts.povRounds,
     mapName: (serverInfo && serverInfo.mapFile) ? serverInfo.mapFile.replace(/^maps\//, '').replace(/\.bsp$/, '') : header.mapName,
@@ -837,6 +864,6 @@ export function parseDemo(buffer, onProgress, opts = {}) {
     times: new Float32Array(samples.t), slots,
     finalScore: { ...scores }, models: resources.models, stride: STRIDE,
     pmodels, sounds: resources.sounds, events: resources.events, snds: new Float32Array(snds), shots: new Float32Array(shots), booms: new Float32Array(booms), puffs: new Float32Array(puffs), radio, centre, corpses,
-    errors, errSamples, health,
+    errors, errSamples, health, c4drops: new Float32Array(c4drops), slow,
   };
 }
