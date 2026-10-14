@@ -106,7 +106,21 @@ button { cursor: pointer; }
 .radar.m3d .heatbar, .radar.msplit .heatbar { display: none; }
 .cam3 { position: absolute; left: 12px; top: 44px; display: flex; gap: 6px; flex-wrap: wrap; z-index: 3; }
 .cam3 .btn { background: rgba(10,12,14,.82); font-size: 12px; padding: 4px 8px; }
-.cam3 select { background: rgba(10,12,14,.82); border: 1px solid var(--line); border-radius: 4px; padding: 3px 6px; font-size: 12px; }
+.cam3 select { background: var(--panel-2); border: 1px solid var(--line); border-radius: 4px; padding: 3px 6px; font-size: 12px; }
+.cam3 .camseg { background: rgba(10,12,14,.82); }
+.cam3 .camseg button { font-size: 12px; padding: 4px 10px; background: rgba(10,12,14,.82); }
+.cam3 .camseg button.on { background: var(--sand); }
+.cam3 .btn.arr { width: 28px; padding: 4px 0; justify-content: center; font-size: 15px; line-height: 1; }
+.vset { position: relative; }
+#bVset svg { width: 9px; height: 6px; fill: none; stroke: currentColor; stroke-width: 1.6; }
+#bVset[aria-expanded="true"] { border-color: var(--sand); color: var(--sand); }
+#bVset[aria-expanded="true"] svg { transform: rotate(180deg); }
+.vpanel { position: absolute; left: 0; top: calc(100% + 6px); z-index: 6; min-width: 230px; display: grid; gap: 2px; padding: 6px; background: var(--panel); border: 1px solid var(--line); border-radius: 6px; box-shadow: 0 10px 28px rgba(0,0,0,.5); }
+.vrow { display: flex; align-items: center; justify-content: space-between; gap: 12px; padding: 5px 6px; font-size: 12px; border-radius: 4px; }
+.vrow:hover { background: var(--panel-2); }
+.vrow > span { display: grid; }
+.vrow small { color: var(--muted); font-size: 11px; }
+.vrow .btn { font-size: 12px; padding: 3px 10px; min-width: 52px; justify-content: center; }
 .hint3 { position: absolute; right: 12px; bottom: 12px; font-family: var(--f-mono); font-size: 11px; color: var(--muted); background: rgba(10,12,14,.82); border: 1px solid var(--line); padding: 4px 8px; border-radius: 3px; white-space: nowrap; }
 .radar.m2d .hint3, .radar.msplit .hint3 { display: none; }
 @media (max-width: 1100px) { .hint3 { display: none; } }
@@ -451,30 +465,39 @@ body:has(.app.theatre) { overflow: hidden; }
     <div class="status3" id="status3" hidden></div>
     <div class="pov" id="pov" hidden></div>
     <div class="cmsg" id="cmsg" hidden></div>
+    <!-- The 3D bar, one short row since 0.18.1 so the kill feed at the top right doesn't run into it (Sujan,
+         14 Oct 2026): the three cameras as one control, Prev and Next player as arrows, the rest in View settings -->
     <div class="cam3" id="cam3" hidden>
-      <button class="btn on" data-c="free" type="button">Free camera</button>
-      <button class="btn" data-c="eyes" type="button">Player's eyes</button>
-      <button class="btn" data-c="chase" type="button">Behind player</button>
-      <button class="btn" id="bPrevP" type="button" title="Previous player (Z or right-click)">‹ Prev player</button>
-      <button class="btn" id="bNextP" type="button" title="Next player (X or click)">Next player ›</button>
-      <button class="btn" id="tgModels" type="button" title="Draw the players in flat team colours: red for Terrorists, blue for Counter-Terrorists">Team colours</button>
-      <select id="q3" aria-label="3D render quality" title="How sharp the 3D view is drawn. Auto starts sharp and steps down if playback can't keep up">
-        <option value="auto">Quality: auto</option>
-        <option value="high">Quality: high</option>
-        <option value="low">Quality: low</option>
-      </select>
-      <select id="xh3" aria-label="Crosshair size" title="Crosshair size in Player's eyes, like the game's crosshair size setting" hidden>
-        <option value="small">Crosshair: small</option>
-        <option value="medium">Crosshair: medium</option>
-        <option value="large">Crosshair: large</option>
-      </select>
+      <div class="seg camseg" role="group" aria-label="Camera">
+        <button class="on" data-c="free" type="button" title="Free camera: fly around (V switches camera)">Free</button>
+        <button data-c="eyes" type="button" title="Player's eyes: see what the player saw (V switches camera)">Eyes</button>
+        <button data-c="chase" type="button" title="Behind player: follow from just behind (V switches camera)">Behind</button>
+      </div>
+      <button class="btn arr" id="bPrevP" type="button" title="Previous player (Z or right-click)" aria-label="Previous player">‹</button>
+      <button class="btn arr" id="bNextP" type="button" title="Next player (X or click)" aria-label="Next player">›</button>
+      <div class="vset">
+        <button class="btn" id="bVset" type="button" aria-expanded="false" aria-controls="vsetPanel" title="Team colours, quality and crosshair size">View settings <svg viewBox="0 0 10 6" aria-hidden="true"><path d="M1 1l4 4 4-4"/></svg></button>
+        <div class="vpanel" id="vsetPanel" role="group" aria-label="View settings" hidden>
+          <div class="vrow"><span>Team colours</span><button class="btn" id="tgModels" type="button" title="Draw the players in flat team colours: red for Terrorists, blue for Counter-Terrorists">Off</button></div>
+          <label class="vrow"><span>Quality</span><select id="q3" title="How sharp the 3D view is drawn. Auto starts sharp and steps down if playback can't keep up">
+            <option value="auto">Auto</option>
+            <option value="high">High</option>
+            <option value="low">Low</option>
+          </select></label>
+          <label class="vrow"><span>Crosshair<small>in Player's eyes</small></span><select id="xh3" title="Crosshair size in Player's eyes, like the game's crosshair size setting">
+            <option value="small">Small</option>
+            <option value="medium">Medium</option>
+            <option value="large">Large</option>
+          </select></label>
+        </div>
+      </div>
     </div>
     <div class="hint3" id="hint3">Press ? for keyboard shortcuts</div>
     <div class="overlay" id="sb" hidden></div>
     <div class="overlay sumwrap" id="sumCard" hidden></div>
     <div class="overlay keys" id="keys" hidden>
       <div class="keys-card">
-        <div class="keys-head"><b>Shortcuts and kill markers</b><div class="kh-r"><span class="ver">Version 0.18.0 · <a href="https://github.com/deswalsujan/cs16-demo-viewer/blob/main/CHANGELOG.md" target="_blank" rel="noopener">What's new</a> · <a href="https://github.com/deswalsujan/cs16-demo-viewer/issues/new/choose" target="_blank" rel="noopener">Report a bug</a></span><button class="btn" id="bDebug" type="button" title="Copies details for a bug report: browser, demo name, what loaded, errors. No file contents.">Copy debug info</button><button class="btn" id="bKeysClose" type="button">Close</button></div></div>
+        <div class="keys-head"><b>Shortcuts and kill markers</b><div class="kh-r"><span class="ver">Version 0.18.1 · <a href="https://github.com/deswalsujan/cs16-demo-viewer/blob/main/CHANGELOG.md" target="_blank" rel="noopener">What's new</a> · <a href="https://github.com/deswalsujan/cs16-demo-viewer/issues/new/choose" target="_blank" rel="noopener">Report a bug</a></span><button class="btn" id="bDebug" type="button" title="Copies details for a bug report: browser, demo name, what loaded, errors. No file contents.">Copy debug info</button><button class="btn" id="bKeysClose" type="button">Close</button></div></div>
         <textarea class="dbgbox" id="dbgBox" readonly hidden aria-label="Debug info"></textarea>
         <div class="keys-grid">
           <section><h3>Playback</h3>
@@ -576,7 +599,7 @@ body:has(.app.theatre) { overflow: hidden; }
         <div class="drophint">Or drop a .dem file, or an overview .bmp and .txt pair, anywhere on this page</div>
         <div class="prog" id="prog" hidden><i id="progBar"></i></div>
         <div class="msg" id="msg"></div>
-        <div class="loadfoot"><span>Version 0.18.0</span><button class="btn" id="bClear" type="button" title="Forgets your Half-Life folder and deletes the maps, models, sounds and overviews this browser saved from it, as on a first visit">Clear saved files</button></div>
+        <div class="loadfoot"><span>Version 0.18.1</span><button class="btn" id="bClear" type="button" title="Forgets your Half-Life folder and deletes the maps, models, sounds and overviews this browser saved from it, as on a first visit">Clear saved files</button></div>
       </div>
     </div>
   </section>
@@ -5899,7 +5922,10 @@ function playSound(name, pos, vol, atten, pitch, key, L) {
     gain *= Math.max(0, 1 - dist * atten / 1000);
     if (dist > 1) pan = Math.max(-1, Math.min(1, (dx * L.right[0] + dy * L.right[1]) / dist)) * 0.8;
   }
-  if (gain < 0.01) return;
+  // a listener or sound with no usable position (NaN for a frame, as when the view is resized) would set the
+  // volume to NaN, which the browser rejects with a page error (found by theatre_test.py, 14 Oct 2026): skip it
+  if (!(gain >= 0.01)) return;
+  if (!Number.isFinite(pan)) pan = 0;
   const src = ctx.createBufferSource(); src.buffer = buf;
   src.playbackRate.value = (pitch || 100) / 100;
   const g = ctx.createGain(); g.gain.value = Math.min(1, gain);
@@ -6227,7 +6253,6 @@ function update3() {
       lx.font = `400 10px ${mono}`; lx.strokeText(sub, sx, sy + 12); lx.fillStyle = '#d8d3c8'; lx.fillText(sub, sx, sy + 12); }
   }
   drawKillRings(lx, W, H, camera);
-  { const xs = $('xh3'), off = cam3.mode !== 'eyes'; if (xs.hidden !== off) xs.hidden = off; } // the crosshair size only matters in Player's eyes
   const pov = $('pov');
   const s = selected && playerState(selected, T);
   if (cam3.mode !== 'free' && s && s.state > 0) {
@@ -6376,8 +6401,14 @@ requestAnimationFrame(frame);
 setMsg('');
 setControls(false);
 // Team colours: real models in flat red and blue. The simple figures are only used when a model file is missing or broken.
-$('tgModels').onclick = () => { opts.teamColours = !opts.teamColours; $('tgModels').classList.toggle('on', opts.teamColours); ls.set('teamColours', opts.teamColours); };
-if (ls.get('teamColours') === true) { opts.teamColours = true; $('tgModels').classList.add('on'); }
+const tcShow = () => { $('tgModels').classList.toggle('on', opts.teamColours); $('tgModels').textContent = opts.teamColours ? 'On' : 'Off'; };
+$('tgModels').onclick = () => { opts.teamColours = !opts.teamColours; tcShow(); ls.set('teamColours', opts.teamColours); };
+if (ls.get('teamColours') === true) { opts.teamColours = true; tcShow(); }
+// View settings (0.18.1): opens under its button; a click outside it or Esc closes it
+const vsetOpen = (on) => { $('vsetPanel').hidden = !on; $('bVset').setAttribute('aria-expanded', on ? 'true' : 'false'); };
+$('bVset').onclick = (e) => { e.stopPropagation(); vsetOpen($('vsetPanel').hidden); };
+document.addEventListener('pointerdown', (e) => { if (!$('vsetPanel').hidden && !e.target.closest('.vset')) vsetOpen(false); }, true);
+document.addEventListener('keydown', (e) => { if (e.key === 'Escape' && !$('vsetPanel').hidden) { e.stopPropagation(); vsetOpen(false); $('bVset').focus(); } }, true);
 ls.set('models', null); // the old "Player models" switch is gone (0.11.0): forget its setting
 ls.set('smoothAim', null); // Smooth aim was removed in 0.10.0: forget the old setting
 $('q3').value = ['auto', 'high', 'low'].includes(ls.get('quality')) ? ls.get('quality') : 'auto';
@@ -6440,6 +6471,7 @@ function thOver(k, target) {
   const els = TH_PANELS[k]().filter(Boolean);
   if (target && els.some((el) => el.contains(target))) return true;
   const a = document.activeElement;
+  if (k === 't' && !$('vsetPanel').hidden) return true; // View settings is open
   return !!(a && a.tagName === 'SELECT' && els.some((el) => el.contains(a)));
 }
 // what's under the pointer right now: a bar can slide in under a mouse that isn't moving
@@ -6732,7 +6764,7 @@ window.addEventListener('unhandledrejection', (e) => { ERRLOG.push('Promise: ' +
 function debugInfo() {
   let gpu = '';
   try { const gl = document.createElement('canvas').getContext('webgl'); const x = gl && gl.getExtension('WEBGL_debug_renderer_info'); gpu = gl ? (x ? gl.getParameter(x.UNMASKED_RENDERER_WEBGL) : 'WebGL available') : 'no WebGL'; } catch (e) { gpu = 'unknown'; }
-  const L = [`CS 1.6 Demo Viewer 0.18.0`, `Browser: ${navigator.userAgent}`, `Screen: ${screen.width}x${screen.height} at ${devicePixelRatio}x, window ${innerWidth}x${innerHeight}`, `Graphics: ${gpu}`];
+  const L = [`CS 1.6 Demo Viewer 0.18.1`, `Browser: ${navigator.userAgent}`, `Screen: ${screen.width}x${screen.height} at ${devicePixelRatio}x, window ${innerWidth}x${innerHeight}`, `Graphics: ${gpu}`];
   L.push(`Folder: ${Object.keys(files.maps).length} maps, ${Object.keys(files.overviews).length} overviews, ${Object.keys(files.mdl).length} models, ${Object.keys(files.snd).length} sounds, ${files.demos.length} demos`);
   if (D) {
     L.push(`Demo: ${D.fileName}, protocol ${(D.header && D.header.netProtocol) || '?'}, ${D.pov ? 'POV (recorded by a player)' : 'HLTV'}, map ${D.mapName}, length ${fmt(D.end - D.start)}, ${M.liveR.length} live rounds, final ${M.liveR.length ? M.liveR[M.liveR.length - 1].scoreAfter.join(':') : '-'}`);

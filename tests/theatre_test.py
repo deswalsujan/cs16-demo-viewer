@@ -133,10 +133,11 @@ with sync_playwright() as p:
     check('Round pill moves below the header', rc >= hh, f'pill top {rc:.0f}, header {hh}')
     pg.screenshot(path=f'th_{label}_top.png')
     # an open menu in that bar keeps it
-    v("$('q3').focus()"); pg.mouse.move(W / 2, H / 2, steps=5); pg.wait_for_timeout(2600)
-    check('Header stays while its Quality menu has focus', 'show-t' in cls())
-    v("$('q3').blur()"); pg.mouse.move(W / 2 + 10, H / 2, steps=2)
-    check('Header hides after the menu closes', eventually("!$('app').classList.contains('show-t')"))
+    # an open View settings panel in that bar keeps it (0.18.1; before, the Quality menu sat in the bar itself)
+    v("$('bVset').click()"); pg.mouse.move(W / 2, H / 2, steps=5); pg.wait_for_timeout(2600)
+    check('Header stays while its View settings panel is open', 'show-t' in cls())
+    v("vsetOpen(false)"); pg.mouse.move(W / 2 + 10, H / 2, steps=2)
+    check('Header hides after the panel closes', eventually("!$('app').classList.contains('show-t')"))
 
     # 10. right edge: side panel, kill feed moves left of it
     pg.mouse.move(W - 10, H / 2, steps=8); pg.wait_for_timeout(400)

@@ -144,7 +144,10 @@ function playSound(name, pos, vol, atten, pitch, key, L) {
     gain *= Math.max(0, 1 - dist * atten / 1000);
     if (dist > 1) pan = Math.max(-1, Math.min(1, (dx * L.right[0] + dy * L.right[1]) / dist)) * 0.8;
   }
-  if (gain < 0.01) return;
+  // a listener or sound with no usable position (NaN for a frame, as when the view is resized) would set the
+  // volume to NaN, which the browser rejects with a page error (found by theatre_test.py, 14 Oct 2026): skip it
+  if (!(gain >= 0.01)) return;
+  if (!Number.isFinite(pan)) pan = 0;
   const src = ctx.createBufferSource(); src.buffer = buf;
   src.playbackRate.value = (pitch || 100) / 100;
   const g = ctx.createGain(); g.gain.value = Math.min(1, gain);

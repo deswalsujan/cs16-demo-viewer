@@ -32,7 +32,7 @@ Custom maps work too, as long as the map's `.bsp` (and its `.wad` files if it us
 
 - 2D radar on the in-game overview, 3D view with the map's real textures and lighting, or both side by side
 - Cameras: free fly, player's eyes, behind the player. Movement and aim are filled in smoothly between the demo's snapshots (HLTV stores about ten a second)
-- Quality setting for the 3D view (auto, high, low) for slower machines
+- Quality setting for the 3D view (auto, high, low) for slower machines, in View settings with Team colours and the crosshair size
 - Theatre mode (T): the view fills the window, and the controls slide back in when the mouse moves to the top, right or bottom edge. Full screen (F) uses it too
 - Real player and weapon models from your game files: legs run with the movement, the upper body aims where the player looks, shots and reloads animate, and bodies stay on the floor until the round ends. Team colours (red and blue) on request; simple figures stand in when a model file is missing
 - See through walls (H): players behind walls drawn through them in their team colour, with their names, for checking suspected wallhackers

@@ -548,7 +548,6 @@ function update3() {
       lx.font = `400 10px ${mono}`; lx.strokeText(sub, sx, sy + 12); lx.fillStyle = '#d8d3c8'; lx.fillText(sub, sx, sy + 12); }
   }
   drawKillRings(lx, W, H, camera);
-  { const xs = $('xh3'), off = cam3.mode !== 'eyes'; if (xs.hidden !== off) xs.hidden = off; } // the crosshair size only matters in Player's eyes
   const pov = $('pov');
   const s = selected && playerState(selected, T);
   if (cam3.mode !== 'free' && s && s.state > 0) {

@@ -28,6 +28,19 @@ What changed in the viewer, newest first. The version shows in the viewer's shor
 - The dropped bomb on the radar needs the bomb object in the demo, so on de_tuscan it's often missing (the 256-object limit above).
 - Round announcements use Verdana, the game's font; where it isn't installed (most Linux machines) the browser picks a similar one.
 
+## 0.18.1 (2026-10-14)
+
+### Changed
+- **A shorter 3D bar**, so the kill feed at the top right doesn't run into it (Sujan, 14 Oct 2026: with two or more kills, long names reached the bar). The three cameras are one control (Free, Eyes, Behind; the full names are on hover), Prev and Next player are arrows, and Team colours, Quality and Crosshair sit in one "View settings" panel that opens under its button and closes with a click elsewhere or Esc. At 1,512 px wide the bar now ends at 348 px; it used to run to about 850 px. No button to hide it: Theatre and Full screen already hide it until the mouse reaches the top edge, and an open View settings panel keeps it showing there, as an open menu did. The "smaller row" Sujan chose over stacking the options down the left side.
+
+### Fixed
+- A sound whose position, or the listener's, was not a number for a frame (as while the view is resized) set its volume to NaN, which the browser reports as a page error. Such a sound is now skipped. Found by `theatre_test.py`.
+
+### How it was tested
+- `theatre_test.py` at the 14-inch MacBook size (1512 x 982 at 2x): 39 of 39, with its menu check now opening View settings (before: focusing the Quality menu, which is inside the panel now). The first run failed only on the sound error above.
+- In the test browser on FX vs Lions, Nuke, DreamHack Winter 2010, R8 at 21:06 in Player's eyes with two kills in the feed: the bar ends at 348 px, the feed's longest line starts at 615 px. View settings opens with Team colours Off, Quality Auto, Crosshair Medium, and Esc closes it.
+- `modes_and_toggles.js` (every view and camera, Quality), `folder_row_test.py` (20 of 20), `start_screen_check.py`, `prefs_check.py`, `demo_search_check.py`, `late_kill_timing_check.py` and `panel_click_check.py` pass.
+
 ## 0.18.0 (2026-10-14)
 
 From Sujan's feedback of 14 Oct 2026, on FX vs Lions, Nuke, DreamHack Winter 2010, Sweden vs Norway, Dust2, ASUS ENC 2010, and mym vs fnatic, Train, 2006. Built without a mockup at his request, except the start screen (option A of [docs/start-screen-step2-mock.png](docs/start-screen-step2-mock.png)).
