@@ -24,9 +24,27 @@ What changed in the viewer, newest first. The version shows in the viewer's shor
 - The wallbang finder rules out a kill that needed more damage than any shot through a wall can do (0.15.5). It needs the killer's shots in the demo; around a jump in the recording it can't tell, and the kill stays as the walls alone say.
 - Health and weapon under the names in 3D show at any distance (0.16.0). With many players far away, the labels can overlap.
 - A smoke cloud is drawn as one light green ball for as long as the smoke puffs (about 21 seconds, less when the round restarts). The game's own puffs drift and thin out unevenly, which the viewer doesn't copy.
-- Some HLTV recordings skip ahead: at a few moments every player jumps far between two snapshots while the demo's game clock runs on as if 0.1 s passed (FX vs Lions, Nuke, DreamHack Winter 2010: 7 times). What happened in between isn't in the file. Players slide to the new spot over 0.1 s, and a kill that lands on a jump is judged by the wallbang finder from where everyone stood after it. How to show these is open (IDEAS.md).
+- Some HLTV recordings skip ahead: at a few moments every player jumps far between two snapshots while the demo's game clock runs on as if 0.1 s passed (FX vs Lions, Nuke, DreamHack Winter 2010: 7 times). What happened in between isn't in the file, so no viewer can show it. Since 0.19.0 the viewer marks each skip and tags a wallbang that lands on one UNSURE, since the finder can only judge it from where everyone stood after the skip. A skip is found by its jump, so one where few players moved far (most standing still) isn't marked.
 - The dropped bomb on the radar needs the bomb object in the demo, so on de_tuscan it's often missing (the 256-object limit above).
 - Round announcements use Verdana, the game's font; where it isn't installed (most Linux machines) the browser picks a similar one.
+
+## 0.19.0 (2026-10-14)
+
+Skips in the recording, from the approved mockup ([docs/recording-skip-mock.png](docs/recording-skip-mock.png); Sujan, 14 Oct 2026: build it and judge it by eye in the viewer).
+
+### Added
+- **The viewer finds skips in the recording**: snapshots where at least 3 living players, and at least 60% of them, moved over 60 units from the snapshot before (running covers at most about 25), away from round starts. HLTV left that stretch of game out of the file (see 0.18.0, "Discussed, not changed"). FX vs Lions, Nuke, DreamHack Winter 2010: 7 (5:46, 11:17, 16:15, 21:05, 26:54, 31:33, 37:26); Sweden vs Norway, Dust2, ASUS ENC 2010: 3; mTw vs Lions, Nuke, DreamHack Summer 2011: 3; Na`Vi vs FX, Dust2, SEC 2011: 1 (45:46); k1ck vs eq, Nuke, DreamHack Winter 2011: none. The same counts as the measurement of 14 Oct.
+- **"// Recording skips here"** above the name bar for 2 seconds after a skip, in 2D and 3D, and a // break mark on the timeline at each skip. Hovering the mark says what it means.
+- **UNSURE** on a wallbang that lands within 0.3 s of a skip, in the Wallbangs and Kills lists (hover: the recording skips at this kill, so the wallbang was judged from where everyone stood after the skip) and at the end of its line in Copy list. Three in the test demos: 742 on Xizt (R2) and kHRYSTAL on PASHA (R8), FX vs Lions; ArcadioN on SNAJDINHO (R15), mTw vs Lions.
+
+### Changed
+- **Players snap across a skip** instead of sliding to the new spot over 0.1 s, often through walls.
+
+### How it was tested
+- `v019_skips.js` on the five demos above: the skip times; just before the first skip every player checked is still exactly where the snapshot before put him (3 of 3, 3 of 3, 10 of 10, 10 of 10); the note shows 0.5 s after a skip and is gone 3 s after; the UNSURE kills.
+- Wallbang lists with the maps, 0.18.1 against 0.19.0, all 31 demos: identical, so snapping changes no verdict.
+- In the test browser on FX vs Lions, R2 11:17.9 in Player's eyes: the note above the name bar, the // marks, the hover on the R8 mark, UNSURE on R2 and R8 in the Wallbangs list.
+- `folder_row_test.py` (20 of 20), `start_screen_check.py`, `prefs_check.py`, `demo_search_check.py`, `late_kill_timing_check.py` and `panel_click_check.py` pass.
 
 ## 0.18.1 (2026-10-14)
 
