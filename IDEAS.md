@@ -8,7 +8,8 @@ Everything raised in conversation that isn't finished, in one place. Each item s
 
 **Sujan's feedback of 14 Oct 2026** (HLTV viewer; decided by Sujan the same day; built in 0.18.0 unless said)
 - [ ] Sujan, by eye on 0.18.0: names over the players in 2D and 3D, and in the Kills and Wallbangs lists, without the tag or sponsor (FX vs Lions, Nuke, DreamHack Winter 2010: "Xizt", "kHRYSTAL"; hover a list name for the full one). The kill feed, the name bar under the view, the Tab scoreboard and Copy list keep full names.
-- [ ] Sujan, by eye: the kill feed at the top right with the orange weapon and headshot icons (any demo, Player's eyes).
+- [x] Confirmed by Sujan, 14 Oct 2026: the kill feed at the top right with the orange weapon and headshot icons looks good.
+- [ ] Open, raised by Sujan 14 Oct 2026 (discuss before building): with several kills the kill feed at the top right runs into the 3D bar at the top left (Free camera, Player's eyes, Behind player, Prev and Next player, Team colours, Quality, Crosshair). His idea: stack those options down the left side instead of across the top, perhaps with a button to open and close them; maybe no button is needed, since Theatre and Full screen already hide them until the mouse reaches the top edge.
 - [ ] Sujan, by eye: on the 2D radar, a "C4" tag on the carrier's dot and the dropped bomb where it lies (FX vs Lions, Nuke: R2 at about 10:54 THREAT carries it). This changes the 5 Oct decision to leave the C4 off the radar, for the HLTV viewer.
 - [ ] Sujan, by eye: round announcements in the game's look and place: orange Verdana, the top of the text 35% of the way down (measured from his two screenshots; 0.17.0 had it centred at 25%). Compare with the game once on a Mac or Windows screen.
 - [ ] Sujan, by eye: "Crosshair: small / medium / large" in the 3D bar, shown in Player's eyes only; medium is the default. The kill marker keeps its size and moves out with the arms.
