@@ -77,6 +77,8 @@ button { cursor: pointer; }
 }
 .feed .w { color: var(--muted); margin-inline: 6px; }
 .feed .hs { color: var(--kill); margin-right: 6px; }
+.feed div { display: flex; align-items: center; }
+.feed .w .kico, .feed .hs .kico { display: block; background: #ffa83c; } /* the game's kill feed icons are orange */
 .rclock { position: absolute; top: 12px; left: 12px; font-family: var(--f-mono); font-size: 12px; color: var(--muted); background: rgba(10,12,14,.82); border: 1px solid var(--line); padding: 4px 8px; border-radius: 3px; }
 .rclock b { color: var(--fg); font-weight: 500; }
 .legend { position: absolute; left: 12px; bottom: 12px; display: flex; gap: 6px; flex-wrap: wrap; }
@@ -707,7 +709,7 @@ function decodeSpr(u8) {
 async function loadKillIcons() {
   const txt = files.hud.txt;
   if (!txt || kiconsFrom === txt) return;
-  kiconsFrom = txt;
+  kiconsFrom = txt; lastFeedKey = ''; // the kill feed redraws with the icons
   const css = [];
   try {
     const want = {};
@@ -2950,8 +2952,12 @@ function updateHud(force) {
     lastFeedKey = key;
     $('feed').innerHTML = feed.map((k) => {
       const ks = k.kteam === 'TERRORIST' ? 1 : 2, vs = k.vteam === 'TERRORIST' ? 1 : 2;
-      if (k.killer === k.victim || !k.kp) return `<div>${nameHtml(k.vp, vs)}<span class="w">${esc(k.weapon)}</span></div>`;
-      return `<div>${nameHtml(k.kp, ks)}<span class="w">${esc(k.weapon)}</span>${k.hs ? '<span class="hs">HS</span>' : ''}${nameHtml(k.vp, vs)}</div>`;
+      // the weapon's kill feed icon and the headshot icon from the game's own sprites, as in the game's kill
+      // feed (Sujan, 14 Oct 2026, HLTV viewer 0.18.0; POV mode 22 Oct 2026); the words when those files aren't in the folder
+      const gun = KICONS[k.weapon] ? `<span class="w">${kicon(k.weapon)}</span>` : `<span class="w">${esc(k.weapon)}</span>`;
+      const hs = k.hs ? (KICONS.headshot ? `<span class="hs">${kicon('headshot')}</span>` : '<span class="hs">HS</span>') : '';
+      if (k.killer === k.victim || !k.kp) return `<div>${nameHtml(k.vp, vs)}${gun}</div>`;
+      return `<div>${nameHtml(k.kp, ks)}${gun}${hs}${nameHtml(k.vp, vs)}</div>`;
     }).join('');
   }
   // the players list greys out whoever is dead right now, so redraw it when someone dies or respawns

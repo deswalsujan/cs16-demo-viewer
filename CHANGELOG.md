@@ -51,6 +51,11 @@ How the recorder's track was tested (on Sujan's Mac files, 3 Oct 2026):
 
 Sujan's look at parts 2 and 3, done 5 Oct 2026: the crosshair at 70%, the HUD, the trimmed spectator bars, gun draws (the M4A1 silencer going on) and the hidden-enemies note all confirmed (IDEAS.md, "POV demos").
 
+**Kill feed icons (22 Oct 2026, Sujan's request):** the kill feed at the top right shows the weapon's kill feed icon and the headshot icon from `cstrike/sprites`, in orange, in place of "m4a1" and "HS", as the HLTV viewer has since 0.18.0 (same code, copied into `pov/src/template.html`). Without those files it shows the words. No mockup: the HLTV viewer's look, which Sujan already uses.
+- How it was tested: `tests/page/pov_feed_icons.js` on `PPGpub_de_barcelona[Cts]_21-10-2026_15.54.26.dem` (public server, 21 Oct 2026, de_barcelona; recorder "make some noiz fr the ddos boiz"; named by Sujan), with `sprites/hud.txt` and the `640hud` sheets from his Windows folder: 30 icons read, the headshot icon among them; at 2:03 the feed shows nsnd, M4A1 icon, shizznit, and his M4A1 headshot on r`GrimeS with both icons, no words left. Screenshot checked by eye. `folder_row_test.py` (20 of 20), `start_screen_check.py` and `prefs_check.py` pass on `pov/pov.html`.
+
+**Discussed, not changed (22 Oct 2026):** Sujan's M4A1 headshot on r`GrimeS at 2:02 (round 2, 1:08) in the same demo was a wallbang and isn't listed. The finder never got to the walls: r`GrimeS isn't in the file at all from 10 s before the kill to 3 s after, so there is no victim position to check (`tests/page/pov_wb_why.js`). The server held him back, as on the GP css_cache demo's 4:13 kill. His exact aim at each of his last 8 shots meets solid about 1,110 to 1,160 units out, 150 to 216 units thick, then open space (`tests/page/pov_wb_noVictim.js`). Left unmarked, per Sujan's decision of 5 Oct 2026 on kills the finder can't check.
+
 Still to do: a weapon-by-weapon check of his gun animations (parked); whether to make the hidden-enemies note easier to spot (to decide); the aimbot catcher (not started); voice and chat (parked); and making the kill markers subtler (parked, HLTV viewer too).
 
 ## Known limits (current version)
