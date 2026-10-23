@@ -1645,13 +1645,14 @@ function renderJoinCard() {
     ${order ? `<div class="jorder"><b>Order:</b> ${esc(order)}</div>` : ''}
     ${checks.length ? `<ul class="sum-list">${checks.map((c) => `<li><span class="sum-ic ${c.s}" aria-hidden="true">${ic[c.s]}</span><span>${esc(c.t)}${c.n ? `<small>${esc(c.n)}</small>` : ''}</span></li>`).join('')}</ul>` : ''}
     ${wrong}${picker}
-    <div class="sum-foot"><span class="sp"></span><button class="btn" type="button" id="jAdd" ${busy ? 'disabled' : ''}>Add another part…</button><button class="btn" type="button" id="jCancel">Cancel</button><button class="btn primary" type="button" id="jGo" ${busy || JOIN.list.length < 2 || (problem && !JOIN.keep) ? 'disabled' : ''}>Join them</button></div>
+    <div class="sum-foot"><span class="sp"></span><button class="btn" type="button" id="jAdd" ${busy || JOIN.picking ? 'disabled' : ''} ${JOIN.picking ? 'title="Pick a demo above, or a file from elsewhere"' : ''}>Add another part…</button><button class="btn" type="button" id="jCancel">Cancel</button><button class="btn primary" type="button" id="jGo" ${busy || JOIN.list.length < 2 || (problem && !JOIN.keep) ? 'disabled' : ''}>Join them</button></div>
   </div>`;
   el.hidden = false;
   $('jX').onclick = closeJoinCard; $('jCancel').onclick = closeJoinCard;
   el.onclick = (e) => { if (e.target === el) closeJoinCard(); };
   el.querySelectorAll('[data-mv]').forEach((b) => b.onclick = () => { const [i, d] = b.dataset.mv.split(',').map(Number); joinMove(i, d); });
-  $('jAdd').onclick = () => { JOIN.picking = !JOIN.picking; renderJoinCard(); };
+  // greyed out while the picker row is open and empty: clicking it there only closed the row (Sujan, 23 Oct 2026)
+  $('jAdd').onclick = () => { JOIN.picking = true; renderJoinCard(); };
   if ($('jKeep')) $('jKeep').onclick = () => { JOIN.keep = true; renderJoinCard(); };
   if ($('jSugg')) $('jSugg').onclick = useSuggested;
   if ($('jSel')) $('jSel').onchange = (e) => { const f = (files.demos || []).find((x) => x.name === e.target.value); if (f) addJoinPart(f); };
@@ -1791,6 +1792,7 @@ const NO_WB = new Set(['grenade', 'knife', 'world', '']);
 // damage than that from the shots fired can't have gone through a wall: an AWP body shot through any wall
 // does at most 115 x 0.6 x 1.25 = 86, too little for a player on 100 HP (Sweden vs Norway, Dust2,
 // ASUS ENC 2010: three AWP body-shot kills on players at 100 HP were listed as wallbangs; Sujan saw clear shots).
+let WB_FENCES = true; // fences and grates count as cover (decision pending with Sujan, 23 Oct 2026)
 const MAX_DMG = { ak47: 36, aug: 32, awp: 115, deagle: 54, famas: 34, g3sg1: 80, galil: 30, m249: 32, m4a1: 33, scout: 75, sg550: 70, sg552: 33 };
 const ONE_SURFACE = new Set(['usp', 'glock18', 'p228', 'fiveseven', 'elite', 'mac10', 'tmp', 'mp5navy', 'ump45', 'p90', 'm3', 'xm1014']);
 // The victim's health just before the killing hit, and the killer's shots that could have done the damage.
@@ -1826,12 +1828,16 @@ function computeWallbangs() {
     return false;
   };
   const eyeOf = (p) => [p[0], p[1], p[2] + (p[3] ? 12 : 17)];
+  // Not cover: what bullets break (Nuke's vents and upper windows; a kill through them isn't a wallbang, Sujan,
+  // 23 Oct 2026) and, with WB_FENCES off, what you see through (fences, grates). Glass that doesn't break (Nuke's
+  // sliding doors at the lower site) stays cover. Invisible brushes are never cover (solidAlong in bsp.js).
+  const notCover = bsp.solids.filter((s) => s.shootable || (!WB_FENCES && s.fence)).map((s) => s.model);
   for (const k of D.kills) {
     k.wb = null;
     if (!k.kpos || !k.vpos || k.killer === k.victim || NO_WB.has(k.weapon) || ONE_SURFACE.has(k.weapon)) continue;
     const kNow = [...k.kpos, k.kduck], vNow = [...k.vpos, k.vduck];
     const tP = k.tPos != null ? k.tPos : k.t;
-    skip = brokenSet(tP - 0.05);
+    skip = brokenSet(tP - 0.05); for (const m of notCover) skip.add(m);
     poses = posesAt(tP - 0.05);
     if (bodyVisible(eyeOf(kNow), vNow)) continue;
     if (tooMuchDamage(k)) continue;
@@ -1846,6 +1852,9 @@ function computeWallbangs() {
     const hit = aim.hit;
     k.wb = { thick: Math.round(aim.solid > 0 ? aim.solid : mid.solid), aim: Math.round(aim.solid), what: hit.some((h) => h.model !== 0) ? 'object' : 'wall', eye };
   }
+  // a kill that lands on a skip across a round restart was judged from the next round's spawns, thousands of units
+  // apart (4,000 units of "wall" for Orwall's AWP kill on coNTE, roccat vs fnatic, Inferno, R21): nothing to judge
+  for (const k of D.kills) if (k.wb && (M.skipRestart || []).some((st) => Math.abs(st - k.t) <= 0.3)) k.wb = null;
   M.wbs = D.kills.filter((k) => k.wb && M.liveR.some((r) => r.n === k.round));
   renderPane(); drawTimeline();
 }
@@ -2382,9 +2391,17 @@ function findSkips() {
     silent.push([t, e]);
   }
   const silentAt = (t) => new Set(silent.filter(([st]) => Math.abs(st - t) <= 0.3).map(([, e]) => e)).size;
-  M.skipIdx = new Set(); M.skipT = [];
+  M.skipIdx = new Set(); M.skipT = []; M.skipRestart = [];
+  // kills by a player on another (not suicides, the world or the bomb): none can happen in the snapshot where
+  // everyone is put back at the spawns for a new round
+  const killT = D.kills.filter((k) => k.killer !== k.victim && k.kp && !NO_WB.has(k.weapon)).map((k) => k.tMsg != null ? k.tMsg : k.t);
   for (let i = 1; i < n; i++) {
-    if (tt[i] < D.start + 2 || nearStart(tt[i])) continue;
+    if (tt[i] < D.start + 2) continue;
+    // Near a round start everyone jumps to the spawns, so a jump there is the respawn, unless kills arrive in that
+    // same snapshot: then HLTV left out the end of the round and the restart, and the kills that ended it land at
+    // the spawns (roccat vs fnatic, Inferno, Extreme Masters II, R18, R21, R26; mTw vs Lions, Nuke, DreamHack
+    // Summer 2011, minet on dennis in R23; 23 Oct 2026)
+    if (nearStart(tt[i]) && !killT.some((kt) => Math.abs(kt - tt[i]) < 0.06)) continue;
     const gap = Math.max(0.05, gameSpan(tt[i - 1], tt[i])), gap2 = i >= 2 ? Math.max(0.05, gameSpan(tt[i - 2], tt[i])) : gap;
     let alive = 0, fast = 0;
     for (const e in D.slots) {
@@ -2396,7 +2413,7 @@ function findSkips() {
       const m2 = two ? Math.hypot(a[q] - a[o], a[q + 1] - a[o + 1]) : m, g2 = two ? gap2 : gap;
       if (m > 60 && m > 400 * gap && m2 > 400 * g2) fast++;
     }
-    if ((alive >= 3 && fast >= Math.max(3, alive * 0.6)) || (alive >= 1 && alive < 3 && fast === alive && silentAt(tt[i]) >= 1)) { M.skipIdx.add(i); M.skipT.push(tt[i]); }
+    if ((alive >= 3 && fast >= Math.max(3, alive * 0.6)) || (alive >= 1 && alive < 3 && fast === alive && silentAt(tt[i]) >= 1)) { M.skipIdx.add(i); M.skipT.push(tt[i]); if (nearStart(tt[i])) M.skipRestart.push(tt[i]); }
   }
   // silent damage to 3 or more players at once, away from the skips found so far: the snapshot it arrives in
   const groups = []; for (const [t, e] of silent) { let g = groups.find((x) => Math.abs(x.t - t) < 0.15); if (!g) { g = { t, es: new Set() }; groups.push(g); } g.es.add(e); }
@@ -2705,6 +2722,13 @@ function clockAt(t, countdown) {
   return { text: (freeze ? 'freeze ' : '') + fmt(rem), phase: freeze ? 'freeze' : 'round' };
 }
 const clockText = (t, countdown) => { const c = clockAt(t, countdown); return c ? c.text : ''; };
+// the round timer in the narrow time cell of the Kills and Wallbangs lists: "C4 0:16" stays in one piece, and
+// "freeze 0:15" goes on two lines, since in one it ran into the gun icon beside it (Sujan, 23 Oct 2026)
+// A kill that lands on a skip across a round restart belongs to the round it ended, but at that instant the next
+// round's freeze time has begun ("R23 freeze 0:15" for minet on dennis, mTw vs Lions, Nuke, DreamHack Summer 2011):
+// its timer is the round's own, as last recorded before the skip (23 Oct 2026)
+const killClock = (t) => clockText(M && M.skipRestart && M.skipRestart.some((st) => Math.abs(st - t) < 0.06) ? t - 0.05 : t);
+const cellClock = (t) => { const c = killClock(t); return c.startsWith('freeze ') ? `<span class="nw">freeze</span><br><span class="nw">${c.slice(7)}</span>` : `<span class="nw">${c}</span>`; };
 // ---- team names ----
 // Well-known CS 1.6 team names, keyed by how they tend to appear in demo file names and clan tags.
 const KNOWN_TEAMS = {
@@ -2922,6 +2946,9 @@ document.querySelectorAll('.tabs button').forEach((b) => b.onclick = () => {
   tab = b.dataset.tab;
   document.querySelectorAll('.tabs button').forEach((x) => x.classList.toggle('on', x === b));
   renderPane();
+  // back on the Rounds tab, the round playing now is in view, in the middle of the list (it opened at the top
+  // before, so at round 23 the list had to be scrolled by hand; Sujan, 23 Oct 2026)
+  if (tab === 'rounds') { const cur = $('pane').querySelector('.row.cur'); if (cur) cur.scrollIntoView({ block: 'center' }); }
 });
 const teamSpan = (r, e) => {
   const side = teamOfSlot(e, T) != null && r && r.tTeam != null ? (teamOfSlot(e, T) === r.tTeam ? 1 : 2) : 0;
@@ -3033,7 +3060,7 @@ function renderPane() {
     if (r) for (const k of r.kills) {
       // a kill inside a skip in the recording: // by its time (0.20.0), wallbangs included since 0.21.0, which keep UNSURE too
       const sk = skipNear(k.t) ? `<span class="skipk" title="Happened inside a skip in the recording: you won't see it happen">//</span>` : '';
-      h += `<div class="row krow kill3${killState(k)}" data-kill="${k.t}"><span class="n" title="Round timer as shown in game">${k === pickedKill ? MARK : ''}<span class="nw">${clockText(k.t) || '+' + fmt(k.t - r.start)}</span>${sk}</span><span class="main">${killRow3(k, true)}</span></div>`;
+      h += `<div class="row krow kill3${killState(k)}" data-kill="${k.t}"><span class="n" title="Round timer as shown in game">${k === pickedKill ? MARK : ''}${killClock(k.t) ? cellClock(k.t) : '<span class="nw">+' + fmt(k.t - r.start) + '</span>'}${sk}</span><span class="main">${killRow3(k, true)}</span></div>`;
     }
     if (!r || !r.kills.length) h += `<div class="opt">No kills in this round.</div>`;
     p.innerHTML = h;
@@ -3045,7 +3072,7 @@ function renderPane() {
       for (const k of M.wbs) {
         // the round, the round timer and the demo time on three lines; "C4 0:16" never splits (0.21.1, Sujan 15 Oct 2026)
         const r = M.rounds.find((x) => x.n === k.round);
-        h += `<div class="row krow wbrow kill3${killState(k)}" data-wb="${k.t}" title="Through ${k.wb.thick} units of ${k.wb.what === 'object' ? 'a breakable or door' : 'wall or crate'}"><span class="n">${k === pickedKill ? MARK : ''}R${r ? r.ln : '?'} ·<br><span class="nw">${clockText(k.t)}</span><br>${fmt(k.t - D.start)}</span><span class="main">${killRow3(k, false)}</span></div>`;
+        h += `<div class="row krow wbrow kill3${killState(k)}" data-wb="${k.t}" title="Through ${k.wb.thick} units of ${k.wb.what === 'object' ? 'a breakable or door' : 'wall or crate'}"><span class="n">${k === pickedKill ? MARK : ''}R${r ? r.ln : '?'} ·<br>${cellClock(k.t)}<br>${fmt(k.t - D.start)}</span><span class="main">${killRow3(k, false)}</span></div>`;
       }
       if (!M.wbs.length) h += `<div class="opt">No wallbang kills found in the live rounds.</div>`;
     }
@@ -3747,12 +3774,15 @@ tl.addEventListener('pointermove', (e) => {
   for (const k of D.kills) { if (!liveSet.has(k.round)) continue; const x = (k.t - a) / (b - a) * r.width; const d = Math.abs(x - (e.clientX - r.left)); if (d < bd) { bd = d; best = k; } }
   const tip = $('tip');
   const rr = roundAt(t);
-  tip.innerHTML = best ? `${rr && rr.live ? 'R' + rr.ln + ' ' : ''}${clockText(best.t)} · ${killHtml(best)}` : `${fmt(t - D.start)}${rr && rr.live ? ' · round ' + rr.ln + ' · ' + clockText(t) : ''}`;
+  tip.innerHTML = best ? `${rr && rr.live ? 'R' + rr.ln + ' ' : ''}${killClock(best.t)} · ${killHtml(best)}` : `${fmt(t - D.start)}${rr && rr.live ? ' · round ' + rr.ln + ' · ' + clockText(t) : ''}`;
   // a skip in the recording within 6 px: say what the // means, above the rest
   const sk = (M.skipT || []).find((st) => Math.abs((st - a) / (b - a) * r.width - (e.clientX - r.left)) < 6);
   if (sk != null) tip.innerHTML = `<b>Recording skips here</b>: HLTV left part of the game out, so players jump<br>` + tip.innerHTML;
-  tip.style.left = Math.max(80, Math.min(r.width - 80, e.clientX - r.left)) + 'px';
+  // centred on the mouse, but kept whole inside the window: measured after filling it, since a skip note is far
+  // wider than a kill (it ran off the left edge at round 3 and the right edge at the last rounds; Sujan, 23 Oct 2026)
   tip.hidden = false;
+  const half = tip.offsetWidth / 2, tr = tl.getBoundingClientRect(), lo = 8 + half - tr.left, hi = window.innerWidth - 8 - half - tr.left;
+  tip.style.left = (hi < lo ? lo : Math.max(lo, Math.min(hi, e.clientX - tr.left))) + 'px';
 });
 tl.addEventListener('pointerup', () => { tlDrag = false; });
 tl.addEventListener('pointerleave', () => { $('tip').hidden = true; });
@@ -3836,7 +3866,10 @@ function theatreActive() { return TH.on && !!D && $('load').hidden; }
 function setTheatre(on) {
   TH.on = !!on;
   applyTheatre();
-  if (theatreActive() && !TH.hint) { TH.hint = true; toast('Theatre mode. Move the mouse to the top, right or bottom edge for the controls. T leaves it.', 4500); }
+  // the first time in each: full screen names itself and how to leave it, since T doesn't (Sujan, 23 Oct 2026:
+  // choosing Full screen first showed the Theatre mode note)
+  const fs = !!document.fullscreenElement, key = fs ? 'hintFs' : 'hint';
+  if (theatreActive() && !TH[key]) { TH[key] = true; toast(fs ? 'Full screen. Move the mouse to the top, right or bottom edge for the controls. F or Esc leaves it.' : 'Theatre mode. Move the mouse to the top, right or bottom edge for the controls. T leaves it.', 4500); }
 }
 function applyTheatre() {
   const app = $('app'), act = theatreActive();

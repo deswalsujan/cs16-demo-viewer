@@ -2,6 +2,21 @@
 
 What changed in the viewer, newest first. The version shows in the viewer's shortcuts panel (press ?) and on the start screen.
 
+## In progress (branch `wip/feedback-23-oct`, 23 Oct 2026)
+
+From Sujan's feedback of 23 Oct 2026. Built and checked on the 18 demos in the cloud session; not shipped until the wallbang lists and match numbers are compared on all 31 regression demos (Sujan's Mac went offline) and three decisions are taken.
+
+Built:
+- Wallbang finder: invisible brushes (Inferno's lamp post boxes) are never cover, anywhere in the viewer (ALTERNATE aTTaX vs Virtus.pro, Inferno, Extreme Masters II, R8 0:48 mooN on Zeus). Brushes bullets can break (Nuke's vents and upper windows, Inferno's shutters; func_breakable not flagged "only trigger") aren't cover for the finder: SK vs eSTRO, Nuke, WCG 2008, R22 zet on solo; tyloo vs mTw, Nuke, e-Stars Seoul 2009, R4 Xuefeng on ave and R22 Sunde on Xuefeng. Dust2's crates (only the bomb breaks them) and Nuke's sliding glass doors stay cover.
+- Skips across a round restart: HLTV left out the end of a round and the restart, so the kills that ended it arrive in the snapshot where everyone is back at the spawns. Found now (kills in the respawn snapshot), marked //, left out of the Wallbangs list (judged from the next round's spawns), and timed by the round they ended instead of the next round's freeze time. roccat vs fnatic, Inferno, Extreme Masters II (R18, R21, R26); fnatic vs Moscow Five, Nuke, DreamHack Summer 2011 (R4, R10); mTw vs Lions, Nuke, DreamHack Summer 2011 (R19, R23); Burning vs FairFrag, Inferno, ESWC 2010 (R17); ALTERNATE aTTaX vs Virtus.pro, Inferno, Extreme Masters II (R4, R19); MYM vs mTw, Dust2, EM3 2009 (R15); tyloo vs mTw (R28).
+- POV label: a demo is POV only when it has no HLTV audience updates (SK vs eSTRO, Train, WCG 2008, `-0811081859-`, 13 s, read as POV).
+- Timeline hover note kept inside the window; Full screen's own first note; the Rounds tab scrolls to the current round; "Add another part…" greyed out while the picker row is open; "freeze 0:15" on two lines in the list time cells.
+- tests: `compare_all.sh` handles demo names with spaces; new page scripts in tests/README.md.
+
+Waiting on Sujan: a pixel check for visible bodies (items 3, 6, 10: 8 of 145 wallbangs show 100+ pixels of the victim at the shot), wallbang hits that didn't kill (list and threshold, mockup or not), and fences as cover (`WB_FENCES`, no difference on these demos).
+
+Left to do: run the regression comparison on all 31 demos, then version, CHANGELOG entry, IDEAS.md, merge to main, artifact.
+
 ## Known limits (current version)
 - HLTV demos don't record the first-person weapon's animation, so it's rebuilt from shots, weapon switches and the player's body animation. Timing can differ slightly from in-game, and idle variations won't match. If a `v_` model is missing, no gun is shown.
 - Player models get even lighting, so they don't darken in shaded spots the way they do in-game.

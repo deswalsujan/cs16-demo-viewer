@@ -856,7 +856,10 @@ export function parseDemo(buffer, onProgress, opts = {}) {
     if (t1 > timescale[i]) slow.push([timescale[i], t1, v]);
   }
   return {
-    header, serverInfo, maxClients, maps, pov: !!opts.povRounds,
+    // POV: rounds found from the round timer, and no HLTV status updates (the audience count every few seconds,
+    // which only an HLTV recording carries). A short HLTV file with no round marker in it, such as SK vs eSTRO,
+    // Train, WCG 2008 (`-0811081859-`, 13 s), read as POV before (23 Oct 2026).
+    header, serverInfo, maxClients, maps, pov: !!opts.povRounds && !hltvStatus.length,
     mapName: (serverInfo && serverInfo.mapFile) ? serverInfo.mapFile.replace(/^maps\//, '').replace(/\.bsp$/, '') : header.mapName,
     start: playbackStart || 0, end: time,
     players, kills, rounds, bomb, chat, nades, roundTimes, pauses, hp: new Float32Array(hp), pack: new Float32Array(pack),

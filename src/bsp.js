@@ -91,9 +91,17 @@ function solidModels(bsp) {
   const out = [{ model: 0, origin: [0, 0, 0], cls: 'worldspawn' }];
   for (const e of bsp.entities) {
     if (!e.model || e.model[0] !== '*' || !BLOCKING.test(e.classname || '')) continue;
-    if (e.rendermode && e.rendermode !== '0' && e.classname === 'func_wall' && (e.renderamt === '0')) continue; // invisible helpers
     const o = (e.origin || '0 0 0').split(/\s+/).map(Number);
-    out.push({ model: +e.model.slice(1), origin: o, cls: e.classname });
+    // What a player sees of it, for the wallbang finder (23 Oct 2026):
+    //   invisible: drawn with a see-through render mode and no amount (an entity without renderamt has 0, so it
+    //     isn't drawn): the box around Inferno's lamp posts, there for players to bump into
+    //   shootable: a func_breakable that bullets can break (not flagged "only trigger", spawnflags 1, as Dust2's
+    //     crates are, which only the bomb blows up): Nuke's vents and upper windows, Inferno's shutters
+    //   fence: drawn with render mode 4 (solid, see-through where the texture's colour 255 is): fences, grates, ladders
+    const mode = +(e.rendermode || 0), amt = e.renderamt != null ? +e.renderamt : 0;
+    const invisible = mode !== 0 && amt === 0;
+    const shootable = e.classname === 'func_breakable' && !(+(e.spawnflags || 0) & 1);
+    out.push({ model: +e.model.slice(1), origin: o, cls: e.classname, invisible, shootable, fence: mode === 4 });
   }
   return out;
 }
@@ -137,7 +145,7 @@ export function solidAlong(bsp, a, b, step = 2, skip = null, poses = null) {
   for (let i = 1; i < n; i++) {
     const f = i / n, x = a[0] + dx * f, y = a[1] + dy * f, z = a[2] + dz * f;
     for (const s of bsp.solids) {
-      if (skip && skip.has(s.model)) continue;
+      if (s.invisible || (skip && skip.has(s.model))) continue; // nothing to see: never cover (Inferno's lamp post boxes)
       const mdl = bsp.models[s.model];
       let lx, ly, lz;
       const ps = poses && s.model !== 0 ? poses.get(s.model) : null;

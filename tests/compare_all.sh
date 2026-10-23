@@ -11,6 +11,7 @@
 # Each run gets its own copy of the page: harness.py writes _test_<page name> next to the page and deletes it
 # at the end, so parallel runs on one page name break each other (found 2 Oct 2026, a run lost its page).
 set -u
+# demo names are quoted for xargs, so names with spaces work (Burning vs FairFrag, Inferno, 2010; 23 Oct 2026)
 # paths are resolved before moving into tests/, so they can be given relative to where you are
 OUT=$(realpath -m "$1"); A=$(realpath "$2"); B=${3:+$(realpath "$3")}; SCRIPT=${4:-page/match_summary.js}
 # a script path as given, or relative to tests/ (page/match_detail.js)
@@ -28,7 +29,7 @@ one() {
 export -f one; export OUT SCRIPT
 i=0
 ls "$HALF_LIFE_DIR/cstrike" | grep -i '\.dem$' | while read -r n; do
-  i=$((i + 1)); echo "$n a $A $i"; [ -n "$B" ] && echo "$n b $B $i"
+  i=$((i + 1)); echo "\"$n\" a $A $i"; [ -n "$B" ] && echo "\"$n\" b $B $i"
 done | xargs -P 6 -L 1 bash -c 'one "$0" "$1" "$2" "$3"'
 python3 - "$OUT" "$B" <<'EOF'
 import json, os, sys
