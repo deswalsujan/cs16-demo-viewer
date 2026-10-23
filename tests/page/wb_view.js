@@ -36,6 +36,8 @@
       for (const key in R3.rigs) { const r = R3.rigs[key]; if (r !== pr && r !== wr && r.g.visible) { r.g.visible = false; hidden.push(r.g); } }
       const swapped = [];
       if (wr && window.__body) { wr.g.visible = false; hidden.push(wr.g); }
+      if (window.__body) for (const c of R3.dyn.children) if (c !== (pr && pr.g) && c.visible && !Object.values(R3.rigs).some((r) => r.g === c)) { c.visible = false; hidden.push(c); } // smokes and other overlays, as in the picture check
+      if (window.__body) for (const c of R3.scene.children) if (c !== R3.world && c !== R3.dyn && c.visible && !c.isLight) { c.visible = false; hidden.push(c); }
       for (const r of [pr, wr]) if (r && r.g.visible) for (const pt of r.parts) { swapped.push([pt.mesh, pt.mesh.material]); pt.mesh.material = MAG; }
       R3.renderer.setRenderTarget(rt); R3.renderer.render(R3.scene, cam); const vis = grab(); const img = window.__all ? null : png();
       const offs = [];
