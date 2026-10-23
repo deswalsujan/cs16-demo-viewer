@@ -147,7 +147,9 @@ function build3d() {
       transparent: see, depthWrite: !see, side: water ? THREE.DoubleSide : THREE.BackSide,
     });
     const m3 = new THREE.Mesh(geo, mat);
-    if (g.name[0] === '{') m3.userData.holes = true; // a fence or grate texture: see-through where it has holes
+    // a fence, grate or ladder that bullets hit, see-through where its texture has holes; func_illusionary ones
+    // (Inferno's vines, Nuke's wires) are left out, since bullets pass them
+    if (g.name[0] === '{' && g.solid) m3.userData.holes = true;
     if (g.model >= 0) (R3.brk[g.model] || (R3.brk[g.model] = [])).push(m3);
     if (MAP.movers.has(g.model)) { m3.matrixAutoUpdate = false; (R3.mov[g.model] || (R3.mov[g.model] = [])).push(m3); }
     world.add(m3);

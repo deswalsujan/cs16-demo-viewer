@@ -1,4 +1,5 @@
-// The killer's view of the victim at a wallbang, for judging by eye (23 Oct 2026): from the eye the finder
+// The killer's view of the victim at a wallbang, for judging by eye (23 Oct 2026; window.__body = true draws the
+// body alone, as the picture check does, and window.__jpeg = true returns JPEGs): from the eye the finder
 // uses, looking at the victim, at the killing shot and 0.1 s before it. The victim is drawn in flat magenta;
 // the magenta pixels left after the walls are counted, next to his whole silhouette. Returns PNG data URLs.
 // window.__want = [{tag: 'R10 1:22', killer: 'zet'}] (round and round timer as the Wallbangs list shows them),
@@ -14,7 +15,7 @@
   const buf = new Uint8Array(W * H * 4);
   const cv = document.createElement('canvas'); cv.width = W; cv.height = H; const cx = cv.getContext('2d');
   const grab = () => { R3.renderer.readRenderTargetPixels(rt, 0, 0, W, H, buf); let n = 0; for (let i = 0; i < buf.length; i += 4) if (buf[i] > 245 && buf[i + 1] < 12 && buf[i + 2] > 245) n++; return n; };
-  const png = () => { const im = cx.createImageData(W, H); for (let y = 0; y < H; y++) im.data.set(buf.subarray((H - 1 - y) * W * 4, (H - y) * W * 4), y * W * 4); cx.putImageData(im, 0, 0); return cv.toDataURL('image/png'); };
+  const png = () => { const im = cx.createImageData(W, H); for (let y = 0; y < H; y++) im.data.set(buf.subarray((H - 1 - y) * W * 4, (H - y) * W * 4), y * W * 4); cx.putImageData(im, 0, 0); return window.__jpeg ? cv.toDataURL('image/jpeg', 0.82) : cv.toDataURL('image/png'); };
   const out = [];
   const wants = window.__all ? M.wbs.map((k) => { const r = M.rounds.find((x) => x.n === k.round); return { tag: `R${r.ln} ${clockText(k.t)}`, killer: M.pl[k.kp].name, k, offs: window.__all }; }) : window.__want;
   for (const w of wants) {
@@ -34,6 +35,7 @@
       const hidden = [];
       for (const key in R3.rigs) { const r = R3.rigs[key]; if (r !== pr && r !== wr && r.g.visible) { r.g.visible = false; hidden.push(r.g); } }
       const swapped = [];
+      if (wr && window.__body) { wr.g.visible = false; hidden.push(wr.g); }
       for (const r of [pr, wr]) if (r && r.g.visible) for (const pt of r.parts) { swapped.push([pt.mesh, pt.mesh.material]); pt.mesh.material = MAG; }
       R3.renderer.setRenderTarget(rt); R3.renderer.render(R3.scene, cam); const vis = grab(); const img = window.__all ? null : png();
       const offs = [];

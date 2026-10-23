@@ -1845,8 +1845,9 @@ function computeWallbangs() {
     const pitch = -raw * 3 * Math.PI / 180, yaw = (k.kang ? k.kang[1] : 0) * Math.PI / 180;
     const dist = Math.hypot(k.vpos[0] - eye[0], k.vpos[1] - eye[1], k.vpos[2] - eye[2]);
     const end = [eye[0] + Math.cos(pitch) * Math.cos(yaw) * dist, eye[1] + Math.cos(pitch) * Math.sin(yaw) * dist, eye[2] - Math.sin(pitch) * dist];
-    const aim = solidAlong(bsp, eye, end, 2, skip, poses);
-    const mid = solidAlong(bsp, eye, [k.vpos[0], k.vpos[1], k.vpos[2] + (k.vduck ? 4 : 6)], 2, skip, poses);
+    // the crosshair line goes through what a bullet hits (the 15 points above are sight lines)
+    const aim = solidAlong(bsp, eye, end, 2, skip, poses, 'bullet');
+    const mid = solidAlong(bsp, eye, [k.vpos[0], k.vpos[1], k.vpos[2] + (k.vduck ? 4 : 6)], 2, skip, poses, 'bullet');
     if (aim.solid === 0) continue; // crosshair had a clear line: the victim was hit in the open
     const hit = aim.hit;
     k.wb = { thick: Math.round(aim.solid > 0 ? aim.solid : mid.solid), aim: Math.round(aim.solid), what: hit.some((h) => h.model !== 0) ? 'object' : 'wall', eye };

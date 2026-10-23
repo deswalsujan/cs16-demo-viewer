@@ -90,11 +90,20 @@ const BLOCKING = /^func_(wall|breakable|door|door_rotating|wall_toggle|pushable|
 function solidModels(bsp) {
   const out = [{ model: 0, origin: [0, 0, 0], cls: 'worldspawn' }];
   for (const e of bsp.entities) {
-    if (!e.model || e.model[0] !== '*' || !BLOCKING.test(e.classname || '')) continue;
+    if (!e.model || e.model[0] !== '*') continue;
     const o = (e.origin || '0 0 0').split(/\s+/).map(Number);
+    // Drawn solid but not solid to bullets or players: a func_illusionary in the normal render mode. It hides what's
+    // behind it, so the sight lines count it (sightOnly), and bullets pass through it. Inferno's lamp posts are one:
+    // the post you see is a func_illusionary, and an invisible func_wall of the same size around it (below) is what
+    // a bullet hits (23 Oct 2026: ave on PASHA, FX vs mTw, Inferno, Xperia Play 2011, R9 0:53, is a wallbang through
+    // the post; mooN on Zeus, ALTERNATE aTTaX vs Virtus.pro, Inferno, Extreme Masters II, R8 0:48, isn't: Zeus was
+    // beside it, in view).
+    if (e.classname === 'func_illusionary' && !+(e.rendermode || 0)) { out.push({ model: +e.model.slice(1), origin: o, cls: e.classname, sightOnly: true }); continue; }
+    if (!BLOCKING.test(e.classname || '')) continue;
     // What a player sees of it, for the wallbang finder (23 Oct 2026):
     //   invisible: drawn with a see-through render mode and no amount (an entity without renderamt has 0, so it
-    //     isn't drawn): the box around Inferno's lamp posts, there for players to bump into
+    //     isn't drawn): the box around Inferno's lamp posts, there for players and bullets to hit. Nothing to see,
+    //     so the sight lines pass it; bullets don't
     //   shootable: a func_breakable that bullets can break (not flagged "only trigger", spawnflags 1, as Dust2's
     //     crates are, which only the bomb blows up): Nuke's vents and upper windows, Inferno's shutters
     //   fence: drawn with render mode 4 (solid, see-through where the texture's colour 255 is): fences, grates, ladders
@@ -136,7 +145,10 @@ function pointContents(bsp, head, x, y, z) {
 // skip: optional Set of brush model numbers to ignore (e.g. vents that are already broken)
 // poses: optional Map of brush model number -> where it is at that moment ({ o, f, r, u }, see brushPose),
 //        for doors and other movers that aren't where the map file puts them (a door opened either way)
-export function solidAlong(bsp, a, b, step = 2, skip = null, poses = null) {
+// use: 'sight' (default) for what a player sees: invisible brushes let the line through and func_illusionary
+//      stops it; 'bullet' for what a bullet hits: the other way round
+export function solidAlong(bsp, a, b, step = 2, skip = null, poses = null, use = 'sight') {
+  const bullet = use === 'bullet';
   const dx = b[0] - a[0], dy = b[1] - a[1], dz = b[2] - a[2];
   const len = Math.hypot(dx, dy, dz);
   const n = Math.max(1, Math.ceil(len / step));
@@ -145,7 +157,7 @@ export function solidAlong(bsp, a, b, step = 2, skip = null, poses = null) {
   for (let i = 1; i < n; i++) {
     const f = i / n, x = a[0] + dx * f, y = a[1] + dy * f, z = a[2] + dz * f;
     for (const s of bsp.solids) {
-      if (s.invisible || (skip && skip.has(s.model))) continue; // nothing to see: never cover (Inferno's lamp post boxes)
+      if ((bullet ? s.sightOnly : s.invisible) || (skip && skip.has(s.model))) continue;
       const mdl = bsp.models[s.model];
       let lx, ly, lz;
       const ps = poses && s.model !== 0 ? poses.get(s.model) : null;
@@ -210,7 +222,7 @@ export function parseWad(buffer, wanted) {
 const HIDE = /^(trigger_|func_buyzone|func_bomb_target|func_hostage_rescue|func_escapezone|func_vip_safetyzone|func_ladder|env_|info_|armoury|func_mortar_field)/;
 // separate: Set of brush model numbers that get their own meshes (so they can be hidden when broken)
 export function buildMesh(bsp, separate = null) {
-  const drawModels = [{ model: 0, origin: [0, 0, 0], amt: 1, mode: 0 }];
+  const drawModels = [{ model: 0, origin: [0, 0, 0], amt: 1, mode: 0, solid: true }];
   for (const e of bsp.entities) {
     if (!e.model || e.model[0] !== '*' || HIDE.test(e.classname || '')) continue;
     const mode = +(e.rendermode || 0);
@@ -218,7 +230,7 @@ export function buildMesh(bsp, separate = null) {
     // (Inferno's lamp posts have such a box around them for players to bump into)
     const amt = e.renderamt != null ? +e.renderamt / 255 : 0;
     if (mode && amt === 0) continue;
-    drawModels.push({ model: +e.model.slice(1), origin: (e.origin || '0 0 0').split(/\s+/).map(Number), amt: mode === 0 ? 1 : amt, mode });
+    drawModels.push({ model: +e.model.slice(1), origin: (e.origin || '0 0 0').split(/\s+/).map(Number), amt: mode === 0 ? 1 : amt, mode, solid: BLOCKING.test(e.classname || '') });
   }
   // gather faces per texture
   const groups = new Map();
@@ -249,8 +261,8 @@ export function buildMesh(bsp, separate = null) {
       const bs0 = Math.floor(smin / 16), bt0 = Math.floor(tmin / 16);
       const lw = Math.ceil(smax / 16) - bs0 + 1, lh = Math.ceil(tmax / 16) - bt0 + 1;
       const own = separate && separate.has(dm.model) ? dm.model : -1;
-      const key = name + '|' + dm.amt + '|' + dm.mode + '|' + own;
-      if (!groups.has(key)) groups.set(key, { name, amt: dm.amt, mode: dm.mode, model: own, faces: [] });
+      const key = name + '|' + dm.amt + '|' + dm.mode + '|' + own + '|' + (dm.solid ? 1 : 0);
+      if (!groups.has(key)) groups.set(key, { name, amt: dm.amt, mode: dm.mode, model: own, solid: !!dm.solid, faces: [] });
       const rec = { poly, ti, tex, origin: dm.origin, bs0, bt0, lw, lh, light: f.light, styles: f.styles, lm: null };
       groups.get(key).faces.push(rec);
       if (f.light >= 0 && f.styles[0] !== 255 && lw > 0 && lh > 0 && lw <= 64 && lh <= 64) lmFaces.push(rec);
@@ -296,7 +308,7 @@ export function buildMesh(bsp, separate = null) {
       }
       for (let k = 1; k + 1 < vs.length; k++) for (const v of [vs[0], vs[k], vs[k + 1]]) { pos.push(v[0], v[1], v[2]); uv.push(v[3], v[4]); uv2.push(v[5], v[6]); }
     }
-    out.push({ name: g.name, amt: g.amt, mode: g.mode, model: g.model, pos: new Float32Array(pos), uv: new Float32Array(uv), uv2: new Float32Array(uv2) });
+    out.push({ name: g.name, amt: g.amt, mode: g.mode, model: g.model, solid: g.solid, pos: new Float32Array(pos), uv: new Float32Array(uv), uv2: new Float32Array(uv2) });
   }
   return { groups: out, atlas: { w: AW, h: AH, data: atlas } };
 }
