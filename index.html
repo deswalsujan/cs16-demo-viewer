@@ -507,7 +507,7 @@ body:has(.app.theatre) { overflow: hidden; }
     <div class="overlay sumwrap" id="sumCard" hidden></div>
     <div class="overlay keys" id="keys" hidden>
       <div class="keys-card">
-        <div class="keys-head"><b>Shortcuts and kill markers</b><div class="kh-r"><span class="ver">Version 0.21.1 · <a href="https://github.com/deswalsujan/cs16-demo-viewer/blob/main/CHANGELOG.md" target="_blank" rel="noopener">What's new</a> · <a href="https://github.com/deswalsujan/cs16-demo-viewer/issues/new/choose" target="_blank" rel="noopener">Report a bug</a></span><button class="btn" id="bDebug" type="button" title="Copies details for a bug report: browser, demo name, what loaded, errors. No file contents.">Copy debug info</button><button class="btn" id="bKeysClose" type="button">Close</button></div></div>
+        <div class="keys-head"><b>Shortcuts and kill markers</b><div class="kh-r"><span class="ver">Version 0.22.0 · <a href="https://github.com/deswalsujan/cs16-demo-viewer/blob/main/CHANGELOG.md" target="_blank" rel="noopener">What's new</a> · <a href="https://github.com/deswalsujan/cs16-demo-viewer/issues/new/choose" target="_blank" rel="noopener">Report a bug</a></span><button class="btn" id="bDebug" type="button" title="Copies details for a bug report: browser, demo name, what loaded, errors. No file contents.">Copy debug info</button><button class="btn" id="bKeysClose" type="button">Close</button></div></div>
         <textarea class="dbgbox" id="dbgBox" readonly hidden aria-label="Debug info"></textarea>
         <div class="keys-grid">
           <section><h3>Playback</h3>
@@ -609,7 +609,7 @@ body:has(.app.theatre) { overflow: hidden; }
         <div class="drophint">Or drop a .dem file, or an overview .bmp and .txt pair, anywhere on this page</div>
         <div class="prog" id="prog" hidden><i id="progBar"></i></div>
         <div class="msg" id="msg"></div>
-        <div class="loadfoot"><span>Version 0.21.1</span><button class="btn" id="bClear" type="button" title="Forgets your Half-Life folder and deletes the maps, models, sounds and overviews this browser saved from it, as on a first visit">Clear saved files</button></div>
+        <div class="loadfoot"><span>Version 0.22.0</span><button class="btn" id="bClear" type="button" title="Forgets your Half-Life folder and deletes the maps, models, sounds and overviews this browser saved from it, as on a first visit">Clear saved files</button></div>
       </div>
     </div>
   </section>
@@ -2976,7 +2976,6 @@ const NO_WB = new Set(['grenade', 'knife', 'world', '']);
 // damage than that from the shots fired can't have gone through a wall: an AWP body shot through any wall
 // does at most 115 x 0.6 x 1.25 = 86, too little for a player on 100 HP (Sweden vs Norway, Dust2,
 // ASUS ENC 2010: three AWP body-shot kills on players at 100 HP were listed as wallbangs; Sujan saw clear shots).
-let WB_FENCES = true; // fences and grates count as cover (decision pending with Sujan, 23 Oct 2026)
 const MAX_DMG = { ak47: 36, aug: 32, awp: 115, deagle: 54, famas: 34, g3sg1: 80, galil: 30, m249: 32, m4a1: 33, scout: 75, sg550: 70, sg552: 33 };
 const ONE_SURFACE = new Set(['usp', 'glock18', 'p228', 'fiveseven', 'elite', 'mac10', 'tmp', 'mp5navy', 'ump45', 'p90', 'm3', 'xm1014']);
 // The victim's health just before the killing hit, and the killer's shots that could have done the damage.
@@ -3013,11 +3012,11 @@ function computeWallbangs() {
   };
   const eyeOf = (p) => [p[0], p[1], p[2] + (p[3] ? 12 : 17)];
   // Not cover: what bullets break (Nuke's vents and upper windows; a kill through them isn't a wallbang, Sujan,
-  // 23 Oct 2026) and, with WB_FENCES off, what you see through (fences, grates). Glass that doesn't break (Nuke's
-  // sliding doors at the lower site) stays cover. Invisible brushes are never cover (solidAlong in bsp.js).
-  const notCover = bsp.solids.filter((s) => s.shootable || (!WB_FENCES && s.fence)).map((s) => s.model);
+  // 23 Oct 2026). Glass that doesn't break (Nuke's sliding doors at the lower site) and fences, grates and ladders
+  // stay cover (Sujan, 23 Oct 2026). Invisible brushes are never cover (solidAlong in bsp.js).
+  const notCover = bsp.solids.filter((s) => s.shootable).map((s) => s.model);
   for (const k of D.kills) {
-    k.wb = null;
+    k.wb = null; k.seenPx = null;
     if (!k.kpos || !k.vpos || k.killer === k.victim || NO_WB.has(k.weapon) || ONE_SURFACE.has(k.weapon)) continue;
     const kNow = [...k.kpos, k.kduck], vNow = [...k.vpos, k.vduck];
     const tP = k.tPos != null ? k.tPos : k.t;
@@ -3041,6 +3040,8 @@ function computeWallbangs() {
   for (const k of D.kills) if (k.wb && (M.skipRestart || []).some((st) => Math.abs(st - k.t) <= 0.3)) k.wb = null;
   M.wbs = D.kills.filter((k) => k.wb && M.liveR.some((r) => r.n === k.round));
   renderPane(); drawTimeline();
+  // then the picture check (checkSeen, view3d.part.js), once the 3D map is built: loadMap builds it right after this
+  setTimeout(() => { if (typeof checkSeen === 'function') checkSeen(); }, 0);
 }
 
 // Stretches of the demo that the server announced as live: [start, end] pairs from its text messages.
@@ -4252,7 +4253,7 @@ function renderPane() {
     let h;
     if (!MAP || MAP.name !== D.mapName.toLowerCase()) h = `<div class="opt">Wallbang detection needs the map file (${esc(D.mapName)}.bsp). Choose your Half-Life folder or drop the .bsp here.</div>`;
     else {
-      h = `<div class="copyrow"><span>${M.wbs.length} kills where the victim was fully hidden from the shooter and the crosshair was on the wall. Times: round and in-game round timer, then demo time.</span><button class="btn" id="bCopyWb" type="button">Copy list</button></div>`;
+      h = `<div class="copyrow"><span>${M.wbs.length} kills where the victim was fully hidden from the shooter and the crosshair was on the wall. Times: round and in-game round timer, then demo time.${M.seenPending ? ` <b>Checking ${M.seenPending} from the shooter's eye…</b>` : ''}</span><button class="btn" id="bCopyWb" type="button">Copy list</button></div>`;
       for (const k of M.wbs) {
         // the round, the round timer and the demo time on three lines; "C4 0:16" never splits (0.21.1, Sujan 15 Oct 2026)
         const r = M.rounds.find((x) => x.n === k.round);
@@ -5120,6 +5121,7 @@ function build3d() {
       transparent: see, depthWrite: !see, side: water ? THREE.DoubleSide : THREE.BackSide,
     });
     const m3 = new THREE.Mesh(geo, mat);
+    if (g.name[0] === '{') m3.userData.holes = true; // a fence or grate texture: see-through where it has holes
     if (g.model >= 0) (R3.brk[g.model] || (R3.brk[g.model] = [])).push(m3);
     if (MAP.movers.has(g.model)) { m3.matrixAutoUpdate = false; (R3.mov[g.model] || (R3.mov[g.model] = [])).push(m3); }
     world.add(m3);
@@ -6518,6 +6520,81 @@ function placeCam(p, yaw, pitch) {
   cam3.lastYaw = yaw; cam3.lastPitch = pitch;
 }
 
+// ---------------- wallbangs: is any of the victim in view? (0.22.0) ----------------
+// The finder's 15 points on the victim (computeWallbangs) miss a head or shoulder showing over cover: SK vs eSTRO,
+// Nuke, WCG 2008, R15 hee on walle; roccat vs fnatic, Inferno, Extreme Masters II, R13 Torgersen on Niko; MYM vs
+// mTw, Dust2, EM3 2009, R28 LoordB on MJE (Sujan, 23 Oct 2026). So every wallbang the points leave is also drawn
+// from the killer's eye at the killing shot: the map as it was then (broken breakables gone, doors where they were),
+// the victim's body alone in flat magenta, posed for that moment. If SEEN_PX or more of his pixels show past the
+// walls, part of him was in view and it isn't a wallbang. The picture is always the same size around the victim
+// (640 x 400, 220 units high at his distance), so the count doesn't depend on the screen: 100 pixels is a patch
+// about 5 by 6 units, a piece of a head. As for the points, what bullets break doesn't hide him, and fences and
+// grates do (Sujan, 23 Oct 2026: they count as cover), so their holes are filled in for this picture.
+// Measured 23 Oct 2026 on 145 wallbangs: Sujan's three showed 210, 371 and 907 pixels; 8 showed 100 or more.
+const SEEN_PX = 100, SEEN_W = 640, SEEN_H = 400;
+let seenGen = 0;
+async function checkSeen() {
+  const gen = ++seenGen;
+  if (!R3 || !MAP || !D || !M || !window.THREE || view3.map !== MAP.name) return;
+  if (!R3.rigs) R3.rigs = {};
+  const cands = D.kills.filter((k) => k.wb && k.seenPx == null);
+  if (!cands.length) return;
+  M.seenPending = cands.length; renderPane();
+  const done = () => { if (gen === seenGen) { M.seenPending = 0; M.wbs = D.kills.filter((k) => k.wb && M.liveR.some((r) => r.n === k.round)); renderPane(); drawTimeline(); } };
+  // the models these victims wear, loaded first (the folder's files are read on demand)
+  const names = new Set();
+  for (const k of cands) { const a = D.slots[k.victim]; if (a) names.add(playerModelName(a[M.idxAt(k.tPos != null ? k.tPos : k.t) * D.stride + 8])); }
+  await Promise.all([...names].filter((n) => /\.mdl$/i.test(n)).map((n) => modelEntry(n).done));
+  if (gen !== seenGen || view3.map !== MAP.name) return;
+  const rt = new THREE.WebGLRenderTarget(SEEN_W, SEEN_H);
+  const cam = new THREE.PerspectiveCamera(30, SEEN_W / SEEN_H, 1, 20000);
+  const MAG = new THREE.MeshBasicMaterial({ color: 0xff00ff, fog: false, side: THREE.DoubleSide });
+  const SOLID = new THREE.MeshBasicMaterial({ color: 0x000000, side: THREE.DoubleSide });
+  const buf = new Uint8Array(SEEN_W * SEEN_H * 4);
+  const notCover = new Set(MAP.bsp.solids.filter((s) => s.shootable).map((s) => s.model));
+  for (const k of cands) {
+    if (gen !== seenGen) break;
+    const tP = k.tPos != null ? k.tPos : k.t, vs = playerState(k.victim, tP);
+    const a = D.slots[k.victim];
+    const pname = a ? playerModelName(a[M.idxAt(tP) * D.stride + 8]) : '';
+    if (!vs || !/\.mdl$/i.test(pname)) { k.seenPx = -1; continue; }
+    const r = rigFor('seen', pname); if (!r) { k.seenPx = -1; continue; }
+    setBody(r, packAt(k.victim, tP));
+    const yaw = posePlayer(r, k.victim, vs, tP);
+    if (yaw === false) { r.g.visible = false; k.seenPx = -1; continue; }
+    placeRig(r, vs.x, vs.y, vs.z, yaw, 0);
+    // the map at the shot
+    if (R3.brk) for (const m in R3.brk) { const vis = !notCover.has(+m) && !brokenAt(+m, tP - 0.05); for (const x of R3.brk[m]) x.visible = vis; }
+    const poses = posesAt(tP - 0.05);
+    if (R3.mov) for (const m in R3.mov) placeMover(R3.mov[m], poses.get(+m) || brushPose(MAP.movers.get(+m), null));
+    const swapped = [];
+    for (const c of R3.world.children) if (c.userData.holes) { swapped.push([c, c.material]); c.material = SOLID; }
+    const hidden = [];
+    for (const c of R3.scene.children) if (c !== R3.world && c !== R3.dyn && c.visible && !c.isLight) { c.visible = false; hidden.push(c); }
+    for (const c of R3.dyn.children) if (c !== r.g && c.visible) { c.visible = false; hidden.push(c); }
+    const mats = r.parts.map((pt) => pt.mesh.material); for (const pt of r.parts) pt.mesh.material = MAG;
+    const eye = [k.kpos[0], k.kpos[1], k.kpos[2] + (k.kduck ? 12 : 17)];
+    const dist = Math.hypot(vs.x - eye[0], vs.y - eye[1], vs.z - eye[2]);
+    cam.fov = Math.max(4, Math.min(60, 2 * Math.atan(110 / Math.max(dist, 1)) * 180 / Math.PI)); cam.updateProjectionMatrix();
+    cam.position.copy(g3(eye[0], eye[1], eye[2])); cam.lookAt(g3(vs.x, vs.y, vs.z));
+    const bg = R3.scene.background; R3.scene.background = new THREE.Color(0);
+    R3.renderer.setRenderTarget(rt); R3.renderer.render(R3.scene, cam);
+    R3.renderer.readRenderTargetPixels(rt, 0, 0, SEEN_W, SEEN_H, buf); R3.renderer.setRenderTarget(null);
+    let n = 0; for (let i = 0; i < buf.length; i += 4) if (buf[i] > 245 && buf[i + 1] < 12 && buf[i + 2] > 245) n++;
+    // put everything back as it was (update3 redraws breakables and doors for the moment playing on the next frame)
+    R3.scene.background = bg;
+    r.parts.forEach((pt, i) => { pt.mesh.material = mats[i]; });
+    for (const [c, m] of swapped) c.material = m;
+    for (const c of hidden) c.visible = true;
+    r.g.visible = false;
+    k.seenPx = n;
+    if (n >= SEEN_PX) k.wb = null;
+    await new Promise((res) => setTimeout(res, 0)); // let the page breathe between pictures
+  }
+  rt.dispose(); MAG.dispose(); SOLID.dispose();
+  done();
+}
+
 // ---------------- loop ----------------
 let lastNow = performance.now(), hudAcc = 0;
 function frame(now) {
@@ -6917,7 +6994,7 @@ window.addEventListener('unhandledrejection', (e) => { ERRLOG.push('Promise: ' +
 function debugInfo() {
   let gpu = '';
   try { const gl = document.createElement('canvas').getContext('webgl'); const x = gl && gl.getExtension('WEBGL_debug_renderer_info'); gpu = gl ? (x ? gl.getParameter(x.UNMASKED_RENDERER_WEBGL) : 'WebGL available') : 'no WebGL'; } catch (e) { gpu = 'unknown'; }
-  const L = [`CS 1.6 Demo Viewer 0.21.1`, `Browser: ${navigator.userAgent}`, `Screen: ${screen.width}x${screen.height} at ${devicePixelRatio}x, window ${innerWidth}x${innerHeight}`, `Graphics: ${gpu}`];
+  const L = [`CS 1.6 Demo Viewer 0.22.0`, `Browser: ${navigator.userAgent}`, `Screen: ${screen.width}x${screen.height} at ${devicePixelRatio}x, window ${innerWidth}x${innerHeight}`, `Graphics: ${gpu}`];
   L.push(`Folder: ${Object.keys(files.maps).length} maps, ${Object.keys(files.overviews).length} overviews, ${Object.keys(files.mdl).length} models, ${Object.keys(files.snd).length} sounds, ${files.demos.length} demos`);
   if (D) {
     L.push(`Demo: ${D.fileName}, protocol ${(D.header && D.header.netProtocol) || '?'}, ${D.pov ? 'POV (recorded by a player)' : 'HLTV'}, map ${D.mapName}, length ${fmt(D.end - D.start)}, ${M.liveR.length} live rounds, final ${M.liveR.length ? M.liveR[M.liveR.length - 1].scoreAfter.join(':') : '-'}`);

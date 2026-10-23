@@ -1792,7 +1792,6 @@ const NO_WB = new Set(['grenade', 'knife', 'world', '']);
 // damage than that from the shots fired can't have gone through a wall: an AWP body shot through any wall
 // does at most 115 x 0.6 x 1.25 = 86, too little for a player on 100 HP (Sweden vs Norway, Dust2,
 // ASUS ENC 2010: three AWP body-shot kills on players at 100 HP were listed as wallbangs; Sujan saw clear shots).
-let WB_FENCES = true; // fences and grates count as cover (decision pending with Sujan, 23 Oct 2026)
 const MAX_DMG = { ak47: 36, aug: 32, awp: 115, deagle: 54, famas: 34, g3sg1: 80, galil: 30, m249: 32, m4a1: 33, scout: 75, sg550: 70, sg552: 33 };
 const ONE_SURFACE = new Set(['usp', 'glock18', 'p228', 'fiveseven', 'elite', 'mac10', 'tmp', 'mp5navy', 'ump45', 'p90', 'm3', 'xm1014']);
 // The victim's health just before the killing hit, and the killer's shots that could have done the damage.
@@ -1829,11 +1828,11 @@ function computeWallbangs() {
   };
   const eyeOf = (p) => [p[0], p[1], p[2] + (p[3] ? 12 : 17)];
   // Not cover: what bullets break (Nuke's vents and upper windows; a kill through them isn't a wallbang, Sujan,
-  // 23 Oct 2026) and, with WB_FENCES off, what you see through (fences, grates). Glass that doesn't break (Nuke's
-  // sliding doors at the lower site) stays cover. Invisible brushes are never cover (solidAlong in bsp.js).
-  const notCover = bsp.solids.filter((s) => s.shootable || (!WB_FENCES && s.fence)).map((s) => s.model);
+  // 23 Oct 2026). Glass that doesn't break (Nuke's sliding doors at the lower site) and fences, grates and ladders
+  // stay cover (Sujan, 23 Oct 2026). Invisible brushes are never cover (solidAlong in bsp.js).
+  const notCover = bsp.solids.filter((s) => s.shootable).map((s) => s.model);
   for (const k of D.kills) {
-    k.wb = null;
+    k.wb = null; k.seenPx = null;
     if (!k.kpos || !k.vpos || k.killer === k.victim || NO_WB.has(k.weapon) || ONE_SURFACE.has(k.weapon)) continue;
     const kNow = [...k.kpos, k.kduck], vNow = [...k.vpos, k.vduck];
     const tP = k.tPos != null ? k.tPos : k.t;
@@ -1857,6 +1856,8 @@ function computeWallbangs() {
   for (const k of D.kills) if (k.wb && (M.skipRestart || []).some((st) => Math.abs(st - k.t) <= 0.3)) k.wb = null;
   M.wbs = D.kills.filter((k) => k.wb && M.liveR.some((r) => r.n === k.round));
   renderPane(); drawTimeline();
+  // then the picture check (checkSeen, view3d.part.js), once the 3D map is built: loadMap builds it right after this
+  setTimeout(() => { if (typeof checkSeen === 'function') checkSeen(); }, 0);
 }
 
 // Stretches of the demo that the server announced as live: [start, end] pairs from its text messages.
@@ -3068,7 +3069,7 @@ function renderPane() {
     let h;
     if (!MAP || MAP.name !== D.mapName.toLowerCase()) h = `<div class="opt">Wallbang detection needs the map file (${esc(D.mapName)}.bsp). Choose your Half-Life folder or drop the .bsp here.</div>`;
     else {
-      h = `<div class="copyrow"><span>${M.wbs.length} kills where the victim was fully hidden from the shooter and the crosshair was on the wall. Times: round and in-game round timer, then demo time.</span><button class="btn" id="bCopyWb" type="button">Copy list</button></div>`;
+      h = `<div class="copyrow"><span>${M.wbs.length} kills where the victim was fully hidden from the shooter and the crosshair was on the wall. Times: round and in-game round timer, then demo time.${M.seenPending ? ` <b>Checking ${M.seenPending} from the shooter's eye…</b>` : ''}</span><button class="btn" id="bCopyWb" type="button">Copy list</button></div>`;
       for (const k of M.wbs) {
         // the round, the round timer and the demo time on three lines; "C4 0:16" never splits (0.21.1, Sujan 15 Oct 2026)
         const r = M.rounds.find((x) => x.n === k.round);

@@ -2,21 +2,6 @@
 
 What changed in the viewer, newest first. The version shows in the viewer's shortcuts panel (press ?) and on the start screen.
 
-## In progress (branch `wip/feedback-23-oct`, 23 Oct 2026)
-
-From Sujan's feedback of 23 Oct 2026. Built and checked on the 18 demos in the cloud session; not shipped until the wallbang lists and match numbers are compared on all 31 regression demos (Sujan's Mac went offline) and three decisions are taken.
-
-Built:
-- Wallbang finder: invisible brushes (Inferno's lamp post boxes) are never cover, anywhere in the viewer (ALTERNATE aTTaX vs Virtus.pro, Inferno, Extreme Masters II, R8 0:48 mooN on Zeus). Brushes bullets can break (Nuke's vents and upper windows, Inferno's shutters; func_breakable not flagged "only trigger") aren't cover for the finder: SK vs eSTRO, Nuke, WCG 2008, R22 zet on solo; tyloo vs mTw, Nuke, e-Stars Seoul 2009, R4 Xuefeng on ave and R22 Sunde on Xuefeng. Dust2's crates (only the bomb breaks them) and Nuke's sliding glass doors stay cover.
-- Skips across a round restart: HLTV left out the end of a round and the restart, so the kills that ended it arrive in the snapshot where everyone is back at the spawns. Found now (kills in the respawn snapshot), marked //, left out of the Wallbangs list (judged from the next round's spawns), and timed by the round they ended instead of the next round's freeze time. roccat vs fnatic, Inferno, Extreme Masters II (R18, R21, R26); fnatic vs Moscow Five, Nuke, DreamHack Summer 2011 (R4, R10); mTw vs Lions, Nuke, DreamHack Summer 2011 (R19, R23); Burning vs FairFrag, Inferno, ESWC 2010 (R17); ALTERNATE aTTaX vs Virtus.pro, Inferno, Extreme Masters II (R4, R19); MYM vs mTw, Dust2, EM3 2009 (R15); tyloo vs mTw (R28).
-- POV label: a demo is POV only when it has no HLTV audience updates (SK vs eSTRO, Train, WCG 2008, `-0811081859-`, 13 s, read as POV).
-- Timeline hover note kept inside the window; Full screen's own first note; the Rounds tab scrolls to the current round; "Add another part…" greyed out while the picker row is open; "freeze 0:15" on two lines in the list time cells.
-- tests: `compare_all.sh` handles demo names with spaces; new page scripts in tests/README.md.
-
-Waiting on Sujan: a pixel check for visible bodies (items 3, 6, 10: 8 of 145 wallbangs show 100+ pixels of the victim at the shot), wallbang hits that didn't kill (list and threshold, mockup or not), and fences as cover (`WB_FENCES`, no difference on these demos).
-
-Left to do: run the regression comparison on all 31 demos, then version, CHANGELOG entry, IDEAS.md, merge to main, artifact.
-
 ## Known limits (current version)
 - HLTV demos don't record the first-person weapon's animation, so it's rebuilt from shots, weapon switches and the player's body animation. Timing can differ slightly from in-game, and idle variations won't match. If a `v_` model is missing, no gun is shown.
 - Player models get even lighting, so they don't darken in shaded spots the way they do in-game.
@@ -43,6 +28,44 @@ Left to do: run the regression comparison on all 31 demos, then version, CHANGEL
 - The dropped bomb on the radar needs the bomb object in the demo, so on de_tuscan it's often missing (the 256-object limit above).
 - Round announcements use Verdana, the game's font; where it isn't installed (most Linux machines) the browser picks a similar one.
 - The C4 timer above the view counts down from a fixed 35 s, the fuse every tournament demo measured so far uses (0.21.0). A demo from a server with another fuse (the game's own default is 45 s) would read wrong; the time since the plant in the Kills and Wallbangs lists is right either way.
+- The wallbang finder's last check draws the killer's view at the shot (0.22.0), so it needs the 3D engine and the victim's player model. Without them (no WebGL, a missing model) the finder's 15 points decide alone, as before. The Wallbangs list settles a few seconds after the map loads, while it says "Checking N from the shooter's eye…". The victim's pose at the shot is the viewer's estimate (HLTV doesn't record animation frames), so a sliver of a limb can be off by a few units.
+- A kill that lands on a skip across a round restart (HLTV left out the end of the round and the restart) is never listed as a wallbang: where everyone stood at the shot isn't in the file (0.22.0).
+
+## 0.22.0 (2026-10-23)
+
+From Sujan's feedback of 23 Oct 2026, on the WCG 2008, Extreme Masters II, EM3 2009, e-Stars Seoul 2009, ESWC 2010 and DreamHack Summer 2011 demos he added (events in `tests/README.md`). The rule for bodies in view was decided by Sujan the same day.
+
+### Fixed
+- **Wallbangs where part of the victim was in view.** The finder tests 15 points on the victim's body, and they missed a head or shoulder showing over cover: SK vs eSTRO, Nuke, WCG 2008, R15 C4 0:23 hee on walle; roccat vs fnatic, Inferno, Extreme Masters II, R13 1:37 Torgersen on Niko; MYM vs mTw, Dust2, EM3 2009, R28 1:21 LoordB on MJE (Sujan, with screenshots). Every wallbang the points leave is now also drawn from the killer's eye at the killing shot, with the map as it was at that moment and the victim's body posed for it. If 100 or more pixels of his body show past the walls, it's not a wallbang. The picture is always the same size around the victim (640 x 400, 220 units high at his distance), so the count doesn't depend on the screen: 100 pixels is a patch about 5 by 6 units, a piece of a head. Only the body counts: a gun barrel past the corner doesn't (paN on Edward, ALTERNATE aTTaX vs Virtus.pro, Inferno, Extreme Masters II, R10 1:02, stays). This is the check parked on 5 Oct 2026 as not conclusive; at the killing shot itself, with a 100 pixel line, it fits all three of Sujan's cases (210, 371 and 907 pixels).
+- **The boxes around Inferno's lamp posts counted as walls.** They are invisible brushes, there for players to bump into. ALTERNATE aTTaX vs Virtus.pro, Inferno, Extreme Masters II, R8 0:48 mooN on Zeus was listed with Zeus in full view (Sujan's guess was right). Invisible brushes (a see-through render mode with no amount) are now never cover: not for the finder, See through walls or the camera.
+- **Kills through what bullets break.** Nuke's vents and upper-site windows and Inferno's shutters (a func_breakable not flagged "only trigger") aren't cover for the finder any more (Sujan: a kill through them isn't a wallbang). SK vs eSTRO, Nuke, R22 C4 0:13 zet on solo through the vent; tyloo vs mTw, Nuke, e-Stars Seoul 2009, R4 1:03 Xuefeng on ave and R22 1:11 Sunde on Xuefeng through the windows. RobbaN on hee, SK vs eSTRO, Nuke, R26 1:21, stays, as Sujan wanted: the vent was already gone, and his line passes only through its frame. Dust2's crates (only the bomb breaks them) and Nuke's sliding glass doors at the lower site still count as cover, and so do fences, grates and ladders (Sujan).
+- **Skips across a round restart weren't found.** HLTV sometimes leaves out the end of a round and the restart together, so the kills that ended the round arrive in the snapshot where everyone is back at the spawns. The skip finder ignored every jump near a round start, since that is normally the respawn; it now counts one when kills arrive in that same snapshot. Sujan's cases: roccat vs fnatic, Inferno, Extreme Masters II, R18, R21 and R26 (he took it for slow motion); fnatic vs Moscow Five, Nuke, DreamHack Summer 2011, R4 1:22 ED1K and Dosia; mTw vs Lions, Nuke, DreamHack Summer 2011, R23 minet on dennis; Burning vs FairFrag, Inferno, ESWC 2010, R17 Rara on HaRts. These kills get // in the Kills list and the skip note, and leave the Wallbangs list: the finder had judged them from the next round's spawns, thousands of units apart (Orwall's AWP on coNTE, roccat vs fnatic, R21: "4,023 units" of wall). Their timer is now the round's own as last recorded (minet on dennis read "freeze 0:15", the next round's freeze time; now 1:20).
+- **A 13-second HLTV file read as a POV demo** (SK vs eSTRO, Train, WCG 2008, `-0811081859-`): it has no round marker, which was taken to mean a demo recorded by a player. A demo is now POV only when it also has no HLTV audience updates, which only HLTV recordings carry. Sujan's POV demos still read as POV (checked on Match 1, T side).
+- **The timeline's hover note ran off the window** at the left and right ends (the skip note at round 3). It's measured after it's filled and kept whole inside the window.
+- **"Freeze 0:15" ran into the gun icon** in the Kills and Wallbangs lists. It now reads on two lines, "freeze" and the time.
+
+### Changed
+- **Full screen has its own first note:** "Full screen. Move the mouse to the top, right or bottom edge for the controls. F or Esc leaves it." Choosing Full screen first showed Theatre mode's note, which says T leaves it.
+- **Back on the Rounds tab, the list opens at the round playing** (it opened at the top, so at round 23 it had to be scrolled by hand).
+- **"Add another part…" is greyed out while the picker row is open** in the Join card. Clicking it there only closed the empty "Pick a demo…" row.
+
+### How it was tested
+- Every demo in Sujan's Half-Life folder (34: the 31 of the regression set and the three he added: fnatic vs Moscow Five; tyloo vs mTw; Burning vs FairFrag), brought over from his Mac, main's build against 0.22.0:
+  - Scores, every round's winner and every player's K-D overall, on T and on CT (`match_detail.js`): identical on all 34.
+  - Wallbang lists with the maps (`wallbang_list.js`, which now waits for the picture check): 287 to 262 on 33 demos (no de_mirage.bsp in the Mac's folder, so SK vs WinFakt, Mirage, IEM6 New York has no list there); 17 identical. Every one removed, with why:
+    - picture check (pixels of the body in view at the shot): f0cus on ave, mTw vs Na`Vi, Tuscan, ESWC 2010, R24 1:31 (240); markeloff on minet, same match, file `-1007031645-`, R4 0:36 (172); gob b on Xizt, fnatic vs mousesports, Forge, IEM6 Guangzhou, R14 1:05 (223); NEO's AWP on markeloff, Na`Vi vs FX, Train, SEC 2011, R23 C4 0:01 (561); B1ad3 on RobbaN, R9 0:59 (165) and cArNaGe on edzie, R23 1:25 (743), Sweden vs Ukraine, Train, ClanBase NationsCup XI; NIKO on LoordB, FX vs Lions, Nuke, DreamHack Winter 2010, R13 1:19 (124); starix on f0rest, R12 C4 0:04 (138) and markeloff's AWP on Xizt, R20 0:36 (410), fnatic vs Na`Vi, Dust2, GameGune 2012; ceh9 on XEK, Na`Vi vs Moscow 5, Inferno, DreamHack Winter 2011, R25 0:54 (872). Not yet seen by Sujan (IDEAS.md).
+    - lamp post boxes: KUBEN on gob b, mousesports vs AGAiN, Inferno, ESWC 2011 final, R21 0:51; ave on PASHA, FX vs mTw, Inferno, Xperia Play 2011, R9 0:53; XEK on ceh9, Na`Vi vs Moscow 5, Inferno, DreamHack Winter 2011, R7 1:15.
+    - Nuke's upper windows: tyloo vs mTw R4 1:03 and R22 1:11.
+    - on a skip across a round restart: FX vs SK, Inferno, IEM5, R27 (2); fnatic vs Moscow Five R4 (2); k1ck vs eq, Nuke, DreamHack Winter 2011, R4; mTw vs Lions R19 and R23; tyloo vs mTw R28; fnatic vs EG, Dust2, EM3 2009, R19 (killer and victim 3,514 units apart); Burning vs FairFrag R17.
+  - Skips across a round restart (`restart_skips.js`): none in the 7 SK vs eSTRO files, Na`Vi vs FX, Dust2, FX vs Lions, GameGune 2012 or NoA vs Pentagram; each one found has kills in the respawn snapshot.
+- Sujan's demos in `~/Downloads/test-demos-2`: the picture check (`v022_seen.js`) drops hee on walle (210), Torgersen on Niko (371), LoordB on MJE (907) and ave on TAZ, MYM vs mTw, R29 C4 0:13 (210); paN on Edward stays (0 for the body). mooN on Zeus, zet on solo (R22) and the restart-skip kills leave the lists (`wb_detail.js` names what blocked each).
+- `v022_ui.js` (new) on mTw vs Lions, Nuke: minet on dennis in R23 at 1:20 with //, not a wallbang; a freeze cell on two lines; the Rounds tab scrolled to R23 from the Kills tab; the hover note inside the window at the left end, round 3's skip, the last skip and the right end; "Add another part…" disabled with the picker open; Full screen's note.
+- `v019_skips.js`, `v021_skip_tags.js`, `v021_c4_countdown.js` and `v021_time_cells.js` give the same results as on 0.21.1. `folder_row_test.py` (20 of 20), `start_screen_check.py`, `prefs_check.py`, `demo_search_check.py` (34 demos), `late_kill_timing_check.py` and `panel_click_check.py` pass.
+
+### Discussed, not changed
+- **SK vs eSTRO, Dust2 and Nuke, WCG 2008, don't join** (Sujan): the small files aren't parts. `-0811081854-` (Dust2, 5 minutes, 1:6) holds only the five SK players, and `-0811081945-` (Nuke, one round) only the five eSTRO players. The maps are whole in `-0811081950-` (Dust2, SK 16:11) and `-0811082043-` (Nuke, SK 16:12), and Train in `-0811081900-` (eSTRO 16:12), as [fragbite's write-up](https://fragbite.se/cs/blog/9/thorins-take/post/10362/estro-2008-the-year-that-could-have-been) has them.
+- **zet on solo, SK vs eSTRO, Nuke, R10 1:22** (Sujan asked whether two smokes made it a wallbang): the finder doesn't look at smokes. From zet's eye solo is fully behind the doorway, and the crosshair line passes through 2 units of the frame's corner, 94 units from zet. It stays, as a close call: aim is recorded about ten times a second.
+- Kills on a skip across a round restart stay in the round they ended, with its timer; when exactly they happened inside the skip isn't in the file.
 
 ## 0.21.1 (2026-10-15)
 

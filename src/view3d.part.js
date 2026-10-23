@@ -147,6 +147,7 @@ function build3d() {
       transparent: see, depthWrite: !see, side: water ? THREE.DoubleSide : THREE.BackSide,
     });
     const m3 = new THREE.Mesh(geo, mat);
+    if (g.name[0] === '{') m3.userData.holes = true; // a fence or grate texture: see-through where it has holes
     if (g.model >= 0) (R3.brk[g.model] || (R3.brk[g.model] = [])).push(m3);
     if (MAP.movers.has(g.model)) { m3.matrixAutoUpdate = false; (R3.mov[g.model] || (R3.mov[g.model] = [])).push(m3); }
     world.add(m3);
@@ -661,4 +662,79 @@ function placeCam(p, yaw, pitch) {
   c.up.set(0, 1, 0);
   c.lookAt(g3(p[0] + f[0], p[1] + f[1], p[2] + f[2]));
   cam3.lastYaw = yaw; cam3.lastPitch = pitch;
+}
+
+// ---------------- wallbangs: is any of the victim in view? (0.22.0) ----------------
+// The finder's 15 points on the victim (computeWallbangs) miss a head or shoulder showing over cover: SK vs eSTRO,
+// Nuke, WCG 2008, R15 hee on walle; roccat vs fnatic, Inferno, Extreme Masters II, R13 Torgersen on Niko; MYM vs
+// mTw, Dust2, EM3 2009, R28 LoordB on MJE (Sujan, 23 Oct 2026). So every wallbang the points leave is also drawn
+// from the killer's eye at the killing shot: the map as it was then (broken breakables gone, doors where they were),
+// the victim's body alone in flat magenta, posed for that moment. If SEEN_PX or more of his pixels show past the
+// walls, part of him was in view and it isn't a wallbang. The picture is always the same size around the victim
+// (640 x 400, 220 units high at his distance), so the count doesn't depend on the screen: 100 pixels is a patch
+// about 5 by 6 units, a piece of a head. As for the points, what bullets break doesn't hide him, and fences and
+// grates do (Sujan, 23 Oct 2026: they count as cover), so their holes are filled in for this picture.
+// Measured 23 Oct 2026 on 145 wallbangs: Sujan's three showed 210, 371 and 907 pixels; 8 showed 100 or more.
+const SEEN_PX = 100, SEEN_W = 640, SEEN_H = 400;
+let seenGen = 0;
+async function checkSeen() {
+  const gen = ++seenGen;
+  if (!R3 || !MAP || !D || !M || !window.THREE || view3.map !== MAP.name) return;
+  if (!R3.rigs) R3.rigs = {};
+  const cands = D.kills.filter((k) => k.wb && k.seenPx == null);
+  if (!cands.length) return;
+  M.seenPending = cands.length; renderPane();
+  const done = () => { if (gen === seenGen) { M.seenPending = 0; M.wbs = D.kills.filter((k) => k.wb && M.liveR.some((r) => r.n === k.round)); renderPane(); drawTimeline(); } };
+  // the models these victims wear, loaded first (the folder's files are read on demand)
+  const names = new Set();
+  for (const k of cands) { const a = D.slots[k.victim]; if (a) names.add(playerModelName(a[M.idxAt(k.tPos != null ? k.tPos : k.t) * D.stride + 8])); }
+  await Promise.all([...names].filter((n) => /\.mdl$/i.test(n)).map((n) => modelEntry(n).done));
+  if (gen !== seenGen || view3.map !== MAP.name) return;
+  const rt = new THREE.WebGLRenderTarget(SEEN_W, SEEN_H);
+  const cam = new THREE.PerspectiveCamera(30, SEEN_W / SEEN_H, 1, 20000);
+  const MAG = new THREE.MeshBasicMaterial({ color: 0xff00ff, fog: false, side: THREE.DoubleSide });
+  const SOLID = new THREE.MeshBasicMaterial({ color: 0x000000, side: THREE.DoubleSide });
+  const buf = new Uint8Array(SEEN_W * SEEN_H * 4);
+  const notCover = new Set(MAP.bsp.solids.filter((s) => s.shootable).map((s) => s.model));
+  for (const k of cands) {
+    if (gen !== seenGen) break;
+    const tP = k.tPos != null ? k.tPos : k.t, vs = playerState(k.victim, tP);
+    const a = D.slots[k.victim];
+    const pname = a ? playerModelName(a[M.idxAt(tP) * D.stride + 8]) : '';
+    if (!vs || !/\.mdl$/i.test(pname)) { k.seenPx = -1; continue; }
+    const r = rigFor('seen', pname); if (!r) { k.seenPx = -1; continue; }
+    setBody(r, packAt(k.victim, tP));
+    const yaw = posePlayer(r, k.victim, vs, tP);
+    if (yaw === false) { r.g.visible = false; k.seenPx = -1; continue; }
+    placeRig(r, vs.x, vs.y, vs.z, yaw, 0);
+    // the map at the shot
+    if (R3.brk) for (const m in R3.brk) { const vis = !notCover.has(+m) && !brokenAt(+m, tP - 0.05); for (const x of R3.brk[m]) x.visible = vis; }
+    const poses = posesAt(tP - 0.05);
+    if (R3.mov) for (const m in R3.mov) placeMover(R3.mov[m], poses.get(+m) || brushPose(MAP.movers.get(+m), null));
+    const swapped = [];
+    for (const c of R3.world.children) if (c.userData.holes) { swapped.push([c, c.material]); c.material = SOLID; }
+    const hidden = [];
+    for (const c of R3.scene.children) if (c !== R3.world && c !== R3.dyn && c.visible && !c.isLight) { c.visible = false; hidden.push(c); }
+    for (const c of R3.dyn.children) if (c !== r.g && c.visible) { c.visible = false; hidden.push(c); }
+    const mats = r.parts.map((pt) => pt.mesh.material); for (const pt of r.parts) pt.mesh.material = MAG;
+    const eye = [k.kpos[0], k.kpos[1], k.kpos[2] + (k.kduck ? 12 : 17)];
+    const dist = Math.hypot(vs.x - eye[0], vs.y - eye[1], vs.z - eye[2]);
+    cam.fov = Math.max(4, Math.min(60, 2 * Math.atan(110 / Math.max(dist, 1)) * 180 / Math.PI)); cam.updateProjectionMatrix();
+    cam.position.copy(g3(eye[0], eye[1], eye[2])); cam.lookAt(g3(vs.x, vs.y, vs.z));
+    const bg = R3.scene.background; R3.scene.background = new THREE.Color(0);
+    R3.renderer.setRenderTarget(rt); R3.renderer.render(R3.scene, cam);
+    R3.renderer.readRenderTargetPixels(rt, 0, 0, SEEN_W, SEEN_H, buf); R3.renderer.setRenderTarget(null);
+    let n = 0; for (let i = 0; i < buf.length; i += 4) if (buf[i] > 245 && buf[i + 1] < 12 && buf[i + 2] > 245) n++;
+    // put everything back as it was (update3 redraws breakables and doors for the moment playing on the next frame)
+    R3.scene.background = bg;
+    r.parts.forEach((pt, i) => { pt.mesh.material = mats[i]; });
+    for (const [c, m] of swapped) c.material = m;
+    for (const c of hidden) c.visible = true;
+    r.g.visible = false;
+    k.seenPx = n;
+    if (n >= SEEN_PX) k.wb = null;
+    await new Promise((res) => setTimeout(res, 0)); // let the page breathe between pictures
+  }
+  rt.dispose(); MAG.dispose(); SOLID.dispose();
+  done();
 }

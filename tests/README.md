@@ -178,6 +178,7 @@ Page scripts in `page/`:
 | `skip_probe.js` | Round starts, kills and every snapshot (game-time gap, living players, how many jumped, near a round start or not) from 3 s before to 1 s after the demo times in `window.__at` | restart skips, 23 Oct 2026 |
 | `restart_skips.js` | Skips across a round restart: each with the kills on it, and the wallbangs left on one (should be none). `MAP_NEEDED=0` | 0.22.0 |
 | `v022_ui.js` | On mTw vs Lions, Nuke, DreamHack Summer 2011 (`DEMO=mtw-vs-lions`, waits for the map): minet on dennis in R23 with R23's timer and //, not a wallbang; a freeze time cell on two lines; the Rounds tab scrolled to the current round; the timeline's hover note inside the window at both ends; "Add another part…" greyed out with the picker open; Full screen's own note | 0.22.0 |
+| `v022_seen.js` | The picture check (0.22.0): waits for it, then every kill the 15 points called a wallbang with the victim's body pixels in view at the shot and whether it stays (fewer than 100). Waits for the map (`DEMO=mtw.mym`: LoordB on MJE 907, ave on TAZ 210) | 0.22.0 |
 
 Stand-alone checks:
 
@@ -233,9 +234,12 @@ The Claude session runs on a cloud machine, while the files are on the Mac. On 3
 
 On 15 Oct 2026 (0.21.0) it went that way: access to `~/Downloads/Half-Life`, everything but the demos packed with `tar` and `zstd` into `_claude_transfer/assets.tar.zst` (248 MB; the Mac's shell has no other folder the transfer can read from), staged to the cloud machine with the demos needed (FX vs Lions, Nuke, DreamHack Winter 2010; mTw vs Lions, Nuke, DreamHack Summer 2011; Na`Vi vs FX, Dust2, SEC 2011 final; NoA vs Pentagram, Train 2006; SK vs Na`Vi, Train, DreamHack Winter 2011), then Sujan granted delete permission and `_claude_transfer` was removed straight away. The cloud machine has no `zstd`: `pip install zstandard` and unpack with Python. `demo_search_check.py` needs only the demo names: empty files named as the Mac's 31 demos, plus the real SK vs Na`Vi Train file, which the check opens.
 
+On 23 Oct 2026 (0.22.0) the same again, `_claude_transfer` removed with Sujan's permission as soon as it was staged; the demos were staged in batches of 6 to 8 (a call with 26 timed out while the Mac went offline). The 34 demos of his Half-Life folder went into a separate test folder on the cloud machine.
+
 ## Lessons
 
 - The headless browser draws 3D without a graphics chip, so it's slow. Checks that wait a fixed time can fail there and pass on a real machine: wait for the outcome instead, and confirm timing failures by hand before chasing them. The one Theatre check that failed on the 14-inch setup worked on a real MacBook.
 - Give an estimate before long runs. One full Theatre round across five setups takes about 45 minutes.
 - Parallel runs of `harness.py` need a copy of the page each: it writes `_test_<page name>` beside the page and deletes it at the end, so two runs on one page name break each other (`compare_all.sh` does this). Found 2 Oct 2026.
+- The browser doesn't read symlinked folders inside the folder given to it: a test folder built with `ln -s` to the maps gave every demo an empty wallbang list, identical on both builds, so the comparison passed with nothing compared. Use real copies or hard links (`cp -al`); `wallbang_list.js` now says "not loaded" when the map is missing. Found 23 Oct 2026.
 - A page script that opens another demo and waits for it must wait for a new demo object (`D !== old`), not just for `D.parts` or `M`: those still hold the previous demo's values until its counting has run, so the check passes early and reads old numbers. Found 2 Oct 2026, twice.
