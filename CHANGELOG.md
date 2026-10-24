@@ -31,6 +31,18 @@ What changed in the viewer, newest first. The version shows in the viewer's shor
 - The wallbang finder's last check draws the killer's view at the shot (0.22.0), so it needs the 3D engine and the victim's player model. Without them (no WebGL, a missing model) the finder's 15 points decide alone, as before. The Wallbangs list settles a few seconds after the map loads, while it says "Checking N from the shooter's eye…". The victim's pose at the shot is the viewer's estimate (HLTV doesn't record animation frames), so a sliver of a limb can be off by a few units.
 - A kill that lands on a skip across a round restart (HLTV left out the end of the round and the restart) is never listed as a wallbang: where everyone stood at the shot isn't in the file (0.22.0).
 
+## 0.22.2 (2026-10-24)
+
+### Fixed
+- **Clicking one of two kills that happened at the same moment picked the other one.** The Kills list found the clicked kill by its time, and kills that arrive in one snapshot share it, so the first of them won: FX vs Lions, Nuke, DreamHack Winter 2010, R20 C4 0:05, NEO's wallbang on NIKO showed KUB3N's view, as KUB3N killed Xizt in the same snapshot (Sujan, 24 Oct 2026, with a screenshot). Rows now carry the kill's place in the list. The Wallbangs list had the same code, and only looked right because one of the two was a wallbang.
+
+### How it was tested
+- `v022_same_time.js` (new) on FX vs Lions, R20: clicking KUB3N's row and NEO's row in the Kills list picks each kill and follows its own killer; NEO's row in the Wallbangs list follows NEO.
+- `v021_skip_tags.js` and `v021_time_cells.js` as before; `folder_row_test.py` (20 of 20), `start_screen_check.py`, `prefs_check.py`, `demo_search_check.py`, `late_kill_timing_check.py` and `panel_click_check.py` pass.
+
+### Discussed, not changed
+- **Sujan's check of 0.22.0 and 0.22.1, 24 Oct 2026** (34 cases on the review page https://claude.ai/artifact/Y4V77jgiF3SEb79HJfLVKu; full results in IDEAS.md): the lamp posts (3), the window (1), the skips across a round restart (5) and the small fixes (6) all right. Of the 13 wallbangs the picture check dropped, 12 right; gob b on Xizt (fnatic vs mousesports, Forge, IEM6 Guangzhou, R14 1:05, 223 pixels) he finds hidden at the moment of the kill. Of the 6 closest calls it kept, 4 had the victim in view (53 to 98 pixels), so the 100-pixel line is too high. Left as it is for now: Sujan proposes three levels of wallbang instead (IDEAS.md), which would turn the line into a split rather than a cut.
+
 ## 0.22.1 (2026-10-23)
 
 ### Fixed

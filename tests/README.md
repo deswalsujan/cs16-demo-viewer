@@ -180,6 +180,7 @@ Page scripts in `page/`:
 | `v022_ui.js` | On mTw vs Lions, Nuke, DreamHack Summer 2011 (`DEMO=mtw-vs-lions`, waits for the map): minet on dennis in R23 with R23's timer and //, not a wallbang; a freeze time cell on two lines; the Rounds tab scrolled to the current round; the timeline's hover note inside the window at both ends; "Add another part…" greyed out with the picker open; Full screen's own note | 0.22.0 |
 | `v022_seen.js` | The picture check (0.22.0): waits for it, then every kill the 15 points called a wallbang with the victim's body pixels in view at the shot and whether it stays (fewer than 100). Waits for the map (`DEMO=mtw.mym`: LoordB on MJE 907, ave on TAZ 210) | 0.22.0 |
 | `kill_lookup.js` | For a review list: each kill in `window.__want` (`{tag, killer}` or `{at: demo seconds, killer}`) with its demo time, full names, gun, and whether this build lists it as a wallbang, its pixels in view and whether it's on a skip. Waits for the map and the picture check | Sujan's check list, 23 Oct 2026 |
+| `v022_same_time.js` | Two kills in one snapshot (FX vs Lions, Nuke, DreamHack Winter 2010, R20 C4 0:05, `DEMO=fx-vs-lions`, waits for the map): each row in the Kills list, and the wallbang's row in the Wallbangs list, picks its own kill and follows its own killer | 0.22.2 |
 
 Stand-alone checks:
 

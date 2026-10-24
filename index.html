@@ -507,7 +507,7 @@ body:has(.app.theatre) { overflow: hidden; }
     <div class="overlay sumwrap" id="sumCard" hidden></div>
     <div class="overlay keys" id="keys" hidden>
       <div class="keys-card">
-        <div class="keys-head"><b>Shortcuts and kill markers</b><div class="kh-r"><span class="ver">Version 0.22.1 · <a href="https://github.com/deswalsujan/cs16-demo-viewer/blob/main/CHANGELOG.md" target="_blank" rel="noopener">What's new</a> · <a href="https://github.com/deswalsujan/cs16-demo-viewer/issues/new/choose" target="_blank" rel="noopener">Report a bug</a></span><button class="btn" id="bDebug" type="button" title="Copies details for a bug report: browser, demo name, what loaded, errors. No file contents.">Copy debug info</button><button class="btn" id="bKeysClose" type="button">Close</button></div></div>
+        <div class="keys-head"><b>Shortcuts and kill markers</b><div class="kh-r"><span class="ver">Version 0.22.2 · <a href="https://github.com/deswalsujan/cs16-demo-viewer/blob/main/CHANGELOG.md" target="_blank" rel="noopener">What's new</a> · <a href="https://github.com/deswalsujan/cs16-demo-viewer/issues/new/choose" target="_blank" rel="noopener">Report a bug</a></span><button class="btn" id="bDebug" type="button" title="Copies details for a bug report: browser, demo name, what loaded, errors. No file contents.">Copy debug info</button><button class="btn" id="bKeysClose" type="button">Close</button></div></div>
         <textarea class="dbgbox" id="dbgBox" readonly hidden aria-label="Debug info"></textarea>
         <div class="keys-grid">
           <section><h3>Playback</h3>
@@ -609,7 +609,7 @@ body:has(.app.theatre) { overflow: hidden; }
         <div class="drophint">Or drop a .dem file, or an overview .bmp and .txt pair, anywhere on this page</div>
         <div class="prog" id="prog" hidden><i id="progBar"></i></div>
         <div class="msg" id="msg"></div>
-        <div class="loadfoot"><span>Version 0.22.1</span><button class="btn" id="bClear" type="button" title="Forgets your Half-Life folder and deletes the maps, models, sounds and overviews this browser saved from it, as on a first visit">Clear saved files</button></div>
+        <div class="loadfoot"><span>Version 0.22.2</span><button class="btn" id="bClear" type="button" title="Forgets your Half-Life folder and deletes the maps, models, sounds and overviews this browser saved from it, as on a first visit">Clear saved files</button></div>
       </div>
     </div>
   </section>
@@ -4199,9 +4199,8 @@ window.addEventListener('pointercancel', paneRelease, true);
 window.addEventListener('blur', paneRelease);
 function paneMarks() {
   if (tab !== 'kills' && tab !== 'wb') return;
-  const list = tab === 'wb' ? M.wbs : (roundAt(T) || { kills: [] }).kills;
   $('pane').querySelectorAll(tab === 'wb' ? '[data-wb]' : '[data-kill]').forEach((el) => {
-    const t = +(el.dataset.wb || el.dataset.kill), k = list.find((x) => x.t === t);
+    const k = D.kills[+el.dataset.ki]; // by its place in the kill list: two kills can share one time (0.22.2)
     if (!k) return;
     el.classList.toggle('pick', k === pickedKill); el.classList.toggle('pass', k !== pickedKill && Math.abs(k.t - T) < 2);
   });
@@ -4258,7 +4257,7 @@ function renderPane() {
     if (r) for (const k of r.kills) {
       // a kill inside a skip in the recording: // by its time (0.20.0), wallbangs included since 0.21.0, which keep UNSURE too
       const sk = skipNear(k.t) ? `<span class="skipk" title="Happened inside a skip in the recording: you won't see it happen">//</span>` : '';
-      h += `<div class="row krow kill3${killState(k)}" data-kill="${k.t}"><span class="n" title="Round timer as shown in game">${k === pickedKill ? MARK : ''}${killClock(k.t) ? cellClock(k.t) : '<span class="nw">+' + fmt(k.t - r.start) + '</span>'}${sk}</span><span class="main">${killRow3(k, true)}</span></div>`;
+      h += `<div class="row krow kill3${killState(k)}" data-kill="${k.t}" data-ki="${D.kills.indexOf(k)}"><span class="n" title="Round timer as shown in game">${k === pickedKill ? MARK : ''}${killClock(k.t) ? cellClock(k.t) : '<span class="nw">+' + fmt(k.t - r.start) + '</span>'}${sk}</span><span class="main">${killRow3(k, true)}</span></div>`;
     }
     if (!r || !r.kills.length) h += `<div class="opt">No kills in this round.</div>`;
     p.innerHTML = h;
@@ -4270,7 +4269,7 @@ function renderPane() {
       for (const k of M.wbs) {
         // the round, the round timer and the demo time on three lines; "C4 0:16" never splits (0.21.1, Sujan 15 Oct 2026)
         const r = M.rounds.find((x) => x.n === k.round);
-        h += `<div class="row krow wbrow kill3${killState(k)}" data-wb="${k.t}" title="Through ${k.wb.thick} units of ${k.wb.what === 'object' ? 'a breakable or door' : 'wall or crate'}"><span class="n">${k === pickedKill ? MARK : ''}R${r ? r.ln : '?'} ·<br>${cellClock(k.t)}<br>${fmt(k.t - D.start)}</span><span class="main">${killRow3(k, false)}</span></div>`;
+        h += `<div class="row krow wbrow kill3${killState(k)}" data-wb="${k.t}" data-ki="${D.kills.indexOf(k)}" title="Through ${k.wb.thick} units of ${k.wb.what === 'object' ? 'a breakable or door' : 'wall or crate'}"><span class="n">${k === pickedKill ? MARK : ''}R${r ? r.ln : '?'} ·<br>${cellClock(k.t)}<br>${fmt(k.t - D.start)}</span><span class="main">${killRow3(k, false)}</span></div>`;
       }
       if (!M.wbs.length) h += `<div class="opt">No wallbang kills found in the live rounds.</div>`;
     }
@@ -4282,7 +4281,7 @@ function renderPane() {
       try { navigator.clipboard.writeText(`${D.fileName}\n${txt}`).then(ok, () => { b.textContent = 'Copy failed'; }); } catch { b.textContent = 'Copy failed'; }
     };
     p.querySelectorAll('[data-wb]').forEach((el) => el.onclick = () => {
-      const k = M.wbs.find((x) => x.t === +el.dataset.wb);
+      const k = D.kills[+el.dataset.ki];
       wbFocus = k; pickedKill = k;
       watchKill(k, 3); renderPane();
     });
@@ -4312,7 +4311,10 @@ function renderPane() {
   }
   p.querySelectorAll('[data-t]').forEach((el) => el.onclick = () => { seek(+el.dataset.t); });
   p.querySelectorAll('[data-kill]').forEach((el) => el.onclick = () => {
-    const k = D.kills.find((x) => x.t === +el.dataset.kill);
+    // by the kill's place in the list, not its time: kills in the same snapshot share a time, and the first of them
+    // was picked (FX vs Lions, Nuke, DreamHack Winter 2010, R20 C4 0:05: NEO's wallbang showed KUB3N's view; Sujan,
+    // 24 Oct 2026). The Wallbangs list only looked right because one of them was a wallbang.
+    const k = D.kills[+el.dataset.ki];
     if (!k) return;
     pickedKill = k;
     watchKill(k, 4); renderPane();
@@ -7009,7 +7011,7 @@ window.addEventListener('unhandledrejection', (e) => { ERRLOG.push('Promise: ' +
 function debugInfo() {
   let gpu = '';
   try { const gl = document.createElement('canvas').getContext('webgl'); const x = gl && gl.getExtension('WEBGL_debug_renderer_info'); gpu = gl ? (x ? gl.getParameter(x.UNMASKED_RENDERER_WEBGL) : 'WebGL available') : 'no WebGL'; } catch (e) { gpu = 'unknown'; }
-  const L = [`CS 1.6 Demo Viewer 0.22.1`, `Browser: ${navigator.userAgent}`, `Screen: ${screen.width}x${screen.height} at ${devicePixelRatio}x, window ${innerWidth}x${innerHeight}`, `Graphics: ${gpu}`];
+  const L = [`CS 1.6 Demo Viewer 0.22.2`, `Browser: ${navigator.userAgent}`, `Screen: ${screen.width}x${screen.height} at ${devicePixelRatio}x, window ${innerWidth}x${innerHeight}`, `Graphics: ${gpu}`];
   L.push(`Folder: ${Object.keys(files.maps).length} maps, ${Object.keys(files.overviews).length} overviews, ${Object.keys(files.mdl).length} models, ${Object.keys(files.snd).length} sounds, ${files.demos.length} demos`);
   if (D) {
     L.push(`Demo: ${D.fileName}, protocol ${(D.header && D.header.netProtocol) || '?'}, ${D.pov ? 'POV (recorded by a player)' : 'HLTV'}, map ${D.mapName}, length ${fmt(D.end - D.start)}, ${M.liveR.length} live rounds, final ${M.liveR.length ? M.liveR[M.liveR.length - 1].scoreAfter.join(':') : '-'}`);
