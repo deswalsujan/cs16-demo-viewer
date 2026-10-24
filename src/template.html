@@ -125,6 +125,8 @@ button { cursor: pointer; }
 .skipnote svg { width: 14px; height: 10px; stroke: var(--fg); stroke-width: 1.6; fill: none; }
 .radar.m2d .skipnote { bottom: 56px; }
 .wbtag.unsure { color: #e7c37a; border-color: rgba(231,195,122,.55); }
+/* a loose wallbang (0.23.0): the bullet went through cover, part of the victim was in view */
+.wbtag.loose { color: #c9a3e8; border-color: rgba(201,163,232,.55); }
 .skipk { display: block; color: var(--fg); font-weight: 600; letter-spacing: -.05em; margin-top: 2px; cursor: help; }
 .pov { position: absolute; left: 50%; bottom: 56px; transform: translateX(-50%); font-family: var(--f-mono); font-size: 12px; background: rgba(10,12,14,.82); border: 1px solid var(--line); padding: 4px 10px; border-radius: 3px; }
 .pov.dead { border-color: #8a2b2b; background: rgba(40,6,6,.9); padding: 6px 12px; font-size: 13px; }
@@ -532,7 +534,7 @@ body:has(.app.theatre) { overflow: hidden; }
             <dl class="hmlist">
               <dt><svg class="hm" viewBox="0 0 40 40" aria-hidden="true"><g stroke="#000" stroke-opacity=".45" stroke-width="3" stroke-linecap="round"><path d="M28 28l4 4M28 12l4-4M12 28l-4 4M12 12l-4-4"/></g><g stroke="#ffffff" stroke-width="1.5" stroke-linecap="round"><path d="M28 28l4 4M28 12l4-4M12 28l-4 4M12 12l-4-4"/></g><g stroke="#5aff5a" stroke-width="1.5"><path d="M12 20h5M23 20h5M20 12v5M20 23v5"/></g></svg></dt><dd><b class="hmw">KILL</b><span>A normal kill. Example: an AK spray to the body in the open.</span></dd>
               <dt><svg class="hm" viewBox="0 0 40 40" aria-hidden="true"><g stroke="#000" stroke-opacity=".45" stroke-width="3" stroke-linecap="round"><path d="M28 28l4 4M28 12l4-4M12 28l-4 4M12 12l-4-4"/></g><g stroke="#ff9a3c" stroke-width="1.5" stroke-linecap="round"><path d="M28 28l4 4M28 12l4-4M12 28l-4 4M12 12l-4-4"/></g><g stroke="#5aff5a" stroke-width="1.5"><path d="M12 20h5M23 20h5M20 12v5M20 23v5"/></g></svg></dt><dd><b class="hmo">HEADSHOT</b><span>The killing bullet hit the head. Example: a one-tap with the AK.</span></dd>
-              <dt><svg class="hm" viewBox="0 0 40 40" aria-hidden="true"><g stroke="#000" stroke-opacity=".45" stroke-width="3" stroke-linecap="round"><path d="M28 28l4 4M28 12l4-4M12 28l-4 4M12 12l-4-4"/></g><g stroke="#ff4fd8" stroke-width="1.5" stroke-linecap="round"><path d="M28 28l4 4M28 12l4-4M12 28l-4 4M12 12l-4-4"/></g><g stroke="#5aff5a" stroke-width="1.5"><path d="M12 20h5M23 20h5M20 12v5M20 23v5"/></g></svg></dt><dd><b class="hms">WALLBANG · HS</b><span>The victim was fully hidden and the bullet went through cover. HS is added when it was also a headshot.</span></dd>
+              <dt><svg class="hm" viewBox="0 0 40 40" aria-hidden="true"><g stroke="#000" stroke-opacity=".45" stroke-width="3" stroke-linecap="round"><path d="M28 28l4 4M28 12l4-4M12 28l-4 4M12 12l-4-4"/></g><g stroke="#ff4fd8" stroke-width="1.5" stroke-linecap="round"><path d="M28 28l4 4M28 12l4-4M12 28l-4 4M12 12l-4-4"/></g><g stroke="#5aff5a" stroke-width="1.5"><path d="M12 20h5M23 20h5M20 12v5M20 23v5"/></g></svg></dt><dd><b class="hms">WALLBANG · HS</b><span>The bullet went through cover, with the victim fully hidden (or, tagged LOOSE in the lists, with part of him in view). HS is added when it was also a headshot.</span></dd>
             </dl>
           </section>
           <section><h3>Radar (2D)</h3>
@@ -2431,6 +2433,10 @@ const SKIP_BEFORE = 2, SKIP_AFTER = 1; // seconds of game time the skip note sho
 const skipNear = (t) => !!(M && M.skipT) && M.skipT.some((s) => Math.abs(s - t) <= 0.3);
 const UNSURE_TIP = 'The recording skips at this kill, so the wallbang was judged from where everyone stood after the skip';
 const unsureTag = (k) => (k.wb && skipNear(k.t) ? `<span class="wbtag unsure" title="${UNSURE_TIP}">UNSURE</span>` : '');
+// Sujan's three levels (24 Oct 2026; built in 0.23.0): a strict wallbang has none of the victim in view from the
+// shooter's eye; a loose one has part of him in view (50 pixels or more in the picture check, view3d.part.js).
+const LOOSE_TIP = (k) => `Loose wallbang: the bullet went through cover, but part of him was in view from the shooter's eye (${k.wb.loose} pixels in the check, 50 or more counts as in view)`;
+const looseTag = (k) => (k.wb && k.wb.loose ? `<span class="wbtag loose" title="${LOOSE_TIP(k)}">LOOSE</span>` : '');
 
 // ---------------- shorter names ----------------
 // The team heading already names the team, so the clan tag most of the team shares is dropped there:
@@ -2976,7 +2982,8 @@ function killRow3(k, wbTag) {
   const hs = k.hs ? (KICONS.headshot ? kicon('headshot', 'hs') : '<span class="khs">HS</span>') : '';
   // WALLBANG and UNSURE on a line of their own under the gun, so they always fit the panel (Sujan, 15 Oct 2026,
   // docs/skip-tags-mock.png; side by side after the gun, UNSURE was cut off at the right edge)
-  const tags = (wbTag && k.wb ? '<span class="wbtag">WALLBANG</span>' : '') + unsureTag(k);
+  // LOOSE (0.23.0) follows WALLBANG in the Kills list and stands alone in the Wallbangs list, like UNSURE
+  const tags = (wbTag && k.wb ? '<span class="wbtag">WALLBANG</span>' : '') + looseTag(k) + unsureTag(k);
   const gun = `<span class="gun">${kicon(w)}${esc(w)}${hs}</span>${tags ? `<span class="ktags">${tags}</span>` : ''}`;
   if (k.killer === k.victim || !k.kp) return `<span class="kname">${nameHtml(k.vp, vs)}</span>${gun}`;
   return `<span class="kname">${nameHtml(k.kp, ks)}</span>${gun}<span class="kname">${nameHtml(k.vp, vs)}</span>`;
@@ -3069,7 +3076,8 @@ function renderPane() {
     let h;
     if (!MAP || MAP.name !== D.mapName.toLowerCase()) h = `<div class="opt">Wallbang detection needs the map file (${esc(D.mapName)}.bsp). Choose your Half-Life folder or drop the .bsp here.</div>`;
     else {
-      h = `<div class="copyrow"><span>${M.wbs.length} kills where the victim was fully hidden from the shooter and the crosshair was on the wall. Times: round and in-game round timer, then demo time.${M.seenPending ? ` <b>Checking ${M.seenPending} from the shooter's eye…</b>` : ''}</span><button class="btn" id="bCopyWb" type="button">Copy list</button></div>`;
+      const nLoose = M.seenPending ? 0 : M.wbs.filter((k) => k.wb.loose).length;
+      h = `<div class="copyrow"><span>${M.wbs.length} kills through cover, with the crosshair on the wall${nLoose ? `: ${M.wbs.length - nLoose} with the victim fully hidden from the shooter, ${nLoose} LOOSE (part of him in view)` : ''}. Times: round and in-game round timer, then demo time.${M.seenPending ? ` <b>Checking ${M.seenPending} from the shooter's eye…</b>` : ''}</span><button class="btn" id="bCopyWb" type="button">Copy list</button></div>`;
       for (const k of M.wbs) {
         // the round, the round timer and the demo time on three lines; "C4 0:16" never splits (0.21.1, Sujan 15 Oct 2026)
         const r = M.rounds.find((x) => x.n === k.round);
@@ -3079,7 +3087,7 @@ function renderPane() {
     }
     p.innerHTML = h;
     if ($('bCopyWb')) $('bCopyWb').onclick = () => {
-      const txt = M.wbs.map((k) => { const r = M.rounds.find((x) => x.n === k.round); return `R${r ? r.ln : '?'}  timer ${clockText(k.t)}  demo ${fmt(k.t - D.start)}  ${M.pl[k.kp] ? M.pl[k.kp].name : '?'} -> ${M.pl[k.vp] ? M.pl[k.vp].name : '?'}  ${k.weapon}${k.hs ? ' HS' : ''}  (${k.wb.thick} units)${skipNear(k.t) ? '  UNSURE: the recording skips here' : ''}`; }).join('\n');
+      const txt = M.wbs.map((k) => { const r = M.rounds.find((x) => x.n === k.round); return `R${r ? r.ln : '?'}  timer ${clockText(k.t)}  demo ${fmt(k.t - D.start)}  ${M.pl[k.kp] ? M.pl[k.kp].name : '?'} -> ${M.pl[k.vp] ? M.pl[k.vp].name : '?'}  ${k.weapon}${k.hs ? ' HS' : ''}  (${k.wb.thick} units)${k.wb.loose ? '  LOOSE: part of him in view' : ''}${skipNear(k.t) ? '  UNSURE: the recording skips here' : ''}`; }).join('\n');
       const b = $('bCopyWb');
       const ok = () => { b.textContent = 'Copied'; setTimeout(() => b.textContent = 'Copy list', 1500); };
       try { navigator.clipboard.writeText(`${D.fileName}\n${txt}`).then(ok, () => { b.textContent = 'Copy failed'; }); } catch { b.textContent = 'Copy failed'; }

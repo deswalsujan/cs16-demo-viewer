@@ -28,8 +28,26 @@ What changed in the viewer, newest first. The version shows in the viewer's shor
 - The dropped bomb on the radar needs the bomb object in the demo, so on de_tuscan it's often missing (the 256-object limit above).
 - Round announcements use Verdana, the game's font; where it isn't installed (most Linux machines) the browser picks a similar one.
 - The C4 timer above the view counts down from a fixed 35 s, the fuse every tournament demo measured so far uses (0.21.0). A demo from a server with another fuse (the game's own default is 45 s) would read wrong; the time since the plant in the Kills and Wallbangs lists is right either way.
-- The wallbang finder's last check draws the killer's view at the shot (0.22.0), so it needs the 3D engine and the victim's player model. Without them (no WebGL, a missing model) the finder's 15 points decide alone, as before. The Wallbangs list settles a few seconds after the map loads, while it says "Checking N from the shooter's eye…". The victim's pose at the shot is the viewer's estimate (HLTV doesn't record animation frames), so a sliver of a limb can be off by a few units.
+- The wallbang finder's last check draws the killer's view at the shot (0.22.0), so it needs the 3D engine and the victim's player model. Without them (no WebGL, a missing model) the finder's 15 points decide alone and every wallbang reads as strict. The Wallbangs list settles a few seconds after the map loads, while it says "Checking N from the shooter's eye…". The victim's pose at the shot is the viewer's estimate (HLTV doesn't record animation frames), so a sliver of a limb can be off by a few units. Strict and LOOSE are split at 50 pixels of the victim in view (0.23.0); no line fits every close call: NEO on ArcadioN (74) and gob b on Xizt (223) read LOOSE, where Sujan finds the victim hidden.
 - A kill that lands on a skip across a round restart (HLTV left out the end of the round and the restart) is never listed as a wallbang: where everyone stood at the shot isn't in the file (0.22.0).
+
+## 0.23.0 (2026-10-25)
+
+Sujan's three levels of wallbang (24 Oct 2026), the first two: a kill by a bullet through cover is a wallbang whether or not part of the victim was in view. Line decided from a pixel count, as Sujan asked (25 Oct 2026: "do a pixel count first and based on the results accordingly make a recommendation and apply it").
+
+### Changed
+- **Wallbangs where part of the victim was in view are listed again, tagged LOOSE.** 0.22.0 dropped a wallbang when 100 or more pixels of the victim showed from the shooter's eye at the killing shot. The count now splits instead: under 50 pixels it's a strict wallbang (nothing of him in view), 50 or more a loose one, kept in the Wallbangs list with a LOOSE tag (in the Kills list beside WALLBANG), the pixel count on hover, and "LOOSE: part of him in view" in Copy list. The heading says how many of each. Example: FX vs Lions, Nuke, DreamHack Winter 2010, R13 1:19 NIKO on LoordB (124 pixels) is back as LOOSE; R22 0:47 THREAT on LoordB (38) is strict.
+- **Why 50.** The count on 50 demos (the 34 in Sujan's Half-Life folder and 16 HLTV demos from his two test folders): of 398 kills the finder's 15 points call wallbangs, 364 show 0 pixels, 13 show 1 to 49, 5 show 50 to 99, 16 show 100 or more. Sujan's answers of 24 Oct 2026 had 742 on gob b (49) hidden, and Xizt on ED1K (53), pita on zonixx (67), minet on ceh9 (69) and Edward on 742 (98) in view, so 50 fits 5 of his 7 close calls. It misses NEO on ArcadioN (FX vs mTw, Nuke, Xperia Play 2011, R11 0:41, 74), which he finds hidden, and gob b on Xizt (fnatic vs mousesports, Forge, IEM6 Guangzhou, R14 1:05, 223). A line at 1 (strict only at 0) would miss 742 on gob b as well. The 12 kills at 100 or more that Sujan checked were all in view, so they read LOOSE.
+- The shortcuts list explains LOOSE beside WALLBANG · HS.
+
+### How it was tested
+- `v022_seen.js` on 0.22.2 over the 50 demos for the count above (`compare_all.sh`, now with `JOBS` and `TIMEOUT` settings for a small machine: 2 at a time, about 14 s a demo).
+- `v023_levels.js` (new) on the same 50: 398 wallbangs listed (382 in 0.22.2: the 16 at 100 pixels or more come back), 377 strict and 21 LOOSE; every LOOSE kill tagged in the Wallbangs list and in its Kills list row, no strict one tagged, none at 50 pixels or more left strict. Screenshot of the Wallbangs list on FX vs Lions checked.
+- `folder_row_test.py` (20 of 20), `start_screen_check.py`, `prefs_check.py`, `demo_search_check.py`, `late_kill_timing_check.py` and `panel_click_check.py` pass.
+
+### Discussed, not changed
+- **Sujan's question on the kill feed: no delay** (`tests/demo-probes/kill_moments.mjs`). In these demos the killing shot, the last hit, health 0, the death sound and the kill message share one snapshot, and the viewer starts the kill feed, the death animation and the picture check there. Details in IDEAS.md, "Three levels of wallbang".
+- The level 3, wallbang damage that didn't kill, is next: mockups first (IDEAS.md).
 
 ## 0.22.2 (2026-10-24)
 

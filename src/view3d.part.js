@@ -672,12 +672,17 @@ function placeCam(p, yaw, pitch) {
 // mTw, Dust2, EM3 2009, R28 LoordB on MJE (Sujan, 23 Oct 2026). So every wallbang the points leave is also drawn
 // from the killer's eye at the killing shot: the map as it was then (broken breakables gone, doors where they were),
 // the victim's body alone in flat magenta, posed for that moment. If SEEN_PX or more of his pixels show past the
-// walls, part of him was in view and it isn't a wallbang. The picture is always the same size around the victim
+// walls, part of him was in view: a loose wallbang (0.22.0 dropped these; 0.23.0 keeps them, tagged). The picture is always the same size around the victim
 // (640 x 400, 220 units high at his distance), so the count doesn't depend on the screen: 100 pixels is a patch
 // about 5 by 6 units, a piece of a head. As for the points, what bullets break doesn't hide him, and fences and
 // grates do (Sujan, 23 Oct 2026: they count as cover), so their holes are filled in for this picture.
 // Measured 23 Oct 2026 on 145 wallbangs: Sujan's three showed 210, 371 and 907 pixels; 8 showed 100 or more.
-const SEEN_PX = 100, SEEN_W = 640, SEEN_H = 400;
+// Since 0.23.0 the count splits wallbangs instead of cutting them (Sujan's three levels, 24 Oct 2026): under SEEN_PX
+// a strict wallbang, SEEN_PX or more a loose one (k.wb.loose holds the count), still listed and tagged LOOSE. The
+// line from the count on 50 demos (25 Oct 2026): 364 of 398 at 0, 13 at 1 to 49, 5 at 50 to 99, 16 at 100 or more;
+// Sujan's answers had 49 hidden and 53, 67, 69, 98 seen, so 50 fits 5 of his 7 close calls (not NEO on ArcadioN at
+// 74, which he finds hidden, nor gob b on Xizt at 223).
+const SEEN_PX = 50, SEEN_W = 640, SEEN_H = 400;
 let seenGen = 0;
 async function checkSeen() {
   const gen = ++seenGen;
@@ -734,7 +739,7 @@ async function checkSeen() {
     for (const c of hidden) c.visible = true;
     r.g.visible = false;
     k.seenPx = n;
-    if (n >= SEEN_PX) k.wb = null;
+    if (n >= SEEN_PX) k.wb.loose = n;
     await new Promise((res) => setTimeout(res, 0)); // let the page breathe between pictures
   }
   rt.dispose(); MAG.dispose(); SOLID.dispose();

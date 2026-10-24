@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-# Run one page script on every demo in the Half-Life folder, 6 at a time, and collect what it returns.
+# Run one page script on every demo in the Half-Life folder, 6 at a time (JOBS=2 for a small machine), and collect what it returns.
 #
 #   HALF_LIFE_DIR=/path/to/Half-Life bash compare_all.sh OUT_DIR PAGE_A [PAGE_B] [SCRIPT]
 #
@@ -23,14 +23,14 @@ one() {
   n="$1"; side="$2"; src="$3"; i="$4"; page="_p_${side}_$i.html"
   cp "$src" "$page"
   key=$(echo "$n" | tr 'A-Z' 'a-z')
-  MAP_NEEDED=0 DEMO="$key" timeout 500 python3 harness.py "$page" "$SCRIPT" > "$OUT/$side/$n.out" 2>&1
+  MAP_NEEDED=0 DEMO="$key" timeout "${TIMEOUT:-500}" python3 harness.py "$page" "$SCRIPT" > "$OUT/$side/$n.out" 2>&1
   rm -f "$page" "_test_$page"
 }
 export -f one; export OUT SCRIPT
 i=0
 ls "$HALF_LIFE_DIR/cstrike" | grep -i '\.dem$' | while read -r n; do
   i=$((i + 1)); echo "\"$n\" a $A $i"; [ -n "$B" ] && echo "\"$n\" b $B $i"
-done | xargs -P 6 -L 1 bash -c 'one "$0" "$1" "$2" "$3"'
+done | xargs -P "${JOBS:-6}" -L 1 bash -c 'one "$0" "$1" "$2" "$3"'
 python3 - "$OUT" "$B" <<'EOF'
 import json, os, sys
 out, two = sys.argv[1], bool(sys.argv[2])
