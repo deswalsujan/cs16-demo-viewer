@@ -19,8 +19,11 @@
   const sname = (i) => String((D.sounds && D.sounds[i]) || '').toLowerCase();
   const hits = {}; const s = D.snds || [];
   for (let i = 0; i < s.length; i += 10) { const n = sname(s[i + 1]); if (/player\/(bhit|headshot)/.test(n)) (hits[s[i + 2]] ||= []).push([s[i], /headshot|helmet/.test(n)]); }
-  const shots = {}; const sh = D.shots || [];
-  for (let i = 0; i < sh.length; i += 4) (shots[sh[i + 1]] ||= []).push(sh[i]);
+  // each shot with its gun, from the fire event's name (events/ak47.sc); guns whose bullets stop at the first surface
+  // (ONE_SURFACE, as for kills) can't hit through cover
+  const evGun = (i) => String((D.events && D.events[i]) || '').toLowerCase().replace(/^.*\//, '').replace(/\.sc$/, '').replace(/^mp5n$/, 'mp5navy').replace(/^elite_(left|right)$/, 'elite');
+  const shots = {}, gunAt = {}; const sh = D.shots || [];
+  for (let i = 0; i < sh.length; i += 4) { (shots[sh[i + 1]] ||= []).push(sh[i]); (gunAt[sh[i + 1]] ||= []).push(evGun(sh[i + 2])); }
   const booms = []; const b = D.booms || []; for (let i = 0; i < b.length; i += 4) booms.push([b[i], b[i + 1], b[i + 2], b[i + 3]]);
   const notCover = bsp.solids.filter((x) => x.shootable).map((x) => x.model);
   const live = (t) => M.liveR.find((r) => t >= r.start && (r.end == null || t <= r.end + 0.5));
@@ -45,7 +48,8 @@
     const cands = [];
     for (const e in shots) {
       const se = +e; if (se === d.e) continue;
-      const st = (shots[se]).filter((t) => t >= d.t - 0.15 && t <= d.t + 0.001); if (!st.length) continue;
+      let li = -1; shots[se].forEach((t, j) => { if (t >= d.t - 0.15 && t <= d.t + 0.001) li = j; }); if (li < 0) continue;
+      const gun = gunAt[se][li]; if (ONE_SURFACE.has(gun) || /knife|grenade|flash|smoke/.test(gun)) { stat.oneSurface++; continue; }
       const a = D.slots[se]; if (!a || isNaN(a[i * S])) continue;
       if (team(se, i) === vt) continue;
       const eye = [a[i * S], a[i * S + 1], a[i * S + 2] + (a[i * S + 7] ? 12 : 17)];
@@ -56,7 +60,7 @@
       const rel = [tgt[0] - eye[0], tgt[1] - eye[1], tgt[2] - eye[2]];
       const along = rel[0] * dir[0] + rel[1] * dir[1] + rel[2] * dir[2]; if (along <= 0) continue;
       const off = Math.hypot(rel[0] - dir[0] * along, rel[1] - dir[1] * along, rel[2] - dir[2] * along);
-      cands.push({ e: se, eye, dir, along, off, tgt, weapon: null });
+      cands.push({ e: se, eye, dir, along, off, tgt, gun });
     }
     if (!cands.length) { stat.noShooter++; continue; }
     cands.sort((x, y) => x.off - y.off);
@@ -70,7 +74,7 @@
     if (aim.solid === 0 || zone.solid === 0) { stat.open++; continue; }
     stat.cover++;
     const r = live(d.t);
-    coverHits.push({ t: d.t, v: d.e, s: c.e, dmg: d.dmg, hpAfter: d.hpAfter, head, thick: Math.round(zone.solid), dist: Math.round(c.along), round: r ? r.ln : null, clock: clockText(d.t), demo: fmt(d.t - D.start), offAim: Math.round(c.off), what: (aim.hit || []).some((h) => h.model !== 0) ? 'object' : 'wall' });
+    coverHits.push({ t: d.t, v: d.e, s: c.e, dmg: d.dmg, hpAfter: d.hpAfter, head, thick: Math.round(zone.solid), dist: Math.round(c.along), round: r ? r.ln : null, clock: clockText(d.t), demo: fmt(d.t - D.start), offAim: Math.round(c.off), gun: c.gun, what: (aim.hit || []).some((h) => h.model !== 0) ? 'object' : 'wall' });
   }
   // bursts: through-cover hits on one victim, each within 2 s of the last
   const byV = {}; for (const h of coverHits) (byV[h.v] ||= []).push(h);
@@ -92,8 +96,8 @@
     const h0 = bu.hits[0];
     out.push({ round: h0.round, clock: h0.clock, demo: h0.demo, t0: +h0.t.toFixed(2), t1: +(kill ? kill.t : bu.end).toFixed(2), victim: nm(bu.v), total, kill: kill ? `${M.pl[kill.kp].name} ${kill.weapon}${kill.wb.loose ? ' (LOOSE)' : ''}` : null,
       shooters: Object.entries(share).sort((a, c) => c[1] - a[1]).map(([e, n]) => `${nm(+e)} ${n}`),
-      raw: bu.hits.map((h) => ({ t: +h.t.toFixed(3), s: h.s, v: h.v, dmg: h.dmg, head: h.head })), killT: kill ? +kill.t.toFixed(3) : null, killer: kill ? kill.killer : null,
-      hits: bu.hits.map((h) => `${h.demo} ${nm(h.s)} -${h.dmg}${h.head ? ' head' : ''} (${h.thick}u ${h.what}, ${h.dist}u away, aim ${h.offAim}u off)`) });
+      raw: bu.hits.map((h) => ({ t: +h.t.toFixed(3), s: h.s, v: h.v, dmg: h.dmg, head: h.head, gun: h.gun })), killT: kill ? +kill.t.toFixed(3) : null, killer: kill ? kill.killer : null,
+      hits: bu.hits.map((h) => `${h.demo} ${nm(h.s)} ${h.gun} -${h.dmg}${h.head ? ' head' : ''} (${h.thick}u ${h.what}, ${h.dist}u away, aim ${h.offAim}u off)`) });
   }
   return { demo: D.fileName, stat, coverHits: coverHits.length, bursts: bursts.length, listed: out.length, withKill: out.filter((x) => x.kill).length, out };
 })()
