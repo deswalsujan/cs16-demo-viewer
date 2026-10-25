@@ -55,6 +55,12 @@
     const head = hs.some(([, h]) => h);
     const i = idx(d.t), v = D.slots[d.e]; if (!v || isNaN(v[i * S])) continue;
     const vp = [v[i * S], v[i * S + 1], v[i * S + 2]], vduck = v[i * S + 7];
+    // a fall: the game plays the same hit sound for fall damage (Pain() in player.cpp, after TakeDamage with DMG_FALL),
+    // so a drop as he lands after falling 100 units or more in the last second is a fall, not a bullet (Sujan, 26 Oct
+    // 2026: zonic falls 330 units and lands on 46 HP, FX vs mTw, Nuke, Xperia Play 2011, R10 1:21)
+    { let zTop = vp[2]; for (let j = i; j >= 0 && times[j] >= d.t - 1; j--) if (!isNaN(v[j * S + 2])) zTop = Math.max(zTop, v[j * S + 2]);
+      const zPrev = i >= 2 ? v[(i - 2) * S + 2] : vp[2];
+      if (zTop - vp[2] >= 100 && zPrev - vp[2] >= 20) { stat.fall = (stat.fall || 0) + 1; note(d, 'fall', `${Math.round(zTop - vp[2])} units`); continue; } }
     if (booms.some(([t, x, y, z]) => d.t - t >= -0.05 && d.t - t < 0.4 && Math.hypot(x - vp[0], y - vp[1], z - vp[2]) < 450)) { stat.nearNade++; note(d, 'grenade'); continue; }
     const vt = team(d.e, i);
     const cands = [];
