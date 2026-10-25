@@ -37,4 +37,4 @@ Notes for Claude sessions, so nothing is lost between chats and machines.
 - Fonts: Zalando Sans (headings and text) and IBM Plex Mono (file names, numbers, stats), from Google Fonts since 0.15.3. The test machine can't reach Google, so for screenshots with the real fonts serve the files from Fontsource on npm (`npm pack @fontsource-variable/zalando-sans @fontsource/ibm-plex-mono`); the test scripts otherwise replace Google Fonts with nothing.
 - Mockups waiting for approval go in `docs/proposed/`, and move to `docs/` once approved.
 - Work not yet shipped lives on a `wip/...` branch, with an "In progress" entry at the top of CHANGELOG.md saying what's built and what's left.
-- Writing style for docs and messages: plain words, no em dashes, no "not X but Y" framing.
+- Writing style for docs and messages: plain words, no em dashes, no "not X but Y" framing. Feature and button names in **bold**, capitalized as on screen (**See through walls**, **Player's eyes**), in docs, messages and the viewer's own text; no quotes around them (Sujan, 25 Oct 2026, following Microsoft's and Google's style guides).
