@@ -50,7 +50,7 @@
   const note = (d, r, extra) => { if (dbg && d.e === dbg.v && d.t >= dbg.from && d.t <= dbg.to) why.push(`${d.t.toFixed(3)} -${d.dmg} ${r}${extra ? ' ' + extra : ''}`); };
   for (const d of drops) {
     if (!live(d.t)) continue;
-    const hs = (hits[d.e] || []).filter(([t]) => t >= d.t - 0.12 && t <= d.t + 0.02);
+    const hs = (hits[d.e] || []).filter(([t]) => Math.abs(t - d.t) <= 0.02); // the hit sound comes in the same snapshot as the health; a wider window took the last hit's sound too (Xizt's second hit read as a headshot, FX vs Lions, R18, 26 Oct 2026)
     if (!hs.length) continue; stat.withSound++;
     const head = hs.some(([, h]) => h);
     const i = idx(d.t), v = D.slots[d.e]; if (!v || isNaN(v[i * S])) continue;
