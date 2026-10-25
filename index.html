@@ -509,6 +509,10 @@ body:has(.app.theatre) { overflow: hidden; }
             <option value="C">C, numbers</option>
             <option value="off">Off</option>
           </select></label>
+          <label class="vrow"><span>3D timing<small>trial: the game draws 0.1 s behind</small></span><select id="lag3" title="As recorded: the 3D view shows the moment the kill feed shows. Like the game: the 3D view runs 0.1 s behind the kill feed, timers and sounds, as the game's demo player seems to">
+            <option value="rec">As recorded</option>
+            <option value="game">Like the game</option>
+          </select></label>
           <label class="vrow"><span>Glow on hits<small>trial: damage without a kill</small></span><select id="glow3" title="A short pink glow on a player each time a bullet hits him through a wall, for damage that doesn't end in a kill">
             <option value="on">On</option>
             <option value="off">Off</option>
@@ -4327,7 +4331,7 @@ function killRow3(k, wbTag) {
   const tags = (strict ? (wbTag ? '<span class="wbtag">WALLBANG</span>' : `<span class="wbtag" title="${STRICT_TIP}">STRICT WB</span>`) : '') + looseTag(k) + unsureTag(k);
   // the damage line under the gun (Sujan's option 2, 25 Oct 2026): what this shooter took through walls in the burst, and teammates' share before it
   const b = !wbTag && k.burst;
-  const dline = b ? `<span class="dline"><b>${b.share[k.killer]} HP</b> through walls (${hitCounts({ hits: b.hits.filter((h) => h.s === k.killer) }, k.t)})${Object.keys(b.share).filter((e) => +e !== k.killer).map((e) => ` · ${esc(labelAt(+e, k.t))} ${b.share[e]} before`).join('')}</span>` : '';
+  const dline = b ? `<span class="dline"><b>${b.share[k.killer]} HP</b> (${hitCounts({ hits: b.hits.filter((h) => h.s === k.killer) }, k.t)})${Object.keys(b.share).filter((e) => +e !== k.killer).map((e) => ` · ${esc(labelAt(+e, k.t))} ${b.share[e]} before`).join('')}</span>` : '';
   const gun = `<span class="gun">${kicon(w)}${esc(w)}${hs}</span>${tags ? `<span class="ktags">${tags}</span>` : ''}${dline || ''}`;
   if (k.killer === k.victim || !k.kp) return `<span class="kname">${nameHtml(k.vp, vs)}</span>${gun}`;
   return `<span class="kname">${nameHtml(k.kp, ks)}</span>${gun}<span class="kname">${nameHtml(k.vp, vs)}</span>`;
@@ -4444,7 +4448,7 @@ function renderPane() {
           const gun = b.hits.find((hh) => hh.s === b.main).gun;
           const others = Object.keys(b.share).filter((e) => +e !== b.main).map((e) => ` · ${esc(labelAt(+e, b.start))} ${b.share[e]}`).join('');
           const mine = b.hits.filter((hh) => hh.s === b.main);
-          h += `<div class="row krow wbrow kill3${b === pickedBurst ? ' pick' : ''}" data-hb="${bi}" title="${DMG_TIP}"><span class="n">${b === pickedBurst ? MARK : ''}R${r ? r.ln : '?'} ·<br>${cellClock(b.start)}<br>${fmt(b.start - D.start)}</span><span class="main"><span class="kname"><span class="${sideOf(b.main) === 1 ? 'kt' : 'kct'}">${esc(labelAt(b.main, b.start))}</span></span><span class="gun">${kicon(gun)}${esc(gun)}</span><span class="ktags"><span class="wbtag dmg" title="${DMG_TIP}">DAMAGE</span></span><span class="dline"><b>${b.share[b.main]} HP</b> through walls (${hitCounts({ hits: mine }, b.end)})${others}</span><span class="kname"><span class="${sideOf(b.v) === 1 ? 'kt' : 'kct'}">${esc(labelAt(b.v, b.start))}</span></span></span></div>`;
+          h += `<div class="row krow wbrow kill3${b === pickedBurst ? ' pick' : ''}" data-hb="${bi}" title="${DMG_TIP}"><span class="n">${b === pickedBurst ? MARK : ''}R${r ? r.ln : '?'} ·<br>${cellClock(b.start)}<br>${fmt(b.start - D.start)}</span><span class="main"><span class="kname"><span class="${sideOf(b.main) === 1 ? 'kt' : 'kct'}">${esc(labelAt(b.main, b.start))}</span></span><span class="gun">${kicon(gun)}${esc(gun)}</span><span class="ktags"><span class="wbtag dmg" title="${DMG_TIP}">DAMAGE</span></span><span class="dline"><b>${b.share[b.main]} HP</b> (${hitCounts({ hits: mine }, b.end)})${others}</span><span class="kname"><span class="${sideOf(b.v) === 1 ? 'kt' : 'kct'}">${esc(labelAt(b.v, b.start))}</span></span></span></div>`;
         }
       }
       if (!all.length) h += `<div class="opt">No wallbang kills or wallbang damage found in the live rounds.</div>`;
@@ -6366,7 +6370,17 @@ function lineMesh(a, b, color, dashed, opacity = 1) {
 const geoCache = {};
 const sphere = (r) => geoCache['s' + r] || (geoCache['s' + r] = new THREE.SphereGeometry(r, 14, 10));
 let lastFrame3 = performance.now();
+// Timing trial (wip/wallbang-hits, Sujan 26 Oct 2026): "Like the game" draws the 3D view 0.1 s behind the rest of the
+// viewer (kill feed, timers, sounds, radar), as the game's demo player seems to draw players about 0.1 s in the past
+// while it shows a kill message as soon as it arrives (fnatic vs Moscow Five, Nuke, DreamHack Summer 2011, R2 1:13:
+// the game showed cArn in the doorway at the kill feed, where the viewer showed him behind the wall a moment later).
+const LAG3 = 0.1;
 function update3() {
+  const T0 = T, lag = $('lag3') && $('lag3').value === 'game' && D ? LAG3 : 0;
+  if (lag) T = Math.max(D.start || 0, T - lag);
+  try { update3Now(); } finally { T = T0; }
+}
+function update3Now() {
   if (!R3 || !D || viewMode === '2d') return;
   const now = performance.now(); const rawDt = (now - lastFrame3) / 1000; const dt = Math.min(0.1, rawDt); lastFrame3 = now;
   qualityTick(rawDt);
@@ -6935,6 +6949,8 @@ $('hit3').value = ['A', 'C', 'off'].includes(ls.get('hitStyle')) ? ls.get('hitSt
 $('hit3').onchange = () => { ls.set('hitStyle', $('hit3').value); };
 $('glow3').value = ['on', 'off'].includes(ls.get('hitGlow')) ? ls.get('hitGlow') : 'on';
 $('glow3').onchange = () => { ls.set('hitGlow', $('glow3').value); };
+$('lag3').value = ['rec', 'game'].includes(ls.get('lag3')) ? ls.get('lag3') : 'rec';
+$('lag3').onchange = () => { ls.set('lag3', $('lag3').value); };
 if (document.fonts) document.fonts.ready.then(() => { tlCache.key = ''; });
 $('bSnd').onclick = () => setSound(!SND.on);
 // full screen: the whole viewer fills the screen (Esc or F leaves it)

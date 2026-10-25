@@ -308,7 +308,17 @@ function lineMesh(a, b, color, dashed, opacity = 1) {
 const geoCache = {};
 const sphere = (r) => geoCache['s' + r] || (geoCache['s' + r] = new THREE.SphereGeometry(r, 14, 10));
 let lastFrame3 = performance.now();
+// Timing trial (wip/wallbang-hits, Sujan 26 Oct 2026): "Like the game" draws the 3D view 0.1 s behind the rest of the
+// viewer (kill feed, timers, sounds, radar), as the game's demo player seems to draw players about 0.1 s in the past
+// while it shows a kill message as soon as it arrives (fnatic vs Moscow Five, Nuke, DreamHack Summer 2011, R2 1:13:
+// the game showed cArn in the doorway at the kill feed, where the viewer showed him behind the wall a moment later).
+const LAG3 = 0.1;
 function update3() {
+  const T0 = T, lag = $('lag3') && $('lag3').value === 'game' && D ? LAG3 : 0;
+  if (lag) T = Math.max(D.start || 0, T - lag);
+  try { update3Now(); } finally { T = T0; }
+}
+function update3Now() {
   if (!R3 || !D || viewMode === '2d') return;
   const now = performance.now(); const rawDt = (now - lastFrame3) / 1000; const dt = Math.min(0.1, rawDt); lastFrame3 = now;
   qualityTick(rawDt);
