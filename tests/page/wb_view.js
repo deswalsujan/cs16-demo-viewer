@@ -17,7 +17,9 @@
   const grab = () => { R3.renderer.readRenderTargetPixels(rt, 0, 0, W, H, buf); let n = 0; for (let i = 0; i < buf.length; i += 4) if (buf[i] > 245 && buf[i + 1] < 12 && buf[i + 2] > 245) n++; return n; };
   const png = () => { const im = cx.createImageData(W, H); for (let y = 0; y < H; y++) im.data.set(buf.subarray((H - 1 - y) * W * 4, (H - y) * W * 4), y * W * 4); cx.putImageData(im, 0, 0); return window.__jpeg ? cv.toDataURL('image/jpeg', 0.82) : cv.toDataURL('image/png'); };
   const out = [];
-  const wants = window.__all ? M.wbs.map((k) => { const r = M.rounds.find((x) => x.n === k.round); return { tag: `R${r.ln} ${clockText(k.t)}`, killer: M.pl[k.kp].name, k, offs: window.__all }; }) : window.__want;
+  // window.__onlySeen: only the wallbangs with some of the victim in view (picture check over 0), after it's done
+  if (window.__onlySeen) while (M.seenPending || D.kills.some((k) => k.wb && k.seenPx == null)) await wait(500);
+  const wants = window.__all ? M.wbs.filter((k) => !window.__onlySeen || k.seenPx > 0).map((k) => { const r = M.rounds.find((x) => x.n === k.round); return { tag: `R${r.ln} ${clockText(k.t)}`, killer: M.pl[k.kp].name, k, offs: window.__all }; }) : window.__want;
   for (const w of wants) {
     const k = w.k || D.kills.find((k) => { const r = M.rounds.find((x) => x.n === k.round); return r && `R${r.ln} ${clockText(k.t)}` === w.tag && M.pl[k.kp] && M.pl[k.kp].name.includes(w.killer); });
     if (!k) { out.push({ tag: w.tag, missing: true }); continue; }
