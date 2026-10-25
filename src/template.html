@@ -112,6 +112,7 @@ button { cursor: pointer; }
 .vrow > span { display: grid; }
 .vrow small { color: var(--muted); font-size: 11px; }
 .vrow .btn { font-size: 12px; padding: 3px 10px; min-width: 52px; justify-content: center; }
+.vrow input[type=checkbox] { width: 16px; height: 16px; accent-color: var(--sand); margin: 0 4px; }
 .hint3 { position: absolute; right: 12px; bottom: 12px; font-family: var(--f-mono); font-size: 11px; color: var(--muted); background: rgba(10,12,14,.82); border: 1px solid var(--line); padding: 4px 8px; border-radius: 3px; white-space: nowrap; }
 .radar.m2d .hint3, .radar.msplit .hint3 { display: none; }
 @media (max-width: 1100px) { .hint3 { display: none; } }
@@ -494,19 +495,7 @@ body:has(.app.theatre) { overflow: hidden; }
             <option value="high">High</option>
             <option value="low">Low</option>
           </select></label>
-          <label class="vrow"><span>Wallbang damage<small>trial: pick one to compare</small></span><select id="hit3" title="How damage through walls shows on the player hit: A in his label, C as numbers that float up">
-            <option value="A">A, in his label</option>
-            <option value="C">C, numbers</option>
-            <option value="off">Off</option>
-          </select></label>
-          <label class="vrow"><span>3D timing<small>trial: the game draws 0.1 s behind</small></span><select id="lag3" title="As recorded: the 3D view shows the moment the kill feed shows. Like the game: the 3D view runs 0.1 s behind the kill feed, timers and sounds, as the game's demo player seems to">
-            <option value="rec">As recorded</option>
-            <option value="game">Like the game</option>
-          </select></label>
-          <label class="vrow"><span>Glow on hits<small>trial: damage without a kill</small></span><select id="glow3" title="A short pink glow on a player each time a bullet hits him through a wall, for damage that doesn't end in a kill">
-            <option value="on">On</option>
-            <option value="off">Off</option>
-          </select></label>
+          <label class="vrow"><span>Glow on hits<small>damage through walls, no kill</small></span><input type="checkbox" id="glow3" title="A short pink glow on a player each time a bullet hits him through a wall, for damage that doesn't end in a kill"></label>
           <label class="vrow"><span>Crosshair<small>in Player's eyes</small></span><select id="xh3" title="Crosshair size in Player's eyes, like the game's crosshair size setting">
             <option value="small">Small</option>
             <option value="medium">Medium</option>
@@ -1921,6 +1910,7 @@ function computeHits() {
     let p = last[e]; if (lastR[e] !== rn) p = 100;
     last[e] = v; lastR[e] = rn; (hpLog[e] || (hpLog[e] = [])).push([t, v]);
     if (v > 0 && v < p) drops.push({ t, e, dmg: p - v });
+    else if (v === 0 && p > 0) drops.push({ t, e, dmg: p, dead: true }); // the killing hit takes its own sound (judged as the kill, not here)
   }
   const hpBefore = (e, t) => { let h = 100; const rn = roundOf(t); for (const [tt, v] of hpLog[e] || []) { if (tt > t + 1e-4) break; if (v > 0 && roundOf(tt) === rn) h = v; } return h; };
   const aimAt = (a, i, vp, head, vduck) => {
@@ -1935,47 +1925,68 @@ function computeHits() {
     return { eye, dir, along, off, tgt };
   };
   const cover = [];
+  // Each health drop is paired with its hit sound (27 Oct 2026). The sound comes at the moment of the hit; in some demos
+  // the health follows it by a tenth of a second or more, several readings at once (tyloo vs mTw, Nuke, e-Stars Seoul
+  // 2009, R15: zonic's 58 to 48, 38 and 0 arrive 0.1 to 0.33 s after their hit sounds; NoA vs Pentagram, Train 2006,
+  // R10: neo's 70 to 49 comes 0.11 s after its sound). So the earliest unused hit sound on him up to 0.4 s before each
+  // drop goes with it, one per drop; when several drops arrive at one moment, the last takes the sounds left (two
+  // bullets between two readings). The hit is judged at the sound's time.
+  const used = new Set();
+  const byT = {}; for (const d of drops) (byT[d.e + ':' + d.t] || (byT[d.e + ':' + d.t] = [])).push(d);
+  for (const key in byT) {
+    const grp = byT[key], e = grp[0].e, t0 = grp[0].t;
+    const W = (hits[e] || []).map((h, k) => [h, k]).filter(([h, k]) => !used.has(e + ':' + k) && h[0] >= t0 - 0.4 && h[0] <= t0 + 0.02);
+    grp.forEach((d, gi) => {
+      if (!W.length) return;
+      const take = gi < grp.length - 1 ? [W.shift()] : W.splice(0);
+      for (const [, k] of take) used.add(e + ':' + k);
+      d.snd = take.map(([h]) => h);
+    });
+  }
+  const why = M.hitWhy = []; const dv = window.__debugV; // for tests: why each of one victim's drops was or wasn't counted
+  const note = (d, r) => { if (dv && d.e === dv.v && d.t >= dv.from && d.t <= dv.to) why.push(`${d.t.toFixed(3)} -${d.dmg} ${r}`); };
   for (const d of drops) {
-    if (!live(d.t)) continue;
-    const hs = (hits[d.e] || []).filter(([t]) => Math.abs(t - d.t) <= 0.02);
-    if (!hs.length) continue;
+    if (d.dead || !live(d.t) || !d.snd) { if (!d.dead) note(d, d.snd ? 'not live' : 'no hit sound'); continue; }
+    const hs = d.snd, th = hs[0][0];
     const head = hs.some(([, h]) => h);
-    const i = idx(d.t), v = D.slots[d.e]; if (!v || isNaN(v[i * S])) continue;
+    const i = idx(th), v = D.slots[d.e]; if (!v || isNaN(v[i * S])) continue;
     const vp = [v[i * S], v[i * S + 1], v[i * S + 2]], vduck = v[i * S + 7];
-    let zTop = vp[2]; for (let j = i; j >= 0 && times[j] >= d.t - 1; j--) if (!isNaN(v[j * S + 2])) zTop = Math.max(zTop, v[j * S + 2]);
-    if (zTop - vp[2] >= 100 && (i >= 2 ? v[(i - 2) * S + 2] : vp[2]) - vp[2] >= 20) continue; // a fall
-    if (booms.some(([t, x, y, z]) => d.t - t >= -0.05 && d.t - t < 0.4 && Math.hypot(x - vp[0], y - vp[1], z - vp[2]) < 450)) continue;
-    const vt = team(d.e, i), cands = [];
+    let zTop = vp[2]; for (let j = i; j >= 0 && times[j] >= th - 1; j--) if (!isNaN(v[j * S + 2])) zTop = Math.max(zTop, v[j * S + 2]);
+    if (zTop - vp[2] >= 100 && (i >= 2 ? v[(i - 2) * S + 2] : vp[2]) - vp[2] >= 20) { note(d, 'fall'); continue; }
+    if (booms.some(([t, x, y, z]) => th - t >= -0.05 && th - t < 0.4 && Math.hypot(x - vp[0], y - vp[1], z - vp[2]) < 450)) { note(d, 'grenade'); continue; }
+    const vt = team(d.e, i), cands = [], seen = new Set();
     for (const e in shots) {
       const se = +e; if (se === d.e) continue;
-      let li = -1; shots[se].forEach((t, j) => { if (t >= d.t - 0.15 && t <= d.t + 0.001) li = j; }); if (li < 0) continue;
+      let li = -1; shots[se].forEach((t, j) => { if (t >= th - 0.2 && t <= th + 0.001) li = j; }); if (li < 0) continue;
       const gun = gunAt[se][li]; if (ONE_SURFACE.has(gun) || /knife|grenade|flash|smoke/.test(gun)) continue;
       const a = D.slots[se]; if (!a || isNaN(a[i * S]) || team(se, i) === vt) continue;
       const c = aimAt(a, i, vp, head, vduck); if (c.along <= 0) continue;
-      cands.push(Object.assign(c, { e: se, gun }));
+      cands.push(Object.assign(c, { e: se, gun, shot: true })); seen.add(se);
     }
-    let aimOnly = false;
-    if (!cands.length) {
-      for (const e in D.slots) {
-        const se = +e; if (se === d.e) continue;
-        const a = D.slots[se]; if (!a || isNaN(a[i * S]) || !(a[i * S + 5] > 0) || team(se, i) === vt || team(se, i) == null) continue;
-        const gun = weaponShort(D.models[a[i * S + 6]]); if (!MAX_DMG[gun]) continue;
-        const c = aimAt(a, i, vp, head, vduck); if (c.along > 0 && c.off <= 32) cands.push(Object.assign(c, { e: se, gun }));
-      }
-      aimOnly = cands.length > 0;
+    // enemies whose fire events the demo left out still count when they aim at him (27 Oct 2026: Go's spray on zonic,
+    // tyloo vs mTw, Nuke, R15, has one fire event in two seconds, so GoodRifle, 76 units off, got his headshot)
+    for (const e in D.slots) {
+      const se = +e; if (se === d.e || seen.has(se)) continue;
+      const a = D.slots[se]; if (!a || isNaN(a[i * S]) || !(a[i * S + 5] > 0) || team(se, i) === vt || team(se, i) == null) continue;
+      const gun = weaponShort(D.models[a[i * S + 6]]); if (!MAX_DMG[gun]) continue;
+      const c = aimAt(a, i, vp, head, vduck); if (c.along > 0 && c.off <= 32) cands.push(Object.assign(c, { e: se, gun, shot: false }));
     }
-    if (!cands.length) continue;
+    if (!cands.length) { note(d, 'no shooter'); continue; }
     cands.sort((x, y) => x.off - y.off);
     const c = cands[0];
-    if (c.off > (cands.length === 1 && !aimOnly ? 96 : 64) || (cands[1] && cands[1].off - c.off < 16)) continue;
+    // the only enemy near his line may aim a little wider when the demo has his shot (aim is recorded about ten times a second)
+    if (c.off > (cands.length === 1 && c.shot ? 96 : 64) || (cands[1] && cands[1].off - c.off < 16)) { note(d, `unknown ${cands.slice(0, 2).map((x) => x.e + ':' + Math.round(x.off)).join(' ')}`); continue; }
     const per = MAX_DMG[c.gun];
-    if (per && d.dmg > per * 0.6 * (head ? 4 : 1.25) * Math.max(1, hs.length)) continue;
-    const skip = brokenSet(d.t - 0.05); for (const m of notCover) skip.add(m);
-    const poses = posesAt(d.t - 0.05);
+    if (per && d.dmg > per * 0.6 * (head ? 4 : 1.25) * Math.max(1, hs.length)) { note(d, 'too much for a wall'); continue; }
+    const skip = brokenSet(th - 0.05); for (const m of notCover) skip.add(m);
+    const poses = posesAt(th - 0.05);
     const end = [c.eye[0] + c.dir[0] * c.along, c.eye[1] + c.dir[1] * c.along, c.eye[2] + c.dir[2] * c.along];
-    if (solidAlong(bsp, c.eye, end, 2, skip, poses, 'bullet').solid === 0 || solidAlong(bsp, c.eye, c.tgt, 2, skip, poses, 'bullet').solid === 0) continue;
-    cover.push({ t: d.t, v: d.e, s: c.e, dmg: d.dmg, head, gun: c.gun });
+    const aimS = solidAlong(bsp, c.eye, end, 2, skip, poses, 'bullet').solid, zoneS = solidAlong(bsp, c.eye, c.tgt, 2, skip, poses, 'bullet').solid;
+    if (aimS === 0 || zoneS === 0) { note(d, `open aim ${Math.round(aimS)} zone ${Math.round(zoneS)} off ${Math.round(c.off)} by ${c.e}`); continue; }
+    note(d, `cover by ${c.e} off ${Math.round(c.off)}`);
+    cover.push({ t: th, v: d.e, s: c.e, dmg: d.dmg, head, gun: c.gun });
   }
+  cover.sort((x, y) => x.t - y.t);
   const byV = {}; for (const h of cover) (byV[h.v] || (byV[h.v] = [])).push(h);
   for (const v in byV) {
     let cur = null;
@@ -1986,13 +1997,22 @@ function computeHits() {
   }
   for (const b of M.bursts) {
     const kill = D.kills.find((k) => k.victim === b.v && k.wb && k.t >= b.end && k.t - b.end <= 2 && b.hits.some((h) => h.s === k.killer));
-    if (kill) { b.kill = kill; b.hits.push({ t: kill.t, v: b.v, s: kill.killer, dmg: hpBefore(b.v, kill.t), head: !!kill.hs, gun: kill.weapon, kill: true }); kill.burst = b; }
+    if (kill) { b.kill = kill; b.hits.push({ t: kill.t, v: b.v, s: kill.killer, dmg: hpBefore(b.v, kill.tMsg != null ? kill.tMsg : kill.t), head: !!kill.hs, gun: kill.weapon, kill: true }); kill.burst = b; }
     b.total = b.hits.reduce((a, h) => a + h.dmg, 0);
     b.share = {}; for (const h of b.hits) b.share[h.s] = (b.share[h.s] || 0) + h.dmg;
     b.main = +Object.keys(b.share).sort((x, y) => b.share[y] - b.share[x])[0];
     const r = M.rounds.find((x) => b.start >= x.start && (x.end == null || b.start <= x.end + 0.5)); b.round = r ? r.n : 0;
   }
   M.bursts = M.bursts.filter((b) => b.total >= HITS_MIN && M.liveR.some((r) => r.n === b.round)).sort((x, y) => x.start - y.start);
+  // every wallbang kill gets its numbers (Sujan, 27 Oct 2026), also one with no hit through cover before it: then the
+  // killing bullet alone, taking what he had left
+  for (const k of D.kills) {
+    if (!k.wb || k.burst || !M.liveR.some((r) => r.n === k.round)) continue;
+    const h = { t: k.t, v: k.victim, s: k.killer, dmg: hpBefore(k.victim, k.tMsg != null ? k.tMsg : k.t), head: !!k.hs, gun: k.weapon, kill: true };
+    const b = { v: k.victim, hits: [h], start: k.t, end: k.t, kill: k, total: h.dmg, share: { [k.killer]: h.dmg }, main: k.killer, round: k.round, solo: true };
+    k.burst = b; M.bursts.push(b);
+  }
+  M.bursts.sort((x, y) => x.start - y.start);
   for (const b of M.bursts) (M.hitByV[b.v] || (M.hitByV[b.v] = [])).push(b);
   renderPane(); drawTimeline();
 }
@@ -4029,14 +4049,12 @@ ls.set('smoothAim', null); // Smooth aim was removed in 0.10.0: forget the old s
 $('q3').value = ['auto', 'high', 'low'].includes(ls.get('quality')) ? ls.get('quality') : 'auto';
 $('q3').onchange = () => { ls.set('quality', $('q3').value); applyQuality(true); };
 // crosshair size in Player's eyes (0.18.0, Sujan 14 Oct 2026): small is the size before 0.18.0; medium is the default
-$('xh3').value = ['small', 'medium', 'large'].includes(ls.get('crosshair')) ? ls.get('crosshair') : 'medium';
-$('xh3').onchange = () => { ls.set('crosshair', $('xh3').value); };
-$('hit3').value = ['A', 'C', 'off'].includes(ls.get('hitStyle')) ? ls.get('hitStyle') : 'A';
-$('hit3').onchange = () => { ls.set('hitStyle', $('hit3').value); };
-$('glow3').value = ['on', 'off'].includes(ls.get('hitGlow')) ? ls.get('hitGlow') : 'on';
-$('glow3').onchange = () => { ls.set('hitGlow', $('glow3').value); };
-$('lag3').value = ['rec', 'game'].includes(ls.get('lag3')) ? ls.get('lag3') : 'rec';
-$('lag3').onchange = () => { ls.set('lag3', $('lag3').value); };
+// crosshair sizes moved down one step on 27 Oct 2026 (large = the old medium): a size saved before keeps its look
+{ const old = ls.get('crosshair'), now = ls.get('crosshair2');
+  $('xh3').value = ['small', 'medium', 'large'].includes(now) ? now : old === 'small' ? 'medium' : 'large'; }
+$('xh3').onchange = () => { ls.set('crosshair2', $('xh3').value); };
+$('glow3').checked = ls.get('hitGlow') !== 'off';
+$('glow3').onchange = () => { ls.set('hitGlow', $('glow3').checked ? 'on' : 'off'); };
 if (document.fonts) document.fonts.ready.then(() => { tlCache.key = ''; });
 $('bSnd').onclick = () => setSound(!SND.on);
 // full screen: the whole viewer fills the screen (Esc or F leaves it)

@@ -308,13 +308,14 @@ function lineMesh(a, b, color, dashed, opacity = 1) {
 const geoCache = {};
 const sphere = (r) => geoCache['s' + r] || (geoCache['s' + r] = new THREE.SphereGeometry(r, 14, 10));
 let lastFrame3 = performance.now();
-// Timing trial (wip/wallbang-hits, Sujan 26 Oct 2026): "Like the game" draws the 3D view 0.1 s behind the rest of the
+// The 3D view runs 0.1 s behind the rest of the
 // viewer (kill feed, timers, sounds, radar), as the game's demo player seems to draw players about 0.1 s in the past
 // while it shows a kill message as soon as it arrives (fnatic vs Moscow Five, Nuke, DreamHack Summer 2011, R2 1:13:
 // the game showed cArn in the doorway at the kill feed, where the viewer showed him behind the wall a moment later).
 const LAG3 = 0.1;
 function update3() {
-  const T0 = T, lag = $('lag3') && $('lag3').value === 'game' && D ? LAG3 : 0;
+  // Sujan, 27 Oct 2026: keep it like the game, no switch
+  const T0 = T, lag = D ? LAG3 : 0;
   if (lag) T = Math.max(D.start || 0, T - lag);
   try { update3Now(); } finally { T = T0; }
 }
@@ -549,13 +550,7 @@ function update3Now() {
     if (!opts.names || (hidden && !opts.xray)) continue;
     // Behind player: the followed player's name is in the name bar under the view already (Sujan, 14 Oct 2026)
     if (cam3.mode === 'chase' && L.e === selected) continue;
-    const sx = (v.x + 1) / 2 * W; let sy = (1 - v.y) / 2 * H;
-    // a label carrying wallbang damage (option A, trial) moves up past the crosshair's arms when it would touch them,
-    // by how far they reach for the size chosen (Sujan, 25 Oct 2026: nothing over the crosshair)
-    if (cam3.mode === 'eyes' && $('hit3').value === 'A' && burstAt(L.e, T)) {
-      const arm = (XHAIR[$('xh3').value] || XHAIR.medium).end + 4;
-      if (Math.abs(sx - W / 2) < 110 + arm && sy + 16 > H / 2 - arm && sy - 14 < H / 2 + arm) sy = H / 2 - arm - 18;
-    }
+    const sx = (v.x + 1) / 2 * W, sy = (1 - v.y) / 2 * H;
     const dist = camera.position.distanceTo(L.p);
     const nm = labelAt(L.e, T); // without the clan tag (0.18.0); the name bar below keeps the full name
     lx.font = `500 ${dist < 1500 ? 12 : 10}px ${mono}`; lx.textAlign = 'center';
@@ -563,20 +558,8 @@ function update3Now() {
     lx.strokeText(nm, sx, sy); lx.fillStyle = L.e === selected ? COL.sand : sideCol(L.s.state); lx.fillText(nm, sx, sy);
     const w = weaponShort(L.s.weapon), hpv = hpAt(L.e, T);
     const sub = [hpv != null ? hpv + ' hp' : '', w].filter(Boolean).join(' · ');
-    // wallbang damage, option A (trial, wip/wallbang-hits; Sujan, 26 Oct 2026): after his health and gun, in the damage
-    // colour: "(1 HS, 2 hits)" when the burst ends in his death (his health already counts down), "−61 (1 HS, 2 hits)"
-    // when it doesn't
-    const hb = $('hit3').value === 'A' && burstAt(L.e, T);
-    const extra = hb ? (hb.kill ? `(${hitCounts(hb, T)})` : `−${hb.hits.filter((h) => h.t <= T + 1e-4).reduce((a, h) => a + h.dmg, 0)} (${hitCounts(hb, T)})`) : '';
     if (sub) { // at any distance, scoped or not (the 2500-unit limit was dropped in 0.16.0, Sujan)
-      lx.font = `400 10px ${mono}`;
-      if (extra) {
-        const w1 = lx.measureText(sub + '  ').width; lx.font = `600 10px ${mono}`; const w2 = lx.measureText(extra).width;
-        const x0 = sx - (w1 + w2) / 2; lx.textAlign = 'left'; lx.font = `400 10px ${mono}`;
-        lx.strokeText(sub, x0, sy + 12); lx.fillStyle = '#d8d3c8'; lx.fillText(sub, x0, sy + 12);
-        lx.font = `600 10px ${mono}`; lx.strokeText(extra, x0 + w1, sy + 12); lx.fillStyle = '#ffb347'; lx.fillText(extra, x0 + w1, sy + 12); lx.textAlign = 'center';
-      } else { lx.strokeText(sub, sx, sy + 12); lx.fillStyle = '#d8d3c8'; lx.fillText(sub, sx, sy + 12); }
-    }
+      lx.font = `400 10px ${mono}`; lx.strokeText(sub, sx, sy + 12); lx.fillStyle = '#d8d3c8'; lx.fillText(sub, sx, sy + 12); }
   }
   drawHitNumbers(lx, W, H, camera, mono);
   drawKillRings(lx, W, H, camera);
@@ -587,7 +570,7 @@ function update3Now() {
     const hpv = hpAt(selected, T);
     pov.innerHTML = `<span class="${s.state === 1 ? 'kt' : 'kct'}">${esc(nameAt(selected, T))}</span>${hpv != null ? ` <b>(${hpv})</b>` : ''}<span class="kw">${esc(weaponShort(s.weapon))}</span>`;
     if (scoped) drawScope(lx, W, H);
-    const xh = XHAIR[$('xh3').value] || XHAIR.medium;
+    const xh = XHAIR[$('xh3').value] || XHAIR.large;
     if (cam3.mode === 'eyes') drawHitMarker(lx, W / 2, H / 2, xh);
     if (cam3.mode === 'eyes' && !scoped) { lx.strokeStyle = 'rgba(90,255,90,.85)'; lx.lineWidth = xh.w; const cx = W / 2, cy = H / 2, g = xh.gap, e = xh.end; lx.beginPath(); lx.moveTo(cx - e, cy); lx.lineTo(cx - g, cy); lx.moveTo(cx + g, cy); lx.lineTo(cx + e, cy); lx.moveTo(cx, cy - e); lx.lineTo(cx, cy - g); lx.moveTo(cx, cy + g); lx.lineTo(cx, cy + e); lx.stroke(); }
   } else if (cam3.mode !== 'free' && selected) {
@@ -625,16 +608,15 @@ const MARK_MS = 450;
 // Crosshair sizes (0.18.0): gap from the middle to each arm, where the arm ends, line width, in CSS pixels.
 // small is the crosshair before 0.18.0. The kill marker keeps its size and moves out with the arms, so it
 // always starts just past them (option A of 5 Oct 2026).
-const XHAIR = { small: { gap: 4, end: 12, w: 1.5 }, medium: { gap: 5, end: 17, w: 2 }, large: { gap: 6, end: 23, w: 2.5 } };
-// Wallbang damage on the player hit (trial, wip/wallbang-hits, Sujan 26 Oct 2026).
-// A, after a death: his last label stays on the body for 2 s with how many headshots and hits it took.
-// C: each hit's damage floats up from beside his head and fades in 0.9 s; newer numbers push older ones up; a
+// Since 27 Oct 2026 (Sujan: the large one was too big): large is the old medium, medium the old small, and small is new
+const XHAIR = { small: { gap: 3, end: 8, w: 1.25 }, medium: { gap: 4, end: 12, w: 1.5 }, large: { gap: 5, end: 17, w: 2 } };
+// Wallbang damage on the player hit (option C, chosen by Sujan 27 Oct 2026): each hit's damage floats up from beside his head and fades in 0.9 s; newer numbers push older ones up; a
 // headshot reads "−49 HS". In Player's eyes, a number that would touch the crosshair's arms moves up past them.
 function drawHitNumbers(lx, W, H, camera, mono) {
   if (!M.bursts || !M.bursts.length) return;
   // the glow (trial switch, Sujan 26 Oct 2026): a short pink glow around him at each hit through a wall, fading in
   // 0.3 s; only for damage that doesn't end in a kill (Sujan: no glow on a wallbang kill)
-  if ($('glow3').value === 'on') for (const b of M.bursts) {
+  if ($('glow3').checked) for (const b of M.bursts) {
     if (b.kill || T < b.start - 0.05 || T > b.end + 0.3 || (cam3.mode === 'eyes' && b.v === selected)) continue;
     const h = b.hits.filter((x) => x.t <= T + 1e-4).pop(); if (!h || T - h.t > 0.3) continue;
     const st = playerState(b.v, T); if (!st || st.state <= 0) continue;
@@ -645,23 +627,12 @@ function drawHitNumbers(lx, W, H, camera, mono) {
     g.addColorStop(0, `rgba(255,79,216,${0.55 * a})`); g.addColorStop(1, 'rgba(255,79,216,0)');
     lx.fillStyle = g; lx.beginPath(); lx.ellipse(tx, cy, hgt * 0.45, hgt * 0.75, 0, 0, Math.PI * 2); lx.fill();
   }
-  const style = $('hit3').value;
-  if (style === 'off') return;
-  const xh = XHAIR[$('xh3').value] || XHAIR.medium, arm = xh.end + 6;
+  const xh = XHAIR[$('xh3').value] || XHAIR.large, arm = xh.end + 6;
   const scr = (x, y, z) => { const v = g3(x, y, z).project(camera); return v.z > 1 || v.z < -1 ? null : [(v.x + 1) / 2 * W, (1 - v.y) / 2 * H]; };
-  const skipSelf = (e) => cam3.mode === 'eyes' && e === selected;
   lx.lineWidth = 3; lx.strokeStyle = 'rgba(8,10,12,.9)';
   for (const b of M.bursts) {
-    if (T < b.start - 0.05 || T > (b.kill ? b.kill.t + 2 : b.end + 1)) continue;
-    if (skipSelf(b.v)) continue;
-    if (style === 'A') {
-      if (!b.kill || T < b.kill.t || !opts.names) continue;
-      const p = scr(b.kill.vpos[0], b.kill.vpos[1], b.kill.vpos[2] + 10); if (!p) continue;
-      lx.textAlign = 'center'; lx.font = `500 12px ${mono}`;
-      const nm = labelAt(b.v, b.kill.t); lx.strokeText(nm, p[0], p[1] - 14); lx.fillStyle = '#d8d3c8'; lx.fillText(nm, p[0], p[1] - 14);
-      const t2 = `(${hitCounts(b, b.kill.t)})`; lx.font = `600 10px ${mono}`; lx.strokeText(t2, p[0], p[1] - 2); lx.fillStyle = '#ffb347'; lx.fillText(t2, p[0], p[1] - 2);
-      continue;
-    }
+    if (T < b.start - 0.05 || T > (b.kill ? b.kill.t + 1 : b.end + 1)) continue;
+    if (cam3.mode === 'eyes' && b.v === selected) continue;
     const live = b.hits.filter((h) => h.t <= T + 1e-4 && T - h.t <= 0.9);
     if (!live.length) continue;
     const st = playerState(b.v, T);
@@ -733,13 +704,7 @@ function drawKillRings(lx, W, H, camera) {
     const a = (performance.now() - f.at) / FLASH_MS; if (a >= 1) continue;
     const v = g3(k.vpos[0], k.vpos[1], k.vpos[2] + 6).project(camera);
     if (v.z > 1 || v.z < -1) continue;
-    const sx = (v.x + 1) / 2 * W; let sy = (1 - v.y) / 2 * H;
-    // a label carrying wallbang damage (option A, trial) moves up past the crosshair's arms when it would touch them,
-    // by how far they reach for the size chosen (Sujan, 25 Oct 2026: nothing over the crosshair)
-    if (cam3.mode === 'eyes' && $('hit3').value === 'A' && burstAt(L.e, T)) {
-      const arm = (XHAIR[$('xh3').value] || XHAIR.medium).end + 4;
-      if (Math.abs(sx - W / 2) < 110 + arm && sy + 16 > H / 2 - arm && sy - 14 < H / 2 + arm) sy = H / 2 - arm - 18;
-    }
+    const sx = (v.x + 1) / 2 * W, sy = (1 - v.y) / 2 * H;
     lx.globalAlpha = 1 - a; lx.lineWidth = 3;
     lx.strokeStyle = k.wb ? '#ff4fd8' : k.hs ? '#ff9a3c' : '#ffffff';
     lx.beginPath(); lx.arc(sx, sy, 6 + a * 28, 0, 7); lx.stroke();
