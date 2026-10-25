@@ -6,6 +6,7 @@ Notes for Claude sessions, so nothing is lost between chats and machines.
 - Read README.md, CHANGELOG.md and IDEAS.md first. IDEAS.md starts with the checklist of everything open; CHANGELOG.md says what was built, how it was tested, and what was "Discussed, not changed".
 - Discuss issues with Sujan before changing code when he asks for that, and before building any visible change, ask whether he wants to see a mockup first; make one only when he says yes (see `docs/` for the approved ones). Rule set 2 Oct 2026, replacing "always make a side-by-side image".
 - Warn before anything that runs a long time (a full test run, a big measurement), or stop partway to ask.
+- Think about the user experience in every change (Sujan, 25 Oct 2026): what a first-time user sees, whether a feature or option needs a tooltip, and whether the UI could be simpler. Open UX items are under "User experience" in IDEAS.md.
 
 ## How each change ships
 1. Change `src/`, then `python3 build.py` (writes `index.html` and `dist/artifact.html`).
