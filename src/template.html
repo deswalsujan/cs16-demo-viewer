@@ -133,6 +133,7 @@ button { cursor: pointer; }
 .wbtag.dmg { color: var(--hit); border-color: color-mix(in srgb, var(--hit) 55%, transparent); }
 .kill3 .dline { display: block; font: 12px var(--f-mono); color: var(--muted); margin: 0 0 3px; }
 .kill3 .dline b { color: var(--hit); font-weight: 500; }
+.kill3 .dline .dmore { display: block; white-space: normal; overflow-wrap: anywhere; margin-top: 1px; }
 .wbchips { display: flex; flex-wrap: wrap; gap: 6px; padding: 8px 14px; border-bottom: 1px solid var(--line); }
 .wbchips button { font: 12px var(--f-mono); color: var(--muted); background: none; border: 1px solid var(--line); border-radius: 12px; padding: 1px 9px; }
 .wbchips button.on { color: #1b1a16; background: var(--sand); border-color: var(--sand); }
@@ -1925,7 +1926,7 @@ function computeHits() {
     return { eye, dir, along, off, tgt };
   };
   const cover = [];
-  // Each health drop is paired with its hit sound (27 Oct 2026). The sound comes at the moment of the hit; in some demos
+  // Each health drop is paired with its hit sound (26 Oct 2026). The sound comes at the moment of the hit; in some demos
   // the health follows it by a tenth of a second or more, several readings at once (tyloo vs mTw, Nuke, e-Stars Seoul
   // 2009, R15: zonic's 58 to 48, 38 and 0 arrive 0.1 to 0.33 s after their hit sounds; NoA vs Pentagram, Train 2006,
   // R10: neo's 70 to 49 comes 0.11 s after its sound). So the earliest unused hit sound on him up to 0.4 s before each
@@ -1963,7 +1964,7 @@ function computeHits() {
       const c = aimAt(a, i, vp, head, vduck); if (c.along <= 0) continue;
       cands.push(Object.assign(c, { e: se, gun, shot: true })); seen.add(se);
     }
-    // enemies whose fire events the demo left out still count when they aim at him (27 Oct 2026: Go's spray on zonic,
+    // enemies whose fire events the demo left out still count when they aim at him (26 Oct 2026: Go's spray on zonic,
     // tyloo vs mTw, Nuke, R15, has one fire event in two seconds, so GoodRifle, 76 units off, got his headshot)
     for (const e in D.slots) {
       const se = +e; if (se === d.e || seen.has(se)) continue;
@@ -2004,7 +2005,7 @@ function computeHits() {
     const r = M.rounds.find((x) => b.start >= x.start && (x.end == null || b.start <= x.end + 0.5)); b.round = r ? r.n : 0;
   }
   M.bursts = M.bursts.filter((b) => b.total >= HITS_MIN && M.liveR.some((r) => r.n === b.round)).sort((x, y) => x.start - y.start);
-  // every wallbang kill gets its numbers (Sujan, 27 Oct 2026), also one with no hit through cover before it: then the
+  // every wallbang kill gets its numbers (Sujan, 26 Oct 2026), also one with no hit through cover before it: then the
   // killing bullet alone, taking what he had left
   for (const k of D.kills) {
     if (!k.wb || k.burst || !M.liveR.some((r) => r.n === k.round)) continue;
@@ -2016,6 +2017,9 @@ function computeHits() {
   for (const b of M.bursts) (M.hitByV[b.v] || (M.hitByV[b.v] = [])).push(b);
   renderPane(); drawTimeline();
 }
+// the other shooters in a burst go on a line of their own under the damage, so a long name isn't cut off (Sujan,
+// 26 Oct 2026: "Xi '2q' Wang 49 before" was cut at "War" on Go's kill of zonic, tyloo vs mTw, Nuke)
+const dmore = (list) => list.length ? `<span class="dmore">${list.join(' · ')}</span>` : '';
 // "(1 HS, 2 hits)": headshots and the other hits so far in the burst, at time t (Sujan, 26 Oct 2026)
 function hitCounts(b, t) {
   const so = b.hits.filter((h) => h.t <= t + 1e-4), nh = so.filter((h) => h.head).length, nb = so.length - nh;
@@ -3155,7 +3159,7 @@ function killRow3(k, wbTag) {
   const tags = (strict ? (wbTag ? '<span class="wbtag">WALLBANG</span>' : `<span class="wbtag" title="${STRICT_TIP}">STRICT WB</span>`) : '') + looseTag(k) + unsureTag(k);
   // the damage line under the gun (Sujan's option 2, 25 Oct 2026): what this shooter took through walls in the burst, and teammates' share before it
   const b = !wbTag && k.burst;
-  const dline = b ? `<span class="dline"><b>${b.share[k.killer]} HP</b> (${hitCounts({ hits: b.hits.filter((h) => h.s === k.killer) }, k.t)})${Object.keys(b.share).filter((e) => +e !== k.killer).map((e) => ` · ${esc(labelAt(+e, k.t))} ${b.share[e]} before`).join('')}</span>` : '';
+  const dline = b ? `<span class="dline"><b>${b.share[k.killer]} HP</b> (${hitCounts({ hits: b.hits.filter((h) => h.s === k.killer) }, k.t)})${dmore(Object.keys(b.share).filter((e) => +e !== k.killer).map((e) => `${esc(labelAt(+e, k.t))} ${b.share[e]} before`))}</span>` : '';
   const gun = `<span class="gun">${kicon(w)}${esc(w)}${hs}</span>${tags ? `<span class="ktags">${tags}</span>` : ''}${dline || ''}`;
   if (k.killer === k.victim || !k.kp) return `<span class="kname">${nameHtml(k.vp, vs)}</span>${gun}`;
   return `<span class="kname">${nameHtml(k.kp, ks)}</span>${gun}<span class="kname">${nameHtml(k.vp, vs)}</span>`;
@@ -3270,7 +3274,7 @@ function renderPane() {
           const b = x.b, r = M.rounds.find((y) => y.n === b.round), bi = M.bursts.indexOf(b);
           const sideOf = (e) => { const st = playerState(e, b.start); return st ? (Math.abs(st.state) === 1 ? 1 : 2) : 0; };
           const gun = b.hits.find((hh) => hh.s === b.main).gun;
-          const others = Object.keys(b.share).filter((e) => +e !== b.main).map((e) => ` · ${esc(labelAt(+e, b.start))} ${b.share[e]}`).join('');
+          const others = dmore(Object.keys(b.share).filter((e) => +e !== b.main).map((e) => `${esc(labelAt(+e, b.start))} ${b.share[e]}`));
           const mine = b.hits.filter((hh) => hh.s === b.main);
           h += `<div class="row krow wbrow kill3${b === pickedBurst ? ' pick' : ''}" data-hb="${bi}" title="${DMG_TIP}"><span class="n">${b === pickedBurst ? MARK : ''}R${r ? r.ln : '?'} ·<br>${cellClock(b.start)}<br>${fmt(b.start - D.start)}</span><span class="main"><span class="kname"><span class="${sideOf(b.main) === 1 ? 'kt' : 'kct'}">${esc(labelAt(b.main, b.start))}</span></span><span class="gun">${kicon(gun)}${esc(gun)}</span><span class="ktags"><span class="wbtag dmg" title="${DMG_TIP}">DAMAGE</span></span><span class="dline"><b>${b.share[b.main]} HP</b> (${hitCounts({ hits: mine }, b.end)})${others}</span><span class="kname"><span class="${sideOf(b.v) === 1 ? 'kt' : 'kct'}">${esc(labelAt(b.v, b.start))}</span></span></span></div>`;
         }
@@ -4049,7 +4053,7 @@ ls.set('smoothAim', null); // Smooth aim was removed in 0.10.0: forget the old s
 $('q3').value = ['auto', 'high', 'low'].includes(ls.get('quality')) ? ls.get('quality') : 'auto';
 $('q3').onchange = () => { ls.set('quality', $('q3').value); applyQuality(true); };
 // crosshair size in Player's eyes (0.18.0, Sujan 14 Oct 2026): small is the size before 0.18.0; medium is the default
-// crosshair sizes moved down one step on 27 Oct 2026 (large = the old medium): a size saved before keeps its look
+// crosshair sizes moved down one step on 26 Oct 2026 (large = the old medium): a size saved before keeps its look
 { const old = ls.get('crosshair'), now = ls.get('crosshair2');
   $('xh3').value = ['small', 'medium', 'large'].includes(now) ? now : old === 'small' ? 'medium' : 'large'; }
 $('xh3').onchange = () => { ls.set('crosshair2', $('xh3').value); };

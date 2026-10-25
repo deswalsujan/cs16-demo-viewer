@@ -314,7 +314,7 @@ let lastFrame3 = performance.now();
 // the game showed cArn in the doorway at the kill feed, where the viewer showed him behind the wall a moment later).
 const LAG3 = 0.1;
 function update3() {
-  // Sujan, 27 Oct 2026: keep it like the game, no switch
+  // Sujan, 26 Oct 2026: keep it like the game, no switch
   const T0 = T, lag = D ? LAG3 : 0;
   if (lag) T = Math.max(D.start || 0, T - lag);
   try { update3Now(); } finally { T = T0; }
@@ -608,18 +608,24 @@ const MARK_MS = 450;
 // Crosshair sizes (0.18.0): gap from the middle to each arm, where the arm ends, line width, in CSS pixels.
 // small is the crosshair before 0.18.0. The kill marker keeps its size and moves out with the arms, so it
 // always starts just past them (option A of 5 Oct 2026).
-// Since 27 Oct 2026 (Sujan: the large one was too big): large is the old medium, medium the old small, and small is new
+// Since 26 Oct 2026 (Sujan: the large one was too big): large is the old medium, medium the old small, and small is new
 const XHAIR = { small: { gap: 3, end: 8, w: 1.25 }, medium: { gap: 4, end: 12, w: 1.5 }, large: { gap: 5, end: 17, w: 2 } };
-// Wallbang damage on the player hit (option C, chosen by Sujan 27 Oct 2026): each hit's damage floats up from beside his head and fades in 0.9 s; newer numbers push older ones up; a
+// Wallbang damage on the player hit (option C, chosen by Sujan 26 Oct 2026): each hit's damage floats up from beside his head and fades in 0.9 s; newer numbers push older ones up; a
 // headshot reads "−49 HS". In Player's eyes, a number that would touch the crosshair's arms moves up past them.
 function drawHitNumbers(lx, W, H, camera, mono) {
   if (!M.bursts || !M.bursts.length) return;
-  // the glow (trial switch, Sujan 26 Oct 2026): a short pink glow around him at each hit through a wall, fading in
-  // 0.3 s; only for damage that doesn't end in a kill (Sujan: no glow on a wallbang kill)
+  // through a player's eyes or from behind him, only his own hits are shown (Sujan, 26 Oct 2026: in whimp's view at
+  // R23 1:10, tyloo vs mTw, Nuke, the hits of four other players showed too); in Free view everyone's
+  const mine = (h) => !(selected != null && (cam3.mode === 'eyes' || cam3.mode === 'chase')) || h.s === selected;
+  // the glow (Glow on hits, Sujan 26 Oct 2026): a short pink glow around him at each hit through a wall, fading in
+  // 0.3 s; also on the killing bullet (Sujan, 26 Oct 2026)
   if ($('glow3').checked) for (const b of M.bursts) {
-    if (b.kill || T < b.start - 0.05 || T > b.end + 0.3 || (cam3.mode === 'eyes' && b.v === selected)) continue;
-    const h = b.hits.filter((x) => x.t <= T + 1e-4).pop(); if (!h || T - h.t > 0.3) continue;
-    const st = playerState(b.v, T); if (!st || st.state <= 0) continue;
+    const tEnd = b.kill ? b.kill.t : b.end;
+    if (T < b.start - 0.05 || T > tEnd + 0.3 || (cam3.mode === 'eyes' && b.v === selected)) continue;
+    const h = b.hits.filter((x) => x.t <= T + 1e-4 && mine(x)).pop(); if (!h || T - h.t > 0.3) continue;
+    let st = playerState(b.v, T);
+    if ((!st || st.state <= 0) && h.kill && b.kill.vpos) st = { x: b.kill.vpos[0], y: b.kill.vpos[1], z: b.kill.vpos[2], duck: b.kill.vduck, state: 1 };
+    if (!st || st.state <= 0) continue;
     const top = g3(st.x, st.y, st.z + (st.duck ? 22 : 36)).project(camera), bot = g3(st.x, st.y, st.z - (st.duck ? 18 : 36)).project(camera);
     if (top.z > 1 || top.z < -1) continue;
     const tx = (top.x + 1) / 2 * W, ty = (1 - top.y) / 2 * H, by = (1 - bot.y) / 2 * H, hgt = Math.max(12, by - ty), cy = (ty + by) / 2, a = 1 - (T - h.t) / 0.3;
@@ -633,7 +639,7 @@ function drawHitNumbers(lx, W, H, camera, mono) {
   for (const b of M.bursts) {
     if (T < b.start - 0.05 || T > (b.kill ? b.kill.t + 1 : b.end + 1)) continue;
     if (cam3.mode === 'eyes' && b.v === selected) continue;
-    const live = b.hits.filter((h) => h.t <= T + 1e-4 && T - h.t <= 0.9);
+    const live = b.hits.filter((h) => h.t <= T + 1e-4 && T - h.t <= 0.9 && mine(h));
     if (!live.length) continue;
     const st = playerState(b.v, T);
     const base = st && st.state > 0 ? scr(st.x, st.y, st.z + (st.duck ? 26 : 44) + 10) : (b.kill ? scr(b.kill.vpos[0], b.kill.vpos[1], b.kill.vpos[2] + 20) : null);
