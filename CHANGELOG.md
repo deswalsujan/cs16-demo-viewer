@@ -31,6 +31,20 @@ What changed in the viewer, newest first. The version shows in the viewer's shor
 - The wallbang finder's last check draws the killer's view at the shot (0.22.0), so it needs the 3D engine and the victim's player model. Without them (no WebGL, a missing model) the finder's 15 points decide alone and every wallbang reads as strict. The Wallbangs list settles a few seconds after the map loads, while it says "Checking N from the shooter's eye…". The victim's pose at the shot is the viewer's estimate (HLTV doesn't record animation frames), so a sliver of a limb can be off by a few units. Strict and LOOSE are split at 50 pixels of the victim in view (0.23.0); no line fits every close call: NEO on ArcadioN (74) and gob b on Xizt (223) read LOOSE, where Sujan finds the victim hidden.
 - A kill that lands on a skip across a round restart (HLTV left out the end of the round and the restart) is never listed as a wallbang: where everyone stood at the shot isn't in the file (0.22.0).
 
+## In progress: wallbang damage trial (branch `wip/wallbang-hits`, from 26 Oct 2026)
+
+Sujan's level 3 of wallbang, built for trying out live before it goes to main (Sujan, 26 Oct 2026: "How can I see both options A and C in the demo viewer itself (without touching the main)"). Published as its own claude.ai page, separate from the viewer's: GitHub Pages and https://claude.ai/artifact/KHjQXfeVe17XXPrqarFDrS stay on main.
+
+Built:
+- **Wallbang damage found in the viewer** (`computeHits` in `src/template.html`, from the prototype `tests/page/wb_hits.js` with every fix from Sujan's check of 24 bursts): hits through cover that didn't kill, grouped in bursts (each hit within 2 s of the last), listed from 35 HP with every shooter's share; a burst ending in a wallbang kill joins it.
+- **Wallbangs list**: filters **All · Strict wb · Loose wb · Damage**, each with a tooltip; rows tagged STRICT WB, LOOSE WB or DAMAGE; under the gun a line with the health taken through walls and the hits it took ("88 HP through walls (1 HS, 4 hits)"), and teammates' share. A damage row opens the burst 3 s early through the main shooter's eyes. Copy list adds the damage rows. In the Kills list a loose kill reads LOOSE WB, a strict one keeps WALLBANG.
+- **Timeline**: damage as hollow diamonds in the damage colour.
+- **On the player hit, in 3D** (a temporary switch in **View settings**, Wallbang damage: A, C or Off): A puts the damage after his health and gun in his label ("15 hp · m4a1 (1 HS, 2 hits)" when the burst ends in his death, "−61 (1 HS, 2 hits)" when it doesn't) and leaves "(1 HS, 4 hits)" on his body for 2 s after a wallbang kill; C floats each hit's damage up from beside his head ("−49 HS", "−12"), fading in 0.9 s, moving above the crosshair's arms (by the size chosen) when it would touch them. No glow (Sujan, 26 Oct 2026, questioned it; left out of the trial).
+
+Left: Sujan picks A or C (or both, or a mix) in the trial; then the switch goes, a CHANGELOG version entry, Known limits, README, the "HS" counting checked on more demos, and the merge to main.
+
+How it was tested: `v024_hits.js` (new) on FX vs Lions, Nuke, DreamHack Winter 2010: 19 bursts, 6 with a wallbang kill, 13 damage rows; filters 28, 14, 1, 13 rows; Xizt's burst (R18 0:55) 88 HP, 49 HS then 12, 12, 12 and the kill for 3, "(1 HS, 4 hits)"; a damage row picks its main shooter and jumps 3 s before; screenshots of A and C at 36:14.80 checked. `folder_row_test.py` (20 of 20), `start_screen_check.py`, `prefs_check.py`, `demo_search_check.py`, `late_kill_timing_check.py` and `panel_click_check.py` pass (the last failed once with a page error and passed on the rerun; to watch).
+
 ## 0.23.0 (2026-10-25)
 
 Sujan's three levels of wallbang (24 Oct 2026), the first two: a kill by a bullet through cover is a wallbang whether or not part of the victim was in view. Line decided from a pixel count, as Sujan asked (25 Oct 2026: "do a pixel count first and based on the results accordingly make a recommendation and apply it").

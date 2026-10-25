@@ -547,9 +547,22 @@ function update3() {
     lx.strokeText(nm, sx, sy); lx.fillStyle = L.e === selected ? COL.sand : sideCol(L.s.state); lx.fillText(nm, sx, sy);
     const w = weaponShort(L.s.weapon), hpv = hpAt(L.e, T);
     const sub = [hpv != null ? hpv + ' hp' : '', w].filter(Boolean).join(' · ');
+    // wallbang damage, option A (trial, wip/wallbang-hits; Sujan, 26 Oct 2026): after his health and gun, in the damage
+    // colour: "(1 HS, 2 hits)" when the burst ends in his death (his health already counts down), "−61 (1 HS, 2 hits)"
+    // when it doesn't
+    const hb = $('hit3').value === 'A' && burstAt(L.e, T);
+    const extra = hb ? (hb.kill ? `(${hitCounts(hb, T)})` : `−${hb.hits.filter((h) => h.t <= T + 1e-4).reduce((a, h) => a + h.dmg, 0)} (${hitCounts(hb, T)})`) : '';
     if (sub) { // at any distance, scoped or not (the 2500-unit limit was dropped in 0.16.0, Sujan)
-      lx.font = `400 10px ${mono}`; lx.strokeText(sub, sx, sy + 12); lx.fillStyle = '#d8d3c8'; lx.fillText(sub, sx, sy + 12); }
+      lx.font = `400 10px ${mono}`;
+      if (extra) {
+        const w1 = lx.measureText(sub + '  ').width; lx.font = `600 10px ${mono}`; const w2 = lx.measureText(extra).width;
+        const x0 = sx - (w1 + w2) / 2; lx.textAlign = 'left'; lx.font = `400 10px ${mono}`;
+        lx.strokeText(sub, x0, sy + 12); lx.fillStyle = '#d8d3c8'; lx.fillText(sub, x0, sy + 12);
+        lx.font = `600 10px ${mono}`; lx.strokeText(extra, x0 + w1, sy + 12); lx.fillStyle = '#ffb347'; lx.fillText(extra, x0 + w1, sy + 12); lx.textAlign = 'center';
+      } else { lx.strokeText(sub, sx, sy + 12); lx.fillStyle = '#d8d3c8'; lx.fillText(sub, sx, sy + 12); }
+    }
   }
+  drawHitNumbers(lx, W, H, camera, mono);
   drawKillRings(lx, W, H, camera);
   const pov = $('pov');
   const s = selected && playerState(selected, T);
@@ -597,6 +610,46 @@ const MARK_MS = 450;
 // small is the crosshair before 0.18.0. The kill marker keeps its size and moves out with the arms, so it
 // always starts just past them (option A of 5 Oct 2026).
 const XHAIR = { small: { gap: 4, end: 12, w: 1.5 }, medium: { gap: 5, end: 17, w: 2 }, large: { gap: 6, end: 23, w: 2.5 } };
+// Wallbang damage on the player hit (trial, wip/wallbang-hits, Sujan 26 Oct 2026).
+// A, after a death: his last label stays on the body for 2 s with how many headshots and hits it took.
+// C: each hit's damage floats up from beside his head and fades in 0.9 s; newer numbers push older ones up; a
+// headshot reads "−49 HS". In Player's eyes, a number that would touch the crosshair's arms moves up past them.
+function drawHitNumbers(lx, W, H, camera, mono) {
+  const style = $('hit3').value;
+  if (style === 'off' || !M.bursts || !M.bursts.length) return;
+  const xh = XHAIR[$('xh3').value] || XHAIR.medium, arm = xh.end + 6;
+  const scr = (x, y, z) => { const v = g3(x, y, z).project(camera); return v.z > 1 || v.z < -1 ? null : [(v.x + 1) / 2 * W, (1 - v.y) / 2 * H]; };
+  const skipSelf = (e) => cam3.mode === 'eyes' && e === selected;
+  lx.lineWidth = 3; lx.strokeStyle = 'rgba(8,10,12,.9)';
+  for (const b of M.bursts) {
+    if (T < b.start - 0.05 || T > (b.kill ? b.kill.t + 2 : b.end + 1)) continue;
+    if (skipSelf(b.v)) continue;
+    if (style === 'A') {
+      if (!b.kill || T < b.kill.t || !opts.names) continue;
+      const p = scr(b.kill.vpos[0], b.kill.vpos[1], b.kill.vpos[2] + 10); if (!p) continue;
+      lx.textAlign = 'center'; lx.font = `500 12px ${mono}`;
+      const nm = labelAt(b.v, b.kill.t); lx.strokeText(nm, p[0], p[1] - 14); lx.fillStyle = '#d8d3c8'; lx.fillText(nm, p[0], p[1] - 14);
+      const t2 = `(${hitCounts(b, b.kill.t)})`; lx.font = `600 10px ${mono}`; lx.strokeText(t2, p[0], p[1] - 2); lx.fillStyle = '#ffb347'; lx.fillText(t2, p[0], p[1] - 2);
+      continue;
+    }
+    const live = b.hits.filter((h) => h.t <= T + 1e-4 && T - h.t <= 0.9);
+    if (!live.length) continue;
+    const st = playerState(b.v, T);
+    const base = st && st.state > 0 ? scr(st.x, st.y, st.z + (st.duck ? 26 : 44) + 10) : (b.kill ? scr(b.kill.vpos[0], b.kill.vpos[1], b.kill.vpos[2] + 20) : null);
+    if (!base) continue;
+    live.forEach((h, k) => {
+      const age = T - h.t, a = age < 0.15 ? 1 : Math.max(0, 1 - (age - 0.15) / 0.75);
+      let px = base[0] + 18, py = base[1] - 6 - age * 40 - (live.length - 1 - k) * 13;
+      if (cam3.mode === 'eyes' && Math.abs(px + 20 - W / 2) < arm + 24 && Math.abs(py - H / 2) < arm + 8) py = H / 2 - arm - 10;
+      lx.globalAlpha = a; lx.textAlign = 'left';
+      lx.font = `600 ${h.head ? 13 : 11}px ${mono}`; const txt = `−${h.dmg}`;
+      lx.strokeText(txt, px, py); lx.fillStyle = '#ffb347'; lx.fillText(txt, px, py);
+      if (h.head) { const w = lx.measureText(txt + ' ').width; lx.font = `700 10px ${mono}`; lx.strokeText('HS', px + w, py); lx.fillText('HS', px + w, py); }
+      lx.globalAlpha = 1;
+    });
+  }
+  lx.textAlign = 'center';
+}
 function drawHitMarker(lx, cx, cy, xh = XHAIR.small) {
   const f = flashes.filter((x) => x.k.killer === selected).pop();
   if (!f) return;

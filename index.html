@@ -28,6 +28,7 @@
   --t: #e8574d;
   --ct: #5ea3e8;
   --kill: #ff9a3c;
+  --hit: #ffb347;
   --radar: #0b0e10;
   --good: #8fc97a;
   --f-display: "Zalando Sans", system-ui, -apple-system, "Segoe UI", sans-serif;
@@ -137,6 +138,13 @@ button { cursor: pointer; }
 .wbtag.unsure { color: #e7c37a; border-color: rgba(231,195,122,.55); }
 /* a loose wallbang (0.23.0): the bullet went through cover, part of the victim was in view */
 .wbtag.loose { color: #c9a3e8; border-color: rgba(201,163,232,.55); }
+/* wallbang damage (trial, wip/wallbang-hits): hits through cover that didn't kill, in the damage colour */
+.wbtag.dmg { color: var(--hit); border-color: color-mix(in srgb, var(--hit) 55%, transparent); }
+.kill3 .dline { display: block; font: 12px var(--f-mono); color: var(--muted); margin: 0 0 3px; }
+.kill3 .dline b { color: var(--hit); font-weight: 500; }
+.wbchips { display: flex; flex-wrap: wrap; gap: 6px; padding: 8px 14px; border-bottom: 1px solid var(--line); }
+.wbchips button { font: 12px var(--f-mono); color: var(--muted); background: none; border: 1px solid var(--line); border-radius: 12px; padding: 1px 9px; }
+.wbchips button.on { color: #1b1a16; background: var(--sand); border-color: var(--sand); }
 .skipk { display: block; color: var(--fg); font-weight: 600; letter-spacing: -.05em; margin-top: 2px; cursor: help; }
 .pov { position: absolute; left: 50%; bottom: 56px; transform: translateX(-50%); font-family: var(--f-mono); font-size: 12px; background: rgba(10,12,14,.82); border: 1px solid var(--line); padding: 4px 10px; border-radius: 3px; }
 .pov.dead { border-color: #8a2b2b; background: rgba(40,6,6,.9); padding: 6px 12px; font-size: 13px; }
@@ -496,6 +504,11 @@ body:has(.app.theatre) { overflow: hidden; }
             <option value="high">High</option>
             <option value="low">Low</option>
           </select></label>
+          <label class="vrow"><span>Wallbang damage<small>trial: pick one to compare</small></span><select id="hit3" title="How damage through walls shows on the player hit: A in his label, C as numbers that float up">
+            <option value="A">A, in his label</option>
+            <option value="C">C, numbers</option>
+            <option value="off">Off</option>
+          </select></label>
           <label class="vrow"><span>Crosshair<small>in Player's eyes</small></span><select id="xh3" title="Crosshair size in Player's eyes, like the game's crosshair size setting">
             <option value="small">Small</option>
             <option value="medium">Medium</option>
@@ -509,7 +522,7 @@ body:has(.app.theatre) { overflow: hidden; }
     <div class="overlay sumwrap" id="sumCard" hidden></div>
     <div class="overlay keys" id="keys" hidden>
       <div class="keys-card">
-        <div class="keys-head"><b>Shortcuts and kill markers</b><div class="kh-r"><span class="ver">Version 0.23.0 · <a href="https://github.com/deswalsujan/cs16-demo-viewer/blob/main/CHANGELOG.md" target="_blank" rel="noopener">What's new</a> · <a href="https://github.com/deswalsujan/cs16-demo-viewer/issues/new/choose" target="_blank" rel="noopener">Report a bug</a></span><button class="btn" id="bDebug" type="button" title="Copies details for a bug report: browser, demo name, what loaded, errors. No file contents.">Copy debug info</button><button class="btn" id="bKeysClose" type="button">Close</button></div></div>
+        <div class="keys-head"><b>Shortcuts and kill markers</b><div class="kh-r"><span class="ver">Version 0.24.0-trial · <a href="https://github.com/deswalsujan/cs16-demo-viewer/blob/main/CHANGELOG.md" target="_blank" rel="noopener">What's new</a> · <a href="https://github.com/deswalsujan/cs16-demo-viewer/issues/new/choose" target="_blank" rel="noopener">Report a bug</a></span><button class="btn" id="bDebug" type="button" title="Copies details for a bug report: browser, demo name, what loaded, errors. No file contents.">Copy debug info</button><button class="btn" id="bKeysClose" type="button">Close</button></div></div>
         <textarea class="dbgbox" id="dbgBox" readonly hidden aria-label="Debug info"></textarea>
         <div class="keys-grid">
           <section><h3>Playback</h3>
@@ -611,7 +624,7 @@ body:has(.app.theatre) { overflow: hidden; }
         <div class="drophint">Or drop a .dem file, or an overview .bmp and .txt pair, anywhere on this page</div>
         <div class="prog" id="prog" hidden><i id="progBar"></i></div>
         <div class="msg" id="msg"></div>
-        <div class="loadfoot"><span>Version 0.23.0</span><button class="btn" id="bClear" type="button" title="Forgets your Half-Life folder and deletes the maps, models, sounds and overviews this browser saved from it, as on a first visit">Clear saved files</button></div>
+        <div class="loadfoot"><span>Version 0.24.0-trial</span><button class="btn" id="bClear" type="button" title="Forgets your Half-Life folder and deletes the maps, models, sounds and overviews this browser saved from it, as on a first visit">Clear saved files</button></div>
       </div>
     </div>
   </section>
@@ -1851,6 +1864,7 @@ let view = { s: 1, x: 0, y: 0 };
 let selected = null;     // selected player entity
 let scope = 'match';
 let tab = 'rounds';
+let wbFilter = 'all', pickedBurst = null; // Wallbangs list filter and the clicked damage row (wip/wallbang-hits)
 const opts = { names: true, nades: true, lines: true, xray: false, teamColours: false };
 // kill moments that just happened, for the hit markers (timed in real seconds so they stay visible at any speed)
 const flashes = [];
@@ -3057,6 +3071,129 @@ function computeWallbangs() {
   renderPane(); drawTimeline();
   // then the picture check (checkSeen, view3d.part.js), once the 3D map is built: loadMap builds it right after this
   setTimeout(() => { if (typeof checkSeen === 'function') checkSeen(); }, 0);
+  computeHits();
+}
+
+// ---------------- wallbang damage: hits through cover that didn't kill (trial, wip/wallbang-hits) ----------------
+// Sujan's level 3 (24 Oct 2026), rules decided 25 Oct 2026, fixed from his check of 24 bursts (26 Oct 2026; the
+// prototype is tests/page/wb_hits.js). HLTV sends each player's health whenever it changes, and the game plays a hit
+// sound on the player hit. Every health drop he survives with a hit sound in the same snapshot is tied to the enemy
+// who fired in the 0.15 s before it and whose crosshair passes closest to him (for demos without fire events, the
+// enemy aiming within 32 units of him); it is through cover when the crosshair line and the line to the part hit
+// (head for a headshot sound) both pass through what a bullet hits. Left out: hits near a grenade blast, a drop on
+// landing after a fall of 100 units or more (the game plays the same hit sound for fall damage), more damage than
+// the gun can do through a wall (0.6 x headshot 4 or stomach 1.25, per hit sound), guns whose bullets stop at the
+// first surface. Hits on one victim within 2 s of the last make a burst; hits in the open neither break it nor count.
+// A burst ending in a wallbang kill (strict or loose) joins it, the kill taking what he had left. Listed from 35 HP.
+const HITS_MIN = 35;
+function computeHits() {
+  M.bursts = []; M.hitByV = {};
+  if (!MAP || !D || !D.hp) return;
+  const bsp = MAP.bsp, S = D.stride, times = D.times;
+  const idx = (t) => { let lo = 0, hi = times.length - 1; while (lo < hi) { const m = (lo + hi + 1) >> 1; if (times[m] <= t + 1e-4) lo = m; else hi = m - 1; } return lo; };
+  const team = (e, i) => { const n = playerModelName(D.slots[e][i * S + 8]).toLowerCase(); return /terror|leet|arctic|guerilla/.test(n) ? 'T' : /urban|gsg9|sas|gign|vip/.test(n) ? 'CT' : null; };
+  const sname = (i) => String((D.sounds && D.sounds[i]) || '').toLowerCase();
+  const hits = {}; const sn = D.snds || [];
+  for (let i = 0; i < sn.length; i += 10) { const n = sname(sn[i + 1]); if (/player\/(bhit|headshot)/.test(n)) (hits[sn[i + 2]] || (hits[sn[i + 2]] = [])).push([sn[i], /headshot|helmet/.test(n)]); }
+  const evGun = (i) => String((D.events && D.events[i]) || '').toLowerCase().replace(/^.*\//, '').replace(/\.sc$/, '').replace(/^mp5n$/, 'mp5navy').replace(/^elite_(left|right)$/, 'elite');
+  const shots = {}, gunAt = {}; const sh = D.shots || [];
+  for (let i = 0; i < sh.length; i += 4) { (shots[sh[i + 1]] || (shots[sh[i + 1]] = [])).push(sh[i]); (gunAt[sh[i + 1]] || (gunAt[sh[i + 1]] = [])).push(evGun(sh[i + 2])); }
+  const booms = []; const bm = D.booms || []; for (let i = 0; i < bm.length; i += 4) booms.push([bm[i], bm[i + 1], bm[i + 2], bm[i + 3]]);
+  const notCover = bsp.solids.filter((x) => x.shootable).map((x) => x.model);
+  const live = (t) => M.liveR.find((r) => t >= r.start && (r.end == null || t <= r.end + 0.5));
+  const starts = (M.rounds || []).map((r) => r.start).sort((x, y) => x - y);
+  const roundOf = (t) => { let k = -1; for (let j = 0; j < starts.length && starts[j] <= t; j++) k = j; return k; };
+  const last = {}, lastR = {}, drops = [], hpLog = {};
+  for (let i = 0; i < D.hp.length; i += 3) {
+    const t = D.hp[i], e = D.hp[i + 1], v = D.hp[i + 2], rn = roundOf(t);
+    let p = last[e]; if (lastR[e] !== rn) p = 100;
+    last[e] = v; lastR[e] = rn; (hpLog[e] || (hpLog[e] = [])).push([t, v]);
+    if (v > 0 && v < p) drops.push({ t, e, dmg: p - v });
+  }
+  const hpBefore = (e, t) => { let h = 100; const rn = roundOf(t); for (const [tt, v] of hpLog[e] || []) { if (tt > t + 1e-4) break; if (v > 0 && roundOf(tt) === rn) h = v; } return h; };
+  const aimAt = (a, i, vp, head, vduck) => {
+    const eye = [a[i * S], a[i * S + 1], a[i * S + 2] + (a[i * S + 7] ? 12 : 17)];
+    let raw = a[i * S + 4]; if (raw > 180) raw -= 360;
+    const pitch = -raw * 3 * Math.PI / 180, yaw = a[i * S + 3] * Math.PI / 180;
+    const dir = [Math.cos(pitch) * Math.cos(yaw), Math.cos(pitch) * Math.sin(yaw), -Math.sin(pitch)];
+    const tgt = [vp[0], vp[1], vp[2] + (head ? (vduck ? 16 : 28) : (vduck ? 4 : 10))];
+    const rel = [tgt[0] - eye[0], tgt[1] - eye[1], tgt[2] - eye[2]];
+    const along = rel[0] * dir[0] + rel[1] * dir[1] + rel[2] * dir[2];
+    const off = Math.hypot(rel[0] - dir[0] * along, rel[1] - dir[1] * along, rel[2] - dir[2] * along);
+    return { eye, dir, along, off, tgt };
+  };
+  const cover = [];
+  for (const d of drops) {
+    if (!live(d.t)) continue;
+    const hs = (hits[d.e] || []).filter(([t]) => Math.abs(t - d.t) <= 0.02);
+    if (!hs.length) continue;
+    const head = hs.some(([, h]) => h);
+    const i = idx(d.t), v = D.slots[d.e]; if (!v || isNaN(v[i * S])) continue;
+    const vp = [v[i * S], v[i * S + 1], v[i * S + 2]], vduck = v[i * S + 7];
+    let zTop = vp[2]; for (let j = i; j >= 0 && times[j] >= d.t - 1; j--) if (!isNaN(v[j * S + 2])) zTop = Math.max(zTop, v[j * S + 2]);
+    if (zTop - vp[2] >= 100 && (i >= 2 ? v[(i - 2) * S + 2] : vp[2]) - vp[2] >= 20) continue; // a fall
+    if (booms.some(([t, x, y, z]) => d.t - t >= -0.05 && d.t - t < 0.4 && Math.hypot(x - vp[0], y - vp[1], z - vp[2]) < 450)) continue;
+    const vt = team(d.e, i), cands = [];
+    for (const e in shots) {
+      const se = +e; if (se === d.e) continue;
+      let li = -1; shots[se].forEach((t, j) => { if (t >= d.t - 0.15 && t <= d.t + 0.001) li = j; }); if (li < 0) continue;
+      const gun = gunAt[se][li]; if (ONE_SURFACE.has(gun) || /knife|grenade|flash|smoke/.test(gun)) continue;
+      const a = D.slots[se]; if (!a || isNaN(a[i * S]) || team(se, i) === vt) continue;
+      const c = aimAt(a, i, vp, head, vduck); if (c.along <= 0) continue;
+      cands.push(Object.assign(c, { e: se, gun }));
+    }
+    let aimOnly = false;
+    if (!cands.length) {
+      for (const e in D.slots) {
+        const se = +e; if (se === d.e) continue;
+        const a = D.slots[se]; if (!a || isNaN(a[i * S]) || !(a[i * S + 5] > 0) || team(se, i) === vt || team(se, i) == null) continue;
+        const gun = weaponShort(D.models[a[i * S + 6]]); if (!MAX_DMG[gun]) continue;
+        const c = aimAt(a, i, vp, head, vduck); if (c.along > 0 && c.off <= 32) cands.push(Object.assign(c, { e: se, gun }));
+      }
+      aimOnly = cands.length > 0;
+    }
+    if (!cands.length) continue;
+    cands.sort((x, y) => x.off - y.off);
+    const c = cands[0];
+    if (c.off > (cands.length === 1 && !aimOnly ? 96 : 64) || (cands[1] && cands[1].off - c.off < 16)) continue;
+    const per = MAX_DMG[c.gun];
+    if (per && d.dmg > per * 0.6 * (head ? 4 : 1.25) * Math.max(1, hs.length)) continue;
+    const skip = brokenSet(d.t - 0.05); for (const m of notCover) skip.add(m);
+    const poses = posesAt(d.t - 0.05);
+    const end = [c.eye[0] + c.dir[0] * c.along, c.eye[1] + c.dir[1] * c.along, c.eye[2] + c.dir[2] * c.along];
+    if (solidAlong(bsp, c.eye, end, 2, skip, poses, 'bullet').solid === 0 || solidAlong(bsp, c.eye, c.tgt, 2, skip, poses, 'bullet').solid === 0) continue;
+    cover.push({ t: d.t, v: d.e, s: c.e, dmg: d.dmg, head, gun: c.gun });
+  }
+  const byV = {}; for (const h of cover) (byV[h.v] || (byV[h.v] = [])).push(h);
+  for (const v in byV) {
+    let cur = null;
+    for (const h of byV[v]) {
+      if (cur && h.t - cur.end <= 2) { cur.hits.push(h); cur.end = h.t; }
+      else { cur = { v: +v, hits: [h], start: h.t, end: h.t }; M.bursts.push(cur); }
+    }
+  }
+  for (const b of M.bursts) {
+    const kill = D.kills.find((k) => k.victim === b.v && k.wb && k.t >= b.end && k.t - b.end <= 2 && b.hits.some((h) => h.s === k.killer));
+    if (kill) { b.kill = kill; b.hits.push({ t: kill.t, v: b.v, s: kill.killer, dmg: hpBefore(b.v, kill.t), head: !!kill.hs, gun: kill.weapon, kill: true }); kill.burst = b; }
+    b.total = b.hits.reduce((a, h) => a + h.dmg, 0);
+    b.share = {}; for (const h of b.hits) b.share[h.s] = (b.share[h.s] || 0) + h.dmg;
+    b.main = +Object.keys(b.share).sort((x, y) => b.share[y] - b.share[x])[0];
+    const r = M.rounds.find((x) => b.start >= x.start && (x.end == null || b.start <= x.end + 0.5)); b.round = r ? r.n : 0;
+  }
+  M.bursts = M.bursts.filter((b) => b.total >= HITS_MIN && M.liveR.some((r) => r.n === b.round)).sort((x, y) => x.start - y.start);
+  for (const b of M.bursts) (M.hitByV[b.v] || (M.hitByV[b.v] = [])).push(b);
+  renderPane(); drawTimeline();
+}
+// "(1 HS, 2 hits)": headshots and the other hits so far in the burst, at time t (Sujan, 26 Oct 2026)
+function hitCounts(b, t) {
+  const so = b.hits.filter((h) => h.t <= t + 1e-4), nh = so.filter((h) => h.head).length, nb = so.length - nh;
+  return [nh ? `${nh} HS` : '', nb ? `${nb} hit${nb > 1 ? 's' : ''}` : ''].filter(Boolean).join(', ');
+}
+// the burst a player is in at time t, from his first hit until 1.5 s after the last (or his death)
+function burstAt(e, t) {
+  const L = M.hitByV && M.hitByV[e]; if (!L) return null;
+  for (const b of L) { const endT = b.kill ? b.kill.t : b.end + 1.5; if (t >= b.start - 1e-4 && t <= endT) return b; }
+  return null;
 }
 
 // Stretches of the demo that the server announced as live: [start, end] pairs from its text messages.
@@ -3632,7 +3769,9 @@ const unsureTag = (k) => (k.wb && skipNear(k.t) ? `<span class="wbtag unsure" ti
 // Sujan's three levels (24 Oct 2026; built in 0.23.0): a strict wallbang has none of the victim in view from the
 // shooter's eye; a loose one has part of him in view (50 pixels or more in the picture check, view3d.part.js).
 const LOOSE_TIP = (k) => `Loose wallbang: the bullet went through cover, but part of him was in view from the shooter's eye (${k.wb.loose} pixels in the check, 50 or more counts as in view)`;
-const looseTag = (k) => (k.wb && k.wb.loose ? `<span class="wbtag loose" title="${LOOSE_TIP(k)}">LOOSE</span>` : '');
+const looseTag = (k) => (k.wb && k.wb.loose ? `<span class="wbtag loose" title="${LOOSE_TIP(k)}">LOOSE WB</span>` : '');
+const STRICT_TIP = 'Strict wallbang: the bullet went through cover and none of him was in view from the shooter\'s eye';
+const DMG_TIP = 'Wallbang damage: hits through cover that didn\'t kill him';
 
 // ---------------- shorter names ----------------
 // The team heading already names the team, so the clan tag most of the team shares is dropped there:
@@ -4075,7 +4214,7 @@ async function onDemo() {
   showLoad(false);
   const first = M.liveR[0];
   T = first ? first.start : D.start;
-  playing = false; selected = null; pickedKill = null;
+  playing = false; selected = null; pickedKill = null; pickedBurst = null;
   $('meta').textContent = D.parts ? `${D.mapName} · ${D.parts[0].fileName} and ${plural(D.parts.length - 1, 'more file')} · ${fmt(D.end - D.start)}` : `${D.mapName} · ${D.fileName} · ${fmt(D.end - D.start)}`;
   const chip = $('partsChip');
   chip.onclick = () => { const b = document.querySelector('.tabs button[data-tab="rounds"]'); if (b) b.click(); $('pane').scrollTop = 0; };
@@ -4117,7 +4256,7 @@ function closeDemo() {
   if (worker) { worker.terminate(); worker = null; }
   sndPreload++; // stops a sound preload that's still running for this demo
   resetForNewDemo(); clear3d(); closeSummary(); if ($('joinCard')) closeJoinCard();
-  D = null; M = null; MAP = null; OV = null; T = 0; prevT = null; pickedKill = null; heat = null;
+  D = null; M = null; MAP = null; OV = null; T = 0; prevT = null; pickedKill = null; pickedBurst = null; heat = null;
   $('meta').textContent = 'CS 1.6 HLTV demos, played in your browser';
   for (const id of ['score', 'legend', 'heatbar', 'rclock', 'cam3', 'status3', 'pov', 'sb']) $(id).hidden = true;
   $('feed').innerHTML = '';
@@ -4179,8 +4318,13 @@ function killRow3(k, wbTag) {
   // WALLBANG and UNSURE on a line of their own under the gun, so they always fit the panel (Sujan, 15 Oct 2026,
   // docs/skip-tags-mock.png; side by side after the gun, UNSURE was cut off at the right edge)
   // LOOSE (0.23.0) follows WALLBANG in the Kills list and stands alone in the Wallbangs list, like UNSURE
-  const tags = (wbTag && k.wb ? '<span class="wbtag">WALLBANG</span>' : '') + looseTag(k) + unsureTag(k);
-  const gun = `<span class="gun">${kicon(w)}${esc(w)}${hs}</span>${tags ? `<span class="ktags">${tags}</span>` : ''}`;
+  // Kills list: WALLBANG for a strict one, LOOSE WB for a loose one; Wallbangs list: STRICT WB or LOOSE WB (Sujan, 25 Oct 2026)
+  const strict = k.wb && !k.wb.loose;
+  const tags = (strict ? (wbTag ? '<span class="wbtag">WALLBANG</span>' : `<span class="wbtag" title="${STRICT_TIP}">STRICT WB</span>`) : '') + looseTag(k) + unsureTag(k);
+  // the damage line under the gun (Sujan's option 2, 25 Oct 2026): what this shooter took through walls in the burst, and teammates' share before it
+  const b = !wbTag && k.burst;
+  const dline = b ? `<span class="dline"><b>${b.share[k.killer]} HP</b> through walls (${hitCounts({ hits: b.hits.filter((h) => h.s === k.killer) }, k.t)})${Object.keys(b.share).filter((e) => +e !== k.killer).map((e) => ` · ${esc(labelAt(+e, k.t))} ${b.share[e]} before`).join('')}</span>` : '';
+  const gun = `<span class="gun">${kicon(w)}${esc(w)}${hs}</span>${tags ? `<span class="ktags">${tags}</span>` : ''}${dline || ''}`;
   if (k.killer === k.victim || !k.kp) return `<span class="kname">${nameHtml(k.vp, vs)}</span>${gun}`;
   return `<span class="kname">${nameHtml(k.kp, ks)}</span>${gun}<span class="kname">${nameHtml(k.vp, vs)}</span>`;
 }
@@ -4272,25 +4416,54 @@ function renderPane() {
     let h;
     if (!MAP || MAP.name !== D.mapName.toLowerCase()) h = `<div class="opt">Wallbang detection needs the map file (${esc(D.mapName)}.bsp). Choose your Half-Life folder or drop the .bsp here.</div>`;
     else {
-      const nLoose = M.seenPending ? 0 : M.wbs.filter((k) => k.wb.loose).length;
-      h = `<div class="copyrow"><span>${M.wbs.length} kills through cover, with the crosshair on the wall${nLoose ? `: ${M.wbs.length - nLoose} with the victim fully hidden from the shooter, ${nLoose} LOOSE (part of him in view)` : ''}. Times: round and in-game round timer, then demo time.${M.seenPending ? ` <b>Checking ${M.seenPending} from the shooter's eye…</b>` : ''}</span><button class="btn" id="bCopyWb" type="button">Copy list</button></div>`;
-      for (const k of M.wbs) {
-        // the round, the round timer and the demo time on three lines; "C4 0:16" never splits (0.21.1, Sujan 15 Oct 2026)
-        const r = M.rounds.find((x) => x.n === k.round);
-        h += `<div class="row krow wbrow kill3${killState(k)}" data-wb="${k.t}" data-ki="${D.kills.indexOf(k)}" title="Through ${k.wb.thick} units of ${k.wb.what === 'object' ? 'a breakable or door' : 'wall or crate'}"><span class="n">${k === pickedKill ? MARK : ''}R${r ? r.ln : '?'} ·<br>${cellClock(k.t)}<br>${fmt(k.t - D.start)}</span><span class="main">${killRow3(k, false)}</span></div>`;
+      // filters (Sujan, 25 Oct 2026): All, Strict wb, Loose wb, Damage, each with a tooltip; rows tagged STRICT WB,
+      // LOOSE WB or DAMAGE; a damage row is a burst of hits through cover that didn't kill (wip/wallbang-hits)
+      const busy = !!M.seenPending;
+      const kills = M.wbs.map((k) => ({ t: k.t, k, kind: k.wb.loose ? 'loose' : 'strict' }));
+      const dmg = (M.bursts || []).filter((b) => !b.kill).map((b) => ({ t: b.start, b, kind: 'damage' }));
+      const all = kills.concat(dmg).sort((a, b) => a.t - b.t);
+      const n = { all: all.length, strict: kills.filter((x) => x.kind === 'strict').length, loose: kills.filter((x) => x.kind === 'loose').length, damage: dmg.length };
+      if (!n[wbFilter]) wbFilter = 'all';
+      const TIPS = { all: 'Every kill and every burst of damage through walls', strict: 'Kills through cover with none of the victim in view from the shooter\'s eye', loose: 'Kills through cover with part of the victim in view from the shooter\'s eye', damage: `Hits through cover that didn't kill: ${HITS_MIN} HP or more from one or more shooters, each hit within 2 s of the last` };
+      const LBL = { all: 'All', strict: 'Strict wb', loose: 'Loose wb', damage: 'Damage' };
+      h = `<div class="wbchips" role="group" aria-label="Show">${['all', 'strict', 'loose', 'damage'].map((f) => `<button type="button" data-wf="${f}" class="${wbFilter === f ? 'on' : ''}" title="${TIPS[f]}">${LBL[f]} ${n[f]}</button>`).join('')}</div>`;
+      h += `<div class="copyrow"><span>Times: round and in-game round timer, then demo time.${busy ? ` <b>Checking ${M.seenPending} from the shooter's eye…</b>` : ''}</span><button class="btn" id="bCopyWb" type="button">Copy list</button></div>`;
+      for (const x of all) {
+        if (wbFilter !== 'all' && x.kind !== wbFilter) continue;
+        if (x.k) {
+          const k = x.k, r = M.rounds.find((y) => y.n === k.round);
+          // the round, the round timer and the demo time on three lines; "C4 0:16" never splits (0.21.1, Sujan 15 Oct 2026)
+          h += `<div class="row krow wbrow kill3${killState(k)}" data-wb="${k.t}" data-ki="${D.kills.indexOf(k)}" title="Through ${k.wb.thick} units of ${k.wb.what === 'object' ? 'a breakable or door' : 'wall or crate'}"><span class="n">${k === pickedKill ? MARK : ''}R${r ? r.ln : '?'} ·<br>${cellClock(k.t)}<br>${fmt(k.t - D.start)}</span><span class="main">${killRow3(k, false)}</span></div>`;
+        } else {
+          const b = x.b, r = M.rounds.find((y) => y.n === b.round), bi = M.bursts.indexOf(b);
+          const sideOf = (e) => { const st = playerState(e, b.start); return st ? (Math.abs(st.state) === 1 ? 1 : 2) : 0; };
+          const gun = b.hits.find((hh) => hh.s === b.main).gun;
+          const others = Object.keys(b.share).filter((e) => +e !== b.main).map((e) => ` · ${esc(labelAt(+e, b.start))} ${b.share[e]}`).join('');
+          const mine = b.hits.filter((hh) => hh.s === b.main);
+          h += `<div class="row krow wbrow kill3${b === pickedBurst ? ' pick' : ''}" data-hb="${bi}" title="${DMG_TIP}"><span class="n">${b === pickedBurst ? MARK : ''}R${r ? r.ln : '?'} ·<br>${cellClock(b.start)}<br>${fmt(b.start - D.start)}</span><span class="main"><span class="kname"><span class="${sideOf(b.main) === 1 ? 'kt' : 'kct'}">${esc(labelAt(b.main, b.start))}</span></span><span class="gun">${kicon(gun)}${esc(gun)}</span><span class="ktags"><span class="wbtag dmg" title="${DMG_TIP}">DAMAGE</span></span><span class="dline"><b>${b.share[b.main]} HP</b> through walls (${hitCounts({ hits: mine }, b.end)})${others}</span><span class="kname"><span class="${sideOf(b.v) === 1 ? 'kt' : 'kct'}">${esc(labelAt(b.v, b.start))}</span></span></span></div>`;
+        }
       }
-      if (!M.wbs.length) h += `<div class="opt">No wallbang kills found in the live rounds.</div>`;
+      if (!all.length) h += `<div class="opt">No wallbang kills or wallbang damage found in the live rounds.</div>`;
     }
     p.innerHTML = h;
     if ($('bCopyWb')) $('bCopyWb').onclick = () => {
       const txt = M.wbs.map((k) => { const r = M.rounds.find((x) => x.n === k.round); return `R${r ? r.ln : '?'}  timer ${clockText(k.t)}  demo ${fmt(k.t - D.start)}  ${M.pl[k.kp] ? M.pl[k.kp].name : '?'} -> ${M.pl[k.vp] ? M.pl[k.vp].name : '?'}  ${k.weapon}${k.hs ? ' HS' : ''}  (${k.wb.thick} units)${k.wb.loose ? '  LOOSE: part of him in view' : ''}${skipNear(k.t) ? '  UNSURE: the recording skips here' : ''}`; }).join('\n');
       const b = $('bCopyWb');
       const ok = () => { b.textContent = 'Copied'; setTimeout(() => b.textContent = 'Copy list', 1500); };
-      try { navigator.clipboard.writeText(`${D.fileName}\n${txt}`).then(ok, () => { b.textContent = 'Copy failed'; }); } catch { b.textContent = 'Copy failed'; }
+      const dtx = (M.bursts || []).filter((b) => !b.kill).map((b) => { const r = M.rounds.find((y) => y.n === b.round); return `R${r ? r.ln : '?'}  timer ${clockText(b.start)}  demo ${fmt(b.start - D.start)}  DAMAGE ${b.total} HP to ${labelAt(b.v, b.start)}: ${Object.keys(b.share).map((e) => `${labelAt(+e, b.start)} ${b.share[e]}`).join(', ')}`; }).join('\n');
+      try { navigator.clipboard.writeText(`${D.fileName}\n${txt}${dtx ? '\n' + dtx : ''}`).then(ok, () => { b.textContent = 'Copy failed'; }); } catch { b.textContent = 'Copy failed'; }
     };
+    p.querySelectorAll('[data-wf]').forEach((el) => el.onclick = () => { wbFilter = el.dataset.wf; renderPane(); });
+    p.querySelectorAll('[data-hb]').forEach((el) => el.onclick = () => {
+      const b = M.bursts[+el.dataset.hb]; if (!b) return;
+      pickedBurst = b; pickedKill = null; selected = b.main;
+      seek(b.start - 3); playing = true; setPlayIcon();
+      if (viewMode !== '2d') setCam('eyes', true);
+      renderPane();
+    });
     p.querySelectorAll('[data-wb]').forEach((el) => el.onclick = () => {
       const k = D.kills[+el.dataset.ki];
-      wbFocus = k; pickedKill = k;
+      wbFocus = k; pickedKill = k; pickedBurst = null;
       watchKill(k, 3); renderPane();
     });
   } else {
@@ -4947,6 +5120,8 @@ function drawTimelineInto(cv, W, H, a, b) {
     tctx.fillStyle = 'rgba(231,227,217,.35)'; tctx.fillRect(x0, 14, Math.max(2, x1 - x0), H - 14);
   }
   // wallbangs
+  // wallbang damage: hollow diamonds in the damage colour (wip/wallbang-hits)
+  if (M.bursts) for (const b of M.bursts) { if (b.kill) continue; const x = X(b.start); if (x < 0 || x > W) continue; tctx.strokeStyle = '#ffb347'; tctx.lineWidth = 1.4; tctx.beginPath(); tctx.moveTo(x, 12.5); tctx.lineTo(x + 3.5, 16); tctx.lineTo(x, 19.5); tctx.lineTo(x - 3.5, 16); tctx.closePath(); tctx.stroke(); }
   if (M.wbs) for (const k of M.wbs) { const x = X(k.t); if (x < 0 || x > W) continue; tctx.fillStyle = COL.wb; tctx.beginPath(); tctx.moveTo(x, 12); tctx.lineTo(x + 4, 16); tctx.lineTo(x, 20); tctx.lineTo(x - 4, 16); tctx.fill(); }
   // skips in the recording: a break mark // (0.19.0)
   for (const t of M.skipT || []) {
@@ -6426,9 +6601,22 @@ function update3() {
     lx.strokeText(nm, sx, sy); lx.fillStyle = L.e === selected ? COL.sand : sideCol(L.s.state); lx.fillText(nm, sx, sy);
     const w = weaponShort(L.s.weapon), hpv = hpAt(L.e, T);
     const sub = [hpv != null ? hpv + ' hp' : '', w].filter(Boolean).join(' · ');
+    // wallbang damage, option A (trial, wip/wallbang-hits; Sujan, 26 Oct 2026): after his health and gun, in the damage
+    // colour: "(1 HS, 2 hits)" when the burst ends in his death (his health already counts down), "−61 (1 HS, 2 hits)"
+    // when it doesn't
+    const hb = $('hit3').value === 'A' && burstAt(L.e, T);
+    const extra = hb ? (hb.kill ? `(${hitCounts(hb, T)})` : `−${hb.hits.filter((h) => h.t <= T + 1e-4).reduce((a, h) => a + h.dmg, 0)} (${hitCounts(hb, T)})`) : '';
     if (sub) { // at any distance, scoped or not (the 2500-unit limit was dropped in 0.16.0, Sujan)
-      lx.font = `400 10px ${mono}`; lx.strokeText(sub, sx, sy + 12); lx.fillStyle = '#d8d3c8'; lx.fillText(sub, sx, sy + 12); }
+      lx.font = `400 10px ${mono}`;
+      if (extra) {
+        const w1 = lx.measureText(sub + '  ').width; lx.font = `600 10px ${mono}`; const w2 = lx.measureText(extra).width;
+        const x0 = sx - (w1 + w2) / 2; lx.textAlign = 'left'; lx.font = `400 10px ${mono}`;
+        lx.strokeText(sub, x0, sy + 12); lx.fillStyle = '#d8d3c8'; lx.fillText(sub, x0, sy + 12);
+        lx.font = `600 10px ${mono}`; lx.strokeText(extra, x0 + w1, sy + 12); lx.fillStyle = '#ffb347'; lx.fillText(extra, x0 + w1, sy + 12); lx.textAlign = 'center';
+      } else { lx.strokeText(sub, sx, sy + 12); lx.fillStyle = '#d8d3c8'; lx.fillText(sub, sx, sy + 12); }
+    }
   }
+  drawHitNumbers(lx, W, H, camera, mono);
   drawKillRings(lx, W, H, camera);
   const pov = $('pov');
   const s = selected && playerState(selected, T);
@@ -6476,6 +6664,46 @@ const MARK_MS = 450;
 // small is the crosshair before 0.18.0. The kill marker keeps its size and moves out with the arms, so it
 // always starts just past them (option A of 5 Oct 2026).
 const XHAIR = { small: { gap: 4, end: 12, w: 1.5 }, medium: { gap: 5, end: 17, w: 2 }, large: { gap: 6, end: 23, w: 2.5 } };
+// Wallbang damage on the player hit (trial, wip/wallbang-hits, Sujan 26 Oct 2026).
+// A, after a death: his last label stays on the body for 2 s with how many headshots and hits it took.
+// C: each hit's damage floats up from beside his head and fades in 0.9 s; newer numbers push older ones up; a
+// headshot reads "−49 HS". In Player's eyes, a number that would touch the crosshair's arms moves up past them.
+function drawHitNumbers(lx, W, H, camera, mono) {
+  const style = $('hit3').value;
+  if (style === 'off' || !M.bursts || !M.bursts.length) return;
+  const xh = XHAIR[$('xh3').value] || XHAIR.medium, arm = xh.end + 6;
+  const scr = (x, y, z) => { const v = g3(x, y, z).project(camera); return v.z > 1 || v.z < -1 ? null : [(v.x + 1) / 2 * W, (1 - v.y) / 2 * H]; };
+  const skipSelf = (e) => cam3.mode === 'eyes' && e === selected;
+  lx.lineWidth = 3; lx.strokeStyle = 'rgba(8,10,12,.9)';
+  for (const b of M.bursts) {
+    if (T < b.start - 0.05 || T > (b.kill ? b.kill.t + 2 : b.end + 1)) continue;
+    if (skipSelf(b.v)) continue;
+    if (style === 'A') {
+      if (!b.kill || T < b.kill.t || !opts.names) continue;
+      const p = scr(b.kill.vpos[0], b.kill.vpos[1], b.kill.vpos[2] + 10); if (!p) continue;
+      lx.textAlign = 'center'; lx.font = `500 12px ${mono}`;
+      const nm = labelAt(b.v, b.kill.t); lx.strokeText(nm, p[0], p[1] - 14); lx.fillStyle = '#d8d3c8'; lx.fillText(nm, p[0], p[1] - 14);
+      const t2 = `(${hitCounts(b, b.kill.t)})`; lx.font = `600 10px ${mono}`; lx.strokeText(t2, p[0], p[1] - 2); lx.fillStyle = '#ffb347'; lx.fillText(t2, p[0], p[1] - 2);
+      continue;
+    }
+    const live = b.hits.filter((h) => h.t <= T + 1e-4 && T - h.t <= 0.9);
+    if (!live.length) continue;
+    const st = playerState(b.v, T);
+    const base = st && st.state > 0 ? scr(st.x, st.y, st.z + (st.duck ? 26 : 44) + 10) : (b.kill ? scr(b.kill.vpos[0], b.kill.vpos[1], b.kill.vpos[2] + 20) : null);
+    if (!base) continue;
+    live.forEach((h, k) => {
+      const age = T - h.t, a = age < 0.15 ? 1 : Math.max(0, 1 - (age - 0.15) / 0.75);
+      let px = base[0] + 18, py = base[1] - 6 - age * 40 - (live.length - 1 - k) * 13;
+      if (cam3.mode === 'eyes' && Math.abs(px + 20 - W / 2) < arm + 24 && Math.abs(py - H / 2) < arm + 8) py = H / 2 - arm - 10;
+      lx.globalAlpha = a; lx.textAlign = 'left';
+      lx.font = `600 ${h.head ? 13 : 11}px ${mono}`; const txt = `−${h.dmg}`;
+      lx.strokeText(txt, px, py); lx.fillStyle = '#ffb347'; lx.fillText(txt, px, py);
+      if (h.head) { const w = lx.measureText(txt + ' ').width; lx.font = `700 10px ${mono}`; lx.strokeText('HS', px + w, py); lx.fillText('HS', px + w, py); }
+      lx.globalAlpha = 1;
+    });
+  }
+  lx.textAlign = 'center';
+}
 function drawHitMarker(lx, cx, cy, xh = XHAIR.small) {
   const f = flashes.filter((x) => x.k.killer === selected).pop();
   if (!f) return;
@@ -6673,6 +6901,8 @@ $('q3').onchange = () => { ls.set('quality', $('q3').value); applyQuality(true);
 // crosshair size in Player's eyes (0.18.0, Sujan 14 Oct 2026): small is the size before 0.18.0; medium is the default
 $('xh3').value = ['small', 'medium', 'large'].includes(ls.get('crosshair')) ? ls.get('crosshair') : 'medium';
 $('xh3').onchange = () => { ls.set('crosshair', $('xh3').value); };
+$('hit3').value = ['A', 'C', 'off'].includes(ls.get('hitStyle')) ? ls.get('hitStyle') : 'A';
+$('hit3').onchange = () => { ls.set('hitStyle', $('hit3').value); };
 if (document.fonts) document.fonts.ready.then(() => { tlCache.key = ''; });
 $('bSnd').onclick = () => setSound(!SND.on);
 // full screen: the whole viewer fills the screen (Esc or F leaves it)
@@ -7024,7 +7254,7 @@ window.addEventListener('unhandledrejection', (e) => { ERRLOG.push('Promise: ' +
 function debugInfo() {
   let gpu = '';
   try { const gl = document.createElement('canvas').getContext('webgl'); const x = gl && gl.getExtension('WEBGL_debug_renderer_info'); gpu = gl ? (x ? gl.getParameter(x.UNMASKED_RENDERER_WEBGL) : 'WebGL available') : 'no WebGL'; } catch (e) { gpu = 'unknown'; }
-  const L = [`CS 1.6 Demo Viewer 0.23.0`, `Browser: ${navigator.userAgent}`, `Screen: ${screen.width}x${screen.height} at ${devicePixelRatio}x, window ${innerWidth}x${innerHeight}`, `Graphics: ${gpu}`];
+  const L = [`CS 1.6 Demo Viewer 0.24.0-trial`, `Browser: ${navigator.userAgent}`, `Screen: ${screen.width}x${screen.height} at ${devicePixelRatio}x, window ${innerWidth}x${innerHeight}`, `Graphics: ${gpu}`];
   L.push(`Folder: ${Object.keys(files.maps).length} maps, ${Object.keys(files.overviews).length} overviews, ${Object.keys(files.mdl).length} models, ${Object.keys(files.snd).length} sounds, ${files.demos.length} demos`);
   if (D) {
     L.push(`Demo: ${D.fileName}, protocol ${(D.header && D.header.netProtocol) || '?'}, ${D.pov ? 'POV (recorded by a player)' : 'HLTV'}, map ${D.mapName}, length ${fmt(D.end - D.start)}, ${M.liveR.length} live rounds, final ${M.liveR.length ? M.liveR[M.liveR.length - 1].scoreAfter.join(':') : '-'}`);
