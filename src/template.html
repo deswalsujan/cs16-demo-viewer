@@ -499,6 +499,10 @@ body:has(.app.theatre) { overflow: hidden; }
             <option value="C">C, numbers</option>
             <option value="off">Off</option>
           </select></label>
+          <label class="vrow"><span>Glow on hits<small>trial: damage without a kill</small></span><select id="glow3" title="A short pink glow on a player each time a bullet hits him through a wall, for damage that doesn't end in a kill">
+            <option value="on">On</option>
+            <option value="off">Off</option>
+          </select></label>
           <label class="vrow"><span>Crosshair<small>in Player's eyes</small></span><select id="xh3" title="Crosshair size in Player's eyes, like the game's crosshair size setting">
             <option value="small">Small</option>
             <option value="medium">Medium</option>
@@ -4025,6 +4029,8 @@ $('xh3').value = ['small', 'medium', 'large'].includes(ls.get('crosshair')) ? ls
 $('xh3').onchange = () => { ls.set('crosshair', $('xh3').value); };
 $('hit3').value = ['A', 'C', 'off'].includes(ls.get('hitStyle')) ? ls.get('hitStyle') : 'A';
 $('hit3').onchange = () => { ls.set('hitStyle', $('hit3').value); };
+$('glow3').value = ['on', 'off'].includes(ls.get('hitGlow')) ? ls.get('hitGlow') : 'on';
+$('glow3').onchange = () => { ls.set('hitGlow', $('glow3').value); };
 if (document.fonts) document.fonts.ready.then(() => { tlCache.key = ''; });
 $('bSnd').onclick = () => setSound(!SND.on);
 // full screen: the whole viewer fills the screen (Esc or F leaves it)

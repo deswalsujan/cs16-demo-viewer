@@ -539,7 +539,13 @@ function update3() {
     if (!opts.names || (hidden && !opts.xray)) continue;
     // Behind player: the followed player's name is in the name bar under the view already (Sujan, 14 Oct 2026)
     if (cam3.mode === 'chase' && L.e === selected) continue;
-    const sx = (v.x + 1) / 2 * W, sy = (1 - v.y) / 2 * H;
+    const sx = (v.x + 1) / 2 * W; let sy = (1 - v.y) / 2 * H;
+    // a label carrying wallbang damage (option A, trial) moves up past the crosshair's arms when it would touch them,
+    // by how far they reach for the size chosen (Sujan, 25 Oct 2026: nothing over the crosshair)
+    if (cam3.mode === 'eyes' && $('hit3').value === 'A' && burstAt(L.e, T)) {
+      const arm = (XHAIR[$('xh3').value] || XHAIR.medium).end + 4;
+      if (Math.abs(sx - W / 2) < 110 + arm && sy + 16 > H / 2 - arm && sy - 14 < H / 2 + arm) sy = H / 2 - arm - 18;
+    }
     const dist = camera.position.distanceTo(L.p);
     const nm = labelAt(L.e, T); // without the clan tag (0.18.0); the name bar below keeps the full name
     lx.font = `500 ${dist < 1500 ? 12 : 10}px ${mono}`; lx.textAlign = 'center';
@@ -615,8 +621,22 @@ const XHAIR = { small: { gap: 4, end: 12, w: 1.5 }, medium: { gap: 5, end: 17, w
 // C: each hit's damage floats up from beside his head and fades in 0.9 s; newer numbers push older ones up; a
 // headshot reads "−49 HS". In Player's eyes, a number that would touch the crosshair's arms moves up past them.
 function drawHitNumbers(lx, W, H, camera, mono) {
+  if (!M.bursts || !M.bursts.length) return;
+  // the glow (trial switch, Sujan 26 Oct 2026): a short pink glow around him at each hit through a wall, fading in
+  // 0.3 s; only for damage that doesn't end in a kill (Sujan: no glow on a wallbang kill)
+  if ($('glow3').value === 'on') for (const b of M.bursts) {
+    if (b.kill || T < b.start - 0.05 || T > b.end + 0.3 || (cam3.mode === 'eyes' && b.v === selected)) continue;
+    const h = b.hits.filter((x) => x.t <= T + 1e-4).pop(); if (!h || T - h.t > 0.3) continue;
+    const st = playerState(b.v, T); if (!st || st.state <= 0) continue;
+    const top = g3(st.x, st.y, st.z + (st.duck ? 22 : 36)).project(camera), bot = g3(st.x, st.y, st.z - (st.duck ? 18 : 36)).project(camera);
+    if (top.z > 1 || top.z < -1) continue;
+    const tx = (top.x + 1) / 2 * W, ty = (1 - top.y) / 2 * H, by = (1 - bot.y) / 2 * H, hgt = Math.max(12, by - ty), cy = (ty + by) / 2, a = 1 - (T - h.t) / 0.3;
+    const g = lx.createRadialGradient(tx, cy, 1, tx, cy, hgt * 0.75);
+    g.addColorStop(0, `rgba(255,79,216,${0.55 * a})`); g.addColorStop(1, 'rgba(255,79,216,0)');
+    lx.fillStyle = g; lx.beginPath(); lx.ellipse(tx, cy, hgt * 0.45, hgt * 0.75, 0, 0, Math.PI * 2); lx.fill();
+  }
   const style = $('hit3').value;
-  if (style === 'off' || !M.bursts || !M.bursts.length) return;
+  if (style === 'off') return;
   const xh = XHAIR[$('xh3').value] || XHAIR.medium, arm = xh.end + 6;
   const scr = (x, y, z) => { const v = g3(x, y, z).project(camera); return v.z > 1 || v.z < -1 ? null : [(v.x + 1) / 2 * W, (1 - v.y) / 2 * H]; };
   const skipSelf = (e) => cam3.mode === 'eyes' && e === selected;
@@ -703,7 +723,13 @@ function drawKillRings(lx, W, H, camera) {
     const a = (performance.now() - f.at) / FLASH_MS; if (a >= 1) continue;
     const v = g3(k.vpos[0], k.vpos[1], k.vpos[2] + 6).project(camera);
     if (v.z > 1 || v.z < -1) continue;
-    const sx = (v.x + 1) / 2 * W, sy = (1 - v.y) / 2 * H;
+    const sx = (v.x + 1) / 2 * W; let sy = (1 - v.y) / 2 * H;
+    // a label carrying wallbang damage (option A, trial) moves up past the crosshair's arms when it would touch them,
+    // by how far they reach for the size chosen (Sujan, 25 Oct 2026: nothing over the crosshair)
+    if (cam3.mode === 'eyes' && $('hit3').value === 'A' && burstAt(L.e, T)) {
+      const arm = (XHAIR[$('xh3').value] || XHAIR.medium).end + 4;
+      if (Math.abs(sx - W / 2) < 110 + arm && sy + 16 > H / 2 - arm && sy - 14 < H / 2 + arm) sy = H / 2 - arm - 18;
+    }
     lx.globalAlpha = 1 - a; lx.lineWidth = 3;
     lx.strokeStyle = k.wb ? '#ff4fd8' : k.hs ? '#ff9a3c' : '#ffffff';
     lx.beginPath(); lx.arc(sx, sy, 6 + a * 28, 0, 7); lx.stroke();

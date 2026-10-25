@@ -21,7 +21,7 @@
   if (!opts.xray) $('tgXray').click();
   if (!opts.names) $('tgNames').click();
   $('hit3').value = window.__step || 'A';
-  playing = false; selected = 13; T = window.__at || 2174.80; prevT = T; setCam('eyes', true); await wait(1500); update3(); await wait(400);
+  playing = false; selected = window.__sel || 13; T = window.__at || 2174.80; prevT = T; setCam('eyes', true); await wait(1500); update3(); await wait(400);
   out.style = $('hit3').value; out.burstNow = burstAt(10, T) ? hitCounts(burstAt(10, T), T) : null;
   return out;
 })()
