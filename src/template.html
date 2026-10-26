@@ -1880,7 +1880,7 @@ function computeWallbangs() {
 // Sujan's level 3 (24 Oct 2026), rules decided 25 Oct 2026, fixed from his check of 24 bursts (26 Oct 2026; the
 // prototype is tests/page/wb_hits.js). HLTV sends each player's health whenever it changes, and the game plays a hit
 // sound on the player hit. Every health drop he survives with a hit sound in the same snapshot is tied to the enemy
-// who fired in the 0.15 s before it and whose crosshair passes closest to him (for demos without fire events, the
+// who fired in the 0.15 s before it and whose crosshair passes closest to him (in demos that lose fire events, an
 // enemy aiming within 32 units of him); it is through cover when the crosshair line and the line to the part hit
 // (head for a headshot sound) both pass through what a bullet hits. Left out: hits near a grenade blast, a drop on
 // landing after a fall of 100 units or more (the game plays the same hit sound for fall damage), more damage than
@@ -1900,6 +1900,20 @@ function computeHits() {
   const evGun = (i) => String((D.events && D.events[i]) || '').toLowerCase().replace(/^.*\//, '').replace(/\.sc$/, '').replace(/^mp5n$/, 'mp5navy').replace(/^elite_(left|right)$/, 'elite');
   const shots = {}, gunAt = {}; const sh = D.shots || [];
   for (let i = 0; i < sh.length; i += 4) { (shots[sh[i + 1]] || (shots[sh[i + 1]] = [])).push(sh[i]); (gunAt[sh[i + 1]] || (gunAt[sh[i + 1]] = [])).push(evGun(sh[i + 2])); }
+  // Does this demo keep its fire events? Measured on 27 Oct 2026 by whether each gun kill's killer has a fire event at
+  // the kill: 94 to 100% in the 2010 and 2011 Nuke demos (k1ck vs eq, DreamHack Winter 2011: 193 of 193), 47 to 71% in
+  // the 2008 and 2009 ones (tyloo vs mTw, e-Stars Seoul 2009: 114 of 235; the rest missing or 0.1 to 0.3 s late). Where
+  // they're kept, an enemy with no fire event at a hit didn't fire it: n0rx, aiming 9 units off szrtech, took mUtcb's
+  // 36 HS (k1ck vs eq, R25 1:24; n0rx's first shot came 0.09 s later), and coachi took fox's FAMAS headshot on EneRyYyYy
+  // (R26 1:30; coachi's first shot came 0.6 s later; 78 is what fox's FAMAS does to a helmet from 708 units, coachi's M4
+  // from 799 would do 84). So enemies merely aiming at him compete only in demos that lose fire events (Go on zonic).
+  let gk = 0, gkf = 0;
+  for (const k of D.kills) {
+    if (k.killer === k.victim || !MAX_DMG[k.weapon] || ONE_SURFACE.has(k.weapon)) continue;
+    const t = k.tMsg != null ? k.tMsg : k.t; gk++;
+    if ((shots[k.killer] || []).some((x) => x >= t - 0.25 && x <= t + 0.001)) gkf++;
+  }
+  const firesKept = M.firesKept = gk >= 20 && gkf / gk >= 0.9;
   const booms = []; const bm = D.booms || []; for (let i = 0; i < bm.length; i += 4) booms.push([bm[i], bm[i + 1], bm[i + 2], bm[i + 3]]);
   const notCover = bsp.solids.filter((x) => x.shootable).map((x) => x.model);
   const live = (t) => M.liveR.find((r) => t >= r.start && (r.end == null || t <= r.end + 0.5));
@@ -1970,6 +1984,7 @@ function computeHits() {
       const se = +e; if (se === d.e || seen.has(se)) continue;
       const a = D.slots[se]; if (!a || isNaN(a[i * S]) || !(a[i * S + 5] > 0) || team(se, i) === vt || team(se, i) == null) continue;
       const gun = weaponShort(D.models[a[i * S + 6]]); if (!MAX_DMG[gun]) continue;
+      if (firesKept) continue;
       const c = aimAt(a, i, vp, head, vduck); if (c.along > 0 && c.off <= 32) cands.push(Object.assign(c, { e: se, gun, shot: false }));
     }
     if (!cands.length) { note(d, 'no shooter'); continue; }

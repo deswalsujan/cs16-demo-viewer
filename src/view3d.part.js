@@ -612,6 +612,9 @@ const MARK_MS = 450;
 const XHAIR = { small: { gap: 3, end: 8, w: 1.25 }, medium: { gap: 4, end: 12, w: 1.5 }, large: { gap: 5, end: 17, w: 2 } };
 // Wallbang damage on the player hit (option C, chosen by Sujan 26 Oct 2026): each hit's damage floats up from beside his head and fades in 0.9 s; newer numbers push older ones up; a
 // headshot reads "−49 HS". In Player's eyes, a number that would touch the crosshair's arms moves up past them.
+// The killing bullet's number is the health he had left (the demo doesn't carry that bullet's own damage), so it ends
+// with a kill mark, "−8 HS ✕" (option A, Sujan 27 Oct 2026: whimp's "−8 HS" on Go, tyloo vs mTw, Nuke, e-Stars
+// Seoul 2009, R23 1:09, read like an 8-damage headshot).
 function drawHitNumbers(lx, W, H, camera, mono) {
   if (!M.bursts || !M.bursts.length) return;
   // through a player's eyes or from behind him, only his own hits are shown (Sujan, 26 Oct 2026: in whimp's view at
@@ -651,7 +654,9 @@ function drawHitNumbers(lx, W, H, camera, mono) {
       lx.globalAlpha = a; lx.textAlign = 'left';
       lx.font = `600 ${h.head ? 13 : 11}px ${mono}`; const txt = `−${h.dmg}`;
       lx.strokeText(txt, px, py); lx.fillStyle = '#ffb347'; lx.fillText(txt, px, py);
-      if (h.head) { const w = lx.measureText(txt + ' ').width; lx.font = `700 10px ${mono}`; lx.strokeText('HS', px + w, py); lx.fillText('HS', px + w, py); }
+      let w = lx.measureText(txt + ' ').width;
+      if (h.head) { lx.font = `700 10px ${mono}`; lx.strokeText('HS', px + w, py); lx.fillText('HS', px + w, py); w += lx.measureText('HS ').width; }
+      if (h.kill) { lx.font = `700 ${h.head ? 13 : 11}px ${mono}`; lx.fillStyle = '#ff4fd8'; lx.strokeText('✕', px + w, py); lx.fillText('✕', px + w, py); }
       lx.globalAlpha = 1;
     });
   }

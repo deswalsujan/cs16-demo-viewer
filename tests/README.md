@@ -22,6 +22,7 @@ Settings (environment variables):
 | `HALF_LIFE_DIR` | Your Half-Life folder (the one with `cstrike` and `valve`). Required for the browser checks. | none |
 | `THREE_JS` | Path to three.min.js r128 | `tests/three.min.js` |
 | `DEMO` | Part of the demo file name to open (`harness.py` only) | `dust2` |
+| `CHROME` | A Chromium to run instead of Playwright's own (`harness.py` only; for the Linux VM on Sujan's Mac, which can't download Playwright's) | Playwright's |
 | `MAP_NEEDED` | `0` to start without waiting for the map (for a demo whose map isn't in the folder) | `1` |
 | `PAGE` | Page to test (Theatre checks) | `../index.html` |
 
@@ -185,6 +186,9 @@ Page scripts in `page/`:
 | `v024_hits.js` | Wallbang damage trial (`wip/wallbang-hits`): the bursts found, the Wallbangs filters, tags and rows, Xizt's burst and its counts, a damage row clicked, and Player's eyes at 36:14.80 with option A or C (`window.__step`, `window.__at`, `window.__sel` for whose eyes; 773.45 with slot 5 shows THREAT's hits on 742 with the glow). `DEMO=fx-vs-lions-dhw2010-bronze-1011272059`, waits for the map | wallbang damage trial, 26 Oct 2026 |
 | `hit_probe.js` | Raw data around wallbang kills (`window.__kp = [{tag, killer, before}]`): every health reading, hit sound, fire event and kill from `before` seconds (default 3) before to 0.5 s after, with the bursts found. For checking the trial's numbers by hand. Waits for the map | wallbang damage, 26 Oct 2026 |
 | `hits_view.js` | Player's eyes at a moment around a kill (`window.__hv = {tag, killer, who, off, cam}`), with the Wallbangs tab scrolled to the kill's row; pass a screenshot prefix to harness.py. Waits for the map | wallbang damage, 26 Oct 2026 |
+| `round_hits.js` | One player's damage in one round (`window.__q = {ln, victim, shooters, t1, t2}`): every health reading, hit sound, fire event and kill on him, why the finder counted or skipped each drop, and his bursts. Waits for the map | wallbang damage, 27 Oct 2026 |
+| `fire_check.js` | Whether a demo keeps its fire events: for each gun kill, is the killer's fire event at the kill, only after it, or missing (`M.firesKept` is the finder's verdict). Waits for the map | wallbang damage, 27 Oct 2026 |
+| `bursts_all.js` | Every burst the damage finder lists, one line each, to diff two builds. Waits for the map | wallbang damage, 27 Oct 2026 |
 | `burst_dump.js` | The trial's wallbang damage bursts on one victim between two times (`window.__bd = {v, from, to}`), each hit with time, shooter, damage, headshot and the kill it joins; with `window.__debugV` the reason each of his health drops was or wasn't counted. Waits for the map | wallbang damage, 26 Oct 2026 |
 | `v024_lag.js` | The 3D timing trial on Dosia's kill on cArn (fnatic vs Moscow Five, Nuke, DreamHack Summer 2011, R2 1:13, `DEMO=fnatic-vs-m5-dhs11-1106191035`): the kill feed and the camera's aim at the kill message, as recorded or like the game (`window.__lag`). Waits for the map | 3D timing trial, 26 Oct 2026 |
 | `kill_frames.js` | A kill frame by frame in Player's eyes: the killer's view as the viewer draws it and the same with the victim in flat magenta, his pixels counted, at moments around the kill (`window.__want = {tag, killer}`, `window.__offs`); PNGs | gob b on Xizt, 25 Oct 2026 |
