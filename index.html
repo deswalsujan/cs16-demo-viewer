@@ -3003,6 +3003,19 @@ const NO_WB = new Set(['grenade', 'knife', 'world', '']);
 // does at most 115 x 0.6 x 1.25 = 86, too little for a player on 100 HP (Sweden vs Norway, Dust2,
 // ASUS ENC 2010: three AWP body-shot kills on players at 100 HP were listed as wallbangs; Sujan saw clear shots).
 const MAX_DMG = { ak47: 36, aug: 32, awp: 115, deagle: 54, famas: 34, g3sg1: 80, galil: 30, m249: 32, m4a1: 33, scout: 75, sg550: 70, sg552: 33 };
+// The least damage each gun's bullet does in the open (level 2 by damage, 28 Oct 2026): damage and range modifier from
+// ReGameDLL weapons.h (M4 silenced or not, FAMAS burst or not), x modifier^(distance/500) cut to a whole number
+// (FireBullets3, cbase.cpp); the hit sound says where: helmet = head with a helmet, headshot = head without, kevlar =
+// body with armour, flesh = a leg or the body without armour (Pain, player.cpp); head 4, stomach 1.25, chest and arms
+// 1, legs 0.75 (TraceAttack); armour lets through 0.5 x the gun's factor (TakeDamage). 30 units are added to the
+// distance for the aim recorded ten times a second. Checked on 2,171 hits on 6 demos (tests/page/seen_through_cover.js).
+const GUN_DMG = { ak47: [[36, 0.98]], m4a1: [[32, 0.97], [33, 0.95]], famas: [[30, 0.96], [34, 0.96]], galil: [[30, 0.98]], aug: [[32, 0.96]], sg552: [[33, 0.955]], awp: [[115, 0.99]], scout: [[75, 0.98]], deagle: [[54, 0.81]], sg550: [[70, 0.98]], g3sg1: [[80, 0.98]], m249: [[32, 0.97]] };
+const GUN_ARMOR = { ak47: 0.775, galil: 0.775, m4a1: 0.7, aug: 0.7, famas: 0.7, sg552: 0.7, awp: 0.975, scout: 0.85, deagle: 0.75, sg550: 0.725, g3sg1: 0.825, m249: 0.75 };
+const HIT_LOW = { helmet: [4, true], headshot: [4, false], kevlar: [1, true], flesh: [0.75, false] };
+function openLow(gun, dist, sounds) {
+  if (!GUN_DMG[gun] || !sounds.length) return 0;
+  return sounds.reduce((sum, cls) => { const [m, arm] = HIT_LOW[cls] || HIT_LOW.flesh; return sum + Math.min(...GUN_DMG[gun].map(([dm, r]) => Math.floor(Math.floor(dm * Math.pow(r, (dist + 30) / 500)) * m * (arm ? GUN_ARMOR[gun] : 1) + 1e-6))); }, 0);
+}
 const ONE_SURFACE = new Set(['usp', 'glock18', 'p228', 'fiveseven', 'elite', 'mac10', 'tmp', 'mp5navy', 'ump45', 'p90', 'm3', 'xm1014']);
 // The victim's health just before the killing hit, and the killer's shots that could have done the damage.
 // HLTV sends a player's health whenever it changes, so an earlier hit would show as a lower reading; only
@@ -3042,14 +3055,14 @@ function computeWallbangs() {
   // stay cover (Sujan, 23 Oct 2026). Invisible brushes are never cover (solidAlong in bsp.js).
   const notCover = bsp.solids.filter((s) => s.shootable).map((s) => s.model);
   for (const k of D.kills) {
-    k.wb = null; k.seenPx = null;
+    k.wb = null; k.seenPx = null; k.seenAim = null;
     if (!k.kpos || !k.vpos || k.killer === k.victim || NO_WB.has(k.weapon) || ONE_SURFACE.has(k.weapon)) continue;
     const kNow = [...k.kpos, k.kduck], vNow = [...k.vpos, k.vduck];
     const tP = k.tPos != null ? k.tPos : k.t;
     skip = brokenSet(tP - 0.05); for (const m of notCover) skip.add(m);
     poses = posesAt(tP - 0.05);
-    if (bodyVisible(eyeOf(kNow), vNow)) continue;
-    if (tooMuchDamage(k)) continue;
+    const seen = bodyVisible(eyeOf(kNow), vNow);
+    if (!seen && tooMuchDamage(k)) continue;
     const eye = eyeOf(kNow);
     let raw = k.kang ? k.kang[0] : 0; if (raw > 180) raw -= 360;
     const pitch = -raw * 3 * Math.PI / 180, yaw = (k.kang ? k.kang[1] : 0) * Math.PI / 180;
@@ -3060,11 +3073,15 @@ function computeWallbangs() {
     const mid = solidAlong(bsp, eye, [k.vpos[0], k.vpos[1], k.vpos[2] + (k.vduck ? 4 : 6)], 2, skip, poses, 'bullet');
     if (aim.solid === 0) continue; // crosshair had a clear line: the victim was hit in the open
     const hit = aim.hit;
+    // part of him in view to the 15 points, but the crosshair line goes through cover: computeHits makes it a loose
+    // wallbang when the demo's damage shows one of the killer's bullets went through a surface in the same spray
+    // (Sujan, 28 Oct 2026; measured with tests/page/seen_through_cover.js)
+    if (seen) { k.seenAim = { thick: Math.round(aim.solid > 0 ? aim.solid : mid.solid), aim: Math.round(aim.solid), what: hit.some((h) => h.model !== 0) ? 'object' : 'wall', eye }; continue; }
     k.wb = { thick: Math.round(aim.solid > 0 ? aim.solid : mid.solid), aim: Math.round(aim.solid), what: hit.some((h) => h.model !== 0) ? 'object' : 'wall', eye };
   }
   // a kill that lands on a skip across a round restart was judged from the next round's spawns, thousands of units
   // apart (4,000 units of "wall" for Orwall's AWP kill on coNTE, roccat vs fnatic, Inferno, R21): nothing to judge
-  for (const k of D.kills) if (k.wb && (M.skipRestart || []).some((st) => Math.abs(st - k.t) <= 0.3)) k.wb = null;
+  for (const k of D.kills) if ((k.wb || k.seenAim) && (M.skipRestart || []).some((st) => Math.abs(st - k.t) <= 0.3)) { k.wb = null; k.seenAim = null; }
   M.wbs = D.kills.filter((k) => k.wb && M.liveR.some((r) => r.n === k.round));
   renderPane(); drawTimeline();
   // then the picture check (checkSeen, view3d.part.js), once the 3D map is built: loadMap builds it right after this
@@ -3092,7 +3109,7 @@ function computeHits() {
   const team = (e, i) => { const n = playerModelName(D.slots[e][i * S + 8]).toLowerCase(); return /terror|leet|arctic|guerilla/.test(n) ? 'T' : /urban|gsg9|sas|gign|vip/.test(n) ? 'CT' : null; };
   const sname = (i) => String((D.sounds && D.sounds[i]) || '').toLowerCase();
   const hits = {}; const sn = D.snds || [];
-  for (let i = 0; i < sn.length; i += 10) { const n = sname(sn[i + 1]); if (/player\/(bhit|headshot)/.test(n)) (hits[sn[i + 2]] || (hits[sn[i + 2]] = [])).push([sn[i], /headshot|helmet/.test(n)]); }
+  for (let i = 0; i < sn.length; i += 10) { const n = sname(sn[i + 1]); if (/player\/(bhit|headshot)/.test(n)) (hits[sn[i + 2]] || (hits[sn[i + 2]] = [])).push([sn[i], /headshot|helmet/.test(n), /helmet/.test(n) ? 'helmet' : /headshot/.test(n) ? 'headshot' : /kevlar/.test(n) ? 'kevlar' : 'flesh']); }
   const evGun = (i) => String((D.events && D.events[i]) || '').toLowerCase().replace(/^.*\//, '').replace(/\.sc$/, '').replace(/^mp5n$/, 'mp5navy').replace(/^elite_(left|right)$/, 'elite');
   const shots = {}, gunAt = {}; const sh = D.shots || [];
   for (let i = 0; i < sh.length; i += 4) { (shots[sh[i + 1]] || (shots[sh[i + 1]] = [])).push(sh[i]); (gunAt[sh[i + 1]] || (gunAt[sh[i + 1]] = [])).push(evGun(sh[i + 2])); }
@@ -3135,7 +3152,7 @@ function computeHits() {
     const off = Math.hypot(rel[0] - dir[0] * along, rel[1] - dir[1] * along, rel[2] - dir[2] * along);
     return { eye, dir, along, off, tgt };
   };
-  const cover = [];
+  const cover = [], proven = [];
   // Each health drop is paired with its hit sound (26 Oct 2026). The sound comes at the moment of the hit; in some demos
   // the health follows it by a tenth of a second or more, several readings at once (tyloo vs mTw, Nuke, e-Stars Seoul
   // 2009, R15: zonic's 58 to 48, 38 and 0 arrive 0.1 to 0.33 s after their hit sounds; NoA vs Pentagram, Train 2006,
@@ -3188,6 +3205,23 @@ function computeHits() {
     const c = cands[0];
     // the only enemy near his line may aim a little wider when the demo has his shot (aim is recorded about ten times a second)
     if (c.off > (cands.length === 1 && c.shot ? 96 : 64) || (cands[1] && cands[1].off - c.off < 16)) { note(d, `unknown ${cands.slice(0, 2).map((x) => x.e + ':' + Math.round(x.off)).join(' ')}`); continue; }
+    // less damage than his gun does in the open at that distance, for that hit sound: only a surface explains it
+    // (level 2 by damage, Sujan 28 Oct 2026). Not when a teammate of the victim fired and aimed near him (team damage
+    // is cut), and not when another player stood on the line (a bullet through a player keeps 0.75: cArNaGe on
+    // STRIKE, Sweden vs Ukraine, Train, ClanBase NationsCup XI, R22 C4 0:07, Sujan's catch)
+    const lo = openLow(c.gun, Math.hypot(c.tgt[0] - c.eye[0], c.tgt[1] - c.eye[1], c.tgt[2] - c.eye[2]), hs.map((h) => h[2]));
+    if (lo && d.dmg < lo - 1) {
+      let other = false;
+      for (const e in D.slots) {
+        const se = +e; if (se === c.e || se === d.e) continue;
+        const p = D.slots[se]; if (!p || isNaN(p[i * S]) || !(p[i * S + 5] > 0)) continue;
+        if (team(se, i) === vt && (shots[se] || []).some((t) => t >= th - 0.2 && t <= th + 0.001) && aimAt(p, i, vp, head, vduck).off <= 32) { other = true; break; }
+        const u = [c.tgt[0] - c.eye[0], c.tgt[1] - c.eye[1], c.tgt[2] - c.eye[2]], L = Math.hypot(...u), rel = [p[i * S] - c.eye[0], p[i * S + 1] - c.eye[1], p[i * S + 2] + 18 - c.eye[2]];
+        const al = (rel[0] * u[0] + rel[1] * u[1] + rel[2] * u[2]) / L;
+        if (al > 20 && al < L - 10 && Math.hypot(...rel.map((x, j) => x - u[j] / L * al)) < 32) { other = true; break; }
+      }
+      if (!other) proven.push({ t: th, v: d.e, s: c.e, dmg: d.dmg, head, gun: c.gun, open: lo });
+    }
     const per = MAX_DMG[c.gun];
     if (per && d.dmg > per * 0.6 * (head ? 4 : 1.25) * Math.max(1, hs.length)) { note(d, 'too much for a wall'); continue; }
     const skip = brokenSet(th - 0.05); for (const m of notCover) skip.add(m);
@@ -3198,6 +3232,19 @@ function computeHits() {
     note(d, `cover by ${c.e} off ${Math.round(c.off)}`);
     cover.push({ t: th, v: d.e, s: c.e, dmg: d.dmg, head, gun: c.gun });
   }
+  // seen kills with the crosshair through cover (computeWallbangs) become loose wallbangs when a bullet of the
+  // killer's that only a surface explains landed 0.5 s or less before the kill (Sujan, 28 Oct 2026: the same spray
+  // only; a hit matched by his aim alone counts here, since the kill confirms he was shooting at him then). Their
+  // hits through a surface join the burst, so the kill shows its numbers.
+  for (const k of D.kills) {
+    if (!k.seenAim || (k.wb && k.wb.loose !== 'dmg') || !M.liveR.some((r) => r.n === k.round)) continue;
+    const mine = proven.filter((p) => p.v === k.victim && p.s === k.killer && p.t <= k.t + 0.01 && k.t - p.t <= 2);
+    const near = mine.filter((p) => k.t - p.t <= 0.5);
+    if (!near.length) continue;
+    k.wb = Object.assign({}, k.seenAim, { loose: 'dmg', dmg: near[near.length - 1] }); k.seenPx = -2;
+    for (const p of mine) if (!cover.some((x) => x.t === p.t && x.v === p.v)) cover.push(p);
+  }
+  M.wbs = D.kills.filter((k) => k.wb && M.liveR.some((r) => r.n === k.round));
   cover.sort((x, y) => x.t - y.t);
   const byV = {}; for (const h of cover) (byV[h.v] || (byV[h.v] = [])).push(h);
   for (const v in byV) {
@@ -3815,7 +3862,7 @@ const UNSURE_TIP = 'The recording skips at this kill, so the wallbang was judged
 const unsureTag = (k) => (k.wb && skipNear(k.t) ? `<span class="wbtag unsure" title="${UNSURE_TIP}">UNSURE</span>` : '');
 // Sujan's three levels (24 Oct 2026; built in 0.23.0): a strict wallbang has none of the victim in view from the
 // shooter's eye; a loose one has part of him in view (50 pixels or more in the picture check, view3d.part.js).
-const LOOSE_TIP = (k) => `Loose wallbang: the bullet went through cover, but part of him was in view from the shooter's eye (${k.wb.loose} pixels in the check, 50 or more counts as in view)`;
+const LOOSE_TIP = (k) => k.wb.dmg ? `Loose wallbang: part of him was in view, and the demo's damage shows a bullet of the killer's went through cover just before the kill (${k.wb.dmg.dmg} HP where his gun does at least ${k.wb.dmg.open} in the open)` : `Loose wallbang: the bullet went through cover, but part of him was in view from the shooter's eye (${k.wb.loose} pixels in the check, 50 or more counts as in view)`;
 const looseTag = (k) => (k.wb && k.wb.loose ? `<span class="wbtag loose" title="${LOOSE_TIP(k)}">LOOSE WB</span>` : '');
 const STRICT_TIP = 'Strict wallbang: the bullet went through cover and none of him was in view from the shooter\'s eye';
 const DMG_TIP = 'Wallbang damage: hits through cover that didn\'t kill him';
