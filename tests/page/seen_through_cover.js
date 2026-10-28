@@ -103,6 +103,17 @@
       const a = D.slots[se]; if (!a || isNaN(a[i * S]) || team(se, i) !== vt) continue;
       const m = aimAt(a, i, vp, head, vduck); if (m.along > 0 && m.off <= 32) mate = nm(se, th);
     }
+    // another player on the line between them (a bullet through a player keeps 0.75 of its damage): Sujan's question
+    // on cArNaGe on STRIKE, Sweden vs Ukraine, Train, R22 C4 0:07, 28 Oct 2026 (valentinich 16 units off the line)
+    const onLine = [];
+    if (c) for (const e in D.slots) {
+      const se = +e; if (se === c.e || se === d.e) continue;
+      const p = D.slots[se]; if (!p || isNaN(p[i * S]) || !(p[i * S + 5] > 0)) continue;
+      const rel = [p[i * S] - c.eye[0], p[i * S + 1] - c.eye[1], p[i * S + 2] + 18 - c.eye[2]], u = [c.tgt[0] - c.eye[0], c.tgt[1] - c.eye[1], c.tgt[2] - c.eye[2]], L = Math.hypot(...u);
+      const al = (rel[0] * u[0] + rel[1] * u[1] + rel[2] * u[2]) / L;
+      if (al < 20 || al > L - 10) continue;
+      if (Math.hypot(...rel.map((x, j) => x - u[j] / L * al)) < 32) onLine.push(nm(se, th) + (team(se, i) === vt ? ' (his teammate)' : ''));
+    }
     const out = { t: +(th - killer.t).toFixed(2), hp: `${d.from}>${d.to}`, dmg: d.dmg, snd: (d.snd || []).map(([, s]) => s), dead: !!d.dead };
     if (!c) return Object.assign(out, { by: null, why: 'no enemy fired or aimed at him' });
     out.by = nm(c.e, th); out.byKiller = c.e === killer.killer; out.gun = c.gun; out.dist = Math.round(c.dist); out.off = Math.round(c.off);
@@ -111,6 +122,7 @@
     if (fall) { out.verdict = 'fall'; return out; }
     if (nade) { out.verdict = 'grenade nearby'; return out; }
     if (mate) out.mate = mate;
+    if (onLine.length) out.onLine = onLine;
     if (!d.snd || !d.snd.length) { out.verdict = 'no hit sound'; return out; }
     const rs = d.snd.map(([, s]) => range(c.gun, c.dist, s)); if (rs.some((r) => !r)) { out.verdict = 'gun not modelled'; return out; }
     out.open = rs.length === 1 ? `${rs[0][0]}-${rs[0][1]}` : rs.map((r) => `${r[0]}-${r[1]}`).join(' + ');
@@ -160,7 +172,9 @@
     const mine = hs.filter((h) => h.byKiller && !h.dead);
     const kill = hs.find((h) => h.dead);
     // proof: a hit of the killer's that only a surface explains, with no doubt about who fired it
-    const sure = mine.filter((h) => /^through/.test(h.verdict || '') && !h.unsure && !h.mate);
+    // and the demo has his shot (a shooter matched only by his aim isn't proof: NEO on Edward, Na`Vi vs FX, Dust2, SEC
+    // 2011, R23 1:09, Sujan saw him reloading), and no other player stood on the line
+    const sure = mine.filter((h) => /^through/.test(h.verdict || '') && !h.unsure && !h.mate && h.fired && !h.onLine);
     const proven = sure.length > 0;
     res.push({
       at: `R${r ? r.ln : '?'} ${clockText(k.t)}`, demoTime: +(k.t - D.start).toFixed(1), killer: nm(k.killer, k.t), victim: nm(k.victim, k.t), gun: k.weapon, hs: !!k.hs,
