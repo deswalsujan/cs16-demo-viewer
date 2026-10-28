@@ -30,7 +30,9 @@ threading.Thread(target=srv.serve_forever, daemon=True).start()
 url = f'http://127.0.0.1:{srv.server_port}/{os.path.basename(page_path)}'
 
 with sync_playwright() as p:
-    b = p.chromium.launch(args=['--use-gl=angle', '--use-angle=swiftshader', '--enable-unsafe-swiftshader', '--ignore-gpu-blocklist'])
+    # CHROME: a Chromium to use instead of Playwright's own (27 Oct 2026: the Linux VM on Sujan's Mac can't download
+    # Playwright's, so a Chromium build from GitHub is used there)
+    b = p.chromium.launch(executable_path=os.environ.get('CHROME') or None, args=['--use-gl=angle', '--use-angle=swiftshader', '--enable-unsafe-swiftshader', '--ignore-gpu-blocklist'])
     pg = b.new_page(viewport={'width': 1440, 'height': 900})
     errs = []
     pg.on('pageerror', lambda e: errs.append(str(e)))

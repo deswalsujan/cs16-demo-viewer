@@ -25,9 +25,11 @@
   --faint: #5b636a;
   --sand: #cbb47e;
   --wb: #ff4fd8;
+  --loose: #c9a3e8; /* a loose wallbang, everywhere it's marked (Sujan, 28 Oct 2026: easier to tell from a strict one) */
   --t: #e8574d;
   --ct: #5ea3e8;
   --kill: #ff9a3c;
+  --hit: #ffb347;
   --radar: #0b0e10;
   --good: #8fc97a;
   --f-display: "Zalando Sans", system-ui, -apple-system, "Segoe UI", sans-serif;
@@ -121,6 +123,7 @@ button { cursor: pointer; }
 .vrow > span { display: grid; }
 .vrow small { color: var(--muted); font-size: 11px; }
 .vrow .btn { font-size: 12px; padding: 3px 10px; min-width: 52px; justify-content: center; }
+.vrow input[type=checkbox] { width: 16px; height: 16px; accent-color: var(--sand); margin: 0 4px; }
 .hint3 { position: absolute; right: 12px; bottom: 12px; font-family: var(--f-mono); font-size: 11px; color: var(--muted); background: rgba(10,12,14,.82); border: 1px solid var(--line); padding: 4px 8px; border-radius: 3px; white-space: nowrap; }
 .radar.m2d .hint3, .radar.msplit .hint3 { display: none; }
 @media (max-width: 1100px) { .hint3 { display: none; } }
@@ -136,7 +139,15 @@ button { cursor: pointer; }
 .radar.m2d .skipnote { bottom: 56px; }
 .wbtag.unsure { color: #e7c37a; border-color: rgba(231,195,122,.55); }
 /* a loose wallbang (0.23.0): the bullet went through cover, part of the victim was in view */
-.wbtag.loose { color: #c9a3e8; border-color: rgba(201,163,232,.55); }
+.wbtag.loose { color: var(--loose); border-color: color-mix(in srgb, var(--loose) 55%, transparent); }
+/* wallbang damage (trial, wip/wallbang-hits): hits through cover that didn't kill, in the damage colour */
+.wbtag.dmg { color: var(--hit); border-color: color-mix(in srgb, var(--hit) 55%, transparent); }
+.kill3 .dline { display: block; font: 12px var(--f-mono); color: var(--muted); margin: 0 0 3px; }
+.kill3 .dline b { color: var(--hit); font-weight: 500; }
+.kill3 .dline .dmore { display: block; white-space: normal; overflow-wrap: anywhere; margin-top: 1px; }
+.wbchips { display: flex; flex-wrap: wrap; gap: 6px; padding: 8px 14px; border-bottom: 1px solid var(--line); }
+.wbchips button { font: 12px var(--f-mono); color: var(--muted); background: none; border: 1px solid var(--line); border-radius: 12px; padding: 1px 9px; }
+.wbchips button.on { color: #1b1a16; background: var(--sand); border-color: var(--sand); }
 .skipk { display: block; color: var(--fg); font-weight: 600; letter-spacing: -.05em; margin-top: 2px; cursor: help; }
 .pov { position: absolute; left: 50%; bottom: 56px; transform: translateX(-50%); font-family: var(--f-mono); font-size: 12px; background: rgba(10,12,14,.82); border: 1px solid var(--line); padding: 4px 10px; border-radius: 3px; }
 .pov.dead { border-color: #8a2b2b; background: rgba(40,6,6,.9); padding: 6px 12px; font-size: 13px; }
@@ -209,7 +220,7 @@ button { cursor: pointer; }
 .hmlist dd span { color: var(--muted); }
 .hm { width: 40px; height: 40px; display: block; background: #3a3f44; border-radius: 4px; }
 .hmw, .hmo, .hms { font-family: var(--f-mono); font-size: 12px; letter-spacing: .04em; }
-.hmw { color: #ffffff; } .hmo { color: #ff9a3c; } .hms { color: var(--wb); }
+.hmw { color: #ffffff; } .hmo { color: #ff9a3c; } .hms { color: var(--wb); } .hml { color: var(--loose); font-family: var(--f-mono); font-size: 12px; letter-spacing: .04em; }
 kbd { font-family: var(--f-mono); font-size: 11px; background: var(--panel-2); border: 1px solid var(--line); border-bottom-width: 2px; border-radius: 3px; padding: 1px 5px; color: var(--fg); }
 .pnum { display: inline-block; width: 16px; color: var(--faint); font-family: var(--f-mono); font-size: 11px; }
 @media (max-width: 600px) { .sbcard { grid-template-columns: minmax(0, 1fr); } }
@@ -277,6 +288,7 @@ kbd { font-family: var(--f-mono); font-size: 11px; background: var(--panel-2); b
 .kt { color: var(--t); } .kct { color: var(--ct); }
 .kw { color: var(--muted); font-family: var(--f-mono); font-size: 12px; margin-inline: 5px; }
 .khs { color: var(--kill); font-family: var(--f-mono); font-size: 11px; margin-left: 4px; }
+.kwb.loose { color: var(--loose); }
 .kwb { color: var(--wb); font-family: var(--f-mono); font-size: 11px; margin-left: 4px; }
 .sechead { padding: 10px 14px 6px; font-size: 11px; text-transform: uppercase; letter-spacing: .08em; color: var(--muted); display: flex; justify-content: space-between; gap: 8px; }
 .prow { grid-template-columns: minmax(0, 1fr) auto; }
@@ -496,6 +508,7 @@ body:has(.app.theatre) { overflow: hidden; }
             <option value="high">High</option>
             <option value="low">Low</option>
           </select></label>
+          <label class="vrow"><span>Glow on hits<small>damage through walls, no kill</small></span><input type="checkbox" id="glow3" title="A short pink glow on a player each time a bullet hits him through a wall, for damage that doesn't end in a kill"></label>
           <label class="vrow"><span>Crosshair<small>in Player's eyes</small></span><select id="xh3" title="Crosshair size in Player's eyes, like the game's crosshair size setting">
             <option value="small">Small</option>
             <option value="medium">Medium</option>
@@ -509,7 +522,7 @@ body:has(.app.theatre) { overflow: hidden; }
     <div class="overlay sumwrap" id="sumCard" hidden></div>
     <div class="overlay keys" id="keys" hidden>
       <div class="keys-card">
-        <div class="keys-head"><b>Shortcuts and kill markers</b><div class="kh-r"><span class="ver">Version 0.23.0 · <a href="https://github.com/deswalsujan/cs16-demo-viewer/blob/main/CHANGELOG.md" target="_blank" rel="noopener">What's new</a> · <a href="https://github.com/deswalsujan/cs16-demo-viewer/issues/new/choose" target="_blank" rel="noopener">Report a bug</a></span><button class="btn" id="bDebug" type="button" title="Copies details for a bug report: browser, demo name, what loaded, errors. No file contents.">Copy debug info</button><button class="btn" id="bKeysClose" type="button">Close</button></div></div>
+        <div class="keys-head"><b>Shortcuts and kill markers</b><div class="kh-r"><span class="ver">Version 0.24.0-trial · <a href="https://github.com/deswalsujan/cs16-demo-viewer/blob/main/CHANGELOG.md" target="_blank" rel="noopener">What's new</a> · <a href="https://github.com/deswalsujan/cs16-demo-viewer/issues/new/choose" target="_blank" rel="noopener">Report a bug</a></span><button class="btn" id="bDebug" type="button" title="Copies details for a bug report: browser, demo name, what loaded, errors. No file contents.">Copy debug info</button><button class="btn" id="bKeysClose" type="button">Close</button></div></div>
         <textarea class="dbgbox" id="dbgBox" readonly hidden aria-label="Debug info"></textarea>
         <div class="keys-grid">
           <section><h3>Playback</h3>
@@ -545,6 +558,7 @@ body:has(.app.theatre) { overflow: hidden; }
               <dt><svg class="hm" viewBox="0 0 40 40" aria-hidden="true"><g stroke="#000" stroke-opacity=".45" stroke-width="3" stroke-linecap="round"><path d="M28 28l4 4M28 12l4-4M12 28l-4 4M12 12l-4-4"/></g><g stroke="#ffffff" stroke-width="1.5" stroke-linecap="round"><path d="M28 28l4 4M28 12l4-4M12 28l-4 4M12 12l-4-4"/></g><g stroke="#5aff5a" stroke-width="1.5"><path d="M12 20h5M23 20h5M20 12v5M20 23v5"/></g></svg></dt><dd><b class="hmw">KILL</b><span>A normal kill. Example: an AK spray to the body in the open.</span></dd>
               <dt><svg class="hm" viewBox="0 0 40 40" aria-hidden="true"><g stroke="#000" stroke-opacity=".45" stroke-width="3" stroke-linecap="round"><path d="M28 28l4 4M28 12l4-4M12 28l-4 4M12 12l-4-4"/></g><g stroke="#ff9a3c" stroke-width="1.5" stroke-linecap="round"><path d="M28 28l4 4M28 12l4-4M12 28l-4 4M12 12l-4-4"/></g><g stroke="#5aff5a" stroke-width="1.5"><path d="M12 20h5M23 20h5M20 12v5M20 23v5"/></g></svg></dt><dd><b class="hmo">HEADSHOT</b><span>The killing bullet hit the head. Example: a one-tap with the AK.</span></dd>
               <dt><svg class="hm" viewBox="0 0 40 40" aria-hidden="true"><g stroke="#000" stroke-opacity=".45" stroke-width="3" stroke-linecap="round"><path d="M28 28l4 4M28 12l4-4M12 28l-4 4M12 12l-4-4"/></g><g stroke="#ff4fd8" stroke-width="1.5" stroke-linecap="round"><path d="M28 28l4 4M28 12l4-4M12 28l-4 4M12 12l-4-4"/></g><g stroke="#5aff5a" stroke-width="1.5"><path d="M12 20h5M23 20h5M20 12v5M20 23v5"/></g></svg></dt><dd><b class="hms">WALLBANG · HS</b><span>The bullet went through cover, with the victim fully hidden (or, tagged LOOSE in the lists, with part of him in view). HS is added when it was also a headshot.</span></dd>
+              <dt><svg class="hm" viewBox="0 0 40 40" aria-hidden="true"><g stroke="#000" stroke-opacity=".45" stroke-width="3" stroke-linecap="round"><path d="M28 28l4 4M28 12l4-4M12 28l-4 4M12 12l-4-4"/></g><g stroke="#c9a3e8" stroke-width="1.5" stroke-linecap="round"><path d="M28 28l4 4M28 12l4-4M12 28l-4 4M12 12l-4-4"/></g><g stroke="#5aff5a" stroke-width="1.5"><path d="M12 20h5M23 20h5M20 12v5M20 23v5"/></g></svg></dt><dd><b class="hml">LOOSE WB</b><span>A loose wallbang: the bullet went through cover, but part of the victim was in view.</span></dd>
             </dl>
           </section>
           <section><h3>Radar (2D)</h3>
@@ -611,7 +625,7 @@ body:has(.app.theatre) { overflow: hidden; }
         <div class="drophint">Or drop a .dem file, or an overview .bmp and .txt pair, anywhere on this page</div>
         <div class="prog" id="prog" hidden><i id="progBar"></i></div>
         <div class="msg" id="msg"></div>
-        <div class="loadfoot"><span>Version 0.23.0</span><button class="btn" id="bClear" type="button" title="Forgets your Half-Life folder and deletes the maps, models, sounds and overviews this browser saved from it, as on a first visit">Clear saved files</button></div>
+        <div class="loadfoot"><span>Version 0.24.0-trial</span><button class="btn" id="bClear" type="button" title="Forgets your Half-Life folder and deletes the maps, models, sounds and overviews this browser saved from it, as on a first visit">Clear saved files</button></div>
       </div>
     </div>
   </section>
@@ -1839,7 +1853,7 @@ function buildMesh(bsp, separate = null) {
   return { groups: out, atlas: { w: AW, h: AH, data: atlas } };
 }
 
-const COL = { t: '#e8574d', ct: '#5ea3e8', kill: '#ff9a3c', sand: '#cbb47e', wb: '#ff4fd8', fg: '#e7e3d9', muted: '#8d959c', line: '#2a3137' };
+const COL = { t: '#e8574d', ct: '#5ea3e8', kill: '#ff9a3c', sand: '#cbb47e', wb: '#ff4fd8', loose: '#c9a3e8', fg: '#e7e3d9', muted: '#8d959c', line: '#2a3137' };
 const SPEEDS = [0.25, 0.5, 1, 2, 4, 8];
 
 // ---------------- state ----------------
@@ -1851,6 +1865,7 @@ let view = { s: 1, x: 0, y: 0 };
 let selected = null;     // selected player entity
 let scope = 'match';
 let tab = 'rounds';
+let wbFilter = 'all', pickedBurst = null; // Wallbangs list filter and the clicked damage row (wip/wallbang-hits)
 const opts = { names: true, nades: true, lines: true, xray: false, teamColours: false };
 // kill moments that just happened, for the hit markers (timed in real seconds so they stay visible at any speed)
 const flashes = [];
@@ -2991,6 +3006,19 @@ const NO_WB = new Set(['grenade', 'knife', 'world', '']);
 // does at most 115 x 0.6 x 1.25 = 86, too little for a player on 100 HP (Sweden vs Norway, Dust2,
 // ASUS ENC 2010: three AWP body-shot kills on players at 100 HP were listed as wallbangs; Sujan saw clear shots).
 const MAX_DMG = { ak47: 36, aug: 32, awp: 115, deagle: 54, famas: 34, g3sg1: 80, galil: 30, m249: 32, m4a1: 33, scout: 75, sg550: 70, sg552: 33 };
+// The least damage each gun's bullet does in the open (level 2 by damage, 28 Oct 2026): damage and range modifier from
+// ReGameDLL weapons.h (M4 silenced or not, FAMAS burst or not), x modifier^(distance/500) cut to a whole number
+// (FireBullets3, cbase.cpp); the hit sound says where: helmet = head with a helmet, headshot = head without, kevlar =
+// body with armour, flesh = a leg or the body without armour (Pain, player.cpp); head 4, stomach 1.25, chest and arms
+// 1, legs 0.75 (TraceAttack); armour lets through 0.5 x the gun's factor (TakeDamage). 30 units are added to the
+// distance for the aim recorded ten times a second. Checked on 2,171 hits on 6 demos (tests/page/seen_through_cover.js).
+const GUN_DMG = { ak47: [[36, 0.98]], m4a1: [[32, 0.97], [33, 0.95]], famas: [[30, 0.96], [34, 0.96]], galil: [[30, 0.98]], aug: [[32, 0.96]], sg552: [[33, 0.955]], awp: [[115, 0.99]], scout: [[75, 0.98]], deagle: [[54, 0.81]], sg550: [[70, 0.98]], g3sg1: [[80, 0.98]], m249: [[32, 0.97]] };
+const GUN_ARMOR = { ak47: 0.775, galil: 0.775, m4a1: 0.7, aug: 0.7, famas: 0.7, sg552: 0.7, awp: 0.975, scout: 0.85, deagle: 0.75, sg550: 0.725, g3sg1: 0.825, m249: 0.75 };
+const HIT_LOW = { helmet: [4, true], headshot: [4, false], kevlar: [1, true], flesh: [0.75, false] };
+function openLow(gun, dist, sounds) {
+  if (!GUN_DMG[gun] || !sounds.length) return 0;
+  return sounds.reduce((sum, cls) => { const [m, arm] = HIT_LOW[cls] || HIT_LOW.flesh; return sum + Math.min(...GUN_DMG[gun].map(([dm, r]) => Math.floor(Math.floor(dm * Math.pow(r, (dist + 30) / 500)) * m * (arm ? GUN_ARMOR[gun] : 1) + 1e-6))); }, 0);
+}
 const ONE_SURFACE = new Set(['usp', 'glock18', 'p228', 'fiveseven', 'elite', 'mac10', 'tmp', 'mp5navy', 'ump45', 'p90', 'm3', 'xm1014']);
 // The victim's health just before the killing hit, and the killer's shots that could have done the damage.
 // HLTV sends a player's health whenever it changes, so an earlier hit would show as a lower reading; only
@@ -3030,14 +3058,14 @@ function computeWallbangs() {
   // stay cover (Sujan, 23 Oct 2026). Invisible brushes are never cover (solidAlong in bsp.js).
   const notCover = bsp.solids.filter((s) => s.shootable).map((s) => s.model);
   for (const k of D.kills) {
-    k.wb = null; k.seenPx = null;
+    k.wb = null; k.seenPx = null; k.seenAim = null;
     if (!k.kpos || !k.vpos || k.killer === k.victim || NO_WB.has(k.weapon) || ONE_SURFACE.has(k.weapon)) continue;
     const kNow = [...k.kpos, k.kduck], vNow = [...k.vpos, k.vduck];
     const tP = k.tPos != null ? k.tPos : k.t;
     skip = brokenSet(tP - 0.05); for (const m of notCover) skip.add(m);
     poses = posesAt(tP - 0.05);
-    if (bodyVisible(eyeOf(kNow), vNow)) continue;
-    if (tooMuchDamage(k)) continue;
+    const seen = bodyVisible(eyeOf(kNow), vNow);
+    if (!seen && tooMuchDamage(k)) continue;
     const eye = eyeOf(kNow);
     let raw = k.kang ? k.kang[0] : 0; if (raw > 180) raw -= 360;
     const pitch = -raw * 3 * Math.PI / 180, yaw = (k.kang ? k.kang[1] : 0) * Math.PI / 180;
@@ -3048,15 +3076,221 @@ function computeWallbangs() {
     const mid = solidAlong(bsp, eye, [k.vpos[0], k.vpos[1], k.vpos[2] + (k.vduck ? 4 : 6)], 2, skip, poses, 'bullet');
     if (aim.solid === 0) continue; // crosshair had a clear line: the victim was hit in the open
     const hit = aim.hit;
+    // part of him in view to the 15 points, but the crosshair line goes through cover: computeHits makes it a loose
+    // wallbang when the demo's damage shows one of the killer's bullets went through a surface in the same spray
+    // (Sujan, 28 Oct 2026; measured with tests/page/seen_through_cover.js)
+    if (seen) { k.seenAim = { thick: Math.round(aim.solid > 0 ? aim.solid : mid.solid), aim: Math.round(aim.solid), what: hit.some((h) => h.model !== 0) ? 'object' : 'wall', eye }; continue; }
     k.wb = { thick: Math.round(aim.solid > 0 ? aim.solid : mid.solid), aim: Math.round(aim.solid), what: hit.some((h) => h.model !== 0) ? 'object' : 'wall', eye };
   }
   // a kill that lands on a skip across a round restart was judged from the next round's spawns, thousands of units
   // apart (4,000 units of "wall" for Orwall's AWP kill on coNTE, roccat vs fnatic, Inferno, R21): nothing to judge
-  for (const k of D.kills) if (k.wb && (M.skipRestart || []).some((st) => Math.abs(st - k.t) <= 0.3)) k.wb = null;
+  for (const k of D.kills) if ((k.wb || k.seenAim) && (M.skipRestart || []).some((st) => Math.abs(st - k.t) <= 0.3)) { k.wb = null; k.seenAim = null; }
   M.wbs = D.kills.filter((k) => k.wb && M.liveR.some((r) => r.n === k.round));
   renderPane(); drawTimeline();
   // then the picture check (checkSeen, view3d.part.js), once the 3D map is built: loadMap builds it right after this
   setTimeout(() => { if (typeof checkSeen === 'function') checkSeen(); }, 0);
+  computeHits();
+}
+
+// ---------------- wallbang damage: hits through cover that didn't kill (trial, wip/wallbang-hits) ----------------
+// Sujan's level 3 (24 Oct 2026), rules decided 25 Oct 2026, fixed from his check of 24 bursts (26 Oct 2026; the
+// prototype is tests/page/wb_hits.js). HLTV sends each player's health whenever it changes, and the game plays a hit
+// sound on the player hit. Every health drop he survives with a hit sound in the same snapshot is tied to the enemy
+// who fired in the 0.15 s before it and whose crosshair passes closest to him (in demos that lose fire events, an
+// enemy aiming within 32 units of him); it is through cover when the crosshair line and the line to the part hit
+// (head for a headshot sound) both pass through what a bullet hits. Left out: hits near a grenade blast, a drop on
+// landing after a fall of 100 units or more (the game plays the same hit sound for fall damage), more damage than
+// the gun can do through a wall (0.6 x headshot 4 or stomach 1.25, per hit sound), guns whose bullets stop at the
+// first surface. Hits on one victim within 2 s of the last make a burst; hits in the open neither break it nor count.
+// A burst ending in a wallbang kill (strict or loose) joins it, the kill taking what he had left. Listed from 35 HP.
+const HITS_MIN = 35;
+function computeHits() {
+  M.bursts = []; M.hitByV = {};
+  if (!MAP || !D || !D.hp) return;
+  const bsp = MAP.bsp, S = D.stride, times = D.times;
+  const idx = (t) => { let lo = 0, hi = times.length - 1; while (lo < hi) { const m = (lo + hi + 1) >> 1; if (times[m] <= t + 1e-4) lo = m; else hi = m - 1; } return lo; };
+  const team = (e, i) => { const n = playerModelName(D.slots[e][i * S + 8]).toLowerCase(); return /terror|leet|arctic|guerilla/.test(n) ? 'T' : /urban|gsg9|sas|gign|vip/.test(n) ? 'CT' : null; };
+  const sname = (i) => String((D.sounds && D.sounds[i]) || '').toLowerCase();
+  const hits = {}; const sn = D.snds || [];
+  for (let i = 0; i < sn.length; i += 10) { const n = sname(sn[i + 1]); if (/player\/(bhit|headshot)/.test(n)) (hits[sn[i + 2]] || (hits[sn[i + 2]] = [])).push([sn[i], /headshot|helmet/.test(n), /helmet/.test(n) ? 'helmet' : /headshot/.test(n) ? 'headshot' : /kevlar/.test(n) ? 'kevlar' : 'flesh']); }
+  const evGun = (i) => String((D.events && D.events[i]) || '').toLowerCase().replace(/^.*\//, '').replace(/\.sc$/, '').replace(/^mp5n$/, 'mp5navy').replace(/^elite_(left|right)$/, 'elite');
+  const shots = {}, gunAt = {}; const sh = D.shots || [];
+  for (let i = 0; i < sh.length; i += 4) { (shots[sh[i + 1]] || (shots[sh[i + 1]] = [])).push(sh[i]); (gunAt[sh[i + 1]] || (gunAt[sh[i + 1]] = [])).push(evGun(sh[i + 2])); }
+  // Does this demo keep its fire events? Measured on 27 Oct 2026 by whether each gun kill's killer has a fire event at
+  // the kill: 94 to 100% in the 2010 and 2011 Nuke demos (k1ck vs eq, DreamHack Winter 2011: 193 of 193), 47 to 71% in
+  // the 2008 and 2009 ones (tyloo vs mTw, e-Stars Seoul 2009: 114 of 235; the rest missing or 0.1 to 0.3 s late). Where
+  // they're kept, an enemy with no fire event at a hit didn't fire it: n0rx, aiming 9 units off szrtech, took mUtcb's
+  // 36 HS (k1ck vs eq, R25 1:24; n0rx's first shot came 0.09 s later), and coachi took fox's FAMAS headshot on EneRyYyYy
+  // (R26 1:30; coachi's first shot came 0.6 s later; 78 is what fox's FAMAS does to a helmet from 708 units, coachi's M4
+  // from 799 would do 84). So enemies merely aiming at him compete only in demos that lose fire events (Go on zonic).
+  let gk = 0, gkf = 0;
+  for (const k of D.kills) {
+    if (k.killer === k.victim || !MAX_DMG[k.weapon] || ONE_SURFACE.has(k.weapon)) continue;
+    const t = k.tMsg != null ? k.tMsg : k.t; gk++;
+    if ((shots[k.killer] || []).some((x) => x >= t - 0.25 && x <= t + 0.001)) gkf++;
+  }
+  const firesKept = M.firesKept = gk >= 20 && gkf / gk >= 0.9;
+  const booms = []; const bm = D.booms || []; for (let i = 0; i < bm.length; i += 4) booms.push([bm[i], bm[i + 1], bm[i + 2], bm[i + 3]]);
+  const notCover = bsp.solids.filter((x) => x.shootable).map((x) => x.model);
+  const live = (t) => M.liveR.find((r) => t >= r.start && (r.end == null || t <= r.end + 0.5));
+  const starts = (M.rounds || []).map((r) => r.start).sort((x, y) => x - y);
+  const roundOf = (t) => { let k = -1; for (let j = 0; j < starts.length && starts[j] <= t; j++) k = j; return k; };
+  const last = {}, lastR = {}, drops = [], hpLog = {};
+  for (let i = 0; i < D.hp.length; i += 3) {
+    const t = D.hp[i], e = D.hp[i + 1], v = D.hp[i + 2], rn = roundOf(t);
+    let p = last[e]; if (lastR[e] !== rn) p = 100;
+    last[e] = v; lastR[e] = rn; (hpLog[e] || (hpLog[e] = [])).push([t, v]);
+    if (v > 0 && v < p) drops.push({ t, e, dmg: p - v });
+    else if (v === 0 && p > 0) drops.push({ t, e, dmg: p, dead: true }); // the killing hit takes its own sound (judged as the kill, not here)
+  }
+  const hpBefore = (e, t) => { let h = 100; const rn = roundOf(t); for (const [tt, v] of hpLog[e] || []) { if (tt > t + 1e-4) break; if (v > 0 && roundOf(tt) === rn) h = v; } return h; };
+  const aimAt = (a, i, vp, head, vduck) => {
+    const eye = [a[i * S], a[i * S + 1], a[i * S + 2] + (a[i * S + 7] ? 12 : 17)];
+    let raw = a[i * S + 4]; if (raw > 180) raw -= 360;
+    const pitch = -raw * 3 * Math.PI / 180, yaw = a[i * S + 3] * Math.PI / 180;
+    const dir = [Math.cos(pitch) * Math.cos(yaw), Math.cos(pitch) * Math.sin(yaw), -Math.sin(pitch)];
+    const tgt = [vp[0], vp[1], vp[2] + (head ? (vduck ? 16 : 28) : (vduck ? 4 : 10))];
+    const rel = [tgt[0] - eye[0], tgt[1] - eye[1], tgt[2] - eye[2]];
+    const along = rel[0] * dir[0] + rel[1] * dir[1] + rel[2] * dir[2];
+    const off = Math.hypot(rel[0] - dir[0] * along, rel[1] - dir[1] * along, rel[2] - dir[2] * along);
+    return { eye, dir, along, off, tgt };
+  };
+  const cover = [], proven = [];
+  // Each health drop is paired with its hit sound (26 Oct 2026). The sound comes at the moment of the hit; in some demos
+  // the health follows it by a tenth of a second or more, several readings at once (tyloo vs mTw, Nuke, e-Stars Seoul
+  // 2009, R15: zonic's 58 to 48, 38 and 0 arrive 0.1 to 0.33 s after their hit sounds; NoA vs Pentagram, Train 2006,
+  // R10: neo's 70 to 49 comes 0.11 s after its sound). So the earliest unused hit sound on him up to 0.4 s before each
+  // drop goes with it, one per drop; when several drops arrive at one moment, the last takes the sounds left (two
+  // bullets between two readings). The hit is judged at the sound's time.
+  const used = new Set();
+  const byT = {}; for (const d of drops) (byT[d.e + ':' + d.t] || (byT[d.e + ':' + d.t] = [])).push(d);
+  for (const key in byT) {
+    const grp = byT[key], e = grp[0].e, t0 = grp[0].t;
+    const W = (hits[e] || []).map((h, k) => [h, k]).filter(([h, k]) => !used.has(e + ':' + k) && h[0] >= t0 - 0.4 && h[0] <= t0 + 0.02);
+    grp.forEach((d, gi) => {
+      if (!W.length) return;
+      const take = gi < grp.length - 1 ? [W.shift()] : W.splice(0);
+      for (const [, k] of take) used.add(e + ':' + k);
+      d.snd = take.map(([h]) => h);
+    });
+  }
+  const why = M.hitWhy = []; const dv = window.__debugV; // for tests: why each of one victim's drops was or wasn't counted
+  const note = (d, r) => { if (dv && d.e === dv.v && d.t >= dv.from && d.t <= dv.to) why.push(`${d.t.toFixed(3)} -${d.dmg} ${r}`); };
+  for (const d of drops) {
+    if (d.dead || !live(d.t) || !d.snd) { if (!d.dead) note(d, d.snd ? 'not live' : 'no hit sound'); continue; }
+    const hs = d.snd, th = hs[0][0];
+    const head = hs.some(([, h]) => h);
+    const i = idx(th), v = D.slots[d.e]; if (!v || isNaN(v[i * S])) continue;
+    const vp = [v[i * S], v[i * S + 1], v[i * S + 2]], vduck = v[i * S + 7];
+    let zTop = vp[2]; for (let j = i; j >= 0 && times[j] >= th - 1; j--) if (!isNaN(v[j * S + 2])) zTop = Math.max(zTop, v[j * S + 2]);
+    if (zTop - vp[2] >= 100 && (i >= 2 ? v[(i - 2) * S + 2] : vp[2]) - vp[2] >= 20) { note(d, 'fall'); continue; }
+    if (booms.some(([t, x, y, z]) => th - t >= -0.05 && th - t < 0.4 && Math.hypot(x - vp[0], y - vp[1], z - vp[2]) < 450)) { note(d, 'grenade'); continue; }
+    const vt = team(d.e, i), cands = [], seen = new Set();
+    for (const e in shots) {
+      const se = +e; if (se === d.e) continue;
+      let li = -1; shots[se].forEach((t, j) => { if (t >= th - 0.2 && t <= th + 0.001) li = j; }); if (li < 0) continue;
+      const gun = gunAt[se][li]; if (ONE_SURFACE.has(gun) || /knife|grenade|flash|smoke/.test(gun)) continue;
+      const a = D.slots[se]; if (!a || isNaN(a[i * S]) || team(se, i) === vt) continue;
+      const c = aimAt(a, i, vp, head, vduck); if (c.along <= 0) continue;
+      cands.push(Object.assign(c, { e: se, gun, shot: true })); seen.add(se);
+    }
+    // enemies whose fire events the demo left out still count when they aim at him (26 Oct 2026: Go's spray on zonic,
+    // tyloo vs mTw, Nuke, R15, has one fire event in two seconds, so GoodRifle, 76 units off, got his headshot)
+    for (const e in D.slots) {
+      const se = +e; if (se === d.e || seen.has(se)) continue;
+      const a = D.slots[se]; if (!a || isNaN(a[i * S]) || !(a[i * S + 5] > 0) || team(se, i) === vt || team(se, i) == null) continue;
+      const gun = weaponShort(D.models[a[i * S + 6]]); if (!MAX_DMG[gun]) continue;
+      if (firesKept) continue;
+      const c = aimAt(a, i, vp, head, vduck); if (c.along > 0 && c.off <= 32) cands.push(Object.assign(c, { e: se, gun, shot: false }));
+    }
+    if (!cands.length) { note(d, 'no shooter'); continue; }
+    cands.sort((x, y) => x.off - y.off);
+    const c = cands[0];
+    // the only enemy near his line may aim a little wider when the demo has his shot (aim is recorded about ten times a second)
+    if (c.off > (cands.length === 1 && c.shot ? 96 : 64) || (cands[1] && cands[1].off - c.off < 16)) { note(d, `unknown ${cands.slice(0, 2).map((x) => x.e + ':' + Math.round(x.off)).join(' ')}`); continue; }
+    // less damage than his gun does in the open at that distance, for that hit sound: only a surface explains it
+    // (level 2 by damage, Sujan 28 Oct 2026). Not when a teammate of the victim fired and aimed near him (team damage
+    // is cut), and not when another player stood on the line (a bullet through a player keeps 0.75: cArNaGe on
+    // STRIKE, Sweden vs Ukraine, Train, ClanBase NationsCup XI, R22 C4 0:07, Sujan's catch)
+    const lo = openLow(c.gun, Math.hypot(c.tgt[0] - c.eye[0], c.tgt[1] - c.eye[1], c.tgt[2] - c.eye[2]), hs.map((h) => h[2]));
+    if (lo && d.dmg < lo - 1) {
+      let other = false;
+      for (const e in D.slots) {
+        const se = +e; if (se === c.e || se === d.e) continue;
+        const p = D.slots[se]; if (!p || isNaN(p[i * S]) || !(p[i * S + 5] > 0)) continue;
+        if (team(se, i) === vt && (shots[se] || []).some((t) => t >= th - 0.2 && t <= th + 0.001) && aimAt(p, i, vp, head, vduck).off <= 32) { other = true; break; }
+        const u = [c.tgt[0] - c.eye[0], c.tgt[1] - c.eye[1], c.tgt[2] - c.eye[2]], L = Math.hypot(...u), rel = [p[i * S] - c.eye[0], p[i * S + 1] - c.eye[1], p[i * S + 2] + 18 - c.eye[2]];
+        const al = (rel[0] * u[0] + rel[1] * u[1] + rel[2] * u[2]) / L;
+        if (al > 20 && al < L - 10 && Math.hypot(...rel.map((x, j) => x - u[j] / L * al)) < 32) { other = true; break; }
+      }
+      if (!other) proven.push({ t: th, v: d.e, s: c.e, dmg: d.dmg, head, gun: c.gun, open: lo });
+    }
+    const per = MAX_DMG[c.gun];
+    if (per && d.dmg > per * 0.6 * (head ? 4 : 1.25) * Math.max(1, hs.length)) { note(d, 'too much for a wall'); continue; }
+    const skip = brokenSet(th - 0.05); for (const m of notCover) skip.add(m);
+    const poses = posesAt(th - 0.05);
+    const end = [c.eye[0] + c.dir[0] * c.along, c.eye[1] + c.dir[1] * c.along, c.eye[2] + c.dir[2] * c.along];
+    const aimS = solidAlong(bsp, c.eye, end, 2, skip, poses, 'bullet').solid, zoneS = solidAlong(bsp, c.eye, c.tgt, 2, skip, poses, 'bullet').solid;
+    if (aimS === 0 || zoneS === 0) { note(d, `open aim ${Math.round(aimS)} zone ${Math.round(zoneS)} off ${Math.round(c.off)} by ${c.e}`); continue; }
+    note(d, `cover by ${c.e} off ${Math.round(c.off)}`);
+    cover.push({ t: th, v: d.e, s: c.e, dmg: d.dmg, head, gun: c.gun });
+  }
+  // seen kills with the crosshair through cover (computeWallbangs) become loose wallbangs when a bullet of the
+  // killer's that only a surface explains landed 0.5 s or less before the kill (Sujan, 28 Oct 2026: the same spray
+  // only; a hit matched by his aim alone counts here, since the kill confirms he was shooting at him then). Their
+  // hits through a surface join the burst, so the kill shows its numbers.
+  for (const k of D.kills) {
+    if (!k.seenAim || (k.wb && k.wb.loose !== 'dmg') || !M.liveR.some((r) => r.n === k.round)) continue;
+    const mine = proven.filter((p) => p.v === k.victim && p.s === k.killer && p.t <= k.t + 0.01 && k.t - p.t <= 2);
+    const near = mine.filter((p) => k.t - p.t <= 0.5);
+    if (!near.length) continue;
+    k.wb = Object.assign({}, k.seenAim, { loose: 'dmg', dmg: near[near.length - 1] }); k.seenPx = -2;
+    for (const p of mine) if (!cover.some((x) => x.t === p.t && x.v === p.v)) cover.push(p);
+  }
+  M.wbs = D.kills.filter((k) => k.wb && M.liveR.some((r) => r.n === k.round));
+  cover.sort((x, y) => x.t - y.t);
+  const byV = {}; for (const h of cover) (byV[h.v] || (byV[h.v] = [])).push(h);
+  for (const v in byV) {
+    let cur = null;
+    for (const h of byV[v]) {
+      if (cur && h.t - cur.end <= 2) { cur.hits.push(h); cur.end = h.t; }
+      else { cur = { v: +v, hits: [h], start: h.t, end: h.t }; M.bursts.push(cur); }
+    }
+  }
+  for (const b of M.bursts) {
+    const kill = D.kills.find((k) => k.victim === b.v && k.wb && k.t >= b.end && k.t - b.end <= 2 && b.hits.some((h) => h.s === k.killer));
+    if (kill) { b.kill = kill; b.hits.push({ t: kill.t, v: b.v, s: kill.killer, dmg: hpBefore(b.v, kill.tMsg != null ? kill.tMsg : kill.t), head: !!kill.hs, gun: kill.weapon, kill: true }); kill.burst = b; }
+    b.total = b.hits.reduce((a, h) => a + h.dmg, 0);
+    b.share = {}; for (const h of b.hits) b.share[h.s] = (b.share[h.s] || 0) + h.dmg;
+    b.main = +Object.keys(b.share).sort((x, y) => b.share[y] - b.share[x])[0];
+    const r = M.rounds.find((x) => b.start >= x.start && (x.end == null || b.start <= x.end + 0.5)); b.round = r ? r.n : 0;
+  }
+  M.bursts = M.bursts.filter((b) => b.total >= HITS_MIN && M.liveR.some((r) => r.n === b.round)).sort((x, y) => x.start - y.start);
+  // every wallbang kill gets its numbers (Sujan, 26 Oct 2026), also one with no hit through cover before it: then the
+  // killing bullet alone, taking what he had left
+  for (const k of D.kills) {
+    if (!k.wb || k.burst || !M.liveR.some((r) => r.n === k.round)) continue;
+    const h = { t: k.t, v: k.victim, s: k.killer, dmg: hpBefore(k.victim, k.tMsg != null ? k.tMsg : k.t), head: !!k.hs, gun: k.weapon, kill: true };
+    const b = { v: k.victim, hits: [h], start: k.t, end: k.t, kill: k, total: h.dmg, share: { [k.killer]: h.dmg }, main: k.killer, round: k.round, solo: true };
+    k.burst = b; M.bursts.push(b);
+  }
+  M.bursts.sort((x, y) => x.start - y.start);
+  for (const b of M.bursts) (M.hitByV[b.v] || (M.hitByV[b.v] = [])).push(b);
+  renderPane(); drawTimeline();
+}
+// the other shooters in a burst go on a line of their own under the damage, so a long name isn't cut off (Sujan,
+// 26 Oct 2026: "Xi '2q' Wang 49 before" was cut at "War" on Go's kill of zonic, tyloo vs mTw, Nuke)
+const dmore = (list) => list.length ? `<span class="dmore">${list.join(' · ')}</span>` : '';
+// "(1 HS, 2 hits)": headshots and the other hits so far in the burst, at time t (Sujan, 26 Oct 2026)
+function hitCounts(b, t) {
+  const so = b.hits.filter((h) => h.t <= t + 1e-4), nh = so.filter((h) => h.head).length, nb = so.length - nh;
+  return [nh ? `${nh} HS` : '', nb ? `${nb} hit${nb > 1 ? 's' : ''}` : ''].filter(Boolean).join(', ');
+}
+// the burst a player is in at time t, from his first hit until 1.5 s after the last (or his death)
+function burstAt(e, t) {
+  const L = M.hitByV && M.hitByV[e]; if (!L) return null;
+  for (const b of L) { const endT = b.kill ? b.kill.t : b.end + 1.5; if (t >= b.start - 1e-4 && t <= endT) return b; }
+  return null;
 }
 
 // Stretches of the demo that the server announced as live: [start, end] pairs from its text messages.
@@ -3631,8 +3865,10 @@ const UNSURE_TIP = 'The recording skips at this kill, so the wallbang was judged
 const unsureTag = (k) => (k.wb && skipNear(k.t) ? `<span class="wbtag unsure" title="${UNSURE_TIP}">UNSURE</span>` : '');
 // Sujan's three levels (24 Oct 2026; built in 0.23.0): a strict wallbang has none of the victim in view from the
 // shooter's eye; a loose one has part of him in view (50 pixels or more in the picture check, view3d.part.js).
-const LOOSE_TIP = (k) => `Loose wallbang: the bullet went through cover, but part of him was in view from the shooter's eye (${k.wb.loose} pixels in the check, 50 or more counts as in view)`;
-const looseTag = (k) => (k.wb && k.wb.loose ? `<span class="wbtag loose" title="${LOOSE_TIP(k)}">LOOSE</span>` : '');
+const LOOSE_TIP = (k) => k.wb.dmg ? `Loose wallbang: part of him was in view, and the demo's damage shows a bullet of the killer's went through cover just before the kill (${k.wb.dmg.dmg} HP where his gun does at least ${k.wb.dmg.open} in the open)` : `Loose wallbang: the bullet went through cover, but part of him was in view from the shooter's eye (${k.wb.loose} pixels in the check, 50 or more counts as in view)`;
+const looseTag = (k) => (k.wb && k.wb.loose ? `<span class="wbtag loose" title="${LOOSE_TIP(k)}">LOOSE WB</span>` : '');
+const STRICT_TIP = 'Strict wallbang: the bullet went through cover and none of him was in view from the shooter\'s eye';
+const DMG_TIP = 'Wallbang damage: hits through cover that didn\'t kill him';
 
 // ---------------- shorter names ----------------
 // The team heading already names the team, so the clan tag most of the team shares is dropped there:
@@ -4075,7 +4311,7 @@ async function onDemo() {
   showLoad(false);
   const first = M.liveR[0];
   T = first ? first.start : D.start;
-  playing = false; selected = null; pickedKill = null;
+  playing = false; selected = null; pickedKill = null; pickedBurst = null;
   $('meta').textContent = D.parts ? `${D.mapName} · ${D.parts[0].fileName} and ${plural(D.parts.length - 1, 'more file')} · ${fmt(D.end - D.start)}` : `${D.mapName} · ${D.fileName} · ${fmt(D.end - D.start)}`;
   const chip = $('partsChip');
   chip.onclick = () => { const b = document.querySelector('.tabs button[data-tab="rounds"]'); if (b) b.click(); $('pane').scrollTop = 0; };
@@ -4117,7 +4353,7 @@ function closeDemo() {
   if (worker) { worker.terminate(); worker = null; }
   sndPreload++; // stops a sound preload that's still running for this demo
   resetForNewDemo(); clear3d(); closeSummary(); if ($('joinCard')) closeJoinCard();
-  D = null; M = null; MAP = null; OV = null; T = 0; prevT = null; pickedKill = null; heat = null;
+  D = null; M = null; MAP = null; OV = null; T = 0; prevT = null; pickedKill = null; pickedBurst = null; heat = null;
   $('meta').textContent = 'CS 1.6 HLTV demos, played in your browser';
   for (const id of ['score', 'legend', 'heatbar', 'rclock', 'cam3', 'status3', 'pov', 'sb']) $(id).hidden = true;
   $('feed').innerHTML = '';
@@ -4167,7 +4403,7 @@ function killHtml(k) {
   const ks = k.kteam === 'TERRORIST' ? 1 : k.kteam === 'CT' ? 2 : 0;
   const vs = k.vteam === 'TERRORIST' ? 1 : k.vteam === 'CT' ? 2 : 0;
   if (k.killer === k.victim || !k.kp) return `${nameHtml(k.vp, vs)}<span class="kw">${esc(k.weapon || 'suicide')}</span>`;
-  return `${nameHtml(k.kp, ks)}<span class="kw">${esc(k.weapon)}</span>${nameHtml(k.vp, vs)}${k.hs ? '<span class="khs">HS</span>' : ''}${k.wb ? `<span class="kwb" title="Through ${k.wb.thick} units of ${k.wb.what === 'object' ? 'a breakable or door' : 'wall or crate'}">WB</span>` : ''}`;
+  return `${nameHtml(k.kp, ks)}<span class="kw">${esc(k.weapon)}</span>${nameHtml(k.vp, vs)}${k.hs ? '<span class="khs">HS</span>' : ''}${k.wb ? `<span class="kwb${k.wb.loose ? ' loose' : ''}" title="Through ${k.wb.thick} units of ${k.wb.what === 'object' ? 'a breakable or door' : 'wall or crate'}">WB</span>` : ''}`;
 }
 // A kill on three lines, for the Kills and Wallbangs lists: killer, then the gun (its kill feed icon from the
 // player's own files, its name, and the headshot icon), then the victim.
@@ -4179,8 +4415,13 @@ function killRow3(k, wbTag) {
   // WALLBANG and UNSURE on a line of their own under the gun, so they always fit the panel (Sujan, 15 Oct 2026,
   // docs/skip-tags-mock.png; side by side after the gun, UNSURE was cut off at the right edge)
   // LOOSE (0.23.0) follows WALLBANG in the Kills list and stands alone in the Wallbangs list, like UNSURE
-  const tags = (wbTag && k.wb ? '<span class="wbtag">WALLBANG</span>' : '') + looseTag(k) + unsureTag(k);
-  const gun = `<span class="gun">${kicon(w)}${esc(w)}${hs}</span>${tags ? `<span class="ktags">${tags}</span>` : ''}`;
+  // Kills list: WALLBANG for a strict one, LOOSE WB for a loose one; Wallbangs list: STRICT WB or LOOSE WB (Sujan, 25 Oct 2026)
+  const strict = k.wb && !k.wb.loose;
+  const tags = (strict ? (wbTag ? '<span class="wbtag">WALLBANG</span>' : `<span class="wbtag" title="${STRICT_TIP}">STRICT WB</span>`) : '') + looseTag(k) + unsureTag(k);
+  // the damage line under the gun (Sujan's option 2, 25 Oct 2026): what this shooter took through walls in the burst, and teammates' share before it
+  const b = !wbTag && k.burst;
+  const dline = b ? `<span class="dline"><b>${b.share[k.killer]} HP</b> (${hitCounts({ hits: b.hits.filter((h) => h.s === k.killer) }, k.t)})${dmore(Object.keys(b.share).filter((e) => +e !== k.killer).map((e) => `${esc(labelAt(+e, k.t))} ${b.share[e]} before`))}</span>` : '';
+  const gun = `<span class="gun">${kicon(w)}${esc(w)}${hs}</span>${tags ? `<span class="ktags">${tags}</span>` : ''}${dline || ''}`;
   if (k.killer === k.victim || !k.kp) return `<span class="kname">${nameHtml(k.vp, vs)}</span>${gun}`;
   return `<span class="kname">${nameHtml(k.kp, ks)}</span>${gun}<span class="kname">${nameHtml(k.vp, vs)}</span>`;
 }
@@ -4272,25 +4513,54 @@ function renderPane() {
     let h;
     if (!MAP || MAP.name !== D.mapName.toLowerCase()) h = `<div class="opt">Wallbang detection needs the map file (${esc(D.mapName)}.bsp). Choose your Half-Life folder or drop the .bsp here.</div>`;
     else {
-      const nLoose = M.seenPending ? 0 : M.wbs.filter((k) => k.wb.loose).length;
-      h = `<div class="copyrow"><span>${M.wbs.length} kills through cover, with the crosshair on the wall${nLoose ? `: ${M.wbs.length - nLoose} with the victim fully hidden from the shooter, ${nLoose} LOOSE (part of him in view)` : ''}. Times: round and in-game round timer, then demo time.${M.seenPending ? ` <b>Checking ${M.seenPending} from the shooter's eye…</b>` : ''}</span><button class="btn" id="bCopyWb" type="button">Copy list</button></div>`;
-      for (const k of M.wbs) {
-        // the round, the round timer and the demo time on three lines; "C4 0:16" never splits (0.21.1, Sujan 15 Oct 2026)
-        const r = M.rounds.find((x) => x.n === k.round);
-        h += `<div class="row krow wbrow kill3${killState(k)}" data-wb="${k.t}" data-ki="${D.kills.indexOf(k)}" title="Through ${k.wb.thick} units of ${k.wb.what === 'object' ? 'a breakable or door' : 'wall or crate'}"><span class="n">${k === pickedKill ? MARK : ''}R${r ? r.ln : '?'} ·<br>${cellClock(k.t)}<br>${fmt(k.t - D.start)}</span><span class="main">${killRow3(k, false)}</span></div>`;
+      // filters (Sujan, 25 Oct 2026): All, Strict wb, Loose wb, Damage, each with a tooltip; rows tagged STRICT WB,
+      // LOOSE WB or DAMAGE; a damage row is a burst of hits through cover that didn't kill (wip/wallbang-hits)
+      const busy = !!M.seenPending;
+      const kills = M.wbs.map((k) => ({ t: k.t, k, kind: k.wb.loose ? 'loose' : 'strict' }));
+      const dmg = (M.bursts || []).filter((b) => !b.kill).map((b) => ({ t: b.start, b, kind: 'damage' }));
+      const all = kills.concat(dmg).sort((a, b) => a.t - b.t);
+      const n = { all: all.length, strict: kills.filter((x) => x.kind === 'strict').length, loose: kills.filter((x) => x.kind === 'loose').length, damage: dmg.length };
+      if (!n[wbFilter]) wbFilter = 'all';
+      const TIPS = { all: 'Every kill and every burst of damage through walls', strict: 'Kills through cover with none of the victim in view from the shooter\'s eye', loose: 'Kills through cover with part of the victim in view from the shooter\'s eye', damage: `Hits through cover that didn't kill: ${HITS_MIN} HP or more from one or more shooters, each hit within 2 s of the last` };
+      const LBL = { all: 'All', strict: 'Strict wb', loose: 'Loose wb', damage: 'Damage' };
+      h = `<div class="wbchips" role="group" aria-label="Show">${['all', 'strict', 'loose', 'damage'].map((f) => `<button type="button" data-wf="${f}" class="${wbFilter === f ? 'on' : ''}" title="${TIPS[f]}">${LBL[f]} ${n[f]}</button>`).join('')}</div>`;
+      h += `<div class="copyrow"><span>Times: round and in-game round timer, then demo time.${busy ? ` <b>Checking ${M.seenPending} from the shooter's eye…</b>` : ''}</span><button class="btn" id="bCopyWb" type="button">Copy list</button></div>`;
+      for (const x of all) {
+        if (wbFilter !== 'all' && x.kind !== wbFilter) continue;
+        if (x.k) {
+          const k = x.k, r = M.rounds.find((y) => y.n === k.round);
+          // the round, the round timer and the demo time on three lines; "C4 0:16" never splits (0.21.1, Sujan 15 Oct 2026)
+          h += `<div class="row krow wbrow kill3${killState(k)}" data-wb="${k.t}" data-ki="${D.kills.indexOf(k)}" title="Through ${k.wb.thick} units of ${k.wb.what === 'object' ? 'a breakable or door' : 'wall or crate'}"><span class="n">${k === pickedKill ? MARK : ''}R${r ? r.ln : '?'} ·<br>${cellClock(k.t)}<br>${fmt(k.t - D.start)}</span><span class="main">${killRow3(k, false)}</span></div>`;
+        } else {
+          const b = x.b, r = M.rounds.find((y) => y.n === b.round), bi = M.bursts.indexOf(b);
+          const sideOf = (e) => { const st = playerState(e, b.start); return st ? (Math.abs(st.state) === 1 ? 1 : 2) : 0; };
+          const gun = b.hits.find((hh) => hh.s === b.main).gun;
+          const others = dmore(Object.keys(b.share).filter((e) => +e !== b.main).map((e) => `${esc(labelAt(+e, b.start))} ${b.share[e]}`));
+          const mine = b.hits.filter((hh) => hh.s === b.main);
+          h += `<div class="row krow wbrow kill3${b === pickedBurst ? ' pick' : ''}" data-hb="${bi}" title="${DMG_TIP}"><span class="n">${b === pickedBurst ? MARK : ''}R${r ? r.ln : '?'} ·<br>${cellClock(b.start)}<br>${fmt(b.start - D.start)}</span><span class="main"><span class="kname"><span class="${sideOf(b.main) === 1 ? 'kt' : 'kct'}">${esc(labelAt(b.main, b.start))}</span></span><span class="gun">${kicon(gun)}${esc(gun)}</span><span class="ktags"><span class="wbtag dmg" title="${DMG_TIP}">DAMAGE</span></span><span class="dline"><b>${b.share[b.main]} HP</b> (${hitCounts({ hits: mine }, b.end)})${others}</span><span class="kname"><span class="${sideOf(b.v) === 1 ? 'kt' : 'kct'}">${esc(labelAt(b.v, b.start))}</span></span></span></div>`;
+        }
       }
-      if (!M.wbs.length) h += `<div class="opt">No wallbang kills found in the live rounds.</div>`;
+      if (!all.length) h += `<div class="opt">No wallbang kills or wallbang damage found in the live rounds.</div>`;
     }
     p.innerHTML = h;
     if ($('bCopyWb')) $('bCopyWb').onclick = () => {
       const txt = M.wbs.map((k) => { const r = M.rounds.find((x) => x.n === k.round); return `R${r ? r.ln : '?'}  timer ${clockText(k.t)}  demo ${fmt(k.t - D.start)}  ${M.pl[k.kp] ? M.pl[k.kp].name : '?'} -> ${M.pl[k.vp] ? M.pl[k.vp].name : '?'}  ${k.weapon}${k.hs ? ' HS' : ''}  (${k.wb.thick} units)${k.wb.loose ? '  LOOSE: part of him in view' : ''}${skipNear(k.t) ? '  UNSURE: the recording skips here' : ''}`; }).join('\n');
       const b = $('bCopyWb');
       const ok = () => { b.textContent = 'Copied'; setTimeout(() => b.textContent = 'Copy list', 1500); };
-      try { navigator.clipboard.writeText(`${D.fileName}\n${txt}`).then(ok, () => { b.textContent = 'Copy failed'; }); } catch { b.textContent = 'Copy failed'; }
+      const dtx = (M.bursts || []).filter((b) => !b.kill).map((b) => { const r = M.rounds.find((y) => y.n === b.round); return `R${r ? r.ln : '?'}  timer ${clockText(b.start)}  demo ${fmt(b.start - D.start)}  DAMAGE ${b.total} HP to ${labelAt(b.v, b.start)}: ${Object.keys(b.share).map((e) => `${labelAt(+e, b.start)} ${b.share[e]}`).join(', ')}`; }).join('\n');
+      try { navigator.clipboard.writeText(`${D.fileName}\n${txt}${dtx ? '\n' + dtx : ''}`).then(ok, () => { b.textContent = 'Copy failed'; }); } catch { b.textContent = 'Copy failed'; }
     };
+    p.querySelectorAll('[data-wf]').forEach((el) => el.onclick = () => { wbFilter = el.dataset.wf; renderPane(); });
+    p.querySelectorAll('[data-hb]').forEach((el) => el.onclick = () => {
+      const b = M.bursts[+el.dataset.hb]; if (!b) return;
+      pickedBurst = b; pickedKill = null; selected = b.main;
+      seek(b.start - 3); playing = true; setPlayIcon();
+      if (viewMode !== '2d') setCam('eyes', true);
+      renderPane();
+    });
     p.querySelectorAll('[data-wb]').forEach((el) => el.onclick = () => {
       const k = D.kills[+el.dataset.ki];
-      wbFocus = k; pickedKill = k;
+      wbFocus = k; pickedKill = k; pickedBurst = null;
       watchKill(k, 3); renderPane();
     });
   } else {
@@ -4752,7 +5022,7 @@ function draw() {
     const life = k.wb ? 6 : 2.5;
     if (opts.lines && age < life && k.kpos && k.killer !== k.victim) {
       const [kx, ky] = toScreen(k.kpos[0], k.kpos[1]);
-      ctx.strokeStyle = k.wb ? `rgba(255,79,216,${1 - age / life})` : `rgba(255,154,60,${1 - age / life})`; ctx.lineWidth = 2;
+      ctx.strokeStyle = k.wb ? (k.wb.loose ? `rgba(201,163,232,${1 - age / life})` : `rgba(255,79,216,${1 - age / life})`) : `rgba(255,154,60,${1 - age / life})`; ctx.lineWidth = 2;
       if (k.wb) ctx.setLineDash([6, 4]);
       ctx.beginPath(); ctx.moveTo(kx, ky); ctx.lineTo(vx, vy); ctx.stroke(); ctx.setLineDash([]);
     }
@@ -4767,7 +5037,7 @@ function draw() {
     const k = f.k; if (!k.vpos) continue;
     const a = (performance.now() - f.at) / FLASH_MS;
     const [vx, vy] = toScreen(k.vpos[0], k.vpos[1]);
-    ctx.strokeStyle = k.wb ? COL.wb : k.hs ? COL.kill : '#ffffff';
+    ctx.strokeStyle = k.wb ? (k.wb.loose ? COL.loose : COL.wb) : k.hs ? COL.kill : '#ffffff';
     ctx.globalAlpha = 1 - a; ctx.lineWidth = 3;
     ctx.beginPath(); ctx.arc(vx, vy, 8 + a * 26, 0, 7); ctx.stroke(); ctx.globalAlpha = 1;
   }
@@ -4947,7 +5217,9 @@ function drawTimelineInto(cv, W, H, a, b) {
     tctx.fillStyle = 'rgba(231,227,217,.35)'; tctx.fillRect(x0, 14, Math.max(2, x1 - x0), H - 14);
   }
   // wallbangs
-  if (M.wbs) for (const k of M.wbs) { const x = X(k.t); if (x < 0 || x > W) continue; tctx.fillStyle = COL.wb; tctx.beginPath(); tctx.moveTo(x, 12); tctx.lineTo(x + 4, 16); tctx.lineTo(x, 20); tctx.lineTo(x - 4, 16); tctx.fill(); }
+  // wallbang damage: hollow diamonds in the damage colour (wip/wallbang-hits)
+  if (M.bursts) for (const b of M.bursts) { if (b.kill) continue; const x = X(b.start); if (x < 0 || x > W) continue; tctx.strokeStyle = '#ffb347'; tctx.lineWidth = 1.4; tctx.beginPath(); tctx.moveTo(x, 12.5); tctx.lineTo(x + 3.5, 16); tctx.lineTo(x, 19.5); tctx.lineTo(x - 3.5, 16); tctx.closePath(); tctx.stroke(); }
+  if (M.wbs) for (const k of M.wbs) { const x = X(k.t); if (x < 0 || x > W) continue; tctx.fillStyle = k.wb.loose ? COL.loose : COL.wb; tctx.beginPath(); tctx.moveTo(x, 12); tctx.lineTo(x + 4, 16); tctx.lineTo(x, 20); tctx.lineTo(x - 4, 16); tctx.fill(); }
   // skips in the recording: a break mark // (0.19.0)
   for (const t of M.skipT || []) {
     const x = X(t); if (x < 0 || x > W) continue;
@@ -6187,7 +6459,18 @@ function lineMesh(a, b, color, dashed, opacity = 1) {
 const geoCache = {};
 const sphere = (r) => geoCache['s' + r] || (geoCache['s' + r] = new THREE.SphereGeometry(r, 14, 10));
 let lastFrame3 = performance.now();
+// The 3D view runs 0.1 s behind the rest of the
+// viewer (kill feed, timers, sounds, radar), as the game's demo player seems to draw players about 0.1 s in the past
+// while it shows a kill message as soon as it arrives (fnatic vs Moscow Five, Nuke, DreamHack Summer 2011, R2 1:13:
+// the game showed cArn in the doorway at the kill feed, where the viewer showed him behind the wall a moment later).
+const LAG3 = 0.1;
 function update3() {
+  // Sujan, 26 Oct 2026: keep it like the game, no switch
+  const T0 = T, lag = D ? LAG3 : 0;
+  if (lag) T = Math.max(D.start || 0, T - lag);
+  try { update3Now(); } finally { T = T0; }
+}
+function update3Now() {
   if (!R3 || !D || viewMode === '2d') return;
   const now = performance.now(); const rawDt = (now - lastFrame3) / 1000; const dt = Math.min(0.1, rawDt); lastFrame3 = now;
   qualityTick(rawDt);
@@ -6254,7 +6537,7 @@ function update3() {
     const life = k.wb ? 6 : 2.5;
     if (opts.lines && k.kpos && k.killer !== k.victim && age < life) {
       const eye = k.wb ? k.wb.eye : [k.kpos[0], k.kpos[1], k.kpos[2] + (k.kduck ? 12 : 17)];
-      const l = ov('kl:' + ki, () => lineMesh(g3(eye[0], eye[1], eye[2]), g3(k.vpos[0], k.vpos[1], k.vpos[2] + (k.vduck ? 4 : 10)), k.wb ? 0xff4fd8 : 0xff9a3c, !!k.wb));
+      const l = ov('kl:' + ki + (k.wb ? (k.wb.loose ? 'l' : 's') : ''), () => lineMesh(g3(eye[0], eye[1], eye[2]), g3(k.vpos[0], k.vpos[1], k.vpos[2] + (k.vduck ? 4 : 10)), k.wb ? (k.wb.loose ? 0xc9a3e8 : 0xff4fd8) : 0xff9a3c, !!k.wb));
       l.material.opacity = 1 - age / life;
     }
   }
@@ -6429,6 +6712,7 @@ function update3() {
     if (sub) { // at any distance, scoped or not (the 2500-unit limit was dropped in 0.16.0, Sujan)
       lx.font = `400 10px ${mono}`; lx.strokeText(sub, sx, sy + 12); lx.fillStyle = '#d8d3c8'; lx.fillText(sub, sx, sy + 12); }
   }
+  drawHitNumbers(lx, W, H, camera, mono);
   drawKillRings(lx, W, H, camera);
   const pov = $('pov');
   const s = selected && playerState(selected, T);
@@ -6437,7 +6721,7 @@ function update3() {
     const hpv = hpAt(selected, T);
     pov.innerHTML = `<span class="${s.state === 1 ? 'kt' : 'kct'}">${esc(nameAt(selected, T))}</span>${hpv != null ? ` <b>(${hpv})</b>` : ''}<span class="kw">${esc(weaponShort(s.weapon))}</span>`;
     if (scoped) drawScope(lx, W, H);
-    const xh = XHAIR[$('xh3').value] || XHAIR.medium;
+    const xh = XHAIR[$('xh3').value] || XHAIR.large;
     if (cam3.mode === 'eyes') drawHitMarker(lx, W / 2, H / 2, xh);
     if (cam3.mode === 'eyes' && !scoped) { lx.strokeStyle = 'rgba(90,255,90,.85)'; lx.lineWidth = xh.w; const cx = W / 2, cy = H / 2, g = xh.gap, e = xh.end; lx.beginPath(); lx.moveTo(cx - e, cy); lx.lineTo(cx - g, cy); lx.moveTo(cx + g, cy); lx.lineTo(cx + e, cy); lx.moveTo(cx, cy - e); lx.lineTo(cx, cy - g); lx.moveTo(cx, cy + g); lx.lineTo(cx, cy + e); lx.stroke(); }
   } else if (cam3.mode !== 'free' && selected) {
@@ -6452,7 +6736,7 @@ function update3() {
       const rr = M.rounds.find((r) => r.n === death.round);
       const kside = rr && rr.tTeam != null && death.kp ? (M.teamOf[death.kp] === rr.tTeam ? 'kt' : 'kct') : '';
       const kn = death.kp && death.killer !== death.victim
-        ? `killed by <span class="${kside}">${esc(M.pl[death.kp].name)}</span> · ${esc(death.weapon)}${death.hs ? ' · <span class="khs">HS</span>' : ''}${death.wb ? ' · <span class="kwb">wallbang</span>' : ''}`
+        ? `killed by <span class="${kside}">${esc(M.pl[death.kp].name)}</span> · ${esc(death.weapon)}${death.hs ? ' · <span class="khs">HS</span>' : ''}${death.wb ? (death.wb.loose ? ' · <span class="kwb loose">loose wallbang</span>' : ' · <span class="kwb">wallbang</span>') : ''}`
         : (death.weapon === 'world' ? 'died' : 'killed themselves');
       pov.hidden = false; pov.classList.add('dead');
       pov.innerHTML = `<b>${esc(nameAt(selected, T))}</b> ${kn} <span class="kw">· ${playing && age < 2.5 ? 'switching to a teammate' : 'press X for the next player'}</span>`;
@@ -6475,13 +6759,67 @@ const MARK_MS = 450;
 // Crosshair sizes (0.18.0): gap from the middle to each arm, where the arm ends, line width, in CSS pixels.
 // small is the crosshair before 0.18.0. The kill marker keeps its size and moves out with the arms, so it
 // always starts just past them (option A of 5 Oct 2026).
-const XHAIR = { small: { gap: 4, end: 12, w: 1.5 }, medium: { gap: 5, end: 17, w: 2 }, large: { gap: 6, end: 23, w: 2.5 } };
+// Since 26 Oct 2026 (Sujan: the large one was too big): large is the old medium, medium the old small, and small is new
+const XHAIR = { small: { gap: 3, end: 8, w: 1.25 }, medium: { gap: 4, end: 12, w: 1.5 }, large: { gap: 5, end: 17, w: 2 } };
+// Wallbang damage on the player hit (option C, chosen by Sujan 26 Oct 2026): each hit's damage floats up from beside his head and fades in 0.9 s; newer numbers push older ones up; a
+// headshot reads "−49 HS". In Player's eyes, a number that would touch the crosshair's arms moves up past them.
+// The killing bullet's number is the health he had left (the demo doesn't carry that bullet's own damage), so it ends
+// with a kill mark, "−8 HS ✕" (option A, Sujan 27 Oct 2026: whimp's "−8 HS" on Go, tyloo vs mTw, Nuke, e-Stars
+// Seoul 2009, R23 1:09, read like an 8-damage headshot).
+function drawHitNumbers(lx, W, H, camera, mono) {
+  if (!M.bursts || !M.bursts.length) return;
+  // through a player's eyes or from behind him, only his own hits are shown (Sujan, 26 Oct 2026: in whimp's view at
+  // R23 1:10, tyloo vs mTw, Nuke, the hits of four other players showed too); in Free view everyone's
+  const mine = (h) => !(selected != null && (cam3.mode === 'eyes' || cam3.mode === 'chase')) || h.s === selected;
+  // the glow (Glow on hits, Sujan 26 Oct 2026): a short pink glow around him at each hit through a wall, fading in
+  // 0.3 s; also on the killing bullet (Sujan, 26 Oct 2026)
+  if ($('glow3').checked) for (const b of M.bursts) {
+    const tEnd = b.kill ? b.kill.t : b.end;
+    if (T < b.start - 0.05 || T > tEnd + 0.3 || (cam3.mode === 'eyes' && b.v === selected)) continue;
+    const h = b.hits.filter((x) => x.t <= T + 1e-4 && mine(x)).pop(); if (!h || T - h.t > 0.3) continue;
+    let st = playerState(b.v, T);
+    if ((!st || st.state <= 0) && h.kill && b.kill.vpos) st = { x: b.kill.vpos[0], y: b.kill.vpos[1], z: b.kill.vpos[2], duck: b.kill.vduck, state: 1 };
+    if (!st || st.state <= 0) continue;
+    const top = g3(st.x, st.y, st.z + (st.duck ? 22 : 36)).project(camera), bot = g3(st.x, st.y, st.z - (st.duck ? 18 : 36)).project(camera);
+    if (top.z > 1 || top.z < -1) continue;
+    const tx = (top.x + 1) / 2 * W, ty = (1 - top.y) / 2 * H, by = (1 - bot.y) / 2 * H, hgt = Math.max(12, by - ty), cy = (ty + by) / 2, a = 1 - (T - h.t) / 0.3;
+    const g = lx.createRadialGradient(tx, cy, 1, tx, cy, hgt * 0.75);
+    g.addColorStop(0, `rgba(255,79,216,${0.55 * a})`); g.addColorStop(1, 'rgba(255,79,216,0)');
+    lx.fillStyle = g; lx.beginPath(); lx.ellipse(tx, cy, hgt * 0.45, hgt * 0.75, 0, 0, Math.PI * 2); lx.fill();
+  }
+  const xh = XHAIR[$('xh3').value] || XHAIR.large, arm = xh.end + 6;
+  const scr = (x, y, z) => { const v = g3(x, y, z).project(camera); return v.z > 1 || v.z < -1 ? null : [(v.x + 1) / 2 * W, (1 - v.y) / 2 * H]; };
+  lx.lineWidth = 3; lx.strokeStyle = 'rgba(8,10,12,.9)';
+  for (const b of M.bursts) {
+    if (T < b.start - 0.05 || T > (b.kill ? b.kill.t + 1 : b.end + 1)) continue;
+    if (cam3.mode === 'eyes' && b.v === selected) continue;
+    const live = b.hits.filter((h) => h.t <= T + 1e-4 && T - h.t <= 0.9 && mine(h));
+    if (!live.length) continue;
+    const st = playerState(b.v, T);
+    const base = st && st.state > 0 ? scr(st.x, st.y, st.z + (st.duck ? 26 : 44) + 10) : (b.kill ? scr(b.kill.vpos[0], b.kill.vpos[1], b.kill.vpos[2] + 20) : null);
+    if (!base) continue;
+    live.forEach((h, k) => {
+      const age = T - h.t, a = age < 0.15 ? 1 : Math.max(0, 1 - (age - 0.15) / 0.75);
+      let px = base[0] + 18, py = base[1] - 6 - age * 40 - (live.length - 1 - k) * 13;
+      if (cam3.mode === 'eyes' && Math.abs(px + 20 - W / 2) < arm + 24 && Math.abs(py - H / 2) < arm + 8) py = H / 2 - arm - 10;
+      lx.globalAlpha = a; lx.textAlign = 'left';
+      lx.font = `600 ${h.head ? 13 : 11}px ${mono}`; const txt = `−${h.dmg}`;
+      lx.strokeText(txt, px, py); lx.fillStyle = '#ffb347'; lx.fillText(txt, px, py);
+      let w = lx.measureText(txt + ' ').width;
+      if (h.head) { lx.font = `700 10px ${mono}`; lx.strokeText('HS', px + w, py); lx.fillText('HS', px + w, py); w += lx.measureText('HS ').width; }
+      if (h.kill) { lx.font = `700 ${h.head ? 13 : 11}px ${mono}`; lx.fillStyle = b.kill && b.kill.wb && b.kill.wb.loose ? '#c9a3e8' : '#ff4fd8'; lx.strokeText('✕', px + w, py); lx.fillText('✕', px + w, py); }
+      lx.globalAlpha = 1;
+    });
+  }
+  lx.textAlign = 'center';
+}
 function drawHitMarker(lx, cx, cy, xh = XHAIR.small) {
   const f = flashes.filter((x) => x.k.killer === selected).pop();
   if (!f) return;
   const a = (performance.now() - f.at) / MARK_MS; if (a >= 1) return;
   const k = f.k;
-  const col = k.wb ? '#ff4fd8' : k.hs ? '#ff9a3c' : '#ffffff';
+  // a loose wallbang in light purple, a strict one in pink (Sujan, 28 Oct 2026)
+  const col = k.wb ? (k.wb.loose ? '#c9a3e8' : '#ff4fd8') : k.hs ? '#ff9a3c' : '#ffffff';
   const g0 = Math.round(xh.end * 11 / 12), g1 = g0 + 5; // 11 to 16 with the small crosshair, as before
   lx.save();
   lx.globalAlpha = a < 0.6 ? 1 : 1 - (a - 0.6) / 0.4;
@@ -6491,7 +6829,7 @@ function drawHitMarker(lx, cx, cy, xh = XHAIR.small) {
     for (const [dx, dy] of [[1, 1], [1, -1], [-1, 1], [-1, -1]]) { lx.moveTo(cx + dx * g0, cy + dy * g0); lx.lineTo(cx + dx * g1, cy + dy * g1); }
     lx.stroke();
   }
-  const label = k.wb ? `WALLBANG${k.hs ? ' · HS' : ''}` : k.hs ? 'HEADSHOT' : 'KILL';
+  const label = k.wb ? `${k.wb.loose ? 'LOOSE WB' : 'WALLBANG'}${k.hs ? ' · HS' : ''}` : k.hs ? 'HEADSHOT' : 'KILL';
   lx.font = `500 10px ${monoFont()}`; lx.textAlign = 'center';
   lx.lineWidth = 2.5; lx.strokeStyle = 'rgba(0,0,0,.6)'; lx.strokeText(label, cx, cy + xh.end + 20); lx.fillStyle = col; lx.fillText(label, cx, cy + xh.end + 20);
   lx.restore();
@@ -6531,7 +6869,7 @@ function drawKillRings(lx, W, H, camera) {
     if (v.z > 1 || v.z < -1) continue;
     const sx = (v.x + 1) / 2 * W, sy = (1 - v.y) / 2 * H;
     lx.globalAlpha = 1 - a; lx.lineWidth = 3;
-    lx.strokeStyle = k.wb ? '#ff4fd8' : k.hs ? '#ff9a3c' : '#ffffff';
+    lx.strokeStyle = k.wb ? (k.wb.loose ? '#c9a3e8' : '#ff4fd8') : k.hs ? '#ff9a3c' : '#ffffff';
     lx.beginPath(); lx.arc(sx, sy, 6 + a * 28, 0, 7); lx.stroke();
     lx.globalAlpha = 1;
   }
@@ -6671,8 +7009,12 @@ ls.set('smoothAim', null); // Smooth aim was removed in 0.10.0: forget the old s
 $('q3').value = ['auto', 'high', 'low'].includes(ls.get('quality')) ? ls.get('quality') : 'auto';
 $('q3').onchange = () => { ls.set('quality', $('q3').value); applyQuality(true); };
 // crosshair size in Player's eyes (0.18.0, Sujan 14 Oct 2026): small is the size before 0.18.0; medium is the default
-$('xh3').value = ['small', 'medium', 'large'].includes(ls.get('crosshair')) ? ls.get('crosshair') : 'medium';
-$('xh3').onchange = () => { ls.set('crosshair', $('xh3').value); };
+// crosshair sizes moved down one step on 26 Oct 2026 (large = the old medium): a size saved before keeps its look
+{ const old = ls.get('crosshair'), now = ls.get('crosshair2');
+  $('xh3').value = ['small', 'medium', 'large'].includes(now) ? now : old === 'small' ? 'medium' : 'large'; }
+$('xh3').onchange = () => { ls.set('crosshair2', $('xh3').value); };
+$('glow3').checked = ls.get('hitGlow') !== 'off';
+$('glow3').onchange = () => { ls.set('hitGlow', $('glow3').checked ? 'on' : 'off'); };
 if (document.fonts) document.fonts.ready.then(() => { tlCache.key = ''; });
 $('bSnd').onclick = () => setSound(!SND.on);
 // full screen: the whole viewer fills the screen (Esc or F leaves it)
@@ -7024,7 +7366,7 @@ window.addEventListener('unhandledrejection', (e) => { ERRLOG.push('Promise: ' +
 function debugInfo() {
   let gpu = '';
   try { const gl = document.createElement('canvas').getContext('webgl'); const x = gl && gl.getExtension('WEBGL_debug_renderer_info'); gpu = gl ? (x ? gl.getParameter(x.UNMASKED_RENDERER_WEBGL) : 'WebGL available') : 'no WebGL'; } catch (e) { gpu = 'unknown'; }
-  const L = [`CS 1.6 Demo Viewer 0.23.0`, `Browser: ${navigator.userAgent}`, `Screen: ${screen.width}x${screen.height} at ${devicePixelRatio}x, window ${innerWidth}x${innerHeight}`, `Graphics: ${gpu}`];
+  const L = [`CS 1.6 Demo Viewer 0.24.0-trial`, `Browser: ${navigator.userAgent}`, `Screen: ${screen.width}x${screen.height} at ${devicePixelRatio}x, window ${innerWidth}x${innerHeight}`, `Graphics: ${gpu}`];
   L.push(`Folder: ${Object.keys(files.maps).length} maps, ${Object.keys(files.overviews).length} overviews, ${Object.keys(files.mdl).length} models, ${Object.keys(files.snd).length} sounds, ${files.demos.length} demos`);
   if (D) {
     L.push(`Demo: ${D.fileName}, protocol ${(D.header && D.header.netProtocol) || '?'}, ${D.pov ? 'POV (recorded by a player)' : 'HLTV'}, map ${D.mapName}, length ${fmt(D.end - D.start)}, ${M.liveR.length} live rounds, final ${M.liveR.length ? M.liveR[M.liveR.length - 1].scoreAfter.join(':') : '-'}`);

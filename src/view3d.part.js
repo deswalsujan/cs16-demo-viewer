@@ -308,7 +308,18 @@ function lineMesh(a, b, color, dashed, opacity = 1) {
 const geoCache = {};
 const sphere = (r) => geoCache['s' + r] || (geoCache['s' + r] = new THREE.SphereGeometry(r, 14, 10));
 let lastFrame3 = performance.now();
+// The 3D view runs 0.1 s behind the rest of the
+// viewer (kill feed, timers, sounds, radar), as the game's demo player seems to draw players about 0.1 s in the past
+// while it shows a kill message as soon as it arrives (fnatic vs Moscow Five, Nuke, DreamHack Summer 2011, R2 1:13:
+// the game showed cArn in the doorway at the kill feed, where the viewer showed him behind the wall a moment later).
+const LAG3 = 0.1;
 function update3() {
+  // Sujan, 26 Oct 2026: keep it like the game, no switch
+  const T0 = T, lag = D ? LAG3 : 0;
+  if (lag) T = Math.max(D.start || 0, T - lag);
+  try { update3Now(); } finally { T = T0; }
+}
+function update3Now() {
   if (!R3 || !D || viewMode === '2d') return;
   const now = performance.now(); const rawDt = (now - lastFrame3) / 1000; const dt = Math.min(0.1, rawDt); lastFrame3 = now;
   qualityTick(rawDt);
@@ -375,7 +386,7 @@ function update3() {
     const life = k.wb ? 6 : 2.5;
     if (opts.lines && k.kpos && k.killer !== k.victim && age < life) {
       const eye = k.wb ? k.wb.eye : [k.kpos[0], k.kpos[1], k.kpos[2] + (k.kduck ? 12 : 17)];
-      const l = ov('kl:' + ki, () => lineMesh(g3(eye[0], eye[1], eye[2]), g3(k.vpos[0], k.vpos[1], k.vpos[2] + (k.vduck ? 4 : 10)), k.wb ? 0xff4fd8 : 0xff9a3c, !!k.wb));
+      const l = ov('kl:' + ki + (k.wb ? (k.wb.loose ? 'l' : 's') : ''), () => lineMesh(g3(eye[0], eye[1], eye[2]), g3(k.vpos[0], k.vpos[1], k.vpos[2] + (k.vduck ? 4 : 10)), k.wb ? (k.wb.loose ? 0xc9a3e8 : 0xff4fd8) : 0xff9a3c, !!k.wb));
       l.material.opacity = 1 - age / life;
     }
   }
@@ -550,6 +561,7 @@ function update3() {
     if (sub) { // at any distance, scoped or not (the 2500-unit limit was dropped in 0.16.0, Sujan)
       lx.font = `400 10px ${mono}`; lx.strokeText(sub, sx, sy + 12); lx.fillStyle = '#d8d3c8'; lx.fillText(sub, sx, sy + 12); }
   }
+  drawHitNumbers(lx, W, H, camera, mono);
   drawKillRings(lx, W, H, camera);
   const pov = $('pov');
   const s = selected && playerState(selected, T);
@@ -558,7 +570,7 @@ function update3() {
     const hpv = hpAt(selected, T);
     pov.innerHTML = `<span class="${s.state === 1 ? 'kt' : 'kct'}">${esc(nameAt(selected, T))}</span>${hpv != null ? ` <b>(${hpv})</b>` : ''}<span class="kw">${esc(weaponShort(s.weapon))}</span>`;
     if (scoped) drawScope(lx, W, H);
-    const xh = XHAIR[$('xh3').value] || XHAIR.medium;
+    const xh = XHAIR[$('xh3').value] || XHAIR.large;
     if (cam3.mode === 'eyes') drawHitMarker(lx, W / 2, H / 2, xh);
     if (cam3.mode === 'eyes' && !scoped) { lx.strokeStyle = 'rgba(90,255,90,.85)'; lx.lineWidth = xh.w; const cx = W / 2, cy = H / 2, g = xh.gap, e = xh.end; lx.beginPath(); lx.moveTo(cx - e, cy); lx.lineTo(cx - g, cy); lx.moveTo(cx + g, cy); lx.lineTo(cx + e, cy); lx.moveTo(cx, cy - e); lx.lineTo(cx, cy - g); lx.moveTo(cx, cy + g); lx.lineTo(cx, cy + e); lx.stroke(); }
   } else if (cam3.mode !== 'free' && selected) {
@@ -573,7 +585,7 @@ function update3() {
       const rr = M.rounds.find((r) => r.n === death.round);
       const kside = rr && rr.tTeam != null && death.kp ? (M.teamOf[death.kp] === rr.tTeam ? 'kt' : 'kct') : '';
       const kn = death.kp && death.killer !== death.victim
-        ? `killed by <span class="${kside}">${esc(M.pl[death.kp].name)}</span> · ${esc(death.weapon)}${death.hs ? ' · <span class="khs">HS</span>' : ''}${death.wb ? ' · <span class="kwb">wallbang</span>' : ''}`
+        ? `killed by <span class="${kside}">${esc(M.pl[death.kp].name)}</span> · ${esc(death.weapon)}${death.hs ? ' · <span class="khs">HS</span>' : ''}${death.wb ? (death.wb.loose ? ' · <span class="kwb loose">loose wallbang</span>' : ' · <span class="kwb">wallbang</span>') : ''}`
         : (death.weapon === 'world' ? 'died' : 'killed themselves');
       pov.hidden = false; pov.classList.add('dead');
       pov.innerHTML = `<b>${esc(nameAt(selected, T))}</b> ${kn} <span class="kw">· ${playing && age < 2.5 ? 'switching to a teammate' : 'press X for the next player'}</span>`;
@@ -596,13 +608,67 @@ const MARK_MS = 450;
 // Crosshair sizes (0.18.0): gap from the middle to each arm, where the arm ends, line width, in CSS pixels.
 // small is the crosshair before 0.18.0. The kill marker keeps its size and moves out with the arms, so it
 // always starts just past them (option A of 5 Oct 2026).
-const XHAIR = { small: { gap: 4, end: 12, w: 1.5 }, medium: { gap: 5, end: 17, w: 2 }, large: { gap: 6, end: 23, w: 2.5 } };
+// Since 26 Oct 2026 (Sujan: the large one was too big): large is the old medium, medium the old small, and small is new
+const XHAIR = { small: { gap: 3, end: 8, w: 1.25 }, medium: { gap: 4, end: 12, w: 1.5 }, large: { gap: 5, end: 17, w: 2 } };
+// Wallbang damage on the player hit (option C, chosen by Sujan 26 Oct 2026): each hit's damage floats up from beside his head and fades in 0.9 s; newer numbers push older ones up; a
+// headshot reads "−49 HS". In Player's eyes, a number that would touch the crosshair's arms moves up past them.
+// The killing bullet's number is the health he had left (the demo doesn't carry that bullet's own damage), so it ends
+// with a kill mark, "−8 HS ✕" (option A, Sujan 27 Oct 2026: whimp's "−8 HS" on Go, tyloo vs mTw, Nuke, e-Stars
+// Seoul 2009, R23 1:09, read like an 8-damage headshot).
+function drawHitNumbers(lx, W, H, camera, mono) {
+  if (!M.bursts || !M.bursts.length) return;
+  // through a player's eyes or from behind him, only his own hits are shown (Sujan, 26 Oct 2026: in whimp's view at
+  // R23 1:10, tyloo vs mTw, Nuke, the hits of four other players showed too); in Free view everyone's
+  const mine = (h) => !(selected != null && (cam3.mode === 'eyes' || cam3.mode === 'chase')) || h.s === selected;
+  // the glow (Glow on hits, Sujan 26 Oct 2026): a short pink glow around him at each hit through a wall, fading in
+  // 0.3 s; also on the killing bullet (Sujan, 26 Oct 2026)
+  if ($('glow3').checked) for (const b of M.bursts) {
+    const tEnd = b.kill ? b.kill.t : b.end;
+    if (T < b.start - 0.05 || T > tEnd + 0.3 || (cam3.mode === 'eyes' && b.v === selected)) continue;
+    const h = b.hits.filter((x) => x.t <= T + 1e-4 && mine(x)).pop(); if (!h || T - h.t > 0.3) continue;
+    let st = playerState(b.v, T);
+    if ((!st || st.state <= 0) && h.kill && b.kill.vpos) st = { x: b.kill.vpos[0], y: b.kill.vpos[1], z: b.kill.vpos[2], duck: b.kill.vduck, state: 1 };
+    if (!st || st.state <= 0) continue;
+    const top = g3(st.x, st.y, st.z + (st.duck ? 22 : 36)).project(camera), bot = g3(st.x, st.y, st.z - (st.duck ? 18 : 36)).project(camera);
+    if (top.z > 1 || top.z < -1) continue;
+    const tx = (top.x + 1) / 2 * W, ty = (1 - top.y) / 2 * H, by = (1 - bot.y) / 2 * H, hgt = Math.max(12, by - ty), cy = (ty + by) / 2, a = 1 - (T - h.t) / 0.3;
+    const g = lx.createRadialGradient(tx, cy, 1, tx, cy, hgt * 0.75);
+    g.addColorStop(0, `rgba(255,79,216,${0.55 * a})`); g.addColorStop(1, 'rgba(255,79,216,0)');
+    lx.fillStyle = g; lx.beginPath(); lx.ellipse(tx, cy, hgt * 0.45, hgt * 0.75, 0, 0, Math.PI * 2); lx.fill();
+  }
+  const xh = XHAIR[$('xh3').value] || XHAIR.large, arm = xh.end + 6;
+  const scr = (x, y, z) => { const v = g3(x, y, z).project(camera); return v.z > 1 || v.z < -1 ? null : [(v.x + 1) / 2 * W, (1 - v.y) / 2 * H]; };
+  lx.lineWidth = 3; lx.strokeStyle = 'rgba(8,10,12,.9)';
+  for (const b of M.bursts) {
+    if (T < b.start - 0.05 || T > (b.kill ? b.kill.t + 1 : b.end + 1)) continue;
+    if (cam3.mode === 'eyes' && b.v === selected) continue;
+    const live = b.hits.filter((h) => h.t <= T + 1e-4 && T - h.t <= 0.9 && mine(h));
+    if (!live.length) continue;
+    const st = playerState(b.v, T);
+    const base = st && st.state > 0 ? scr(st.x, st.y, st.z + (st.duck ? 26 : 44) + 10) : (b.kill ? scr(b.kill.vpos[0], b.kill.vpos[1], b.kill.vpos[2] + 20) : null);
+    if (!base) continue;
+    live.forEach((h, k) => {
+      const age = T - h.t, a = age < 0.15 ? 1 : Math.max(0, 1 - (age - 0.15) / 0.75);
+      let px = base[0] + 18, py = base[1] - 6 - age * 40 - (live.length - 1 - k) * 13;
+      if (cam3.mode === 'eyes' && Math.abs(px + 20 - W / 2) < arm + 24 && Math.abs(py - H / 2) < arm + 8) py = H / 2 - arm - 10;
+      lx.globalAlpha = a; lx.textAlign = 'left';
+      lx.font = `600 ${h.head ? 13 : 11}px ${mono}`; const txt = `−${h.dmg}`;
+      lx.strokeText(txt, px, py); lx.fillStyle = '#ffb347'; lx.fillText(txt, px, py);
+      let w = lx.measureText(txt + ' ').width;
+      if (h.head) { lx.font = `700 10px ${mono}`; lx.strokeText('HS', px + w, py); lx.fillText('HS', px + w, py); w += lx.measureText('HS ').width; }
+      if (h.kill) { lx.font = `700 ${h.head ? 13 : 11}px ${mono}`; lx.fillStyle = b.kill && b.kill.wb && b.kill.wb.loose ? '#c9a3e8' : '#ff4fd8'; lx.strokeText('✕', px + w, py); lx.fillText('✕', px + w, py); }
+      lx.globalAlpha = 1;
+    });
+  }
+  lx.textAlign = 'center';
+}
 function drawHitMarker(lx, cx, cy, xh = XHAIR.small) {
   const f = flashes.filter((x) => x.k.killer === selected).pop();
   if (!f) return;
   const a = (performance.now() - f.at) / MARK_MS; if (a >= 1) return;
   const k = f.k;
-  const col = k.wb ? '#ff4fd8' : k.hs ? '#ff9a3c' : '#ffffff';
+  // a loose wallbang in light purple, a strict one in pink (Sujan, 28 Oct 2026)
+  const col = k.wb ? (k.wb.loose ? '#c9a3e8' : '#ff4fd8') : k.hs ? '#ff9a3c' : '#ffffff';
   const g0 = Math.round(xh.end * 11 / 12), g1 = g0 + 5; // 11 to 16 with the small crosshair, as before
   lx.save();
   lx.globalAlpha = a < 0.6 ? 1 : 1 - (a - 0.6) / 0.4;
@@ -612,7 +678,7 @@ function drawHitMarker(lx, cx, cy, xh = XHAIR.small) {
     for (const [dx, dy] of [[1, 1], [1, -1], [-1, 1], [-1, -1]]) { lx.moveTo(cx + dx * g0, cy + dy * g0); lx.lineTo(cx + dx * g1, cy + dy * g1); }
     lx.stroke();
   }
-  const label = k.wb ? `WALLBANG${k.hs ? ' · HS' : ''}` : k.hs ? 'HEADSHOT' : 'KILL';
+  const label = k.wb ? `${k.wb.loose ? 'LOOSE WB' : 'WALLBANG'}${k.hs ? ' · HS' : ''}` : k.hs ? 'HEADSHOT' : 'KILL';
   lx.font = `500 10px ${monoFont()}`; lx.textAlign = 'center';
   lx.lineWidth = 2.5; lx.strokeStyle = 'rgba(0,0,0,.6)'; lx.strokeText(label, cx, cy + xh.end + 20); lx.fillStyle = col; lx.fillText(label, cx, cy + xh.end + 20);
   lx.restore();
@@ -652,7 +718,7 @@ function drawKillRings(lx, W, H, camera) {
     if (v.z > 1 || v.z < -1) continue;
     const sx = (v.x + 1) / 2 * W, sy = (1 - v.y) / 2 * H;
     lx.globalAlpha = 1 - a; lx.lineWidth = 3;
-    lx.strokeStyle = k.wb ? '#ff4fd8' : k.hs ? '#ff9a3c' : '#ffffff';
+    lx.strokeStyle = k.wb ? (k.wb.loose ? '#c9a3e8' : '#ff4fd8') : k.hs ? '#ff9a3c' : '#ffffff';
     lx.beginPath(); lx.arc(sx, sy, 6 + a * 28, 0, 7); lx.stroke();
     lx.globalAlpha = 1;
   }
