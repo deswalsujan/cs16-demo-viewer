@@ -386,7 +386,7 @@ function update3Now() {
     const life = k.wb ? 6 : 2.5;
     if (opts.lines && k.kpos && k.killer !== k.victim && age < life) {
       const eye = k.wb ? k.wb.eye : [k.kpos[0], k.kpos[1], k.kpos[2] + (k.kduck ? 12 : 17)];
-      const l = ov('kl:' + ki, () => lineMesh(g3(eye[0], eye[1], eye[2]), g3(k.vpos[0], k.vpos[1], k.vpos[2] + (k.vduck ? 4 : 10)), k.wb ? 0xff4fd8 : 0xff9a3c, !!k.wb));
+      const l = ov('kl:' + ki + (k.wb ? (k.wb.loose ? 'l' : 's') : ''), () => lineMesh(g3(eye[0], eye[1], eye[2]), g3(k.vpos[0], k.vpos[1], k.vpos[2] + (k.vduck ? 4 : 10)), k.wb ? (k.wb.loose ? 0xc9a3e8 : 0xff4fd8) : 0xff9a3c, !!k.wb));
       l.material.opacity = 1 - age / life;
     }
   }
@@ -585,7 +585,7 @@ function update3Now() {
       const rr = M.rounds.find((r) => r.n === death.round);
       const kside = rr && rr.tTeam != null && death.kp ? (M.teamOf[death.kp] === rr.tTeam ? 'kt' : 'kct') : '';
       const kn = death.kp && death.killer !== death.victim
-        ? `killed by <span class="${kside}">${esc(M.pl[death.kp].name)}</span> · ${esc(death.weapon)}${death.hs ? ' · <span class="khs">HS</span>' : ''}${death.wb ? ' · <span class="kwb">wallbang</span>' : ''}`
+        ? `killed by <span class="${kside}">${esc(M.pl[death.kp].name)}</span> · ${esc(death.weapon)}${death.hs ? ' · <span class="khs">HS</span>' : ''}${death.wb ? (death.wb.loose ? ' · <span class="kwb loose">loose wallbang</span>' : ' · <span class="kwb">wallbang</span>') : ''}`
         : (death.weapon === 'world' ? 'died' : 'killed themselves');
       pov.hidden = false; pov.classList.add('dead');
       pov.innerHTML = `<b>${esc(nameAt(selected, T))}</b> ${kn} <span class="kw">· ${playing && age < 2.5 ? 'switching to a teammate' : 'press X for the next player'}</span>`;
@@ -656,7 +656,7 @@ function drawHitNumbers(lx, W, H, camera, mono) {
       lx.strokeText(txt, px, py); lx.fillStyle = '#ffb347'; lx.fillText(txt, px, py);
       let w = lx.measureText(txt + ' ').width;
       if (h.head) { lx.font = `700 10px ${mono}`; lx.strokeText('HS', px + w, py); lx.fillText('HS', px + w, py); w += lx.measureText('HS ').width; }
-      if (h.kill) { lx.font = `700 ${h.head ? 13 : 11}px ${mono}`; lx.fillStyle = '#ff4fd8'; lx.strokeText('✕', px + w, py); lx.fillText('✕', px + w, py); }
+      if (h.kill) { lx.font = `700 ${h.head ? 13 : 11}px ${mono}`; lx.fillStyle = b.kill && b.kill.wb && b.kill.wb.loose ? '#c9a3e8' : '#ff4fd8'; lx.strokeText('✕', px + w, py); lx.fillText('✕', px + w, py); }
       lx.globalAlpha = 1;
     });
   }
@@ -667,7 +667,8 @@ function drawHitMarker(lx, cx, cy, xh = XHAIR.small) {
   if (!f) return;
   const a = (performance.now() - f.at) / MARK_MS; if (a >= 1) return;
   const k = f.k;
-  const col = k.wb ? '#ff4fd8' : k.hs ? '#ff9a3c' : '#ffffff';
+  // a loose wallbang in light purple, a strict one in pink (Sujan, 28 Oct 2026)
+  const col = k.wb ? (k.wb.loose ? '#c9a3e8' : '#ff4fd8') : k.hs ? '#ff9a3c' : '#ffffff';
   const g0 = Math.round(xh.end * 11 / 12), g1 = g0 + 5; // 11 to 16 with the small crosshair, as before
   lx.save();
   lx.globalAlpha = a < 0.6 ? 1 : 1 - (a - 0.6) / 0.4;
@@ -677,7 +678,7 @@ function drawHitMarker(lx, cx, cy, xh = XHAIR.small) {
     for (const [dx, dy] of [[1, 1], [1, -1], [-1, 1], [-1, -1]]) { lx.moveTo(cx + dx * g0, cy + dy * g0); lx.lineTo(cx + dx * g1, cy + dy * g1); }
     lx.stroke();
   }
-  const label = k.wb ? `WALLBANG${k.hs ? ' · HS' : ''}` : k.hs ? 'HEADSHOT' : 'KILL';
+  const label = k.wb ? `${k.wb.loose ? 'LOOSE WB' : 'WALLBANG'}${k.hs ? ' · HS' : ''}` : k.hs ? 'HEADSHOT' : 'KILL';
   lx.font = `500 10px ${monoFont()}`; lx.textAlign = 'center';
   lx.lineWidth = 2.5; lx.strokeStyle = 'rgba(0,0,0,.6)'; lx.strokeText(label, cx, cy + xh.end + 20); lx.fillStyle = col; lx.fillText(label, cx, cy + xh.end + 20);
   lx.restore();
@@ -717,7 +718,7 @@ function drawKillRings(lx, W, H, camera) {
     if (v.z > 1 || v.z < -1) continue;
     const sx = (v.x + 1) / 2 * W, sy = (1 - v.y) / 2 * H;
     lx.globalAlpha = 1 - a; lx.lineWidth = 3;
-    lx.strokeStyle = k.wb ? '#ff4fd8' : k.hs ? '#ff9a3c' : '#ffffff';
+    lx.strokeStyle = k.wb ? (k.wb.loose ? '#c9a3e8' : '#ff4fd8') : k.hs ? '#ff9a3c' : '#ffffff';
     lx.beginPath(); lx.arc(sx, sy, 6 + a * 28, 0, 7); lx.stroke();
     lx.globalAlpha = 1;
   }

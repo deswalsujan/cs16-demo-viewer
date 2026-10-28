@@ -25,6 +25,7 @@
   --faint: #5b636a;
   --sand: #cbb47e;
   --wb: #ff4fd8;
+  --loose: #c9a3e8; /* a loose wallbang, everywhere it's marked (Sujan, 28 Oct 2026: easier to tell from a strict one) */
   --t: #e8574d;
   --ct: #5ea3e8;
   --kill: #ff9a3c;
@@ -138,7 +139,7 @@ button { cursor: pointer; }
 .radar.m2d .skipnote { bottom: 56px; }
 .wbtag.unsure { color: #e7c37a; border-color: rgba(231,195,122,.55); }
 /* a loose wallbang (0.23.0): the bullet went through cover, part of the victim was in view */
-.wbtag.loose { color: #c9a3e8; border-color: rgba(201,163,232,.55); }
+.wbtag.loose { color: var(--loose); border-color: color-mix(in srgb, var(--loose) 55%, transparent); }
 /* wallbang damage (trial, wip/wallbang-hits): hits through cover that didn't kill, in the damage colour */
 .wbtag.dmg { color: var(--hit); border-color: color-mix(in srgb, var(--hit) 55%, transparent); }
 .kill3 .dline { display: block; font: 12px var(--f-mono); color: var(--muted); margin: 0 0 3px; }
@@ -219,7 +220,7 @@ button { cursor: pointer; }
 .hmlist dd span { color: var(--muted); }
 .hm { width: 40px; height: 40px; display: block; background: #3a3f44; border-radius: 4px; }
 .hmw, .hmo, .hms { font-family: var(--f-mono); font-size: 12px; letter-spacing: .04em; }
-.hmw { color: #ffffff; } .hmo { color: #ff9a3c; } .hms { color: var(--wb); }
+.hmw { color: #ffffff; } .hmo { color: #ff9a3c; } .hms { color: var(--wb); } .hml { color: var(--loose); font-family: var(--f-mono); font-size: 12px; letter-spacing: .04em; }
 kbd { font-family: var(--f-mono); font-size: 11px; background: var(--panel-2); border: 1px solid var(--line); border-bottom-width: 2px; border-radius: 3px; padding: 1px 5px; color: var(--fg); }
 .pnum { display: inline-block; width: 16px; color: var(--faint); font-family: var(--f-mono); font-size: 11px; }
 @media (max-width: 600px) { .sbcard { grid-template-columns: minmax(0, 1fr); } }
@@ -287,6 +288,7 @@ kbd { font-family: var(--f-mono); font-size: 11px; background: var(--panel-2); b
 .kt { color: var(--t); } .kct { color: var(--ct); }
 .kw { color: var(--muted); font-family: var(--f-mono); font-size: 12px; margin-inline: 5px; }
 .khs { color: var(--kill); font-family: var(--f-mono); font-size: 11px; margin-left: 4px; }
+.kwb.loose { color: var(--loose); }
 .kwb { color: var(--wb); font-family: var(--f-mono); font-size: 11px; margin-left: 4px; }
 .sechead { padding: 10px 14px 6px; font-size: 11px; text-transform: uppercase; letter-spacing: .08em; color: var(--muted); display: flex; justify-content: space-between; gap: 8px; }
 .prow { grid-template-columns: minmax(0, 1fr) auto; }
@@ -556,6 +558,7 @@ body:has(.app.theatre) { overflow: hidden; }
               <dt><svg class="hm" viewBox="0 0 40 40" aria-hidden="true"><g stroke="#000" stroke-opacity=".45" stroke-width="3" stroke-linecap="round"><path d="M28 28l4 4M28 12l4-4M12 28l-4 4M12 12l-4-4"/></g><g stroke="#ffffff" stroke-width="1.5" stroke-linecap="round"><path d="M28 28l4 4M28 12l4-4M12 28l-4 4M12 12l-4-4"/></g><g stroke="#5aff5a" stroke-width="1.5"><path d="M12 20h5M23 20h5M20 12v5M20 23v5"/></g></svg></dt><dd><b class="hmw">KILL</b><span>A normal kill. Example: an AK spray to the body in the open.</span></dd>
               <dt><svg class="hm" viewBox="0 0 40 40" aria-hidden="true"><g stroke="#000" stroke-opacity=".45" stroke-width="3" stroke-linecap="round"><path d="M28 28l4 4M28 12l4-4M12 28l-4 4M12 12l-4-4"/></g><g stroke="#ff9a3c" stroke-width="1.5" stroke-linecap="round"><path d="M28 28l4 4M28 12l4-4M12 28l-4 4M12 12l-4-4"/></g><g stroke="#5aff5a" stroke-width="1.5"><path d="M12 20h5M23 20h5M20 12v5M20 23v5"/></g></svg></dt><dd><b class="hmo">HEADSHOT</b><span>The killing bullet hit the head. Example: a one-tap with the AK.</span></dd>
               <dt><svg class="hm" viewBox="0 0 40 40" aria-hidden="true"><g stroke="#000" stroke-opacity=".45" stroke-width="3" stroke-linecap="round"><path d="M28 28l4 4M28 12l4-4M12 28l-4 4M12 12l-4-4"/></g><g stroke="#ff4fd8" stroke-width="1.5" stroke-linecap="round"><path d="M28 28l4 4M28 12l4-4M12 28l-4 4M12 12l-4-4"/></g><g stroke="#5aff5a" stroke-width="1.5"><path d="M12 20h5M23 20h5M20 12v5M20 23v5"/></g></svg></dt><dd><b class="hms">WALLBANG · HS</b><span>The bullet went through cover, with the victim fully hidden (or, tagged LOOSE in the lists, with part of him in view). HS is added when it was also a headshot.</span></dd>
+              <dt><svg class="hm" viewBox="0 0 40 40" aria-hidden="true"><g stroke="#000" stroke-opacity=".45" stroke-width="3" stroke-linecap="round"><path d="M28 28l4 4M28 12l4-4M12 28l-4 4M12 12l-4-4"/></g><g stroke="#c9a3e8" stroke-width="1.5" stroke-linecap="round"><path d="M28 28l4 4M28 12l4-4M12 28l-4 4M12 12l-4-4"/></g><g stroke="#5aff5a" stroke-width="1.5"><path d="M12 20h5M23 20h5M20 12v5M20 23v5"/></g></svg></dt><dd><b class="hml">LOOSE WB</b><span>A loose wallbang: the bullet went through cover, but part of the victim was in view.</span></dd>
             </dl>
           </section>
           <section><h3>Radar (2D)</h3>
@@ -1850,7 +1853,7 @@ function buildMesh(bsp, separate = null) {
   return { groups: out, atlas: { w: AW, h: AH, data: atlas } };
 }
 
-const COL = { t: '#e8574d', ct: '#5ea3e8', kill: '#ff9a3c', sand: '#cbb47e', wb: '#ff4fd8', fg: '#e7e3d9', muted: '#8d959c', line: '#2a3137' };
+const COL = { t: '#e8574d', ct: '#5ea3e8', kill: '#ff9a3c', sand: '#cbb47e', wb: '#ff4fd8', loose: '#c9a3e8', fg: '#e7e3d9', muted: '#8d959c', line: '#2a3137' };
 const SPEEDS = [0.25, 0.5, 1, 2, 4, 8];
 
 // ---------------- state ----------------
@@ -4400,7 +4403,7 @@ function killHtml(k) {
   const ks = k.kteam === 'TERRORIST' ? 1 : k.kteam === 'CT' ? 2 : 0;
   const vs = k.vteam === 'TERRORIST' ? 1 : k.vteam === 'CT' ? 2 : 0;
   if (k.killer === k.victim || !k.kp) return `${nameHtml(k.vp, vs)}<span class="kw">${esc(k.weapon || 'suicide')}</span>`;
-  return `${nameHtml(k.kp, ks)}<span class="kw">${esc(k.weapon)}</span>${nameHtml(k.vp, vs)}${k.hs ? '<span class="khs">HS</span>' : ''}${k.wb ? `<span class="kwb" title="Through ${k.wb.thick} units of ${k.wb.what === 'object' ? 'a breakable or door' : 'wall or crate'}">WB</span>` : ''}`;
+  return `${nameHtml(k.kp, ks)}<span class="kw">${esc(k.weapon)}</span>${nameHtml(k.vp, vs)}${k.hs ? '<span class="khs">HS</span>' : ''}${k.wb ? `<span class="kwb${k.wb.loose ? ' loose' : ''}" title="Through ${k.wb.thick} units of ${k.wb.what === 'object' ? 'a breakable or door' : 'wall or crate'}">WB</span>` : ''}`;
 }
 // A kill on three lines, for the Kills and Wallbangs lists: killer, then the gun (its kill feed icon from the
 // player's own files, its name, and the headshot icon), then the victim.
@@ -5019,7 +5022,7 @@ function draw() {
     const life = k.wb ? 6 : 2.5;
     if (opts.lines && age < life && k.kpos && k.killer !== k.victim) {
       const [kx, ky] = toScreen(k.kpos[0], k.kpos[1]);
-      ctx.strokeStyle = k.wb ? `rgba(255,79,216,${1 - age / life})` : `rgba(255,154,60,${1 - age / life})`; ctx.lineWidth = 2;
+      ctx.strokeStyle = k.wb ? (k.wb.loose ? `rgba(201,163,232,${1 - age / life})` : `rgba(255,79,216,${1 - age / life})`) : `rgba(255,154,60,${1 - age / life})`; ctx.lineWidth = 2;
       if (k.wb) ctx.setLineDash([6, 4]);
       ctx.beginPath(); ctx.moveTo(kx, ky); ctx.lineTo(vx, vy); ctx.stroke(); ctx.setLineDash([]);
     }
@@ -5034,7 +5037,7 @@ function draw() {
     const k = f.k; if (!k.vpos) continue;
     const a = (performance.now() - f.at) / FLASH_MS;
     const [vx, vy] = toScreen(k.vpos[0], k.vpos[1]);
-    ctx.strokeStyle = k.wb ? COL.wb : k.hs ? COL.kill : '#ffffff';
+    ctx.strokeStyle = k.wb ? (k.wb.loose ? COL.loose : COL.wb) : k.hs ? COL.kill : '#ffffff';
     ctx.globalAlpha = 1 - a; ctx.lineWidth = 3;
     ctx.beginPath(); ctx.arc(vx, vy, 8 + a * 26, 0, 7); ctx.stroke(); ctx.globalAlpha = 1;
   }
@@ -5216,7 +5219,7 @@ function drawTimelineInto(cv, W, H, a, b) {
   // wallbangs
   // wallbang damage: hollow diamonds in the damage colour (wip/wallbang-hits)
   if (M.bursts) for (const b of M.bursts) { if (b.kill) continue; const x = X(b.start); if (x < 0 || x > W) continue; tctx.strokeStyle = '#ffb347'; tctx.lineWidth = 1.4; tctx.beginPath(); tctx.moveTo(x, 12.5); tctx.lineTo(x + 3.5, 16); tctx.lineTo(x, 19.5); tctx.lineTo(x - 3.5, 16); tctx.closePath(); tctx.stroke(); }
-  if (M.wbs) for (const k of M.wbs) { const x = X(k.t); if (x < 0 || x > W) continue; tctx.fillStyle = COL.wb; tctx.beginPath(); tctx.moveTo(x, 12); tctx.lineTo(x + 4, 16); tctx.lineTo(x, 20); tctx.lineTo(x - 4, 16); tctx.fill(); }
+  if (M.wbs) for (const k of M.wbs) { const x = X(k.t); if (x < 0 || x > W) continue; tctx.fillStyle = k.wb.loose ? COL.loose : COL.wb; tctx.beginPath(); tctx.moveTo(x, 12); tctx.lineTo(x + 4, 16); tctx.lineTo(x, 20); tctx.lineTo(x - 4, 16); tctx.fill(); }
   // skips in the recording: a break mark // (0.19.0)
   for (const t of M.skipT || []) {
     const x = X(t); if (x < 0 || x > W) continue;
@@ -6534,7 +6537,7 @@ function update3Now() {
     const life = k.wb ? 6 : 2.5;
     if (opts.lines && k.kpos && k.killer !== k.victim && age < life) {
       const eye = k.wb ? k.wb.eye : [k.kpos[0], k.kpos[1], k.kpos[2] + (k.kduck ? 12 : 17)];
-      const l = ov('kl:' + ki, () => lineMesh(g3(eye[0], eye[1], eye[2]), g3(k.vpos[0], k.vpos[1], k.vpos[2] + (k.vduck ? 4 : 10)), k.wb ? 0xff4fd8 : 0xff9a3c, !!k.wb));
+      const l = ov('kl:' + ki + (k.wb ? (k.wb.loose ? 'l' : 's') : ''), () => lineMesh(g3(eye[0], eye[1], eye[2]), g3(k.vpos[0], k.vpos[1], k.vpos[2] + (k.vduck ? 4 : 10)), k.wb ? (k.wb.loose ? 0xc9a3e8 : 0xff4fd8) : 0xff9a3c, !!k.wb));
       l.material.opacity = 1 - age / life;
     }
   }
@@ -6733,7 +6736,7 @@ function update3Now() {
       const rr = M.rounds.find((r) => r.n === death.round);
       const kside = rr && rr.tTeam != null && death.kp ? (M.teamOf[death.kp] === rr.tTeam ? 'kt' : 'kct') : '';
       const kn = death.kp && death.killer !== death.victim
-        ? `killed by <span class="${kside}">${esc(M.pl[death.kp].name)}</span> · ${esc(death.weapon)}${death.hs ? ' · <span class="khs">HS</span>' : ''}${death.wb ? ' · <span class="kwb">wallbang</span>' : ''}`
+        ? `killed by <span class="${kside}">${esc(M.pl[death.kp].name)}</span> · ${esc(death.weapon)}${death.hs ? ' · <span class="khs">HS</span>' : ''}${death.wb ? (death.wb.loose ? ' · <span class="kwb loose">loose wallbang</span>' : ' · <span class="kwb">wallbang</span>') : ''}`
         : (death.weapon === 'world' ? 'died' : 'killed themselves');
       pov.hidden = false; pov.classList.add('dead');
       pov.innerHTML = `<b>${esc(nameAt(selected, T))}</b> ${kn} <span class="kw">· ${playing && age < 2.5 ? 'switching to a teammate' : 'press X for the next player'}</span>`;
@@ -6804,7 +6807,7 @@ function drawHitNumbers(lx, W, H, camera, mono) {
       lx.strokeText(txt, px, py); lx.fillStyle = '#ffb347'; lx.fillText(txt, px, py);
       let w = lx.measureText(txt + ' ').width;
       if (h.head) { lx.font = `700 10px ${mono}`; lx.strokeText('HS', px + w, py); lx.fillText('HS', px + w, py); w += lx.measureText('HS ').width; }
-      if (h.kill) { lx.font = `700 ${h.head ? 13 : 11}px ${mono}`; lx.fillStyle = '#ff4fd8'; lx.strokeText('✕', px + w, py); lx.fillText('✕', px + w, py); }
+      if (h.kill) { lx.font = `700 ${h.head ? 13 : 11}px ${mono}`; lx.fillStyle = b.kill && b.kill.wb && b.kill.wb.loose ? '#c9a3e8' : '#ff4fd8'; lx.strokeText('✕', px + w, py); lx.fillText('✕', px + w, py); }
       lx.globalAlpha = 1;
     });
   }
@@ -6815,7 +6818,8 @@ function drawHitMarker(lx, cx, cy, xh = XHAIR.small) {
   if (!f) return;
   const a = (performance.now() - f.at) / MARK_MS; if (a >= 1) return;
   const k = f.k;
-  const col = k.wb ? '#ff4fd8' : k.hs ? '#ff9a3c' : '#ffffff';
+  // a loose wallbang in light purple, a strict one in pink (Sujan, 28 Oct 2026)
+  const col = k.wb ? (k.wb.loose ? '#c9a3e8' : '#ff4fd8') : k.hs ? '#ff9a3c' : '#ffffff';
   const g0 = Math.round(xh.end * 11 / 12), g1 = g0 + 5; // 11 to 16 with the small crosshair, as before
   lx.save();
   lx.globalAlpha = a < 0.6 ? 1 : 1 - (a - 0.6) / 0.4;
@@ -6825,7 +6829,7 @@ function drawHitMarker(lx, cx, cy, xh = XHAIR.small) {
     for (const [dx, dy] of [[1, 1], [1, -1], [-1, 1], [-1, -1]]) { lx.moveTo(cx + dx * g0, cy + dy * g0); lx.lineTo(cx + dx * g1, cy + dy * g1); }
     lx.stroke();
   }
-  const label = k.wb ? `WALLBANG${k.hs ? ' · HS' : ''}` : k.hs ? 'HEADSHOT' : 'KILL';
+  const label = k.wb ? `${k.wb.loose ? 'LOOSE WB' : 'WALLBANG'}${k.hs ? ' · HS' : ''}` : k.hs ? 'HEADSHOT' : 'KILL';
   lx.font = `500 10px ${monoFont()}`; lx.textAlign = 'center';
   lx.lineWidth = 2.5; lx.strokeStyle = 'rgba(0,0,0,.6)'; lx.strokeText(label, cx, cy + xh.end + 20); lx.fillStyle = col; lx.fillText(label, cx, cy + xh.end + 20);
   lx.restore();
@@ -6865,7 +6869,7 @@ function drawKillRings(lx, W, H, camera) {
     if (v.z > 1 || v.z < -1) continue;
     const sx = (v.x + 1) / 2 * W, sy = (1 - v.y) / 2 * H;
     lx.globalAlpha = 1 - a; lx.lineWidth = 3;
-    lx.strokeStyle = k.wb ? '#ff4fd8' : k.hs ? '#ff9a3c' : '#ffffff';
+    lx.strokeStyle = k.wb ? (k.wb.loose ? '#c9a3e8' : '#ff4fd8') : k.hs ? '#ff9a3c' : '#ffffff';
     lx.beginPath(); lx.arc(sx, sy, 6 + a * 28, 0, 7); lx.stroke();
     lx.globalAlpha = 1;
   }
