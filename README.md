@@ -74,7 +74,7 @@ src/app.css         The page's styles
 src/ui/             The page's code, one file per part: 2D radar, timeline, sidebar, Join card, wallbangs, Theatre mode, load summary and the rest
 build.py            Combines everything into one self-contained page
 CHANGELOG.md        What changed, newest first
-docs/               Design images: scope styles, the approved side panel designs (0.13.0), Count them, split maps, demo search, the Zalando Sans screens, crosshair kill markers (0.17.0), the start screen once the folder is chosen (0.18.0), skips in the recording (0.19.0) and the skip tags in the Kills list (0.21.0)
+docs/               Design images: scope styles, the approved side panel designs (0.13.0), Count them, split maps, demo search, the Zalando Sans screens, crosshair kill markers (0.17.0), the start screen once the folder is chosen (0.18.0), skips in the recording (0.19.0) and the skip tags in the Kills list (0.21.0); one line per file in docs/README.md
 tests/              Test and measurement scripts: browser checks, Theatre mode checks, demo data probes (see tests/README.md)
 IDEAS.md            Parked ideas and open decisions, with the discussion behind them
 IDEAS-ARCHIVE.md    Done items, and the full text of open ones, moved from IDEAS.md word for word
