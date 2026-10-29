@@ -1,7 +1,7 @@
 """Headless test harness for the CS 1.6 Demo Viewer.
 
 Usage: python3 harness.py <page.html> <script.js>[,<script.js>...] [screenshot prefix]
-Environment: HALF_LIFE_DIR (required), THREE_JS (default tests/three.min.js), DEMO (part of the demo file name, default dust2), MAP_NEEDED (default 1)
+Environment: HALF_LIFE_DIR (required), THREE_JS (default tests/three.min.js), DEMO (part of the demo file name, default dust2), MAP_NEEDED (default 1), POV_MODE (1: the POV mode setting on, 0.25.0)
 Loads the page from a local server, feeds it the staged Half-Life folder, opens the
 Na`Vi vs FX Dust2 demo, waits for the 3D map, then runs <script.js> in the page and
 prints the JSON it returns.
@@ -40,6 +40,8 @@ with sync_playwright() as p:
     pg.route('**/three.min.js', lambda r: r.fulfill(path=THREE, content_type='application/javascript'))
     pg.route('https://fonts.googleapis.com/**', lambda r: r.fulfill(body='', content_type='text/css'))
     pg.goto(url)
+    # POV_MODE=1: the POV mode setting on before the demo opens (0.25.0; it's off by default)
+    if os.environ.get('POV_MODE') == '1': pg.evaluate("__v(\"$('pov3').checked = true\")")
     pg.set_input_files('#fFolder', HL)
     pg.wait_for_function('__v("files.demos.length > 0")', timeout=30000)
     pg.evaluate(f"""__v("loadDemoFile(files.demos.find(f => f.name.toLowerCase().includes('{DEMO}')))")""")
