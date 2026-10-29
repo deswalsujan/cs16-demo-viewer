@@ -13,7 +13,8 @@
 set -u
 # demo names are quoted for xargs, so names with spaces work (Burning vs FairFrag, Inferno, 2010; 23 Oct 2026)
 # paths are resolved before moving into tests/, so they can be given relative to where you are
-OUT=$(realpath -m "$1"); A=$(realpath "$2"); B=${3:+$(realpath "$3")}; SCRIPT=${4:-page/match_summary.js}
+# OUT is made first, so plain realpath works: macOS has no realpath -m (29 Oct 2026)
+mkdir -p "$1"; OUT=$(realpath "$1"); A=$(realpath "$2"); B=${3:+$(realpath "$3")}; SCRIPT=${4:-page/match_summary.js}
 # a script path as given, or relative to tests/ (page/match_detail.js)
 [ -n "${4:-}" ] && [ -f "$4" ] && SCRIPT=$(realpath "$4")
 cd "$(dirname "$0")"
