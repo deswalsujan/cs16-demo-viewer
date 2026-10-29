@@ -96,6 +96,8 @@ To rebuild after editing anything in `src/`:
 python3 build.py
 ```
 
+Commit the rebuilt `index.html` with your change. Every pull request is checked on GitHub (`.github/workflows/check.yml`): it fails if `index.html` doesn't match `src/` or if one of the three browser checks that need no Half-Life folder fails.
+
 ## Credits
 
 - Demo message layouts were adapted from [hlviewer.js](https://github.com/skyrim/hlviewer.js) by Stefan Stojković (MIT license).
