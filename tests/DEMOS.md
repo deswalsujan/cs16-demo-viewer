@@ -1,6 +1,6 @@
 # Test demos
 
-Moved here from `tests/README.md` on 29 Oct 2026, word for word, so the test instructions and the demo list are separate files. Older notes (CHANGELOG.md, IDEAS-ARCHIVE.md) that point to `tests/README.md`, "Demos and their events", or to one of its subsections, mean this file. The text below is unchanged, so two of its pointers read as they did there: "the table below" under "Deleted" is the page script table in [README.md](README.md), "Browser checks", and `tests/README.md`, "POV demos" is the subsection of that name here. How to run the tests is in [README.md](README.md).
+Moved here from `tests/README.md` on 29 Oct 2026, word for word, so the test instructions and the demo list are separate files. Older notes (CHANGELOG.md, IDEAS-ARCHIVE.md) that point to `tests/README.md`, "Demos and their events", or to one of its subsections, mean this file. The text below came over unchanged, and the table is kept up to date from then on (AGENTS.md, "Which demos are where"); two of its pointers read as they did there: "the table below" under "Deleted" is the page script table in [README.md](README.md), "Browser checks", and `tests/README.md`, "POV demos" is the subsection of that name here. How to run the tests is in [README.md](README.md).
 
 ## Demos and their events
 
@@ -87,7 +87,7 @@ Recorded by Sujan on his own server with a bot he placed, 5 Oct 2026, for the 'B
 | `mtw-vs-navi-eswc2010semi-real-1007031520-de_tuscan.dem` (2.5 MB, warmup only: "Match stopped") | ESWC 2010, semi-final, mTw vs Na`Vi, Tuscan (3 Jul 2010) | file name, as the other ESWC 2010 files | Mac, Windows | deleted 3 Oct 2026 on the Mac by Claude, at Sujan's request (the Join card refuses it: only 5 of the same 10 players, by name), and on Windows by Sujan |
 | `de_inferno.dem_mousesports-vs-Virus-.dem` (102 MB, broken: no index, stops 199 bytes into its last frame) | ESWC 2011 | demo text "CS 1.6 ESWC #2 by Verygames", read frame by frame (see IDEAS.md, "Tell exactly why a demo is broken") | Mac, Windows | deleted 2 Oct 2026 |
 | `mym.sk.bronzedecider-0805111924-de_inferno.dem` | Kode5 2008, grand final, bronze decider (11 May 2008) | demo text "Kode5 Grand Final server #2"; file name | Mac, Windows | deleted 2 Oct 2026 |
-| `PGL.DreamHack_Bucuresti_2012.03-Winner.Anexis.vs.fnatic.HLTV.3.de_tuscan.dem` | DreamHack Bucuresti 2012 (PGL) | demo text (HLTV server "DreamHack Bucuresti 2012:3"); file name | Mac, Windows | deleted 2 Oct 2026 |
+| `PGL.DreamHack_Bucuresti_2012.03-Winner.Anexis.vs.fnatic.HLTV.3.de_tuscan.dem` | DreamHack Bucharest 2012 (PGL) | Sujan, 29 Oct 2026 (the name HLTV.org gives the event); demo text (HLTV server "DreamHack Bucuresti 2012:3", the Romanian spelling, also in the file name) | Mac, Windows | deleted 2 Oct 2026 |
 | `2006-07-02_15h00_Team3D_Fnatic-0607021359-de_train.dem` | ESWC 2006, probably (2 Jul 2006) | HLTV server name "HLTV-ESWC" and the date in the file name; not checked further | Mac, Windows | deleted 2 Oct 2026 |
 | `GP-[PuB]_M-[de_zovine]_D-[10_01_2026]_T-[19_08].dem` (GP Pub de_zovine POV demo) | none: a public server game Sujan recorded on 1 Oct 2026 | | Windows | deleted 2 Oct 2026 by Sujan |
 
