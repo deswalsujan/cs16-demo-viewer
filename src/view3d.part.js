@@ -233,6 +233,7 @@ function freeCamFromFollow() {
   cam3.pos = head.map((v, i) => v + (far[i] - v) * f); cam3.yaw = s.yaw; cam3.pitch = pitch;
 }
 function setCam(m, keepPlayer, exact) {
+  if (POV.on) return; // POV mode always shows the recorder's own view
   // exact: dragging, the wheel, WASD, or nobody left to follow, which carry on from the view on screen
   if (m === 'free' && cam3.mode !== 'free') { if (exact) copyCamToFree(); else freeCamFromFollow(); }
   // nobody picked, going from Free camera to Player's eyes or Behind player: follow the living player nearest
@@ -262,6 +263,7 @@ function nearestToView() {
 }
 function alivePlayers() { return Object.keys(D.slots).map(Number).filter((e) => { const s = playerState(e, T); return s && s.state > 0; }).sort((a, b) => ((teamOfSlot(a, T) ?? 9) - (teamOfSlot(b, T) ?? 9)) || a - b); }
 function nextPlayer(dir) {
+  if (POV.on) return;
   const list = alivePlayers(); if (!list.length) return;
   const i = list.indexOf(selected);
   selected = list[(i + dir + list.length) % list.length];
@@ -273,6 +275,7 @@ const k3 = cam3.keys;
 document.addEventListener('keydown', (e) => {
   if (viewMode === '2d' || !D || !$('load').hidden || e.target.tagName === 'INPUT' || e.target.tagName === 'SELECT' || e.target.isContentEditable) return;
   const k = e.key.toLowerCase();
+  if (POV.on) return;
   if (k.length === 1 && 'wasdqe'.includes(k)) { k3[k] = true; if (cam3.mode !== 'free') { setCam('free', false, true); } }
   if (e.key === 'Shift') k3.shift = true;
   if (k === 'v') setCam(cam3.mode === 'free' ? 'eyes' : cam3.mode === 'eyes' ? 'chase' : 'free');
@@ -314,8 +317,11 @@ let lastFrame3 = performance.now();
 // the game showed cArn in the doorway at the kill feed, where the viewer showed him behind the wall a moment later).
 const LAG3 = 0.1;
 function update3() {
-  // Sujan, 26 Oct 2026: keep it like the game, no switch
-  const T0 = T, lag = D ? LAG3 : 0;
+  // Sujan, 26 Oct 2026: keep it like the game, no switch. POV mode: the recorder's own view, HUD and gun stay on the
+  // moment itself (POV.t, his own frames); the delay for everyone else there is POV.lag, measured at 0 and 0.1 s for
+  // Sujan to pick (29 Oct 2026; main's 0.1 s until he does)
+  const T0 = T, lag = D ? (POV.on ? POV.lag : LAG3) : 0;
+  POV.t = T0;
   if (lag) T = Math.max(D.start || 0, T - lag);
   try { update3Now(); } finally { T = T0; }
 }
@@ -338,12 +344,12 @@ function update3Now() {
     const s = playerState(+e, T);
     const f = R3.players[e];
     // also hidden when the free camera sits inside someone's head (after dragging out of Player's eyes)
-    const hideSelf = (+e === selected && (cam3.mode === 'eyes' || (cam3.mode === 'chase' && cam3.chaseDist != null && cam3.chaseDist < 12)))
+    const hideSelf = POV.on ? povHidesLiving(+e) : (+e === selected && (cam3.mode === 'eyes' || (cam3.mode === 'chase' && cam3.chaseDist != null && cam3.chaseDist < 12)))
       || (cam3.mode === 'free' && s && s.state > 0 && Math.hypot(cam3.pos[0] - s.x, cam3.pos[1] - s.y, cam3.pos[2] - s.z - 17) < 24);
     if (!s || s.state < 0) {
       if (f) f.g.visible = false;
       // falling down: the player's own death animation plays until the game swaps in the corpse
-      if (s && !lying.has(+e) && isDeathSeq(+e) && !(+e === selected && cam3.mode !== 'free')) drawModelPlayer(+e, s, false);
+      if (s && !lying.has(+e) && isDeathSeq(+e) && !hidesBody(+e)) drawModelPlayer(+e, s, false);
       continue;
     }
     // behind a wall, as last checked (about 10 times a second, in the labels pass below)
@@ -378,13 +384,14 @@ function update3Now() {
   const ov = (key, make) => { let o = OVL.m.get(key); if (!o) { o = make(); OVL.m.set(key, o); R3.scene.add(o); } o.visible = true; OVL.used.add(key); return o; };
   if (r) for (let ki = 0; ki < r.kills.length; ki++) {
     const k = r.kills[ki];
-    if (k.t > T || !k.vpos) continue;
+    // a position with a part missing (a player whose height the snapshot never sent) draws nothing rather than a line to nowhere
+    if (k.t > T || !k.vpos || !k.vpos.every(Number.isFinite)) continue;
     const age = T - k.t;
     const c = k.vteam === 'TERRORIST' ? 0xe8574d : 0x5ea3e8, z = k.vpos[2] - (k.vduck ? 16 : 34);
     ov('x1:' + ki, () => lineMesh(g3(k.vpos[0] - 10, k.vpos[1] - 10, z), g3(k.vpos[0] + 10, k.vpos[1] + 10, z), c));
     ov('x2:' + ki, () => lineMesh(g3(k.vpos[0] + 10, k.vpos[1] - 10, z), g3(k.vpos[0] - 10, k.vpos[1] + 10, z), c));
     const life = k.wb ? 6 : 2.5;
-    if (opts.lines && k.kpos && k.killer !== k.victim && age < life) {
+    if (opts.lines && k.kpos && k.kpos.every(Number.isFinite) && k.killer !== k.victim && age < life) {
       const eye = k.wb ? k.wb.eye : [k.kpos[0], k.kpos[1], k.kpos[2] + (k.kduck ? 12 : 17)];
       const l = ov('kl:' + ki + (k.wb ? (k.wb.loose ? 'l' : 's') : ''), () => lineMesh(g3(eye[0], eye[1], eye[2]), g3(k.vpos[0], k.vpos[1], k.vpos[2] + (k.vduck ? 4 : 10)), k.wb ? (k.wb.loose ? 0xc9a3e8 : 0xff4fd8) : 0xff9a3c, !!k.wb));
       l.material.opacity = 1 - age / life;
@@ -435,7 +442,14 @@ function update3Now() {
   for (const [key, o] of OVL.m) if (!OVL.used.has(key)) o.visible = false;
 
   // camera
-  if (cam3.mode === 'free') {
+  if (POV.on) {
+    // POV mode: the camera exactly as the recorder's game drew it, zoom included (his scope from SetFOV)
+    const v = povFollow(POV.t);
+    // his zoom, or while he spectates someone in first person, theirs (the server sends him the watched player's)
+    const fov = POV.who != null ? povFov(POV.t) : 90;
+    camera.fov = 2 * Math.atan(Math.tan(fov * Math.PI / 360) / camera.aspect) * 180 / Math.PI;
+    placeCam(v.pos, v.yaw, v.pitch);
+  } else if (cam3.mode === 'free') {
     const sp = (k3.shift ? 1500 : 550) * dt;
     const ff = fwd(cam3.yaw, cam3.pitch), rt = [Math.sin(cam3.yaw * Math.PI / 180), -Math.cos(cam3.yaw * Math.PI / 180)];
     if (k3.w) for (let i = 0; i < 3; i++) cam3.pos[i] += ff[i] * sp;
@@ -513,8 +527,10 @@ function update3Now() {
   camera.updateProjectionMatrix();
   renderer.render(R3.scene, camera);
   // the gun in hand isn't shown while looking through the scope, as in the game
-  const scoped = cam3.mode === 'eyes' && selected && zoomLevel(selected, T) > 0 && (() => { const ss = playerState(selected, T); return ss && ss.state > 0 && SNIPERS[weaponShort(ss.weapon)]; })();
-  if (cam3.mode === 'eyes' && selected && !scoped) drawViewModel(renderer, camera, selected, playerState(selected, T));
+  const scoped = POV.on ? (POV.who != null && povFov(POV.t) < 90 && (() => { const ss = playerState(POV.who, T); return ss && SNIPERS[weaponShort(ss.weapon)]; })())
+    : cam3.mode === 'eyes' && selected && zoomLevel(selected, T) > 0 && (() => { const ss = playerState(selected, T); return ss && ss.state > 0 && SNIPERS[weaponShort(ss.weapon)]; })();
+  // POV mode: no gun in hand while watching from a free or chase spectator camera
+  if (cam3.mode === 'eyes' && selected && !scoped && (!POV.on || POV.who != null)) drawViewModel(renderer, camera, selected, playerState(selected, T));
 
   // name labels on a 2D overlay
   const lc = $('lbl'), lx = lc.getContext('2d');
@@ -529,7 +545,7 @@ function update3Now() {
   // through the map, so each player is re-checked about 10 times a second (and at once after a camera switch
   // or a jump in time), not on every frame.
   if (opts.names || opts.xray) for (const L of lab) {
-    if (cam3.mode === 'eyes' && L.e === selected) continue;
+    if (POV.on ? povHidesLiving(L.e) : cam3.mode === 'eyes' && L.e === selected) continue;
     const v = L.p.clone().project(camera);
     if (v.z > 1 || v.z < -1) continue;
     let hidden = false;
@@ -570,15 +586,17 @@ function update3Now() {
     const hpv = hpAt(selected, T);
     pov.innerHTML = `<span class="${s.state === 1 ? 'kt' : 'kct'}">${esc(nameAt(selected, T))}</span>${hpv != null ? ` <b>(${hpv})</b>` : ''}<span class="kw">${esc(weaponShort(s.weapon))}</span>`;
     if (scoped) drawScope(lx, W, H);
-    const xh = XHAIR[$('xh3').value] || XHAIR.large;
-    if (cam3.mode === 'eyes') drawHitMarker(lx, W / 2, H / 2, xh);
-    if (cam3.mode === 'eyes' && !scoped) { lx.strokeStyle = 'rgba(90,255,90,.85)'; lx.lineWidth = xh.w; const cx = W / 2, cy = H / 2, g = xh.gap, e = xh.end; lx.beginPath(); lx.moveTo(cx - e, cy); lx.lineTo(cx - g, cy); lx.moveTo(cx + g, cy); lx.lineTo(cx + e, cy); lx.moveTo(cx, cy - e); lx.lineTo(cx, cy - g); lx.moveTo(cx, cy + g); lx.lineTo(cx, cy + e); lx.stroke(); }
+    const xh = POV.on ? povXh(W, H) : XHAIR[$('xh3').value] || XHAIR.large;
+    if (cam3.mode === 'eyes' && (!POV.on || POV.who != null)) drawHitMarker(lx, W / 2, H / 2, xh);
+    if (POV.on) { if (!scoped) drawPovCrosshair(lx, W, H); if (POV.who === POV.v.rec && POV.mode === 0) drawPovHud(lx, W, H); }
+    else if (cam3.mode === 'eyes' && !scoped) { lx.strokeStyle = 'rgba(90,255,90,.85)'; lx.lineWidth = xh.w; const cx = W / 2, cy = H / 2, g = xh.gap, e = xh.end; lx.beginPath(); lx.moveTo(cx - e, cy); lx.lineTo(cx - g, cy); lx.moveTo(cx + g, cy); lx.lineTo(cx + e, cy); lx.moveTo(cx, cy - e); lx.lineTo(cx, cy - g); lx.moveTo(cx, cy + g); lx.lineTo(cx, cy + e); lx.stroke(); }
   } else if (cam3.mode !== 'free' && selected) {
     const death = D.kills.filter((k) => k.victim === selected && k.t <= T + 0.05).pop();
     if (death) {
       // red wash over the view that fades to a steady tint, like taking the final hit
       const age = Math.max(0, T - death.t);
-      const a = Math.max(0.3, 0.8 - age * 0.35);
+      // POV mode: the view is the spectator camera he watched through, so the wash only flashes at the death
+      const a = POV.on ? Math.max(0, 0.6 - age * 0.6) : Math.max(0.3, 0.8 - age * 0.35);
       const g = lx.createRadialGradient(W / 2, H / 2, Math.min(W, H) * 0.15, W / 2, H / 2, Math.max(W, H) * 0.7);
       g.addColorStop(0, `rgba(120,0,0,${a * 0.35})`); g.addColorStop(1, `rgba(150,0,0,${a})`);
       lx.fillStyle = g; lx.fillRect(0, 0, W, H);
@@ -588,16 +606,20 @@ function update3Now() {
         ? `killed by <span class="${kside}">${esc(M.pl[death.kp].name)}</span> · ${esc(death.weapon)}${death.hs ? ' · <span class="khs">HS</span>' : ''}${death.wb ? (death.wb.loose ? ' · <span class="kwb loose">loose wallbang</span>' : ' · <span class="kwb">wallbang</span>') : ''}`
         : (death.weapon === 'world' ? 'died' : 'killed themselves');
       pov.hidden = false; pov.classList.add('dead');
-      pov.innerHTML = `<b>${esc(nameAt(selected, T))}</b> ${kn} <span class="kw">· ${playing && age < 2.5 ? 'switching to a teammate' : 'press X for the next player'}</span>`;
-    } else { pov.hidden = false; pov.classList.add('dead'); pov.innerHTML = `<span class="kw">${esc(nameAt(selected, T))} is dead. Press X for the next player.</span>`; }
+      pov.innerHTML = `<b>${esc(nameAt(selected, T))}</b> ${kn}${POV.on ? '' : ` <span class="kw">· ${playing && age < 2.5 ? 'switching to a teammate' : 'press X for the next player'}</span>`}`;
+    } else { pov.hidden = false; pov.classList.add('dead'); pov.innerHTML = `<span class="kw">${esc(nameAt(selected, T))} is dead.${POV.on ? '' : ' Press X for the next player.'}</span>`; }
     // like CS spectating: after a moment, follow a living teammate (or anyone alive)
-    if (death && T - death.t > 2.5 && playing) {
+    if (!POV.on && death && T - death.t > 2.5 && playing) {
       const alive = alivePlayers();
       const mates = alive.filter((e) => teamOfSlot(e, T) === teamOfSlot(selected, T));
       const pick = (mates.length ? mates : alive)[0];
       if (pick) { selected = pick; renderPane(); }
     }
   } else pov.hidden = true;
+  // POV mode: the game's spectator bars while he watches someone else; they name the player, so the box goes
+  if (POV.on && drawSpecBars(lx, W, H)) pov.hidden = true;
+  // ...and while he's playing the game shows no name box, his HUD sits there
+  else if (POV.on && POV.mode === 0 && POV.who === POV.v.rec) pov.hidden = true;
 }
 // Hit marker on the crosshair when the player you're watching gets a kill:
 // white for a kill, orange for a headshot, magenta for a wallbang, with a short label underneath
@@ -710,7 +732,8 @@ function drawScope(lx, W, H) {
 // A ring that bursts out from the victim in 3D, for every kill. Not in Player's eyes: there the victim is
 // usually at the crosshair, so the ring covered it (0.17.0); the crosshair marker says it instead.
 function drawKillRings(lx, W, H, camera) {
-  if (cam3.mode === 'eyes') return;
+  // POV mode: no ring while the view is in someone's eyes; on his death and spectator cameras it shows
+  if (POV.on ? POV.who != null : cam3.mode === 'eyes') return;
   for (const f of flashes) {
     const k = f.k; if (!k.vpos) continue;
     const a = (performance.now() - f.at) / FLASH_MS; if (a >= 1) continue;
@@ -810,4 +833,379 @@ async function checkSeen() {
   }
   rt.dispose(); MAG.dispose(); SOLID.dispose();
   done();
+}
+
+// ---------------- POV mode (0.25.0, behind the POV mode setting; built on wip/pov-mode from 3 Oct 2026) ----------------
+// A demo recorded by a player plays through his own eyes, the way the game plays it back: the camera his game
+// drew, read from the view block written before every frame (about 100 a second, D.view, see VIEW_STRIDE in the
+// reader). It holds his exact aim with the recoil kick in it, and after he dies, the spectator camera he
+// watched through. No free camera and no other players' eyes: the file only has players near him (Sujan, 3 Oct 2026).
+// on: the setting is on and this is a POV demo with its view block (see povApply in the page); t: the moment itself,
+// for his own view, gun, crosshair and HUD; lag: how far the other players are drawn behind it (see update3)
+const POV = { on: false, i: 0, t: 0, lag: LAG3 };
+// The recorder's own shots, in order: time, weapon id, silenced (1 or 0). A shot is his gun's round count going
+// down by 1 to 3 with the same gun in hand (CurWeapon). Whether an M4A1 or USP had its silencer on comes from
+// the last animation his game played on it (demo frame type 7): the silenced and unsilenced versions are
+// separate sequences in v_m4a1.mdl and v_usp.mdl. Each animation belongs to the gun model in his hands 0.05 s
+// after it (his own state's viewmodel; the animation comes a moment before the model at a switch). Checked on
+// Match 1 CT (de_barcelona, 27 Mar 2025), 3 Oct 2026: 25 of 989 animations land on a model without that
+// sequence (97.5% fit, against 154 wrong when credited 0.1 s earlier). A gun with neither yet: unsilenced, as the
+// game hands them out.
+const SIL_SEQ = { v_m4a1: { id: 22, on: [0, 1, 2, 3, 4, 5, 6], off: [7, 8, 9, 10, 11, 12, 13] }, v_usp: { id: 16, on: [0, 1, 2, 3, 4, 5, 6, 7], off: [8, 9, 10, 11, 12, 13, 14, 15] } };
+function povShots() {
+  const A = D.ownAmmo || [], W = D.wanims || [], VM = D.vmodels || [], out = [];
+  const vmName = (t) => { let lo = 0, hi = VM.length / 2 - 1, r = -1; while (lo <= hi) { const m = (lo + hi) >> 1; if (VM[m * 2] <= t) { r = m; lo = m + 1; } else hi = m - 1; } return r < 0 ? '' : (D.models[VM[r * 2 + 1]] || '').replace(/^models\//, '').replace(/\.mdl$/, ''); };
+  const sil = {}; let w = 0;
+  for (let i = 0; i < A.length; i += 3) {
+    const t = A[i], id = A[i + 1], clip = A[i + 2];
+    for (; w < W.length && W[w] <= t; w += 2) {
+      const sq = SIL_SEQ[vmName(W[w] + 0.05)];
+      if (sq) { if (sq.on.includes(W[w + 1])) sil[sq.id] = 1; else if (sq.off.includes(W[w + 1])) sil[sq.id] = 0; }
+    }
+    if (i && A[i - 2] === id && clip < A[i - 1] && A[i - 1] - clip <= 3) out.push(t, id, sil[id] || 0);
+  }
+  return new Float32Array(out);
+}
+function povInit() {
+  POV.shotsBy = null; POV.hidden = null; { const n = $('povNote'); if (n) n.hidden = true; } $('feed').style.top = '';
+  POV.on = !!(D && D.povOn);
+  POV.i = 0; POV.t = T;
+  D.ownShots = POV.on ? povShots() : null;
+  // the camera buttons that pick another view or player go; View settings stays, without the crosshair size (POV mode
+  // draws his own game crosshair) and Glow on hits (no wallbang damage in POV mode, so nothing to glow; Sujan, 29 Oct 2026)
+  $('cam3').querySelector('.camseg').hidden = POV.on;
+  $('bPrevP').hidden = POV.on; $('bNextP').hidden = POV.on;
+  $('xh3').closest('.vrow').hidden = POV.on; $('glow3').closest('.vrow').hidden = POV.on;
+  if (POV.on) { cam3.mode = 'eyes'; cam3.chase = null; cam3.cYaw = null; povFollow(T); if (opts.xray) setTimeout(showHiddenEnemiesNote, 1500); }
+}
+// The view at time t, between the two frames around it. Angles turn the short way round. Across a jump (a
+// respawn, a teleport, the gap between two joined files) there's nothing to blend, so the earlier frame is kept.
+function povView(t) {
+  const V = D.view, n = D.viewStride, N = V.length / n;
+  let i = Math.min(POV.i, N - 1);
+  if (V[i * n] > t) { let lo = 0, hi = i; while (lo < hi) { const m = (lo + hi + 1) >> 1; if (V[m * n] <= t) lo = m; else hi = m - 1; } i = lo; }
+  else while (i < N - 1 && V[(i + 1) * n] <= t) i++;
+  POV.i = i;
+  const a = i * n, b = Math.min(i + 1, N - 1) * n;
+  const span = V[b] - V[a];
+  let f = span > 0 && span < 0.25 ? Math.max(0, Math.min(1, (t - V[a]) / span)) : 0;
+  if (Math.hypot(V[b + 1] - V[a + 1], V[b + 2] - V[a + 2], V[b + 3] - V[a + 3]) > 64) f = 0;
+  const L = (k) => V[a + k] + (V[b + k] - V[a + k]) * f;
+  const LA = (k) => { let d = V[b + k] - V[a + k]; d = ((d % 360) + 540) % 360 - 180; return V[a + k] + d * f; };
+  return { pos: [L(1), L(2), L(3)], pitch: LA(4), yaw: LA(5), punch: [V[a + 7], V[a + 8]], rec: V[a + 17] + 1, t: V[a] };
+}
+// Whose eyes the view is, from his spectator mode (D.obs, his own state): playing, the recorder; first person
+// (mode 4), the player he spectated. In chase (2, the death camera behind his own body for a few seconds after
+// each death, as in the game) and free (3) modes the camera is outside anyone, so nobody's eyes: no gun in hand,
+// no crosshair, and every body is drawn, his own included. Kept in `selected` (the player watched) so the name at
+// the bottom and the right panel follow; POV.who is the one whose eyes the camera is in, or null.
+function povObs(t) {
+  const O = D.obs; if (!O || !O.length) return [0, 0];
+  let lo = 0, hi = O.length / 3 - 1, r = -1;
+  while (lo <= hi) { const m = (lo + hi) >> 1; if (O[m * 3] <= t) { r = m; lo = m + 1; } else hi = m - 1; }
+  return r < 0 ? [0, 0] : [O[r * 3 + 1], O[r * 3 + 2]];
+}
+function povFollow(t) {
+  const v = povView(t);
+  const [mode, target] = povObs(t);
+  const alive = (e) => { const s = e && playerState(e, t); return !!(s && s.state > 0); };
+  let who = null, watched = v.rec;
+  if (mode === 0) { if (alive(v.rec)) who = v.rec; }
+  else if (target && D.slots[target]) { watched = target; if (mode === 4 && alive(target)) who = target; }
+  POV.who = who; POV.v = v; POV.mode = mode;
+  if (selected !== watched) { selected = watched; if (typeof renderPane === 'function') renderPane(); }
+  return v;
+}
+// Hidden from the 3D view: the body whose eyes the camera is in (POV mode), else the followed player in
+// Player's eyes and Behind player as before
+function hidesBody(e) { return POV.on ? e === POV.who : e === selected && cam3.mode !== 'free'; }
+// POV mode, a living player left out of the 3D view: the one whose eyes the camera is in, and the recorder while
+// he's spectating though not dead (before his first spawn after joining; the GP css_cache demo of 3 Oct 2026
+// starts this way, and he was drawn standing there)
+function povHidesLiving(e) { return e === POV.who || (e === POV.v.rec && POV.mode !== 0); }
+
+// The recorder's crosshair, as the game draws it (CS 1.6 client, CHudAmmo::DrawCrosshair, from the rebuilt
+// client code at github.com/Velaron/cs16-client, cl_dll/ammo.cpp, read 3 Oct 2026). Each gun has a resting gap
+// and a step (POV_XHAIR, by weapon id). In every frame of his game where he fired, the gap grows by the step, to at
+// most 15; in every other frame it shrinks by 1.3% plus 0.1, never below the resting gap. Arms are
+// (gap - rest) / 2 + 5 long. Both scale with the screen: width / 800 at cl_crosshair_size 2 or "medium" (640 for
+// large or 3, 1024 for small or 1). No crosshair with the AWP, Scout, SG550 or G3SG1, or while spectating from
+// outside a player. Running and jumping only change it with cl_dynamiccrosshair 1 (Sujan's is 0; not copied).
+const POV_XHAIR = [[8, 3], [4, 3], [5, 3], [8, 3], [9, 4], [6, 3], [9, 3], [3, 3], [8, 3], [4, 3], [8, 3], [6, 3], [5, 3], [4, 3], [4, 3], [8, 3], [8, 3], [8, 3], [6, 3], [6, 3], [8, 6], [4, 3], [7, 3], [6, 4], [8, 3], [8, 3], [5, 3], [4, 4], [7, 3], [7, 3]];
+const NO_XHAIR = { 3: 1, 13: 1, 18: 1, 24: 1 };
+// weapon ids by the p_ model name the snapshots give (CS 1.6 weapon numbering, as CurWeapon uses)
+const P_WEAPON_ID = { p228: 1, scout: 3, hegrenade: 4, xm1014: 5, c4: 6, mac10: 7, aug: 8, smokegrenade: 9, elite: 10, fiveseven: 11, ump45: 12, sg550: 13, galil: 14, famas: 15, usp: 16, glock18: 17, awp: 18, mp5: 19, m249: 20, m3: 21, m4a1: 22, tmp: 23, g3sg1: 24, flashbang: 25, deagle: 26, sg552: 27, ak47: 28, knife: 29, p90: 30 };
+const XCFG = { r: 50, g: 250, b: 50, base: 800, additive: true, read: false, scale: 0.7 }; // scale: 70%, Sujan's pick from docs/pov-crosshair-size-mock.png (4 Oct 2026: 100%, the game's own size, looked large)
+async function readCrosshairCfg() {
+  if (XCFG.read || !files.cfg) return; XCFG.read = true;
+  try {
+    const txt = await files.cfg.text(), get = (k) => { const m = new RegExp('^\\s*' + k + '\\s+"?([^"\\n]*)"?', 'mi').exec(txt); return m ? m[1].trim() : null; };
+    const col = get('cl_crosshair_color'); if (col) { const c = col.split(/\s+/).map(Number); if (c.length === 3 && c.every(Number.isFinite)) [XCFG.r, XCFG.g, XCFG.b] = c.map((x) => Math.max(0, Math.min(255, x))); }
+    const sz = (get('cl_crosshair_size') || '').toLowerCase();
+    XCFG.base = sz === 'small' || sz === '1' ? 1024 : sz === 'large' || sz === '3' ? 640 : 800;
+    const tr = get('cl_crosshair_translucent'); if (tr != null) XCFG.additive = tr !== '0';
+  } catch (e) { }
+}
+// the gun in his hands at t (weapon id), from CurWeapon
+function povGun(t) {
+  const A = D.ownAmmo; if (!A || !A.length) return 0;
+  let lo = 0, hi = A.length / 3 - 1, r = -1;
+  while (lo <= hi) { const m = (lo + hi) >> 1; if (A[m * 3] <= t) { r = m; lo = m + 1; } else hi = m - 1; }
+  return r < 0 ? 0 : A[r * 3 + 1];
+}
+// Shot times of one player, for the crosshair of a teammate he spectates in first person: from the fire
+// messages the server sent him about that player (D.shots), kept per player once worked out
+function shotTimesOf(e) {
+  const C = POV.shotsBy || (POV.shotsBy = {});
+  if (C[e]) return C[e];
+  const sh = D.shots, out = [];
+  for (let i = 0; i < sh.length; i += 4) if (sh[i + 1] === e && FIRE[eventName(sh[i + 2])]) out.push(sh[i], 0, 0);
+  return C[e] = new Float32Array(out);
+}
+// the gap and arm length at t for a gun (weapon id) and its shots (stride 3, time first), played forward
+// through the recorder's own frames from 1.5 s before (long enough to close fully from 15), with the shots
+// landing in the frames they fall in
+function povCrosshairAt(t, id, S) {
+  if (!id || NO_XHAIR[id]) return null;
+  const [rest, step] = POV_XHAIR[id - 1] || [4, 3];
+  const V = D.view, n = D.viewStride;
+  let i = POV.i; while (i > 0 && V[i * n] > t - 1.5) i--;
+  let j = 0; { let lo = 0, hi = S.length / 3; while (lo < hi) { const m = (lo + hi) >> 1; if (S[m * 3] <= V[i * n]) lo = m + 1; else hi = m; } j = lo; }
+  let d = rest, alpha = 255;
+  for (; i * n < V.length && V[i * n] <= t; i++) {
+    let fired = false; while (j * 3 < S.length && S[j * 3] <= V[i * n]) { fired = true; j++; }
+    if (fired) { d = Math.min(d + step, 15); alpha = Math.max(alpha - 40, 120); } else { d -= d * 0.013 + 0.1; alpha = Math.min(255, alpha + 2); }
+    d = Math.max(d, rest);
+  }
+  return { gap: d, len: (d - rest) * 0.5 + 5, alpha };
+}
+// his crosshair now: gap, arm length and alpha in the game's units, or null (no crosshair with this gun, or no eyes)
+function povCrosshairNow() {
+  if (POV.who === POV.v.rec) return povCrosshairAt(POV.t, povGun(POV.t), D.ownShots || []);
+  // spectating a teammate in first person: his gun, opening with his shots (Sujan, 4 Oct 2026: it was static)
+  if (POV.who != null) { const s = playerState(POV.who, T); return povCrosshairAt(POV.t, s && P_WEAPON_ID[weaponShort(s.weapon)], shotTimesOf(POV.who)); }
+  return null;
+}
+// the kill marker's size in POV mode, in the form of XHAIR's sizes: its ticks start just past his crosshair's arms as
+// they open and close (option A of 5 Oct 2026); with no crosshair (a sniper rifle) as with the large size
+function povXh(W, H) {
+  readCrosshairCfg();
+  const c = povCrosshairNow(); if (!c) return XHAIR.large;
+  const k = W / XCFG.base * XCFG.scale, g = c.gap * k;
+  return { gap: g, end: g + Math.max(1, c.len * k), w: Math.max(1, Math.round(W / 1280)) };
+}
+function drawPovCrosshair(lx, W, H) {
+  readCrosshairCfg();
+  const c = povCrosshairNow();
+  if (!c) return;
+  const k = W / XCFG.base * XCFG.scale, g = c.gap * k, L = Math.max(1, c.len * k), cx = Math.round(W / 2), cy = Math.round(H / 2);
+  lx.save();
+  lx.globalCompositeOperation = XCFG.additive ? 'lighter' : 'source-over';
+  lx.fillStyle = `rgba(${XCFG.r},${XCFG.g},${XCFG.b},${(c.alpha / 255).toFixed(3)})`;
+  const w = Math.max(1, Math.round(W / 1280));
+  lx.fillRect(cx - g - L, cy, L, w); lx.fillRect(cx + g, cy, L, w); lx.fillRect(cx, cy - g - L, w, L); lx.fillRect(cx, cy + g, w, L);
+  lx.restore();
+}
+
+// The recorder's zoom at time t (field of view, 90 when not zoomed), from the SetFOV messages
+function povFov(t) {
+  const F = D.fovs; if (!F || !F.length) return 90;
+  let lo = 0, hi = F.length / 2 - 1, r = -1;
+  while (lo <= hi) { const m = (lo + hi) >> 1; if (F[m * 2] <= t) { r = m; lo = m + 1; } else hi = m - 1; }
+  const v = r >= 0 ? F[r * 2 + 1] : 90;
+  return v > 0 && v < 90 ? v : 90;
+}
+
+// ---------------- POV mode: his HUD ----------------
+// Approved design: docs/pov-hud-mock.png. Health and armor bottom left, round timer bottom middle, money and ammo
+// bottom right, drawn with the game's own HUD sprites from the player's folder (cstrike/sprites/hud.txt and its
+// 640hud*.spr sheets, each gun's ammo icon from sprites/weapon_*.txt), in the game's HUD colour (255 160 0, the
+// HL SDK's RGB_YELLOWISH), additive like the game. Health 25 or less turns red, as in CS. The values are what
+// the server told his game: Health, Battery, ArmorType, Money, CurWeapon and AmmoX (D.hud). Only while he's
+// playing (the game shows the spectator bars instead when he spectates). Without the sprites, plain text.
+// HUD_SCALE: sprite pixels per 768 pixels of view height (the game draws its 640 sprites unscaled, so their size
+// on screen depends on the resolution he played at, which the demo doesn't say).
+const HUD_SCALE = 1;
+const HUD_COL = [255, 160, 0], HUD_RED = [250, 0, 0];
+const W_NAME = { 1: 'p228', 3: 'scout', 4: 'hegrenade', 5: 'xm1014', 6: 'c4', 7: 'mac10', 8: 'aug', 9: 'smokegrenade', 10: 'elite', 11: 'fiveseven', 12: 'ump45', 13: 'sg550', 14: 'galil', 15: 'famas', 16: 'usp', 17: 'glock18', 18: 'awp', 19: 'mp5navy', 20: 'm249', 21: 'm3', 22: 'm4a1', 23: 'tmp', 24: 'g3sg1', 25: 'flashbang', 26: 'deagle', 27: 'sg552', 28: 'ak47', 29: 'knife', 30: 'p90' };
+const HUDS = { from: null, spr: {}, ammo: {}, loading: false };
+// one sprite from a sheet as two canvases, yellow and red: the sheet's brightness is how solid each pixel is
+function hudSprite(sheet, r) {
+  if (!sheet || r.w <= 0 || r.h <= 0 || r.x + r.w > sheet.w || r.y + r.h > sheet.h) return null;
+  const mk = (col) => {
+    const cv = document.createElement('canvas'); cv.width = r.w; cv.height = r.h;
+    const g = cv.getContext('2d'), img = g.createImageData(r.w, r.h);
+    for (let j = 0; j < r.h; j++) for (let i = 0; i < r.w; i++) {
+      const c = sheet.px[(r.y + j) * sheet.w + r.x + i], o = (j * r.w + i) * 4;
+      const a = c < sheet.n ? Math.max(sheet.pal[c * 3], sheet.pal[c * 3 + 1], sheet.pal[c * 3 + 2]) : 0;
+      img.data[o] = col[0]; img.data[o + 1] = col[1]; img.data[o + 2] = col[2]; img.data[o + 3] = a;
+    }
+    g.putImageData(img, 0, 0); return cv;
+  };
+  return { y: mk(HUD_COL), r: mk(HUD_RED), w: r.w, h: r.h };
+}
+async function loadHudSprites() {
+  const txt = files.hud && files.hud.txt;
+  if (!txt || HUDS.from === txt || HUDS.loading) return;
+  HUDS.loading = true;
+  try {
+    const sheets = {};
+    const sheet = async (nm) => { if (!(nm in sheets)) { const f = files.hud.spr[nm]; sheets[nm] = f ? decodeSpr(await readPicked(f, `sprites/${nm}.spr`) || new Uint8Array(0)) : null; } return sheets[nm]; };
+    const want = new Set(['cross', 'suit_full', 'suit_empty', 'suithelmet_full', 'suithelmet_empty', 'dollar', 'stopwatch', 'divider', ...Array.from({ length: 10 }, (_, i) => 'number_' + i)]);
+    for (const line of (await txt.text()).split(/\r?\n/)) {
+      const f = line.trim().split(/\s+/);
+      if (f.length === 7 && want.has(f[0]) && f[1] === '640') { const sp = hudSprite(await sheet(f[2].toLowerCase()), { x: +f[3], y: +f[4], w: +f[5], h: +f[6] }); if (sp) HUDS.spr[f[0]] = sp; }
+    }
+    // ammo icons, for the guns he used
+    const ids = new Set(); for (let i = 1; i < (D.ownAmmo || []).length; i += 3) ids.add(D.ownAmmo[i]);
+    for (const id of ids) {
+      const nm = W_NAME[id], f = nm && files.hud.wtxt && files.hud.wtxt['weapon_' + nm]; if (!f) continue;
+      for (const line of (await f.text()).split(/\r?\n/)) {
+        const g = line.trim().split(/\s+/);
+        if (g.length === 7 && g[0] === 'ammo' && g[1] === '640') { const sp = hudSprite(await sheet(g[2].toLowerCase()), { x: +g[3], y: +g[4], w: +g[5], h: +g[6] }); if (sp) HUDS.ammo[id] = sp; }
+      }
+    }
+  } catch (e) { }
+  HUDS.from = txt; HUDS.loading = false;
+}
+// the last value at or before t in a flat (time, value...) array of stride n, column k
+function lastAt(a, n, t, k = 1, from = 0) {
+  if (!a || !a.length) return null;
+  let lo = 0, hi = a.length / n - 1, r = -1;
+  while (lo <= hi) { const m = (lo + hi) >> 1; if (a[m * n] <= t) { r = m; lo = m + 1; } else hi = m - 1; }
+  return r < 0 || a[r * n] < from ? null : a[r * n + k];
+}
+function povHudValues(t) {
+  const H = D.hud; if (!H) return null;
+  const A = D.ownAmmo, id = povGun(t);
+  let clip = null; { let lo = 0, hi = A.length / 3 - 1, r = -1; while (lo <= hi) { const m = (lo + hi) >> 1; if (A[m * 3] <= t) { r = m; lo = m + 1; } else hi = m - 1; } if (r >= 0) clip = A[r * 3 + 2]; }
+  const ty = H.gunAmmo[id];
+  let spare = null;
+  if (ty != null && ty >= 0) for (let i = H.ammox.length - 3; i >= 0; i -= 3) if (H.ammox[i] <= t && H.ammox[i + 1] === ty) { spare = H.ammox[i + 2]; break; }
+  return { hp: lastAt(H.hp, 2, t), ap: lastAt(H.ap, 2, t), helmet: lastAt(H.helmet, 2, t), money: lastAt(H.money, 2, t), id, clip, spare, clock: povRoundTimer(t) };
+}
+// The HUD's round timer as his game showed it: counting down from the last RoundTime message the server sent, and
+// hidden from the bomb plant's BombDrop message (the client hides the timer on it) until a later RoundTime message.
+// A ReGameDLL server with mp_show_bomb_timer 1 sends one right after the plant, with the C4's time left, and again
+// after a defuse or an explosion that doesn't end the round (ReGameDLL wpn_c4.cpp, ggrenade.cpp and player.cpp, read
+// 29 Oct 2026). Sujan, 29 Oct 2026: follow the messages, rather than always hiding it after the plant.
+function povRoundTimer(t) {
+  let rt = null; for (const x of D.roundTimes || []) { if (x.t > t + 0.001) break; rt = x; }
+  if (!rt) return null;
+  for (const b of D.bomb) { if (b.t > t) break; if (b.type === 'plantpos' && b.t >= rt.t) return null; }
+  return fmt(Math.max(0, Math.floor(rt.secs - gameSpan(rt.t, t) + 0.001)));
+}
+function drawPovHud(lx, W, H) {
+  loadHudSprites();
+  const v = povHudValues(POV.t); if (!v) return;
+  const s = H / 768 * HUD_SCALE, haveSpr = !!HUDS.spr.number_0;
+  const dh = haveSpr ? HUDS.spr.number_0.h * s : 25 * s, dw = haveSpr ? HUDS.spr.number_0.w * s : 20 * s;
+  const base = H - 46 - dh; // the bottom buttons sit below
+  lx.save(); lx.globalCompositeOperation = 'lighter'; lx.globalAlpha = 0.8;
+  const spr = (nm, x, y, red) => { const p = HUDS.spr[nm] || HUDS.ammo[nm]; if (!p) return 0; lx.drawImage(red ? p.r : p.y, x, y, p.w * s, p.h * s); return p.w * s; };
+  const num = (n, x, y, red, rightAlign) => {
+    const str = String(Math.max(0, Math.round(n)));
+    if (!haveSpr) { lx.font = `700 ${Math.round(dh)}px ${monoFont()}`; lx.fillStyle = `rgb(${(red ? HUD_RED : HUD_COL).join(',')})`; lx.textBaseline = 'top'; lx.textAlign = rightAlign ? 'right' : 'left'; lx.fillText(str, x, y); return lx.measureText(str).width; }
+    let w = str.length * dw, x0 = rightAlign ? x - w : x;
+    for (const ch of str) { spr('number_' + ch, x0, y, red); x0 += dw; }
+    return w;
+  };
+  const icon = (nm, x, y, red) => { const p = HUDS.spr[nm]; if (!p) return 0; return spr(nm, x, y + (dh - p.h * s) / 2, red); };
+  // health and armor
+  let x = W * 0.02;
+  if (v.hp != null) { const red = v.hp <= 25; x += icon('cross', x, base, red) + 6 * s; x += num(v.hp, x, base, red) + 24 * s; }
+  if (v.ap != null) { x += icon(v.helmet ? (v.ap > 0 ? 'suithelmet_full' : 'suithelmet_empty') : v.ap > 0 ? 'suit_full' : 'suit_empty', x, base) + 6 * s; num(v.ap, x, base); }
+  // round timer
+  if (v.clock) { const tw = dw * v.clock.length; let cx = W / 2 - tw / 2; cx += icon('stopwatch', cx - 30 * s, base); const [m, sec] = v.clock.split(':'); let xx = W / 2 - tw / 2; xx += num(+m, xx, base); if (haveSpr) { lx.fillStyle = `rgba(${HUD_COL.join(',')},1)`; lx.fillRect(xx + dw * 0.3, base + dh * 0.3, 3 * s, 3 * s); lx.fillRect(xx + dw * 0.3, base + dh * 0.65, 3 * s, 3 * s); } xx += dw * 0.8; num(+sec < 10 ? 0 : Math.floor(+sec / 10), xx, base); num(+sec % 10, xx + dw, base); }
+  // money, above the ammo
+  const R = W * 0.98;
+  if (v.money != null) { const w = num(v.money, R, base - dh * 1.5, false, true); icon('dollar', R - w - (HUDS.spr.dollar ? HUDS.spr.dollar.w * s : 0) - 4 * s, base - dh * 1.5); }
+  // ammo: rounds in the gun | spare rounds, then the ammo icon; grenades show their count
+  if (v.id && v.id !== 29) {
+    let r = R; const ic = HUDS.ammo[v.id];
+    if (ic) { r -= ic.w * s; spr(v.id, r, base + (dh - ic.h * s) / 2); r -= 8 * s; }
+    if (v.spare != null && v.spare >= 0) r -= num(v.spare, r, base, false, true) + 10 * s;
+    if (v.clip != null && v.clip >= 0) { if (HUDS.spr.divider) { r -= 2 * s; spr('divider', r, base - dh * 0.25); r -= 12 * s; } num(v.clip, r, base, false, true); }
+  }
+  lx.restore();
+}
+
+// ---------------- POV mode: spectator bars ----------------
+// As the game's spectator view (cstrike/resource/UI/Spectator.res): a translucent black bar at the top and at the
+// bottom (see SPEC_BAR), while he watches someone else after dying (not during the death camera behind
+// his own body). Top right: the score and the round clock; bottom: whose view it is, with his HP when the server
+// sends it (no camera mode label: Sujan, 4 Oct 2026). The kill feed moves below the top bar; the name box goes.
+// Approved design: docs/pov-spectator-bars-mock.png. The bars' darkness (60% black) is a guess: the file doesn't say.
+// Each bar is 40/480 of the view: the game's are 66/480 (they hold its camera and player menus, which the viewer
+// doesn't have), trimmed to what they show (Sujan, 4 Oct 2026).
+const SPEC_BAR = 40 / 480;
+function povBarsOn() { if (!POV.on || POV.mode === 0) return false; const [, tg] = povObs(POV.t); return !(tg === POV.v.rec && POV.mode !== 4) || false; }
+function drawSpecBars(lx, W, H) {
+  const on = povBarsOn();
+  $('feed').style.top = on ? Math.round(H * SPEC_BAR + 8) + 'px' : '';
+  if (!on) return false;
+  const bh = Math.round(H * SPEC_BAR), mono = monoFont();
+  lx.save();
+  lx.fillStyle = 'rgba(0,0,0,.6)'; lx.fillRect(0, 0, W, bh); lx.fillRect(0, H - bh, W, bh);
+  // score and clock
+  const done = M.liveR.filter((r) => r.end != null && r.end <= POV.t), sc = done.length ? done[done.length - 1].scoreAfter : [0, 0];
+  // the clock as above the view, the C4 countdown included (0.21.0)
+  const c = clockAt(POV.t, true), clock = c ? c.text.replace(/^freeze /, '') : '';
+  const xr = W - W * 80 / 640 - 14, y1 = bh / 2 - 9, y2 = bh / 2 + 9;
+  lx.font = `600 14px ${mono}`; lx.textAlign = 'right'; lx.textBaseline = 'middle';
+  lx.fillStyle = '#e8e6e1'; lx.fillText('Counter-Terrorists : ', xr - 14, y1); lx.fillText('Terrorists : ', xr - 14, y2);
+  lx.fillStyle = '#5ea3e8'; lx.fillText(String(sc[1]), xr, y1); lx.fillStyle = '#e8574d'; lx.fillText(String(sc[0]), xr, y2);
+  lx.fillStyle = 'rgba(232,230,225,.6)'; lx.fillRect(W - W * 64 / 640, bh * 0.2, 1, bh * 0.6);
+  lx.textAlign = 'left'; lx.fillStyle = '#e8e6e1'; lx.font = `600 15px ${mono}`; lx.fillText('◷ ' + clock, W - W * 56 / 640, (y1 + y2) / 2);
+  // whose view, and the camera mode
+  const [, tg] = povObs(POV.t), who = POV.who != null ? POV.who : tg;
+  if (who) {
+    const s = playerState(who, T), hp = hpAt(who, T);
+    lx.textAlign = 'center'; lx.font = `600 16px ${mono}`;
+    const nm = nameAt(who, T), txt = nm + (hp != null ? ` (${hp})` : '');
+    lx.fillStyle = s && s.state === 1 || s && s.state === -1 ? '#e8574d' : '#5ea3e8'; lx.fillText(txt, W / 2, H - bh / 2);
+  }
+  lx.restore();
+  return true;
+}
+
+// ---------------- POV mode: "this server held back enemies" ----------------
+// Some servers only send an enemy when he's about to come into view (an anti-wallhack plugin), so See through
+// walls has little to show (Match 1 CT: 223 enemy sightings against 21,065 for teammates). Worked out once per
+// demo, once a second while he's playing. Shown as a note above the See through walls button when it's switched
+// on, and once when the demo opens with it already on; it fades after 8 s or on a click. Option B of
+// docs/pov-hidden-enemies-mock.png (Sujan, 4 Oct 2026), kept at the left so it can't cover the name box.
+function povHidesEnemies() {
+  if (POV.hidden != null) return POV.hidden;
+  let en = 0, tm = 0;
+  for (let t = D.start + 1; t < D.end; t += 1) {
+    POV.i = 0; const v = povView(t); const rs = playerState(v.rec, t);
+    if (!rs || !(rs.state > 0) || povObs(t)[0] !== 0) continue;
+    for (const e in D.slots) {
+      if (+e === v.rec) continue; const s = playerState(+e, t);
+      if (!(s && s.state > 0 && Number.isFinite(s.x) && (s.x || s.y))) continue;
+      if (s.state !== rs.state) en++; else tm++;
+    }
+  }
+  POV.i = 0;
+  return POV.hidden = { on: tm > 200 && en < tm * 0.1, en, tm };
+}
+function showHiddenEnemiesNote() {
+  if (!POV.on) return;
+  const h = povHidesEnemies(); if (!h.on) return;
+  let d = $('povNote');
+  const b = $('tgXray'), host = $('gl').parentElement; if (!b || !host) return;
+  if (!d) {
+    d = document.createElement('div'); d.id = 'povNote'; d.setAttribute('role', 'status');
+    d.style.cssText = 'position:absolute;z-index:4;max-width:300px;background:rgba(10,12,14,.92);border:1px solid var(--sand, #f2b84b);border-radius:4px;padding:8px 11px;font-size:12.5px;line-height:1.45;color:#e8e6e1;cursor:pointer;transition:opacity .4s';
+    d.onclick = () => { d.style.opacity = '0'; setTimeout(() => { d.hidden = true; }, 400); };
+    host.appendChild(d);
+  }
+  const hr = host.getBoundingClientRect(), br = b.parentElement.getBoundingClientRect();
+  d.style.left = (br.left - hr.left) + 'px'; d.style.bottom = (hr.bottom - br.top + 8) + 'px';
+  // Wording (Sujan, 5 Oct 2026): a headline anyone understands, the detail and the numbers below; feature names in
+  // bold (Sujan, 25 Oct 2026; they were in single quotes). "Seems": the demo shows the effect, not the plugin itself.
+  d.innerHTML = `<b style="color:var(--sand, #f2b84b)">This server seems to use an anti-wallhack plugin</b><br>It only sent the recording player enemies who were about to come into view, so <b>See through walls</b> can show just those few (${h.en.toLocaleString()} enemy sightings against ${h.tm.toLocaleString()} for teammates). Once he was dead, it sent them all.`;
+  d.hidden = false; d.style.opacity = '1';
+  clearTimeout(POV.noteT); POV.noteT = setTimeout(() => { d.style.opacity = '0'; setTimeout(() => { d.hidden = true; }, 400); }, 8000);
 }
