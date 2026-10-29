@@ -35,6 +35,15 @@ What changed in the viewer, newest first. The version shows in the viewer's shor
 - The wallbang finder's last check draws the killer's view at the shot (0.22.0), so it needs the 3D engine and the victim's player model. Without them (no WebGL, a missing model) the finder's 15 points decide alone and every wallbang reads as strict. The Wallbangs list settles a few seconds after the map loads, while it says "Checking N from the shooter's eye…". The victim's pose at the shot is the viewer's estimate (HLTV doesn't record animation frames), so a sliver of a limb can be off by a few units. Strict and LOOSE are split at 50 pixels of the victim in view (0.23.0); no line fits every close call: NEO on ArcadioN (74) and gob b on Xizt (223) read LOOSE, where Sujan finds the victim hidden.
 - A kill that lands on a skip across a round restart (HLTV left out the end of the round and the restart) is never listed as a wallbang: where everyone stood at the shot isn't in the file (0.22.0).
 
+## 0.25.1 (2026-10-29)
+
+### Added
+- **Source on GitHub** on the start screen, after the version in its footer ("Version 0.25.1 · Source on GitHub"), linking to https://github.com/deswalsujan/cs16-demo-viewer in a new tab, in the link colour of the shortcuts panel's **What's new** and **Report a bug**. **Clear saved files** stays where it was. No mockup: one link in an existing line (Sujan, 29 Oct 2026).
+
+### How it was tested
+- The footer measured and screenshotted in the headless browser at 1440, 375 and 320 px wide: on one line with the button at 1440 px; at 375 and 320 px the button wraps under the version and the link, which stay on one line; nothing overlaps and the page doesn't scroll sideways. Screenshots checked by eye.
+- `start_screen_check.py` now also checks the link (address, new tab, `rel="noopener"`, its words) and the footer at 375 px; it fails on the 0.25.0 build and passes on this one. `folder_row_test.py` (20 of 20), `start_screen_check.py`, `prefs_check.py`, `demo_search_check.py`, `late_kill_timing_check.py` and `panel_click_check.py` pass on Sujan's Mac; `python3 build.py && git diff --exit-code -- index.html` is clean.
+
 ## 0.25.0 (2026-10-29)
 
 POV mode comes into main behind a **POV mode** setting, off by default (Sujan, 29 Oct 2026; work item 6.5). It was built on `wip/pov-mode` from 3 Oct 2026 in its own copy of the viewer (IDEAS-ARCHIVE.md, "In progress: POV mode", has every part and how it was tested there) and is ported onto main's code by hand, without merging or rebasing that branch, which stays until Sujan deletes it. With the setting off, every demo plays exactly as in 0.24.0, a POV demo's recording player at the map's zero point included (Sujan, 29 Oct 2026). It turns on by default for POV demos once Sujan signs it off.
