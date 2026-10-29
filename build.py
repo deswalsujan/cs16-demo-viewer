@@ -24,6 +24,7 @@ inlined = [
     'app.css',
     'ui/common.js',
     'ui/folder.js',
+    'ui/open.js',
 ]
 template = src('template.html')
 for name in inlined:
