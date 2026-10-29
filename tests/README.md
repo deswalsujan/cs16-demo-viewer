@@ -24,7 +24,7 @@ Settings (environment variables):
 | `DEMO` | Part of the demo file name to open (`harness.py` only) | `dust2` |
 | `CHROME` | A Chromium to run instead of Playwright's own (`harness.py` only; for the Linux VM on Sujan's Mac, which can't download Playwright's) | Playwright's |
 | `MAP_NEEDED` | `0` to start without waiting for the map (for a demo whose map isn't in the folder) | `1` |
-| `POV_MODE` | `1` to tick the **POV mode** setting before the demo opens (`harness.py` only; since 0.25.0). The scripts marked "on `../pov/pov.html`" ran on the POV branch's own page before 0.25.0; on main they run on `index.html` with `POV_MODE=1`. The branch that held that page, `wip/pov-mode`, was deleted on 30 Oct 2026, so they now run only on `index.html` with `POV_MODE=1` | off |
+| `POV_MODE` | `1` to tick the **POV mode** setting before the demo opens (`harness.py` only; since 0.25.0). The scripts marked "on `../pov/pov.html`" ran on the POV branch's own page before 0.25.0; on main they run on `index.html` with `POV_MODE=1`. The branch that held that page, `wip/pov-mode`, was deleted on 30 Oct 2026. | off |
 | `PAGE` | Page to test (Theatre checks) | `../index.html` |
 
 The demos on each machine are listed in [DEMOS.md](DEMOS.md). Most checks default to Na`Vi vs FX on Dust2 (SEC 2011 final).
@@ -78,7 +78,7 @@ Page scripts in `page/`:
 | `wallbang_list.js` | Every wallbang (round, timer, killer, gun, headshot, victim), waiting for the map to load even with `MAP_NEEDED=0`, for comparing two builds with `compare_all.sh` | 0.15.5 |
 | `summary_text.js` | The load summary's text, built afresh (for checking its lines across all demos) | split maps (wip) |
 | `pov_trial.js`, then `pov_2d.js` | A POV demo as the viewer handles it today: the load summary, the recorder (found by name) and whether his position is real, following him, how many players have a position through the match; then the 2D radar mid-demo for a screenshot (`DEMO=match-1_de_barcelona-ts`, `DEMO=match-3`) | POV trial, 3 Oct 2026 |
-| `pov_own_kill.js` | POV mode (`wip/pov-mode`): the recorder's own kills seen from his eyes. Just before each gun kill, how far the victim's head sits from where the recorder aims, as **Player's eyes** draws it; then leaves the view on one kill (`window.__killN`, default the median one) for a screenshot | POV findings, 2 Oct 2026 (first commit `de30b5c`) |
+| `pov_own_kill.js` | POV mode: the recorder's own kills seen from his eyes. Just before each gun kill, how far the victim's head sits from where the recorder aims, as **Player's eyes** draws it; then leaves the view on one kill (`window.__killN`, default the median one) for a screenshot | POV findings, 3 Oct 2026 (first commit `de30b5c`) |
 | `pov_view.js` (run on `../pov/pov.html`) | POV mode part 1: view frames a second; at the recorder's own gun kills, the middle of the screen against the victim's head; camera buttons hidden and locked; whose eyes the view is in, alive and dead; where shot sounds play from; his own shots and silencer; teammates with HP. Leaves the view on the median kill | POV mode (wip) |
 | `pov_crosshair.js` (on `../pov/pov.html`) | The recorder's crosshair gap through his longest spray (rest, 4 shots, last shot, 0.5 and 1.5 s after) and the settings read from config.cfg; leaves the view mid-spray | POV mode (wip) |
 | `pov_death_cam.js` (on `../pov/pov.html`) | 2 s after his first death: spectator mode, whose eyes, whether his body is hidden; when first person on a teammate starts. Leaves the view on the death camera | POV mode (wip) |
@@ -158,8 +158,8 @@ python3 make_probe.py
 node zoom.mjs ~/Downloads/Half-Life/cstrike/<demo>.dem
 ```
 
-| Script | Finds |
-|---|---|
+| Script | Finds | Used for |
+|---|---|---|
 | `run.mjs` | Which user messages the demo has, and which fields it stores per player |
 | `fields.mjs` | Which extra player fields change when zoom clicks happen (none do) |
 | `zoom.mjs` | Zoom click sounds and how many sniper kills have one just before |
@@ -167,7 +167,7 @@ node zoom.mjs ~/Downloads/Half-Life/cstrike/<demo>.dem
 | `qs.mjs` | Whether single clicks between shots follow a weapon switch (the knife quick-switch) |
 | `bullets.mjs`, `bullets_hs.mjs`, `bullets_sweep.mjs` | What weapon fire events carry (spread, recoil); how close a rebuilt killing bullet passes to the victim's head; whether shifting aim or victim by a snapshot helps. `make_probe.py` adds the event capture (bullet marks check, 1 Oct 2026) |
 | `pov_probe.mjs` (run `python3 make_pov_probe.py` first), `pov_raw.mjs` | What a POV demo stores beyond HLTV: the recorder's own view every frame (camera, aim, recoil, health, buttons), zoom from clientdata, weapon animations, voice packets, models listed, players per snapshot; `pov_raw.mjs <demo> <frame number>` prints the raw 464-byte view block, to check the field positions | POV trial, 3 Oct 2026 |
-| `pov_own_check.mjs <demo>` (run `python3 make_pov_probe.py` first) | POV mode (`wip/pov-mode`): the recorder's track, from his own state, against the view block written every frame |
+| `pov_own_check.mjs <demo>` (run `python3 make_pov_probe.py` first) | POV mode: the recorder's track, from his own state, against the view block written every frame |
 | `reader_compare.mjs OLD.mjs NEW.mjs demo...` | Two copies of the demo reader on the same demos, every field compared value by value; for a POV demo also what the new reader adds (view frames, the recorder's own position, kills by or on him, shots with a spot, teammates' HP) and slow-motion stretches. Copy `src/demo.js` of each version to an `.mjs` first (`git show 0de2f7f:src/demo.js > old.mjs`); about a second a demo | 0.25.0: the 0.24.0 reader's fields unchanged |
 | `kill_lag.mjs` | How late each kill message arrives after the victim's death sound, the killer's last shot and the victim's health reaching 0 (0.13.0). Needs `cp ../../src/demo.js demo.mjs` |
 | `kill_moments.mjs` | For every gun kill, the gaps from the killer's last shot, the victim's last hit sound, his health reaching 0 and his death sound to the kill message and the snapshot before it; with `killer:victim` name parts as a second argument, the timeline of those kills. Needs `demo.mjs` (Sujan's kill feed question, 25 Oct 2026) |
