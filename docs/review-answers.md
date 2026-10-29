@@ -2,7 +2,7 @@
 
 Sujan's answers to the review pages Claude made on claude.ai, copied out of each page's store on 29 Oct 2026 so they live in the repo. Agents outside claude.ai can't read those stores. The pages stay as links to the pictures; this file is the record of the answers.
 
-Answers and notes are copied exactly as Sujan wrote them, typos included. What each answer led to is in `IDEAS.md` and `CHANGELOG.md` (the release named under each page). Demos and their events: `tests/README.md`, "Demos and their events".
+Answers and notes are copied exactly as Sujan wrote them, typos included. What each answer led to is in `IDEAS.md` and `CHANGELOG.md` (the release named under each page). Demos and their events: `tests/DEMOS.md`.
 
 | Page | Asked | Answered | Where the outcome is recorded |
 |---|---|---|---|
