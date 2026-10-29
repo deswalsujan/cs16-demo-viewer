@@ -22,6 +22,7 @@ version = open(os.path.join(here, 'VERSION'), encoding='utf-8').read().strip()
 # the page's styles and UI code, in page order: each file goes back in at its own /*INLINE name*/ line in template.html
 inlined = [
     'app.css',
+    'ui/common.js',
 ]
 template = src('template.html')
 for name in inlined:
