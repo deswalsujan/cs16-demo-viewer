@@ -1,6 +1,6 @@
 # Tests and measurements
 
-Scripts used while building 0.8.0 to 0.11.0 (1 Oct 2026). They're the starting point for the test suite in [IDEAS.md](../IDEAS.md). They're run by hand, not on every push yet.
+Scripts used while building 0.8.0 (1 Oct 2026) to 0.24.0 (28 Oct 2026). They're the starting point for the test suite in [IDEAS.md](../IDEAS.md). They're run by hand, not on every push yet.
 
 ## Setup
 
@@ -30,7 +30,7 @@ The demos on each machine are listed in "Demos and their events" below. Most che
 
 ## Demos and their events
 
-Every demo used in testing: the event it's from, which of Sujan's machines has it, and whether it's still in use. This table is the one place that tracks the demo set; CLAUDE.md points here. Deleted demos keep their row so they can be found again. Notes in CHANGELOG.md and IDEAS.md name the event along with the demo (rule in CLAUDE.md). "Demo text" means the event's name is in the demo itself: the game server's name in admin messages, or the HLTV server's name (read 2 Oct 2026 with a probe over every demo on Sujan's Mac).
+Every demo used in testing: the event it's from, which of Sujan's machines has it, and whether it's still in use. This table is the one place that tracks the demo set; AGENTS.md points here. Deleted demos keep their row so they can be found again. Notes in CHANGELOG.md and IDEAS.md name the event along with the demo (rule in CLAUDE.md). "Demo text" means the event's name is in the demo itself: the game server's name in admin messages, or the HLTV server's name (read 2 Oct 2026 with a probe over every demo on Sujan's Mac).
 
 **When demos are added or deleted:** add or change the rows here (file, event, how the event is known, which machines, status with the date), then check the Mac folder matches by listing `cstrike/*.dem`. Windows is checked by Sujan.
 
@@ -116,6 +116,14 @@ Recorded by Sujan on his own server with a bot he placed, 5 Oct 2026, for the 'B
 | `GP-[PuB]_M-[de_zovine]_D-[10_01_2026]_T-[19_08].dem` (GP Pub de_zovine POV demo) | none: a public server game Sujan recorded on 1 Oct 2026 | | Windows | deleted 2 Oct 2026 by Sujan |
 
 Some older page scripts in the table below name a deleted demo (`DEMO=anexis`, `DEMO=gp-[pub]`, the 2006 Train in `new_demo_settings.js`); they need that demo back to run.
+
+### Notes moved from CLAUDE.md (29 Oct 2026)
+
+Moved word for word when CLAUDE.md became AGENTS.md; the counts are as they stood then, and the table above is the current list.
+
+- From the Half-Life folder notes: The GP Pub de_zovine POV demo was deleted on Windows on 2 Oct 2026. Seven of Sujan's own public-server POV demos (Match 1 to 5) are on both machines since 3 Oct 2026, for the POV trial (`tests/README.md`, "POV demos"; IDEAS.md, "POV demos").
+- The regression set: the 16 demos of 2 Oct 2026 (confirmed K-D and scores in CHANGELOG.md, 0.14.2) plus the new batch, added 3 Oct 2026 once Sujan had checked 0.15.1 by eye (30 demos on each machine; the warmup-only ESWC 2010 Tuscan file `-1007031520-` was deleted on both on 3 Oct 2026). The 102 MB mousesports vs Virus demo (ESWC 2011) was broken, confirmed by Sujan, and is deleted; the reason is kept in the table and IDEAS.md.
+- 15 new demos ("new batch" in the table) went onto both machines on 2 Oct 2026; the accuracy check on them was done that day on Windows and led to 0.15.1 (results in CHANGELOG.md 0.15.1 and IDEAS.md). The Windows folder was listed again at the end of that session: 31 demos, matching the table. POV demos the game records by itself while Sujan plays are not test demos: leave them out of counts and accuracy checks.
 
 ## Browser checks (headless Chromium)
 
