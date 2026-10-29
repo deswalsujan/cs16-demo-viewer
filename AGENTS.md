@@ -4,7 +4,7 @@ Rules for agents working in this repo, so nothing is lost between chats and mach
 
 ## Before changing anything
 - `STATE.md` is already loaded (Claude Code imports it; with another tool, read it first). Then read the "Known limits" section of CHANGELOG.md and its last two release entries, then only the IDEAS.md item you are about to touch. IDEAS.md starts with the checklist of everything open, each item as a short header; IDEAS-ARCHIVE.md holds every item's full text, word for word, under the same name, so search it when a header isn't enough; CHANGELOG.md says what was built, how it was tested, and what was "Discussed, not changed".
-- Don't read CHANGELOG.md or IDEAS-ARCHIVE.md end to end, or all of IDEAS.md: they are long, and `STATE.md` says which part matters.
+- Don't read CHANGELOG.md, IDEAS-ARCHIVE.md or `docs/review-answers.md` end to end, or all of IDEAS.md: they are long, and `STATE.md` says which part matters. In `docs/review-answers.md`, search for the page's section.
 - Discuss issues with Sujan before changing code when he asks for that, and before building any visible change, ask whether he wants to see a mockup first; make one only when he says yes (see `docs/` for the approved ones). Rule set 2 Oct 2026, replacing "always make a side-by-side image".
 - Warn before anything that runs a long time (a full test run, a big measurement), or stop partway to ask.
 - Think about the user experience in every change (Sujan, 25 Oct 2026): what a first-time user sees, whether a feature or option needs a tooltip, and whether the UI could be simpler. Open UX items are under "User experience" in IDEAS.md.
@@ -18,7 +18,7 @@ Rules for agents working in this repo, so nothing is lost between chats and mach
 
 ## Recording what Sujan confirms
 - When Sujan says something is checked, done or decided, in that same turn and on the current branch: change its line in `STATE.md` (a replaced decision moves to Superseded, with the date and what replaced it), tick or change the IDEAS.md item, and push it, even when he says "just answer" or "don't act": writing down his answer is not acting on it. Unrecorded confirmations come back as open items in the next session (3 Oct 2026: the 0.13.0 in-game wallbang check and the scope comparison were asked about twice).
-- When a claude.ai review page returns answers, copy the answers into the repo in the same turn (the IDEAS.md item, and `STATE.md` for a decision); the page URL stays only as a link to the pictures. The answers of every page up to 28 Oct 2026 are in `docs/review-answers.md`, copied from the pages' stores on 29 Oct 2026.
+- When a claude.ai review page returns answers, copy the answers into the repo in the same turn (the IDEAS.md item, and `STATE.md` for a decision); the page URL stays only as a link to the pictures. The answers of every page up to 28 Oct 2026 are in `docs/review-answers.md`, copied from the pages' stores on 29 Oct 2026. A new page's answers go into that file as a new section, newest last, in the same turn they come back (Sujan, 29 Oct 2026).
 - When a confirmation could match more than one open item (two lists of "removed wallbangs"), ask which one before ticking, and quote the item's name back.
 - In messages listing open items, say what each check is in one line (what to open, what to look for), not only its release number.
 

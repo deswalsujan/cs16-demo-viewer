@@ -58,6 +58,7 @@ What is open and what is decided, right now. Loaded into every session through `
 - POV HUD as `docs/pov-hud-mock.png` on `wip/pov-mode` (Sujan, 3 Oct 2026); POV crosshair at 70% of the game's size; spectator bars 40/480 each; hidden-enemies note as option B, above **See through walls** (Sujan, 4 Oct 2026, POV branch).
 - One set of notes, on main; POV notes folded in from `wip/pov-mode` (29 Oct 2026).
 - Changes ship as a pull request from a branch; Sujan merges it on GitHub, then the claude.ai viewer is republished (Sujan, 29 Oct 2026).
+- Review page answers: a new claude.ai page's answers go into `docs/review-answers.md` as a new section, newest last, in the same turn they come back; a decision line here keeps the answer, the date, the version and a pointer to that file, and the evidence stays there (Sujan, 29 Oct 2026).
 - Mockup only when Sujan says yes to one (Sujan, 2 Oct 2026).
 - Feature names in **bold**, capitalized as on screen, no quotes, in docs and the viewer's text (Sujan, 25 Oct 2026; viewer text still to do).
 - Demos starting `PPG` or `GP` are ignored unless Sujan names one (Sujan, 3 Oct 2026).
