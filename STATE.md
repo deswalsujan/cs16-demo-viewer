@@ -7,7 +7,7 @@ What is open and what is decided, right now. Loaded into every session through `
 - **Sujan, by eye (0.24.0):** k1ck vs eq, Nuke, DreamHack Winter 2011, R2 1:18, spekz on DECE: loose wallbang in light purple (LOOSE WB crosshair marker in **Player's eyes**, ring, kill line, timeline diamond, ✕ on the numbers, death banner); strict ones stay pink.
 - **A claude.ai session:** republish https://claude.ai/artifact/KHjQXfeVe17XXPrqarFDrS from `dist/artifact.html` (it shows 0.23.0; Claude Code can't).
 - **Claude, bug:** short names leave a bracket, "[fnaticMSI.cArn]" reads "cArn]" (fnatic vs Moscow Five, Nuke, DreamHack Summer 2011; `shortNames` in `src/template.html`).
-- **Claude, next work items, in this order** (Sujan, 29 Oct 2026; steps in the agent brief, `../cs16-agent-brief.md`, one item per session): 6.2 cut IDEAS.md to what's open, archiving the rest; 6.3 stamp the build and add the push check; 6.4 get the review page answers into the repo; 6.5 POV mode into main behind a **POV mode** setting (plan first, wait for Sujan's go); 6.6 split the inline code out of `src/template.html`.
+- **Claude, next work items, in this order** (Sujan, 29 Oct 2026; steps in the agent brief, `../cs16-agent-brief.md`, one item per session): 6.3 stamp the build and add the push check; 6.4 get the review page answers into the repo; 6.5 POV mode into main behind a **POV mode** setting (plan first, wait for Sujan's go); 6.6 split the inline code out of `src/template.html`.
 - **Claude, later:** separate agent(s) review whether the UI can be simpler (give them the page and screenshots, not Claude's conclusions); tooltips on flagship features and confusing options, one look that reads as a tooltip (mockup first); feature names in **bold** in the viewer's own text.
 - **Sujan, on Windows (POV):** open `pov/pov.html` on branch `wip/pov-mode`, any POV demo, top right after a kill: orange gun icon, headshot icon, no "m4a1" or "HS" words.
 - **Sujan to decide (POV):** the hidden-enemies note is easy to miss (show it after the load summary closes, larger?); list a victim never sent to the recorder's game as "not seen on his screen" (would change the 5 Oct decision below).
@@ -37,12 +37,17 @@ What is open and what is decided, right now. Loaded into every session through `
 - Skips in the recording: players snap, a "Recording skips here" note from 2 s before to 1 s after, // on the timeline and by every kill on a skip, wallbangs there tagged UNSURE (Sujan, 14 Oct 2026, 0.19.0 to 0.20.0).
 - Start screen once the folder is fine: the folder step one quiet line, **Open a demo** the outlined card (option A, Sujan, 14 Oct 2026, 0.18.0).
 - Health and weapon under the names at any distance, scoped or not (Sujan, 2 Oct 2026, 0.16.0).
+- Free camera to **Player's eyes** or **Behind player** with nobody picked follows the living player nearest the middle of the view (Sujan, 2 Oct 2026, 0.16.0).
+- Crosshair offset at kills and the scope rebuilt from zoom clicks: no change, after Sujan compared both in the game's demo player (3 Oct 2026).
 - Round announcements as text in the centre, in 2D too, no mockup (Sujan, 5 Oct 2026, 0.17.0); orange Verdana, the top of the text 35% down (Sujan, 14 Oct 2026, 0.18.0).
 - Defusal kits on 3D models and the Tab scoreboard, not the radar (Sujan, 5 Oct 2026, 0.17.0); the carried bomb on 3D models, the Tab scoreboard and, with a dropped bomb, the 2D radar (Sujan, 14 Oct 2026, 0.18.0).
 - Crosshair kill markers: option A, thin ticks past the crosshair's arms (Sujan, 5 Oct 2026, 0.17.0).
 - **Bullet path** (a shot's line through walls, with each wall's thickness) dropped (Sujan, 5 Oct 2026).
 - No marker or message for kills the wallbang finder can't check (Sujan, 5 Oct 2026, POV branch).
 - Unnamed teams read "Team 1" and "Team 2", click to rename; left as is (Sujan, 2 Oct 2026).
+- A map split over files: "map", not "match", in everything the viewer says about it (Sujan, 2 Oct 2026).
+- Broken demos: the load summary says exactly why, and a cut-off demo plays up to where it ends (Sujan, 2 Oct 2026, 0.16.0).
+- Firefox and Safari choose the folder on every visit: accepted (Sujan, 2 Oct 2026).
 - Never host Valve's files; a "lite mode" from the project's own assets is an option for later (1 Oct 2026).
 - POV mode goes into main behind a **POV mode** setting, off by default; on by default for POV demos once Sujan signs it off (Sujan, 29 Oct 2026, in a claude.ai chat; not built).
 - A POV demo opens in POV mode by itself, in the same viewer (Sujan, 3 Oct 2026, POV branch).
