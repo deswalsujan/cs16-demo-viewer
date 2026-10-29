@@ -39,6 +39,7 @@ inlined = [
     'ui/radar.js',
     'ui/timeline.js',
     'ui/loop.js',
+    'ui/theatre.js',
 ]
 template = src('template.html')
 for name in inlined:
