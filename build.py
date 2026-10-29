@@ -32,6 +32,7 @@ inlined = [
     'ui/skips.js',
     'ui/names.js',
     'ui/grenades.js',
+    'ui/lookups.js',
 ]
 template = src('template.html')
 for name in inlined:
