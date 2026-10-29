@@ -75,7 +75,9 @@ CHANGELOG.md        What changed, newest first
 docs/               Design images: scope styles, the approved side panel designs (0.13.0), Count them, split maps, demo search, the Zalando Sans screens, crosshair kill markers (0.17.0), the start screen once the folder is chosen (0.18.0), skips in the recording (0.19.0) and the skip tags in the Kills list (0.21.0)
 tests/              Test and measurement scripts: browser checks, Theatre mode checks, demo data probes (see tests/README.md)
 IDEAS.md            Parked ideas and open decisions, with the discussion behind them
-CLAUDE.md           How Claude sessions work on this repo: workflow, checking facts, where the test files are
+AGENTS.md           How agent sessions work on this repo: workflow, checking facts, where the test files are
+STATE.md            What is open and what is decided, one line each
+CLAUDE.md           Loads AGENTS.md and STATE.md into every Claude Code session
 VERSION             Current version, shown in the viewer
 src/stock.js        Fingerprints of the stock CS 1.6 models, to spot custom ones
 index.html          The built page (what GitHub Pages serves at https://deswalsujan.github.io/cs16-demo-viewer/, updated on every push to main)
