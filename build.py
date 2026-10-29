@@ -41,6 +41,7 @@ inlined = [
     'ui/loop.js',
     'ui/theatre.js',
     'ui/summary.js',
+    'ui/debug.js',
 ]
 template = src('template.html')
 for name in inlined:
