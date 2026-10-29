@@ -75,6 +75,7 @@ CHANGELOG.md        What changed, newest first
 docs/               Design images: scope styles, the approved side panel designs (0.13.0), Count them, split maps, demo search, the Zalando Sans screens, crosshair kill markers (0.17.0), the start screen once the folder is chosen (0.18.0), skips in the recording (0.19.0) and the skip tags in the Kills list (0.21.0)
 tests/              Test and measurement scripts: browser checks, Theatre mode checks, demo data probes (see tests/README.md)
 IDEAS.md            Parked ideas and open decisions, with the discussion behind them
+IDEAS-ARCHIVE.md    Done items, and the full text of open ones, moved from IDEAS.md word for word
 AGENTS.md           How agent sessions work on this repo: workflow, checking facts, where the test files are
 STATE.md            What is open and what is decided, one line each
 CLAUDE.md           Loads AGENTS.md and STATE.md into every Claude Code session
