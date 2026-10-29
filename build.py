@@ -23,6 +23,7 @@ version = open(os.path.join(here, 'VERSION'), encoding='utf-8').read().strip()
 inlined = [
     'app.css',
     'ui/common.js',
+    'ui/folder.js',
 ]
 template = src('template.html')
 for name in inlined:
