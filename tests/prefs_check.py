@@ -1,6 +1,6 @@
 """Viewing preferences are restored on the next visit (0.12.3). No Half-Life folder needed; a few seconds.
     python3 prefs_check.py"""
-import os, threading, functools, http.server
+import os, sys, threading, functools, http.server
 from playwright.sync_api import sync_playwright
 HERE = os.path.dirname(os.path.abspath(__file__))
 h = functools.partial(http.server.SimpleHTTPRequestHandler, directory=os.path.join(HERE, '..')); h.log_message = lambda *a: None
@@ -23,3 +23,4 @@ with sync_playwright() as p:
     print('with damaged saved settings the page still opens with defaults:', r); ok &= r == 'Timeline: match'
     b.close()
 print('PASS' if ok else 'FAIL')
+sys.exit(0 if ok else 1)
