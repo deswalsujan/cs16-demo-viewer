@@ -5,7 +5,6 @@ What is open and what is decided, right now. Loaded into every session through `
 ## Open now
 - **Sujan, by eye (0.23.0):** FX vs Lions, Nuke, DreamHack Winter 2010: R13 1:19 NIKO on LoordB reads LOOSE, R22 0:47 THREAT on LoordB strict; Wallbangs heading counts both.
 - **Sujan, by eye (0.24.0):** k1ck vs eq, Nuke, DreamHack Winter 2011, R2 1:18, spekz on DECE: loose wallbang in light purple (LOOSE WB crosshair marker in **Player's eyes**, ring, kill line, timeline diamond, ✕ on the numbers, death banner); strict ones stay pink.
-- **A claude.ai session:** republish https://claude.ai/artifact/KHjQXfeVe17XXPrqarFDrS from `dist/artifact.html` (it shows 0.23.0; Claude Code can't).
 - **Claude, bug:** short names leave a bracket, "[fnaticMSI.cArn]" reads "cArn]" (fnatic vs Moscow Five, Nuke, DreamHack Summer 2011; `shortNames` in `src/template.html`).
 - **Claude, next work items, in this order** (Sujan, 29 Oct 2026; steps in the agent brief Sujan gives you (not in the repo), one item per session): 6.5 POV mode into main behind a **POV mode** setting: built in 0.25.0 on `wip/pov-in-main` (29 Oct 2026), pull request open, waiting for Sujan's merge; 6.6 split the inline code out of `src/template.html`.
 - **Claude, later:** separate agent(s) review whether the UI can be simpler (give them the page and screenshots, not Claude's conclusions); tooltips on flagship features and confusing options, one look that reads as a tooltip (mockup first); feature names in **bold** in the viewer's own text.
@@ -57,13 +56,15 @@ What is open and what is decided, right now. Loaded into every session through `
 - POV mode: no Free camera, no opponents' HP (teammates' stays), **See through walls** stays, no player numbers (Sujan, 3 Oct 2026, POV branch).
 - POV HUD as `docs/pov-hud-mock.png` on `wip/pov-mode` (Sujan, 3 Oct 2026); POV crosshair at 70% of the game's size; spectator bars 40/480 each; hidden-enemies note as option B, above **See through walls** (Sujan, 4 Oct 2026, POV branch).
 - One set of notes, on main; POV notes folded in from `wip/pov-mode` (29 Oct 2026).
-- Changes ship as a pull request from a branch; Sujan merges it on GitHub, then the claude.ai viewer is republished (Sujan, 29 Oct 2026). The `check` job is a required status check in the `main` ruleset, so a red pull request can't be merged (Sujan, 29 Oct 2026).
+- Changes ship as a pull request from a branch; Sujan merges it on GitHub (Sujan, 29 Oct 2026). The `check` job is a required status check in the `main` ruleset, so a red pull request can't be merged (Sujan, 29 Oct 2026).
+- The claude.ai copy of the viewer (https://claude.ai/artifact/KHjQXfeVe17XXPrqarFDrS) stays at 0.23.0 and isn't updated; GitHub Pages is the only live viewer (Sujan, 29 Oct 2026).
 - Review page answers: a new claude.ai page's answers go into `docs/review-answers.md` as a new section, newest last, in the same turn they come back; a decision line here keeps the answer, the date, the version and a pointer to that file, and the evidence stays there (Sujan, 29 Oct 2026).
 - Mockup only when Sujan says yes to one (Sujan, 2 Oct 2026).
 - Feature names in **bold**, capitalized as on screen, no quotes, in docs and the viewer's text (Sujan, 25 Oct 2026; viewer text still to do).
 - Demos starting `PPG` or `GP` are ignored unless Sujan names one (Sujan, 3 Oct 2026).
 
 ## Superseded
+- "Then the claude.ai viewer is republished" after each merge (Sujan, 29 Oct 2026, part of the shipping decision), replaced 29 Oct 2026 by: the claude.ai copy stays at 0.23.0 and isn't updated, GitHub Pages is the only live viewer.
 - A POV demo opens in POV mode by itself, in the same viewer (Sujan, 3 Oct 2026, POV branch), replaced 29 Oct 2026 by the **POV mode** setting, off by default until Sujan signs it off.
 - The carried bomb kept off the radar (Sujan, 5 Oct 2026, 0.17.0), replaced 14 Oct 2026 in the HLTV viewer by the C4 tag on the carrier's dot and the dropped bomb on the radar (0.18.0).
 - Damage in a box beside the neck, headshots in their own box with an icon (Sujan's yes on the hits check page, 25 Oct 2026, with changes asked), replaced 26 Oct 2026 by option C, numbers floating up beside the head, and HS with no icon.

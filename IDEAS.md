@@ -9,7 +9,7 @@ Only what is open stays here. An open item keeps a three-line header (Status, Ne
 Everything raised in conversation that isn't finished, in one place. Each item says who does it. Ideas for new features are further down; this list is for loose ends.
 
 **Sujan's feedback of 23 Oct 2026** (HLTV viewer; built in 0.22.0 unless said; demos and events in `tests/README.md`)
-- Done, in the archive: Sujan's answers on the 23 Oct review page (24 Oct 2026, on the 0.22.0 fixes), the three levels of wallbang (0.23.0 and 0.24.0), wallbang hits that didn't kill and the damage per wallbang (0.24.0).
+- Done, in the archive: **Republish the claude.ai viewer**, closed 29 Oct 2026 without republishing (the claude.ai copy stays at 0.23.0, GitHub Pages is the only live viewer, Sujan 29 Oct 2026); Sujan's answers on the 23 Oct review page (24 Oct 2026, on the 0.22.0 fixes), the three levels of wallbang (0.23.0 and 0.24.0), wallbang hits that didn't kill and the damage per wallbang (0.24.0).
 - [ ] **Strict and LOOSE wallbangs, by eye (0.23.0)**
   - Status: built in 0.23.0; not yet checked by Sujan. The 21 LOOSE kills on the 50 demos are listed in CHANGELOG.md, 0.23.0.
   - Next step: Sujan opens FX vs Lions, Nuke, DreamHack Winter 2010: R13 1:19 NIKO on LoordB should read LOOSE, R22 0:47 THREAT on LoordB strict, in the Wallbangs and Kills lists (tag after the gun, pixels on hover); the heading counts both.
@@ -18,10 +18,6 @@ Everything raised in conversation that isn't finished, in one place. Each item s
   - Status: built in 0.24.0, live since 28 Oct 2026; not yet checked by Sujan.
   - Next step: Sujan opens k1ck vs eq, Nuke, DreamHack Winter 2011, R2 1:18, spekz on DECE (loose from damage): light purple on the LOOSE WB crosshair marker in **Player's eyes**, the ring, the kill line, the timeline diamond, the ✕ on the numbers and the death banner; strict ones stay pink.
   - Decided so far: loose light purple wherever it's marked, strict pink; a kill is loose from damage when a bullet of the killer's that only a surface explains lands 0.5 s or less before it, same spray only (Sujan, 28 Oct 2026).
-- [ ] **Republish the claude.ai viewer**
-  - Status: https://claude.ai/artifact/KHjQXfeVe17XXPrqarFDrS shows 0.23.0; GitHub Pages is on 0.24.0. Tried 28 Oct 2026: the Artifact tool wanted the whole live page (7,066 lines) read first, which didn't fit in that session.
-  - Next step: a claude.ai session republishes it from `dist/artifact.html` (`STATE.md`).
-  - Decided so far: each change ships as a pull request that Sujan merges, then this page is republished (Sujan, 29 Oct 2026).
 - [ ] **Bug: short names leave a bracket**
   - Status: found 27 Oct 2026, not fixed. "[fnaticMSI.cArn]" reads "cArn]" in the lists and over the players (fnatic vs Moscow Five, Nuke, DreamHack Summer 2011).
   - Next step: Claude fixes `shortNames` in `src/template.html`, which cuts the shared "[fnaticMSI." but not the closing "]".
