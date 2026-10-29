@@ -2,7 +2,7 @@
 
 Items moved out of [IDEAS.md](IDEAS.md) so that it holds only what is open (work item 6.2 of the agent brief, 29 Oct 2026). Moved word for word from IDEAS.md as it stood on main at `1bcb81f`: nothing in a moved item was reworded or left out.
 
-- Sections and block names match IDEAS.md's, so an item is found under the same name in both. Items keep their order inside a block, since they point to each other as "above" and "below". Items archived from now on go at the top of their block, newest first.
+- Sections and block names match IDEAS.md's, so an item is found under the same block in both; its header in IDEAS.md may be shorter or renamed, so search a distinctive word from it. Items keep their order inside a block, since they point to each other as "above" and "below". Items archived from now on go at the top of their block, newest first.
 - An item still marked [ ] here is open: IDEAS.md has its current Status, Next step and Decided so far, and the text here is everything said about it up to 29 Oct 2026. When it's done, tick it here too and add what was done.
 - With the move done, this file is IDEAS.md of 29 Oct 2026 without its title, its two opening paragraphs, the "Next on the roadmap" line and the Roadmap, which stay in IDEAS.md unchanged; "above" and "below" in the text here still point the right way.
 - Don't read this file end to end: search it for the item's name.
