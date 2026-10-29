@@ -40,13 +40,14 @@ What is open and what is decided, right now. Loaded into every session through `
 - Round announcements as text in the centre, in 2D too, no mockup (Sujan, 5 Oct 2026, 0.17.0); orange Verdana, the top of the text 35% down (Sujan, 14 Oct 2026, 0.18.0).
 - Defusal kits on 3D models and the Tab scoreboard, not the radar (Sujan, 5 Oct 2026, 0.17.0); the carried bomb on 3D models, the Tab scoreboard and, with a dropped bomb, the 2D radar (Sujan, 14 Oct 2026, 0.18.0).
 - Crosshair kill markers: option A, thin ticks past the crosshair's arms (Sujan, 5 Oct 2026, 0.17.0).
+- **Bullet path** (a shot's line through walls, with each wall's thickness) dropped (Sujan, 5 Oct 2026).
 - No marker or message for kills the wallbang finder can't check (Sujan, 5 Oct 2026, POV branch).
 - Unnamed teams read "Team 1" and "Team 2", click to rename; left as is (Sujan, 2 Oct 2026).
 - Never host Valve's files; a "lite mode" from the project's own assets is an option for later (1 Oct 2026).
 - POV mode goes into main behind a **POV mode** setting, off by default; on by default for POV demos once Sujan signs it off (Sujan, 29 Oct 2026, in a claude.ai chat; not built).
 - A POV demo opens in POV mode by itself, in the same viewer (Sujan, 3 Oct 2026, POV branch).
 - POV mode: no Free camera, no opponents' HP (teammates' stays), **See through walls** stays, no player numbers (Sujan, 3 Oct 2026, POV branch).
-- POV crosshair at 70% of the game's size; spectator bars 40/480 each; hidden-enemies note as option B, above **See through walls** (Sujan, 4 Oct 2026, POV branch).
+- POV HUD as `docs/pov-hud-mock.png` (Sujan, 3 Oct 2026); POV crosshair at 70% of the game's size; spectator bars 40/480 each; hidden-enemies note as option B, above **See through walls** (Sujan, 4 Oct 2026, POV branch).
 - One set of notes, on main; POV notes folded in from `wip/pov-mode` (29 Oct 2026).
 - Changes ship as a pull request from a branch; Sujan merges it on GitHub, then the claude.ai viewer is republished (Sujan, 29 Oct 2026).
 - Mockup only when Sujan says yes to one (Sujan, 2 Oct 2026).
