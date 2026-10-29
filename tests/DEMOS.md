@@ -1,0 +1,102 @@
+# Test demos
+
+Moved here from `tests/README.md` on 29 Oct 2026, word for word, so the test instructions and the demo list are separate files. Older notes (CHANGELOG.md, IDEAS-ARCHIVE.md) that point to `tests/README.md`, "Demos and their events", or to one of its subsections, mean this file. The text below is unchanged, so two of its pointers read as they did there: "the table below" under "Deleted" is the page script table in [README.md](README.md), "Browser checks", and `tests/README.md`, "POV demos" is the subsection of that name here. How to run the tests is in [README.md](README.md).
+
+## Demos and their events
+
+Every demo used in testing: the event it's from, which of Sujan's machines has it, and whether it's still in use. This table is the one place that tracks the demo set; AGENTS.md points here. Deleted demos keep their row so they can be found again. Notes in CHANGELOG.md and IDEAS.md name the event along with the demo (rule in CLAUDE.md). "Demo text" means the event's name is in the demo itself: the game server's name in admin messages, or the HLTV server's name (read 2 Oct 2026 with a probe over every demo on Sujan's Mac).
+
+**When demos are added or deleted:** add or change the rows here (file, event, how the event is known, which machines, status with the date), then check the Mac folder matches by listing `cstrike/*.dem`. Windows is checked by Sujan.
+
+Status values: **regression set** (kept on purpose: K-D and scores Sujan confirmed, or a known quirk; compared on every release; the new batch of 2 Oct 2026 joined it on 3 Oct 2026, once Sujan had checked 0.15.1 by eye), **new batch, date** (added for an accuracy check in IDEAS.md), **deleted, date**.
+
+### In use
+
+| Demo file | Event | How we know | On | Status |
+|---|---|---|---|---|
+| `navi-vs-fx-sec2011-final-1110091449-de_train.dem`, `...-1110091531-de_dust2.dem` | SEC 2011, final (9 Oct 2011) | Sujan; demo text "SEC #2 \| ProGamers.pl"; file name | Mac, Windows | regression set (main test demo for Dust2) |
+| `mtw-vs-lions-dhs11-1106191044-de_nuke.dem` | DreamHack Summer 2011 (19 Jun 2011) | Sujan; demo text "DHS Main tournament #1" | Mac, Windows | regression set |
+| `fx-vs-mtw-xperia2011-1104240025-de_inferno.dem`, `-1104240112-de_inferno.dem` (Inferno, parts 1 and 2), `-1104240212-de_nuke.dem`, `-1104240242-de_nuke.dem` (Nuke, parts 1 and 2) | Xperia Play 2011 (24 Apr 2011) | file name | Mac, Windows | regression set (confirmed numbers, split maps) |
+| `sk-vs-dateam-iolfinal4-1106181158-de_dust2.dem` | IOL Final4 (18 Jun 2011) | demo text "IOL FINAL4 SM-FINAL #1"; file name | Mac, Windows | regression set (confirmed numbers) |
+| `sk-vs-winfakt-iem6newyork-1110161608-de_mirage.dem` | IEM6 Global Challenge New York, final (16 Oct 2011) | demo text "IEM Global Challenge New York Server 1"; [HLTV.org's report](https://www.hltv.org/news/7636/sk-win-iem6-gc-new-york) | Mac, Windows | regression set |
+| `FX-vs-sk-iem5-inf.dem` | IEM5 (January 2011) | file name; Sujan (0.14.1) | Mac, Windows | regression set (confirmed numbers) |
+| `auto_ifng-1103030950-de_dust2.dem` (iFNG FX vs fnatic) | Intel Extreme Masters, 3 Mar 2011; which stage isn't checked | demo text "Intel Extreme Masters #Stage"; date from the file name | Mac, Windows | regression set (confirmed numbers) |
+| `fnatic_vs_EG_EM3Global-0903061800-de_dust2.dem` | EM3 Global Finals (6 Mar 2009) | file name only | Mac, Windows | regression set (confirmed numbers) |
+| `1110231216--auto_de_tuscan.dem_Fnatic-vs-mousesports.dem` | ESWC 2011 (Paris, 21 to 24 Oct 2011) | demo text "[AdminBot 9.1] ESWC 2011 Grand Final." (the bot says this in every ESWC 2011 game, group games too, so it doesn't tell the stage) | Mac, Windows | regression set (main test demo for Tuscan) |
+| `de_nuke.dem_Fnatic-vs-ALTERNATE.dem` | ESWC 2011 | demo text, as above | Mac, Windows | regression set |
+| `1110241407--auto_de_inferno.dem_mousesports-vs-AGAIN.dem` | ESWC 2011, final | demo text, as above; the final by the teams and date | Mac, Windows | regression set |
+| `noa.penta-0610211800-de_train.dem` (NoA vs Pentagram, Train; protocol 47) | not known; recorded 21 Oct 2006 at 18:00 by the file name | file name (checked 2 Oct 2026, when Sujan copied it to the Mac) | Mac, Windows | regression set (protocol 47, late kill messages) |
+| `mtw-vs-navi-eswc2010semi-real-1007031530-de_tuscan.dem`, `-1007031625-`, `-1007031645-`, `-1007031655-de_tuscan.dem` (Tuscan, 4 files), `-1007031710-de_train.dem` (Train) | ESWC 2010, semi-final (3 Jul 2010); Tuscan was map 2, Train map 3 | file name; HLTV server "HLTV.org - VeryGames.de"; [HLTV.org's match page](https://www.hltv.org/matches/1457651/mtw-vs-natus-vincere-eswc-2010) and [markeloff's 2010 profile](https://www.hltv.org/news/6001/top-20-players-of-2010-markeloff-1) (map order). The warmup-only first Tuscan file `-1007031520-` is deleted (below) | Mac, Windows | regression set (new batch of 2 Oct 2026, added 3 Oct 2026) |
+| `navi-vs-m5-dhwinter2011-1111250937-de_inferno.dem` (Na`Vi vs Moscow 5, Inferno) | DreamHack Winter 2011, group C (25 Nov 2011) | file name; demo text "DreamHack MSI BEAT IT"; [HLTV.org's event page](https://www.hltv.org/events/850/dreamhack-winter-2011) (16-12) | Mac, Windows | regression set (new batch of 2 Oct 2026, added 3 Oct 2026) |
+| `k1ck-vs-eq-dhwinter2011-1111260056-de_nuke.dem` (k1ck vs eq, Nuke) | DreamHack Winter 2011, group D (26 Nov 2011) | file name; demo text, as above; [HLTV.org's event page](https://www.hltv.org/events/850/dreamhack-winter-2011) (10-16) | Mac, Windows | regression set (new batch of 2 Oct 2026, added 3 Oct 2026) |
+| `sk-vs-navi-dhwinter2011-1111261019-de_train.dem` (SK vs Na`Vi, Train) | DreamHack Winter 2011, quarter-final, map 2 (26 Nov 2011) | file name; demo text, as above; [HLTV.org's report](https://www.hltv.org/news/7849/navi-in-triple-overtime-sk-win) (Na`Vi 25-23 after three overtimes) | Mac, Windows | regression set (new batch of 2 Oct 2026, added 3 Oct 2026) |
+| `auto_ifng-1110042145-de_forge.dem`, `auto_ifng-1110042211-de_forge.dem` (fnatic vs mousesports, Forge, probably one map in 2 files) | IEM6 Global Challenge Guangzhou, grand final, map 3 (HLTV.org dates it 5 Oct 2011; the file names say 4 Oct, 21:45) | demo text "Intel Extreme Masters #1"; team tags in player names; [HLTV.org's report](https://www.hltv.org/news/7569/fnatic-win-iem6-gc-guangzhou) (Forge 16-11, the only Forge in it) | Mac, Windows | regression set (new batch of 2 Oct 2026, added 3 Oct 2026) |
+| `auto-server1-1106262105-de_tuscan.dem` (Na`Vi vs fnatic, Tuscan) | Adepto BH Open 2011, final, map 2 (26 Jun 2011) | demo text "Adepto BH OPEN #1"; team tags in player names; [HLTV.org's report](https://www.hltv.org/news/7075/navi-win-adepto-bh-open) (16-0) | Mac, Windows | regression set (new batch of 2 Oct 2026, added 3 Oct 2026) |
+| `fnatic-vs-navi-gamegune2012-1207282133-de_dust2.dem` | GameGune 2012, grand final, map 1 (28 Jul 2012) | demo text "GameGune 2012 Grand Final"; file name; [HLTV.org's report](https://www.hltv.org/news/8857/fnatic-win-gamegune-2012) (16-7) | Mac, Windows | regression set (new batch of 2 Oct 2026, added 3 Oct 2026) |
+| `485.53.706623-0803162045-de_train.dem` (Sweden vs Ukraine, Train; protocol 47) | ClanBase NationsCup XI (16 Mar 2008 by the file name) | Sujan, with [HLTV.org's match page](https://www.hltv.org/matches/586491/ukraine-vs-sweden-cb-nationscup-xi) (2 Oct 2026);  country tags in player names (SpawN, RobbaN, edzie); HLTV server "HLTV.org - VeryGames.de" | Mac, Windows | regression set (new batch of 2 Oct 2026, added 3 Oct 2026) |
+| `fx-vs-lions-dhw2010-bronze-1011272059-de_nuke.dem` (FX vs Lions, Nuke) | DreamHack Winter 2010, third-place decider (27 Nov 2010, 20:59) | Sujan's folder name "Lions_vs_FX_3rd-place-decider_DH_Winter_2010"; file name; HLTV server "HLTV.org - VeryGames.de"; not found online (Liquipedia's page lists a third place match with no teams) | Mac (added by Sujan 14 Oct 2026; Windows not checked) | new, 14 Oct 2026: HLTV slow motion (20 stretches) and 7 jumps in the recording (0.18.0), sponsor names ("LIONS Xizt * MAXFPS") |
+| `53.52.1646548-1005272144-de_dust2.dem` (Sweden vs Norway, Dust2) | ASUS ENC 2010 (27 May 2010) | [HLTV.org match page](https://www.hltv.org/matches/1421903/sweden-vs-norway-asus-enc-2010) (same day; no map score on it); country tags in player names (Sweden: GeT_RiGhT, f0rest, alleN, Gux, Delpan; Norway: REAL, kalle, RashiE, KORN, tacky); admin "XpreZ [raven]", www.SpeedGaming.dk | Mac, Windows | regression set (new batch of 2 Oct 2026, added 3 Oct 2026) |
+| `fnatic-vs-m5-dhs11-1106191035-de_nuke.dem` (fnatic vs Moscow Five, Nuke) | DreamHack Summer 2011 (19 Jun 2011) | demo text "e-s.se \| DHS Main tournament #2"; file name | Mac (added by Sujan 23 Oct 2026; Windows not checked) | new, 23 Oct 2026: skips across a round restart (R4 1:22, ED1K and Dosia; R10) |
+| `mtw.tyloo.estars-0907250910-de_nuke.dem` (tyloo vs mTw, Nuke) | e-Stars Seoul 2009 (25 Jul 2009 by the file name) | demo text "e-Stars Seoul 2009 #1"; file name | Mac (added by Sujan 23 Oct 2026; Windows not checked) | new, 23 Oct 2026: wallbangs through Nuke's upper windows (R4 1:03 Xuefeng on ave, R22 1:11 Sunde on Xuefeng) |
+| `2010-07-01_15h58_-1007021005-de_inferno Burning vs FairFrag.dem` (Burning vs FairFrag, Inferno) | ESWC 2010 (2 Jul 2010 by the file name) | demo text "[AdminBot] Welcome on ESWC Server by VeryGames.net", HLTV server "www.VeryGames.net HLTV ESWC"; file name | Mac (added by Sujan 23 Oct 2026; Windows not checked) | new, 23 Oct 2026: skip across a round restart (R17, Rara on HaRts). The space in the name broke `compare_all.sh` until 23 Oct 2026 |
+| `1110240934--auto_de_train.dem_Again-vs-Navi.dem` (AGAiN vs Na`Vi, Train) | not known; recorded 24 Oct 2011 at 09:34 by the file name | file name, not checked further | Mac (file dated 29 Oct 2026; Windows not checked) | new, found in the Mac folder 29 Oct 2026 (it wasn't in this table) |
+| `2011-10-24_16h08_NaVi_SK-1110241609-de_inferno.dem`, `-1110241724-`, `-1110241740-de_inferno.dem` (Na`Vi vs SK, Inferno, 3 files) | not known; recorded 24 Oct 2011 from 16:08 by the file names | file name, not checked further | Mac (files dated 28 Oct 2026; Windows not checked) | new, found in the Mac folder 29 Oct 2026 (they weren't in this table) |
+
+The Windows copies of the regression set are Sujan's copies from the Mac (2 Oct 2026). The new batch was checked on Windows by listing `cstrike/*.dem` on 2 Oct 2026: all 31 demos in this table are there, none missing and none extra; listed again at the end of the session the same day, still 31. On 3 Oct 2026 the warmup-only Tuscan file was deleted on the Mac (30 demos there, listed) and by Sujan on Windows. The same day the seven POV demos went onto both machines: 37 demos on the Mac (listed), and on Windows by Sujan's word. The new batch rows were read from the demos on the Mac on 2 Oct 2026 (server and admin messages, player names); stages and scores were looked up on 2 Oct 2026 (sources in the rows); no map score was found for Sweden vs Norway or for the ESWC 2010 maps.
+
+### Outside the Half-Life folder
+
+Used for the skip checks of 14 Oct 2026 (CHANGELOG 0.20.0): every demo in Sujan's `~/Downloads/test-demos-2` and `~/Downloads/test demos` except the POV demos, a copy of the regression set ("mac old demos") and three files under 300 KB (`SK_vs_e-STRO_WCG2008-0811081859-de_train.dem`, `virtus.attax.EMII-0803072031-de_train.dem`, `SK_vs_e-STRO_WCG2008-0811081949-de_dust2.dem`, probably warmups; the two SK vs eSTRO ones were read on 23 Oct 2026: 13 s each, with two and one eSTRO players, no round marker). Events from the file and folder names only, not checked further.
+
+| Demo file | Event | How we know | On | Status |
+|---|---|---|---|---|
+| `fx-vs-esahara-dhw2010-1011270905-de_dust2.dem`, `-1011271131-de_nuke.dem` (FX vs eSahara) | DreamHack Winter 2010, playoffs (27 Nov 2010) | Sujan's folder name "Frag-eXecutors_vs_eSahara_playoffs_DH_Winter_2010"; file name | Mac, `~/Downloads/test demos` | skip checks, 14 Oct 2026 (10 and 6 skips) |
+| `fx-vs-lions-dhw2010-bronze-1011272002-de_inferno.dem` (FX vs Lions, Inferno) | DreamHack Winter 2010, third-place decider, the map before the Nuke above | Sujan's folder name; file name | Mac, `~/Downloads/test demos` | skip checks, 14 Oct 2026 (7 skips; a bomb at 22:27.6 went off after 25.1 s) |
+| `SK_vs_e-STRO_WCG2008-0811081854-de_dust2.dem`, `-0811081900-de_train.dem`, `-0811081945-de_nuke.dem`, `-0811081950-de_dust2.dem`, `-0811082043-de_nuke.dem` (SK vs eSTRO) | WCG 2008, semi-final (8 Nov 2008): Train eSTRO 16:12 (`-0811081900-`), Dust2 SK 16:11 (`-0811081950-`), Nuke SK 16:12 (`-0811082043-`), as the viewer reads them; `-0811081854-` (Dust2, 5 min) holds only the five SK players and `-0811081945-` (Nuke, one round) only the five eSTRO players, so neither is part of a map (23 Oct 2026) | folder and file names; map scores from [fragbite's write-up](https://fragbite.se/cs/blog/9/thorins-take/post/10362/estro-2008-the-year-that-could-have-been) | Mac, `~/Downloads/test-demos-2` | skip checks, 14 Oct 2026 (no skips) |
+| `mouz.SK.EM2.real-0803091025-de_nuke.dem` (mousesports vs SK, Nuke) | Extreme Masters II (9 Mar 2008) | file name | Mac, `~/Downloads/test-demos-2` | skip checks, 14 Oct 2026 (7 skips) |
+| `mtw.mym.consfinal.EM3-0903081339-de_dust2.dem` (mTw vs MYM, Dust2) | EM3 Global Finals 2009, consolation final (8 Mar 2009) | file name | Mac, `~/Downloads/test-demos-2` | skip checks, 14 Oct 2026 (7 skips) |
+| `roccat.estro.EMII.cebit-0803081202-de_inferno.dem` (roccat vs eSTRO), `roccat.fnatic.EMII-0803071948-de_inferno.dem` (roccat vs fnatic) | Extreme Masters II, CeBIT (7 and 8 Mar 2008) | file names | Mac, `~/Downloads/test-demos-2` | skip checks, 14 Oct 2026 (3 and 8 skips; roccat vs fnatic: a bomb at 27:08.6 went off after 25.2 s) |
+| `virtus.attax.EMII-0803071948-de_inferno.dem`, `-0803072013-de_train.dem`, `-0803072033-de_inferno.dem` (Virtus.pro vs aTTaX) | Extreme Masters II (7 Mar 2008) | folder and file names | Mac, `~/Downloads/test-demos-2` | skip checks, 14 Oct 2026 (0, 0 and 10 skips; two bombs went off after 25.6 and 27.0 s) |
+| `mym.fnatic.final-0612201357-de_train.dem` (mym vs fnatic, Train; protocol 47) | probably CPL Winter 2006, final (20 Dec 2006 by the file name); not checked further | demo text "CPL CS 1.6 #1" (the admin plugin's server name), file name "final"; HLTV server "HLTV.org - www.GameGuard.no" | Mac, `~/Downloads/test-demos-2` | names check, 14 Oct 2026: every MYM player has a web address after his name ("MYM|REAL www.steelseries.com") |
+
+### POV demos (recorded by a player)
+
+Sujan's own recordings on 32-player public servers (16 vs 16), added to the Mac and Windows on 3 Oct 2026 for the POV trial (IDEAS.md, "POV demos"). Not regression demos: whether they stay depends on that trial. No event: the event column gives the server and date. Recorder names are as the demo shows them.
+
+| Demo file | Event | How we know | On | Status |
+|---|---|---|---|---|
+| `match-1_de_barcelona-Cts_27-03-2025_15.10.23.dem`, `match-1_de_barcelona-Ts_27-03-2025_15.32.54.dem` (Match 1, CT then T) | none: public server, 27 Mar 2025, de_barcelona; recorder "ac shadows optical mouse" | Sujan; file name; demo text | Mac, Windows | POV trial, 3 Oct 2026 |
+| `match-2_de_mirage_32[Cts]_27-03-2025_14.47.11.dem`, `match-2_de_mirage_32[Ts]_27-03-2025_14.23.27.dem` (Match 2) | none: public server, 27 Mar 2025, de_mirage_32 | Sujan; file name | Mac, Windows | POV trial, 3 Oct 2026 |
+| `match-3_css_cache_00-23-35_28-07-2022.dem` (Match 3) | none: public server, 28 Jul 2022, css_cache; recorder "tp optical mouse"; custom weapon skins | Sujan; file name | Mac, Windows | POV trial, 3 Oct 2026 |
+| `match-4-[PuB]_M-[de_nuke32]_D-[08_24_2021]_T-[00_44].dem`, `match-5-[PuB]_M-[de_nuke32]_D-[08_25_2021]_T-[22_09].dem` (Match 4 and 5) | none: public server, 24 and 25 Aug 2021, de_nuke32 | Sujan; file name | Mac, Windows | POV trial, 3 Oct 2026 |
+
+### Bot wallbang tests
+
+Recorded by Sujan on his own server with a bot he placed, 5 Oct 2026, for the 'Bullet path' proof of concept (IDEAS.md, "Across both viewers"). Sujan dropped 'Bullet path' the same day; what the test found about wallbangs is kept in that IDEAS.md item. M4A1 only, unsilenced. The POV file has his chat labels for each spot; the HLTV file has none, and its clock runs 7.462 s ahead of the POV file's (815 of 818 shots matched).
+
+| Demo file | Event | How we know | On | Status |
+|---|---|---|---|---|
+| `bangtest.dem` (POV, recorder "suckopticalmouse") and `full_match_demo-2610050843-de_train.dem` (HLTV of the same session), de_train | none: Sujan's bot test, 5 Oct 2026 | Sujan | Windows | bullet path proof of concept, 5 Oct 2026 (feature dropped the same day) |
+
+### Deleted
+
+| Demo file | Event | How we know | Was on | Status |
+|---|---|---|---|---|
+| `1110231453--auto_de_nuke.dem_AGAIN-vs-ALTERNATE.dem`, `1110231623--auto_de_dust2.dem_AGAIN-vs-ALTERNATE.dem`, `1110231530--auto_de_tuscan.dem_Lions-vs-Mousesports.dem`, `1110231538--auto_de_inferno.dem_ALTERNATE-vs-AGAIN.dem`, `1110231835--auto_de_mirage.dem_Mousesports-vs-SK.dem`, `de_mirage.dem_Z-Antwerp-Aces-vs-LIONS-E-SPORT.dem` | ESWC 2011 | demo text, as above | Mac, Windows | deleted 2 Oct 2026 (Mac by Claude, Windows by Sujan) |
+| `1110231614--auto_de_mirage.dem_Moscow-5-vs-NAVI.dem` | ESWC 2011 | demo text; [HLTV.org's match page](https://www.hltv.org/matches/1901911/natus-vincere-vs-moscow-five-eswc-2011) | Mac, Windows | deleted 2 Oct 2026 |
+| `mtw-vs-navi-eswc2010semi-real-1007031520-de_tuscan.dem` (2.5 MB, warmup only: "Match stopped") | ESWC 2010, semi-final, mTw vs Na`Vi, Tuscan (3 Jul 2010) | file name, as the other ESWC 2010 files | Mac, Windows | deleted 3 Oct 2026 on the Mac by Claude, at Sujan's request (the Join card refuses it: only 5 of the same 10 players, by name), and on Windows by Sujan |
+| `de_inferno.dem_mousesports-vs-Virus-.dem` (102 MB, broken: no index, stops 199 bytes into its last frame) | ESWC 2011 | demo text "CS 1.6 ESWC #2 by Verygames", read frame by frame (see IDEAS.md, "Tell exactly why a demo is broken") | Mac, Windows | deleted 2 Oct 2026 |
+| `mym.sk.bronzedecider-0805111924-de_inferno.dem` | Kode5 2008, grand final, bronze decider (11 May 2008) | demo text "Kode5 Grand Final server #2"; file name | Mac, Windows | deleted 2 Oct 2026 |
+| `PGL.DreamHack_Bucuresti_2012.03-Winner.Anexis.vs.fnatic.HLTV.3.de_tuscan.dem` | DreamHack Bucuresti 2012 (PGL) | demo text (HLTV server "DreamHack Bucuresti 2012:3"); file name | Mac, Windows | deleted 2 Oct 2026 |
+| `2006-07-02_15h00_Team3D_Fnatic-0607021359-de_train.dem` | ESWC 2006, probably (2 Jul 2006) | HLTV server name "HLTV-ESWC" and the date in the file name; not checked further | Mac, Windows | deleted 2 Oct 2026 |
+| `GP-[PuB]_M-[de_zovine]_D-[10_01_2026]_T-[19_08].dem` (GP Pub de_zovine POV demo) | none: a public server game Sujan recorded on 1 Oct 2026 | | Windows | deleted 2 Oct 2026 by Sujan |
+
+Some older page scripts in the table below name a deleted demo (`DEMO=anexis`, `DEMO=gp-[pub]`, the 2006 Train in `new_demo_settings.js`); they need that demo back to run.
+
+### Notes moved from CLAUDE.md (29 Oct 2026)
+
+Moved word for word when CLAUDE.md became AGENTS.md; the counts are as they stood then, and the table above is the current list.
+
+- From the Half-Life folder notes: The GP Pub de_zovine POV demo was deleted on Windows on 2 Oct 2026. Seven of Sujan's own public-server POV demos (Match 1 to 5) are on both machines since 3 Oct 2026, for the POV trial (`tests/README.md`, "POV demos"; IDEAS.md, "POV demos").
+- The regression set: the 16 demos of 2 Oct 2026 (confirmed K-D and scores in CHANGELOG.md, 0.14.2) plus the new batch, added 3 Oct 2026 once Sujan had checked 0.15.1 by eye (30 demos on each machine; the warmup-only ESWC 2010 Tuscan file `-1007031520-` was deleted on both on 3 Oct 2026). The 102 MB mousesports vs Virus demo (ESWC 2011) was broken, confirmed by Sujan, and is deleted; the reason is kept in the table and IDEAS.md.
+- 15 new demos ("new batch" in the table) went onto both machines on 2 Oct 2026; the accuracy check on them was done that day on Windows and led to 0.15.1 (results in CHANGELOG.md 0.15.1 and IDEAS.md). The Windows folder was listed again at the end of that session: 31 demos, matching the table. POV demos the game records by itself while Sujan plays are not test demos: leave them out of counts and accuracy checks.
