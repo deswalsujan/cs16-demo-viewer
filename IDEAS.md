@@ -26,10 +26,10 @@ Everything raised in conversation that isn't finished, in one place. Each item s
 
 **Sujan's feedback of 14 Oct 2026**: done, every item confirmed by Sujan by eye (0.18.0 to 0.21.1, 14 and 15 Oct 2026); the block is in the archive.
 
-**Wallbangs and kill timing** (0.15.5, 2 Oct 2026): done (0.15.5 and 0.16.0; the denser hidden check closed 5 Oct 2026, with the finder left as in 0.17.0); the block is in the archive. Its branch `wip/denser-hidden-check` (last commit `99c7106`, never merged) was deleted by Sujan on GitHub on 29 Oct 2026; checked the same day with `git ls-remote --heads origin`, which lists only `main` and `wip/pov-mode`.
+**Wallbangs and kill timing** (0.15.5, 2 Oct 2026): done (0.15.5 and 0.16.0; the denser hidden check closed 5 Oct 2026, with the finder left as in 0.17.0); the block is in the archive. Its branch `wip/denser-hidden-check` (last commit `99c7106`, never merged) was deleted by Sujan on GitHub on 29 Oct 2026; checked the same day with `git ls-remote --heads origin`, which then listed only `main` and `wip/pov-mode`.
 
-**Across both viewers** (raised during the POV work, 4 and 5 Oct 2026; the same block is on main and on `wip/pov-mode`)
-- Each open item here is built in the HLTV viewer and waits for POV mode, which comes into main on main's code behind a **POV mode** setting (work item 6.5; Sujan, 29 Oct 2026). Once that's built, the items close except their POV-only parts; the 6.5 report lists which. Done, in the archive: **Bullet path**, dropped by Sujan 5 Oct 2026 (what its bot test found about wallbangs is kept there).
+**Across both viewers** (raised during the POV work, 4 and 5 Oct 2026)
+- Done, in the archive: **Bullet path**, dropped by Sujan 5 Oct 2026 (what its bot test found about wallbangs is kept there).
 - Closed 29 Oct 2026 in 0.25.0, when POV mode came into main on main's code (Sujan's answer of 29 Oct 2026: POV mode gets them all), in the archive: **Subtler kill markers at the crosshair**, **Round announcements**, **Defusal kits and the carried bomb on the players**, **The 0.18.0 and 0.18.1 changes**, **C4 timer counting down**, **The 0.22.0 changes**, **Two kills at one moment picked apart in the lists (0.22.2)**, **Strict and LOOSE wallbangs (0.23.0)**. What's left to see of them in a POV demo is in **POV mode in main, by eye (0.25.0)** under "POV demos" below.
 - [ ] **Feature names in bold** (was: in single quotes, 5 Oct 2026)
   - Status: the docs follow it since 25 Oct 2026; the viewer's own text not yet.
@@ -38,7 +38,7 @@ Everything raised in conversation that isn't finished, in one place. Each item s
 - Closed 29 Oct 2026, in the archive: **The 0.24.0 changes**, when Sujan kept the 0.1 s delay for the other players in POV mode, as in the HLTV viewer (`STATE.md`).
 
 **POV demos** (3 Oct 2026; findings under "POV demos" below)
-- The POV checklist from `wip/pov-mode` was folded in on 29 Oct 2026; its done items are in the archive. POV mode goes into main behind a **POV mode** setting, off by default, and on by default for POV demos once Sujan signs it off (Sujan, 29 Oct 2026; work item 6.5, built in 0.25.0 on `wip/pov-in-main`). The setting is a **POV mode** checkbox in **View settings** ("for demos recorded by a player"), plus a line with a button in a POV demo's load summary, no mockup; with it off every demo plays exactly as in 0.24.0, the recording player drawn at the map's zero point included (Sujan, 29 Oct 2026). This replaces "goes back into main only if it works as intended" (3 Oct 2026).
+- The POV checklist from `wip/pov-mode` was folded in on 29 Oct 2026; its done items are in the archive. POV mode goes into main behind a **POV mode** setting, off by default, and on by default for POV demos once Sujan signs it off (Sujan, 29 Oct 2026; work item 6.5, built in 0.25.0, pull request #5). The setting is a **POV mode** checkbox in **View settings** ("for demos recorded by a player"), plus a line with a button in a POV demo's load summary, no mockup; with it off every demo plays exactly as in 0.24.0, the recording player drawn at the map's zero point included (Sujan, 29 Oct 2026). This replaces "goes back into main only if it works as intended" (3 Oct 2026).
 - [ ] **POV mode in main, by eye (0.25.0)**
   - Status: in main since 0.25.0 (merged 29 Oct 2026, pull request #5), checked by Claude in the headless browser on the Mac (CHANGELOG.md, 0.25.0); not yet by Sujan.
   - Next step: Sujan, on Windows: tick **POV mode** in **View settings** (or press **Turn on POV mode** in a POV demo's load summary) and open Match 1 CT (public server, de_barcelona, 27 Mar 2025) or one of his own recordings. Look for: the demo opening again at the same moment; his crosshair in the colour and size of his `config.cfg`, at 70%; at his kills, the marker's ticks just past his crosshair's arms; round announcements in the middle ("Target has been saved!"); the HUD's round timer gone after a plant (back right away on a server with `mp_show_bomb_timer 1`); the spectator bars' clock counting the C4 down; the C4 on a carrier's back and a CT's kit on the 3D models, and the C4 on the radar when his game had it (kits never show on the radar, Sujan 5 Oct 2026); **View settings** with only Team colours, Quality and **POV mode**. Then untick it: the demo plays as in 0.24.0, the recording player at the map's zero point.
@@ -57,7 +57,7 @@ Everything raised in conversation that isn't finished, in one place. Each item s
   - Decided so far: no marker or message for kills the finder can't check ("it'll just confuse players", Sujan, 5 Oct 2026).
 - [ ] **See through walls and an aimbot catcher in POV mode** (Sujan asked 3 Oct 2026)
   - Status: **See through walls** works, on what the server sent (checked 4 Oct 2026: anti-wallhack servers send enemies only when they're about to be seen). The aimbot catcher is not started.
-  - Next step: Claude builds the aimbot catcher; not started, and not in the work order in `STATE.md`.
+  - Next step: Claude builds the aimbot catcher; not started.
   - Decided so far: **See through walls** stays in POV mode, for admins checking a suspect's POV (Sujan, 3 Oct 2026).
 - [ ] Parked (Sujan, 5 Oct 2026): a deeper check of his own gun animations, weapon by weapon (draw, reload, silencer, shots, grenades, knife), beyond the M4A1 silencer seen so far.
 - [ ] Parked (Sujan, 3 Oct 2026): voice from other players.
@@ -120,7 +120,7 @@ Parked after a feasibility check; the checks are in the archive under the same n
 
 ## POV demos
 
-The findings of 3 Oct 2026 (what a POV demo holds, what the viewer got wrong, the headless browser run) and what's built so far on `wip/pov-mode` ("In progress: POV mode", copied from that branch's CHANGELOG on 29 Oct 2026, with how each part was tested) are in the archive under this heading; work item 6.5 starts from there. The open POV items are in the checklist above.
+The findings of 3 Oct 2026 (what a POV demo holds, what the viewer got wrong, the headless browser run) and what's built so far on `wip/pov-mode` ("In progress: POV mode", copied from that branch's CHANGELOG on 29 Oct 2026, with how each part was tested) are in the archive under this heading; work item 6.5 started from there and shipped in 0.25.0 (pull request #5). The open POV items are in the checklist above.
 
 Ideas from the discussion (3 Oct 2026, not decided):
 - A wallbang check for the recorder's own kills only: with aim stored 100 times a second it could be more precise than on HLTV demos.

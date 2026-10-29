@@ -1,6 +1,6 @@
 # Pictures and mockups
 
-One line per file in `docs/` and `docs/proposed/`: what it shows, the release or decision it belongs to, and whether it is approved, proposed or replaced, with where the repo says so. Mockups waiting for approval go in `proposed/` and move here once approved (AGENTS.md). Sujan's answers on the claude.ai review pages are in [review-answers.md](review-answers.md).
+One line per file in `docs/` and `docs/proposed/`: what it shows, the release or decision it belongs to, and whether it is approved, proposed or replaced, with where the repo says so. Mockups waiting for approval go in `proposed/` and move here once approved (AGENTS.md). Sujan's answers on the claude.ai review pages are in [review-answers.md](review-answers.md). The earlier agent brief, whose work order numbered the work items 6.1 to 6.7 that older notes and commits name, is [agent-brief-2026-10-29.md](agent-brief-2026-10-29.md): Sujan's copy, checked against main at `afbc051` (0.24.0) on 29 Oct 2026, unchanged (it mentions `cs16-agent-audit.md`, which isn't in the repo and isn't needed); its work order closed when 6.7 merged on 29 Oct 2026 (pull request #12).
 
 ## docs/
 
