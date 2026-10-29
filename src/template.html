@@ -300,7 +300,7 @@ kbd { font-family: var(--f-mono); font-size: 11px; background: var(--panel-2); b
 .kbd { color: var(--faint); font-size: 11px; font-family: var(--f-mono); }
 .keys-head .kh-r { display: flex; gap: 8px; align-items: center; flex-wrap: wrap; justify-content: flex-end; }
 .ver { color: var(--muted); font-family: var(--f-mono); font-size: 12px; }
-.ver a { color: var(--sand); }
+.ver a, .loadfoot a { color: var(--sand); } /* the start screen's Source on GitHub link too (0.25.1) */
 .dbgbox { width: 100%; min-height: 140px; background: var(--bg); color: var(--fg); border: 1px solid var(--line); border-radius: 4px; font: 11px/1.4 var(--f-mono); padding: 8px; }
 .loadfoot { display: flex; justify-content: space-between; align-items: center; gap: 12px; flex-wrap: wrap; color: var(--faint); font-size: 12px; font-family: var(--f-mono); }
 .loadfoot .btn { font-size: 12px; padding: 4px 8px; }
@@ -616,7 +616,7 @@ body:has(.app.theatre) { overflow: hidden; }
         <div class="drophint">Or drop a .dem file, or an overview .bmp and .txt pair, anywhere on this page</div>
         <div class="prog" id="prog" hidden><i id="progBar"></i></div>
         <div class="msg" id="msg"></div>
-        <div class="loadfoot"><span>Version __VERSION__</span><button class="btn" id="bClear" type="button" title="Forgets your Half-Life folder and deletes the maps, models, sounds and overviews this browser saved from it, as on a first visit">Clear saved files</button></div>
+        <div class="loadfoot"><span>Version __VERSION__ · <a href="https://github.com/deswalsujan/cs16-demo-viewer" target="_blank" rel="noopener">Source on GitHub</a></span><button class="btn" id="bClear" type="button" title="Forgets your Half-Life folder and deletes the maps, models, sounds and overviews this browser saved from it, as on a first visit">Clear saved files</button></div>
       </div>
     </div>
   </section>
