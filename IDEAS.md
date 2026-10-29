@@ -4,7 +4,7 @@ Parked ideas and features we've discussed but not built yet. Each entry keeps en
 
 Only what is open stays here. An open item keeps a three-line header (Status, Next step, Decided so far; each answer in Decided so far also has its line in `STATE.md`); a parked item keeps one line, since nothing happens until Sujan picks it up. Done items, and the full text of open ones, go to [IDEAS-ARCHIVE.md](IDEAS-ARCHIVE.md) word for word, under the same section and block names (since 29 Oct 2026). A section that older notes, code comments or `tests/README.md` point to and that isn't here, such as "Tell exactly why a demo is broken", is in the archive under the same name.
 
-## Open follow-ups (checklist, updated 29 Oct 2026, 0.24.0)
+## Open follow-ups (checklist, updated 29 Oct 2026, 0.25.0)
 
 Everything raised in conversation that isn't finished, in one place. Each item says who does it. Ideas for new features are further down; this list is for loose ends.
 
@@ -30,56 +30,29 @@ Everything raised in conversation that isn't finished, in one place. Each item s
 
 **Sujan's feedback of 14 Oct 2026**: done, every item confirmed by Sujan by eye (0.18.0 to 0.21.1, 14 and 15 Oct 2026); the block is in the archive.
 
-**Wallbangs and kill timing** (0.15.5, 2 Oct 2026): done (0.15.5 and 0.16.0; the denser hidden check closed 5 Oct 2026, with the finder left as in 0.17.0); the block is in the archive.
+**Wallbangs and kill timing** (0.15.5, 2 Oct 2026): done (0.15.5 and 0.16.0; the denser hidden check closed 5 Oct 2026, with the finder left as in 0.17.0); the block is in the archive. Its branch `wip/denser-hidden-check` (last commit `99c7106`, never merged) was deleted by Sujan on GitHub on 29 Oct 2026; checked the same day with `git ls-remote --heads origin`, which lists only `main` and `wip/pov-mode`.
 
 **Across both viewers** (raised during the POV work, 4 and 5 Oct 2026; the same block is on main and on `wip/pov-mode`)
 - Each open item here is built in the HLTV viewer and waits for POV mode, which comes into main on main's code behind a **POV mode** setting (work item 6.5; Sujan, 29 Oct 2026). Once that's built, the items close except their POV-only parts; the 6.5 report lists which. Done, in the archive: **Bullet path**, dropped by Sujan 5 Oct 2026 (what its bot test found about wallbangs is kept there).
-- [ ] **Subtler kill markers at the crosshair**
-  - Status: HLTV viewer, built in 0.17.0, confirmed by Sujan (5 Oct 2026). POV mode not done.
-  - Next step: Claude, in 6.5.
-  - Decided so far: option A, thin ticks past the crosshair's arms, and no ring around the victim in **Player's eyes** (Sujan, 5 Oct 2026).
+- Closed 29 Oct 2026 in 0.25.0, when POV mode came into main on main's code (Sujan's answer of 29 Oct 2026: POV mode gets them all), in the archive: **Subtler kill markers at the crosshair**, **Round announcements**, **Defusal kits and the carried bomb on the players**, **The 0.18.0 and 0.18.1 changes**, **C4 timer counting down**, **The 0.22.0 changes**, **Two kills at one moment picked apart in the lists (0.22.2)**, **Strict and LOOSE wallbangs (0.23.0)**. What's left to see of them in a POV demo is in **POV mode in main, by eye (0.25.0)** under "POV demos" below.
 - [ ] **Feature names in bold** (was: in single quotes, 5 Oct 2026)
   - Status: the docs follow it since 25 Oct 2026; the viewer's own text not yet.
   - Next step: Claude, together with the tooltips ("User experience" below).
   - Decided so far: **bold**, capitalized as on screen, no quotes, in the viewer's text (tooltips, notes, load summary) and in the docs, following Microsoft's and Google's style guides (Sujan, 25 Oct 2026).
-- [ ] **Round announcements**
-  - Status: HLTV viewer, built in 0.17.0, in the game's look and place since 0.18.0. POV mode not done, and not yet checked in a POV demo.
-  - Next step: Claude, in 6.5.
-  - Decided so far: text in the centre like the game, in 2D too, no mockup (Sujan, 5 Oct 2026); orange Verdana, the top of the text 35% down (Sujan, 14 Oct 2026).
-- [ ] **Defusal kits and the carried bomb on the players**
-  - Status: HLTV viewer, built in 0.17.0, confirmed by Sujan (5 Oct 2026). POV mode not done.
-  - Next step: Claude, in 6.5.
-  - Decided so far: on the 3D models and in the Tab scoreboard (Sujan, 5 Oct 2026); in the HLTV viewer the C4 carrier and a dropped bomb are also on the radar since 0.18.0 (Sujan, 14 Oct 2026).
-- [ ] **The 0.18.0 and 0.18.1 changes**: side panel clicks kept during playback, kill feed icons, short names, round announcements in the game's look, three crosshair sizes, the C4 on the radar, a wider Tab scoreboard, HLTV slow motion at real speed, the shorter 3D bar
-  - Status: HLTV viewer, built. POV mode has the kill feed icons (22 Oct 2026, on `wip/pov-mode`); the rest not done.
-  - Next step: Claude, in 6.5; which of them POV mode gets was left as Sujan's call.
-  - Decided so far: Sujan's answers of 14 Oct 2026 (archive, "Sujan's feedback of 14 Oct 2026").
-- [ ] **C4 timer counting down**
-  - Status: HLTV viewer, built in 0.21.0. POV mode's copy still counts up.
-  - Next step: Claude, in 6.5; whether POV mode gets it was left as Sujan's call.
-  - Decided so far: counts down from 0:35, holds 0:00 after the explosion, stops at a defuse; list times stay time since the plant (Sujan, 15 Oct 2026).
-- [ ] **The 0.22.0 changes**: invisible brushes and what bullets break aren't cover, the picture check for bodies in view, skips across a round restart, a demo counts as POV only with no HLTV audience updates, five small fixes
-  - Status: HLTV viewer, built. POV mode not done.
-  - Next step: Claude, in 6.5; which of them POV mode gets was left as Sujan's call.
-  - Decided so far: fences, grates and ladders stay cover (Sujan, 23 Oct 2026); the picture check's 100-pixel drop became the strict and LOOSE split in 0.23.0.
-- [ ] **Two kills at one moment picked apart in the lists (0.22.2)**
-  - Status: HLTV viewer, built. POV mode not done (same code in its copy).
-  - Next step: Claude, in 6.5.
-  - Decided so far: nothing to decide.
-- [ ] **Strict and LOOSE wallbangs (0.23.0)**
-  - Status: HLTV viewer, built. POV mode not done.
-  - Next step: Claude, in 6.5; whether POV mode gets it was left as Sujan's call.
-  - Decided so far: strict under 50 pixels of the victim in view, LOOSE from 50 (Sujan, 25 Oct 2026).
 - [ ] **The 0.24.0 changes**: crosshair sizes a step smaller, the 3D view 0.1 s behind, wallbang damage with **Glow on hits**, loose wallbangs from damage, light purple for loose
-  - Status: HLTV viewer, built. POV mode not done. A POV demo carries the recorder's own health and damage, which may make wallbang damage exact there.
-  - Next step: Claude, in 6.5; which of them POV mode gets was left as Sujan's call.
-  - Decided so far: the 0.24.0 decisions in `STATE.md` (Sujan, 25 to 28 Oct 2026).
+  - Status: HLTV viewer, built. POV mode has them since 0.25.0 (29 Oct 2026), except as decided below; the 0.1 s delay for the other players there is main's 0.1 s until Sujan picks. A POV demo carries the recorder's own health and damage, which may make wallbang damage exact there (not tried).
+  - Next step: Sujan picks the delay for the other players in POV mode, 0 or 0.1 s, from Claude's measurements on the 7 POV demos (CHANGELOG.md, 0.25.0, "How it was tested": neither lines up clearly better).
+  - Decided so far: the 0.24.0 decisions in `STATE.md` (Sujan, 25 to 28 Oct 2026). POV mode gets them (Sujan, 29 Oct 2026), except: wallbang damage, and with it loose wallbangs from damage, stay off in POV mode (teammates' HP from the server never feeds the damage finder), so the **Glow on hits** row in **View settings** is hidden there, like the Crosshair row (Sujan, 29 Oct 2026: the glow comes from the damage finder's bursts, so the checkbox would do nothing); POV mode draws his own game crosshair, so the crosshair sizes don't apply there; the 0.1 s delay for the other players in POV mode is measured at 0 and 0.1 s and both results go to Sujan, who picks (his camera stays on his own frames).
 
 **POV demos** (3 Oct 2026; findings under "POV demos" below)
-- The POV checklist from `wip/pov-mode` was folded in on 29 Oct 2026; its done items are in the archive. POV mode goes into main behind a **POV mode** setting, off by default, and on by default for POV demos once Sujan signs it off (Sujan, 29 Oct 2026; work item 6.5, not built). This replaces "goes back into main only if it works as intended" (3 Oct 2026).
+- The POV checklist from `wip/pov-mode` was folded in on 29 Oct 2026; its done items are in the archive. POV mode goes into main behind a **POV mode** setting, off by default, and on by default for POV demos once Sujan signs it off (Sujan, 29 Oct 2026; work item 6.5, built in 0.25.0 on `wip/pov-in-main`). The setting is a **POV mode** checkbox in **View settings** ("for demos recorded by a player"), plus a line with a button in a POV demo's load summary, no mockup; with it off every demo plays exactly as in 0.24.0, the recording player drawn at the map's zero point included (Sujan, 29 Oct 2026). This replaces "goes back into main only if it works as intended" (3 Oct 2026).
+- [ ] **POV mode in main, by eye (0.25.0)**
+  - Status: built 29 Oct 2026 on `wip/pov-in-main`, checked by Claude in the headless browser on the Mac (CHANGELOG.md, 0.25.0); not yet by Sujan.
+  - Next step: Sujan, on Windows, once it's merged: tick **POV mode** in **View settings** (or press **Turn on POV mode** in a POV demo's load summary) and open Match 1 CT (public server, de_barcelona, 27 Mar 2025) or one of his own recordings. Look for: the demo opening again at the same moment; his crosshair in the colour and size of his `config.cfg`, at 70%; at his kills, the marker's ticks just past his crosshair's arms; round announcements in the middle ("Target has been saved!"); the HUD's round timer gone after a plant (back right away on a server with `mp_show_bomb_timer 1`); the spectator bars' clock counting the C4 down; the C4 on a carrier's back and a CT's kit, in 3D and on the radar when his game had them; **View settings** with only Team colours, Quality and **POV mode**. Then untick it: the demo plays as in 0.24.0, the recording player at the map's zero point.
+  - Decided so far: the **POV mode** setting and what POV mode gets, in `STATE.md` (Sujan, 29 Oct 2026).
 - [ ] **Kill feed icons in POV mode, on Windows**
-  - Status: built 22 Oct 2026 on `wip/pov-mode`, ported from 0.18.0; not yet checked by Sujan.
-  - Next step: Sujan opens `pov/pov.html` on `wip/pov-mode`, any POV demo, and looks at the top right after a kill: orange gun icon, headshot icon on headshots, no "m4a1" or "HS" words.
+  - Status: built 22 Oct 2026 on `wip/pov-mode`, ported from 0.18.0; in main since 0.25.0 (the HLTV viewer's own kill feed, which POV mode now uses); not yet checked by Sujan.
+  - Next step: Sujan, with **POV mode** on in main's viewer (not `pov/pov.html` any more), any POV demo, and looks at the top right after a kill: orange gun icon, headshot icon on headshots, no "m4a1" or "HS" words.
   - Decided so far: built at Sujan's request in the HLTV viewer's look, no mockup (22 Oct 2026).
 - [ ] **The hidden-enemies note is easy to miss**
   - Status: raised by Sujan 5 Oct 2026, apply or park to be decided: when the demo opens, the eye is on the load summary, and the note's box and text are small.

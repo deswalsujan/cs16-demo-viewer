@@ -128,6 +128,16 @@ const TE_SIZES = {
 };
 
 const SAMPLE_HZ = 30;
+// POV mode, one frame of the recording player's view: the camera his game drew, about 100 times a second.
+// Offsets in the 464-byte block (the engine's ref_params_t, then his last user command), checked on Match 1 T
+// (de_barcelona, public server, 27 Mar 2025) on 3 Oct 2026: time; camera position (4: his position plus eye
+// height, about 17 units standing); view angles pitch, yaw, roll (16: his mouse aim plus the recoil kick, also
+// while dead, when they're the spectator camera's); recoil kick, the punch angle (164); his position (simorg, 104);
+// his mouse aim pitch, yaw (cl_viewangles, 132); health (144, stays at its last value after death, so not an alive
+// flag); view entity (180, always his own); player number (184, his entity minus 1); buttons (266); on ground
+// (84); the user command's view angles pitch, yaw (240, the same as 132).
+const VIEW_STRIDE = 22;
+const FL_DUCKING = 1 << 14; // entity flag for a crouched player (the game's FL_DUCKING)
 const STRIDE = 11; // x, y, z, yaw, pitch, state, weaponModel, ducked, playerModel (index into pmodels), sequence, gaitsequence
 
 // ---- is the file as a finished recording leaves it? ----
@@ -199,7 +209,8 @@ function readIndex(u8, r, header) {
 
 // opts (used when the reader runs a second time on the same file, see the end):
 //   stopAtMap: stop at the first map change, for a recording that ran on into the next map
-//   povRounds: start rounds from the round timer, for demos without the HLTV round marker
+//   povRounds: start rounds from the round timer, for demos without the HLTV round marker. In this pass the reader
+//     also gathers what POV mode needs (see `pov` at the end); a file that turns out not to be POV returns none of it.
 export function parseDemo(buffer, onProgress, opts = {}) {
   const u8 = buffer instanceof Uint8Array ? buffer : new Uint8Array(buffer);
   const r = new Reader(u8);
@@ -216,6 +227,14 @@ export function parseDemo(buffer, onProgress, opts = {}) {
   let maxClients = 32;
   let serverInfo = null;
   const resources = { models: {}, sounds: {}, events: {} };
+  const own = {}; // the recording player's own state in a POV demo (clientdata), built up message by message
+  // POV mode: the recording player's own view, from the block his game writes before every frame's messages
+  // (about 100 a second). See VIEW_STRIDE for what each frame holds.
+  const view = [];
+  // POV mode: his position and crouch at each position sample (x, y, z, ducked; NaN where there's none), from his
+  // own state. The server leaves it out of his entity in the snapshots, so `slots` has him at the map's zero point;
+  // the viewer puts these in his track only in POV mode (Sujan, 29 Oct 2026: with it off, exactly as 0.24.0).
+  const ownPos = [];
   const baseline = [];
   const instBaseline = [];
   let ents = [];
@@ -231,6 +250,20 @@ export function parseDemo(buffer, onProgress, opts = {}) {
   // sounds heard in the demo: server sounds, weapon fire events, explosions, radio lines and corpses
   const snds = [];      // time, sound resource index, entity, volume, attenuation, pitch, channel, x, y, z (NaN when not sent)
   const shots = [];     // time, entity, event resource index, bparam1
+  // where each shot was fired, when the message says (x, y, z, else NaN; one per shot, POV demos only). The server
+  // adds it when the shooter isn't in the receiving game's snapshot: in a POV demo that's most shots (2,579 of 3,440
+  // in Match 1 T), and without it those played at full volume with no distance (Sujan, 3 Oct 2026: far CTs sounded close).
+  const shotOrg = [];
+  // POV mode only: the recording player's zoom (time, field of view) and his gun (time, weapon id, rounds in it)
+  const fovs = [], ownAmmo = [], wanims = []; // wanims: time, sequence of his gun model (demo frame type 7)
+  const vmodels = []; // the gun model in his hands (clientdata viewmodel): time, model index, each time it changes
+  // POV mode, his HUD (what the server told his game about himself): health, armor, helmet (time, value each),
+  // money, spare ammo (time, ammo type, count), and which ammo type each gun takes (weapon id -> ammo type)
+  const hud = { hp: [], ap: [], helmet: [], money: [], ammox: [], gunAmmo: {} };
+  const obs = []; // his spectator mode and target (clientdata iuser1, iuser2): time, mode, entity, each time they change
+  // POV mode: teammates' health (HealthInfo; the server sends -1 for opponents): time, entity, health. Kept apart from
+  // hp, which only HLTV sends and which the damage and skip finders read
+  const hpInfo = [];
   const radio = [];     // { t, s: sentence name }
   const centre = [];    // { t, s: '#Terrorists_Win' and the like, a: its arguments } (centre-screen messages)
   const corpses = [];   // { t, start, model, pos, yaw, seq, team, e }
@@ -293,6 +326,12 @@ export function parseDemo(buffer, onProgress, opts = {}) {
       if (st && packNow[e] !== (st.body | 0)) { packNow[e] = st.body | 0; pack.push(time, e, packNow[e]); }
       if (st) a.push(st['origin[0]'] || 0, st['origin[1]'] || 0, st['origin[2]'] || 0, st['angles[1]'] || 0, st['angles[0]'] || 0, state, st.weaponmodel || 0, st.usehull || 0, pmIndex(p, st), st.sequence || 0, st.gaitsequence || 0);
       else a.push(NaN, NaN, NaN, 0, 0, state, 0, 0, 0, 0, 0);
+    }
+    // the recording player in a POV demo: position and crouch from his own state (clientdata), see case 15
+    if (opts.povRounds) {
+      const e = serverInfo ? serverInfo.playerIndex + 1 : 0;
+      if (ents[e] && own['origin[0]'] != null) ownPos.push(own['origin[0]'], own['origin[1]'], own['origin[2]'] || 0, (own.flags || 0) & FL_DUCKING ? 1 : 0);
+      else ownPos.push(NaN, NaN, NaN, 0);
     }
     for (const k in nadeEnts) {
       const st = ents[k];
@@ -393,6 +432,15 @@ export function parseDemo(buffer, onProgress, opts = {}) {
             kduck: kp ? kp.usehull || 0 : 0, vduck: vp ? vp.usehull || 0 : 0,
             kang: kp ? [kp['angles[0]'] || 0, kp['angles[1]'] || 0] : null,
           });
+          // the recording player in a POV demo: where he stood, from his own state (his entity has no position),
+          // as [x, y, z, ducked], for the viewer to use in POV mode (kills by or on him had none: 40, 14 and 66 in
+          // Match 1 CT and T and Match 3, the cause of a page error, 3 Oct 2026)
+          if (inPlayback && opts.povRounds && serverInfo && own['origin[0]'] != null) {
+            const me = serverInfo.playerIndex + 1, k = kills[kills.length - 1];
+            const at = [own['origin[0]'], own['origin[1]'], own['origin[2]'] || 0, (own.flags || 0) & FL_DUCKING ? 1 : 0];
+            if (killer === me && kp) k.kOwn = at;
+            if (victim === me && vp) k.vOwn = at;
+          }
           break;
         }
         case 'TeamInfo': {
@@ -400,6 +448,28 @@ export function parseDemo(buffer, onProgress, opts = {}) {
           if (!players[id]) players[id] = { name: '?', team };
           players[id].team = team;
           if (team === 'TERRORIST' || team === 'CT') players[id].lastTeam = team;
+          break;
+        }
+        // POV mode: what the server sends the recording player about himself and his team (none of it in HLTV recordings)
+        case 'HealthInfo': { // a teammate's health (the server sends -1 for opponents)
+          const id = m.ub(), v = m.i();
+          if (opts.povRounds && inPlayback && v >= 0 && v <= 255) hpInfo.push(time, id, v);
+          break;
+        }
+        case 'Health': { if (opts.povRounds && inPlayback) hud.hp.push(time, m.ub()); break; }
+        case 'Battery': { if (opts.povRounds && inPlayback) hud.ap.push(time, m.s()); break; }
+        case 'ArmorType': { if (opts.povRounds && inPlayback) hud.helmet.push(time, m.ub()); break; }
+        case 'Money': { if (opts.povRounds && inPlayback) hud.money.push(time, m.i()); break; }
+        case 'AmmoX': { const ty = m.ub(), n = m.ub(); if (opts.povRounds && inPlayback) hud.ammox.push(time, ty, n); break; }
+        case 'WeaponList': { // name, primary ammo type, max, secondary ammo type, max, slot, position, weapon id, flags
+          m.str(); const ty = m.b8(); m.ub(); m.b8(); m.ub(); m.ub(); m.ub(); const id = m.ub();
+          if (opts.povRounds) hud.gunAmmo[id] = ty;
+          break;
+        }
+        case 'SetFOV': { if (opts.povRounds && inPlayback) fovs.push(time, m.ub()); break; }
+        case 'CurWeapon': {
+          const on = m.ub(), id = m.ub(), clip = m.b8();
+          if (opts.povRounds && inPlayback && on) ownAmmo.push(time, id, clip);
           break;
         }
         case 'TeamScore': {
@@ -584,7 +654,15 @@ export function parseDemo(buffer, onProgress, opts = {}) {
           if (isProxy()) break;
           r.bitsStart();
           if (r.bits(1)) r.bits(8);
-          readDelta(r, deltas.clientdata_t, {});
+          // the recording player's own state, sent only to him. It's the one place a POV demo has his position:
+          // the server leaves it out of his entity in the snapshots, since his game moves him itself (POV trial,
+          // 3 Oct 2026: the recorder was drawn at the map's zero point). Each message changes only what changed.
+          readDelta(r, deltas.clientdata_t, own);
+          if (opts.povRounds && inPlayback && own.viewmodel != null && own.viewmodel !== vmodels.last) { vmodels.push(time, own.viewmodel); vmodels.last = own.viewmodel; }
+          // how his game showed things after a death: spectator mode (iuser1: 0 playing, 2 chase, 3 free, 4 first
+          // person) and whom (iuser2). Match 1 T, 3 Oct 2026: at each death, chase on himself for about 4 to 5 s (the
+          // death camera behind his body), then first person on teammates.
+          if (opts.povRounds && inPlayback) { const k = (own.iuser1 || 0) * 256 + (own.iuser2 || 0); if (k !== obs.last) { obs.push(time, own.iuser1 || 0, own.iuser2 || 0); obs.last = k; } }
           while (r.bits(1)) { r.bits(6); readDelta(r, deltas.weapon_data_t, {}); }
           r.bitsEnd();
           break;
@@ -781,6 +859,14 @@ export function parseDemo(buffer, onProgress, opts = {}) {
       }
       switch (ftype) {
         case 0: case 1: {
+          // the frame's view block: the engine's ref_params_t, then the player's last user command. Read only
+          // for a demo recorded by a player (on HLTV demos this is the HLTV camera, which nothing here uses).
+          if (opts.povRounds && inPlayback) {
+            const dv = r.dv, b = r.p, f = (o) => dv.getFloat32(b + o, true);
+            view.push(ftime, f(4), f(8), f(12), f(16), f(20), f(24), f(164), f(168), f(172),
+              f(104), f(108), f(112), f(132), f(136), dv.getInt32(b + 144, true), dv.getInt32(b + 180, true),
+              dv.getInt32(b + 184, true), dv.getUint16(b + 266, true), dv.getInt32(b + 84, true), f(240), f(244));
+          }
           r.skip(464);
           const len = r.ui();
           const end = r.p + len;
@@ -793,6 +879,7 @@ export function parseDemo(buffer, onProgress, opts = {}) {
               const ev = pendingEv[k + 2]; let e = ev && ev.entindex ? ev.entindex : 0;
               if (!e && pendingEv[k + 1] >= 0) { if (!order) { order = []; for (let n = 0; n < ents.length; n++) if (ents[n]) order.push(n); } e = order[pendingEv[k + 1]] || 0; }
               shots.push(time, e, pendingEv[k], ev && ev.bparam1 ? 1 : 0);
+              if (opts.povRounds) { if (ev && ev['origin[0]'] != null) shotOrg.push(ev['origin[0]'], ev['origin[1]'] || 0, ev['origin[2]'] || 0); else shotOrg.push(NaN, NaN, NaN); }
               // the smoke itself: the game sends createsmoke when a smoke pops (with the cloud's centre as origin)
               // and then once a second while it smokes (with the centre in angles), from ReGameDLL's
               // CGrenade::SG_Detonate and SG_Smoke. These arrive even when the grenade object isn't in the demo.
@@ -813,7 +900,8 @@ export function parseDemo(buffer, onProgress, opts = {}) {
         case 4: r.skip(32); break;
         case 5: done = true; break;
         case 6: r.skip(84); break;
-        case 7: r.skip(8); break;
+        // the recorder's gun animation, written by his own game (POV demos): sequence, then body
+        case 7: { if (opts.povRounds && inPlayback) wanims.push(time, r.dv.getInt32(r.p, true)); r.skip(8); break; }
         case 8: { r.skip(4); const n = r.ui(); r.skip(n + 16); break; }
         case 9: { const n = r.ui(); r.skip(n); break; }
         default:
@@ -855,11 +943,20 @@ export function parseDemo(buffer, onProgress, opts = {}) {
     const t1 = i + 2 < timescale.length ? timescale[i + 2] : time;
     if (t1 > timescale[i]) slow.push([timescale[i], t1, v]);
   }
+  // POV: rounds found from the round timer, and no HLTV status updates (the audience count every few seconds,
+  // which only an HLTV recording carries). A short HLTV file with no round marker in it, such as SK vs eSTRO,
+  // Train, WCG 2008 (`-0811081859-`, 13 s), read as POV before (23 Oct 2026).
+  const pov = !!opts.povRounds && !hltvStatus.length;
+  // What POV mode needs (0.25.0), only for a POV demo: every field above stays as in 0.24.0, so the viewer with POV
+  // mode off plays any demo exactly as before (Sujan, 29 Oct 2026)
+  const povData = pov ? {
+    view: new Float32Array(view), viewStride: VIEW_STRIDE, ownPos: new Float32Array(ownPos), hpInfo: new Float32Array(hpInfo),
+    shotOrg: new Float32Array(shotOrg), fovs: new Float32Array(fovs), ownAmmo: new Float32Array(ownAmmo), wanims: new Float32Array(wanims), vmodels: new Float32Array(vmodels), obs: new Float32Array(obs),
+    hud: { hp: new Float32Array(hud.hp), ap: new Float32Array(hud.ap), helmet: new Float32Array(hud.helmet), money: new Float32Array(hud.money), ammox: new Float32Array(hud.ammox), gunAmmo: hud.gunAmmo },
+  } : null;
+  if (!pov) for (const k of kills) { delete k.kOwn; delete k.vOwn; }
   return {
-    // POV: rounds found from the round timer, and no HLTV status updates (the audience count every few seconds,
-    // which only an HLTV recording carries). A short HLTV file with no round marker in it, such as SK vs eSTRO,
-    // Train, WCG 2008 (`-0811081859-`, 13 s), read as POV before (23 Oct 2026).
-    header, serverInfo, maxClients, maps, pov: !!opts.povRounds && !hltvStatus.length,
+    header, serverInfo, maxClients, maps, pov,
     mapName: (serverInfo && serverInfo.mapFile) ? serverInfo.mapFile.replace(/^maps\//, '').replace(/\.bsp$/, '') : header.mapName,
     start: playbackStart || 0, end: time,
     players, kills, rounds, bomb, chat, nades, roundTimes, pauses, hp: new Float32Array(hp), pack: new Float32Array(pack),
@@ -868,5 +965,6 @@ export function parseDemo(buffer, onProgress, opts = {}) {
     finalScore: { ...scores }, models: resources.models, stride: STRIDE,
     pmodels, sounds: resources.sounds, events: resources.events, snds: new Float32Array(snds), shots: new Float32Array(shots), booms: new Float32Array(booms), puffs: new Float32Array(puffs), radio, centre, corpses,
     errors, errSamples, health, c4drops: new Float32Array(c4drops), slow,
+    ...(povData ? { povData } : {}),
   };
 }

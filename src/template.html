@@ -490,7 +490,7 @@ body:has(.app.theatre) { overflow: hidden; }
       <button class="btn arr" id="bPrevP" type="button" title="Previous player (Z or right-click)" aria-label="Previous player">‹</button>
       <button class="btn arr" id="bNextP" type="button" title="Next player (X or click)" aria-label="Next player">›</button>
       <div class="vset">
-        <button class="btn" id="bVset" type="button" aria-expanded="false" aria-controls="vsetPanel" title="Team colours, quality and crosshair size">View settings <svg viewBox="0 0 10 6" aria-hidden="true"><path d="M1 1l4 4 4-4"/></svg></button>
+        <button class="btn" id="bVset" type="button" aria-expanded="false" aria-controls="vsetPanel" title="Team colours, quality, crosshair size and POV mode">View settings <svg viewBox="0 0 10 6" aria-hidden="true"><path d="M1 1l4 4 4-4"/></svg></button>
         <div class="vpanel" id="vsetPanel" role="group" aria-label="View settings" hidden>
           <div class="vrow"><span>Team colours</span><button class="btn" id="tgModels" type="button" title="Draw the players in flat team colours: red for Terrorists, blue for Counter-Terrorists">Off</button></div>
           <label class="vrow"><span>Quality</span><select id="q3" title="How sharp the 3D view is drawn. Auto starts sharp and steps down if playback can't keep up">
@@ -504,6 +504,7 @@ body:has(.app.theatre) { overflow: hidden; }
             <option value="medium">Medium</option>
             <option value="large">Large</option>
           </select></label>
+          <label class="vrow"><span>POV mode<small>for demos recorded by a player</small></span><input type="checkbox" id="pov3" title="Watch a demo recorded by a player through his own eyes, as his game showed it: his view, crosshair, HUD and gun. Off, it plays like an HLTV demo. Changing it opens the demo again"></label>
         </div>
       </div>
     </div>
@@ -731,7 +732,7 @@ $('fFolder').onchange = (e) => { const list = [...e.target.files]; e.target.valu
 // The whole folder is read again each time, so files deleted since the last pick drop out
 function indexFolder(list) {
   let nOv = 0;
-  files.demos = []; files.overviews = {}; files.maps = {}; files.wads = {}; files.mdl = {}; files.snd = {}; files.sentences = null; files.lang = null; files.hud = { txt: null, spr: {} };
+  files.demos = []; files.overviews = {}; files.maps = {}; files.wads = {}; files.mdl = {}; files.snd = {}; files.sentences = null; files.lang = null; files.hud = { txt: null, spr: {} }; files.cfg = null;
   STALE.clear();
   for (const f of list) {
     const p = (f.relPath || f.webkitRelativePath || f.name).replace(/\\/g, '/').toLowerCase();
@@ -755,10 +756,13 @@ function indexFolder(list) {
       if (sm) { const o = files.snd[sm[2]]; if (!o || rank(sm[1]) > o.rank) { f.rank = rank(sm[1]); files.snd[sm[2]] = f; } continue; }
       if (/(?:^|\/)cstrike\/sound\/sentences\.txt$/.test(p)) files.sentences = f;
       if (/(?:^|\/)cstrike\/resource\/cstrike_english\.txt$/.test(p)) files.lang = f;
+      if (/(?:^|\/)cstrike\/config\.cfg$/.test(p)) files.cfg = f; // POV mode: the crosshair settings
       // the kill feed's weapon icons: where they sit (hud.txt) and the sprite sheets they're on
       if (/(?:^|\/)cstrike\/sprites\/hud\.txt$/.test(p)) files.hud.txt = f;
       const hm = /(?:^|\/)cstrike\/sprites\/(640hud\d+)\.spr$/.exec(p);
       if (hm) files.hud.spr[hm[1]] = f;
+      const wt = /(?:^|\/)cstrike\/sprites\/(weapon_\w+)\.txt$/.exec(p); // POV HUD: each gun's ammo icon
+      if (wt) (files.hud.wtxt ||= {})[wt[1]] = f;
     }
   }
   files.demos.sort((a, b) => b.lastModified - a.lastModified);
@@ -1227,6 +1231,9 @@ function joinDemos(parts) {
     return (i) => (map[i] != null ? map[i] : i);
   };
   const timesL = [], slotsL = {}, hpL = [], packL = [], brushEvL = [], brushPoseL = [], sndsL = [], shotsL = [], boomsL = [], puffsL = [], c4L = [];
+  // POV mode (0.25.0): the parts' POV data on the joined timeline, when every part is a POV demo. recs: for each part,
+  // its first sample, its number of samples and the recording player's entity there
+  const povL = parts.every((P) => P.povData) ? { view: [], ownPos: [], hpInfo: [], shotOrg: [], fovs: [], ownAmmo: [], wanims: [], vmodels: [], obs: [], hud: { hp: [], ap: [], helmet: [], money: [], ammox: [] }, gunAmmo: {}, recs: [] } : null;
   let shift = 0, nRound = 0, nOcc = 0, nSamples = 0;
   parts.forEach((P, pi) => {
     if (pi) shift = (out.end) + JOIN_GAP - P.start;
@@ -1273,6 +1280,15 @@ function joinDemos(parts) {
     flat(P.puffs, 5, (a, i) => { a[i] = sh(a[i]); }, puffsL);
     flat(P.c4drops || [], 5, (a, i) => { a[i] = sh(a[i]); a[i + 1] = sh(a[i + 1]); }, c4L);
     for (const [a, b, v] of P.slow || []) out.slow.push([sh(a), sh(b), v]);
+    if (povL) {
+      const Q = P.povData, t0 = (a, i) => { a[i] = sh(a[i]); };
+      flat(Q.view, Q.viewStride, t0, povL.view); flat(Q.ownPos, 4, () => {}, povL.ownPos); flat(Q.hpInfo, 3, t0, povL.hpInfo);
+      flat(Q.shotOrg, 3, () => {}, povL.shotOrg); flat(Q.fovs, 2, t0, povL.fovs); flat(Q.ownAmmo, 3, t0, povL.ownAmmo);
+      flat(Q.wanims, 2, t0, povL.wanims); flat(Q.vmodels, 2, (a, i) => { a[i] = sh(a[i]); a[i + 1] = mM(a[i + 1]); }, povL.vmodels); flat(Q.obs, 3, t0, povL.obs);
+      for (const k in povL.hud) flat(Q.hud[k], k === 'ammox' ? 3 : 2, t0, povL.hud[k]);
+      Object.assign(povL.gunAmmo, Q.hud.gunAmmo);
+      povL.recs.push([nSamples, P.times.length, P.serverInfo ? P.serverInfo.playerIndex + 1 : 0]);
+    }
     // player samples: every slot gets an entry for every sample time (empty where the slot isn't in this part)
     const n = P.times.length, tt = new Float32Array(n);
     for (let i = 0; i < n; i++) tt[i] = sh(P.times[i]);
@@ -1295,6 +1311,11 @@ function joinDemos(parts) {
   const cat = (L) => { let len = 0; for (const a of L) len += a.length; const r = new Float32Array(len); let o = 0; for (const a of L) { r.set(a, o); o += a.length; } return r; };
   out.times = cat(timesL);
   out.slots = {}; for (const e in slotsL) out.slots[e] = cat(slotsL[e]);
+  out.povData = povL ? {
+    view: cat(povL.view), viewStride: parts[0].povData.viewStride, ownPos: cat(povL.ownPos), hpInfo: cat(povL.hpInfo), shotOrg: cat(povL.shotOrg), fovs: cat(povL.fovs),
+    ownAmmo: cat(povL.ownAmmo), wanims: cat(povL.wanims), vmodels: cat(povL.vmodels), obs: cat(povL.obs), recs: povL.recs,
+    hud: Object.assign(Object.fromEntries(Object.keys(povL.hud).map((k) => [k, cat(povL.hud[k])])), { gunAmmo: povL.gunAmmo }),
+  } : null;
   out.pack = cat(packL); out.hp = cat(hpL); out.brushEvents = cat(brushEvL); out.brushPose = cat(brushPoseL); out.snds = cat(sndsL); out.shots = cat(shotsL); out.booms = cat(boomsL); out.puffs = cat(puffsL); out.c4drops = cat(c4L);
   out.bomb.sort((a, b) => a.t - b.t);
   out.start = parts[0].start;
@@ -1910,7 +1931,9 @@ function computeWallbangs() {
 const HITS_MIN = 35;
 function computeHits() {
   M.bursts = []; M.hitByV = {};
-  if (!MAP || !D || !D.hp) return;
+  // POV mode: no wallbang damage, and with it no loose wallbang from damage (Sujan, 29 Oct 2026). The server sends a
+  // player his teammates' health only, so most hits can't be seen; the damage finder hasn't been checked there.
+  if (!MAP || !D || !D.hp || D.povOn) return;
   const bsp = MAP.bsp, S = D.stride, times = D.times;
   const idx = (t) => { let lo = 0, hi = times.length - 1; while (lo < hi) { const m = (lo + hi + 1) >> 1; if (times[m] <= t + 1e-4) lo = m; else hi = m - 1; } return lo; };
   const team = (e, i) => { const n = playerModelName(D.slots[e][i * S + 8]).toLowerCase(); return /terror|leet|arctic|guerilla/.test(n) ? 'T' : /urban|gsg9|sas|gign|vip/.test(n) ? 'CT' : null; };
@@ -2903,6 +2926,10 @@ function buildHp() {
     if (e === 0) { for (const k in hpIdx) hpIdx[k].push(t, v); }
     else if (hpIdx[e]) hpIdx[e].push(t, v);
   }
+  // POV mode: teammates' health, which the server sends the recording player (HealthInfo; opponents' it hides). For
+  // the labels only: D.hp, which the damage and skip finders read, stays as HLTV sent it (none in a POV demo)
+  const hi = D.povOn ? D.hpInfo || [] : [];
+  for (let i = 0; i < hi.length; i += 3) if (hpIdx[hi[i + 1]]) hpIdx[hi[i + 1]].push(hi[i], hi[i + 2]);
 }
 // The C4 backpack (T) or defusal kit (CT) a player carries: the body value the game sets on the player (0.17.0)
 let packIdx = null;
@@ -3107,7 +3134,40 @@ function visibleRounds() { return showAll ? M.rounds.filter((r) => r.dur > 0.5 |
 let showAll = false;
 
 // ---------------- after load ----------------
+// POV mode (0.25.0, Sujan 29 Oct 2026): the setting is on, and this is a demo recorded by a player with the view block
+// his game writes. Then, before anything reads the demo (retimeKills, the wallbang finder, the picture check), his own
+// position goes into his track and into the kills by or on him: the snapshots never carry it, so with POV mode off he
+// stands at the map's zero point, as in 0.24.0. The rest of POV mode's data is put on D for the 3D view.
+function povApply() {
+  const P = D.povData;
+  D.povOn = !!($('pov3').checked && D.pov && P && P.view.length >= P.viewStride * 2);
+  if (!D.povOn) return;
+  Object.assign(D, P);
+  const S = D.stride, recs = P.recs || [[0, D.times.length, D.serverInfo ? D.serverInfo.playerIndex + 1 : 0]];
+  for (const [from, n, e] of recs) {
+    const a = D.slots[e]; if (!a) continue;
+    for (let i = from; i < from + n; i++) {
+      const o = i * 4, q = i * S;
+      if (!Number.isFinite(P.ownPos[o]) || Number.isNaN(a[q])) continue;
+      a[q] = P.ownPos[o]; a[q + 1] = P.ownPos[o + 1]; a[q + 2] = P.ownPos[o + 2]; a[q + 7] = P.ownPos[o + 3];
+    }
+  }
+  for (const k of D.kills) {
+    if (k.kOwn) { k.kpos = k.kOwn.slice(0, 3); k.kduck = k.kOwn[3]; }
+    if (k.vOwn) { k.vpos = k.vOwn.slice(0, 3); k.vduck = k.vOwn[3]; }
+  }
+}
+// The POV mode setting is read when a demo opens, so changing it with a POV demo open opens that demo again, at the
+// same moment (REOPEN_T)
+let REOPEN_T = null;
+function reopenForPov() {
+  if (!D || !D.pov) return;
+  REOPEN_T = T;
+  if (D.partFiles) openJoinedUI(D.partFiles);
+  else if (CUR_FILE) loadDemoFile(CUR_FILE, { alone: true });
+}
 async function onDemo() {
+  povApply();
   derive();
   OV = null;
   const ok = await tryLoadOverview(D.mapName);
@@ -3115,6 +3175,7 @@ async function onDemo() {
   showLoad(false);
   const first = M.liveR[0];
   T = first ? first.start : D.start;
+  if (REOPEN_T != null) { T = Math.max(D.start, Math.min(D.end, REOPEN_T)); REOPEN_T = null; }
   playing = false; selected = null; pickedKill = null; pickedBurst = null;
   $('meta').textContent = D.parts ? `${D.mapName} · ${D.parts[0].fileName} and ${plural(D.parts.length - 1, 'more file')} · ${fmt(D.end - D.start)}` : `${D.mapName} · ${D.fileName} · ${fmt(D.end - D.start)}`;
   const chip = $('partsChip');
@@ -3131,6 +3192,7 @@ async function onDemo() {
   if (MAP && MAP.name === D.mapName.toLowerCase()) computeWallbangs();
   else { MAP = null; clear3d(); loadMap(D.mapName); }
   resetCam3();
+  povInit();
   setView(viewMode);
   loadSummary(sndDone);
 }
@@ -3325,7 +3387,7 @@ function renderPane() {
       const all = kills.concat(dmg).sort((a, b) => a.t - b.t);
       const n = { all: all.length, strict: kills.filter((x) => x.kind === 'strict').length, loose: kills.filter((x) => x.kind === 'loose').length, damage: dmg.length };
       if (!n[wbFilter]) wbFilter = 'all';
-      const TIPS = { all: 'Every kill and every burst of damage through walls', strict: 'Kills through cover with none of the victim in view from the shooter\'s eye', loose: 'Kills through cover with part of the victim in view from the shooter\'s eye', damage: `Hits through cover that didn't kill: ${HITS_MIN} HP or more from one or more shooters, each hit within 2 s of the last` };
+      const TIPS = { all: 'Every kill and every burst of damage through walls', strict: 'Kills through cover with none of the victim in view from the shooter\'s eye', loose: 'Kills through cover with part of the victim in view from the shooter\'s eye', damage: D.povOn ? 'Not found in POV mode: the server sends a player only his teammates\' health, so hits through cover can\'t be checked' : `Hits through cover that didn't kill: ${HITS_MIN} HP or more from one or more shooters, each hit within 2 s of the last` };
       const LBL = { all: 'All', strict: 'Strict wb', loose: 'Loose wb', damage: 'Damage' };
       h = `<div class="wbchips" role="group" aria-label="Show">${['all', 'strict', 'loose', 'damage'].map((f) => `<button type="button" data-wf="${f}" class="${wbFilter === f ? 'on' : ''}" title="${TIPS[f]}">${LBL[f]} ${n[f]}</button>`).join('')}</div>`;
       h += `<div class="copyrow"><span>Times: round and in-game round timer, then demo time.${busy ? ` <b>Checking ${M.seenPending} from the shooter's eye…</b>` : ''}</span><button class="btn" id="bCopyWb" type="button">Copy list</button></div>`;
@@ -3384,10 +3446,10 @@ function renderPane() {
         const pm = x.k - x.d;
         const slot = M.slotOf(e, T), dead = slot != null && isDeadNow(slot);
         const full = M.pl[e].name, nm = short[e] || full;
-        h += `<div class="row prow${selected != null && slot === selected ? ' sel' : ''}${slot == null ? ' gone' : ''}${dead ? ' dead' : ''}" data-p="${e}" title="${esc(full)}${dead ? ' · dead until the next round' : ''}"><span class="main">${dead ? `<span class="pnum skull" aria-label="dead">${SKULL}</span>` : `<span class="pnum">${(playerOrder().indexOf(e) + 1) % 10}</span>`}<span class="nm">${esc(nm)}</span>${x.tk ? `<span class="sub"> · ${x.tk} TK</span>` : ''}</span><span class="sc">${x.k}</span><span class="sc">${x.d}</span><span class="sc ${pm > 0 ? 'pos' : pm < 0 ? 'neg' : ''}">${pm > 0 ? '+' : ''}${pm}</span><span class="sc">${x.k ? Math.round(x.hs / x.k * 100) : 0}%</span></div>`;
+        h += `<div class="row prow${selected != null && slot === selected ? ' sel' : ''}${slot == null ? ' gone' : ''}${dead ? ' dead' : ''}" data-p="${e}" title="${esc(full)}${dead ? ' · dead until the next round' : ''}"><span class="main">${dead ? `<span class="pnum skull" aria-label="dead">${SKULL}</span>` : (D.povOn ? '' : `<span class="pnum">${(playerOrder().indexOf(e) + 1) % 10}</span>`)}<span class="nm">${esc(nm)}</span>${x.tk ? `<span class="sub"> · ${x.tk} TK</span>` : ''}</span><span class="sc">${x.k}</span><span class="sc">${x.d}</span><span class="sc ${pm > 0 ? 'pos' : pm < 0 ? 'neg' : ''}">${pm > 0 ? '+' : ''}${pm}</span><span class="sc">${x.k ? Math.round(x.hs / x.k * 100) : 0}%</span></div>`;
       }
     }
-    h += `<div class="opt">Kills and deaths from the kill feed only: no bonus points for bomb plants or defuses, and team kills (TK) are not counted as kills. Only live rounds count${M.hasOT ? `; overtime is every round after round ${M.reg}` : ''}. Click a player to highlight them. The number is their 1 to 0 key.</div>`;
+    h += `<div class="opt">Kills and deaths from the kill feed only: no bonus points for bomb plants or defuses, and team kills (TK) are not counted as kills. Only live rounds count${M.hasOT ? `; overtime is every round after round ${M.reg}` : ''}. ${D.povOn ? 'The highlighted player is the one whose eyes the 3D view shows.' : 'Click a player to highlight them. The number is their 1 to 0 key.'}</div>`;
     p.innerHTML = h;
     p.querySelectorAll('[data-b]').forEach((b) => b.onclick = () => { statBucket = b.dataset.b; renderPane(); });
   }
@@ -3472,7 +3534,7 @@ document.addEventListener('keydown', (e) => {
   else if (k === 't' || k === 'T') setTheatre(!TH.on);
   else if (k === 'x' || k === 'X') { nextPlayer(1); if (viewMode !== '2d' && cam3.mode === 'free') setCam('eyes'); }
   else if (k === 'z' || k === 'Z') { nextPlayer(-1); if (viewMode !== '2d' && cam3.mode === 'free') setCam('eyes'); }
-  else if (/^[0-9]$/.test(k)) {
+  else if (/^[0-9]$/.test(k) && !POV.on) {
     const pid = playerOrder()[(+k + 9) % 10]; const e = pid && M.slotOf(pid, T);
     if (e && isDeadNow(e)) toast(`${M.pl[pid].name} is dead until the next round.`, 2500);
     else if (e) { selected = e; renderPane(); if (viewMode !== '2d' && cam3.mode === 'free') setCam('eyes'); }
@@ -3620,6 +3682,7 @@ function pickPlayer(e) {
 
 function toggleOpt(k, id) {
   opts[k] = !opts[k]; $(id).classList.toggle('on', opts[k]);
+  if (k === 'xray' && opts.xray) showHiddenEnemiesNote(); // POV mode
   savePrefs();
 }
 // Jump to a moment before a kill and watch it through the shooter's eyes (in 3D)
@@ -4124,6 +4187,9 @@ $('q3').onchange = () => { ls.set('quality', $('q3').value); applyQuality(true);
 $('xh3').onchange = () => { ls.set('crosshair2', $('xh3').value); };
 $('glow3').checked = ls.get('hitGlow') !== 'off';
 $('glow3').onchange = () => { ls.set('hitGlow', $('glow3').checked ? 'on' : 'off'); };
+// POV mode (0.25.0, Sujan 29 Oct 2026): off by default until Sujan signs it off; with it off every demo plays as in 0.24.0
+$('pov3').checked = ls.get('povMode') === 'on';
+$('pov3').onchange = () => { ls.set('povMode', $('pov3').checked ? 'on' : 'off'); reopenForPov(); };
 if (document.fonts) document.fonts.ready.then(() => { tlCache.key = ''; });
 $('bSnd').onclick = () => setSound(!SND.on);
 // full screen: the whole viewer fills the screen (Esc or F leaves it)
@@ -4313,7 +4379,10 @@ async function loadSummary(sndDone) {
     rows.push({ s: 'info', t: `${n} ${n === 1 ? 'round was' : 'rounds were'} played after ${who} reached 16 (${sc})`, n: M.count30 ? 'Counted, as chosen for this demo (up to round 30).' : `Some events played all 30 rounds and count them. Not counted now: the match ends at ${sc}.`, btn: { id: 'sumCount30', label: M.count30 ? 'Stop at 16' : 'Count them' } });
   }
   if (D.maps && D.maps.length > 1) rows.push({ s: 'info', t: `The recording switched maps. Showing ${D.mapName}, where it spent longest.`, n: D.maps.map((m) => `${m.map} ${fmt(m.dur)}`).join(', then ') });
-  if (D.pov) rows.push({ s: 'info', t: 'Recorded by a player (a POV demo)', n: "A player's game only receives the players near them, so others drop in and out of view, and wallbangs are found less reliably than in HLTV demos." });
+  // POV mode (0.25.0, Sujan 29 Oct 2026): off by default, so the line says so and turns it on
+  if (D.pov) rows.push(D.povOn
+    ? { s: 'info', t: 'Recorded by a player, shown in POV mode', n: "Through his own eyes, as his game showed it. A player's game only receives the players near them, so others drop in and out of view, and wallbangs are found less reliably than in HLTV demos. POV mode can be turned off in View settings." }
+    : { s: 'info', t: 'Recorded by a player (a POV demo)', n: "A player's game only receives the players near them, so others drop in and out of view, and wallbangs are found less reliably than in HLTV demos. POV mode is off: turn it on to watch through his eyes, with his crosshair, HUD and gun. It's also in View settings.", btn: D.povData ? { id: 'sumPov', label: 'Turn on POV mode' } : null });
   // A map recorded in two or more files. A part on its own says so only when another part is in the folder
   // (same map, at least 8 of the same Steam IDs) and this one starts late or ends before anyone won. Those two
   // alone were wrong on all four demos on Sujan's Mac that showed them with no other part (2 Oct 2026): a draw
@@ -4439,6 +4508,7 @@ function renderSummary(r) {
   el.hidden = false;
   $('sumX').onclick = closeSummary;
   if ($('sumCount30')) $('sumCount30').onclick = () => setCount30(!M.count30);
+  if ($('sumPov')) $('sumPov').onclick = () => { closeSummary(); $('pov3').checked = true; $('pov3').onchange(); };
   if ($('sumJoin')) $('sumJoin').onclick = () => { if (SUM.joinList) openJoinCard(SUM.joinList); };
   if ($('sumFolder')) $('sumFolder').onclick = () => { closeSummary(); refreshOrPick(); };
   el.onclick = (e) => { if (e.target === el && r.state !== 'busy') closeSummary(); };

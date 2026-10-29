@@ -1,4 +1,4 @@
-"""Viewing preferences are restored on the next visit (0.12.3). No Half-Life folder needed; a few seconds.
+"""Viewing preferences are restored on the next visit (0.12.3), and POV mode is off on a first visit (0.25.0). No Half-Life folder needed; a few seconds.
     python3 prefs_check.py"""
 import os, sys, threading, functools, http.server
 from playwright.sync_api import sync_playwright
@@ -14,6 +14,9 @@ with sync_playwright() as p:
     pg.goto(url)
     r = pg.evaluate("[...document.querySelectorAll('#legend .btn')].map(b => b.id + ':' + b.classList.contains('on')).join(' ') + ' | ' + document.getElementById('bScope').textContent")
     print('defaults on a first visit:', r); ok &= r == 'tgNames:true tgNades:true tgLines:true tgXray:false tgFit:false | Timeline: match'
+    # POV mode is off until Sujan signs it off (0.25.0, Sujan 29 Oct 2026)
+    r = pg.evaluate("document.getElementById('pov3').checked")
+    print('POV mode on a first visit:', 'on' if r else 'off'); ok &= r is False
     pg.evaluate("""localStorage.setItem('prefs', JSON.stringify({ view: '3d', names: false, nades: true, lines: false, xray: true, scope: 'round' }))""")
     pg.reload(); pg.wait_for_timeout(500)
     r = pg.evaluate("[...document.querySelectorAll('#legend .btn')].map(b => b.id + ':' + b.classList.contains('on')).join(' ') + ' | ' + document.getElementById('bScope').textContent")
