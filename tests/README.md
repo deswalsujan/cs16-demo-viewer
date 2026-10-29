@@ -24,7 +24,7 @@ Settings (environment variables):
 | `DEMO` | Part of the demo file name to open (`harness.py` only) | `dust2` |
 | `CHROME` | A Chromium to run instead of Playwright's own (`harness.py` only; for the Linux VM on Sujan's Mac, which can't download Playwright's) | Playwright's |
 | `MAP_NEEDED` | `0` to start without waiting for the map (for a demo whose map isn't in the folder) | `1` |
-| `POV_MODE` | `1` to tick the **POV mode** setting before the demo opens (`harness.py` only; since 0.25.0). The scripts marked "on `../pov/pov.html`" ran on the POV branch's own page before 0.25.0; on main they run on `index.html` with `POV_MODE=1` | off |
+| `POV_MODE` | `1` to tick the **POV mode** setting before the demo opens (`harness.py` only; since 0.25.0). The scripts marked "on `../pov/pov.html`" ran on the POV branch's own page before 0.25.0; on main they run on `index.html` with `POV_MODE=1`. The branch that held that page, `wip/pov-mode`, was deleted on 30 Oct 2026, so they now run only on `index.html` with `POV_MODE=1` | off |
 | `PAGE` | Page to test (Theatre checks) | `../index.html` |
 
 The demos on each machine are listed in [DEMOS.md](DEMOS.md). Most checks default to Na`Vi vs FX on Dust2 (SEC 2011 final).
