@@ -19,7 +19,18 @@ for name, code in (('demo.js', parser), ('bsp.js', bsp), ('models', models)):
     assert '</script' not in code, name + ' must not contain a closing script tag'
 
 version = open(os.path.join(here, 'VERSION'), encoding='utf-8').read().strip()
-page = (src('template.html')
+# the page's styles and UI code, in page order: each file goes back in at its own /*INLINE name*/ line in template.html
+inlined = [
+    'app.css',
+]
+template = src('template.html')
+for name in inlined:
+    marker = '/*INLINE ' + name + '*/\n'
+    assert template.count(marker) == 1, name + ' needs exactly one ' + marker.strip() + ' line in template.html'
+    code = src(name)
+    assert ('</style' if name.endswith('.css') else '</script') not in code, name + ' must not contain a closing tag'
+    template = template.replace(marker, code)
+page = (template
         .replace('/*PARSER*/', parser)
         .replace('/*BSP*/', bsp)
         .replace('/*VIEW3D*/', view3d)
