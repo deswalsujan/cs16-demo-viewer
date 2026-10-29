@@ -7,14 +7,13 @@ What is open and what is decided, right now. Loaded into every session through `
 - **Sujan, by eye (0.24.0):** k1ck vs eq, Nuke, DreamHack Winter 2011, R2 1:18, spekz on DECE: loose wallbang in light purple (LOOSE WB crosshair marker in **Player's eyes**, ring, kill line, timeline diamond, ✕ on the numbers, death banner); strict ones stay pink.
 - **A claude.ai session:** republish https://claude.ai/artifact/KHjQXfeVe17XXPrqarFDrS from `dist/artifact.html` (it shows 0.23.0; Claude Code can't).
 - **Claude, bug:** short names leave a bracket, "[fnaticMSI.cArn]" reads "cArn]" (fnatic vs Moscow Five, Nuke, DreamHack Summer 2011; `shortNames` in `src/template.html`).
-- **Claude, next work items, in this order** (Sujan, 29 Oct 2026; steps in the agent brief, `../cs16-agent-brief.md`, one item per session): 6.5 POV mode into main behind a **POV mode** setting (plan first, wait for Sujan's go; the port also brings `docs/pov-hud-mock.png` into main's `docs/`); 6.6 split the inline code out of `src/template.html`.
+- **Claude, next work items, in this order** (Sujan, 29 Oct 2026; steps in the agent brief, `../cs16-agent-brief.md`, one item per session): 6.5 POV mode into main behind a **POV mode** setting (plan first, wait for Sujan's go; the port also brings `docs/pov-hud-mock.png` into main's `docs/`; plan given in chat 29 Oct 2026 on branch `wip/pov-in-main`, waiting for his go, nothing built); 6.6 split the inline code out of `src/template.html`.
 - **Sujan, on GitHub (optional):** make the `check` job of the Check workflow a required status check in the `main` ruleset (Settings, Rules), so a red pull request can't be merged; until then it only shows red.
 - **Claude, later:** separate agent(s) review whether the UI can be simpler (give them the page and screenshots, not Claude's conclusions); tooltips on flagship features and confusing options, one look that reads as a tooltip (mockup first); feature names in **bold** in the viewer's own text.
 - **Sujan, on Windows (POV):** open `pov/pov.html` on branch `wip/pov-mode`, any POV demo, top right after a kill: orange gun icon, headshot icon, no "m4a1" or "HS" words.
 - **Sujan to decide (POV):** the hidden-enemies note is easy to miss (show it after the load summary closes, larger?); list a victim never sent to the recorder's game as "not seen on his screen" (would change the 5 Oct decision below).
 - **Claude (POV):** aimbot catcher, not started. **See through walls** in POV works on what the server sent.
 - **Parked:** POV gun animations weapon by weapon; POV voice and chat; a broken demo's load summary line (when one turns up); a warmup-only file showing one round (needs a new file); order of 3+ parts with no times in their names; load time of a big (145 MB) demo; on the move to sujandeswal.com, drop `noindex` and harden privacy.
-- **Sujan, on GitHub:** delete `wip/denser-hidden-check` (abandoned, still on the remote at `99c7106`).
 - **Roadmap next:** README Requirements list, then opening duels and trades.
 
 ## Decisions

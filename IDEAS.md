@@ -30,7 +30,7 @@ Everything raised in conversation that isn't finished, in one place. Each item s
 
 **Sujan's feedback of 14 Oct 2026**: done, every item confirmed by Sujan by eye (0.18.0 to 0.21.1, 14 and 15 Oct 2026); the block is in the archive.
 
-**Wallbangs and kill timing** (0.15.5, 2 Oct 2026): done (0.15.5 and 0.16.0; the denser hidden check closed 5 Oct 2026, with the finder left as in 0.17.0); the block is in the archive.
+**Wallbangs and kill timing** (0.15.5, 2 Oct 2026): done (0.15.5 and 0.16.0; the denser hidden check closed 5 Oct 2026, with the finder left as in 0.17.0); the block is in the archive. Its branch `wip/denser-hidden-check` (last commit `99c7106`, never merged) was deleted by Sujan on GitHub on 29 Oct 2026; checked the same day with `git ls-remote --heads origin`, which lists only `main` and `wip/pov-mode`.
 
 **Across both viewers** (raised during the POV work, 4 and 5 Oct 2026; the same block is on main and on `wip/pov-mode`)
 - Each open item here is built in the HLTV viewer and waits for POV mode, which comes into main on main's code behind a **POV mode** setting (work item 6.5; Sujan, 29 Oct 2026). Once that's built, the items close except their POV-only parts; the 6.5 report lists which. Done, in the archive: **Bullet path**, dropped by Sujan 5 Oct 2026 (what its bot test found about wallbangs is kept there).
