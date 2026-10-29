@@ -18,16 +18,16 @@ What is open and what is decided, right now. Loaded into every session through `
 - **Roadmap next:** README Requirements list, then opening duels and trades.
 
 ## Decisions
-- Wallbang levels: strict under 50 pixels of the victim in view, LOOSE from 50, still listed (Sujan, 25 Oct 2026, 0.23.0); the line comes from his answers on the 0.22.1 check page, 24 Oct 2026 (of the six closest calls kept, four at 53 to 98 pixels were partly in view, and two at 49 and 74 were fully hidden).
+- Wallbang levels: strict under 50 pixels of the victim in view, LOOSE from 50, still listed (Sujan, 25 Oct 2026, 0.23.0) (answers: `docs/review-answers.md`, "Wallbang fix check, 0.22.1").
 - Fences, grates and ladders stay cover for the wallbang finder (Sujan, 23 Oct 2026, 0.22.0).
-- What bullets break (Nuke's vents and upper windows, Inferno's shutters) isn't cover: a kill through it isn't a wallbang (Sujan, 23 Oct 2026, 0.22.0); Sunde's kill on Xuefeng through the upper window rightly dropped (tyloo vs mTw, Nuke, e-Stars Seoul 2009; Sujan, 24 Oct 2026).
-- Inferno's lamp posts: the drawn post hides a player, the invisible box around it stops bullets (0.22.1); right on all 3 kills (Sujan, 24 Oct 2026).
+- What bullets break (Nuke's vents and upper windows, Inferno's shutters) isn't cover: a kill through it isn't a wallbang (Sujan, 23 Oct 2026, 0.22.0) (answers: `docs/review-answers.md`, "Wallbang fix check, 0.22.1").
+- Inferno's lamp posts: the drawn post hides a player, the invisible box around it stops bullets (Sujan, 24 Oct 2026, 0.22.1) (answers: `docs/review-answers.md`, "Wallbang fix check, 0.22.1").
 - Wallbang hidden check left as in 0.17.0, after the denser check wasn't conclusive (Sujan, 5 Oct 2026); his answers are quoted in IDEAS-ARCHIVE.md, the 5 Oct item (the page no longer opens).
-- Loose wallbang from damage: a killer's bullet only a surface explains, 0.5 s or less before the kill, same spray only (Sujan, 28 Oct 2026, 0.24.0); from his check of 165 kills on the loose check page: 156 loose, 9 not sure, none no (27 and 28 Oct 2026).
-- A bullet through another player isn't a wallbang (Sujan, 28 Oct 2026, 0.24.0), after his note on cArNaGe on STRIKE (Sweden vs Ukraine, Train, ClanBase NationsCup XI).
+- Loose wallbang from damage: a killer's bullet only a surface explains, 0.5 s or less before the kill, same spray only (Sujan, 28 Oct 2026, 0.24.0) (answers: `docs/review-answers.md`, "Loose wallbang check").
+- A bullet through another player isn't a wallbang (Sujan, 28 Oct 2026, 0.24.0) (answers: `docs/review-answers.md`, "Loose wallbang check").
 - In demos that lose fire events, a hit matched by the killer's aim alone counts (Sujan, 28 Oct 2026, 0.24.0).
-- Wallbang damage listed from 35 HP, hits in one burst when each is within 2 s of the last (Sujan, 23 and 25 Oct 2026, 0.24.0), checked first on 24 bursts on the hits check page: 22 real, 2 not sure, none wrong (25 and 26 Oct 2026); "hits" are bullets other than headshots (Sujan, 26 Oct 2026, 0.24.0).
-- Wallbangs list: filters All, Strict wb, Loose wb, Damage, each with a tooltip; rows tagged STRICT WB, LOOSE WB or DAMAGE, the damage on a line under the gun; the Kills list keeps WALLBANG and shows LOOSE WB (Sujan, 25 Oct 2026, 0.24.0; his picks B and 2 on the mockups page).
+- Wallbang damage listed from 35 HP, hits in one burst when each is within 2 s of the last (Sujan, 23 and 25 Oct 2026, 0.24.0) (answers: `docs/review-answers.md`, "Wallbang hits check"); "hits" are bullets other than headshots (Sujan, 26 Oct 2026, 0.24.0).
+- Wallbangs list: filters All, Strict wb, Loose wb, Damage, each with a tooltip; rows tagged STRICT WB, LOOSE WB or DAMAGE, the damage on a line under the gun; the Kills list keeps WALLBANG and shows LOOSE WB (Sujan, 25 Oct 2026, 0.24.0) (answers: `docs/review-answers.md`, "Wallbang hits mockups").
 - Damage floats up beside the hit player's head, option C (Sujan, 26 Oct 2026, 0.24.0); killing bullet ends in a ✕, option A (Sujan, 27 Oct 2026, 0.24.0); headshots written HS, no icon (Sujan, 26 Oct 2026).
 - **Glow on hits**: checkbox in **View settings**, on by default, glow at every hit through a wall, killing bullet included (Sujan, 26 Oct 2026, 0.24.0).
 - Through a player's eyes or from behind him, only his own hits show numbers and glow; in Free view everyone's (Sujan, 26 Oct 2026, 0.24.0).
@@ -37,7 +37,7 @@ What is open and what is decided, right now. Loaded into every session through `
 - C4 timer counts down from 0:35, holds 0:00 after the explosion, stops at a defuse; list times stay time since the plant (Sujan, 15 Oct 2026, 0.21.0).
 - Short names (no clan tag or sponsor) over the players and in the Kills and Wallbangs lists; the kill feed, name bar, Tab scoreboard and Copy list keep full names (Sujan, 14 Oct 2026, 0.18.0).
 - 3D bar: Free, Eyes, Behind as one control, arrows for the players, the rest in **View settings**; no toggle, since Theatre and Full screen hide it (Sujan, 14 Oct 2026, 0.18.1).
-- Skips in the recording: players snap, a "Recording skips here" note from 2 s before to 1 s after, // on the timeline and by every kill on a skip, wallbangs there tagged UNSURE (Sujan, 14 Oct 2026, 0.19.0 to 0.20.0); a kill on a skip across a round restart keeps the round's own timer (0.22.0; right on 5 of 5, Sujan, 24 Oct 2026).
+- Skips in the recording: players snap, a "Recording skips here" note from 2 s before to 1 s after, // on the timeline and by every kill on a skip, wallbangs there tagged UNSURE (Sujan, 14 Oct 2026, 0.19.0 to 0.20.0); a kill on a skip across a round restart keeps the round's own timer (Sujan, 24 Oct 2026, 0.22.0) (answers: `docs/review-answers.md`, "Wallbang fix check, 0.22.1").
 - Start screen once the folder is fine: the folder step one quiet line, **Open a demo** the outlined card (option A, Sujan, 14 Oct 2026, 0.18.0).
 - Health and weapon under the names at any distance, scoped or not (Sujan, 2 Oct 2026, 0.16.0).
 - Free camera to **Player's eyes** or **Behind player** with nobody picked follows the living player nearest the middle of the view (Sujan, 2 Oct 2026, 0.16.0).
