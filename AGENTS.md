@@ -14,7 +14,7 @@ Rules for agents working in this repo, so nothing is lost between chats and mach
 2. Bump `VERSION` for anything user-facing; add a CHANGELOG entry (Fixed / Changed / Added, "How it was tested", "Discussed, not changed") and update "Known limits" at the top.
 3. Move built items out of IDEAS.md and add new loose ends to its checklist.
 4. Test in the headless browser on Sujan's real files (`tests/README.md`), and run the six checks: `folder_row_test.py`, `start_screen_check.py`, `prefs_check.py`, `demo_search_check.py`, `late_kill_timing_check.py` (guards the 0.15.5 late-kill timing, added 3 Oct 2026) and `panel_click_check.py` (marked "Run on every release" in `tests/README.md`). The first three need no game files; the last three need `HALF_LIFE_DIR` with Sujan's demos.
-5. Commit, push to main (GitHub Pages deploys from it), and republish the claude.ai artifact https://claude.ai/artifact/KHjQXfeVe17XXPrqarFDrS from `dist/artifact.html`.
+5. Commit, push a branch and open a pull request; Sujan merges it on GitHub (GitHub Pages deploys from main). Then republish the claude.ai artifact https://claude.ai/artifact/KHjQXfeVe17XXPrqarFDrS from `dist/artifact.html` (Sujan, 29 Oct 2026).
 
 ## Recording what Sujan confirms
 - When Sujan says something is checked, done or decided, in that same turn and on the current branch: change its line in `STATE.md` (a replaced decision moves to Superseded, with the date and what replaced it), tick or change the IDEAS.md item, and push it, even when he says "just answer" or "don't act": writing down his answer is not acting on it. Unrecorded confirmations come back as open items in the next session (3 Oct 2026: the 0.13.0 in-game wallbang check and the scope comparison were asked about twice).
