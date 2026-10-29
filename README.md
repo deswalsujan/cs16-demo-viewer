@@ -69,7 +69,9 @@ src/view3d.part.js  3D view (three.js)
 src/mdl.js          Studio model (.mdl) reader and skeletal animation
 src/players3d.js    Player models in the 3D view: gait, aiming, deaths, corpses, first-person weapons
 src/audio.js        Sound: .wav decoding, positional playback, radio lines
-src/template.html   The page: layout, styles, 2D radar, timeline, panels
+src/template.html   The page's layout, with a /*INLINE name*/ line where each file below goes in
+src/app.css         The page's styles
+src/ui/             The page's code, one file per part: 2D radar, timeline, sidebar, Join card, wallbangs, Theatre mode, load summary and the rest
 build.py            Combines everything into one self-contained page
 CHANGELOG.md        What changed, newest first
 docs/               Design images: scope styles, the approved side panel designs (0.13.0), Count them, split maps, demo search, the Zalando Sans screens, crosshair kill markers (0.17.0), the start screen once the folder is chosen (0.18.0), skips in the recording (0.19.0) and the skip tags in the Kills list (0.21.0)
