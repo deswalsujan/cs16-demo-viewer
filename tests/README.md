@@ -1,6 +1,6 @@
 # Tests and measurements
 
-Scripts used while building 0.8.0 (1 Oct 2026) to 0.24.0 (28 Oct 2026). They're the starting point for the test suite in [IDEAS.md](../IDEAS.md). They're run by hand, not on every push yet.
+Scripts used while building 0.8.0 (1 Oct 2026) to 0.24.0 (28 Oct 2026). They're the starting point for the test suite in [IDEAS.md](../IDEAS.md). They're run by hand, except three that need no Half-Life folder (`start_screen_check.py`, `prefs_check.py`, `folder_row_test.py`): since 29 Oct 2026 those run on GitHub on every pull request and every push to main, after a check that `index.html` matches a fresh build of `src/` (`.github/workflows/check.yml`).
 
 ## Setup
 

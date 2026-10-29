@@ -1,0 +1,48 @@
+# Runs on every pull request and every push to main. index.html must be exactly what build.py makes
+# from src/, and the three browser checks that need no Half-Life folder must pass. The other three
+# checks need Sujan's demos and are run by hand (tests/README.md). Nothing here may need Valve's files.
+name: Check
+
+on:
+  pull_request:
+  push:
+    branches: [main]
+
+permissions:
+  contents: read
+
+jobs:
+  check:
+    runs-on: ubuntu-24.04
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+
+      - name: index.html is the build of src/
+        run: |
+          python3 build.py
+          git diff --exit-code -- index.html || { echo "::error file=index.html::index.html doesn't match src/. Run python3 build.py and commit index.html."; exit 1; }
+
+      - name: Install Playwright and three.js r128
+        run: |
+          pip install playwright==1.64.1
+          python3 -m playwright install --with-deps chromium
+          cd "$RUNNER_TEMP"
+          npm pack three@0.128.0
+          tar xzf three-0.128.0.tgz
+          cp package/build/three.min.js "$GITHUB_WORKSPACE/tests/three.min.js"
+
+      - name: start_screen_check.py
+        working-directory: tests
+        run: python3 start_screen_check.py
+
+      - name: prefs_check.py
+        working-directory: tests
+        run: python3 prefs_check.py
+
+      - name: folder_row_test.py
+        working-directory: tests
+        run: python3 folder_row_test.py

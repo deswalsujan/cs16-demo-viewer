@@ -163,7 +163,7 @@ Ideas from the discussion (3 Oct 2026, not decided):
 
 *From the 30 Sept 2026 discussion on product practices and features. Not yet built.* Long items are cut to a line here; their full text is in the archive under the same name.
 
-- **Test suite.** Known answers per demo, wallbang ground truth checked in game, break-it tests with corrupt files and nasty player names, scripted browser run-throughs, and custom model and sound packs that must load or fall back cleanly. The scripts are in [tests/](tests/README.md) and run by hand; work item 6.3 plans the first check on every push (GitHub Actions).
+- **Test suite.** Known answers per demo, wallbang ground truth checked in game, break-it tests with corrupt files and nasty player names, scripted browser run-throughs, and custom model and sound packs that must load or fall back cleanly. The scripts are in [tests/](tests/README.md) and run by hand, except three that run on every pull request since work item 6.3 (`.github/workflows/check.yml`, 29 Oct 2026).
 - **Join a map split over several demo files**: built in 0.15.0. What's left:
   - **Order of 3 or more parts without recording times in the file names** (Sujan's question, 2 Oct 2026): chain the parts by the game's scoreboard by side and by the teams' sides across each join, which would usually leave one order. Not tested: Sujan has no demo split into more than two files.
   - **Words:** "map", not "match", in everything the viewer says about it (Sujan, 2 Oct 2026).
