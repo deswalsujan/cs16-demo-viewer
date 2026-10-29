@@ -40,7 +40,6 @@ c = c.replace(old, old + """
 open(os.path.join(here, 'demo_probe_count.mjs'), 'w').write(c)
 
 # nades_fn.mjs: the page's addNadesFromEvents, for nadecheck.mjs
-t = open(os.path.join(here, '..', '..', 'src', 'template.html')).read()
-i, j = t.index('function addNadesFromEvents'), t.index('// ---------------- sniper zoom')
-open(os.path.join(here, 'nades_fn.mjs'), 'w').write('export ' + t[i:j])
+t = open(os.path.join(here, '..', '..', 'src', 'ui', 'grenades.js')).read()
+open(os.path.join(here, 'nades_fn.mjs'), 'w').write('export ' + t[t.index('function addNadesFromEvents'):])
 print('wrote demo_probe_count.mjs and nades_fn.mjs')
