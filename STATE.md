@@ -18,7 +18,7 @@ What is open and what is decided, right now. Loaded into every session through `
 - **Roadmap next:** README Requirements list, then opening duels and trades.
 
 ## Decisions
-- Wallbang levels: strict under 50 pixels of the victim in view, LOOSE from 50, still listed (Sujan, 25 Oct 2026, 0.23.0); the line comes from his answers on the 0.22.1 check page, 24 Oct 2026 (in view at 53 to 98 pixels, hidden at 49).
+- Wallbang levels: strict under 50 pixels of the victim in view, LOOSE from 50, still listed (Sujan, 25 Oct 2026, 0.23.0); the line comes from his answers on the 0.22.1 check page, 24 Oct 2026 (of the six closest calls kept, four at 53 to 98 pixels were partly in view, and two at 49 and 74 were fully hidden).
 - Fences, grates and ladders stay cover for the wallbang finder (Sujan, 23 Oct 2026, 0.22.0).
 - What bullets break (Nuke's vents and upper windows, Inferno's shutters) isn't cover: a kill through it isn't a wallbang (Sujan, 23 Oct 2026, 0.22.0); Sunde's kill on Xuefeng through the upper window rightly dropped (tyloo vs mTw, Nuke, e-Stars Seoul 2009; Sujan, 24 Oct 2026).
 - Inferno's lamp posts: the drawn post hides a player, the invisible box around it stops bullets (0.22.1); right on all 3 kills (Sujan, 24 Oct 2026).
