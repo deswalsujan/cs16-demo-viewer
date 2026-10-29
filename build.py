@@ -20,10 +20,11 @@ for name, code in (('demo.js', parser), ('bsp.js', bsp), ('models', models)):
 
 version = open(os.path.join(here, 'VERSION'), encoding='utf-8').read().strip()
 page = (src('template.html')
-        .replace('__VERSION__', version)
         .replace('/*PARSER*/', parser)
         .replace('/*BSP*/', bsp)
-        .replace('/*VIEW3D*/', view3d))
+        .replace('/*VIEW3D*/', view3d)
+        # last, so it also reaches the files inlined above
+        .replace('__VERSION__', version))
 
 os.makedirs(os.path.join(here, 'dist'), exist_ok=True)
 open(os.path.join(here, 'dist', 'artifact.html'), 'w', encoding='utf-8').write(page)
