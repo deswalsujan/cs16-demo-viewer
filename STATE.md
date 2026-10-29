@@ -51,7 +51,7 @@ What is open and what is decided, right now. Loaded into every session through `
 - Never host Valve's files; a "lite mode" from the project's own assets is an option for later (1 Oct 2026).
 - POV mode goes into main behind a **POV mode** setting, off by default; on by default for POV demos once Sujan signs it off (Sujan, 29 Oct 2026, in a claude.ai chat; built in 0.25.0).
 - **POV mode** setting: a checkbox in **View settings** ("for demos recorded by a player") and a line with a button in a POV demo's load summary, no mockup; off means exactly 0.24.0, the recorder at the map's zero point included (Sujan, 29 Oct 2026).
-- POV mode gets the 0.18.0 and 0.18.1 changes, the C4 countdown, the 0.22.0 changes, strict and LOOSE and the 0.24.0 changes, except: his own crosshair (no size setting), no wallbang damage and no loose wallbang from damage, so **View settings** hides the Crosshair and **Glow on hits** rows there; the POV HUD's round timer follows the demo's timer messages (hidden at the plant, back on a later RoundTime); the 0.1 s delay is measured at 0 and 0.1 s and Sujan picks (Sujan, 29 Oct 2026).
+- POV mode gets the 0.18.0 and 0.18.1 changes, the C4 countdown, the 0.22.0 changes, strict and LOOSE and the 0.24.0 changes, except: his own crosshair (no size setting), no wallbang damage and no loose wallbang from damage, so **View settings** hides the Crosshair and **Glow on hits** rows there; the POV HUD's round timer follows the demo's timer messages (hidden at the plant, back on a later RoundTime); the other players keep the 0.1 s delay (Sujan's pick, below) (Sujan, 29 Oct 2026).
 - POV mode keeps the 0.1 s delay for the other players, as in the HLTV viewer, since neither 0 s nor 0.1 s lined up clearly better at his kills (Sujan, 29 Oct 2026, 0.25.0; measurements in CHANGELOG.md, 0.25.0, "How it was tested").
 - POV mode: no Free camera, no opponents' HP (teammates' stays), **See through walls** stays, no player numbers (Sujan, 3 Oct 2026, POV branch).
 - POV HUD as `docs/pov-hud-mock.png` on `wip/pov-mode` (Sujan, 3 Oct 2026); POV crosshair at 70% of the game's size; spectator bars 40/480 each; hidden-enemies note as option B, above **See through walls** (Sujan, 4 Oct 2026, POV branch).
@@ -65,6 +65,7 @@ What is open and what is decided, right now. Loaded into every session through `
 - Demos starting `PPG` or `GP` are ignored unless Sujan names one (Sujan, 3 Oct 2026).
 
 ## Superseded
+- "The 0.1 s delay is measured at 0 and 0.1 s and Sujan picks", in what POV mode gets (Sujan, 29 Oct 2026), replaced 29 Oct 2026 by: the other players keep the 0.1 s delay, as in the HLTV viewer (Sujan's pick).
 - "Then the claude.ai viewer is republished" after each merge (Sujan, 29 Oct 2026, part of the shipping decision), replaced 29 Oct 2026 by: the claude.ai copy stays at 0.23.0 and isn't updated, GitHub Pages is the only live viewer.
 - A POV demo opens in POV mode by itself, in the same viewer (Sujan, 3 Oct 2026, POV branch), replaced 29 Oct 2026 by the **POV mode** setting, off by default until Sujan signs it off.
 - The carried bomb kept off the radar (Sujan, 5 Oct 2026, 0.17.0), replaced 14 Oct 2026 in the HLTV viewer by the C4 tag on the carrier's dot and the dropped bomb on the radar (0.18.0).
