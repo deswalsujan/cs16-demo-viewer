@@ -24,7 +24,7 @@ The start screen shows which folder is selected and whether it's the right one. 
 
 To start over as on a first visit, click **Clear saved files** on the start screen (it forgets the folder and the files this browser saved), then click the icon left of the address bar and choose **Remove access**.
 
-Firefox, Safari and the claude.ai copy of the viewer can't keep folder access, so there you pick the folder on each visit (Chrome's prompt there says "upload", which is only its wording for picking a folder). The viewer still remembers the folder's name and its list of files, never their contents, so it can show which folder you used last time.
+Firefox and Safari can't keep folder access, so there you pick the folder on each visit (Chrome's prompt there says "upload", which is only its wording for picking a folder). The viewer still remembers the folder's name and its list of files, never their contents, so it can show which folder you used last time.
 
 Custom maps work too, as long as the map's `.bsp` (and its `.wad` files if it uses any) are in `cstrike/maps` or `cstrike_downloads/maps`.
 
