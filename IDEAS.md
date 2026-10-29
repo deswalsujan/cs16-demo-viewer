@@ -20,7 +20,7 @@ Everything raised in conversation that isn't finished, in one place. Each item s
   - Decided so far: loose light purple wherever it's marked, strict pink; a kill is loose from damage when a bullet of the killer's that only a surface explains lands 0.5 s or less before it, same spray only (Sujan, 28 Oct 2026).
 - [ ] **Bug: short names leave a bracket**
   - Status: found 27 Oct 2026, not fixed. "[fnaticMSI.cArn]" reads "cArn]" in the lists and over the players (fnatic vs Moscow Five, Nuke, DreamHack Summer 2011).
-  - Next step: Claude fixes `shortNames` in `src/template.html`, which cuts the shared "[fnaticMSI." but not the closing "]".
+  - Next step: Claude fixes `shortNames` in `src/ui/names.js`, which cuts the shared "[fnaticMSI." but not the closing "]".
   - Decided so far: names over the players and in the Kills and Wallbangs lists go without the tag or sponsor; the kill feed, the name bar, the Tab scoreboard and Copy list keep full names (Sujan, 14 Oct 2026, 0.18.0).
 - [ ] **Later (Sujan, 26 Oct 2026): a simpler UI, tooltips, feature names in bold in the viewer's own text.** One piece of work with the two items under "User experience" below, and tracked there.
 
