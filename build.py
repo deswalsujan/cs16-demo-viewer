@@ -28,6 +28,7 @@ inlined = [
     'ui/join.js',
     'ui/map.js',
     'ui/wallbangs.js',
+    'ui/match.js',
 ]
 template = src('template.html')
 for name in inlined:
