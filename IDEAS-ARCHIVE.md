@@ -6,6 +6,7 @@ Items moved out of [IDEAS.md](IDEAS.md) so that it holds only what is open (work
 - An item still marked [ ] here is open: IDEAS.md has its current Status, Next step and Decided so far, and the text here is everything said about it up to 29 Oct 2026. When it's done, tick it here too and add what was done.
 - With the move done, this file is IDEAS.md of 29 Oct 2026 without its title, its two opening paragraphs, the "Next on the roadmap" line and the Roadmap, which stay in IDEAS.md unchanged; "above" and "below" in the text here still point the right way.
 - Don't read this file end to end: search it for the item's name.
+- Where an item says Sujan's answers are kept in a claude.ai page's store, they were copied out on 29 Oct 2026 into `docs/review-answers.md`, word for word, one section per page; the page links stay for the pictures.
 
 ## Open follow-ups (checklist, updated 28 Oct 2026, 0.24.0)
 

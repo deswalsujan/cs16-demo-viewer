@@ -18,7 +18,7 @@ Rules for agents working in this repo, so nothing is lost between chats and mach
 
 ## Recording what Sujan confirms
 - When Sujan says something is checked, done or decided, in that same turn and on the current branch: change its line in `STATE.md` (a replaced decision moves to Superseded, with the date and what replaced it), tick or change the IDEAS.md item, and push it, even when he says "just answer" or "don't act": writing down his answer is not acting on it. Unrecorded confirmations come back as open items in the next session (3 Oct 2026: the 0.13.0 in-game wallbang check and the scope comparison were asked about twice).
-- When a claude.ai review page returns answers, copy the answers into the repo in the same turn (the IDEAS.md item, and `STATE.md` for a decision); the page URL stays only as a link to the pictures.
+- When a claude.ai review page returns answers, copy the answers into the repo in the same turn (the IDEAS.md item, and `STATE.md` for a decision); the page URL stays only as a link to the pictures. The answers of every page up to 28 Oct 2026 are in `docs/review-answers.md`, copied from the pages' stores on 29 Oct 2026.
 - When a confirmation could match more than one open item (two lists of "removed wallbangs"), ask which one before ticking, and quote the item's name back.
 - In messages listing open items, say what each check is in one line (what to open, what to look for), not only its release number.
 
