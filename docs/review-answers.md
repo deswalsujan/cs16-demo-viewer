@@ -344,3 +344,11 @@ Five of the answers above, checked again by Sujan by eye on 30 Oct 2026 when the
 | k37013 | k1ck vs eq, Nuke, DreamHack Winter 2011 | R20 C4 0:21 | EneRyYyYy on mUtcb | loose |
 | k37015 | k1ck vs eq, Nuke, DreamHack Winter 2011 | R26 1:27 | spekz on szrtech | loose |
 | k37016 | k1ck vs eq, Nuke, DreamHack Winter 2011 | R26 1:26 | Darky on spekz | loose |
+
+## Denser hidden check (5 Oct 2026): later evidence
+
+The page no longer opens; its answers are quoted in IDEAS-ARCHIVE.md, the 5 Oct item ("Wallbangs and kill timing"). Later evidence for one of its kills, given by Sujan in chat:
+
+| Demo | Round | Kill | 5 Oct answer | Later evidence |
+|---|---|---|---|---|
+| SK vs Na`Vi, Train, DreamHack Winter 2011 | R40 1:25 | markeloff on Delpan (AWP headshot, one bullet) | hidden, a wallbang | markeloff's own POV video shows Delpan fully hidden at the shot: https://www.youtube.com/watch?v=hWORUXhxSYM, at 1:07:10. Strict, confirmed by the real game (Sujan, 30 Oct 2026) |
