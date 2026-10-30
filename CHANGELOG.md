@@ -5,6 +5,19 @@ What changed in the viewer, newest first. The version shows in the viewer's shor
 ## Known limits
 Moved to [LIMITS.md](LIMITS.md) on 30 Oct 2026; release entries below still say "Known limits" for that list.
 
+## 0.26.2 (2026-10-30)
+
+### Changed
+- **three.js is built into the page**: r128, from `src/vendor/three.min.js` (the same file as cdnjs's and npm's `three@0.128.0`, by SHA-256), in place of the script from cdnjs, so the viewer keeps working if cdnjs changes or goes down, and a saved copy of `index.html` opens without internet. The fonts still come from Google Fonts (self-hosting stays parked until the move to sujandeswal.com). The page is about 600 KB larger.
+- The tests serve that file to older builds (`THREE_JS` defaults to it), and the Python packages are pinned in `tests/requirements.txt`, which `check.yml` installs (Playwright 1.60.0, the Mac's; GitHub had 1.64.1).
+
+### How it was tested
+- `start_screen_check.py` now refuses every outside request but Google Fonts and checks three.js r128 is in the page: it fails on 0.26.1's build (the cdnjs request) and passes on this one. A demo opened the same way (Na`Vi vs FX, Dust2, SEC 2011 final, `regress_summary.js`) loads its 3D map and finishes the picture check with no outside request.
+- `ground_truth_check.py` (0 mismatches, 6 known gaps, PASS) and the other six checks pass on Sujan's Mac; `python3 build.py && git diff --exit-code -- index.html` is clean.
+
+### Discussed, not changed
+- Serving three.js as its own file beside `index.html` (the brief's other choice): a saved copy of `index.html` would then need the file next to it, so it's built in. With nothing loaded from cdnjs, `integrity` and `crossorigin` aren't needed.
+
 ## 0.26.1 (2026-10-30)
 
 ### Fixed

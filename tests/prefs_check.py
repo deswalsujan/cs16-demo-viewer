@@ -8,7 +8,7 @@ srv = http.server.ThreadingHTTPServer(('127.0.0.1', 0), h); threading.Thread(tar
 ok = True
 with sync_playwright() as p:
     b = p.chromium.launch(); pg = b.new_page()
-    pg.route('**/three.min.js', lambda r: r.fulfill(path=os.environ.get('THREE_JS', os.path.join(HERE, 'three.min.js')), content_type='application/javascript'))
+    pg.route('**/three.min.js', lambda r: r.fulfill(path=os.environ.get('THREE_JS', os.path.join(HERE, '..', 'src', 'vendor', 'three.min.js')), content_type='application/javascript'))
     pg.route('https://fonts.googleapis.com/**', lambda r: r.fulfill(body='', content_type='text/css'))
     url = f'http://127.0.0.1:{srv.server_port}/index.html'
     pg.goto(url)

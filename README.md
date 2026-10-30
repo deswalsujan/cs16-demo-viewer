@@ -71,6 +71,7 @@ src/players3d.js    Player models in the 3D view: gait, aiming, deaths, corpses,
 src/audio.js        Sound: .wav decoding, positional playback, radio lines
 src/template.html   The page's layout, with a /*INLINE name*/ line where each file below goes in
 src/app.css         The page's styles
+src/vendor/three.min.js  three.js r128 (MIT), built into the page so it loads nothing from outside but the fonts
 src/ui/             The page's code, one file per part: 2D radar, timeline, sidebar, Join card, wallbangs, Theatre mode, load summary and the rest; one line per file in AGENTS.md, "Where the code is"
 build.py            Combines everything into one self-contained page
 CHANGELOG.md        What changed, newest first
@@ -109,6 +110,6 @@ Commit the rebuilt `index.html` with your change. Every pull request is checked 
 
 - Demo message layouts were adapted from [hlviewer.js](https://github.com/skyrim/hlviewer.js) by Stefan Stojković (MIT license).
 - Fonts: [Zalando Sans](https://fonts.google.com/specimen/Zalando+Sans) and [IBM Plex Mono](https://fonts.google.com/specimen/IBM+Plex+Mono) (SIL Open Font License), loaded from Google Fonts.
-- 3D rendering uses [three.js](https://threejs.org/) r128 (MIT license), loaded from cdnjs.
+- 3D rendering uses [three.js](https://threejs.org/) r128 (MIT license), built into the page from `src/vendor/three.min.js` (the file cdnjs serves).
 - This project's code is under the [MIT license](LICENSE).
 - Counter-Strike and Half-Life are trademarks of Valve. This project is unofficial and not affiliated with Valve.

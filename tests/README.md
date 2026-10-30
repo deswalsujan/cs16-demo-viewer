@@ -4,14 +4,8 @@ Scripts used while building 0.8.0 (1 Oct 2026) to 0.25.0 (29 Oct 2026). They're 
 
 ## Setup
 
-1. Python 3 with Playwright: `pip install playwright`, then `python3 -m playwright install chromium`.
-2. three.js r128, the version the viewer loads from cdnjs, as `tests/three.min.js`:
-   ```
-   npm pack three@0.128.0
-   tar xzf three-0.128.0.tgz
-   cp package/build/three.min.js tests/three.min.js
-   ```
-   (Or point `THREE_JS` at a copy elsewhere. The scripts serve this file in place of the CDN, so they also run without internet.)
+1. Python 3 with Playwright, at the pinned versions: `pip install -r tests/requirements.txt`, then `python3 -m playwright install chromium` (`check.yml` installs the same file).
+2. three.js r128 is in the repo, `src/vendor/three.min.js`, and built into the page since 0.26.2. Builds before that load it from cdnjs; the scripts serve them the same file in place of the CDN, so they also run without internet.
 3. Node 18 or later, for the demo data probes.
 4. Build the viewer first (`python3 build.py`). The browser checks run against `index.html` in the repo root unless told otherwise.
 
@@ -20,7 +14,7 @@ Settings (environment variables):
 | Name | What it is | Default |
 |---|---|---|
 | `HALF_LIFE_DIR` | Your Half-Life folder (the one with `cstrike` and `valve`). Required for the browser checks. | none |
-| `THREE_JS` | Path to three.min.js r128 | `tests/three.min.js` |
+| `THREE_JS` | Path to three.min.js r128, served to builds before 0.26.2 in place of the CDN | `src/vendor/three.min.js` |
 | `DEMO` | Part of the demo file name to open (`harness.py` only) | `dust2` |
 | `CHROME` | A Chromium to run instead of Playwright's own (`harness.py` only; for the Linux VM on Sujan's Mac, which can't download Playwright's) | Playwright's |
 | `MAP_NEEDED` | `0` to start without waiting for the map (for a demo whose map isn't in the folder) | `1` |

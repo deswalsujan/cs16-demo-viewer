@@ -17,7 +17,7 @@ i = html.rindex('})();')
 html = html[:i] + 'window.__v = (c) => eval(c);\n' + html[i:]
 tmp = os.path.join(os.path.dirname(page), '_test_panelclick.html')
 open(tmp, 'w', encoding='utf-8').write(html)
-THREE = os.environ.get('THREE_JS', os.path.join(os.path.dirname(os.path.abspath(__file__)), 'three.min.js'))
+THREE = os.environ.get('THREE_JS', os.path.join(os.path.dirname(os.path.abspath(__file__)), '..', 'src', 'vendor', 'three.min.js'))
 h = functools.partial(http.server.SimpleHTTPRequestHandler, directory=os.path.dirname(tmp)); h.log_message = lambda *a: None
 srv = http.server.ThreadingHTTPServer(('127.0.0.1', 0), h); threading.Thread(target=srv.serve_forever, daemon=True).start()
 fails = 0

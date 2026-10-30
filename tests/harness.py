@@ -1,7 +1,7 @@
 """Headless test harness for the CS 1.6 Demo Viewer.
 
 Usage: python3 harness.py <page.html> <script.js>[,<script.js>...] [screenshot prefix]
-Environment: HALF_LIFE_DIR (required), THREE_JS (default tests/three.min.js), DEMO (part of the demo file name, default dust2), MAP_NEEDED (default 1), POV_MODE (1: the POV mode setting on, 0.25.0)
+Environment: HALF_LIFE_DIR (required), THREE_JS (default src/vendor/three.min.js, for builds before 0.26.2, which load it from cdnjs), DEMO (part of the demo file name, default dust2), MAP_NEEDED (default 1), POV_MODE (1: the POV mode setting on, 0.25.0)
 Loads the page from a local server, feeds it the staged Half-Life folder, opens the
 Na`Vi vs FX Dust2 demo, waits for the 3D map, then runs <script.js> in the page and
 prints the JSON it returns.
@@ -19,7 +19,7 @@ shot = sys.argv[3] if len(sys.argv) > 3 else None
 DEMO = os.environ.get('DEMO', 'dust2').lower()
 # MAP_NEEDED=0 waits only for the demo (for demos whose map isn't in the folder)
 MAP_NEEDED = os.environ.get('MAP_NEEDED', '1') != '0'
-THREE = os.environ.get('THREE_JS', os.path.join(os.path.dirname(os.path.abspath(__file__)), 'three.min.js'))
+THREE = os.environ.get('THREE_JS', os.path.join(os.path.dirname(os.path.abspath(__file__)), '..', 'src', 'vendor', 'three.min.js'))
 HL = os.environ['HALF_LIFE_DIR']
 
 root = os.path.dirname(page_path)

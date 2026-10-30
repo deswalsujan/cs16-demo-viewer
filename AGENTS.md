@@ -57,6 +57,7 @@ Rules for agents working in this repo, so nothing is lost between chats and mach
 - `src/players3d.js`: player models in 3D: loading (`modelEntry`), gait and aim (`posePlayer`), deaths and corpses, the gun in **Player's eyes**.
 - `src/audio.js`: sound: .wav decoding, gunshots, footsteps and radio lines placed around the listener (`soundTick`).
 - `src/stock.js`: fingerprints of the stock CS 1.6 models, to spot custom ones.
+- `src/vendor/three.min.js`: three.js r128 (MIT), the file cdnjs serves, built into the page; the tests serve it to older builds.
 - `src/view3d.part.js`: the 3D view (three.js): cameras, each frame (`update3`), hit numbers, kill rings, the sniper scope (`SCOPE_STYLE`); the wallbang picture check (`checkSeen`); **POV mode**: his view, crosshair, HUD, spectator bars, the hidden-enemies note.
 - `src/ui/common.js`: shared state (`D` the demo, `M` the match, `T` the time), colours, saved settings, small helpers (`weaponShort`).
 - `src/ui/folder.js`: the Half-Life folder, picked and remembered between visits (`pickFolder`, `hlInit`), the demo list, centre-screen messages, kill feed icons.

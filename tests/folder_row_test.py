@@ -13,7 +13,7 @@ from playwright.sync_api import sync_playwright
 
 HERE = os.path.dirname(os.path.abspath(__file__))
 PAGE = os.path.abspath(sys.argv[1] if len(sys.argv) > 1 else os.path.join(HERE, '..', 'index.html'))
-THREE = os.environ.get('THREE_JS', os.path.join(HERE, 'three.min.js'))
+THREE = os.environ.get('THREE_JS', os.path.join(HERE, '..', 'src', 'vendor', 'three.min.js'))
 
 def serve(directory):
     h = functools.partial(http.server.SimpleHTTPRequestHandler, directory=directory); h.log_message = lambda *a: None

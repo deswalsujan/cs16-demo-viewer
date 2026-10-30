@@ -3,7 +3,7 @@ import os, sys, os, threading, http.server, functools
 from playwright.sync_api import sync_playwright
 
 W, H, DPR = 1440, 900, 2
-THREE = os.environ.get('THREE_JS', os.path.join(os.path.dirname(os.path.abspath(__file__)), 'three.min.js'))
+THREE = os.environ.get('THREE_JS', os.path.join(os.path.dirname(os.path.abspath(__file__)), '..', 'src', 'vendor', 'three.min.js'))
 HL = os.environ['HALF_LIFE_DIR']
 html = open(os.environ.get('PAGE', os.path.join(os.path.dirname(os.path.abspath(__file__)), '..', 'index.html')), encoding='utf-8').read()
 i = html.rindex('})();'); html = html[:i] + 'window.__v = (c) => eval(c);\n' + html[i:]
