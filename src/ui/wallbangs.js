@@ -88,7 +88,9 @@ function computeWallbangs() {
     const hit = aim.hit;
     // part of him in view to the 15 points, but the crosshair line goes through cover: computeHits makes it a loose
     // wallbang when the demo's damage shows one of the killer's bullets went through a surface in the same spray
-    // (Sujan, 28 Oct 2026; measured with tests/page/seen_through_cover.js)
+    // (Sujan, 28 Oct 2026; measured with tests/page/seen_through_cover.js), and the picture check lists it when the
+    // killer's view shows under 50 pixels of him: strict at 0, LOOSE from 1 (a sliver kill, Sujan, 30 Oct 2026; checkSeen
+    // in view3d.part.js)
     if (seen) { k.seenAim = { thick: Math.round(aim.solid > 0 ? aim.solid : mid.solid), aim: Math.round(aim.solid), what: hit.some((h) => h.model !== 0) ? 'object' : 'wall', eye }; continue; }
     k.wb = { thick: Math.round(aim.solid > 0 ? aim.solid : mid.solid), aim: Math.round(aim.solid), what: hit.some((h) => h.model !== 0) ? 'object' : 'wall', eye };
   }
@@ -116,6 +118,7 @@ function computeWallbangs() {
 const HITS_MIN = 35;
 function computeHits() {
   M.bursts = []; M.hitByV = {};
+  if (D) for (const k of D.kills) k.burst = null; // run again once the picture check lists a sliver kill (checkSeen)
   // POV mode: no wallbang damage, and with it no loose wallbang from damage (Sujan, 29 Oct 2026). The server sends a
   // player his teammates' health only, so most hits can't be seen; the damage finder hasn't been checked there.
   if (!MAP || !D || !D.hp || D.povOn) return;

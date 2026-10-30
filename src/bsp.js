@@ -222,7 +222,9 @@ export function parseWad(buffer, wanted) {
 const HIDE = /^(trigger_|func_buyzone|func_bomb_target|func_hostage_rescue|func_escapezone|func_vip_safetyzone|func_ladder|env_|info_|armoury|func_mortar_field)/;
 // separate: Set of brush model numbers that get their own meshes (so they can be hidden when broken)
 export function buildMesh(bsp, separate = null) {
-  const drawModels = [{ model: 0, origin: [0, 0, 0], amt: 1, mode: 0, solid: true }];
+  // sight: the sight lines count it (solidModels above: the world, what stops bullets, a func_illusionary in the
+  // normal render mode); the rest is drawn but not solid, and the picture check leaves it out (view3d.part.js)
+  const drawModels = [{ model: 0, origin: [0, 0, 0], amt: 1, mode: 0, solid: true, sight: true }];
   for (const e of bsp.entities) {
     if (!e.model || e.model[0] !== '*' || HIDE.test(e.classname || '')) continue;
     const mode = +(e.rendermode || 0);
@@ -230,7 +232,8 @@ export function buildMesh(bsp, separate = null) {
     // (Inferno's lamp posts have such a box around them for players to bump into)
     const amt = e.renderamt != null ? +e.renderamt / 255 : 0;
     if (mode && amt === 0) continue;
-    drawModels.push({ model: +e.model.slice(1), origin: (e.origin || '0 0 0').split(/\s+/).map(Number), amt: mode === 0 ? 1 : amt, mode, solid: BLOCKING.test(e.classname || '') });
+    const solid = BLOCKING.test(e.classname || '');
+    drawModels.push({ model: +e.model.slice(1), origin: (e.origin || '0 0 0').split(/\s+/).map(Number), amt: mode === 0 ? 1 : amt, mode, solid, sight: solid || (e.classname === 'func_illusionary' && !mode) });
   }
   // gather faces per texture
   const groups = new Map();
@@ -261,8 +264,8 @@ export function buildMesh(bsp, separate = null) {
       const bs0 = Math.floor(smin / 16), bt0 = Math.floor(tmin / 16);
       const lw = Math.ceil(smax / 16) - bs0 + 1, lh = Math.ceil(tmax / 16) - bt0 + 1;
       const own = separate && separate.has(dm.model) ? dm.model : -1;
-      const key = name + '|' + dm.amt + '|' + dm.mode + '|' + own + '|' + (dm.solid ? 1 : 0);
-      if (!groups.has(key)) groups.set(key, { name, amt: dm.amt, mode: dm.mode, model: own, solid: !!dm.solid, faces: [] });
+      const key = name + '|' + dm.amt + '|' + dm.mode + '|' + own + '|' + (dm.solid ? 1 : 0) + (dm.sight ? 1 : 0);
+      if (!groups.has(key)) groups.set(key, { name, amt: dm.amt, mode: dm.mode, model: own, solid: !!dm.solid, sight: !!dm.sight, faces: [] });
       const rec = { poly, ti, tex, origin: dm.origin, bs0, bt0, lw, lh, light: f.light, styles: f.styles, lm: null };
       groups.get(key).faces.push(rec);
       if (f.light >= 0 && f.styles[0] !== 255 && lw > 0 && lh > 0 && lw <= 64 && lh <= 64) lmFaces.push(rec);
@@ -308,7 +311,7 @@ export function buildMesh(bsp, separate = null) {
       }
       for (let k = 1; k + 1 < vs.length; k++) for (const v of [vs[0], vs[k], vs[k + 1]]) { pos.push(v[0], v[1], v[2]); uv.push(v[3], v[4]); uv2.push(v[5], v[6]); }
     }
-    out.push({ name: g.name, amt: g.amt, mode: g.mode, model: g.model, solid: g.solid, pos: new Float32Array(pos), uv: new Float32Array(uv), uv2: new Float32Array(uv2) });
+    out.push({ name: g.name, amt: g.amt, mode: g.mode, model: g.model, solid: g.solid, sight: g.sight, pos: new Float32Array(pos), uv: new Float32Array(uv), uv2: new Float32Array(uv2) });
   }
   return { groups: out, atlas: { w: AW, h: AH, data: atlas } };
 }

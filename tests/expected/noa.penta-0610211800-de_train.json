@@ -21,7 +21,6 @@
    "victim": "PENTAGRAM G-Shock | kubenB",
    "gun": "ak47",
    "expected": "strict",
-   "known_gap": "the finder's 15 points see part of the victim, and the hidden check was left as in 0.17.0 after the denser check wasn't conclusive (STATE.md Decisions, Sujan, 5 Oct 2026); strict with this known gap, Sujan, 30 Oct 2026 (STATE.md Decisions, \"The 10 kills the first run disagreed on\")",
    "source": "IDEAS-ARCHIVE.md, \"Wallbangs and kill timing\", the 5 Oct 2026 denser check answers (Sujan, 5 Oct 2026): hidden, right (gun from the 0.13.0 list, IDEAS-ARCHIVE.md)"
   },
   {

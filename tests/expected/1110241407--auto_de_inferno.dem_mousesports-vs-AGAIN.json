@@ -21,7 +21,6 @@
    "victim": "mousesports | gob b",
    "gun": null,
    "expected": "strict",
-   "known_gap": "the finder's 15 points see part of the victim, and the hidden check was left as in 0.17.0 after the denser check wasn't conclusive (STATE.md Decisions, Sujan, 5 Oct 2026); strict with this known gap, Sujan, 30 Oct 2026 (STATE.md Decisions, \"The 10 kills the first run disagreed on\")",
    "source": "IDEAS-ARCHIVE.md, \"Wallbangs and kill timing\", the 5 Oct 2026 denser check answers (Sujan, 5 Oct 2026): hidden, right; timer left empty: the note's 1:08 is from before 0.18.0 counted round timers in game time (CHANGELOG.md 0.18.0)"
   },
   {
@@ -40,7 +39,6 @@
    "victim": "mousesports | karriganbOb~",
    "gun": "m4a1",
    "expected": "strict",
-   "known_gap": "the sight points see a sliver of him (5 of 15 clear) that the picture doesn't (0 pixels), so the picture check never runs and the finder leaves the kill out (IDEAS.md, \"Sliver kills\"); kept with this known gap until option A is built (Sujan, 30 Oct 2026)",
    "source": "docs/review-answers.md, \"Wallbang sliver check\" (30 Oct 2026), g10: strict; Sujan's note: fully hidden at the killing shot, though most of the damage before it was a loose wallbang (karrigan was at the corner of the surface)"
   }
  ]

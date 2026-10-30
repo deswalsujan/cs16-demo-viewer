@@ -524,7 +524,7 @@ body:has(.app.theatre) { overflow: hidden; }
     <div class="overlay sumwrap" id="sumCard" hidden></div>
     <div class="overlay keys" id="keys" hidden>
       <div class="keys-card">
-        <div class="keys-head"><b>Shortcuts and kill markers</b><div class="kh-r"><span class="ver">Version 0.25.1 · <a href="https://github.com/deswalsujan/cs16-demo-viewer/blob/main/CHANGELOG.md" target="_blank" rel="noopener">What's new</a> · <a href="https://github.com/deswalsujan/cs16-demo-viewer/issues/new/choose" target="_blank" rel="noopener">Report a bug</a></span><button class="btn" id="bDebug" type="button" title="Copies details for a bug report: browser, demo name, what loaded, errors. No file contents.">Copy debug info</button><button class="btn" id="bKeysClose" type="button">Close</button></div></div>
+        <div class="keys-head"><b>Shortcuts and kill markers</b><div class="kh-r"><span class="ver">Version 0.26.0 · <a href="https://github.com/deswalsujan/cs16-demo-viewer/blob/main/CHANGELOG.md" target="_blank" rel="noopener">What's new</a> · <a href="https://github.com/deswalsujan/cs16-demo-viewer/issues/new/choose" target="_blank" rel="noopener">Report a bug</a></span><button class="btn" id="bDebug" type="button" title="Copies details for a bug report: browser, demo name, what loaded, errors. No file contents.">Copy debug info</button><button class="btn" id="bKeysClose" type="button">Close</button></div></div>
         <textarea class="dbgbox" id="dbgBox" readonly hidden aria-label="Debug info"></textarea>
         <div class="keys-grid">
           <section><h3>Playback</h3>
@@ -627,7 +627,7 @@ body:has(.app.theatre) { overflow: hidden; }
         <div class="drophint">Or drop a .dem file, or an overview .bmp and .txt pair, anywhere on this page</div>
         <div class="prog" id="prog" hidden><i id="progBar"></i></div>
         <div class="msg" id="msg"></div>
-        <div class="loadfoot"><span>Version 0.25.1 · <a href="https://github.com/deswalsujan/cs16-demo-viewer" target="_blank" rel="noopener">Source on GitHub</a></span><button class="btn" id="bClear" type="button" title="Forgets your Half-Life folder and deletes the maps, models, sounds and overviews this browser saved from it, as on a first visit">Clear saved files</button></div>
+        <div class="loadfoot"><span>Version 0.26.0 · <a href="https://github.com/deswalsujan/cs16-demo-viewer" target="_blank" rel="noopener">Source on GitHub</a></span><button class="btn" id="bClear" type="button" title="Forgets your Half-Life folder and deletes the maps, models, sounds and overviews this browser saved from it, as on a first visit">Clear saved files</button></div>
       </div>
     </div>
   </section>
@@ -1862,7 +1862,9 @@ function parseWad(buffer, wanted) {
 const HIDE = /^(trigger_|func_buyzone|func_bomb_target|func_hostage_rescue|func_escapezone|func_vip_safetyzone|func_ladder|env_|info_|armoury|func_mortar_field)/;
 // separate: Set of brush model numbers that get their own meshes (so they can be hidden when broken)
 function buildMesh(bsp, separate = null) {
-  const drawModels = [{ model: 0, origin: [0, 0, 0], amt: 1, mode: 0, solid: true }];
+  // sight: the sight lines count it (solidModels above: the world, what stops bullets, a func_illusionary in the
+  // normal render mode); the rest is drawn but not solid, and the picture check leaves it out (view3d.part.js)
+  const drawModels = [{ model: 0, origin: [0, 0, 0], amt: 1, mode: 0, solid: true, sight: true }];
   for (const e of bsp.entities) {
     if (!e.model || e.model[0] !== '*' || HIDE.test(e.classname || '')) continue;
     const mode = +(e.rendermode || 0);
@@ -1870,7 +1872,8 @@ function buildMesh(bsp, separate = null) {
     // (Inferno's lamp posts have such a box around them for players to bump into)
     const amt = e.renderamt != null ? +e.renderamt / 255 : 0;
     if (mode && amt === 0) continue;
-    drawModels.push({ model: +e.model.slice(1), origin: (e.origin || '0 0 0').split(/\s+/).map(Number), amt: mode === 0 ? 1 : amt, mode, solid: BLOCKING.test(e.classname || '') });
+    const solid = BLOCKING.test(e.classname || '');
+    drawModels.push({ model: +e.model.slice(1), origin: (e.origin || '0 0 0').split(/\s+/).map(Number), amt: mode === 0 ? 1 : amt, mode, solid, sight: solid || (e.classname === 'func_illusionary' && !mode) });
   }
   // gather faces per texture
   const groups = new Map();
@@ -1901,8 +1904,8 @@ function buildMesh(bsp, separate = null) {
       const bs0 = Math.floor(smin / 16), bt0 = Math.floor(tmin / 16);
       const lw = Math.ceil(smax / 16) - bs0 + 1, lh = Math.ceil(tmax / 16) - bt0 + 1;
       const own = separate && separate.has(dm.model) ? dm.model : -1;
-      const key = name + '|' + dm.amt + '|' + dm.mode + '|' + own + '|' + (dm.solid ? 1 : 0);
-      if (!groups.has(key)) groups.set(key, { name, amt: dm.amt, mode: dm.mode, model: own, solid: !!dm.solid, faces: [] });
+      const key = name + '|' + dm.amt + '|' + dm.mode + '|' + own + '|' + (dm.solid ? 1 : 0) + (dm.sight ? 1 : 0);
+      if (!groups.has(key)) groups.set(key, { name, amt: dm.amt, mode: dm.mode, model: own, solid: !!dm.solid, sight: !!dm.sight, faces: [] });
       const rec = { poly, ti, tex, origin: dm.origin, bs0, bt0, lw, lh, light: f.light, styles: f.styles, lm: null };
       groups.get(key).faces.push(rec);
       if (f.light >= 0 && f.styles[0] !== 255 && lw > 0 && lh > 0 && lw <= 64 && lh <= 64) lmFaces.push(rec);
@@ -1948,7 +1951,7 @@ function buildMesh(bsp, separate = null) {
       }
       for (let k = 1; k + 1 < vs.length; k++) for (const v of [vs[0], vs[k], vs[k + 1]]) { pos.push(v[0], v[1], v[2]); uv.push(v[3], v[4]); uv2.push(v[5], v[6]); }
     }
-    out.push({ name: g.name, amt: g.amt, mode: g.mode, model: g.model, solid: g.solid, pos: new Float32Array(pos), uv: new Float32Array(uv), uv2: new Float32Array(uv2) });
+    out.push({ name: g.name, amt: g.amt, mode: g.mode, model: g.model, solid: g.solid, sight: g.sight, pos: new Float32Array(pos), uv: new Float32Array(uv), uv2: new Float32Array(uv2) });
   }
   return { groups: out, atlas: { w: AW, h: AH, data: atlas } };
 }
@@ -3198,7 +3201,9 @@ function computeWallbangs() {
     const hit = aim.hit;
     // part of him in view to the 15 points, but the crosshair line goes through cover: computeHits makes it a loose
     // wallbang when the demo's damage shows one of the killer's bullets went through a surface in the same spray
-    // (Sujan, 28 Oct 2026; measured with tests/page/seen_through_cover.js)
+    // (Sujan, 28 Oct 2026; measured with tests/page/seen_through_cover.js), and the picture check lists it when the
+    // killer's view shows under 50 pixels of him: strict at 0, LOOSE from 1 (a sliver kill, Sujan, 30 Oct 2026; checkSeen
+    // in view3d.part.js)
     if (seen) { k.seenAim = { thick: Math.round(aim.solid > 0 ? aim.solid : mid.solid), aim: Math.round(aim.solid), what: hit.some((h) => h.model !== 0) ? 'object' : 'wall', eye }; continue; }
     k.wb = { thick: Math.round(aim.solid > 0 ? aim.solid : mid.solid), aim: Math.round(aim.solid), what: hit.some((h) => h.model !== 0) ? 'object' : 'wall', eye };
   }
@@ -3226,6 +3231,7 @@ function computeWallbangs() {
 const HITS_MIN = 35;
 function computeHits() {
   M.bursts = []; M.hitByV = {};
+  if (D) for (const k of D.kills) k.burst = null; // run again once the picture check lists a sliver kill (checkSeen)
   // POV mode: no wallbang damage, and with it no loose wallbang from damage (Sujan, 29 Oct 2026). The server sends a
   // player his teammates' health only, so most hits can't be seen; the damage finder hasn't been checked there.
   if (!MAP || !D || !D.hp || D.povOn) return;
@@ -3987,7 +3993,7 @@ const UNSURE_TIP = 'The recording skips at this kill, so the wallbang was judged
 const unsureTag = (k) => (k.wb && skipNear(k.t) ? `<span class="wbtag unsure" title="${UNSURE_TIP}">UNSURE</span>` : '');
 // Sujan's three levels (24 Oct 2026; built in 0.23.0): a strict wallbang has none of the victim in view from the
 // shooter's eye; a loose one has part of him in view (50 pixels or more in the picture check, view3d.part.js).
-const LOOSE_TIP = (k) => k.wb.dmg ? `Loose wallbang: part of him was in view, and the demo's damage shows a bullet of the killer's went through cover just before the kill (${k.wb.dmg.dmg} HP where his gun does at least ${k.wb.dmg.open} in the open)` : `Loose wallbang: the bullet went through cover, but part of him was in view from the shooter's eye (${k.wb.loose} pixels in the check, 50 or more counts as in view)`;
+const LOOSE_TIP = (k) => k.wb.dmg ? `Loose wallbang: part of him was in view, and the demo's damage shows a bullet of the killer's went through cover just before the kill (${k.wb.dmg.dmg} HP where his gun does at least ${k.wb.dmg.open} in the open)` : k.wb.sliver ? `Loose wallbang: the bullet went through cover, but part of him was in view from the shooter's eye: some of the finder's sight lines reach him, and ${k.wb.loose} pixels of him show in the check` : `Loose wallbang: the bullet went through cover, but part of him was in view from the shooter's eye (${k.wb.loose} pixels in the check, 50 or more counts as in view)`;
 const looseTag = (k) => (k.wb && k.wb.loose ? `<span class="wbtag loose" title="${LOOSE_TIP(k)}">LOOSE WB</span>` : '');
 const STRICT_TIP = 'Strict wallbang: the bullet went through cover and none of him was in view from the shooter\'s eye';
 const DMG_TIP = 'Wallbang damage: hits through cover that didn\'t kill him';
@@ -5581,6 +5587,11 @@ function build3d() {
     // a fence, grate or ladder that bullets hit, see-through where its texture has holes; func_illusionary ones
     // (Inferno's vines, Nuke's wires) are left out, since bullets pass them
     if (g.name[0] === '{' && g.solid) m3.userData.holes = true;
+    // drawn but not solid, so bullets pass it at full damage and the sight lines don't count it: a func_illusionary in
+    // a see-through render mode (de_train's and Inferno's railings, Inferno's vines, Nuke's wires). Not cover: the
+    // picture check leaves it out (Sujan, 30 Oct 2026, GeT_RiGhT on markeloff through the highway slope's railing,
+    // SK vs Na`Vi, Train, DreamHack Winter 2011, R31 C4 0:09)
+    if (!g.sight) m3.userData.passable = true;
     if (g.model >= 0) (R3.brk[g.model] || (R3.brk[g.model] = [])).push(m3);
     if (MAP.movers.has(g.model)) { m3.matrixAutoUpdate = false; (R3.mov[g.model] || (R3.mov[g.model] = [])).push(m3); }
     world.add(m3);
@@ -7146,16 +7157,29 @@ function placeCam(p, yaw, pitch) {
 // line from the count on 50 demos (25 Oct 2026): 364 of 398 at 0, 13 at 1 to 49, 5 at 50 to 99, 16 at 100 or more;
 // Sujan's answers had 49 hidden and 53, 67, 69, 98 seen, so 50 fits 5 of his 7 close calls (not NEO on ArcadioN at
 // 74, which he finds hidden, nor gob b on Xizt at 223).
-const SEEN_PX = 50, SEEN_W = 640, SEEN_H = 400;
+// Since 0.26.0 it also runs on the kills the points see with the crosshair through cover (k.seenAim, computeWallbangs),
+// the sliver kills (Sujan, 30 Oct 2026): the points can see a sliver that isn't there, up to 6 units off the body
+// (markeloff on Delpan, SK vs Na`Vi, Train, DreamHack Winter 2011, R40 1:25, an AWP headshot through cover that his POV
+// video shows). Under SEEN_PX such a kill is listed (k.wb.sliver): strict at 0 pixels, LOOSE from 1 (k.wb.loose holds
+// the count), Sujan's split of 30 Oct 2026 over option A's LOOSE for all; it fits 11 of his 13 answers on these kills
+// (REAL on alleN, Sweden vs Norway, Dust2, ASUS ENC 2010, R25 0:46, and Tentpole on zet, SK vs eSTRO, Dust2, WCG 2008,
+// R1 1:35, are loose by eye at 0). Two guards: the kill's positions within 32 units of the snapshots the picture is
+// drawn from (Tuscan's 256-object limit loses players for a stretch; 5 of 25 kills were 194 to 1,029 units apart), and
+// the damage rule hidden kills have (tooMuchDamage). Kills already loose from damage keep that. What isn't solid (a
+// railing) isn't drawn.
+const SEEN_PX = 50, SEEN_W = 640, SEEN_H = 400, SLIVER_GAP = 32;
 let seenGen = 0;
 async function checkSeen() {
   const gen = ++seenGen;
   if (!R3 || !MAP || !D || !M || !window.THREE || view3.map !== MAP.name) return;
   if (!R3.rigs) R3.rigs = {};
-  const cands = D.kills.filter((k) => k.wb && k.seenPx == null);
+  const sliver = (k) => !k.wb && k.seenAim && M.liveR.some((r) => r.n === k.round) && !tooMuchDamage(k);
+  const cands = D.kills.filter((k) => (k.wb || sliver(k)) && k.seenPx == null);
   if (!cands.length) return;
   M.seenPending = cands.length; renderPane();
-  const done = () => { if (gen === seenGen) { M.seenPending = 0; M.wbs = D.kills.filter((k) => k.wb && M.liveR.some((r) => r.n === k.round)); renderPane(); drawTimeline(); } };
+  let added = 0;
+  // a sliver kill listed here gets its numbers and joins its burst: computeHits again
+  const done = () => { if (gen === seenGen) { M.seenPending = 0; if (added) computeHits(); M.wbs = D.kills.filter((k) => k.wb && M.liveR.some((r) => r.n === k.round)); renderPane(); drawTimeline(); } };
   // the models these victims wear, loaded first (the folder's files are read on demand)
   const names = new Set();
   for (const k of cands) { const a = D.slots[k.victim]; if (a) names.add(playerModelName(a[M.idxAt(k.tPos != null ? k.tPos : k.t) * D.stride + 8])); }
@@ -7173,6 +7197,10 @@ async function checkSeen() {
     const a = D.slots[k.victim];
     const pname = a ? playerModelName(a[M.idxAt(tP) * D.stride + 8]) : '';
     if (!vs || !/\.mdl$/i.test(pname)) { k.seenPx = -1; continue; }
+    if (!k.wb) {
+      const ks = playerState(k.killer, tP), gap = (p, st) => Math.hypot(p[0] - st.x, p[1] - st.y, p[2] - st.z);
+      if (!ks || gap(k.vpos, vs) > SLIVER_GAP || gap(k.kpos, ks) > SLIVER_GAP) { k.seenPx = -1; continue; }
+    }
     const r = rigFor('seen', pname); if (!r) { k.seenPx = -1; continue; }
     setBody(r, packAt(k.victim, tP));
     const yaw = posePlayer(r, k.victim, vs, tP);
@@ -7182,9 +7210,11 @@ async function checkSeen() {
     if (R3.brk) for (const m in R3.brk) { const vis = !notCover.has(+m) && !brokenAt(+m, tP - 0.05); for (const x of R3.brk[m]) x.visible = vis; }
     const poses = posesAt(tP - 0.05);
     if (R3.mov) for (const m in R3.mov) placeMover(R3.mov[m], poses.get(+m) || brushPose(MAP.movers.get(+m), null));
-    const swapped = [];
-    for (const c of R3.world.children) if (c.userData.holes) { swapped.push([c, c.material]); c.material = SOLID; }
-    const hidden = [];
+    const swapped = [], hidden = [];
+    for (const c of R3.world.children) {
+      if (c.userData.holes) { swapped.push([c, c.material]); c.material = SOLID; }
+      if (c.userData.passable && c.visible) { c.visible = false; hidden.push(c); }
+    }
     for (const c of R3.scene.children) if (c !== R3.world && c !== R3.dyn && c.visible && !c.isLight) { c.visible = false; hidden.push(c); }
     for (const c of R3.dyn.children) if (c !== r.g && c.visible) { c.visible = false; hidden.push(c); }
     const mats = r.parts.map((pt) => pt.mesh.material); for (const pt of r.parts) pt.mesh.material = MAG;
@@ -7203,7 +7233,8 @@ async function checkSeen() {
     for (const c of hidden) c.visible = true;
     r.g.visible = false;
     k.seenPx = n;
-    if (n >= SEEN_PX) k.wb.loose = n;
+    if (!k.wb) { if (n < SEEN_PX) { k.wb = Object.assign({}, k.seenAim, { sliver: true }, n ? { loose: n } : {}); added++; } }
+    else if (n >= SEEN_PX) k.wb.loose = n;
     await new Promise((res) => setTimeout(res, 0)); // let the page breathe between pictures
   }
   rt.dispose(); MAG.dispose(); SOLID.dispose();
@@ -7995,7 +8026,7 @@ window.addEventListener('unhandledrejection', (e) => { ERRLOG.push('Promise: ' +
 function debugInfo() {
   let gpu = '';
   try { const gl = document.createElement('canvas').getContext('webgl'); const x = gl && gl.getExtension('WEBGL_debug_renderer_info'); gpu = gl ? (x ? gl.getParameter(x.UNMASKED_RENDERER_WEBGL) : 'WebGL available') : 'no WebGL'; } catch (e) { gpu = 'unknown'; }
-  const L = [`CS 1.6 Demo Viewer 0.25.1`, `Browser: ${navigator.userAgent}`, `Screen: ${screen.width}x${screen.height} at ${devicePixelRatio}x, window ${innerWidth}x${innerHeight}`, `Graphics: ${gpu}`];
+  const L = [`CS 1.6 Demo Viewer 0.26.0`, `Browser: ${navigator.userAgent}`, `Screen: ${screen.width}x${screen.height} at ${devicePixelRatio}x, window ${innerWidth}x${innerHeight}`, `Graphics: ${gpu}`];
   L.push(`Folder: ${Object.keys(files.maps).length} maps, ${Object.keys(files.overviews).length} overviews, ${Object.keys(files.mdl).length} models, ${Object.keys(files.snd).length} sounds, ${files.demos.length} demos`);
   if (D) {
     L.push(`Demo: ${D.fileName}, protocol ${(D.header && D.header.netProtocol) || '?'}, ${D.pov ? 'POV (recorded by a player)' : 'HLTV'}, map ${D.mapName}, length ${fmt(D.end - D.start)}, ${M.liveR.length} live rounds, final ${M.liveR.length ? M.liveR[M.liveR.length - 1].scoreAfter.join(':') : '-'}`);
