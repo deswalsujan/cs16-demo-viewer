@@ -12,6 +12,7 @@ Answers and notes are copied exactly as Sujan wrote them, typos included. What e
 | [Wallbang hits damage options](https://claude.ai/artifact/9w1Ur8jevh9rweDagvHFhB) | Where damage shows (A/B/C), headshot icon | Not on the page: answered in chat, 26 Oct 2026 | IDEAS, "Decided by Sujan 26 Oct 2026": the letters HS, option A with changes |
 | [Loose wallbang check](https://claude.ai/artifact/AijsuFRmrrp6CDMcoNFoqH) | 225 seen kills with a bullet only a surface explains | 27 and 28 Oct 2026, 165 of 225 | IDEAS ("Sujan's check, 27 and 28 Oct 2026"); CHANGELOG 0.24.0 |
 | [Wallbang damage trial](https://claude.ai/artifact/APnX9iobz6AAEDFsGaAe9L) | A trial copy of the viewer, no questions | | Nothing stored |
+| [Wallbang sliver check](https://claude.ai/artifact/V93PEpQPJFLufvBKy7ZZgw) | 10 kills where the sight points see a sliver and the picture under 50 pixels, 30 Oct 2026 | Not yet | IDEAS, "Sliver kills" |
 | [Denser hidden check](https://claude.ai/artifact/Q9dNFKwNrF37utKP3fGJaM) | 14 cards, 5 Oct 2026 | 5 Oct 2026 | The page can no longer be opened (deleted or not shared). The answers are quoted in full in IDEAS, the 5 Oct item on `wip/denser-hidden-check` |
 
 ## Wallbang fix check, 0.22.1 (24 Oct 2026)

@@ -12,6 +12,7 @@ What is open and what is decided, right now. Loaded into every session through `
 - **Claude (POV):** aimbot catcher, not started. **See through walls** in POV works on what the server sent.
 - **Parked:** POV gun animations weapon by weapon; POV voice and chat; a broken demo's load summary line (when one turns up); a warmup-only file showing one round (needs a new file); order of 3+ parts with no times in their names; load time of a big (145 MB) demo; on the move to sujandeswal.com, drop `noindex` and harden privacy.
 - **Roadmap next:** README Requirements list, then opening duels and trades.
+- **Sujan, by eye:** the 10 kills on the **Wallbang sliver check** page (https://claude.ai/artifact/V93PEpQPJFLufvBKy7ZZgw): each at its round and timer, through the killer's eyes at 0.25x, is the victim fully hidden, partly in view, or is it not a wallbang; then pick option A, B or C (IDEAS.md, **The sight points see a sliver the picture doesn't**).
 - **Claude, its own pull request:** the 0.5 s window for loose from damage misses a hit 0.500244 s before the kill by rounding (Darky on n0rx, k1ck vs eq, Nuke, DreamHack Winter 2011, R15 C4 0:10; `computeHits` in `src/ui/wallbangs.js`); then drop that kill's `known_gap` (IDEAS.md, **The 0.5 s window misses a hit at 0.5 s by rounding**).
 - **Claude, a later docs pull request (decided 30 Oct 2026, below):** the who-it's-for sentence at the top of `AGENTS.md`, Known limits moved to `LIMITS.md`, a `LICENSE` file (MIT) and its line in README "Credits".
 
