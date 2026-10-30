@@ -150,6 +150,11 @@ function build3d() {
     // a fence, grate or ladder that bullets hit, see-through where its texture has holes; func_illusionary ones
     // (Inferno's vines, Nuke's wires) are left out, since bullets pass them
     if (g.name[0] === '{' && g.solid) m3.userData.holes = true;
+    // drawn but not solid, so bullets pass it at full damage and the sight lines don't count it: a func_illusionary in
+    // a see-through render mode (de_train's and Inferno's railings, Inferno's vines, Nuke's wires). Not cover: the
+    // picture check leaves it out (Sujan, 30 Oct 2026, GeT_RiGhT on markeloff through the highway slope's railing,
+    // SK vs Na`Vi, Train, DreamHack Winter 2011, R31 C4 0:09)
+    if (!g.sight) m3.userData.passable = true;
     if (g.model >= 0) (R3.brk[g.model] || (R3.brk[g.model] = [])).push(m3);
     if (MAP.movers.has(g.model)) { m3.matrixAutoUpdate = false; (R3.mov[g.model] || (R3.mov[g.model] = [])).push(m3); }
     world.add(m3);
@@ -771,16 +776,27 @@ function placeCam(p, yaw, pitch) {
 // line from the count on 50 demos (25 Oct 2026): 364 of 398 at 0, 13 at 1 to 49, 5 at 50 to 99, 16 at 100 or more;
 // Sujan's answers had 49 hidden and 53, 67, 69, 98 seen, so 50 fits 5 of his 7 close calls (not NEO on ArcadioN at
 // 74, which he finds hidden, nor gob b on Xizt at 223).
-const SEEN_PX = 50, SEEN_W = 640, SEEN_H = 400;
+// Since 0.26.0 it also runs on the kills the points see with the crosshair through cover (k.seenAim, computeWallbangs),
+// Sujan's option A for the sliver kills (30 Oct 2026): the points can see a sliver that isn't there, up to 6 units off
+// the body (markeloff on Delpan, SK vs Na`Vi, Train, DreamHack Winter 2011, R40 1:25, an AWP headshot through cover
+// that his POV video shows). Under SEEN_PX such a kill is listed as a LOOSE wallbang (k.wb.loose 'sliver'), never
+// strict: his answers on 10 of them had 0 to 41 pixels for loose and 0 for strict, so the count can't split them.
+// Two guards: the kill's positions within 32 units of the snapshots the picture is drawn from (Tuscan's 256-object
+// limit loses players for a stretch; 5 of 25 kills were 194 to 1,029 units apart), and the damage rule hidden kills
+// have (tooMuchDamage). Kills already loose from damage keep that. What isn't solid (a railing) isn't drawn.
+const SEEN_PX = 50, SEEN_W = 640, SEEN_H = 400, SLIVER_GAP = 32;
 let seenGen = 0;
 async function checkSeen() {
   const gen = ++seenGen;
   if (!R3 || !MAP || !D || !M || !window.THREE || view3.map !== MAP.name) return;
   if (!R3.rigs) R3.rigs = {};
-  const cands = D.kills.filter((k) => k.wb && k.seenPx == null);
+  const sliver = (k) => !k.wb && k.seenAim && M.liveR.some((r) => r.n === k.round) && !tooMuchDamage(k);
+  const cands = D.kills.filter((k) => (k.wb || sliver(k)) && k.seenPx == null);
   if (!cands.length) return;
   M.seenPending = cands.length; renderPane();
-  const done = () => { if (gen === seenGen) { M.seenPending = 0; M.wbs = D.kills.filter((k) => k.wb && M.liveR.some((r) => r.n === k.round)); renderPane(); drawTimeline(); } };
+  let added = 0;
+  // a sliver kill listed here gets its numbers and joins its burst: computeHits again
+  const done = () => { if (gen === seenGen) { M.seenPending = 0; if (added) computeHits(); M.wbs = D.kills.filter((k) => k.wb && M.liveR.some((r) => r.n === k.round)); renderPane(); drawTimeline(); } };
   // the models these victims wear, loaded first (the folder's files are read on demand)
   const names = new Set();
   for (const k of cands) { const a = D.slots[k.victim]; if (a) names.add(playerModelName(a[M.idxAt(k.tPos != null ? k.tPos : k.t) * D.stride + 8])); }
@@ -798,6 +814,10 @@ async function checkSeen() {
     const a = D.slots[k.victim];
     const pname = a ? playerModelName(a[M.idxAt(tP) * D.stride + 8]) : '';
     if (!vs || !/\.mdl$/i.test(pname)) { k.seenPx = -1; continue; }
+    if (!k.wb) {
+      const ks = playerState(k.killer, tP), gap = (p, st) => Math.hypot(p[0] - st.x, p[1] - st.y, p[2] - st.z);
+      if (!ks || gap(k.vpos, vs) > SLIVER_GAP || gap(k.kpos, ks) > SLIVER_GAP) { k.seenPx = -1; continue; }
+    }
     const r = rigFor('seen', pname); if (!r) { k.seenPx = -1; continue; }
     setBody(r, packAt(k.victim, tP));
     const yaw = posePlayer(r, k.victim, vs, tP);
@@ -807,9 +827,11 @@ async function checkSeen() {
     if (R3.brk) for (const m in R3.brk) { const vis = !notCover.has(+m) && !brokenAt(+m, tP - 0.05); for (const x of R3.brk[m]) x.visible = vis; }
     const poses = posesAt(tP - 0.05);
     if (R3.mov) for (const m in R3.mov) placeMover(R3.mov[m], poses.get(+m) || brushPose(MAP.movers.get(+m), null));
-    const swapped = [];
-    for (const c of R3.world.children) if (c.userData.holes) { swapped.push([c, c.material]); c.material = SOLID; }
-    const hidden = [];
+    const swapped = [], hidden = [];
+    for (const c of R3.world.children) {
+      if (c.userData.holes) { swapped.push([c, c.material]); c.material = SOLID; }
+      if (c.userData.passable && c.visible) { c.visible = false; hidden.push(c); }
+    }
     for (const c of R3.scene.children) if (c !== R3.world && c !== R3.dyn && c.visible && !c.isLight) { c.visible = false; hidden.push(c); }
     for (const c of R3.dyn.children) if (c !== r.g && c.visible) { c.visible = false; hidden.push(c); }
     const mats = r.parts.map((pt) => pt.mesh.material); for (const pt of r.parts) pt.mesh.material = MAG;
@@ -828,7 +850,8 @@ async function checkSeen() {
     for (const c of hidden) c.visible = true;
     r.g.visible = false;
     k.seenPx = n;
-    if (n >= SEEN_PX) k.wb.loose = n;
+    if (!k.wb) { if (n < SEEN_PX) { k.wb = Object.assign({}, k.seenAim, { loose: 'sliver', px: n }); added++; } }
+    else if (n >= SEEN_PX) k.wb.loose = n;
     await new Promise((res) => setTimeout(res, 0)); // let the page breathe between pictures
   }
   rt.dispose(); MAG.dispose(); SOLID.dispose();
