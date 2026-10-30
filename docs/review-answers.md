@@ -12,6 +12,7 @@ Answers and notes are copied exactly as Sujan wrote them, typos included. What e
 | [Wallbang hits damage options](https://claude.ai/artifact/9w1Ur8jevh9rweDagvHFhB) | Where damage shows (A/B/C), headshot icon | Not on the page: answered in chat, 26 Oct 2026 | IDEAS, "Decided by Sujan 26 Oct 2026": the letters HS, option A with changes |
 | [Loose wallbang check](https://claude.ai/artifact/AijsuFRmrrp6CDMcoNFoqH) | 225 seen kills with a bullet only a surface explains | 27 and 28 Oct 2026, 165 of 225 | IDEAS ("Sujan's check, 27 and 28 Oct 2026"); CHANGELOG 0.24.0 |
 | [Wallbang damage trial](https://claude.ai/artifact/APnX9iobz6AAEDFsGaAe9L) | A trial copy of the viewer, no questions | | Nothing stored |
+| [Wallbang sliver check](https://claude.ai/artifact/V93PEpQPJFLufvBKy7ZZgw) | 10 kills where the sight points see a sliver and the picture under 50 pixels, 30 Oct 2026 | 30 Oct 2026 | IDEAS, "Sliver kills"; STATE.md Decisions (railings, Nuke vents) |
 | [Denser hidden check](https://claude.ai/artifact/Q9dNFKwNrF37utKP3fGJaM) | 14 cards, 5 Oct 2026 | 5 Oct 2026 | The page can no longer be opened (deleted or not shared). The answers are quoted in full in IDEAS, the 5 Oct item on `wip/denser-hidden-check` |
 
 ## Wallbang fix check, 0.22.1 (24 Oct 2026)
@@ -344,3 +345,32 @@ Five of the answers above, checked again by Sujan by eye on 30 Oct 2026 when the
 | k37013 | k1ck vs eq, Nuke, DreamHack Winter 2011 | R20 C4 0:21 | EneRyYyYy on mUtcb | loose |
 | k37015 | k1ck vs eq, Nuke, DreamHack Winter 2011 | R26 1:27 | spekz on szrtech | loose |
 | k37016 | k1ck vs eq, Nuke, DreamHack Winter 2011 | R26 1:26 | Darky on spekz | loose |
+
+## Denser hidden check (5 Oct 2026): later evidence
+
+The page no longer opens; its answers are quoted in IDEAS-ARCHIVE.md, the 5 Oct item ("Wallbangs and kill timing"). Later evidence for one of its kills, given by Sujan in chat:
+
+| Demo | Round | Kill | 5 Oct answer | Later evidence |
+|---|---|---|---|---|
+| SK vs Na`Vi, Train, DreamHack Winter 2011 | R40 1:25 | markeloff on Delpan (AWP headshot, one bullet) | hidden, a wallbang | markeloff's own POV video shows Delpan fully hidden at the shot: https://www.youtube.com/watch?v=hWORUXhxSYM, at 1:07:10. Strict, confirmed by the real game (Sujan, 30 Oct 2026) |
+
+## Wallbang sliver check (30 Oct 2026)
+
+https://claude.ai/artifact/V93PEpQPJFLufvBKy7ZZgw, store collection `answers`. 10 of 10 answered, 30 Oct 2026.
+
+Ten kills the finder doesn't list: some of its sight points see the victim, the crosshair line goes through cover, and the picture from the killer's eye shows under 50 pixels of him. The question for each: at the killing shot, through the killer's eyes at 0.25x, was the victim fully hidden (strict), partly in view (loose), or is it not a wallbang (none)? Names as in the demo; the "|" in the mousesports names is written "\|" so the table holds.
+
+| Card | Demo | Round | Kill | What the page said | Answer | Note |
+|---|---|---|---|---|---|---|
+| g01 | FX vs eSahara, Dust2, DreamHack Winter 2010 | R18 0:21 | Frag eXecutors  KUBEN[t] on ESAHARA.net RARA | 2 of 15 sight points clear, 41 pixels; crosshair through 24 units; AK-47, 307 units | loose (part of him in view) |  |
+| g02 | FX vs mTw, Nuke, Xperia Play 2011, part 2 | R21 C4 0:13 | ave@mymTw.com on Frag eXecutors  PASHA[t] | 2 of 15 sight points clear, 15 pixels; crosshair through 2 units; M4A1 HS, 755 units | loose (part of him in view) |  |
+| g03 | Fnatic vs mousesports, Tuscan, ESWC 2011 | R4 1:05 | fnaticMSI Gux <3 pingu on mousesports \| gob  b | 3 of 15 sight points clear, 0 pixels; crosshair through 66 units; DEAGLE, 253 units | strict (fully hidden) |  |
+| g04 | SK vs Na`Vi, Train, DreamHack Winter 2011 | R31 C4 0:09 | SK.GeT_RiGhT -A- on Na`Vi markeloff ~~~ | 11 of 15 sight points clear, 0 pixels; crosshair through 4 units; M4A1, 1452 units | none (not a wallbang) | This is a good false-positive or trap to have. What you're seeing is get_right shooting through a railing on in the in-site highway slope. That railing acts only as an obstacle for the player model but you can shoot through it with 100% damage as if there was no railing. It's the same like the inferno railings in one of the sites. This should not however be confused with breakable surfaces like nuke vents where the first bullet damage is a wallbang - which then also breaks the vent cover - and then gives full 100% damage from thereon. |
+| g05 | SK vs WinFakt, Mirage, IEM6 New York | R2 1:13 | WinFakt aslak4yoso+M *Allihoppa on SK.face | 3 of 15 sight points clear, 0 pixels; crosshair through 64 units; DEAGLE HS, 603 units | strict (fully hidden) |  |
+| g06 | SK vs eSTRO, Nuke, WCG 2008 | R24 C4 0:30 | SKWEDEN RobbaN[alitdg] on KOREA.eSTRO : ari | 3 of 15 sight points clear, 0 pixels; crosshair through 76 units; AK-47, 1301 units | strict (fully hidden) |  |
+| g07 | Sweden vs Norway, Dust2, ASUS ENC 2010 | R7 1:12 | SWIIIIIDEEEN  GeT_RiGhT on NORWAY KORN | 3 of 15 sight points clear, 15 pixels; crosshair through 2 units; AK-47 HS, 577 units | loose (part of him in view) |  |
+| g08 | Sweden vs Norway, Dust2, ASUS ENC 2010 | R25 0:46 | NORWAY REAL on SWIIIIIDEEEN  alleN | 5 of 15 sight points clear, 0 pixels; crosshair through 46 units; AK-47 HS, 633 units | loose (part of him in view) | In the demo viewer, at the exact same time when I pause the screen when the kill notification comes, I can see some part of his body but it's only for a split second. Your mockup shows no body parts highlighted. I think this happens because he got a headshot in the air which throws the body behind aggressively. |
+| g09 | fnatic vs mousesports, Forge, IEM6 Guangzhou final, file 1 | R15 1:28 | fnaticMSI Friis <3 bambi on mousesports \| KARRiGAN | 5 of 15 sight points clear, 26 pixels; crosshair through 8 units; AWP, 1150 units | loose (part of him in view) |  |
+| g10 | mousesports vs AGAiN, Inferno, ESWC 2011 final | R24 0:29 | AGAiN  Loord on mousesports \| karriganbOb~ | 5 of 15 sight points clear, 0 pixels; crosshair through 22 units; M4A1, 484 units | strict (fully hidden) | This is also a good example of a visual trap. At the exact killing shot - yes he was fully hidden but right before that almost all of the damage he received was a loose wb (because he was right at the corner of the surface). |
+
+Then, in chat the same day: option A (the picture check on these kills too, under 50 pixels LOOSE), with both guards, and two decisions from the notes on g04 (STATE.md Decisions, Sujan, 30 Oct 2026).

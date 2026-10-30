@@ -20,6 +20,16 @@
    "source": "docs/review-answers.md, \"Loose wallbang check\" (27 and 28 Oct 2026), k10001: loose; not listed since 0.24.0, by the same-spray rule: the killer's last bullet that only a surface explains came 1.10 s before the kill, and a loose wallbang from damage needs one 0.5 s or less before it (STATE.md Decisions, Sujan, 28 Oct 2026); a hit 0.40 s before couldn't be given to anyone, ave and dennis aiming about as close, and zonic wasn't one of them. Changed to none as Sujan asked (30 Oct 2026), from the finder's own numbers"
   },
   {
+   "round": 21,
+   "timer": "C4 0:13",
+   "killer": "ave@mymTw.com",
+   "victim": "Frag eXecutors  PASHA[t]",
+   "gun": "m4a1",
+   "expected": "loose",
+   "known_gap": "the sight points see a sliver of him (2 of 15 clear) that the picture doesn't (15 pixels), so the picture check never runs and the finder leaves the kill out (IDEAS.md, \"Sliver kills\"); kept with this known gap until option A is built (Sujan, 30 Oct 2026)",
+   "source": "docs/review-answers.md, \"Wallbang sliver check\" (30 Oct 2026), g02: loose"
+  },
+  {
    "round": 25,
    "timer": "0:38",
    "killer": "Frag eXecutors  NEO[t]",
