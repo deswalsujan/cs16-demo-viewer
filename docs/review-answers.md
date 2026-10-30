@@ -163,6 +163,18 @@ https://claude.ai/artifact/AijsuFRmrrp6CDMcoNFoqH, store collection `answers`. S
 | k28025 | Sweden vs Ukraine, Train, ClanBase NationsCup XI | R22 C4 0:07 | cArNaGe! on STRIKE | unsure | This seemed like the bullet went through not a wall but his own teammate. Can you confirm if that's the case and if that's being treated as a wallbang since his teammate is technically a surface? And regardless of that Im not sure if this was a wallbang |
 | k37003 | k1ck vs eq, Nuke, DreamHack Winter 2011 | R6 1:25 | DECE[A] * on n0rx     <pacheco> | loose | Can you double check the damage numbers here? It felt like as if after 89 hp n0rx got another headshot (separate from the one that killed him) |
 
+### Settled later in chat (30 Oct 2026)
+
+Five of the answers above, checked again by Sujan by eye on 30 Oct 2026 when the wallbang ground truth test was planned (his words in brackets). Later answers win over the page's.
+
+| Id | Demo | Round | Kill | Answer |
+|---|---|---|---|---|
+| k11010 | Fnatic vs ALTERNATE, Nuke, ESWC 2011 | R20 0:40 | hool on fR11$+- | [loose] (was unsure) |
+| k03014 | FX vs SK, Inferno, IEM5 | R12 C4 0:21 | face on KUBEN | [none] (was unsure) |
+| k28025 | Sweden vs Ukraine, Train, ClanBase NationsCup XI | R22 C4 0:07 | cArNaGe! on STRIKE | [none] (was unsure) |
+| k09004 | FX vs mTw, Nuke, Xperia Play 2011 (part 1) | R7 1:23 | KUBEN on trace | [leave out] (was unsure) |
+| k10017 | FX vs mTw, Nuke, Xperia Play 2011 (part 2) | R26 1:30 | KUBEN on trace | [loose] (loose on this page already; on the 5 Oct denser check Sujan had called him hidden) |
+
 ### Every answer
 
 | Id | Demo | Round | Kill | Answer |
