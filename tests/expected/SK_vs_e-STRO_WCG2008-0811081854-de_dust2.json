@@ -11,8 +11,9 @@
    "killer": "SKWEDEN Tentpole <3 Tezz",
    "victim": "SKWEDEN zet",
    "gun": null,
-   "expected": "none",
-   "source": "docs/review-answers.md, \"Loose wallbang check\" (27 and 28 Oct 2026), k23000: loose; not listed since 0.24.0, by the same-spray rule: the killer's last bullet that only a surface explains came 1.75 s before the kill, and a loose wallbang from damage needs one 0.5 s or less before it (STATE.md Decisions, Sujan, 28 Oct 2026). Changed to none as Sujan asked (30 Oct 2026), from the finder's own numbers"
+   "expected": "loose",
+   "known_gap": "reads strict: the picture from the killer's eye shows 0 pixels of him, and a sliver kill is strict at 0 pixels, LOOSE from 1 (Sujan, 30 Oct 2026; STATE.md Decisions, \"Sliver kills\"); loose by eye, kept with this known gap (Sujan, 30 Oct 2026)",
+   "source": "docs/review-answers.md, \"Loose wallbang check\" (27 and 28 Oct 2026), k23000: loose; none from 30 Oct 2026 by the same-spray rule (his last bullet that only a surface explains came 1.75 s before the kill), then loose again, Sujan, 30 Oct 2026, once 0.26.0 listed it: the same-spray rule is about an earlier bullet, and here the killing bullet itself went through cover (STATE.md Decisions)"
   }
  ]
 }

@@ -28,7 +28,6 @@
    "victim": "NORWAY KORN",
    "gun": "ak47",
    "expected": "loose",
-   "known_gap": "the sight points see a sliver of him (3 of 15 clear) that the picture doesn't (15 pixels), so the picture check never runs and the finder leaves the kill out (IDEAS.md, \"Sliver kills\"); kept with this known gap until option A is built (Sujan, 30 Oct 2026)",
    "source": "docs/review-answers.md, \"Wallbang sliver check\" (30 Oct 2026), g07: loose"
   },
   {
@@ -101,7 +100,7 @@
    "victim": "SWIIIIIDEEEN  alleN",
    "gun": "ak47",
    "expected": "loose",
-   "known_gap": "the sight points see a sliver of him (5 of 15 clear) that the picture doesn't (0 pixels), so the picture check never runs and the finder leaves the kill out (IDEAS.md, \"Sliver kills\"); kept with this known gap until option A is built (Sujan, 30 Oct 2026)",
+   "known_gap": "reads strict: the picture from the killer's eye shows 0 pixels of him, and a sliver kill is strict at 0 pixels, LOOSE from 1 (Sujan, 30 Oct 2026; STATE.md Decisions, \"Sliver kills\"); loose by eye, kept with this known gap (Sujan, 30 Oct 2026)",
    "source": "docs/review-answers.md, \"Wallbang sliver check\" (30 Oct 2026), g08: loose; Sujan's note: part of alleN shows for a split second in the viewer at the kill, a headshot in the air that throws the body back"
   },
   {

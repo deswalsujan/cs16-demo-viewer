@@ -116,7 +116,6 @@
    "victim": "SK.Delpan <3 Johan Wedel",
    "gun": null,
    "expected": "strict",
-   "known_gap": "the finder's 15 points see part of the victim, and the hidden check was left as in 0.17.0 after the denser check wasn't conclusive (STATE.md Decisions, Sujan, 5 Oct 2026); strict with this known gap, Sujan, 30 Oct 2026 (STATE.md Decisions, \"The 10 kills the first run disagreed on\")",
    "source": "IDEAS-ARCHIVE.md, \"Wallbangs and kill timing\", the 5 Oct 2026 denser check answers (Sujan, 5 Oct 2026): hidden, right; second source: markeloff's own POV video shows Delpan fully hidden at the shot (https://www.youtube.com/watch?v=hWORUXhxSYM, at 1:07:10), so strict is confirmed by the real game (Sujan, 30 Oct 2026; STATE.md Decisions)"
   },
   {
