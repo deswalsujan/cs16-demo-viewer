@@ -59,7 +59,7 @@ Everything raised in conversation that isn't finished, in one place. Each item s
   - Decided so far: the **POV mode** setting and what POV mode gets, in `STATE.md` (Sujan, 29 Oct 2026).
 - [ ] **Kill feed icons in POV mode, on Windows**
   - Status: built 22 Oct 2026 on `wip/pov-mode`, ported from 0.18.0; in main since 0.25.0 (the HLTV viewer's own kill feed, which POV mode now uses); not yet checked by Sujan.
-  - Next step: Sujan, with **POV mode** on in main's viewer (not `pov/pov.html` any more), any POV demo, and looks at the top right after a kill: orange gun icon, headshot icon on headshots, no "m4a1" or "HS" words.
+  - Next step: Sujan, with **POV mode** on in main's viewer (not the separate POV page of the deleted `wip/pov-mode` branch any more), any POV demo, and looks at the top right after a kill: orange gun icon, headshot icon on headshots, no "m4a1" or "HS" words.
   - Decided so far: built at Sujan's request in the HLTV viewer's look, no mockup (22 Oct 2026).
 - [ ] **The hidden-enemies note is easy to miss**
   - Status: raised by Sujan 5 Oct 2026, apply or park to be decided: when the demo opens, the eye is on the load summary, and the note's box and text are small.

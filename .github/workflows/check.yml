@@ -1,6 +1,7 @@
 # Runs on every pull request and every push to main. index.html must be exactly what build.py makes
-# from src/, and the three browser checks that need no Half-Life folder must pass. The other three
-# checks need Sujan's demos and are run by hand (tests/README.md). Nothing here may need Valve's files.
+# from src/, the notes must agree with the repo (notes_check.py), and the three browser checks that need
+# no Half-Life folder must pass. The other four checks need Sujan's demos and are run by hand
+# (tests/README.md). Nothing here may need Valve's files.
 name: Check
 
 on:
@@ -25,6 +26,10 @@ jobs:
         run: |
           python3 build.py
           git diff --exit-code -- index.html || { echo "::error file=index.html::index.html doesn't match src/. Run python3 build.py and commit index.html."; exit 1; }
+
+      # paths in the notes exist, CHANGELOG.md's newest version is VERSION, every src/ file is in AGENTS.md's code map
+      - name: notes_check.py
+        run: python3 tests/notes_check.py
 
       # three.js is in the repo (src/vendor/three.min.js) since 0.26.2, and the tests use that file
       - name: Install Playwright
