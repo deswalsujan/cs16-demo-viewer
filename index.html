@@ -3201,8 +3201,9 @@ function computeWallbangs() {
     const hit = aim.hit;
     // part of him in view to the 15 points, but the crosshair line goes through cover: computeHits makes it a loose
     // wallbang when the demo's damage shows one of the killer's bullets went through a surface in the same spray
-    // (Sujan, 28 Oct 2026; measured with tests/page/seen_through_cover.js), and the picture check when the killer's view
-    // shows under 50 pixels of him (a sliver kill, Sujan's option A, 30 Oct 2026; checkSeen in view3d.part.js)
+    // (Sujan, 28 Oct 2026; measured with tests/page/seen_through_cover.js), and the picture check lists it when the
+    // killer's view shows under 50 pixels of him: strict at 0, LOOSE from 1 (a sliver kill, Sujan, 30 Oct 2026; checkSeen
+    // in view3d.part.js)
     if (seen) { k.seenAim = { thick: Math.round(aim.solid > 0 ? aim.solid : mid.solid), aim: Math.round(aim.solid), what: hit.some((h) => h.model !== 0) ? 'object' : 'wall', eye }; continue; }
     k.wb = { thick: Math.round(aim.solid > 0 ? aim.solid : mid.solid), aim: Math.round(aim.solid), what: hit.some((h) => h.model !== 0) ? 'object' : 'wall', eye };
   }
@@ -3992,7 +3993,7 @@ const UNSURE_TIP = 'The recording skips at this kill, so the wallbang was judged
 const unsureTag = (k) => (k.wb && skipNear(k.t) ? `<span class="wbtag unsure" title="${UNSURE_TIP}">UNSURE</span>` : '');
 // Sujan's three levels (24 Oct 2026; built in 0.23.0): a strict wallbang has none of the victim in view from the
 // shooter's eye; a loose one has part of him in view (50 pixels or more in the picture check, view3d.part.js).
-const LOOSE_TIP = (k) => k.wb.dmg ? `Loose wallbang: part of him was in view, and the demo's damage shows a bullet of the killer's went through cover just before the kill (${k.wb.dmg.dmg} HP where his gun does at least ${k.wb.dmg.open} in the open)` : k.wb.loose === 'sliver' ? `Loose wallbang: the bullet went through cover, and the check can't say he was fully hidden: some of its sight lines reach him, though the shooter's view shows almost none of him (${k.wb.px} pixels in the check)` : `Loose wallbang: the bullet went through cover, but part of him was in view from the shooter's eye (${k.wb.loose} pixels in the check, 50 or more counts as in view)`;
+const LOOSE_TIP = (k) => k.wb.dmg ? `Loose wallbang: part of him was in view, and the demo's damage shows a bullet of the killer's went through cover just before the kill (${k.wb.dmg.dmg} HP where his gun does at least ${k.wb.dmg.open} in the open)` : k.wb.sliver ? `Loose wallbang: the bullet went through cover, but part of him was in view from the shooter's eye: some of the finder's sight lines reach him, and ${k.wb.loose} pixels of him show in the check` : `Loose wallbang: the bullet went through cover, but part of him was in view from the shooter's eye (${k.wb.loose} pixels in the check, 50 or more counts as in view)`;
 const looseTag = (k) => (k.wb && k.wb.loose ? `<span class="wbtag loose" title="${LOOSE_TIP(k)}">LOOSE WB</span>` : '');
 const STRICT_TIP = 'Strict wallbang: the bullet went through cover and none of him was in view from the shooter\'s eye';
 const DMG_TIP = 'Wallbang damage: hits through cover that didn\'t kill him';
@@ -7157,13 +7158,15 @@ function placeCam(p, yaw, pitch) {
 // Sujan's answers had 49 hidden and 53, 67, 69, 98 seen, so 50 fits 5 of his 7 close calls (not NEO on ArcadioN at
 // 74, which he finds hidden, nor gob b on Xizt at 223).
 // Since 0.26.0 it also runs on the kills the points see with the crosshair through cover (k.seenAim, computeWallbangs),
-// Sujan's option A for the sliver kills (30 Oct 2026): the points can see a sliver that isn't there, up to 6 units off
-// the body (markeloff on Delpan, SK vs Na`Vi, Train, DreamHack Winter 2011, R40 1:25, an AWP headshot through cover
-// that his POV video shows). Under SEEN_PX such a kill is listed as a LOOSE wallbang (k.wb.loose 'sliver'), never
-// strict: his answers on 10 of them had 0 to 41 pixels for loose and 0 for strict, so the count can't split them.
-// Two guards: the kill's positions within 32 units of the snapshots the picture is drawn from (Tuscan's 256-object
-// limit loses players for a stretch; 5 of 25 kills were 194 to 1,029 units apart), and the damage rule hidden kills
-// have (tooMuchDamage). Kills already loose from damage keep that. What isn't solid (a railing) isn't drawn.
+// the sliver kills (Sujan, 30 Oct 2026): the points can see a sliver that isn't there, up to 6 units off the body
+// (markeloff on Delpan, SK vs Na`Vi, Train, DreamHack Winter 2011, R40 1:25, an AWP headshot through cover that his POV
+// video shows). Under SEEN_PX such a kill is listed (k.wb.sliver): strict at 0 pixels, LOOSE from 1 (k.wb.loose holds
+// the count), Sujan's split of 30 Oct 2026 over option A's LOOSE for all; it fits 11 of his 13 answers on these kills
+// (REAL on alleN, Sweden vs Norway, Dust2, ASUS ENC 2010, R25 0:46, and Tentpole on zet, SK vs eSTRO, Dust2, WCG 2008,
+// R1 1:35, are loose by eye at 0). Two guards: the kill's positions within 32 units of the snapshots the picture is
+// drawn from (Tuscan's 256-object limit loses players for a stretch; 5 of 25 kills were 194 to 1,029 units apart), and
+// the damage rule hidden kills have (tooMuchDamage). Kills already loose from damage keep that. What isn't solid (a
+// railing) isn't drawn.
 const SEEN_PX = 50, SEEN_W = 640, SEEN_H = 400, SLIVER_GAP = 32;
 let seenGen = 0;
 async function checkSeen() {
@@ -7230,7 +7233,7 @@ async function checkSeen() {
     for (const c of hidden) c.visible = true;
     r.g.visible = false;
     k.seenPx = n;
-    if (!k.wb) { if (n < SEEN_PX) { k.wb = Object.assign({}, k.seenAim, { loose: 'sliver', px: n }); added++; } }
+    if (!k.wb) { if (n < SEEN_PX) { k.wb = Object.assign({}, k.seenAim, { sliver: true }, n ? { loose: n } : {}); added++; } }
     else if (n >= SEEN_PX) k.wb.loose = n;
     await new Promise((res) => setTimeout(res, 0)); // let the page breathe between pictures
   }

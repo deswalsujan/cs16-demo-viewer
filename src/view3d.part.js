@@ -777,13 +777,15 @@ function placeCam(p, yaw, pitch) {
 // Sujan's answers had 49 hidden and 53, 67, 69, 98 seen, so 50 fits 5 of his 7 close calls (not NEO on ArcadioN at
 // 74, which he finds hidden, nor gob b on Xizt at 223).
 // Since 0.26.0 it also runs on the kills the points see with the crosshair through cover (k.seenAim, computeWallbangs),
-// Sujan's option A for the sliver kills (30 Oct 2026): the points can see a sliver that isn't there, up to 6 units off
-// the body (markeloff on Delpan, SK vs Na`Vi, Train, DreamHack Winter 2011, R40 1:25, an AWP headshot through cover
-// that his POV video shows). Under SEEN_PX such a kill is listed as a LOOSE wallbang (k.wb.loose 'sliver'), never
-// strict: his answers on 10 of them had 0 to 41 pixels for loose and 0 for strict, so the count can't split them.
-// Two guards: the kill's positions within 32 units of the snapshots the picture is drawn from (Tuscan's 256-object
-// limit loses players for a stretch; 5 of 25 kills were 194 to 1,029 units apart), and the damage rule hidden kills
-// have (tooMuchDamage). Kills already loose from damage keep that. What isn't solid (a railing) isn't drawn.
+// the sliver kills (Sujan, 30 Oct 2026): the points can see a sliver that isn't there, up to 6 units off the body
+// (markeloff on Delpan, SK vs Na`Vi, Train, DreamHack Winter 2011, R40 1:25, an AWP headshot through cover that his POV
+// video shows). Under SEEN_PX such a kill is listed (k.wb.sliver): strict at 0 pixels, LOOSE from 1 (k.wb.loose holds
+// the count), Sujan's split of 30 Oct 2026 over option A's LOOSE for all; it fits 11 of his 13 answers on these kills
+// (REAL on alleN, Sweden vs Norway, Dust2, ASUS ENC 2010, R25 0:46, and Tentpole on zet, SK vs eSTRO, Dust2, WCG 2008,
+// R1 1:35, are loose by eye at 0). Two guards: the kill's positions within 32 units of the snapshots the picture is
+// drawn from (Tuscan's 256-object limit loses players for a stretch; 5 of 25 kills were 194 to 1,029 units apart), and
+// the damage rule hidden kills have (tooMuchDamage). Kills already loose from damage keep that. What isn't solid (a
+// railing) isn't drawn.
 const SEEN_PX = 50, SEEN_W = 640, SEEN_H = 400, SLIVER_GAP = 32;
 let seenGen = 0;
 async function checkSeen() {
@@ -850,7 +852,7 @@ async function checkSeen() {
     for (const c of hidden) c.visible = true;
     r.g.visible = false;
     k.seenPx = n;
-    if (!k.wb) { if (n < SEEN_PX) { k.wb = Object.assign({}, k.seenAim, { loose: 'sliver', px: n }); added++; } }
+    if (!k.wb) { if (n < SEEN_PX) { k.wb = Object.assign({}, k.seenAim, { sliver: true }, n ? { loose: n } : {}); added++; } }
     else if (n >= SEEN_PX) k.wb.loose = n;
     await new Promise((res) => setTimeout(res, 0)); // let the page breathe between pictures
   }
