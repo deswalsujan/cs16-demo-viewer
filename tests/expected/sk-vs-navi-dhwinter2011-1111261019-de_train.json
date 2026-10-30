@@ -92,6 +92,15 @@
    "source": "docs/review-answers.md, \"Loose wallbang check\" (27 and 28 Oct 2026), k19028: loose"
   },
   {
+   "round": 31,
+   "timer": "C4 0:09",
+   "killer": "SK.GeT_RiGhT -A-",
+   "victim": "Na`Vi markeloff ~~~",
+   "gun": "m4a1",
+   "expected": "none",
+   "source": "docs/review-answers.md, \"Wallbang sliver check\" (30 Oct 2026), g04: none; Sujan's note: GeT_RiGhT shot through a railing on the highway slope, which stops players but lets bullets through at full damage, so it isn't cover (STATE.md Decisions, Sujan, 30 Oct 2026)"
+  },
+  {
    "round": 39,
    "timer": "C4 0:24",
    "killer": "Na`Vi starix",
