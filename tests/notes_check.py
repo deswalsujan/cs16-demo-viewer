@@ -1,9 +1,10 @@
 """The notes agree with the repo (agent brief of 30 Oct 2026, "Notes consistency check"). No game files needed.
 
 Checks, each failure printed as "file:line: what's wrong", exit code 1 on any:
-- every path in backticks in STATE.md, AGENTS.md, IDEAS.md and README.md exists: a file or folder from the repo root,
-  or a tracked file or folder that ends with it (`page/regress_summary.js`, `folder_row_test.py`). Left out: branch
-  names, the player's game folder, placeholders and the few paths in IGNORE;
+- every path in backticks in STATE.md, AGENTS.md, IDEAS.md and README.md is a tracked file or folder, or ends one
+  (`page/regress_summary.js`, `folder_row_test.py`), so a fresh clone gives the same result as a working copy. Left
+  out: branch names, the player's game folder, build output in `dist/` (gitignored), placeholders and the few paths
+  in IGNORE;
 - the newest version in CHANGELOG.md is `VERSION`;
 - no CHANGELOG entry at or above `VERSION` says "until then", "not yet decided" or "In progress", and an unshipped
   "In progress" entry is only on a `wip/` branch;
@@ -17,8 +18,9 @@ root = os.path.abspath(os.path.join(os.path.dirname(os.path.abspath(__file__)), 
 NOTES = ['STATE.md', 'AGENTS.md', 'IDEAS.md', 'README.md']
 # a backtick token is taken as a path when it has no spaces and has a slash or a file extension
 EXT = re.compile(r'\.(md|js|mjs|py|html|json|yml|yaml|txt|sh|css|png|jpg|svg)$')
-# paths that aren't the repo's: branches, the player's Half-Life folder and its files, placeholders
-NOT_REPO = re.compile(r'^(wip/|origin/|refs/|~|/|https?:)|[<>*{}]|\.\.\.|^(cstrike|cstrike_downloads|valve)(/|$)|\.(cfg|dem|bsp|wad|mdl|wav|spr)$')
+# paths that aren't the repo's: branches, the player's Half-Life folder and its files, build.py's output in dist/
+# (gitignored, so a fresh clone has none until it builds), placeholders
+NOT_REPO = re.compile(r'^(wip/|origin/|refs/|~|/|https?:)|[<>*{}]|\.\.\.|^(cstrike|cstrike_downloads|valve|dist)(/|$)|\.(cfg|dem|bsp|wad|mdl|wav|spr)$')
 # the short list of paths named on purpose that aren't in the repo
 IGNORE = {
     'regamedll/dlls/wpn_shared/wpn_<gun>.cpp',  # ReGameDLL's own source (AGENTS.md, "Facts")
@@ -49,8 +51,8 @@ for f in NOTES:
             if ' ' in t or not ('/' in t or EXT.search(t)) or t in IGNORE or NOT_REPO.search(t):
                 continue
             p = t.rstrip('/')
-            if os.path.exists(os.path.join(root, p)) or any(x == p or x.endswith('/' + p) for x in tracked) \
-                    or any(d == p or d.endswith('/' + p) for d in dirs):
+            # tracked only: a gitignored file on this disk (dist/, tests/three.min.js) isn't in a fresh clone
+            if any(x == p or x.endswith('/' + p) for x in tracked) or any(d == p or d.endswith('/' + p) for d in dirs):
                 continue
             fails.append(f'{f}:{n}: `{t}` is not in the repo')
 
