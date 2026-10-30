@@ -1,0 +1,54 @@
+{
+ "demo": "mtw-vs-navi-eswc2010semi-real-1007031530-de_tuscan.dem",
+ "sha256": "b0c1be388d6ba0813592d61ee15e8dfa134abf5ba7a64247b06bbc42a5bd47a7",
+ "match": "mTw vs Na`Vi, Tuscan, ESWC 2010 semi-final, file 1",
+ "event": "ESWC 2010, semi-final (3 Jul 2010); Tuscan was map 2, Train map 3",
+ "map": "de_tuscan",
+ "joined": {
+  "parts": [
+   "mtw-vs-navi-eswc2010semi-real-1007031530-de_tuscan.dem",
+   "mtw-vs-navi-eswc2010semi-real-1007031625-de_tuscan.dem",
+   "mtw-vs-navi-eswc2010semi-real-1007031645-de_tuscan.dem",
+   "mtw-vs-navi-eswc2010semi-real-1007031655-de_tuscan.dem"
+  ],
+  "sha256": [
+   "b0c1be388d6ba0813592d61ee15e8dfa134abf5ba7a64247b06bbc42a5bd47a7",
+   "c4d9814c5c5414071fc500e11c5ee77abc26e840151cd4dd8f9a92e9dc779b31",
+   "8e6d47608132f2c3aaf5fbad81c4652a2e0935ae39376c8f9e204ad7579fc888",
+   "11f59c63492e75895821f734cf2e726f553d1085c5052d2968bdc4e2711caf07"
+  ],
+  "score": {
+   "value": "25:23",
+   "live": 48,
+   "source": "CHANGELOG.md 0.15.1, How it was tested: mTw 25:23 in round 48, what the server's own \"Finale score\" messages add up to (not found online); which team is written first isn't said. The warmup-only first file was deleted on 3 Oct 2026 (tests/DEMOS.md)",
+   "any_order": true
+  },
+  "kd": [
+   {
+    "player": "Na`Vi markeloff /A/",
+    "kd": "44-29",
+    "source": "CHANGELOG.md 0.15.1, How it was tested: markeloff 44-29, HLTV.org's 2010 article, one of the numbers Sujan has (2 Oct 2026)"
+   }
+  ]
+ },
+ "kills": [
+  {
+   "round": 24,
+   "timer": "1:31",
+   "killer": "Na`Vi f0cuswOw~",
+   "victim": "mTw.Mindfactory | ave",
+   "gun": null,
+   "expected": "loose",
+   "source": "docs/review-answers.md, \"Wallbang fix check, 0.22.1\" (24 Oct 2026), \"Dropped: part of the victim in view\": Yes, part of him was in view (Sujan, 24 Oct 2026); LOOSE from 50 pixels in view, still listed (STATE.md Decisions, Sujan, 25 Oct 2026)"
+  },
+  {
+   "round": 26,
+   "timer": null,
+   "killer": "mTw.Mindfactory | minet",
+   "victim": "Na`Vi ceh9 /A/",
+   "gun": null,
+   "expected": "none",
+   "source": "IDEAS-ARCHIVE.md, \"Wallbangs and kill timing\", the 5 Oct 2026 denser check answers (Sujan, 5 Oct 2026): the victim was seen; timer left empty: the note's 1:16 is from before 0.18.0 counted round timers in game time (CHANGELOG.md 0.18.0)"
+  }
+ ]
+}

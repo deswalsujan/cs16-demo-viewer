@@ -1,0 +1,18 @@
+{
+ "demo": "SK_vs_e-STRO_WCG2008-0811081854-de_dust2.dem",
+ "sha256": "d11acab6cb6d77df9607e6117865c15b0905d08c1909d66049787a26072b244f",
+ "match": "SK vs eSTRO, Dust2, WCG 2008, the 5-minute file with SK only",
+ "event": "WCG 2008, semi-final (8 Nov 2008)",
+ "map": "de_dust2",
+ "kills": [
+  {
+   "round": 1,
+   "timer": "1:35",
+   "killer": "SKWEDEN Tentpole <3 Tezz",
+   "victim": "SKWEDEN zet",
+   "gun": null,
+   "expected": "none",
+   "source": "docs/review-answers.md, \"Loose wallbang check\" (27 and 28 Oct 2026), k23000: loose; not listed since 0.24.0, by the same-spray rule: the killer's last bullet that only a surface explains came 1.75 s before the kill, and a loose wallbang from damage needs one 0.5 s or less before it (STATE.md Decisions, Sujan, 28 Oct 2026). Changed to none as Sujan asked (30 Oct 2026), from the finder's own numbers"
+  }
+ ]
+}

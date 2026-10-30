@@ -1,0 +1,27 @@
+{
+ "demo": "mtw.tyloo.estars-0907250910-de_nuke.dem",
+ "sha256": "3cbe4c510742b9343884904631665ad9b723f502fa7f6b05a7c726d28c24d1cf",
+ "match": "tyloo vs mTw, Nuke, e-Stars Seoul 2009",
+ "event": "e-Stars Seoul 2009 (25 Jul 2009 by the file name)",
+ "map": "de_nuke",
+ "kills": [
+  {
+   "round": 4,
+   "timer": "1:03",
+   "killer": "tyloo Xuefeng ' xf ' Lai",
+   "victim": "mTw.Mindfactory | ave",
+   "gun": null,
+   "expected": "none",
+   "source": "CHANGELOG.md 0.22.0, Fixed, \"Kills through what bullets break\": Xuefeng on ave through the upper window; what bullets break isn't cover (STATE.md Decisions, Sujan, 23 Oct 2026); tests/DEMOS.md: the demo was added by Sujan for this kill"
+  },
+  {
+   "round": 22,
+   "timer": "1:11",
+   "killer": "mTw.Mindfactory | Sunde",
+   "victim": "tyloo Xuefeng ' xf ' Lai",
+   "gun": null,
+   "expected": "none",
+   "source": "docs/review-answers.md, \"Wallbang fix check, 0.22.1\" (24 Oct 2026), \"Nuke's upper windows\": Yes, through the glass: right to drop (Sujan, 24 Oct 2026); what bullets break isn't cover (STATE.md Decisions, Sujan, 23 Oct 2026)"
+  }
+ ]
+}

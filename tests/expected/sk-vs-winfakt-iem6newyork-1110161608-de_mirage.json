@@ -1,0 +1,59 @@
+{
+ "demo": "sk-vs-winfakt-iem6newyork-1110161608-de_mirage.dem",
+ "sha256": "b0a46f21d26c2f6b6214818f541cd0fab243b14d26696c3ac0fa7ca0f33f4940",
+ "match": "SK vs WinFakt, Mirage, IEM6 New York",
+ "event": "IEM6 Global Challenge New York, final (16 Oct 2011)",
+ "map": "de_mirage",
+ "score": {
+  "value": "16:8",
+  "live": 24,
+  "source": "CHANGELOG.md 0.14.2, How it was tested, the 0.14.1 against 0.14.2 table: 16:8, HLTV.org's report of the final; live rounds: the two numbers added"
+ },
+ "kills": [
+  {
+   "round": 4,
+   "timer": "0:37",
+   "killer": "SK.face",
+   "victim": "WinFakt JiGetus =)DD",
+   "gun": null,
+   "expected": "loose-damage",
+   "source": "docs/review-answers.md, \"Loose wallbang check\" (27 and 28 Oct 2026), k20004: loose; the later answer, over IDEAS-ARCHIVE.md, \"The wallbangs that changed in 0.13.0\": no longer listed, R4 0:37 face M4 on JiGetus, confirmed in the game's demo player (Sujan, 3 Oct 2026), before loose wallbangs existed"
+  },
+  {
+   "round": 9,
+   "timer": "0:50",
+   "killer": "SK.RobbaN",
+   "victim": "WinFakt JiGetus =)DD",
+   "gun": "m4a1",
+   "expected": "none",
+   "source": "IDEAS-ARCHIVE.md, \"The wallbangs that changed in 0.13.0\": no longer listed, confirmed in the game's demo player (Sujan, 3 Oct 2026)"
+  },
+  {
+   "round": 14,
+   "timer": "1:09",
+   "killer": "SK.face",
+   "victim": "WinFakt nsutOtO~",
+   "gun": null,
+   "expected": "loose-damage",
+   "source": "docs/review-answers.md, \"Loose wallbang check\" (27 and 28 Oct 2026), k20013: loose"
+  },
+  {
+   "round": 17,
+   "timer": "1:26",
+   "killer": "WinFakt i'M(BA-SiC)K[T_T]",
+   "victim": "SK.Delpan <3 Johan Wedel",
+   "gun": "famas",
+   "expected": "none",
+   "source": "IDEAS-ARCHIVE.md, \"The wallbangs that changed in 0.13.0\": no longer listed, confirmed in the game's demo player (Sujan, 3 Oct 2026); listed there as R19, the number 0.13.0 gave it: 0.14.2 stopped counting two rounds played past the half on this demo (CHANGELOG.md 0.14.2, 17:9 to 16:8), so the same kill (1:26, FAMAS) is R17"
+  },
+  {
+   "round": 18,
+   "timer": "0:20",
+   "killer": "SK.GeT_RiGhT -A-",
+   "victim": "WinFakt nsutOtO~",
+   "gun": null,
+   "expected": "loose-damage",
+   "source": "docs/review-answers.md, \"Loose wallbang check\" (27 and 28 Oct 2026), k20015: loose"
+  }
+ ]
+}

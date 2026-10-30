@@ -1,0 +1,27 @@
+{
+ "demo": "fnatic-vs-m5-dhs11-1106191035-de_nuke.dem",
+ "sha256": "ac22a440665cac47258f4d9dea9fd345c8b3c0c5714a805f9ea665a2b15dbd46",
+ "match": "fnatic vs Moscow Five, Nuke, DreamHack Summer 2011",
+ "event": "DreamHack Summer 2011 (19 Jun 2011)",
+ "map": "de_nuke",
+ "kills": [
+  {
+   "round": 2,
+   "timer": "1:13",
+   "killer": "M5 Dosia[v]",
+   "victim": "[fnaticMSI.cArn]",
+   "gun": "m4a1",
+   "expected": "none",
+   "source": "IDEAS-ARCHIVE.md, the 0.24.0 item: \"Sujan checked it in the game's demo player (26 Oct 2026, two screenshots at the kill feed): not a wallbang\"; CHANGELOG.md 0.24.0, Discussed, not changed"
+  },
+  {
+   "round": 14,
+   "timer": "C4 0:17",
+   "killer": "[fnaticMSI.Xizt]",
+   "victim": "M5 ED1K 5x5 AP DNISHE GO",
+   "gun": null,
+   "expected": "loose",
+   "source": "docs/review-answers.md, \"Wallbang fix check, 0.22.1\" (24 Oct 2026), \"Kept: the closest calls\": No, part of him was in view (Sujan, 24 Oct 2026); LOOSE from 50 pixels in view, still listed (STATE.md Decisions, Sujan, 25 Oct 2026)"
+  }
+ ]
+}

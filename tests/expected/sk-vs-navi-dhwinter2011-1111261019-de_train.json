@@ -1,0 +1,141 @@
+{
+ "demo": "sk-vs-navi-dhwinter2011-1111261019-de_train.dem",
+ "sha256": "ddd178a207efa59d506bf5b4d298eca7b75768d4e6b42f78fa60cd10030d9243",
+ "match": "SK vs Na`Vi, Train, DreamHack Winter 2011",
+ "event": "DreamHack Winter 2011, quarter-final, map 2 (26 Nov 2011)",
+ "map": "de_train",
+ "score": {
+  "value": "25:23",
+  "live": 48,
+  "source": "CHANGELOG.md 0.15.1, How it was tested: Na`Vi 25-23 after three overtimes (HLTV.org's report); which team is written first isn't said; live rounds: the two numbers added",
+  "any_order": true
+ },
+ "kd": [
+  {
+   "player": "Na`Vi markeloff ~~~",
+   "kd": "50-29",
+   "source": "CHANGELOG.md 0.15.1, How it was tested: markeloff 50-29 (Sujan, 2 Oct 2026)"
+  }
+ ],
+ "kills": [
+  {
+   "round": 7,
+   "timer": "0:23",
+   "killer": "Na`Vi markeloff ~~~",
+   "victim": "SK.Delpan <3 Johan Wedel",
+   "gun": null,
+   "expected": "loose-damage",
+   "source": "docs/review-answers.md, \"Loose wallbang check\" (27 and 28 Oct 2026), k19009: loose"
+  },
+  {
+   "round": 8,
+   "timer": "1:27",
+   "killer": "Na`Vi ceh9 32-33y",
+   "victim": "SK.f0rest",
+   "gun": null,
+   "expected": "loose-damage",
+   "known_gap": "the finder gives f0rest's 11 HP hit 0.41 s before the kill to no one: ceh9's crosshair was 99 units off him, past the 64 units it allows with a second enemy near, a rule of the finder's own (CHANGELOG.md 0.24.0; IDEAS-ARCHIVE.md, the 0.24.0 item), not one of Sujan's decisions; ceh9's last bullet it counts came 1.12 s before. Kept loose with this known gap, Sujan, 30 Oct 2026 (STATE.md Decisions, \"The 10 kills the first run disagreed on\")",
+   "source": "docs/review-answers.md, \"Loose wallbang check\" (27 and 28 Oct 2026), k19011: loose"
+  },
+  {
+   "round": 9,
+   "timer": "0:04",
+   "killer": "Na`Vi markeloff ~~~",
+   "victim": "SK.Delpan <3 Johan Wedel",
+   "gun": null,
+   "expected": "loose-damage",
+   "source": "docs/review-answers.md, \"Loose wallbang check\" (27 and 28 Oct 2026), k19013: loose"
+  },
+  {
+   "round": 19,
+   "timer": "1:13",
+   "killer": "SK.GeT_RiGhT -A-",
+   "victim": "Na`Vi starix",
+   "gun": null,
+   "expected": "loose-damage",
+   "source": "docs/review-answers.md, \"Loose wallbang check\" (27 and 28 Oct 2026), k19020: loose; the later answer, over IDEAS-ARCHIVE.md, \"Wallbangs and kill timing\", the 5 Oct 2026 denser check answers (Sujan, 5 Oct 2026): the victim was seen"
+  },
+  {
+   "round": 19,
+   "timer": "0:53",
+   "killer": "SK.face",
+   "victim": "Na`Vi markeloff ~~~",
+   "gun": null,
+   "expected": "loose-damage",
+   "source": "docs/review-answers.md, \"Loose wallbang check\" (27 and 28 Oct 2026), k19021: loose"
+  },
+  {
+   "round": 23,
+   "timer": "1:15",
+   "killer": "Na`Vi starix",
+   "victim": "SK.RobbaN",
+   "gun": null,
+   "expected": "loose-damage",
+   "source": "docs/review-answers.md, \"Loose wallbang check\" (27 and 28 Oct 2026), k19025: loose"
+  },
+  {
+   "round": 25,
+   "timer": "1:09",
+   "killer": "SK.RobbaN",
+   "victim": "Na`Vi starix",
+   "gun": null,
+   "expected": "loose-damage",
+   "source": "docs/review-answers.md, \"Loose wallbang check\" (27 and 28 Oct 2026), k19027: loose"
+  },
+  {
+   "round": 26,
+   "timer": "0:26",
+   "killer": "Na`Vi ceh9 32-33y",
+   "victim": "SK.GeT_RiGhT -A-",
+   "gun": null,
+   "expected": "loose-damage",
+   "source": "docs/review-answers.md, \"Loose wallbang check\" (27 and 28 Oct 2026), k19028: loose"
+  },
+  {
+   "round": 39,
+   "timer": "C4 0:24",
+   "killer": "Na`Vi starix",
+   "victim": "SK.face",
+   "gun": null,
+   "expected": "loose-damage",
+   "source": "docs/review-answers.md, \"Loose wallbang check\" (27 and 28 Oct 2026), k19042: loose"
+  },
+  {
+   "round": 40,
+   "timer": "1:25",
+   "killer": "Na`Vi markeloff ~~~",
+   "victim": "SK.Delpan <3 Johan Wedel",
+   "gun": null,
+   "expected": "strict",
+   "known_gap": "the finder's 15 points see part of the victim, and the hidden check was left as in 0.17.0 after the denser check wasn't conclusive (STATE.md Decisions, Sujan, 5 Oct 2026); strict with this known gap, Sujan, 30 Oct 2026 (STATE.md Decisions, \"The 10 kills the first run disagreed on\")",
+   "source": "IDEAS-ARCHIVE.md, \"Wallbangs and kill timing\", the 5 Oct 2026 denser check answers (Sujan, 5 Oct 2026): hidden, right"
+  },
+  {
+   "round": 45,
+   "timer": "0:24",
+   "killer": "SK.GeT_RiGhT -A-",
+   "victim": "Na`Vi starix",
+   "gun": null,
+   "expected": "none",
+   "source": "docs/review-answers.md, \"Loose wallbang check\" (27 and 28 Oct 2026), k19052: loose; not listed since 0.24.0, by the same-spray rule: the killer's last bullet that only a surface explains came 0.80 s before the kill, and a loose wallbang from damage needs one 0.5 s or less before it (STATE.md Decisions, Sujan, 28 Oct 2026). Changed to none as Sujan asked (30 Oct 2026), from the finder's own numbers"
+  },
+  {
+   "round": 46,
+   "timer": "C4 0:01",
+   "killer": "Na`Vi markeloff ~~~",
+   "victim": "SK.RobbaN",
+   "gun": "awp",
+   "expected": "none",
+   "source": "IDEAS-ARCHIVE.md, \"Wallbangs and kill timing\": the five kills 0.15.5 no longer lists as wallbangs really aren't wallbangs (Sujan, 2 Oct 2026); CHANGELOG.md 0.15.5"
+  },
+  {
+   "round": 47,
+   "timer": "1:37",
+   "killer": "SK.Delpan <3 Johan Wedel",
+   "victim": "Na`Vi edzie",
+   "gun": "awp",
+   "expected": "none",
+   "source": "IDEAS-ARCHIVE.md, \"Wallbangs and kill timing\": the five kills 0.15.5 no longer lists as wallbangs really aren't wallbangs (Sujan, 2 Oct 2026); CHANGELOG.md 0.15.5"
+  }
+ ]
+}

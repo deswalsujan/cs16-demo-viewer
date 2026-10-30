@@ -1,0 +1,72 @@
+{
+ "demo": "1110231216--auto_de_tuscan.dem_Fnatic-vs-mousesports.dem",
+ "sha256": "9ae9201a2c7fc2c7c385b9bda83469d60cc8b159e69dc2725dc126cc76eab9df",
+ "match": "Fnatic vs mousesports, Tuscan, ESWC 2011",
+ "event": "ESWC 2011 (Paris, 21 to 24 Oct 2011)",
+ "map": "de_tuscan",
+ "kills": [
+  {
+   "round": 5,
+   "timer": "C4 0:05",
+   "killer": "mousesports | zonixx",
+   "victim": "fnaticMSI Gux <3 pingu",
+   "gun": null,
+   "expected": "loose-damage",
+   "source": "docs/review-answers.md, \"Loose wallbang check\" (27 and 28 Oct 2026), k12003: loose"
+  },
+  {
+   "round": 7,
+   "timer": "0:33",
+   "killer": "fnaticMSI Xizt",
+   "victim": "mousesports | gob  b",
+   "gun": null,
+   "expected": "none",
+   "source": "docs/review-answers.md, \"Loose wallbang check\" (27 and 28 Oct 2026), k12006: loose; not listed since 0.24.0, by the same-spray rule: the killer's last bullet that only a surface explains came 1.06 s before the kill, and a loose wallbang from damage needs one 0.5 s or less before it (STATE.md Decisions, Sujan, 28 Oct 2026). Changed to none as Sujan asked (30 Oct 2026), from the finder's own numbers"
+  },
+  {
+   "round": 8,
+   "timer": "1:01",
+   "killer": "mousesports | ninja",
+   "victim": "fnaticMSI pita /iBRA/",
+   "gun": null,
+   "expected": "loose-damage",
+   "source": "docs/review-answers.md, \"Loose wallbang check\" (27 and 28 Oct 2026), k12008: loose"
+  },
+  {
+   "round": 13,
+   "timer": "1:17",
+   "killer": "mousesports | ninja",
+   "victim": "fnaticMSI cArn",
+   "gun": null,
+   "expected": "loose-damage",
+   "source": "docs/review-answers.md, \"Loose wallbang check\" (27 and 28 Oct 2026), k12012: loose"
+  },
+  {
+   "round": 14,
+   "timer": "1:05",
+   "killer": "fnaticMSI Gux <3 pingu",
+   "victim": "mousesports | zonixx",
+   "gun": null,
+   "expected": "loose-damage",
+   "source": "docs/review-answers.md, \"Loose wallbang check\" (27 and 28 Oct 2026), k12013: loose"
+  },
+  {
+   "round": 24,
+   "timer": "0:37",
+   "killer": "fnaticMSI Xizt",
+   "victim": "mousesports | zonixx",
+   "gun": null,
+   "expected": "loose-damage",
+   "source": "docs/review-answers.md, \"Loose wallbang check\" (27 and 28 Oct 2026), k12017: loose"
+  },
+  {
+   "round": 25,
+   "timer": "0:59",
+   "killer": "mousesports | roman[K]",
+   "victim": "fnaticMSI Gux <3 pingu",
+   "gun": null,
+   "expected": "loose-damage",
+   "source": "docs/review-answers.md, \"Loose wallbang check\" (27 and 28 Oct 2026), k12019: loose"
+  }
+ ]
+}

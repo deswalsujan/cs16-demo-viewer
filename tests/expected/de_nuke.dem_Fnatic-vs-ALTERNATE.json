@@ -1,0 +1,81 @@
+{
+ "demo": "de_nuke.dem_Fnatic-vs-ALTERNATE.dem",
+ "sha256": "12b0f42d2d9350a980f231b971ea403343d217e95b6dd5558fe89d4f946851b1",
+ "match": "Fnatic vs ALTERNATE, Nuke, ESWC 2011",
+ "event": "ESWC 2011",
+ "map": "de_nuke",
+ "kills": [
+  {
+   "round": 3,
+   "timer": "0:36",
+   "killer": "fnaticMSI Xizt",
+   "victim": "ALTERNATE aTTaX | ROMAN R",
+   "gun": null,
+   "expected": "none",
+   "source": "docs/review-answers.md, \"Loose wallbang check\" (27 and 28 Oct 2026), k11001: loose; not listed since 0.24.0, by the same-spray rule: the killer's last bullet that only a surface explains came 1.14 s before the kill, and a loose wallbang from damage needs one 0.5 s or less before it (STATE.md Decisions, Sujan, 28 Oct 2026). Changed to none as Sujan asked (30 Oct 2026), from the finder's own numbers"
+  },
+  {
+   "round": 6,
+   "timer": "1:05",
+   "killer": "ALTERNATE aTTaX | apxwOw~",
+   "victim": "fnaticMSI CARN",
+   "gun": null,
+   "expected": "loose-damage",
+   "source": "docs/review-answers.md, \"Loose wallbang check\" (27 and 28 Oct 2026), k11004: loose"
+  },
+  {
+   "round": 7,
+   "timer": "1:10",
+   "killer": "ALTERNATE aTTaX | apxwOw~",
+   "victim": "fnaticMSI CARN",
+   "gun": null,
+   "expected": "loose-damage",
+   "source": "docs/review-answers.md, \"Loose wallbang check\" (27 and 28 Oct 2026), k11005: loose"
+  },
+  {
+   "round": 10,
+   "timer": "0:20",
+   "killer": "fnaticMSI fR11$+-",
+   "victim": "ALTERNATE aTTaX | apxwOw~",
+   "gun": null,
+   "expected": "loose-damage",
+   "source": "docs/review-answers.md, \"Loose wallbang check\" (27 and 28 Oct 2026), k11007: loose"
+  },
+  {
+   "round": 18,
+   "timer": "1:12",
+   "killer": "fnaticMSI pita",
+   "victim": "ALTERNATE aTTaX | hool",
+   "gun": null,
+   "expected": "loose-damage",
+   "source": "docs/review-answers.md, \"Loose wallbang check\" (27 and 28 Oct 2026), k11009: loose"
+  },
+  {
+   "round": 20,
+   "timer": "0:40",
+   "killer": "ALTERNATE aTTaX | hool",
+   "victim": "fnaticMSI fR11$+-",
+   "gun": null,
+   "expected": "loose-damage",
+   "source": "docs/review-answers.md, \"Loose wallbang check\" (27 and 28 Oct 2026), k11010: unsure; docs/review-answers.md, \"Loose wallbang check\", \"Settled later in chat\" (Sujan by eye, 30 Oct 2026): [loose]"
+  },
+  {
+   "round": 21,
+   "timer": "0:52",
+   "killer": "ALTERNATE aTTaX | apxwOw~",
+   "victim": "fnaticMSI Xizt",
+   "gun": null,
+   "expected": "loose-damage",
+   "source": "docs/review-answers.md, \"Loose wallbang check\" (27 and 28 Oct 2026), k11012: loose"
+  },
+  {
+   "round": 23,
+   "timer": "C4 0:33",
+   "killer": "ALTERNATE aTTaX | hool",
+   "victim": "fnaticMSI fR11$+-",
+   "gun": null,
+   "expected": "loose-damage",
+   "source": "docs/review-answers.md, \"Loose wallbang check\" (27 and 28 Oct 2026), k11014: loose"
+  }
+ ]
+}

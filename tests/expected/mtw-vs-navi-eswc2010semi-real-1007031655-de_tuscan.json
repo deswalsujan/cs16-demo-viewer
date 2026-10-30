@@ -1,0 +1,18 @@
+{
+ "demo": "mtw-vs-navi-eswc2010semi-real-1007031655-de_tuscan.dem",
+ "sha256": "11f59c63492e75895821f734cf2e726f553d1085c5052d2968bdc4e2711caf07",
+ "match": "mTw vs Na`Vi, Tuscan, ESWC 2010 semi-final, file -1655-",
+ "event": "ESWC 2010, semi-final (3 Jul 2010); Tuscan was map 2, Train map 3",
+ "map": "de_tuscan",
+ "kills": [
+  {
+   "round": 6,
+   "timer": "C4 0:25",
+   "killer": "mTw.Mindfactory | minet",
+   "victim": "Na`Vi ceh9 /A/",
+   "gun": null,
+   "expected": "loose",
+   "source": "docs/review-answers.md, \"Wallbang fix check, 0.22.1\" (24 Oct 2026), \"Kept: the closest calls\": No, part of him was in view (Sujan, 24 Oct 2026); LOOSE from 50 pixels in view, still listed (STATE.md Decisions, Sujan, 25 Oct 2026)"
+  }
+ ]
+}

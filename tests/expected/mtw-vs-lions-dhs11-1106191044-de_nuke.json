@@ -1,0 +1,23 @@
+{
+ "demo": "mtw-vs-lions-dhs11-1106191044-de_nuke.dem",
+ "sha256": "b726f7fdde0e5cd69f0f7a5e884163e6b70bacf3151d0d9ac01e787e75e22cae",
+ "match": "mTw vs Lions, Nuke, DreamHack Summer 2011",
+ "event": "DreamHack Summer 2011 (19 Jun 2011)",
+ "map": "de_nuke",
+ "score": {
+  "value": "10:16",
+  "live": 26,
+  "source": "CHANGELOG.md 0.14.2, How it was tested, the 0.14.1 against 0.14.2 table: 10:16, checked against Sujan (2 Oct 2026); live rounds: the two numbers added"
+ },
+ "kills": [
+  {
+   "round": 8,
+   "timer": null,
+   "killer": "mTw | NoSound",
+   "victim": "LIONS SNAJDINHOOOAOAOAO",
+   "gun": "m4a1",
+   "expected": "wallbang",
+   "source": "docs/review-answers.md, \"Wallbang hits check\" (25 and 26 Oct 2026), b18: yes (the burst ends in this wallbang kill); strict or LOOSE not said"
+  }
+ ]
+}

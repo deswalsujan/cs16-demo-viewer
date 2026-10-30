@@ -1,0 +1,76 @@
+{
+ "demo": "fx-vs-mtw-xperia2011-1104240025-de_inferno.dem",
+ "sha256": "28dc6796c3e19e211714e8b72b6ce5c46f9e83ebb490d5fc8400e99bae9801a6",
+ "match": "FX vs mTw, Inferno, Xperia Play 2011, part 1",
+ "event": "Xperia Play 2011 (24 Apr 2011)",
+ "map": "de_inferno",
+ "score": {
+  "value": "6:9",
+  "live": 15,
+  "source": "CHANGELOG.md 0.14.2, How it was tested, the 0.14.1 against 0.14.2 table: file 1 6:9, checked against Sujan (2 Oct 2026); live rounds: the two numbers added"
+ },
+ "joined": {
+  "parts": [
+   "fx-vs-mtw-xperia2011-1104240025-de_inferno.dem",
+   "fx-vs-mtw-xperia2011-1104240112-de_inferno.dem"
+  ],
+  "sha256": [
+   "28dc6796c3e19e211714e8b72b6ce5c46f9e83ebb490d5fc8400e99bae9801a6",
+   "260f1fc7592a95da5be13e720573928c2e3bf63d47cadec350f48ca831181c53"
+  ],
+  "kd": [
+   {
+    "player": "Frag eXecutors  NEO[t]",
+    "kd": "33-28",
+    "source": "CHANGELOG.md 0.14.2, How it was tested and CHANGELOG.md 0.15.0, How it was tested: NEO 33-28 joined, Sujan's number (2 Oct 2026)"
+   }
+  ]
+ },
+ "kills": [
+  {
+   "round": 3,
+   "timer": "1:08",
+   "killer": "Frag eXecutors  Loord",
+   "victim": "zonic@mymTw.com",
+   "gun": null,
+   "expected": "loose-damage",
+   "source": "docs/review-answers.md, \"Loose wallbang check\" (27 and 28 Oct 2026), k07001: loose"
+  },
+  {
+   "round": 6,
+   "timer": "0:17",
+   "killer": "Frag eXecutors  PASHA[t]",
+   "victim": "zonic@mymTw.com",
+   "gun": null,
+   "expected": "loose-damage",
+   "source": "docs/review-answers.md, \"Loose wallbang check\" (27 and 28 Oct 2026), k07002: loose"
+  },
+  {
+   "round": 6,
+   "timer": "0:16",
+   "killer": "trace@mymTw.com",
+   "victim": "Frag eXecutors  PASHA[t]",
+   "gun": null,
+   "expected": "loose-damage",
+   "source": "docs/review-answers.md, \"Loose wallbang check\" (27 and 28 Oct 2026), k07003: loose"
+  },
+  {
+   "round": 9,
+   "timer": "0:53",
+   "killer": "ave@mymTw.com",
+   "victim": "Frag eXecutors  PASHA[t]",
+   "gun": null,
+   "expected": "strict",
+   "source": "docs/review-answers.md, \"Wallbang fix check, 0.22.1\" (24 Oct 2026), \"Inferno's lamp posts\": Yes, fully hidden (Sujan, 24 Oct 2026)"
+  },
+  {
+   "round": 15,
+   "timer": "1:19",
+   "killer": "ArcadioN@mymTw.com",
+   "victim": "Frag eXecutors  KUBEN[t]",
+   "gun": null,
+   "expected": "loose-damage",
+   "source": "docs/review-answers.md, \"Loose wallbang check\" (27 and 28 Oct 2026), k07008: loose"
+  }
+ ]
+}

@@ -8,6 +8,13 @@ Only what is open stays here. An open item keeps a three-line header (Status, Ne
 
 Everything raised in conversation that isn't finished, in one place. Each item says who does it. Ideas for new features are further down; this list is for loose ends.
 
+**Wallbang ground truth** (30 Oct 2026; `tests/ground_truth_check.py`, `tests/expected/`, rules in `tests/README.md`)
+- Done, in the archive: the 10 kills where Sujan's answer and the viewer disagreed (answered 30 Oct 2026).
+- [ ] **The 0.5 s window misses a hit at 0.5 s by rounding**
+  - Status: found 30 Oct 2026 by the ground truth check: Darky on n0rx, k1ck vs eq, Nuke, DreamHack Winter 2011, R15 C4 0:10, has a bullet only a surface explains 0.500244 s before the kill, so `k.t - p.t <= 0.5` in `computeHits` (`src/ui/wallbangs.js`) leaves it out by a quarter of a millisecond; the expected file has it as `loose-damage` with a `known_gap`.
+  - Next step: Claude, in its own pull request: allow for rounding at 0.5 s, then drop that kill's `known_gap` and run `ground_truth_check.py`.
+  - Decided so far: loose from damage needs a bullet 0.5 s or less before the kill (Sujan, 28 Oct 2026); this one is meant to count (Sujan, 30 Oct 2026).
+
 **Sujan's feedback of 23 Oct 2026** (HLTV viewer; built in 0.22.0 unless said; demos and events in `tests/DEMOS.md`)
 - Done, in the archive: **Republish the claude.ai viewer**, closed 29 Oct 2026 without republishing (the claude.ai copy stays at 0.23.0, GitHub Pages is the only live viewer, Sujan 29 Oct 2026); Sujan's answers on the 23 Oct review page (24 Oct 2026, on the 0.22.0 fixes), the three levels of wallbang (0.23.0 and 0.24.0), wallbang hits that didn't kill and the damage per wallbang (0.24.0).
 - [ ] **Strict and LOOSE wallbangs, by eye (0.23.0)**
@@ -143,7 +150,7 @@ Ideas from the discussion (3 Oct 2026, not decided):
 - **Bookmarks with notes**, exportable with the same timestamps as the wallbang list.
 - **Sounds on the radar**: gunshots and footsteps as brief pulses in 2D.
 - **Share a moment by link**, such as `#r12` to open round 12.
-- **Product basics still to do**: a compatibility note (browsers, HLTV vs POV demos) and a license.
+- **Product basics still to do**: a compatibility note (browsers, HLTV vs POV demos) and a license (MIT, decided by Sujan 30 Oct 2026; the file comes in a later docs pull request, `STATE.md`).
 - **1.6-era look** (parked, not urgent) as an optional theme: VGUI-style panels, Verdana/Tahoma, orange HUD numbers, sprites read from the player's own `cstrike/sprites`.
 - **Say when a recording stops partway through its last round** (found 2 Oct 2026): mousesports vs SK, Mirage, and ALTERNATE vs AGAiN, Inferno, both ESWC 2011, read one round short of a win; the load summary could say "The recording stops partway through the last round". Belongs with the broken demo messages of 0.16.0; needs a mockup.
 - **Shaded lighting on player models** so they darken in shadowed areas like in-game.

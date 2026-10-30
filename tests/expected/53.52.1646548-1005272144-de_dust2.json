@@ -1,0 +1,115 @@
+{
+ "demo": "53.52.1646548-1005272144-de_dust2.dem",
+ "sha256": "ffc4d90f9a5fc46e12ef6ed2837a9284723ca78a05b6e1f08fdb160fd67f1104",
+ "match": "Sweden vs Norway, Dust2, ASUS ENC 2010",
+ "event": "ASUS ENC 2010 (27 May 2010)",
+ "map": "de_dust2",
+ "kd": [
+  {
+   "player": "SWIIIIIDEEEN  Delpan",
+   "kd": "38-16",
+   "source": "CHANGELOG.md 0.15.1, How it was tested: Delpan 38-16, one of the numbers Sujan has (2 Oct 2026)"
+  }
+ ],
+ "kills": [
+  {
+   "round": 4,
+   "timer": "1:27",
+   "killer": "SWIIIIIDEEEN  Gux",
+   "victim": "NORWAY KORN",
+   "gun": null,
+   "expected": "none",
+   "source": "docs/review-answers.md, \"Loose wallbang check\" (27 and 28 Oct 2026), k27001: loose; not listed since 0.24.0, by the same-spray rule: the killer's last bullet that only a surface explains came 0.51 s before the kill, and a loose wallbang from damage needs one 0.5 s or less before it (STATE.md Decisions, Sujan, 28 Oct 2026). Changed to none as Sujan asked (30 Oct 2026), from the finder's own numbers"
+  },
+  {
+   "round": 9,
+   "timer": "1:40",
+   "killer": "NORWAY RashiE",
+   "victim": "SWIIIIIDEEEN  Delpan",
+   "gun": "awp",
+   "expected": "none",
+   "source": "IDEAS-ARCHIVE.md, \"Wallbangs and kill timing\": the five kills 0.15.5 no longer lists as wallbangs really aren't wallbangs (Sujan, 2 Oct 2026); CHANGELOG.md 0.15.5"
+  },
+  {
+   "round": 9,
+   "timer": "1:34",
+   "killer": "NORWAY RashiE",
+   "victim": "SWIIIIIDEEEN  FoReSt",
+   "gun": "awp",
+   "expected": "none",
+   "source": "IDEAS-ARCHIVE.md, \"Wallbangs and kill timing\": the five kills 0.15.5 no longer lists as wallbangs really aren't wallbangs (Sujan, 2 Oct 2026); CHANGELOG.md 0.15.5"
+  },
+  {
+   "round": 14,
+   "timer": "0:59",
+   "killer": "SWIIIIIDEEEN  Gux",
+   "victim": "NORWAY REAL",
+   "gun": null,
+   "expected": "loose-damage",
+   "source": "docs/review-answers.md, \"Loose wallbang check\" (27 and 28 Oct 2026), k27005: loose"
+  },
+  {
+   "round": 22,
+   "timer": "C4 0:09",
+   "killer": "SWIIIIIDEEEN  Gux",
+   "victim": "NORWAY KORN",
+   "gun": null,
+   "expected": "loose-damage",
+   "source": "docs/review-answers.md, \"Loose wallbang check\" (27 and 28 Oct 2026), k27011: loose"
+  },
+  {
+   "round": 23,
+   "timer": "1:05",
+   "killer": "NORWAY REAL",
+   "victim": "SWIIIIIDEEEN  Delpan",
+   "gun": null,
+   "expected": "loose-damage",
+   "source": "docs/review-answers.md, \"Loose wallbang check\" (27 and 28 Oct 2026), k27012: loose"
+  },
+  {
+   "round": 24,
+   "timer": "1:40",
+   "killer": "SWIIIIIDEEEN  Delpan",
+   "victim": "NORWAY RashiE",
+   "gun": "awp",
+   "expected": "wallbang",
+   "source": "CHANGELOG.md 0.15.5, Fixed: \"Delpan's AWP headshot on RashiE (R24 1:40), which Sujan confirmed as a real wallbang, stays\" (2 Oct 2026); strict or LOOSE not said"
+  },
+  {
+   "round": 25,
+   "timer": "0:47",
+   "killer": "SWIIIIIDEEEN  Gux",
+   "victim": "NORWAY kalle",
+   "gun": null,
+   "expected": "loose-damage",
+   "source": "docs/review-answers.md, \"Loose wallbang check\" (27 and 28 Oct 2026), k27016: loose"
+  },
+  {
+   "round": 26,
+   "timer": "1:28",
+   "killer": "NORWAY REAL",
+   "victim": "SWIIIIIDEEEN  FoReSt",
+   "gun": null,
+   "expected": "loose-damage",
+   "source": "docs/review-answers.md, \"Loose wallbang check\" (27 and 28 Oct 2026), k27019: loose"
+  },
+  {
+   "round": 30,
+   "timer": "0:56",
+   "killer": "NORWAY REAL",
+   "victim": "SWIIIIIDEEEN  FoReSt",
+   "gun": null,
+   "expected": "none",
+   "source": "docs/review-answers.md, \"Loose wallbang check\" (27 and 28 Oct 2026), k27021: loose; not listed since 0.24.0, by the same-spray rule: the killer's last bullet that only a surface explains came 1.00 s before the kill, and a loose wallbang from damage needs one 0.5 s or less before it (STATE.md Decisions, Sujan, 28 Oct 2026). Changed to none as Sujan asked (30 Oct 2026), from the finder's own numbers"
+  },
+  {
+   "round": 30,
+   "timer": "1:41",
+   "killer": "SWIIIIIDEEEN  Delpan",
+   "victim": "NORWAY kalle",
+   "gun": "awp",
+   "expected": "none",
+   "source": "IDEAS-ARCHIVE.md, \"Wallbangs and kill timing\": the five kills 0.15.5 no longer lists as wallbangs really aren't wallbangs (Sujan, 2 Oct 2026); CHANGELOG.md 0.15.5"
+  }
+ ]
+}

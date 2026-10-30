@@ -1,0 +1,99 @@
+{
+ "demo": "SK_vs_e-STRO_WCG2008-0811082043-de_nuke.dem",
+ "sha256": "cb0ce3c532eb2589f0ae50637a5e1b1fd3572f9aebd777a1b74bb22fe56048ec",
+ "match": "SK vs eSTRO, Nuke, WCG 2008",
+ "event": "WCG 2008, semi-final (8 Nov 2008)",
+ "map": "de_nuke",
+ "kills": [
+  {
+   "round": 3,
+   "timer": "1:27",
+   "killer": "SKWEDEN allen <3 Sophie",
+   "victim": "KOREA.eSTRO : bail",
+   "gun": null,
+   "expected": "loose-damage",
+   "source": "docs/review-answers.md, \"Loose wallbang check\" (27 and 28 Oct 2026), k24000: loose"
+  },
+  {
+   "round": 7,
+   "timer": null,
+   "killer": "SKWEDEN RobbaN[alitdg]",
+   "victim": "KOREA.eSTRO : ari",
+   "gun": "m4a1",
+   "expected": "wallbang",
+   "source": "docs/review-answers.md, \"Wallbang hits check\" (25 and 26 Oct 2026), b23: yes (the burst ends in this wallbang kill); strict or LOOSE not said"
+  },
+  {
+   "round": 8,
+   "timer": "0:44",
+   "killer": "KOREA.eSTRO : termi",
+   "victim": "SKWEDEN zet",
+   "gun": null,
+   "expected": "loose-damage",
+   "source": "docs/review-answers.md, \"Loose wallbang check\" (27 and 28 Oct 2026), k24005: loose"
+  },
+  {
+   "round": 10,
+   "timer": "1:22",
+   "killer": "SKWEDEN zet",
+   "victim": "KOREA.eSTRO : solo",
+   "gun": "m4a1",
+   "expected": "wallbang",
+   "source": "docs/review-answers.md, \"Wallbang hits check\" (25 and 26 Oct 2026), b24: yes (the burst ends in this wallbang kill); strict or LOOSE not said"
+  },
+  {
+   "round": 15,
+   "timer": "1:29",
+   "killer": "KOREA.eSTRO : solo",
+   "victim": "SKWEDEN RobbaN[alitdg]",
+   "gun": null,
+   "expected": "none",
+   "source": "docs/review-answers.md, \"Loose wallbang check\" (27 and 28 Oct 2026), k24007: loose; none, Sujan, 30 Oct 2026 (STATE.md Decisions, \"The 10 kills the first run disagreed on\"): solo's bullets 0.43 to 0.22 s before the kill had his teammate termi on the line, and a bullet through another player isn't a wallbang (STATE.md Decisions, Sujan, 28 Oct 2026)"
+  },
+  {
+   "round": 15,
+   "timer": "C4 0:23",
+   "killer": "KOREA.eSTRO : hee",
+   "victim": "SKWEDEN walle",
+   "gun": null,
+   "expected": "loose",
+   "source": "CHANGELOG.md 0.22.0, Fixed, \"Wallbangs where part of the victim was in view\": hee on walle (Sujan, with screenshots, 23 Oct 2026); LOOSE from 50 pixels in view, still listed (STATE.md Decisions, Sujan, 25 Oct 2026)"
+  },
+  {
+   "round": 17,
+   "timer": "0:44",
+   "killer": "SKWEDEN Tentpole <3 Tezz",
+   "victim": "KOREA.eSTRO : termi",
+   "gun": null,
+   "expected": "loose-damage",
+   "source": "docs/review-answers.md, \"Loose wallbang check\" (27 and 28 Oct 2026), k24008: loose"
+  },
+  {
+   "round": 22,
+   "timer": "C4 0:13",
+   "killer": "SKWEDEN zet",
+   "victim": "KOREA.eSTRO : solo",
+   "gun": null,
+   "expected": "none",
+   "source": "CHANGELOG.md 0.22.0, Fixed, \"Kills through what bullets break\": zet on solo through the vent; what bullets break isn't cover (STATE.md Decisions, Sujan, 23 Oct 2026)"
+  },
+  {
+   "round": 23,
+   "timer": null,
+   "killer": "SKWEDEN allen <3 Sophie",
+   "victim": "KOREA.eSTRO : bail",
+   "gun": "ak47",
+   "expected": "wallbang",
+   "source": "docs/review-answers.md, \"Wallbang hits check\" (25 and 26 Oct 2026), b21: yes (the burst ends in this wallbang kill); strict or LOOSE not said"
+  },
+  {
+   "round": 26,
+   "timer": "1:21",
+   "killer": "SKWEDEN RobbaN[alitdg]",
+   "victim": "KOREA.eSTRO : hee",
+   "gun": null,
+   "expected": "wallbang",
+   "source": "CHANGELOG.md 0.22.0, Fixed, \"Kills through what bullets break\": RobbaN on hee stays a wallbang, as Sujan wanted (23 Oct 2026); strict or LOOSE not said"
+  }
+ ]
+}

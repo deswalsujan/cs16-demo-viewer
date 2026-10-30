@@ -1,0 +1,134 @@
+{
+ "demo": "485.53.706623-0803162045-de_train.dem",
+ "sha256": "2fbb765b8c61755ab9eb47a22fa5c2ae62d2af33a5b6f3314a4ce8edd7939f18",
+ "match": "Sweden vs Ukraine, Train, ClanBase NationsCup XI",
+ "event": "ClanBase NationsCup XI (16 Mar 2008 by the file name)",
+ "map": "de_train",
+ "kd": [
+  {
+   "player": "SWEDEN|SpawN",
+   "kd": "28-16",
+   "source": "CHANGELOG.md 0.15.1, How it was tested: SpawN 28-16, one of the numbers Sujan has (2 Oct 2026)"
+  }
+ ],
+ "kills": [
+  {
+   "round": 2,
+   "timer": "1:25",
+   "killer": "[Ukraine] - B1ad3 _R",
+   "victim": "SWEDEN|RobbaN",
+   "gun": null,
+   "expected": "none",
+   "source": "docs/review-answers.md, \"Loose wallbang check\" (27 and 28 Oct 2026), k28000: loose; not listed since 0.24.0, by the same-spray rule: the killer's last bullet that only a surface explains came 0.54 s before the kill, and a loose wallbang from damage needs one 0.5 s or less before it (STATE.md Decisions, Sujan, 28 Oct 2026). Changed to none as Sujan asked (30 Oct 2026), from the finder's own numbers"
+  },
+  {
+   "round": 3,
+   "timer": "0:55",
+   "killer": "SWEDEN|SpawN",
+   "victim": "[Ukraine] - B1ad3 _R",
+   "gun": null,
+   "expected": "loose-damage",
+   "source": "docs/review-answers.md, \"Loose wallbang check\" (27 and 28 Oct 2026), k28001: loose"
+  },
+  {
+   "round": 5,
+   "timer": "1:06",
+   "killer": "SWEDEN|sTriKeR",
+   "victim": "[Ukraine] - LMBT~R~3A HEHbKY!",
+   "gun": null,
+   "expected": "loose-damage",
+   "source": "docs/review-answers.md, \"Loose wallbang check\" (27 and 28 Oct 2026), k28004: loose"
+  },
+  {
+   "round": 7,
+   "timer": "0:44",
+   "killer": "SWEDEN|cArNaGe!",
+   "victim": "[Ukraine] - edzie",
+   "gun": null,
+   "expected": "loose-damage",
+   "source": "docs/review-answers.md, \"Loose wallbang check\" (27 and 28 Oct 2026), k28006: loose"
+  },
+  {
+   "round": 8,
+   "timer": "C4 0:19",
+   "killer": "[Ukraine] - edzie",
+   "victim": "SWEDEN|allen",
+   "gun": null,
+   "expected": "loose-damage",
+   "source": "docs/review-answers.md, \"Loose wallbang check\" (27 and 28 Oct 2026), k28010: loose"
+  },
+  {
+   "round": 9,
+   "timer": "0:59",
+   "killer": "[Ukraine] - B1ad3 _R",
+   "victim": "SWEDEN|RobbaN",
+   "gun": null,
+   "expected": "loose",
+   "source": "docs/review-answers.md, \"Wallbang fix check, 0.22.1\" (24 Oct 2026), \"Dropped: part of the victim in view\": Yes, part of him was in view (Sujan, 24 Oct 2026); LOOSE from 50 pixels in view, still listed (STATE.md Decisions, Sujan, 25 Oct 2026)"
+  },
+  {
+   "round": 14,
+   "timer": "1:34",
+   "killer": "SWEDEN|SpawN",
+   "victim": "[Ukraine] - LMBT~R~3A HEHbKY!",
+   "gun": null,
+   "expected": "loose-damage",
+   "source": "docs/review-answers.md, \"Loose wallbang check\" (27 and 28 Oct 2026), k28016: loose"
+  },
+  {
+   "round": 15,
+   "timer": "1:10",
+   "killer": "SWEDEN|SpawN",
+   "victim": "[Ukraine] - STRIKE",
+   "gun": null,
+   "expected": "loose-damage",
+   "source": "docs/review-answers.md, \"Loose wallbang check\" (27 and 28 Oct 2026), k28019: loose"
+  },
+  {
+   "round": 15,
+   "timer": "0:40",
+   "killer": "[Ukraine] - B1ad3 _R",
+   "victim": "SWEDEN|sTriKeR",
+   "gun": null,
+   "expected": "loose-damage",
+   "source": "docs/review-answers.md, \"Loose wallbang check\" (27 and 28 Oct 2026), k28020: loose"
+  },
+  {
+   "round": 17,
+   "timer": "1:12",
+   "killer": "[Ukraine] - STRIKE",
+   "victim": "SWEDEN|allen",
+   "gun": null,
+   "expected": "none",
+   "source": "docs/review-answers.md, \"Loose wallbang check\" (27 and 28 Oct 2026), k28021: loose; not listed since 0.24.0, by the same-spray rule: the killer's last bullet that only a surface explains came 1.28 s before the kill, and a loose wallbang from damage needs one 0.5 s or less before it (STATE.md Decisions, Sujan, 28 Oct 2026). Changed to none as Sujan asked (30 Oct 2026), from the finder's own numbers"
+  },
+  {
+   "round": 22,
+   "timer": "1:26",
+   "killer": "[Ukraine] - LMBT~R~3A HEHbKY!",
+   "victim": "SWEDEN|RobbaN",
+   "gun": null,
+   "expected": "loose-damage",
+   "known_gap": "the finder leaves out RobbaN's 7 HP hit 0.11 s before the kill because his teammate SpawN fired and aimed at him then, a rule of the finder's own (CHANGELOG.md 0.24.0: \"a teammate of the victim who fired at him then\"), not one of Sujan's decisions; LMBT's last bullet it counts came 0.52 s before. Kept loose with this known gap, Sujan, 30 Oct 2026 (STATE.md Decisions, \"The 10 kills the first run disagreed on\")",
+   "source": "docs/review-answers.md, \"Loose wallbang check\" (27 and 28 Oct 2026), k28024: loose; the later answer, over IDEAS-ARCHIVE.md, \"Wallbangs and kill timing\", the 5 Oct 2026 denser check answers (Sujan, 5 Oct 2026): the victim was seen"
+  },
+  {
+   "round": 22,
+   "timer": "C4 0:07",
+   "killer": "SWEDEN|cArNaGe!",
+   "victim": "[Ukraine] - STRIKE",
+   "gun": null,
+   "expected": "none",
+   "source": "docs/review-answers.md, \"Loose wallbang check\" (27 and 28 Oct 2026), k28025: unsure; docs/review-answers.md, \"Loose wallbang check\", \"Settled later in chat\" (Sujan by eye, 30 Oct 2026): [none]; a bullet through another player isn't a wallbang (STATE.md Decisions, Sujan, 28 Oct 2026)"
+  },
+  {
+   "round": 23,
+   "timer": "1:25",
+   "killer": "SWEDEN|cArNaGe!",
+   "victim": "[Ukraine] - edzie",
+   "gun": null,
+   "expected": "loose",
+   "source": "docs/review-answers.md, \"Wallbang fix check, 0.22.1\" (24 Oct 2026), \"Dropped: part of the victim in view\": Yes, part of him was in view (Sujan, 24 Oct 2026); LOOSE from 50 pixels in view, still listed (STATE.md Decisions, Sujan, 25 Oct 2026)"
+  }
+ ]
+}
