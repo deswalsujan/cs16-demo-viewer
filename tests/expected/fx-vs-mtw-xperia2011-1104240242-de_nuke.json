@@ -1,0 +1,41 @@
+{
+ "demo": "fx-vs-mtw-xperia2011-1104240242-de_nuke.dem",
+ "sha256": "08363d9e17484c9289848a1f79c6dc8b070e81cb7ef23feba26aafc1a736b3af",
+ "match": "FX vs mTw, Nuke, Xperia Play 2011, part 2",
+ "event": "Xperia Play 2011 (24 Apr 2011)",
+ "map": "de_nuke",
+ "score": {
+  "value": "11:15",
+  "live": 26,
+  "source": "CHANGELOG.md 0.14.2, How it was tested, the 0.14.1 against 0.14.2 table: file 2 11:15, checked against Sujan (2 Oct 2026); live rounds: the two numbers added"
+ },
+ "kills": [
+  {
+   "round": 4,
+   "timer": "0:39",
+   "killer": "zonic@mymTw.com",
+   "victim": "Frag eXecutors  TaZ",
+   "gun": null,
+   "expected": "none",
+   "source": "docs/review-answers.md, \"Loose wallbang check\" (27 and 28 Oct 2026), k10001: loose; not listed since 0.24.0, by the same-spray rule: the killer's last bullet that only a surface explains came 1.10 s before the kill, and a loose wallbang from damage needs one 0.5 s or less before it (STATE.md Decisions, Sujan, 28 Oct 2026); a hit 0.40 s before couldn't be given to anyone, ave and dennis aiming about as close, and zonic wasn't one of them. Changed to none as Sujan asked (30 Oct 2026), from the finder's own numbers"
+  },
+  {
+   "round": 25,
+   "timer": "0:38",
+   "killer": "Frag eXecutors  NEO[t]",
+   "victim": "minet@mymTw.com",
+   "gun": null,
+   "expected": "loose-damage",
+   "source": "docs/review-answers.md, \"Loose wallbang check\" (27 and 28 Oct 2026), k10016: loose"
+  },
+  {
+   "round": 26,
+   "timer": "1:30",
+   "killer": "Frag eXecutors  KUBEN[t]",
+   "victim": "trace@mymTw.com",
+   "gun": null,
+   "expected": "loose-damage",
+   "source": "docs/review-answers.md, \"Loose wallbang check\" (27 and 28 Oct 2026), k10017: loose; docs/review-answers.md, \"Loose wallbang check\", \"Settled later in chat\" (Sujan by eye, 30 Oct 2026): [loose], over \"hidden\" in IDEAS-ARCHIVE.md, \"Wallbangs and kill timing\", the 5 Oct 2026 denser check answers (Sujan, 5 Oct 2026)"
+  }
+ ]
+}

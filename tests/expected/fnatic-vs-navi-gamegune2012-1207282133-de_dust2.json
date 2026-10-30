@@ -1,0 +1,27 @@
+{
+ "demo": "fnatic-vs-navi-gamegune2012-1207282133-de_dust2.dem",
+ "sha256": "cb975f767b66e54ede45cff76fc6c6cdd901345524a48a3a8af382878ec15552",
+ "match": "fnatic vs Na`Vi, Dust2, GameGune 2012 final",
+ "event": "GameGune 2012, grand final, map 1 (28 Jul 2012)",
+ "map": "de_dust2",
+ "kills": [
+  {
+   "round": 12,
+   "timer": "C4 0:04",
+   "killer": "Na`Vi starix",
+   "victim": "fnaticRC f0restBambiJQgarN^",
+   "gun": null,
+   "expected": "loose",
+   "source": "docs/review-answers.md, \"Wallbang fix check, 0.22.1\" (24 Oct 2026), \"Dropped: part of the victim in view\": Yes, part of him was in view (Sujan, 24 Oct 2026); LOOSE from 50 pixels in view, still listed (STATE.md Decisions, Sujan, 25 Oct 2026)"
+  },
+  {
+   "round": 20,
+   "timer": "0:36",
+   "killer": "Na`Vi markeloff",
+   "victim": "fnaticRC Xizt",
+   "gun": "awp",
+   "expected": "loose",
+   "source": "docs/review-answers.md, \"Wallbang fix check, 0.22.1\" (24 Oct 2026), \"Dropped: part of the victim in view\": Yes, part of him was in view (Sujan, 24 Oct 2026); LOOSE from 50 pixels in view, still listed (STATE.md Decisions, Sujan, 25 Oct 2026)"
+  }
+ ]
+}

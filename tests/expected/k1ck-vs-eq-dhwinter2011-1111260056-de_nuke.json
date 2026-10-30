@@ -1,0 +1,106 @@
+{
+ "demo": "k1ck-vs-eq-dhwinter2011-1111260056-de_nuke.dem",
+ "sha256": "893580d1af6c7fd4e89b61792684185b7464c12fe5526742b5019c5b0de4d439",
+ "match": "k1ck vs eq, Nuke, DreamHack Winter 2011",
+ "event": "DreamHack Winter 2011, group D (26 Nov 2011)",
+ "map": "de_nuke",
+ "kd": [
+  {
+   "player": "-Eq- SeDaN",
+   "kd": "28-11",
+   "source": "CHANGELOG.md 0.15.1, How it was tested: SeDaN 28-11, one of the numbers Sujan has (2 Oct 2026)"
+  }
+ ],
+ "kills": [
+  {
+   "round": 2,
+   "timer": "1:18",
+   "killer": "K1CK spekz",
+   "victim": "-Eq- DECE[A] *",
+   "gun": null,
+   "expected": "loose-damage",
+   "source": "docs/review-answers.md, \"Loose wallbang check\" (27 and 28 Oct 2026), k37000: loose"
+  },
+  {
+   "round": 2,
+   "timer": "1:11",
+   "killer": "K1CK mUtcb",
+   "victim": "-Eq- Darky",
+   "gun": null,
+   "expected": "loose-damage",
+   "source": "docs/review-answers.md, \"Loose wallbang check\" (27 and 28 Oct 2026), k37001: loose"
+  },
+  {
+   "round": 6,
+   "timer": "1:25",
+   "killer": "-Eq- DECE[A] *",
+   "victim": "K1CK n0rx     <pacheco>",
+   "gun": null,
+   "expected": "loose-damage",
+   "source": "docs/review-answers.md, \"Loose wallbang check\" (27 and 28 Oct 2026), k37003: loose"
+  },
+  {
+   "round": 10,
+   "timer": "1:29",
+   "killer": "K1CK n0rx     <pacheco>",
+   "victim": "-Eq- DECE[A] *",
+   "gun": null,
+   "expected": "loose-damage",
+   "source": "docs/review-answers.md, \"Loose wallbang check\" (27 and 28 Oct 2026), k37005: loose"
+  },
+  {
+   "round": 11,
+   "timer": "1:29",
+   "killer": "-Eq- Darky",
+   "victim": "K1CK fox <pacheco> C.N.",
+   "gun": null,
+   "expected": "loose-damage",
+   "source": "docs/review-answers.md, \"Loose wallbang check\" (27 and 28 Oct 2026), k37006: loose; the later answer, over IDEAS-ARCHIVE.md, \"Wallbangs and kill timing\", the 5 Oct 2026 denser check answers (Sujan, 5 Oct 2026): the victim was seen"
+  },
+  {
+   "round": 15,
+   "timer": "1:10",
+   "killer": "-Eq- SeDaN",
+   "victim": "K1CK fox <pacheco> C.N.",
+   "gun": null,
+   "expected": "loose-damage",
+   "source": "docs/review-answers.md, \"Loose wallbang check\" (27 and 28 Oct 2026), k37009: loose"
+  },
+  {
+   "round": 15,
+   "timer": "C4 0:10",
+   "killer": "-Eq- Darky",
+   "victim": "K1CK n0rx     <pacheco>",
+   "gun": null,
+   "expected": "loose-damage",
+   "source": "docs/review-answers.md, \"Loose wallbang check\" (27 and 28 Oct 2026), k37010: loose"
+  },
+  {
+   "round": 20,
+   "timer": "C4 0:21",
+   "killer": "-Eq- EneRyYyYy",
+   "victim": "K1CK mUtcb",
+   "gun": null,
+   "expected": "loose-damage",
+   "source": "docs/review-answers.md, \"Loose wallbang check\" (27 and 28 Oct 2026), k37013: loose"
+  },
+  {
+   "round": 26,
+   "timer": "1:27",
+   "killer": "K1CK spekz",
+   "victim": "-Eq- szrtech",
+   "gun": null,
+   "expected": "loose-damage",
+   "source": "docs/review-answers.md, \"Loose wallbang check\" (27 and 28 Oct 2026), k37015: loose"
+  },
+  {
+   "round": 26,
+   "timer": "1:26",
+   "killer": "-Eq- Darky",
+   "victim": "K1CK spekz",
+   "gun": null,
+   "expected": "loose-damage",
+   "source": "docs/review-answers.md, \"Loose wallbang check\" (27 and 28 Oct 2026), k37016: loose"
+  }
+ ]
+}

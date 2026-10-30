@@ -1,0 +1,36 @@
+{
+ "demo": "1110241407--auto_de_inferno.dem_mousesports-vs-AGAIN.dem",
+ "sha256": "e0da33705ab4c165e8e84c6ded8ec52f56b4f0590892b88a9edd847a2e0b035c",
+ "match": "mousesports vs AGAiN, Inferno, ESWC 2011 final",
+ "event": "ESWC 2011, final",
+ "map": "de_inferno",
+ "kills": [
+  {
+   "round": 4,
+   "timer": "1:13",
+   "killer": "AGAiN  742",
+   "victim": "mousesports | gob b",
+   "gun": null,
+   "expected": "strict",
+   "source": "docs/review-answers.md, \"Wallbang fix check, 0.22.1\" (24 Oct 2026), \"Kept: the closest calls\": Yes, fully hidden (Sujan, 24 Oct 2026)"
+  },
+  {
+   "round": 18,
+   "timer": null,
+   "killer": "AGAiN  PASHA[t]",
+   "victim": "mousesports | gob b",
+   "gun": null,
+   "expected": "strict",
+   "source": "IDEAS-ARCHIVE.md, \"Wallbangs and kill timing\", the 5 Oct 2026 denser check answers (Sujan, 5 Oct 2026): hidden, right; timer left empty: the note's 1:08 is from before 0.18.0 counted round timers in game time (CHANGELOG.md 0.18.0)"
+  },
+  {
+   "round": 21,
+   "timer": "0:51",
+   "killer": "AGAiN  KUBEN[t]",
+   "victim": "mousesports | gob b",
+   "gun": null,
+   "expected": "none",
+   "source": "docs/review-answers.md, \"Wallbang fix check, 0.22.1\" (24 Oct 2026), \"Inferno's lamp posts\": Yes, part of him was in view (Sujan, 24 Oct 2026); the box around a lamp post isn't cover (STATE.md Decisions, Sujan, 24 Oct 2026)"
+  }
+ ]
+}

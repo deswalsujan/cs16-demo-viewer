@@ -1,0 +1,34 @@
+{
+ "demo": "auto-server1-1106262105-de_tuscan.dem",
+ "sha256": "2def4956ff8d8d932611cb6bb2fb0d2962b70195604af480b4549a109e1c28d7",
+ "match": "Na`Vi vs fnatic, Tuscan, Adepto BH Open 2011",
+ "event": "Adepto BH Open 2011, final, map 2 (26 Jun 2011)",
+ "map": "de_tuscan",
+ "kd": [
+  {
+   "player": "Na`Vi markeloff <3 BiH",
+   "kd": "20-6",
+   "source": "CHANGELOG.md 0.15.1, How it was tested: markeloff 20-6, one of the numbers Sujan has (2 Oct 2026)"
+  }
+ ],
+ "kills": [
+  {
+   "round": 2,
+   "timer": "0:55",
+   "killer": "Na`Vi iOANN4[a] <3 BiH",
+   "victim": "fnatic.MSi Gux /PiNGU/",
+   "gun": null,
+   "expected": "loose-damage",
+   "source": "docs/review-answers.md, \"Loose wallbang check\" (27 and 28 Oct 2026), k17000: loose"
+  },
+  {
+   "round": 5,
+   "timer": "0:39",
+   "killer": "Na`Vi markeloff <3 BiH",
+   "victim": "fnatic.MSi dsn",
+   "gun": null,
+   "expected": "loose-damage",
+   "source": "docs/review-answers.md, \"Loose wallbang check\" (27 and 28 Oct 2026), k17002: loose"
+  }
+ ]
+}

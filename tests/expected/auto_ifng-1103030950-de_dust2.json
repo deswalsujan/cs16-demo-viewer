@@ -1,0 +1,57 @@
+{
+ "demo": "auto_ifng-1103030950-de_dust2.dem",
+ "sha256": "35e1284f61ab95be44721c56dec61ce487f3873dc9009822b9fcb3d198d1039d",
+ "match": "iFNG FX vs fnatic, Dust2, IEM March 2011",
+ "event": "Intel Extreme Masters, 3 Mar 2011; which stage isn't checked",
+ "map": "de_dust2",
+ "score": {
+  "value": "16:13",
+  "live": 29,
+  "source": "CHANGELOG.md 0.14.2, How it was tested, the 0.14.1 against 0.14.2 table: 16:13, checked against Sujan (2 Oct 2026); live rounds: the two numbers added"
+ },
+ "kd": [
+  {
+   "player": "NEO[t]",
+   "kd": "30-17",
+   "source": "CHANGELOG.md 0.14.2, How it was tested: NEO 30-17, Sujan's number (2 Oct 2026)"
+  }
+ ],
+ "kills": [
+  {
+   "round": 2,
+   "timer": "1:04",
+   "killer": "Loord",
+   "victim": "Delpan4Miichy",
+   "gun": null,
+   "expected": "loose-damage",
+   "source": "docs/review-answers.md, \"Loose wallbang check\" (27 and 28 Oct 2026), k06000: loose; the later answer, over IDEAS-ARCHIVE.md, \"Wallbangs and kill timing\", the 5 Oct 2026 denser check answers (Sujan, 5 Oct 2026): the victim was seen"
+  },
+  {
+   "round": 6,
+   "timer": "0:28",
+   "killer": "carn",
+   "victim": "PASHA[t]",
+   "gun": null,
+   "expected": "loose-damage",
+   "source": "docs/review-answers.md, \"Loose wallbang check\" (27 and 28 Oct 2026), k06002: loose; the later answer, over IDEAS-ARCHIVE.md, \"Wallbangs and kill timing\", the 5 Oct 2026 denser check answers (Sujan, 5 Oct 2026): the victim was seen"
+  },
+  {
+   "round": 13,
+   "timer": "1:19",
+   "killer": "NEO[t]",
+   "victim": "Xizt",
+   "gun": null,
+   "expected": "loose-damage",
+   "source": "docs/review-answers.md, \"Loose wallbang check\" (27 and 28 Oct 2026), k06005: loose"
+  },
+  {
+   "round": 14,
+   "timer": "0:40",
+   "killer": "NEO[t]",
+   "victim": "pita 4 Balkan",
+   "gun": null,
+   "expected": "loose-damage",
+   "source": "docs/review-answers.md, \"Loose wallbang check\" (27 and 28 Oct 2026), k06006: loose"
+  }
+ ]
+}

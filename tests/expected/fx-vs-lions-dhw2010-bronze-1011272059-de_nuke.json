@@ -1,0 +1,63 @@
+{
+ "demo": "fx-vs-lions-dhw2010-bronze-1011272059-de_nuke.dem",
+ "sha256": "58a241ae0875b4bf773638735a66353ac6e6602d3aa2b95053e53ce45097c9c8",
+ "match": "FX vs Lions, Nuke, DreamHack Winter 2010",
+ "event": "DreamHack Winter 2010, third-place decider (27 Nov 2010, 20:59)",
+ "map": "de_nuke",
+ "kills": [
+  {
+   "round": 5,
+   "timer": "0:26",
+   "killer": "LIONS kHRYSTAL * KASPERSKY",
+   "victim": "Frag eXecutors  742",
+   "gun": null,
+   "expected": "loose-damage",
+   "source": "docs/review-answers.md, \"Loose wallbang check\" (27 and 28 Oct 2026), k02001: loose"
+  },
+  {
+   "round": 7,
+   "timer": "1:23",
+   "killer": "Frag eXecutors  742",
+   "victim": "LIONS kHRYSTAL * KASPERSKY",
+   "gun": null,
+   "expected": "none",
+   "source": "docs/review-answers.md, \"Loose wallbang check\" (27 and 28 Oct 2026), k02003: loose; not listed since 0.24.0, by the same-spray rule: the killer's last bullet that only a surface explains came 0.94 s before the kill, and a loose wallbang from damage needs one 0.5 s or less before it (STATE.md Decisions, Sujan, 28 Oct 2026). Changed to none as Sujan asked (30 Oct 2026), from the finder's own numbers"
+  },
+  {
+   "round": 7,
+   "timer": null,
+   "killer": "Frag eXecutors  NEO[t]",
+   "victim": "LIONS THREAT * KASPERSKY",
+   "gun": "m4a1",
+   "expected": "wallbang",
+   "source": "docs/review-answers.md, \"Wallbang hits check\" (25 and 26 Oct 2026), b05: yes (the burst ends in this wallbang kill); strict or LOOSE not said"
+  },
+  {
+   "round": 11,
+   "timer": null,
+   "killer": "LIONS THREAT * KASPERSKY",
+   "victim": "Frag eXecutors  LoordB",
+   "gun": "ak47",
+   "expected": "wallbang",
+   "source": "docs/review-answers.md, \"Wallbang hits check\" (25 and 26 Oct 2026), b06: yes (the burst ends in this wallbang kill); strict or LOOSE not said"
+  },
+  {
+   "round": 13,
+   "timer": "1:19",
+   "killer": "LIONS NIKO DA PANDA * QPAD",
+   "victim": "Frag eXecutors  LoordB",
+   "gun": null,
+   "expected": "loose",
+   "source": "docs/review-answers.md, \"Wallbang fix check, 0.22.1\" (24 Oct 2026), \"Dropped: part of the victim in view\": Yes, part of him was in view (Sujan, 24 Oct 2026); LOOSE from 50 pixels in view, still listed (STATE.md Decisions, Sujan, 25 Oct 2026)"
+  },
+  {
+   "round": 18,
+   "timer": null,
+   "killer": "Frag eXecutors  LoordB",
+   "victim": "LIONS Xizt * MAXFPS",
+   "gun": "ak47",
+   "expected": "wallbang",
+   "source": "docs/review-answers.md, \"Wallbang hits check\" (25 and 26 Oct 2026), b04: yes (the burst ends in this wallbang kill); strict or LOOSE not said"
+  }
+ ]
+}

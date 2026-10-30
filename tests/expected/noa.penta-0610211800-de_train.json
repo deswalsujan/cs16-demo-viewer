@@ -1,0 +1,45 @@
+{
+ "demo": "noa.penta-0610211800-de_train.dem",
+ "sha256": "aefb97aa3b55f887ec5d9765868d5875057b308d20abe71f53c3abc2d2a08f4a",
+ "match": "NoA vs Pentagram, Train, 2006",
+ "event": "not known; recorded 21 Oct 2006 at 18:00 by the file name",
+ "map": "de_train",
+ "kills": [
+  {
+   "round": 5,
+   "timer": "1:10",
+   "killer": "PENTAGRAM G-Shock | taz[b]",
+   "victim": "NoA.hpx",
+   "gun": null,
+   "expected": "loose-damage",
+   "source": "docs/review-answers.md, \"Loose wallbang check\" (27 and 28 Oct 2026), k18003: loose"
+  },
+  {
+   "round": 18,
+   "timer": "1:22",
+   "killer": "NoA.MJE -.-",
+   "victim": "PENTAGRAM G-Shock | kubenB",
+   "gun": "ak47",
+   "expected": "strict",
+   "source": "IDEAS-ARCHIVE.md, \"Wallbangs and kill timing\", the 5 Oct 2026 denser check answers (Sujan, 5 Oct 2026): hidden, right (gun from the 0.13.0 list, IDEAS-ARCHIVE.md)"
+  },
+  {
+   "round": 21,
+   "timer": "1:09",
+   "killer": "PENTAGRAM G-Shock | neo[t]",
+   "victim": "NoA.zonic'10 -.-",
+   "gun": null,
+   "expected": "none",
+   "source": "docs/review-answers.md, \"Loose wallbang check\" (27 and 28 Oct 2026), k18017: loose; not listed since 0.24.0, by the same-spray rule: the killer's last bullet that only a surface explains came 0.54 s before the kill, and a loose wallbang from damage needs one 0.5 s or less before it (STATE.md Decisions, Sujan, 28 Oct 2026). Changed to none as Sujan asked (30 Oct 2026), from the finder's own numbers"
+  },
+  {
+   "round": 26,
+   "timer": "1:26",
+   "killer": "NoA.zonic'10 -.-",
+   "victim": "PENTAGRAM G-Shock | kubenB",
+   "gun": null,
+   "expected": "loose-damage",
+   "source": "docs/review-answers.md, \"Loose wallbang check\" (27 and 28 Oct 2026), k18023: loose"
+  }
+ ]
+}

@@ -1,0 +1,18 @@
+{
+ "demo": "roccat.fnatic.EMII-0803071948-de_inferno.dem",
+ "sha256": "040d89a0ffbbf70cc32a067a04b6e480ecbb58224344af7518460647d6bbb84d",
+ "match": "roccat vs fnatic, Inferno, Extreme Masters II",
+ "event": "Extreme Masters II, CeBIT (7 and 8 Mar 2008)",
+ "map": "de_inferno",
+ "kills": [
+  {
+   "round": 13,
+   "timer": "1:37",
+   "killer": "fnatic Torgersen",
+   "victim": "roccat > Niko K. <NASU>",
+   "gun": null,
+   "expected": "loose",
+   "source": "CHANGELOG.md 0.22.0, Fixed, \"Wallbangs where part of the victim was in view\": Torgersen on Niko (Sujan, with screenshots, 23 Oct 2026); LOOSE from 50 pixels in view, still listed (STATE.md Decisions, Sujan, 25 Oct 2026)"
+  }
+ ]
+}

@@ -1,0 +1,63 @@
+{
+ "demo": "SK_vs_e-STRO_WCG2008-0811081950-de_dust2.dem",
+ "sha256": "ef6670676bea2037fce1b896277f517a917289258da9fd8164ab6884d14f1738",
+ "match": "SK vs eSTRO, Dust2, WCG 2008",
+ "event": "WCG 2008, semi-final (8 Nov 2008)",
+ "map": "de_dust2",
+ "kills": [
+  {
+   "round": 2,
+   "timer": "1:10",
+   "killer": "SKWEDEN walle",
+   "victim": "KOREA.eSTRO : solo",
+   "gun": null,
+   "expected": "loose-damage",
+   "source": "docs/review-answers.md, \"Loose wallbang check\" (27 and 28 Oct 2026), k22000: loose"
+  },
+  {
+   "round": 8,
+   "timer": "1:18",
+   "killer": "SKWEDEN Tentpole <3 Tezz",
+   "victim": "KOREA.eSTRO : hee",
+   "gun": null,
+   "expected": "loose-damage",
+   "source": "docs/review-answers.md, \"Loose wallbang check\" (27 and 28 Oct 2026), k22005: loose"
+  },
+  {
+   "round": 9,
+   "timer": "0:41",
+   "killer": "SKWEDEN zet",
+   "victim": "KOREA.eSTRO : ari",
+   "gun": null,
+   "expected": "loose-damage",
+   "source": "docs/review-answers.md, \"Loose wallbang check\" (27 and 28 Oct 2026), k22006: loose"
+  },
+  {
+   "round": 12,
+   "timer": "0:59",
+   "killer": "SKWEDEN zet",
+   "victim": "KOREA.eSTRO : ari",
+   "gun": null,
+   "expected": "loose-damage",
+   "source": "docs/review-answers.md, \"Loose wallbang check\" (27 and 28 Oct 2026), k22007: loose"
+  },
+  {
+   "round": 18,
+   "timer": "1:22",
+   "killer": "SKWEDEN allen <3 Sophie",
+   "victim": "KOREA.eSTRO : bail",
+   "gun": null,
+   "expected": "loose-damage",
+   "source": "docs/review-answers.md, \"Loose wallbang check\" (27 and 28 Oct 2026), k22010: loose"
+  },
+  {
+   "round": 26,
+   "timer": "0:04",
+   "killer": "SKWEDEN RobbaN[alitdg]",
+   "victim": "KOREA.eSTRO : termi",
+   "gun": null,
+   "expected": "loose-damage",
+   "source": "docs/review-answers.md, \"Loose wallbang check\" (27 and 28 Oct 2026), k22017: loose"
+  }
+ ]
+}

@@ -1,0 +1,14 @@
+{
+ "demo": "mtw-vs-navi-eswc2010semi-real-1007031710-de_train.dem",
+ "sha256": "90230ba694c437393f9d7807ce3626e1a25c0ecfd990ff88935b27cda3591dbf",
+ "match": "mTw vs Na`Vi, Train, ESWC 2010 semi-final",
+ "event": "ESWC 2010, semi-final (3 Jul 2010); Tuscan was map 2, Train map 3",
+ "map": "de_train",
+ "score": {
+  "value": "16:1",
+  "live": 17,
+  "source": "CHANGELOG.md 0.15.1, How it was tested: \"Finale score: 16 1\" in the demo; which team is written first isn't said; live rounds: the two numbers added",
+  "any_order": true
+ },
+ "kills": []
+}

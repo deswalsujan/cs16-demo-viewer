@@ -12,7 +12,7 @@ What is open and what is decided, right now. Loaded into every session through `
 - **Claude (POV):** aimbot catcher, not started. **See through walls** in POV works on what the server sent.
 - **Parked:** POV gun animations weapon by weapon; POV voice and chat; a broken demo's load summary line (when one turns up); a warmup-only file showing one round (needs a new file); order of 3+ parts with no times in their names; load time of a big (145 MB) demo; on the move to sujandeswal.com, drop `noindex` and harden privacy.
 - **Roadmap next:** README Requirements list, then opening duels and trades.
-- **Claude, in progress:** the wallbang ground truth test on `tests/wallbang-ground-truth` (an outside audit's first item); the full run waits for Sujan's go, after the quick run is timed.
+- **Sujan to decide (wallbang ground truth):** 10 kills where his answer and the viewer disagree, in three groups (IDEAS.md, **10 kills where Sujan's answer and the viewer disagree**); the check on `tests/wallbang-ground-truth` fails on those 10 alone, and the pull request follows his answers.
 - **Claude, a later docs pull request (decided 30 Oct 2026, below):** the who-it's-for sentence at the top of `AGENTS.md`, Known limits moved to `LIMITS.md`, a `LICENSE` file (MIT) and its line in README "Credits".
 
 ## Decisions

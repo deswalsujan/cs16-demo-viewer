@@ -1,0 +1,97 @@
+{
+ "demo": "navi-vs-m5-dhwinter2011-1111250937-de_inferno.dem",
+ "sha256": "c73716f64bc259082427ee0301d9b2fd0826eb55c896a2e0fd311208e22d2959",
+ "match": "Na`Vi vs Moscow 5, Inferno, DreamHack Winter 2011",
+ "event": "DreamHack Winter 2011, group C (25 Nov 2011)",
+ "map": "de_inferno",
+ "kd": [
+  {
+   "player": "Na`Vi edzie",
+   "kd": "29-16",
+   "source": "CHANGELOG.md 0.15.1, How it was tested: 29-16, one of the numbers Sujan has (2 Oct 2026; his list said \"edward\"); edzie's (STATE.md Decisions, Sujan, 30 Oct 2026)"
+  }
+ ],
+ "kills": [
+  {
+   "round": 5,
+   "timer": "0:20",
+   "killer": "M5 ROMJkE2H^",
+   "victim": "Na`Vi starix",
+   "gun": null,
+   "expected": "loose-damage",
+   "source": "docs/review-answers.md, \"Loose wallbang check\" (27 and 28 Oct 2026), k16004: loose"
+  },
+  {
+   "round": 7,
+   "timer": "1:15",
+   "killer": "M5 XEK",
+   "victim": "Na`Vi ceh9 /A/",
+   "gun": null,
+   "expected": "none",
+   "source": "docs/review-answers.md, \"Wallbang fix check, 0.22.1\" (24 Oct 2026), \"Inferno's lamp posts\": Yes, part of him was in view (Sujan, 24 Oct 2026); the box around a lamp post isn't cover (STATE.md Decisions, Sujan, 24 Oct 2026)"
+  },
+  {
+   "round": 15,
+   "timer": "0:16",
+   "killer": "Na`Vi edzie",
+   "victim": "M5 XEK",
+   "gun": null,
+   "expected": "loose-damage",
+   "source": "docs/review-answers.md, \"Loose wallbang check\" (27 and 28 Oct 2026), k16015: loose"
+  },
+  {
+   "round": 23,
+   "timer": "C4 0:11",
+   "killer": "Na`Vi markeloff ~~~",
+   "victim": "M5 Fox",
+   "gun": null,
+   "expected": "loose-damage",
+   "source": "docs/review-answers.md, \"Loose wallbang check\" (27 and 28 Oct 2026), k16020: loose"
+  },
+  {
+   "round": 24,
+   "timer": "0:37",
+   "killer": "Na`Vi ceh9 /A/",
+   "victim": "M5 ROMJkE2H^",
+   "gun": null,
+   "expected": "loose-damage",
+   "source": "docs/review-answers.md, \"Loose wallbang check\" (27 and 28 Oct 2026), k16022: loose"
+  },
+  {
+   "round": 25,
+   "timer": "1:13",
+   "killer": "Na`Vi ceh9 /A/",
+   "victim": "M5 ED1K",
+   "gun": null,
+   "expected": "loose-damage",
+   "source": "docs/review-answers.md, \"Loose wallbang check\" (27 and 28 Oct 2026), k16024: loose"
+  },
+  {
+   "round": 25,
+   "timer": "C4 0:15",
+   "killer": "Na`Vi edzie",
+   "victim": "M5 Fox",
+   "gun": null,
+   "expected": "loose-damage",
+   "source": "docs/review-answers.md, \"Loose wallbang check\" (27 and 28 Oct 2026), k16025: loose"
+  },
+  {
+   "round": 25,
+   "timer": "0:54",
+   "killer": "Na`Vi ceh9 /A/",
+   "victim": "M5 XEK",
+   "gun": null,
+   "expected": "loose",
+   "source": "docs/review-answers.md, \"Wallbang fix check, 0.22.1\" (24 Oct 2026), \"Dropped: part of the victim in view\": Yes, part of him was in view (Sujan, 24 Oct 2026); LOOSE from 50 pixels in view, still listed (STATE.md Decisions, Sujan, 25 Oct 2026)"
+  },
+  {
+   "round": 28,
+   "timer": "C4 0:22",
+   "killer": "M5 Fox",
+   "victim": "Na`Vi edzie",
+   "gun": null,
+   "expected": "loose-damage",
+   "source": "docs/review-answers.md, \"Loose wallbang check\" (27 and 28 Oct 2026), k16028: loose"
+  }
+ ]
+}

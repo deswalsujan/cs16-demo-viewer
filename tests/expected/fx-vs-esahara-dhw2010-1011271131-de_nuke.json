@@ -1,0 +1,72 @@
+{
+ "demo": "fx-vs-esahara-dhw2010-1011271131-de_nuke.dem",
+ "sha256": "892b999fbf9a6bb7f9879cbec6086573eede40a58ad822521d6d9e9613ecd702",
+ "match": "FX vs eSahara, Nuke, DreamHack Winter 2010",
+ "event": "DreamHack Winter 2010, playoffs (27 Nov 2010)",
+ "map": "de_nuke",
+ "kills": [
+  {
+   "round": 3,
+   "timer": "0:08",
+   "killer": "ESAHARA.net MAHE",
+   "victim": "Frag eXecutors  742",
+   "gun": null,
+   "expected": "loose-damage",
+   "source": "docs/review-answers.md, \"Loose wallbang check\" (27 and 28 Oct 2026), k05001: loose"
+  },
+  {
+   "round": 6,
+   "timer": "1:05",
+   "killer": "Frag eXecutors  KUBEN[t]",
+   "victim": "ESAHARA.net MAJ3R",
+   "gun": null,
+   "expected": "loose-damage",
+   "source": "docs/review-answers.md, \"Loose wallbang check\" (27 and 28 Oct 2026), k05002: loose"
+  },
+  {
+   "round": 9,
+   "timer": "1:11",
+   "killer": "ESAHARA.net MAHE",
+   "victim": "Frag eXecutors  NEO[t]",
+   "gun": null,
+   "expected": "loose-damage",
+   "source": "docs/review-answers.md, \"Loose wallbang check\" (27 and 28 Oct 2026), k05003: loose"
+  },
+  {
+   "round": 10,
+   "timer": "1:20",
+   "killer": "ESAHARA.net RARA",
+   "victim": "Frag eXecutors  PASHA[t]",
+   "gun": null,
+   "expected": "loose-damage",
+   "source": "docs/review-answers.md, \"Loose wallbang check\" (27 and 28 Oct 2026), k05004: loose"
+  },
+  {
+   "round": 18,
+   "timer": "1:09",
+   "killer": "Frag eXecutors  LoordB",
+   "victim": "ESAHARA.net MAHE",
+   "gun": null,
+   "expected": "loose-damage",
+   "source": "docs/review-answers.md, \"Loose wallbang check\" (27 and 28 Oct 2026), k05008: loose"
+  },
+  {
+   "round": 24,
+   "timer": "0:45",
+   "killer": "Frag eXecutors  KUBEN[t]",
+   "victim": "ESAHARA.net RARA",
+   "gun": null,
+   "expected": "loose-damage",
+   "source": "docs/review-answers.md, \"Loose wallbang check\" (27 and 28 Oct 2026), k05012: loose"
+  },
+  {
+   "round": 24,
+   "timer": "0:19",
+   "killer": "Frag eXecutors  PASHA[t]",
+   "victim": "ESAHARA.net MAJ3R",
+   "gun": null,
+   "expected": "loose-damage",
+   "source": "docs/review-answers.md, \"Loose wallbang check\" (27 and 28 Oct 2026), k05013: loose"
+  }
+ ]
+}

@@ -1,0 +1,27 @@
+{
+ "demo": "fnatic_vs_EG_EM3Global-0903061800-de_dust2.dem",
+ "sha256": "66e5ac8f8a472bd779ebb29cce3f5d26ae7332e834eaf647691c525f5c221598",
+ "match": "fnatic vs EG, Dust2, EM3 Global Finals 2009",
+ "event": "EM3 Global Finals (6 Mar 2009)",
+ "map": "de_dust2",
+ "score": {
+  "value": "11:16",
+  "live": 27,
+  "source": "CHANGELOG.md 0.14.2, How it was tested: 11:16 stopping at 16, \"Demo read: 30 rounds, 27 counted\", checked against Sujan (2 Oct 2026)"
+ },
+ "count_them": {
+  "score": {
+   "value": "13:17",
+   "live": 30,
+   "source": "CHANGELOG.md 0.14.2, How it was tested: with Count them 13:17, all 30 rounds played (Sujan, 2 Oct 2026)"
+  },
+  "kd": [
+   {
+    "player": "fnatic.MSI iZnoGouD",
+    "kd": "32-19",
+    "source": "CHANGELOG.md 0.14.2, How it was tested: f0rest (shows as iZnoGouD) 32-19 with all 30 rounds, Sujan's number (2 Oct 2026)"
+   }
+  ]
+ },
+ "kills": []
+}

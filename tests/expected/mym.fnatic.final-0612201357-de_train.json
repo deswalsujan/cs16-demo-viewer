@@ -1,0 +1,18 @@
+{
+ "demo": "mym.fnatic.final-0612201357-de_train.dem",
+ "sha256": "f653119a1ff5e885ea35e64855116548dab8ed3926e99a373aed10ebcce643ce",
+ "match": "MYM vs fnatic, Train, CPL Winter 2006 (probably)",
+ "event": "probably CPL Winter 2006, final (20 Dec 2006 by the file name); not checked further",
+ "map": "de_train",
+ "kills": [
+  {
+   "round": 19,
+   "timer": "1:09",
+   "killer": "MYM|XioNe www.icemat.com",
+   "victim": "fnatic.dsn[tw]",
+   "gun": null,
+   "expected": "loose-damage",
+   "source": "docs/review-answers.md, \"Loose wallbang check\" (27 and 28 Oct 2026), k13016: loose"
+  }
+ ]
+}

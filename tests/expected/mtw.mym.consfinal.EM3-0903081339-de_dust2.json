@@ -1,0 +1,27 @@
+{
+ "demo": "mtw.mym.consfinal.EM3-0903081339-de_dust2.dem",
+ "sha256": "69b9c531f48abe8f761fcfef0365545dff320e9ba4aae88c0697c0582c56a768",
+ "match": "MYM vs mTw, Dust2, EM3 2009 consolation final",
+ "event": "EM3 Global Finals 2009, consolation final (8 Mar 2009)",
+ "map": "de_dust2",
+ "kills": [
+  {
+   "round": 28,
+   "timer": "1:21",
+   "killer": "MEET LOORDB, YOUR MAKER",
+   "victim": "mTw | MJE",
+   "gun": null,
+   "expected": "loose",
+   "source": "CHANGELOG.md 0.22.0, Fixed, \"Wallbangs where part of the victim was in view\": LoordB on MJE (Sujan, with screenshots, 23 Oct 2026); LOOSE from 50 pixels in view, still listed (STATE.md Decisions, Sujan, 25 Oct 2026)"
+  },
+  {
+   "round": 29,
+   "timer": "C4 0:13",
+   "killer": "mTw | ave",
+   "victim": "MEET TAZ, YOUR MAKER",
+   "gun": null,
+   "expected": "loose",
+   "source": "docs/review-answers.md, \"Wallbang fix check, 0.22.1\" (24 Oct 2026), \"Dropped: part of the victim in view\": Yes, part of him was in view (Sujan, 24 Oct 2026); LOOSE from 50 pixels in view, still listed (STATE.md Decisions, Sujan, 25 Oct 2026)"
+  }
+ ]
+}

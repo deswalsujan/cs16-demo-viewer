@@ -1,0 +1,54 @@
+{
+ "demo": "fx-vs-lions-dhw2010-bronze-1011272002-de_inferno.dem",
+ "sha256": "3919a6c19d4ff0a6e6962511b3476c2fe3f625f37e679868aba19452abb46f03",
+ "match": "FX vs Lions, Inferno, DreamHack Winter 2010",
+ "event": "DreamHack Winter 2010, third-place decider, the map before the Nuke above",
+ "map": "de_inferno",
+ "kills": [
+  {
+   "round": 5,
+   "timer": "0:16",
+   "killer": "Frag eXecutors  NEO[t]",
+   "victim": "LIONS Xizt * MAXFPS",
+   "gun": null,
+   "expected": "loose-damage",
+   "source": "docs/review-answers.md, \"Loose wallbang check\" (27 and 28 Oct 2026), k01001: loose"
+  },
+  {
+   "round": 5,
+   "timer": "C4 0:25",
+   "killer": "Frag eXecutors  742",
+   "victim": "LIONS NIKO DA PANDA * QPAD",
+   "gun": null,
+   "expected": "loose-damage",
+   "source": "docs/review-answers.md, \"Loose wallbang check\" (27 and 28 Oct 2026), k01003: loose"
+  },
+  {
+   "round": 7,
+   "timer": "1:20",
+   "killer": "Frag eXecutors  742",
+   "victim": "LIONS THREAT * KASPERSKY",
+   "gun": null,
+   "expected": "loose-damage",
+   "source": "docs/review-answers.md, \"Loose wallbang check\" (27 and 28 Oct 2026), k01004: loose"
+  },
+  {
+   "round": 14,
+   "timer": "1:08",
+   "killer": "Frag eXecutors  PASHA[t]",
+   "victim": "LIONS Xizt * MAXFPS",
+   "gun": null,
+   "expected": "none",
+   "source": "docs/review-answers.md, \"Loose wallbang check\" (27 and 28 Oct 2026), k01006: loose; not listed since 0.24.0, by the same-spray rule: the killer's last bullet that only a surface explains came 0.54 s before the kill, and a loose wallbang from damage needs one 0.5 s or less before it (STATE.md Decisions, Sujan, 28 Oct 2026). Changed to none as Sujan asked (30 Oct 2026), from the finder's own numbers"
+  },
+  {
+   "round": 28,
+   "timer": "0:46",
+   "killer": "LIONS NIKO DA PANDA * QPAD",
+   "victim": "Frag eXecutors  KUB3N[t]",
+   "gun": null,
+   "expected": "loose-damage",
+   "source": "docs/review-answers.md, \"Loose wallbang check\" (27 and 28 Oct 2026), k01013: loose"
+  }
+ ]
+}

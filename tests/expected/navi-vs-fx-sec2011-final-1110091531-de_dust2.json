@@ -1,0 +1,68 @@
+{
+ "demo": "navi-vs-fx-sec2011-final-1110091531-de_dust2.dem",
+ "sha256": "e5214ee5ce39af8bf3285aa299bb9bb7d4e39445c9828ece20dc7ae3e928cea2",
+ "match": "Na`Vi vs FX, Dust2, SEC 2011 final",
+ "event": "SEC 2011, final (9 Oct 2011)",
+ "map": "de_dust2",
+ "score": {
+  "value": "11:16",
+  "live": 27,
+  "source": "CHANGELOG.md 0.14.2, How it was tested, the 0.14.1 against 0.14.2 table: 11:16, the official 16-11; live rounds: the two numbers added"
+ },
+ "kills": [
+  {
+   "round": 3,
+   "timer": "0:40",
+   "killer": "Na`Vi markeloff /A/",
+   "victim": "Loord",
+   "gun": null,
+   "expected": "loose-damage",
+   "source": "docs/review-answers.md, \"Loose wallbang check\" (27 and 28 Oct 2026), k14000: loose"
+  },
+  {
+   "round": 4,
+   "timer": "1:05",
+   "killer": "Na`Vi EdwardwOw~",
+   "victim": "742",
+   "gun": null,
+   "expected": "loose",
+   "source": "docs/review-answers.md, \"Wallbang fix check, 0.22.1\" (24 Oct 2026), \"Kept: the closest calls\": No, part of him was in view (Sujan, 24 Oct 2026); LOOSE from 50 pixels in view, still listed (STATE.md Decisions, Sujan, 25 Oct 2026)"
+  },
+  {
+   "round": 7,
+   "timer": "0:56",
+   "killer": "Na`Vi starix /A/",
+   "victim": "NEO[t]",
+   "gun": null,
+   "expected": "none",
+   "source": "docs/review-answers.md, \"Loose wallbang check\" (27 and 28 Oct 2026), k14004: loose; not listed since 0.24.0, by the same-spray rule: the killer's last bullet that only a surface explains came 0.64 s before the kill, and a loose wallbang from damage needs one 0.5 s or less before it (STATE.md Decisions, Sujan, 28 Oct 2026). Changed to none as Sujan asked (30 Oct 2026), from the finder's own numbers"
+  },
+  {
+   "round": 7,
+   "timer": "0:54",
+   "killer": "742",
+   "victim": "Na`Vi starix /A/",
+   "gun": null,
+   "expected": "loose-damage",
+   "source": "docs/review-answers.md, \"Loose wallbang check\" (27 and 28 Oct 2026), k14005: loose"
+  },
+  {
+   "round": 10,
+   "timer": "1:04",
+   "killer": "742",
+   "victim": "Na`Vi starix /A/",
+   "gun": null,
+   "expected": "loose-damage",
+   "source": "docs/review-answers.md, \"Loose wallbang check\" (27 and 28 Oct 2026), k14008: loose"
+  },
+  {
+   "round": 23,
+   "timer": "1:13",
+   "killer": "Na`Vi EdwardwOw~",
+   "victim": "Loord",
+   "gun": null,
+   "expected": "none",
+   "source": "docs/review-answers.md, \"Loose wallbang check\" (27 and 28 Oct 2026), k14018: loose; not listed since 0.24.0, by the same-spray rule: the killer's last bullet that only a surface explains came 1.90 s before the kill, and a loose wallbang from damage needs one 0.5 s or less before it (STATE.md Decisions, Sujan, 28 Oct 2026). Changed to none as Sujan asked (30 Oct 2026), from the finder's own numbers"
+  }
+ ]
+}

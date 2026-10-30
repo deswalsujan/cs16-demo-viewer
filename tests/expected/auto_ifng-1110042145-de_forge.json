@@ -1,0 +1,45 @@
+{
+ "demo": "auto_ifng-1110042145-de_forge.dem",
+ "sha256": "b9b0ad89ea107d59e7f3024919cde447f43724f7e5dc99a4a9df41e78d5b4b95",
+ "match": "fnatic vs mousesports, Forge, IEM6 Guangzhou final, file 1",
+ "event": "IEM6 Global Challenge Guangzhou, grand final, map 3 (HLTV.org dates it 5 Oct 2011; the file names say 4 Oct, 21:45)",
+ "map": "de_forge",
+ "joined": {
+  "parts": [
+   "auto_ifng-1110042145-de_forge.dem",
+   "auto_ifng-1110042211-de_forge.dem"
+  ],
+  "sha256": [
+   "b9b0ad89ea107d59e7f3024919cde447f43724f7e5dc99a4a9df41e78d5b4b95",
+   "5fd81c289429f4a893775d4f21ad5745c827f96f86cf985dba3cf41fe5febf3d"
+  ],
+  "kd": [
+   {
+    "player": "mousesports | zonixx",
+    "kd": "32-17",
+    "source": "CHANGELOG.md 0.15.1, How it was tested: zonixx 32-17, one of the numbers Sujan has (2 Oct 2026)"
+   }
+  ]
+ },
+ "kills": [
+  {
+   "round": 12,
+   "timer": "1:08",
+   "killer": "fnaticMSI pita * Sensei",
+   "victim": "mousesports | zonixx",
+   "gun": null,
+   "expected": "loose",
+   "source": "docs/review-answers.md, \"Wallbang fix check, 0.22.1\" (24 Oct 2026), \"Kept: the closest calls\": No, part of him was in view (Sujan, 24 Oct 2026); LOOSE from 50 pixels in view, still listed (STATE.md Decisions, Sujan, 25 Oct 2026)"
+  },
+  {
+   "round": 14,
+   "timer": "1:05",
+   "killer": "mousesports | gob b",
+   "victim": "fnaticMSI Xizt",
+   "gun": null,
+   "expected": "strict",
+   "known_gap": "CHANGELOG.md, Known limits: \"NEO on ArcadioN (74) and gob b on Xizt (223) read LOOSE, where Sujan finds the victim hidden\" (strict and LOOSE split at 50 pixels, Sujan 25 Oct 2026)",
+   "source": "docs/review-answers.md, \"Wallbang fix check, 0.22.1\" (24 Oct 2026), \"Dropped: part of the victim in view\": No, he was fully hidden (Sujan, 24 Oct 2026)"
+  }
+ ]
+}
