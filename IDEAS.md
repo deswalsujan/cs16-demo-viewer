@@ -16,15 +16,11 @@ Everything raised in conversation that isn't finished, in one place. Each item s
   - Decided so far: loose from damage needs a bullet 0.5 s or less before the kill (Sujan, 28 Oct 2026); this one is meant to count (Sujan, 30 Oct 2026).
 
 **Sliver kills** (30 Oct 2026; built in 0.26.0)
-- Done, in the archive: **The sight points see a sliver the picture doesn't** (built in 0.26.0, 30 Oct 2026: strict at 0 pixels, LOOSE from 1 to 49).
+- Done, in the archive: **The sight points see a sliver the picture doesn't** (built in 0.26.0, 30 Oct 2026: strict at 0 pixels, LOOSE from 1 to 49); **Railings and Nuke vents** (railings built in 0.26.0; the vent exception withdrawn, 30 Oct 2026).
 - [ ] **Sliver kills, by eye (0.26.0)**
   - Status: built in 0.26.0; not yet checked by Sujan in the viewer (the 10 kills were answered on the review page).
   - Next step: Sujan opens FX vs eSahara, Dust2, DreamHack Winter 2010: R18 0:21 KUBEN on RARA reads LOOSE, its tag's hover saying the sight lines reach him; NoA vs Pentagram, Train 2006: R18 1:22 MJE on kubenB reads strict; SK vs Na`Vi, Train, DreamHack Winter 2011: R31 C4 0:09 GeT_RiGhT on markeloff isn't listed (the railing).
   - Decided so far: a kill the sight points see with the crosshair through cover is listed under 50 pixels in the picture, strict at 0, LOOSE from 1 to 49, with both guards (Sujan, 30 Oct 2026); railings aren't cover (Sujan, 30 Oct 2026).
-- [ ] **Railings and Nuke vents**
-  - Status: railings built in 0.26.0: the picture check leaves out what the map draws but bullets pass at full damage (a `func_illusionary` in a see-through render mode: de_train's `{rail2` on the highway slope, Inferno's `{cufence` and `{woodrail`, also Inferno's vines and Nuke's wires), as the sight lines already did; no other wallbang on the 50 test demos changed with it. Nuke's vents not built: the finder takes everything bullets break as never cover (`shootable` in `src/bsp.js`).
-  - Next step: Sujan says whether Nuke's upper windows and Inferno's shutters work like the vents (cover for the first bullet only) or stay not cover; then Claude builds the vents (and those, if so) in its own pull request, with what it does on the 50 demos and `ground_truth_check.py`.
-  - Decided so far: a railing that stops players but lets bullets through at full damage (de_train's highway slope, the Inferno site railings) isn't cover; a Nuke vent is cover for the first bullet through it, which breaks it, and open air after (Sujan, 30 Oct 2026); Nuke's upper windows and Inferno's shutters not cover (Sujan, 23 Oct 2026), open again since the vents changed.
 
 **Sujan's feedback of 23 Oct 2026** (HLTV viewer; built in 0.22.0 unless said; demos and events in `tests/DEMOS.md`)
 - Done, in the archive: **Republish the claude.ai viewer**, closed 29 Oct 2026 without republishing (the claude.ai copy stays at 0.23.0, GitHub Pages is the only live viewer, Sujan 29 Oct 2026); Sujan's answers on the 23 Oct review page (24 Oct 2026, on the 0.22.0 fixes), the three levels of wallbang (0.23.0 and 0.24.0), wallbang hits that didn't kill and the damage per wallbang (0.24.0).

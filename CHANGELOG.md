@@ -51,7 +51,7 @@ The sliver kills (Sujan, 30 Oct 2026; the measurements are in IDEAS-ARCHIVE.md, 
 
 ### Discussed, not changed
 - **Option A** (every sliver kill under 50 pixels LOOSE) fit 5 of Sujan's 13 answers; the split fits 11. Options B (the same kills, read strict) and C (only where the killing bullet is the killer's only hit, 12 kills) weren't picked.
-- **A Nuke vent is cover for the first bullet through it** (Sujan, 30 Oct 2026): not built here; the finder still takes everything bullets break as never cover (IDEAS.md, **Railings and Nuke vents**).
+- **A Nuke vent as cover for the first bullet through it** (Sujan's note on the sliver check, 30 Oct 2026) was withdrawn the same day: breakable surfaces (vents, glass, shutters) are never cover, even for the bullet that breaks them, as since 0.22.0; an unbreakable one, such as the semi-glass door at Nuke's lower site, stays cover even where the player shows through it (Sujan, 30 Oct 2026). Nothing in `tests/expected/` relied on the exception.
 
 ## 0.25.1 (2026-10-29)
 
