@@ -93,7 +93,6 @@
    "victim": "KOREA.eSTRO : ari",
    "gun": "ak47",
    "expected": "strict",
-   "known_gap": "the sight points see a sliver of him (3 of 15 clear) that the picture doesn't (0 pixels), so the picture check never runs and the finder leaves the kill out (IDEAS.md, \"Sliver kills\"); kept with this known gap until option A is built (Sujan, 30 Oct 2026)",
    "source": "docs/review-answers.md, \"Wallbang sliver check\" (30 Oct 2026), g06: strict"
   },
   {
