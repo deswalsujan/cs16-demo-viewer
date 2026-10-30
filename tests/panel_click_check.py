@@ -39,6 +39,10 @@ try:
             print(('PASS ' if ok else 'FAIL ') + label)
             if not ok: fails += 1
 
+        # the picture check ends with a rebuild of the list (30 Oct 2026: since 0.26.0 it draws more kills and could
+        # land on the first aim), so wait for one that's running; one starting later is caught by aiming again below
+        pg.wait_for_function('__v("!M.seenPending")', timeout=120000)
+
         # Kills tab, playing at 8x through a round with many kills
         pg.click('.tabs button[data-tab="kills"]')
         for attempt in range(3):
@@ -51,6 +55,7 @@ try:
                 pg.wait_for_timeout(400)
                 row = pg.locator('#pane [data-kill]').nth(1)
                 want = row.get_attribute('data-kill'); box = row.bounding_box()
+                if box is None: continue  # the row was rebuilt between the two calls
                 x, y = box['x'] + 40, box['y'] + box['height'] / 2
                 pg.mouse.move(x, y)
                 if pg.evaluate('([x, y, t]) => { const el = document.elementFromPoint(x, y); const r = el && el.closest("[data-kill]"); return !!r && r.dataset.kill === t; }', [x, y, want]): break
@@ -73,6 +78,7 @@ try:
         for _ in range(5):
             pg.wait_for_timeout(400)
             box = pg.locator(f'#pane .prow[data-p="{pid}"]').bounding_box()
+            if box is None: continue
             x, y = box['x'] + 60, box['y'] + box['height'] / 2
             pg.mouse.move(x, y)
             if pg.evaluate('([x, y, p]) => { const el = document.elementFromPoint(x, y); const r = el && el.closest("[data-p]"); return !!r && r.dataset.p === p; }', [x, y, pid]): break

@@ -5,6 +5,18 @@ What changed in the viewer, newest first. The version shows in the viewer's shor
 ## Known limits
 Moved to [LIMITS.md](LIMITS.md) on 30 Oct 2026; release entries below still say "Known limits" for that list.
 
+## 0.26.1 (2026-10-30)
+
+### Fixed
+- **Loose wallbangs from damage**: the 0.5 s window allows a millisecond more, since the demo's times are 32-bit floats. Darky's kill on n0rx (k1ck vs eq, Nuke, DreamHack Winter 2011, R15 C4 0:10), with his hit through cover 0.500244 s before, now reads LOOSE WB, as Sujan answered (30 Oct 2026). One more kill changed with it: starix on RobbaN (Na`Vi vs SK, Inferno, recorded 24 Oct 2011, event not known), R14 0:26, AK, now loose from damage.
+
+### How it was tested
+- `compare_all.sh` with `page/regress_summary.js` on the 0.26.0 build and this one, on 64 demos, every one in the Half-Life folder and the two test folders but `test demos/POV`, through an APFS clone as in 0.25.0 (the 7 POV demos in the Half-Life folder with **POV mode** off): 62 identical, the two kills above the only differences; all 64 loaded their map and finished the picture check.
+- `ground_truth_check.py`: 223 kills and 27 scores and K-D on 45 demos, 0 mismatches, 6 known gaps (Darky on n0rx's gone), PASS. The other six checks pass on Sujan's Mac. `panel_click_check.py` failed on 0.26.0's build too: the picture check's last rebuild of the list could land on the first aim; it now waits for a running picture check and aims again when the row was rebuilt (3 of 3 runs pass).
+
+### Discussed, not changed
+- Kills the sight points call hidden read strict under 50 pixels, sliver kills only at 0 (0.26.0); whether 0 should be the line for both is in IDEAS.md for later, to be checked against Sujan's answers (Sujan, 30 Oct 2026).
+
 ## 0.26.0 (2026-10-30)
 
 The sliver kills (Sujan, 30 Oct 2026; the measurements are in IDEAS-ARCHIVE.md, "Sliver kills", and his answers in `docs/review-answers.md`, "Wallbang sliver check").

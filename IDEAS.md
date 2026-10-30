@@ -4,16 +4,12 @@ Parked ideas and features we've discussed but not built yet. Each entry keeps en
 
 Only what is open stays here. An open item keeps a three-line header (Status, Next step, Decided so far; each answer in Decided so far also has its line in `STATE.md`); a parked item keeps one line, since nothing happens until Sujan picks it up. Done items, and the full text of open ones, go to [IDEAS-ARCHIVE.md](IDEAS-ARCHIVE.md) word for word, under the same section and block names (since 29 Oct 2026). A section that older notes, code comments, `tests/README.md` or `tests/DEMOS.md` point to and that isn't here, such as "Tell exactly why a demo is broken", is in the archive under the same name.
 
-## Open follow-ups (checklist, updated 29 Oct 2026, 0.25.0)
+## Open follow-ups (checklist, updated 30 Oct 2026, 0.26.1)
 
 Everything raised in conversation that isn't finished, in one place. Each item says who does it. Ideas for new features are further down; this list is for loose ends.
 
 **Wallbang ground truth** (30 Oct 2026; `tests/ground_truth_check.py`, `tests/expected/`, rules in `tests/README.md`)
-- Done, in the archive: the 10 kills where Sujan's answer and the viewer disagreed (answered 30 Oct 2026).
-- [ ] **The 0.5 s window misses a hit at 0.5 s by rounding**
-  - Status: found 30 Oct 2026 by the ground truth check: Darky on n0rx, k1ck vs eq, Nuke, DreamHack Winter 2011, R15 C4 0:10, has a bullet only a surface explains 0.500244 s before the kill, so `k.t - p.t <= 0.5` in `computeHits` (`src/ui/wallbangs.js`) leaves it out by a quarter of a millisecond; the expected file has it as `loose-damage` with a `known_gap`.
-  - Next step: Claude, in its own pull request: allow for rounding at 0.5 s, then drop that kill's `known_gap` and run `ground_truth_check.py`.
-  - Decided so far: loose from damage needs a bullet 0.5 s or less before the kill (Sujan, 28 Oct 2026); this one is meant to count (Sujan, 30 Oct 2026).
+- Done, in the archive: the 10 kills where Sujan's answer and the viewer disagreed (answered 30 Oct 2026); **The 0.5 s window misses a hit at 0.5 s by rounding** (fixed in 0.26.1, 30 Oct 2026).
 
 **Sliver kills** (30 Oct 2026; built in 0.26.0)
 - Done, in the archive: **The sight points see a sliver the picture doesn't** (built in 0.26.0, 30 Oct 2026: strict at 0 pixels, LOOSE from 1 to 49); **Railings and Nuke vents** (railings built in 0.26.0; the vent exception withdrawn, 30 Oct 2026).
@@ -21,6 +17,10 @@ Everything raised in conversation that isn't finished, in one place. Each item s
   - Status: built in 0.26.0; not yet checked by Sujan in the viewer (the 10 kills were answered on the review page).
   - Next step: Sujan opens FX vs eSahara, Dust2, DreamHack Winter 2010: R18 0:21 KUBEN on RARA reads LOOSE, its tag's hover saying the sight lines reach him; NoA vs Pentagram, Train 2006: R18 1:22 MJE on kubenB reads strict; SK vs Na`Vi, Train, DreamHack Winter 2011: R31 C4 0:09 GeT_RiGhT on markeloff isn't listed (the railing).
   - Decided so far: a kill the sight points see with the crosshair through cover is listed under 50 pixels in the picture, strict at 0, LOOSE from 1 to 49, with both guards (Sujan, 30 Oct 2026); railings aren't cover (Sujan, 30 Oct 2026).
+- [ ] **One line for strict: 0 pixels for hidden kills too?** (for later, Sujan, 30 Oct 2026)
+  - Status: kills the finder's sight points call hidden read strict under 50 pixels of the victim in the picture (0.23.0), but sliver kills need 0 pixels for strict (0.26.0), so two kills with the same picture can get different tags.
+  - Next step: Claude, later: check whether 0 pixels should be the strict line for both, against Sujan's answers in `tests/expected/` (which hidden kills at 1 to 49 pixels he answered, and whether he called them strict or loose); then Sujan decides.
+  - Decided so far: hidden kills strict under 50 pixels, LOOSE from 50 (Sujan, 25 Oct 2026); sliver kills strict at 0, LOOSE from 1 to 49 (Sujan, 30 Oct 2026).
 
 **Sujan's feedback of 23 Oct 2026** (HLTV viewer; built in 0.22.0 unless said; demos and events in `tests/DEMOS.md`)
 - Done, in the archive: **Republish the claude.ai viewer**, closed 29 Oct 2026 without republishing (the claude.ai copy stays at 0.23.0, GitHub Pages is the only live viewer, Sujan 29 Oct 2026); Sujan's answers on the 23 Oct review page (24 Oct 2026, on the 0.22.0 fixes), the three levels of wallbang (0.23.0 and 0.24.0), wallbang hits that didn't kill and the damage per wallbang (0.24.0).

@@ -257,7 +257,9 @@ function computeHits() {
   for (const k of D.kills) {
     if (!k.seenAim || (k.wb && k.wb.loose !== 'dmg') || !M.liveR.some((r) => r.n === k.round)) continue;
     const mine = proven.filter((p) => p.v === k.victim && p.s === k.killer && p.t <= k.t + 0.01 && k.t - p.t <= 2);
-    const near = mine.filter((p) => k.t - p.t <= 0.5);
+    // a millisecond more for rounding: the demo's times are 32-bit floats, so Darky's hit on n0rx (k1ck vs eq, Nuke,
+    // DreamHack Winter 2011, R15 C4 0:10) reads 0.500244 s before the kill (Sujan, 30 Oct 2026: it counts)
+    const near = mine.filter((p) => k.t - p.t <= 0.501);
     if (!near.length) continue;
     k.wb = Object.assign({}, k.seenAim, { loose: 'dmg', dmg: near[near.length - 1] }); k.seenPx = -2;
     for (const p of mine) if (!cover.some((x) => x.t === p.t && x.v === p.v)) cover.push(p);
