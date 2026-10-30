@@ -40,6 +40,16 @@
    "expected": "strict",
    "known_gap": "CHANGELOG.md, Known limits: \"NEO on ArcadioN (74) and gob b on Xizt (223) read LOOSE, where Sujan finds the victim hidden\" (strict and LOOSE split at 50 pixels, Sujan 25 Oct 2026)",
    "source": "docs/review-answers.md, \"Wallbang fix check, 0.22.1\" (24 Oct 2026), \"Dropped: part of the victim in view\": No, he was fully hidden (Sujan, 24 Oct 2026)"
+  },
+  {
+   "round": 15,
+   "timer": "1:28",
+   "killer": "fnaticMSI Friis <3 bambi",
+   "victim": "mousesports | KARRiGAN",
+   "gun": "awp",
+   "expected": "loose",
+   "known_gap": "the sight points see a sliver of him (5 of 15 clear) that the picture doesn't (26 pixels), so the picture check never runs and the finder leaves the kill out (IDEAS.md, \"Sliver kills\"); kept with this known gap until option A is built (Sujan, 30 Oct 2026)",
+   "source": "docs/review-answers.md, \"Wallbang sliver check\" (30 Oct 2026), g09: loose"
   }
  ]
 }

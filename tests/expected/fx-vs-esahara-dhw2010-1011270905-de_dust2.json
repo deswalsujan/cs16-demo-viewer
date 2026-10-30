@@ -24,6 +24,16 @@
    "source": "docs/review-answers.md, \"Loose wallbang check\" (27 and 28 Oct 2026), k04002: loose"
   },
   {
+   "round": 18,
+   "timer": "0:21",
+   "killer": "Frag eXecutors  KUBEN[t]",
+   "victim": "ESAHARA.net RARA",
+   "gun": "ak47",
+   "expected": "loose",
+   "known_gap": "the sight points see a sliver of him (2 of 15 clear) that the picture doesn't (41 pixels), so the picture check never runs and the finder leaves the kill out (IDEAS.md, \"Sliver kills\"); kept with this known gap until option A is built (Sujan, 30 Oct 2026)",
+   "source": "docs/review-answers.md, \"Wallbang sliver check\" (30 Oct 2026), g01: loose"
+  },
+  {
    "round": 26,
    "timer": "C4 0:23",
    "killer": "Frag eXecutors  742",

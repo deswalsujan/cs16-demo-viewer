@@ -32,6 +32,16 @@
    "gun": null,
    "expected": "loose-damage",
    "source": "docs/review-answers.md, \"Wallbang fix check, 0.22.1\" (24 Oct 2026), \"Inferno's lamp posts\": Yes, part of him was in view (Sujan, 24 Oct 2026); the box around a lamp post isn't cover (STATE.md Decisions, Sujan, 24 Oct 2026); loose-damage, Sujan, 30 Oct 2026 (STATE.md Decisions, \"The 10 kills the first run disagreed on\"): the invisible box around a lamp post stops bullets (STATE.md Decisions, Inferno's lamp posts, Sujan, 24 Oct 2026), part of him was in view (his answer above), and KUBEN's bullets lost damage through it up to 0.11 s before the kill (loose from damage, STATE.md Decisions, Sujan, 28 Oct 2026)"
+  },
+  {
+   "round": 24,
+   "timer": "0:29",
+   "killer": "AGAiN  Loord",
+   "victim": "mousesports | karriganbOb~",
+   "gun": "m4a1",
+   "expected": "strict",
+   "known_gap": "the sight points see a sliver of him (5 of 15 clear) that the picture doesn't (0 pixels), so the picture check never runs and the finder leaves the kill out (IDEAS.md, \"Sliver kills\"); kept with this known gap until option A is built (Sujan, 30 Oct 2026)",
+   "source": "docs/review-answers.md, \"Wallbang sliver check\" (30 Oct 2026), g10: strict; Sujan's note: fully hidden at the killing shot, though most of the damage before it was a loose wallbang (karrigan was at the corner of the surface)"
   }
  ]
 }

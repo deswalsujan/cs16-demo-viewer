@@ -6,6 +6,16 @@
  "map": "de_tuscan",
  "kills": [
   {
+   "round": 4,
+   "timer": "1:05",
+   "killer": "fnaticMSI Gux <3 pingu",
+   "victim": "mousesports | gob  b",
+   "gun": "deagle",
+   "expected": "strict",
+   "known_gap": "the sight points see a sliver of him (3 of 15 clear) that the picture doesn't (0 pixels), so the picture check never runs and the finder leaves the kill out (IDEAS.md, \"Sliver kills\"); kept with this known gap until option A is built (Sujan, 30 Oct 2026)",
+   "source": "docs/review-answers.md, \"Wallbang sliver check\" (30 Oct 2026), g03: strict"
+  },
+  {
    "round": 5,
    "timer": "C4 0:05",
    "killer": "mousesports | zonixx",
