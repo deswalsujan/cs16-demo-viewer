@@ -6,7 +6,7 @@ import os, sys, json, os, threading, http.server, functools
 from playwright.sync_api import sync_playwright
 
 src, label, W, H, DPR = sys.argv[1], sys.argv[2], int(sys.argv[3]), int(sys.argv[4]), float(sys.argv[5])
-THREE = os.environ.get('THREE_JS', os.path.join(os.path.dirname(os.path.abspath(__file__)), 'three.min.js'))
+THREE = os.environ.get('THREE_JS', os.path.join(os.path.dirname(os.path.abspath(__file__)), '..', 'src', 'vendor', 'three.min.js'))
 HL = os.environ['HALF_LIFE_DIR']
 html = open(src, encoding='utf-8').read()
 i = html.rindex('})();')

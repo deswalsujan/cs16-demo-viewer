@@ -1,0 +1,6 @@
+# The test scripts' Python packages, pinned (30 Oct 2026): the set on Sujan's Mac, where all seven checks pass;
+# check.yml installs the same. Install with: pip install -r tests/requirements.txt
+greenlet==3.2.5
+playwright==1.60.0
+pyee==13.0.1
+typing_extensions==4.16.0

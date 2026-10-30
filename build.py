@@ -15,7 +15,9 @@ view3d = src('view3d.part.js')
 # player models and sound live in their own files, placed just before the simple player figures
 models = src('stock.js') + '\n' + src('mdl.js') + '\n' + src('players3d.js') + '\n' + src('audio.js') + '\n'
 view3d = view3d.replace('/*MODELS*/\n', models)
-for name, code in (('demo.js', parser), ('bsp.js', bsp), ('models', models)):
+# three.js r128, the file cdnjs served before 30 Oct 2026 (same SHA-256 as npm's three@0.128.0); the tests use it too
+three = src('vendor/three.min.js')
+for name, code in (('demo.js', parser), ('bsp.js', bsp), ('models', models), ('vendor/three.min.js', three)):
     assert '</script' not in code, name + ' must not contain a closing script tag'
 
 version = open(os.path.join(here, 'VERSION'), encoding='utf-8').read().strip()
@@ -56,7 +58,9 @@ page = (template
         .replace('/*BSP*/', bsp)
         .replace('/*VIEW3D*/', view3d)
         # last, so it also reaches the files inlined above
-        .replace('__VERSION__', version))
+        .replace('__VERSION__', version)
+        # after the version, so nothing is replaced inside three.js
+        .replace('/*THREE*/', three))
 
 os.makedirs(os.path.join(here, 'dist'), exist_ok=True)
 open(os.path.join(here, 'dist', 'artifact.html'), 'w', encoding='utf-8').write(page)

@@ -152,7 +152,7 @@ Ideas from the discussion (3 Oct 2026, not decided):
 - **Show the event's name while a demo plays** (parked 2 Oct 2026 by Sujan, not urgent): 19 of 26 demos on the Mac name the event in their own text (the game server's or the HLTV server's name); show it somewhere quiet (the load summary, the header's file line, the hold-Tab scoreboard or Copy debug info).
 - **Team names when nothing names the team** (parked 2 Oct 2026 by Sujan, leave as is for now): the header says "Team 1" and "Team 2", click to rename; a fix would need a list of known players per team and year, which goes stale.
 - **Safety with custom and bad files.** Fall back to the simple figure when a model's skeleton or animations don't match stock CS, cap model and sound size, decode unusual WAVs through the browser, audit every place player names and demo text reach the page, and bail out of files with nonsense values.
-- **Privacy hardening for sujandeswal.com.** Self-host three.js and the fonts, and add a security header that blocks the page from sending data anywhere.
+- **Privacy hardening for sujandeswal.com.** Self-host the fonts (three.js is built into the page since 0.26.2), and add a security header that blocks the page from sending data anywhere.
 - **Wallhack measure** (parked, from the "See through walls" discussion, 1 Oct 2026). Measure how long each player's crosshair stays on enemies hidden behind walls, compared with the same players in the open. A high share of time tracking hidden enemies is a sign admins could use alongside watching the view.
 - **Highlight finder** (parked, not urgent). 3Ks, 4Ks, aces, clutches and quick multi-kills, filterable by player and weapon.
 - **Record a clip** from the 3D view, with sound, to a video file.

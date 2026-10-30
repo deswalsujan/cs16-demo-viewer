@@ -20,7 +20,7 @@ def check(label, ok, extra=''):
 
 with sync_playwright() as p:
     b = p.chromium.launch(); pg = b.new_page(viewport={'width': 880, 'height': 1300})
-    pg.route('**/three.min.js', lambda r: r.fulfill(path=os.environ.get('THREE_JS', os.path.join(here, 'three.min.js')), content_type='application/javascript'))
+    pg.route('**/three.min.js', lambda r: r.fulfill(path=os.environ.get('THREE_JS', os.path.join(here, '..', 'src', 'vendor', 'three.min.js')), content_type='application/javascript'))
     pg.route('https://fonts.googleapis.com/**', lambda r: r.fulfill(body='', content_type='text/css'))
     pg.goto(f'http://127.0.0.1:{srv.server_port}/{os.path.basename(page_path)}')
     check('no search box before a folder is chosen', pg.locator('#demoFind').is_hidden())
