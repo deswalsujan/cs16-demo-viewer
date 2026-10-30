@@ -137,6 +137,7 @@ Stand-alone checks:
 
 | Script | Checks | Time |
 |---|---|---|
+| `notes_check.py` | The notes agree with the repo (agent brief, 30 Oct 2026): every path in backticks in STATE.md, AGENTS.md, IDEAS.md and README.md exists (branch names, the player's game folder, placeholders and a short ignore list left out); CHANGELOG.md's newest version is `VERSION`; the entries at or above it don't say "until then", "not yet decided" or "In progress", and an "In progress" entry is only on a `wip/` branch; every `src/` file has a line in AGENTS.md, "Where the code is". Fails (exit code 1) with the file and line. No browser, no game files; runs in `check.yml` | a second |
 | `theatre_test.py <page> <label> <width> <height> <scale>` | 39 Theatre mode checks with a real mouse and keyboard, for one screen setup | about 10 minutes |
 | `theatre_all_setups.sh` | The above for five setups: 14-inch and 13-inch MacBook (2x), Windows at 100%, 125% and 150% | about 45 minutes |
 | `theatre_side_panel_test.py`, `theatre_together_test.py` | The 0.9.1 and 0.9.2 checks: the side panel doesn't bring in the header; all panels come and go together | about 5 minutes each |
