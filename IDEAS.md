@@ -109,6 +109,8 @@ Everything raised in conversation that isn't finished, in one place. Each item s
 
 ## Roadmap (agreed 1 Oct 2026, in this order)
 
+Who the viewer is for, in Sujan's words (30 Oct 2026): "The viewer is for CS 1.6 players who want to watch HLTV and POV demos in the browser without opening the game, with easier controls and more information than the game's own player, and to find wallbangs; a second use is admins checking suspected cheaters with **See through walls**." The order below stays as it is (Sujan, 30 Oct 2026).
+
 Item 1, smoother playback, is done (0.8.0; Smooth aim later removed in 0.10.0). Theatre mode (0.9.0 to 0.9.3), the sniper scope (0.10.0 and 0.10.1), See through walls and Team colours (0.11.0) were added along the way.
 
 2. **Requirements section in the README.** What's left: a short "Requirements" list (desktop computer, recent Chrome or Edge, a browser with WebGL for 3D, 8 GB RAM recommended for long demos, phones not supported, Firefox and Safari work without remembering the folder). Already done, nothing to add: the README's "You need your own legitimate copy of Counter-Strike 1.6, installed through Steam" box at the top, and on the start screen the folder row's "The Half-Life folder from your Steam install" text (0.12.1). The start screen also says plainly "Needs your own copy of Counter-Strike 1.6, installed through Steam" since 0.12.4.
@@ -157,7 +159,7 @@ Ideas from the discussion (3 Oct 2026, not decided):
 - **Bookmarks with notes**, exportable with the same timestamps as the wallbang list.
 - **Sounds on the radar**: gunshots and footsteps as brief pulses in 2D.
 - **Share a moment by link**, such as `#r12` to open round 12.
-- **Product basics still to do**: a compatibility note (browsers, HLTV vs POV demos) and a license (MIT, decided by Sujan 30 Oct 2026; the file comes in a later docs pull request, `STATE.md`).
+- **Product basics still to do**: a compatibility note (browsers, HLTV vs POV demos); the license is done (MIT, `LICENSE`, Sujan 30 Oct 2026).
 - **1.6-era look** (parked, not urgent) as an optional theme: VGUI-style panels, Verdana/Tahoma, orange HUD numbers, sprites read from the player's own `cstrike/sprites`.
 - **Say when a recording stops partway through its last round** (found 2 Oct 2026): mousesports vs SK, Mirage, and ALTERNATE vs AGAiN, Inferno, both ESWC 2011, read one round short of a win; the load summary could say "The recording stops partway through the last round". Belongs with the broken demo messages of 0.16.0; needs a mockup.
 - **Shaded lighting on player models** so they darken in shadowed areas like in-game.

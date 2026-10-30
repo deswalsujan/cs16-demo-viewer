@@ -71,16 +71,21 @@ src/players3d.js    Player models in the 3D view: gait, aiming, deaths, corpses,
 src/audio.js        Sound: .wav decoding, positional playback, radio lines
 src/template.html   The page's layout, with a /*INLINE name*/ line where each file below goes in
 src/app.css         The page's styles
-src/ui/             The page's code, one file per part: 2D radar, timeline, sidebar, Join card, wallbangs, Theatre mode, load summary and the rest
+src/ui/             The page's code, one file per part: 2D radar, timeline, sidebar, Join card, wallbangs, Theatre mode, load summary and the rest; one line per file in AGENTS.md, "Where the code is"
 build.py            Combines everything into one self-contained page
 CHANGELOG.md        What changed, newest first
+LIMITS.md           What the viewer can't do yet, or does only roughly
+LICENSE             MIT license
 docs/               Design images: scope styles, the approved side panel designs (0.13.0), Count them, split maps, demo search, the Zalando Sans screens, crosshair kill markers (0.17.0), the start screen once the folder is chosen (0.18.0), skips in the recording (0.19.0) and the skip tags in the Kills list (0.21.0); one line per file in docs/README.md
 tests/              Test and measurement scripts: browser checks, Theatre mode checks, demo data probes (see tests/README.md)
 IDEAS.md            Parked ideas and open decisions, with the discussion behind them
 IDEAS-ARCHIVE.md    Done items, and the full text of open ones, moved from IDEAS.md word for word
 AGENTS.md           How agent sessions work on this repo: workflow, checking facts, where the test files are
 STATE.md            What is open and what is decided, one line each
-CLAUDE.md           Loads AGENTS.md and STATE.md into every Claude Code session
+CLAUDE.md           Loads AGENTS.md, STATE.md and LIMITS.md into every Claude Code session
+tests/DEMOS.md      Every test demo, its event and which machine has it
+docs/review-answers.md  Sujan's answers on the claude.ai review pages
+docs/agent-brief-2026-10-29.md  The agent brief that numbered work items 6.1 to 6.7
 VERSION             Current version, shown in the viewer
 src/stock.js        Fingerprints of the stock CS 1.6 models, to spot custom ones
 index.html          The built page (what GitHub Pages serves at https://deswalsujan.github.io/cs16-demo-viewer/, updated on every push to main)
@@ -105,4 +110,5 @@ Commit the rebuilt `index.html` with your change. Every pull request is checked 
 - Demo message layouts were adapted from [hlviewer.js](https://github.com/skyrim/hlviewer.js) by Stefan Stojković (MIT license).
 - Fonts: [Zalando Sans](https://fonts.google.com/specimen/Zalando+Sans) and [IBM Plex Mono](https://fonts.google.com/specimen/IBM+Plex+Mono) (SIL Open Font License), loaded from Google Fonts.
 - 3D rendering uses [three.js](https://threejs.org/) r128 (MIT license), loaded from cdnjs.
+- This project's code is under the [MIT license](LICENSE).
 - Counter-Strike and Half-Life are trademarks of Valve. This project is unofficial and not affiliated with Valve.

@@ -1,6 +1,6 @@
 # State
 
-What is open and what is decided, right now. Loaded into every session through `CLAUDE.md`. Open items: `IDEAS.md`; their full text and everything done, word for word: `IDEAS-ARCHIVE.md`; what shipped: `CHANGELOG.md`; Sujan's answers on the claude.ai review pages: `docs/review-answers.md`; current version: `VERSION`. When Sujan confirms or decides something, change its line here in the same turn (old answer to Superseded) and tick `IDEAS.md`.
+What is open and what is decided, right now. Loaded into every session through `CLAUDE.md`. Open items: `IDEAS.md`; their full text and everything done, word for word: `IDEAS-ARCHIVE.md`; what shipped: `CHANGELOG.md`; what the viewer can't do yet: `LIMITS.md`; Sujan's answers on the claude.ai review pages: `docs/review-answers.md`; current version: `VERSION`. When Sujan confirms or decides something, change its line here in the same turn (old answer to Superseded) and tick `IDEAS.md`.
 
 ## Open now
 - **Sujan, by eye (0.23.0):** FX vs Lions, Nuke, DreamHack Winter 2010: R13 1:19 NIKO on LoordB reads LOOSE, R22 0:47 THREAT on LoordB strict; Wallbangs heading counts both.
@@ -11,10 +11,9 @@ What is open and what is decided, right now. Loaded into every session through `
 - **Sujan to decide (POV):** the hidden-enemies note is easy to miss (show it after the load summary closes, larger?); list a victim never sent to the recorder's game as "not seen on his screen" (would change the 5 Oct decision below).
 - **Claude (POV):** aimbot catcher, not started. **See through walls** in POV works on what the server sent.
 - **Parked:** POV gun animations weapon by weapon; POV voice and chat; a broken demo's load summary line (when one turns up); a warmup-only file showing one round (needs a new file); order of 3+ parts with no times in their names; load time of a big (145 MB) demo; on the move to sujandeswal.com, drop `noindex` and harden privacy.
-- **Roadmap next:** README Requirements list, then opening duels and trades.
+- **Roadmap next:** README Requirements list, then opening duels and trades; the order agreed on 1 Oct 2026 stays (Sujan, 30 Oct 2026; who the viewer is for: the top of `AGENTS.md`).
 - **Sujan, by eye (0.26.0):** FX vs eSahara, Dust2, DreamHack Winter 2010, R18 0:21 KUBEN on RARA reads LOOSE (hover: the sight lines reach him); NoA vs Pentagram, Train 2006, R18 1:22 MJE on kubenB strict; SK vs Na`Vi, Train, DreamHack Winter 2011, R31 C4 0:09 GeT_RiGhT on markeloff not listed (the railing).
 - **Claude, its own pull request:** the 0.5 s window for loose from damage misses a hit 0.500244 s before the kill by rounding (Darky on n0rx, k1ck vs eq, Nuke, DreamHack Winter 2011, R15 C4 0:10; `computeHits` in `src/ui/wallbangs.js`); then drop that kill's `known_gap` (IDEAS.md, **The 0.5 s window misses a hit at 0.5 s by rounding**).
-- **Claude, a later docs pull request (decided 30 Oct 2026, below):** the who-it's-for sentence at the top of `AGENTS.md`, Known limits moved to `LIMITS.md`, a `LICENSE` file (MIT) and its line in README "Credits".
 
 ## Decisions
 - Who the viewer is for, in Sujan's words: "The viewer is for CS 1.6 players who want to watch HLTV and POV demos in the browser without opening the game, with easier controls and more information than the game's own player, and to find wallbangs; a second use is admins checking suspected cheaters with **See through walls**." The roadmap order stays as it is (Sujan, 30 Oct 2026, answering an outside audit of that day).
