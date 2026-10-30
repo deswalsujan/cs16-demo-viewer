@@ -1,6 +1,62 @@
 # Changelog
 
-What changed in the viewer, newest first. The version shows in the viewer's shortcuts panel (press ?) and on the start screen. Code locations in entries up to 0.25.1 are as they were before the `src/ui/` split of 29 Oct 2026 (pull request #10); the current map is in AGENTS.md, "Where the code is".
+What changed in the viewer, newest first. The version shows in the viewer's shortcuts panel (press ?) and on the start screen. Code locations in entries up to 0.25.1 are as they were before the `src/ui/` split of 29 Oct 2026 (pull request #10); the current map is in AGENTS.md, "Where the code is". The index below has one line per version; from 0.26.0 on, each release's full test log is in `tests/logs/<version>.md`.
+
+## Versions
+
+- [0.26.2](#0262-2026-10-30) 2026-10-30: three.js built into the page
+- [0.26.1](#0261-2026-10-30) 2026-10-30: Loose wallbang rounding fix
+- [0.26.0](#0260-2026-10-30) 2026-10-30: Sliver kills; railings aren't cover
+- [0.25.1](#0251-2026-10-29) 2026-10-29: Source on GitHub link
+- [0.25.0](#0250-2026-10-29) 2026-10-29: POV mode setting in main
+- [0.24.0](#0240-2026-10-28) 2026-10-28: Wallbang damage, loose from damage
+- [0.23.0](#0230-2026-10-25) 2026-10-25: Strict and LOOSE wallbangs
+- [0.22.2](#0222-2026-10-24) 2026-10-24: Two kills at one moment
+- [0.22.1](#0221-2026-10-23) 2026-10-23: Lamp posts and fence holes
+- [0.22.0](#0220-2026-10-23) 2026-10-23: Wallbang and skip fixes
+- [0.21.1](#0211-2026-10-15) 2026-10-15: Wallbangs list times line up
+- [0.21.0](#0210-2026-10-15) 2026-10-15: C4 countdown, skip tags
+- [0.20.0](#0200-2026-10-14) 2026-10-14: Skips found more reliably
+- [0.19.1](#0191-2026-10-14) 2026-10-14: Skip note before the skip
+- [0.19.0](#0190-2026-10-14) 2026-10-14: Skips in the recording marked
+- [0.18.1](#0181-2026-10-14) 2026-10-14: A shorter 3D bar
+- [0.18.0](#0180-2026-10-14) 2026-10-14: Panel clicks, slow motion, timers
+- [0.17.0](#0170-2026-10-05) 2026-10-05: Round announcements, C4 and kits
+- [0.16.0](#0160-2026-10-03) 2026-10-03: Broken demos play, camera fixes
+- [0.15.5](#0155-2026-10-02) 2026-10-02: Wallbang damage rule, kill timing
+- [0.15.4](#0154-2026-10-02) 2026-10-02: Debug info names demo kind
+- [0.15.3](#0153-2026-10-02) 2026-10-02: Zalando Sans font
+- [0.15.2](#0152-2026-10-02) 2026-10-02: Search your demos
+- [0.15.1](#0151-2026-10-02) 2026-10-02: Round counting fixes
+- [0.15.0](#0150-2026-10-02) 2026-10-02: Join a map's parts
+- [0.14.3](#0143-2026-10-02) 2026-10-02: Players no longer drawn late
+- [0.14.2](#0142-2026-10-02) 2026-10-02: Round counting and player stats
+- [0.14.1](#0141-2026-10-02) 2026-10-02: FX vs SK score, names
+- [0.14.0](#0140-2026-10-02) 2026-10-02: Smokes and cameras, Tuscan feedback
+- [0.13.1](#0131-2026-10-02) 2026-10-02: Plainer wallbang crosshair marker
+- [0.13.0](#0130-2026-10-02) 2026-10-02: Wallbang fixes, POV demos open
+- [0.12.4](#0124-2026-10-01) 2026-10-01: Start screen: needs CS 1.6
+- [0.12.3](#0123-2026-10-01) 2026-10-01: Viewing settings remembered
+- [0.12.2](#0122-2026-10-01) 2026-10-01: Reset view in 3D
+- [0.12.1](#0121-2026-10-01) 2026-10-01: Folder row after first test
+- [0.12.0](#0120-2026-10-01) 2026-10-01: Half-Life folder remembered
+- [0.11.1](#0111-2026-10-01) 2026-10-01: Protocol 47 demos note
+- [0.11.0](#0110-2026-10-01) 2026-10-01: See through walls, Team colours
+- [0.10.1](#0101-2026-10-01) 2026-10-01: Scope like the game's
+- [0.10.0](#0100-2026-10-01) 2026-10-01: Sniper scope in Player's eyes
+- [0.9.3](#093-2026-10-01) 2026-10-01: Theatre off on start screen
+- [0.9.2](#092-2026-10-01) 2026-10-01: Theatre mode bars and score
+- [0.9.1](#091-2026-10-01) 2026-10-01: Theatre mode side panel fix
+- [0.9.0](#090-2026-10-01) 2026-10-01: Theatre mode and full screen
+- [0.8.0](#080-2026-10-01) 2026-10-01: Smoother playback
+- [0.7.1](#071-2026-10-01) 2026-10-01: Scores, deaths, Inferno props fixed
+- [0.7.0](#070-2026-10-01) 2026-10-01: Doors, right-handed guns, start screen
+- [0.6.0](#060-2026-10-01) 2026-10-01: Load summary card
+- [0.5.0](#050-2026-09-30) 2026-09-30: Version, debug info, summary
+- [0.4.0](#040-2026-09-30) 2026-09-30: Player models, heatmap, full screen
+- [0.3.0](#030-2026-09-30) 2026-09-30: First-person weapons
+- [0.2.0](#020-2026-09-30) 2026-09-30: Real models and sound
+- [0.1.0](#010-before-2026-09-30) before 2026-09-30: First version: radar, 3D, kills
 
 ## Known limits
 Moved to [LIMITS.md](LIMITS.md) on 30 Oct 2026; release entries below still say "Known limits" for that list.
@@ -12,9 +68,9 @@ Moved to [LIMITS.md](LIMITS.md) on 30 Oct 2026; release entries below still say 
 - The tests serve that file to older builds (`THREE_JS` defaults to it), and the Python packages are pinned in `tests/requirements.txt`, which `check.yml` installs (Playwright 1.60.0, the Mac's; GitHub had 1.64.1).
 
 ### How it was tested
-- `start_screen_check.py` now refuses every outside request but Google Fonts and checks three.js r128 is in the page: it fails on 0.26.1's build (the cdnjs request) and passes on this one. A demo opened the same way (Na`Vi vs FX, Dust2, SEC 2011 final, `regress_summary.js`) loads its 3D map and finishes the picture check with no outside request.
-- `ground_truth_check.py` (0 mismatches, 6 known gaps, PASS) and the other six checks pass on Sujan's Mac; `python3 build.py && git diff --exit-code -- index.html` is clean.
-
+- `start_screen_check.py` (in `check.yml`) now refuses every outside request but Google Fonts: it fails on 0.26.1's build and passes on this one.
+- `ground_truth_check.py` (0 mismatches, 6 known gaps) and the other six checks pass on Sujan's Mac; `check.yml` passes with the pinned packages.
+- Full log: `tests/logs/0.26.2.md`.
 ### Discussed, not changed
 - Serving three.js as its own file beside `index.html` (the brief's other choice): a saved copy of `index.html` would then need the file next to it, so it's built in. With nothing loaded from cdnjs, `integrity` and `crossorigin` aren't needed.
 
@@ -24,9 +80,9 @@ Moved to [LIMITS.md](LIMITS.md) on 30 Oct 2026; release entries below still say 
 - **Loose wallbangs from damage**: the 0.5 s window allows a millisecond more, since the demo's times are 32-bit floats. Darky's kill on n0rx (k1ck vs eq, Nuke, DreamHack Winter 2011, R15 C4 0:10), with his hit through cover 0.500244 s before, now reads LOOSE WB, as Sujan answered (30 Oct 2026). One more kill changed with it: starix on RobbaN (Na`Vi vs SK, Inferno, recorded 24 Oct 2011, event not known), R14 0:26, AK, now loose from damage.
 
 ### How it was tested
-- `compare_all.sh` with `page/regress_summary.js` on the 0.26.0 build and this one, on 64 demos, every one in the Half-Life folder and the two test folders but `test demos/POV`, through an APFS clone as in 0.25.0 (the 7 POV demos in the Half-Life folder with **POV mode** off): 62 identical, the two kills above the only differences; all 64 loaded their map and finished the picture check.
-- `ground_truth_check.py`: 223 kills and 27 scores and K-D on 45 demos, 0 mismatches, 6 known gaps (Darky on n0rx's gone), PASS. The other six checks pass on Sujan's Mac. `panel_click_check.py` failed on 0.26.0's build too: the picture check's last rebuild of the list could land on the first aim; it now waits for a running picture check and aims again when the row was rebuilt (3 of 3 runs pass).
-
+- `regress_summary.js` (with `compare_all.sh`) on 64 demos, 0.26.0 against this build: the two kills above changed, nothing else.
+- `ground_truth_check.py`: 0 mismatches, 6 known gaps, PASS. The other six checks pass on Sujan's Mac, `panel_click_check.py` after a fix to the test itself.
+- Full log: `tests/logs/0.26.1.md`.
 ### Discussed, not changed
 - Kills the sight points call hidden read strict under 50 pixels, sliver kills only at 0 (0.26.0); whether 0 should be the line for both is in IDEAS.md for later, to be checked against Sujan's answers (Sujan, 30 Oct 2026).
 
@@ -39,11 +95,10 @@ The sliver kills (Sujan, 30 Oct 2026; the measurements are in IDEAS-ARCHIVE.md, 
 - **Railings aren't cover** in the picture check: what the map draws but bullets pass at full damage (a `func_illusionary` in a see-through render mode: de_train's and Inferno's railings, Inferno's vines, Nuke's wires) is left out of the picture, as the sight lines already left it out (Sujan, 30 Oct 2026). GeT_RiGhT's kill on markeloff through the highway slope's railing (SK vs Na`Vi, Train, DreamHack Winter 2011, R31 C4 0:09) shows 2,054 pixels of markeloff and stays a normal kill. No wallbang on the 50 test demos changed with it.
 
 ### How it was tested
-- **The 50 test demos**, `tests/page/regress_summary.js` (which now marks these kills "(sliver)") on the 0.25.1 build and this one: 19 wallbangs added, none removed, none changed from strict to LOOSE or back; score, live rounds, kills and every K-D identical. The damage bursts differ only by the new kills' numbers (16 demos), and on SK vs eSTRO, Dust2, WCG 2008 (the 5-minute file with SK only) Tentpole's 51 HP AWP hit on zet 1.75 s before the kill joins it. On the 50 demos: 390 strict wallbangs and 195 LOOSE (21 by pixels, 6 sliver kills, 168 from damage).
-- **What the guards and the picture did there**: 631 kills the points see with the crosshair through cover (not loose from damage). The damage rule stopped 57. The positions stopped 7: 4 by 194 to 1,029 units (Fnatic vs mousesports, Tuscan, ESWC 2011, three times, where the 256-object limit loses players; mTw vs Lions, Nuke, DreamHack Summer 2011, once), 2 by 33 and 34 units (they show 490 and 2,051 pixels, so they'd stay out anyway), and 1 with no snapshot. The picture check drew 567: 525 show 200 or more pixels, 23 show 50 to 199, 6 show 1 to 49 and 13 show 0.
-- **Sujan's answers**, `ground_truth_check.py` on every expected file: 223 kills and 27 scores and K-D on 45 demos, 0 mismatches, 7 known gaps, PASS (1.4 minutes). Of his 13 answers on these kills, 11 pass: KUBEN on RARA (41 pixels), Friis on KARRiGAN (26), ave on PASHA (15) and GeT_RiGhT on KORN (15) LOOSE; Gux on gob b, aslak on face, RobbaN on ari, Loord on karrigan, MJE on kubenB, markeloff on Delpan and PASHA on gob b strict at 0 pixels, so the last three lose the known gaps they had since 5 Oct 2026. REAL on alleN (Sweden vs Norway, Dust2, ASUS ENC 2010, R25 0:46) and Tentpole on zet (R1 1:35), loose by eye at 0 pixels, read strict: known gaps. GeT_RiGhT on markeloff stays out, as Sujan answered. With option A, the first build of this pull request, the same check had 1 mismatch (Tentpole on zet, then expected none) and 12 known gaps.
-- `folder_row_test.py` (20 of 20), `start_screen_check.py`, `prefs_check.py`, `demo_search_check.py`, `late_kill_timing_check.py` and `panel_click_check.py` pass on Sujan's Mac; `python3 build.py && git diff --exit-code -- index.html` is clean.
-
+- `regress_summary.js` (with `compare_all.sh`) on the 50 test demos, 0.25.1 against this build: 19 wallbangs added (13 strict, 6 LOOSE), none removed or changed; scores, live rounds, kills and K-D identical.
+- `ground_truth_check.py`: 223 kills and 27 scores and K-D on 45 demos, 0 mismatches, 7 known gaps, PASS; 11 of Sujan's 13 answers on these kills pass.
+- The other six checks pass on Sujan's Mac; `index.html` matches a fresh build.
+- Full log: `tests/logs/0.26.0.md`.
 ### Discussed, not changed
 - **Option A** (every sliver kill under 50 pixels LOOSE) fit 5 of Sujan's 13 answers; the split fits 11. Options B (the same kills, read strict) and C (only where the killing bullet is the killer's only hit, 12 kills) weren't picked.
 - **A Nuke vent as cover for the first bullet through it** (Sujan's note on the sliver check, 30 Oct 2026) was withdrawn the same day: breakable surfaces (vents, glass, shutters) are never cover, even for the bullet that breaks them, as since 0.22.0; an unbreakable one, such as the semi-glass door at Nuke's lower site, stays cover even where the player shows through it (Sujan, 30 Oct 2026). Nothing in `tests/expected/` relied on the exception.
