@@ -85,6 +85,7 @@ AGENTS.md           How agent sessions work on this repo: workflow, checking fac
 STATE.md            What is open and what is decided, one line each
 CLAUDE.md           Loads AGENTS.md, STATE.md and LIMITS.md into every Claude Code session
 tests/DEMOS.md      Every test demo, its event and which machine has it
+tests/logs/         Each release's full test log, from 0.26.0 on (CHANGELOG.md keeps a few lines and a pointer)
 docs/review-answers.md  Sujan's answers on the claude.ai review pages
 docs/agent-brief-2026-10-29.md  The agent brief that numbered work items 6.1 to 6.7
 VERSION             Current version, shown in the viewer

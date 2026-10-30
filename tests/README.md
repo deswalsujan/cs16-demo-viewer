@@ -2,9 +2,11 @@
 
 Scripts used while building 0.8.0 (1 Oct 2026) to 0.25.0 (29 Oct 2026). They're the starting point for the test suite in [IDEAS.md](../IDEAS.md). They're run by hand, except three that need no Half-Life folder (`start_screen_check.py`, `prefs_check.py`, `folder_row_test.py`): since 29 Oct 2026 those run on GitHub on every pull request and every push to main, after a check that `index.html` matches a fresh build of `src/` (`.github/workflows/check.yml`).
 
+Each release's full test log, from 0.26.0 on, is in `logs/<version>.md`; its CHANGELOG entry keeps a few lines and a pointer (30 Oct 2026).
+
 ## Setup
 
-1. Python 3 with Playwright, at the pinned versions: `pip install -r tests/requirements.txt`, then `python3 -m playwright install chromium` (`check.yml` installs the same file).
+1. Python 3 with Playwright, at the pinned versions: `pip install -r tests/requirements.txt`, then `python3 -m playwright install chromium` (`check.yml` installs the same file). On Sujan's Mac they're in `~/.venvs/cs16-tests`: put its `bin` first on `PATH`, or every browser check fails in a second (`compare_all.sh` then still says all demos are identical; look for its "NO RESULT" lines).
 2. three.js r128 is in the repo, `src/vendor/three.min.js`, and built into the page since 0.26.2. Builds before that load it from cdnjs; the scripts serve them the same file in place of the CDN, so they also run without internet.
 3. Node 18 or later, for the demo data probes.
 4. Build the viewer first (`python3 build.py`). The browser checks run against `index.html` in the repo root unless told otherwise.
