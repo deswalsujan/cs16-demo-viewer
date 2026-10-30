@@ -143,7 +143,7 @@ Ideas from the discussion (3 Oct 2026, not decided):
 - **Bookmarks with notes**, exportable with the same timestamps as the wallbang list.
 - **Sounds on the radar**: gunshots and footsteps as brief pulses in 2D.
 - **Share a moment by link**, such as `#r12` to open round 12.
-- **Product basics still to do**: a compatibility note (browsers, HLTV vs POV demos) and a license.
+- **Product basics still to do**: a compatibility note (browsers, HLTV vs POV demos) and a license (MIT, decided by Sujan 30 Oct 2026; the file comes in a later docs pull request, `STATE.md`).
 - **1.6-era look** (parked, not urgent) as an optional theme: VGUI-style panels, Verdana/Tahoma, orange HUD numbers, sprites read from the player's own `cstrike/sprites`.
 - **Say when a recording stops partway through its last round** (found 2 Oct 2026): mousesports vs SK, Mirage, and ALTERNATE vs AGAiN, Inferno, both ESWC 2011, read one round short of a win; the load summary could say "The recording stops partway through the last round". Belongs with the broken demo messages of 0.16.0; needs a mockup.
 - **Shaded lighting on player models** so they darken in shadowed areas like in-game.

@@ -12,8 +12,12 @@ What is open and what is decided, right now. Loaded into every session through `
 - **Claude (POV):** aimbot catcher, not started. **See through walls** in POV works on what the server sent.
 - **Parked:** POV gun animations weapon by weapon; POV voice and chat; a broken demo's load summary line (when one turns up); a warmup-only file showing one round (needs a new file); order of 3+ parts with no times in their names; load time of a big (145 MB) demo; on the move to sujandeswal.com, drop `noindex` and harden privacy.
 - **Roadmap next:** README Requirements list, then opening duels and trades.
+- **Claude, a later docs pull request (decided 30 Oct 2026, below):** the who-it's-for sentence at the top of `AGENTS.md`, Known limits moved to `LIMITS.md`, a `LICENSE` file (MIT) and its line in README "Credits".
 
 ## Decisions
+- Who the viewer is for, in Sujan's words: "The viewer is for CS 1.6 players who want to watch HLTV and POV demos in the browser without opening the game, with easier controls and more information than the game's own player, and to find wallbangs; a second use is admins checking suspected cheaters with **See through walls**." The roadmap order stays as it is (Sujan, 30 Oct 2026, answering an outside audit of that day).
+- Known limits move out of CHANGELOG.md into their own file, `LIMITS.md` (Sujan, 30 Oct 2026).
+- License: MIT (Sujan, 30 Oct 2026).
 - Wallbang levels: strict under 50 pixels of the victim in view, LOOSE from 50, still listed (Sujan, 25 Oct 2026, 0.23.0) (answers: `docs/review-answers.md`, "Wallbang fix check, 0.22.1").
 - Fences, grates and ladders stay cover for the wallbang finder (Sujan, 23 Oct 2026, 0.22.0).
 - What bullets break (Nuke's vents and upper windows, Inferno's shutters) isn't cover: a kill through it isn't a wallbang (Sujan, 23 Oct 2026, 0.22.0) (answers: `docs/review-answers.md`, "Wallbang fix check, 0.22.1").
