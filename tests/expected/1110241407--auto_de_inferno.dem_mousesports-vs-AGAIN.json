@@ -21,6 +21,7 @@
    "victim": "mousesports | gob b",
    "gun": null,
    "expected": "strict",
+   "known_gap": "the finder's 15 points see part of the victim, and the hidden check was left as in 0.17.0 after the denser check wasn't conclusive (STATE.md Decisions, Sujan, 5 Oct 2026); strict with this known gap, Sujan, 30 Oct 2026 (STATE.md Decisions, \"The 10 kills the first run disagreed on\")",
    "source": "IDEAS-ARCHIVE.md, \"Wallbangs and kill timing\", the 5 Oct 2026 denser check answers (Sujan, 5 Oct 2026): hidden, right; timer left empty: the note's 1:08 is from before 0.18.0 counted round timers in game time (CHANGELOG.md 0.18.0)"
   },
   {
@@ -29,8 +30,8 @@
    "killer": "AGAiN  KUBEN[t]",
    "victim": "mousesports | gob b",
    "gun": null,
-   "expected": "none",
-   "source": "docs/review-answers.md, \"Wallbang fix check, 0.22.1\" (24 Oct 2026), \"Inferno's lamp posts\": Yes, part of him was in view (Sujan, 24 Oct 2026); the box around a lamp post isn't cover (STATE.md Decisions, Sujan, 24 Oct 2026)"
+   "expected": "loose-damage",
+   "source": "docs/review-answers.md, \"Wallbang fix check, 0.22.1\" (24 Oct 2026), \"Inferno's lamp posts\": Yes, part of him was in view (Sujan, 24 Oct 2026); the box around a lamp post isn't cover (STATE.md Decisions, Sujan, 24 Oct 2026); loose-damage, Sujan, 30 Oct 2026 (STATE.md Decisions, \"The 10 kills the first run disagreed on\"): the invisible box around a lamp post stops bullets (STATE.md Decisions, Inferno's lamp posts, Sujan, 24 Oct 2026), part of him was in view (his answer above), and KUBEN's bullets lost damage through it up to 0.11 s before the kill (loose from damage, STATE.md Decisions, Sujan, 28 Oct 2026)"
   }
  ]
 }

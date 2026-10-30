@@ -8,13 +8,11 @@ kill is found by round, killer and victim, names exactly as the viewer has them 
 and gun are compared only where the file has them. A kill with "known_gap" is printed when it differs, never failed.
 How the files were filled: tests/README.md, "Wallbang ground truth" (Sujan, 30 Oct 2026).
 
-Usage:  HALF_LIFE_DIR=~/Downloads/Half-Life python3 ground_truth_check.py [--full] [--demo TEXT] [--save DIR] [page.html]
-  default, the quick run: the 5 demos in HALF_LIFE_DIR with the most expected kills, for every release (12 s on
-          Sujan's Mac, 30 Oct 2026).
-  --full: every expected file whose demo is found, before any change to the wallbang finder (1.3 minutes for 45
-          demos on Sujan's Mac). Also looks under
-          EXTRA_DEMO_DIRS (folders separated by ":", subfolders included); those demos go into an APFS clone of
-          HALF_LIFE_DIR for the run (macOS; it takes no disk space), as for 0.25.0's comparison.
+Usage:  HALF_LIFE_DIR=~/Downloads/Half-Life python3 ground_truth_check.py [--demo TEXT] [--save DIR] [page.html]
+Runs every expected file whose demo is found, on every release (1.3 minutes for 45 demos on Sujan's Mac, 30 Oct
+2026; Sujan dropped a quicker run on 5 of them the same day). Looks in HALF_LIFE_DIR's cstrike and under
+EXTRA_DEMO_DIRS (folders separated by ":", subfolders included); those demos go into an APFS clone of HALF_LIFE_DIR
+for the run (macOS; it takes no disk space), as for 0.25.0's comparison.
   --demo TEXT: only the expected files whose name contains TEXT.   --save DIR: keep each run's output there.
 Demos are matched by hash; a missing demo, or one whose map isn't in the folder, is skipped with a note. JOBS runs at
 once (default 6), TIMEOUT seconds each (default 600). Needs game files, so it can't run in check.yml. Exit 1 on any
@@ -25,7 +23,6 @@ from concurrent.futures import ThreadPoolExecutor
 
 here = os.path.dirname(os.path.abspath(__file__))
 LEVELS = {'strict', 'loose', 'loose-damage', 'none', 'wallbang'}
-QUICK = 5
 
 
 def sha256(path):
@@ -126,14 +123,13 @@ def check_totals(label, want, got, fails):
 def main():
     ap = argparse.ArgumentParser(description=__doc__.split('\n')[0])
     ap.add_argument('page', nargs='?', default=os.path.join(here, '..', 'index.html'))
-    ap.add_argument('--full', action='store_true')
     ap.add_argument('--demo', default='')
     ap.add_argument('--save')
     a = ap.parse_args()
     hl = os.path.abspath(os.path.expanduser(os.environ.get('HALF_LIFE_DIR', '')))
     if not os.path.isdir(os.path.join(hl, 'cstrike')):
         sys.exit('Set HALF_LIFE_DIR to the Half-Life folder (the one with cstrike)')
-    extra_dirs = [os.path.expanduser(d) for d in os.environ.get('EXTRA_DEMO_DIRS', '').split(':') if d] if a.full else []
+    extra_dirs = [os.path.expanduser(d) for d in os.environ.get('EXTRA_DEMO_DIRS', '').split(':') if d]
     page = os.path.abspath(a.page)
     t0 = time.time()
 
@@ -161,10 +157,6 @@ def main():
             notes.append(f"skipped {w['match']} ({w['demo']}): map {w['map']} not in the Half-Life folder")
             continue
         runs.append(w)
-    if not a.full:
-        runs = [w for w in runs if in_hl(found[w['sha256']]) and all(in_hl(found[h]) for h in w.get('joined', {}).get('sha256', []))]
-        runs = sorted(runs, key=lambda w: (-len(w['kills']), w['demo']))[:QUICK]
-        notes = [f'quick run: {len(runs)} of the {len(want)} expected files (--full for all of them)']
 
     extra = sorted({found[h] for w in runs for h in [w['sha256']] + w.get('joined', {}).get('sha256', []) if not in_hl(found[h])})
     folder, tmp = hl, None
@@ -183,7 +175,7 @@ def main():
         if 'joined' in w:
             parts = [name(h) for h in w['joined']['sha256']]
             jobs.append((w, 'joined', parts[0], ['ground_truth_totals.js'], {'parts': [p.lower() for p in parts]}))
-    print(f"{'Full' if a.full else 'Quick'} run: {len(runs)} demos, {len(jobs)} runs, {os.environ.get('JOBS', 6)} at a time", flush=True)
+    print(f"{len(runs)} of {len(want)} expected files, {len(jobs)} runs, {os.environ.get('JOBS', 6)} at a time", flush=True)
 
     work = tempfile.mkdtemp(prefix='ground_truth_pages_')
     if a.save:

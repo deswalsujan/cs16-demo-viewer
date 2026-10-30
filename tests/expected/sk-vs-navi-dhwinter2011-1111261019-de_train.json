@@ -34,6 +34,7 @@
    "victim": "SK.f0rest",
    "gun": null,
    "expected": "loose-damage",
+   "known_gap": "the finder gives f0rest's 11 HP hit 0.41 s before the kill to no one: ceh9's crosshair was 99 units off him, past the 64 units it allows with a second enemy near, a rule of the finder's own (CHANGELOG.md 0.24.0; IDEAS-ARCHIVE.md, the 0.24.0 item), not one of Sujan's decisions; ceh9's last bullet it counts came 1.12 s before. Kept loose with this known gap, Sujan, 30 Oct 2026 (STATE.md Decisions, \"The 10 kills the first run disagreed on\")",
    "source": "docs/review-answers.md, \"Loose wallbang check\" (27 and 28 Oct 2026), k19011: loose"
   },
   {
@@ -106,6 +107,7 @@
    "victim": "SK.Delpan <3 Johan Wedel",
    "gun": null,
    "expected": "strict",
+   "known_gap": "the finder's 15 points see part of the victim, and the hidden check was left as in 0.17.0 after the denser check wasn't conclusive (STATE.md Decisions, Sujan, 5 Oct 2026); strict with this known gap, Sujan, 30 Oct 2026 (STATE.md Decisions, \"The 10 kills the first run disagreed on\")",
    "source": "IDEAS-ARCHIVE.md, \"Wallbangs and kill timing\", the 5 Oct 2026 denser check answers (Sujan, 5 Oct 2026): hidden, right"
   },
   {

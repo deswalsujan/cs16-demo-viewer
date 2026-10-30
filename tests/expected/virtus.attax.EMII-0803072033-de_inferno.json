@@ -21,16 +21,7 @@
    "victim": "Virtus.pro > DaniiL T. <Zeus>",
    "gun": null,
    "expected": "loose-damage",
-   "source": "docs/review-answers.md, \"Loose wallbang check\" (27 and 28 Oct 2026), k30001: loose"
-  },
-  {
-   "round": 8,
-   "timer": "0:48",
-   "killer": "ALTERNATE aTTaX | mooN <M>",
-   "victim": "Virtus.pro > DaniiL T. <Zeus>",
-   "gun": null,
-   "expected": "none",
-   "source": "CHANGELOG.md 0.22.0, Fixed, \"The boxes around Inferno's lamp posts counted as walls\": mooN on Zeus, listed with Zeus in full view (Sujan's guess was right, 23 Oct 2026)"
+   "source": "docs/review-answers.md, \"Loose wallbang check\" (27 and 28 Oct 2026), k30001: loose; the later answer, over CHANGELOG.md 0.22.0, Fixed, \"The boxes around Inferno's lamp posts counted as walls\": mooN on Zeus, listed with Zeus in full view (Sujan's guess was right, 23 Oct 2026); loose-damage, Sujan, 30 Oct 2026 (STATE.md Decisions, \"The 10 kills the first run disagreed on\"): the invisible box around a lamp post stops bullets (STATE.md Decisions, Inferno's lamp posts, Sujan, 24 Oct 2026), and mooN's bullet lost damage through it 0.10 s before the kill (loose from damage, STATE.md Decisions, Sujan, 28 Oct 2026)"
   },
   {
    "round": 10,

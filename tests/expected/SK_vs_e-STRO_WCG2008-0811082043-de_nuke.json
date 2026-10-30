@@ -47,8 +47,8 @@
    "killer": "KOREA.eSTRO : solo",
    "victim": "SKWEDEN RobbaN[alitdg]",
    "gun": null,
-   "expected": "loose-damage",
-   "source": "docs/review-answers.md, \"Loose wallbang check\" (27 and 28 Oct 2026), k24007: loose"
+   "expected": "none",
+   "source": "docs/review-answers.md, \"Loose wallbang check\" (27 and 28 Oct 2026), k24007: loose; none, Sujan, 30 Oct 2026 (STATE.md Decisions, \"The 10 kills the first run disagreed on\"): solo's bullets 0.43 to 0.22 s before the kill had his teammate termi on the line, and a bullet through another player isn't a wallbang (STATE.md Decisions, Sujan, 28 Oct 2026)"
   },
   {
    "round": 15,

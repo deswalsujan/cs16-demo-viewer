@@ -54,8 +54,8 @@
    "killer": "-Eq- Darky",
    "victim": "K1CK fox <pacheco> C.N.",
    "gun": null,
-   "expected": "loose-damage",
-   "source": "docs/review-answers.md, \"Loose wallbang check\" (27 and 28 Oct 2026), k37006: loose; the later answer, over IDEAS-ARCHIVE.md, \"Wallbangs and kill timing\", the 5 Oct 2026 denser check answers (Sujan, 5 Oct 2026): the victim was seen"
+   "expected": "none",
+   "source": "docs/review-answers.md, \"Loose wallbang check\" (27 and 28 Oct 2026), k37006: loose; the later answer, over IDEAS-ARCHIVE.md, \"Wallbangs and kill timing\", the 5 Oct 2026 denser check answers (Sujan, 5 Oct 2026): the victim was seen; none, Sujan, 30 Oct 2026 (STATE.md Decisions, \"The 10 kills the first run disagreed on\"): Darky's 58 HP headshot 0.20 s before the kill had fox's teammate mUtcb on the line, and a bullet through another player isn't a wallbang (STATE.md Decisions, Sujan, 28 Oct 2026)"
   },
   {
    "round": 15,
@@ -73,6 +73,7 @@
    "victim": "K1CK n0rx     <pacheco>",
    "gun": null,
    "expected": "loose-damage",
+   "known_gap": "Darky's bullet that only a surface explains came 0.500244 s before the kill, and the finder's 0.5 s test (computeHits, src/ui/wallbangs.js) misses it by a quarter of a millisecond of rounding; fixed in its own pull request (STATE.md, Open now), Sujan, 30 Oct 2026 (STATE.md Decisions, \"The 10 kills the first run disagreed on\")",
    "source": "docs/review-answers.md, \"Loose wallbang check\" (27 and 28 Oct 2026), k37010: loose"
   },
   {

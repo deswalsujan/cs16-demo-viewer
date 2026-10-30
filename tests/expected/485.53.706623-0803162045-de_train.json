@@ -109,6 +109,7 @@
    "victim": "SWEDEN|RobbaN",
    "gun": null,
    "expected": "loose-damage",
+   "known_gap": "the finder leaves out RobbaN's 7 HP hit 0.11 s before the kill because his teammate SpawN fired and aimed at him then, a rule of the finder's own (CHANGELOG.md 0.24.0: \"a teammate of the victim who fired at him then\"), not one of Sujan's decisions; LMBT's last bullet it counts came 0.52 s before. Kept loose with this known gap, Sujan, 30 Oct 2026 (STATE.md Decisions, \"The 10 kills the first run disagreed on\")",
    "source": "docs/review-answers.md, \"Loose wallbang check\" (27 and 28 Oct 2026), k28024: loose; the later answer, over IDEAS-ARCHIVE.md, \"Wallbangs and kill timing\", the 5 Oct 2026 denser check answers (Sujan, 5 Oct 2026): the victim was seen"
   },
   {
