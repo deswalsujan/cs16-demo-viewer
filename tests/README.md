@@ -25,6 +25,8 @@ Settings (environment variables):
 | `DEMO_DIRS` | The one setting for demos outside the Half-Life folder, used by every test that opens a demo (Sujan, 1 Nov 2026; it replaced `EXTRA_DEMO_DIRS`, which now stops a test with a note): folders separated by `:` (`;` on Windows), subfolders included. On Sujan's Mac `~/code/cs16-data/test-demos`, which holds every test demo (`DEMOS.md`). The viewer only lists the demos in the folder it's given, so the tests give it an APFS clone of the Half-Life folder with these demos added to its `cstrike` (macOS: no disk space, under a second; elsewhere a copy made of hard links), deleted at the end. A byte-identical copy of a demo already there is left out; two different demos with one file name, or a folder that doesn't exist, stop the test (`demo_dirs.py`) | none |
 | `JOBS`, `TIMEOUT` | Runs at once and seconds per run (`compare_all.sh`, `ground_truth_check.py`) | 6; 500 and 600 |
 
+On Sujan's Mac, `HALF_LIFE_DIR` and `DEMO_DIRS` are exported in `~/.zshrc` (1 Nov 2026), so every new Terminal window has them, and so do Claude Code sessions there, whose shell starts from that file; a session already open when they were added sets them itself.
+
 The demos on each machine are listed in [DEMOS.md](DEMOS.md). Most checks default to Na`Vi vs FX on Dust2 (SEC 2011 final).
 
 The section "Demos and their events", with its subsections and "Notes moved from CLAUDE.md", moved to [DEMOS.md](DEMOS.md) on 29 Oct 2026, word for word.
