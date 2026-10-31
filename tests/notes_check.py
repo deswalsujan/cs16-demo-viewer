@@ -8,11 +8,16 @@ Checks, each failure printed as "file:line: what's wrong", exit code 1 on any:
 - the newest version in CHANGELOG.md is `VERSION`;
 - no CHANGELOG entry at or above `VERSION` says "until then", "not yet decided" or "In progress", and an unshipped
   "In progress" entry is only on a `wip/` branch;
-- every file in `src/` has a line in AGENTS.md, "Where the code is".
+- every file in `src/` has a line in AGENTS.md, "Where the code is";
+- every demo of `tests/expected/` (joined parts too) has a row in `tests/demos-manifest.md` with the same name and
+  SHA-256, so the backup check knows every demo the ground truth needs (Sujan, 1 Nov 2026).
 
 Usage: python3 notes_check.py   (from anywhere; it reads the repo it's in)
 """
 import os, re, subprocess, sys
+
+sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
+import demo_dirs  # only its readers of tests/expected/ and the manifest: no game files
 
 root = os.path.abspath(os.path.join(os.path.dirname(os.path.abspath(__file__)), '..'))
 NOTES = ['STATE.md', 'AGENTS.md', 'IDEAS.md', 'README.md']
@@ -90,7 +95,13 @@ else:
         if p not in named:
             fails.append(f'AGENTS.md:{start + 1}: no line for `{p}` in "Where the code is"')
 
+# 5. the demo manifest against tests/expected/
+listed = {h: n for n, _, h in demo_dirs.manifest()}
+for h, n, match in demo_dirs.expected():
+    if listed.get(h) != n:
+        fails.append(f"tests/demos-manifest.md:1: {n} ({match}) {'is listed as ' + listed[h] if h in listed else 'has no row with its SHA-256'}")
+
 for f in fails:
     print('FAIL', f)
-print(f'FAIL: {len(fails)} found' if fails else 'PASS: paths in the notes, CHANGELOG against VERSION, the code map')
+print(f'FAIL: {len(fails)} found' if fails else 'PASS: paths in the notes, CHANGELOG against VERSION, the code map, the demo manifest')
 sys.exit(1 if fails else 0)

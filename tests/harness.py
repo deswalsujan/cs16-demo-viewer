@@ -1,13 +1,21 @@
 """Headless test harness for the CS 1.6 Demo Viewer.
 
 Usage: python3 harness.py <page.html> <script.js>[,<script.js>...] [screenshot prefix]
-Environment: HALF_LIFE_DIR (required), THREE_JS (default src/vendor/three.min.js, for builds before 0.26.2, which load it from cdnjs), DEMO (part of the demo file name, default dust2), MAP_NEEDED (default 1), POV_MODE (1: the POV mode setting on, 0.25.0)
-Loads the page from a local server, feeds it the staged Half-Life folder, opens the
-Na`Vi vs FX Dust2 demo, waits for the 3D map, then runs <script.js> in the page and
-prints the JSON it returns.
+Environment: HALF_LIFE_DIR (required), DEMO_DIRS (more folders with demos, see demo_dirs.py), THREE_JS (default src/vendor/three.min.js, for builds before 0.26.2, which load it from cdnjs), DEMO (the demo's file name or a part of it that only one demo has, default navi-vs-fx-sec2011-final-1110091531), MAP_NEEDED (default 1), POV_MODE (1: the POV mode setting on, 0.25.0)
+Loads the page from a local server, feeds it the Half-Life folder (with the DEMO_DIRS demos
+added, demo_dirs.py), opens the demo (Na`Vi vs FX, Dust2, SEC 2011 final by default), waits
+for the 3D map, then runs <script.js> in the page and prints the JSON it returns. A DEMO that
+more than one demo's name contains stops with the list (Sujan, 1 Nov 2026).
 """
 import os, sys, json, os, threading, http.server, functools, time
 from playwright.sync_api import sync_playwright
+import demo_dirs
+
+# the demo and the folder first, so a DEMO that matches no demo or several stops before anything is written
+_hl, _inside, _outside = demo_dirs.collect()
+DEMO = demo_dirs.find(os.environ.get('DEMO', 'navi-vs-fx-sec2011-final-1110091531'), _inside, _outside).lower()
+print('harness: opening ' + DEMO, file=sys.stderr)
+HL = demo_dirs.stage(_outside)
 
 src_path = os.path.abspath(sys.argv[1])
 html = open(src_path, encoding='utf-8').read()
@@ -16,11 +24,9 @@ html = html[:i] + 'window.__v = (c) => eval(c);\n' + html[i:]
 page_path = os.path.join(os.path.dirname(src_path), '_test_' + os.path.basename(src_path))
 open(page_path, 'w', encoding='utf-8').write(html)
 shot = sys.argv[3] if len(sys.argv) > 3 else None
-DEMO = os.environ.get('DEMO', 'dust2').lower()
 # MAP_NEEDED=0 waits only for the demo (for demos whose map isn't in the folder)
 MAP_NEEDED = os.environ.get('MAP_NEEDED', '1') != '0'
 THREE = os.environ.get('THREE_JS', os.path.join(os.path.dirname(os.path.abspath(__file__)), '..', 'src', 'vendor', 'three.min.js'))
-HL = os.environ['HALF_LIFE_DIR']
 
 root = os.path.dirname(page_path)
 handler = functools.partial(http.server.SimpleHTTPRequestHandler, directory=root)
@@ -44,7 +50,7 @@ with sync_playwright() as p:
     if os.environ.get('POV_MODE') == '1': pg.evaluate("__v(\"$('pov3').checked = true\")")
     pg.set_input_files('#fFolder', HL)
     pg.wait_for_function('__v("files.demos.length > 0")', timeout=30000)
-    pg.evaluate(f"""__v("loadDemoFile(files.demos.find(f => f.name.toLowerCase().includes('{DEMO}')))")""")
+    pg.evaluate('(n) => __v(`loadDemoFile(files.demos.find((f) => f.name.toLowerCase() === ${JSON.stringify(n)}))`)', DEMO)
     # stop at once when the page says the demo can't be played (a broken or cut-off file), instead of waiting
     # 4 minutes for a demo that will never load (the mousesports vs Virus demo looked "slow" this way)
     failed = "$('sumCard') && !$('sumCard').hidden && !!$('sumCard').querySelector('.sum-top.fail')"

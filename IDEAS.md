@@ -13,6 +13,13 @@ Everything raised in conversation that isn't finished, in one place. Each item s
 **Wallbang ground truth** (30 Oct 2026; `tests/ground_truth_check.py`, `tests/expected/`, rules in `tests/README.md`)
 - Done, in the archive: the 10 kills where Sujan's answer and the viewer disagreed (answered 30 Oct 2026); **The 0.5 s window misses a hit at 0.5 s by rounding** (fixed in 0.26.1, 30 Oct 2026).
 
+**Test demos** (1 Nov 2026; `tests/demo_dirs.py`, `tests/demos-manifest.md`)
+- The Mac's test demos are in `~/code/cs16-data/test-demos` since 1 Nov 2026, found by every test through `DEMO_DIRS` (`tests/README.md`, "Settings"; `STATE.md`, "Test files on the Mac").
+- [ ] **Hold-out set of new demos** (for later, Sujan, 1 Nov 2026)
+  - Status: planned, not built. 3 to 4 fresh demos in `~/code/cs16-data/holdout-demos`, never in `cstrike`, `DEMO_DIRS` or `compare_all.sh`, so no change to the viewer is ever tuned on them. Sujan writes the answers for them (wallbangs, scores, K-D, whatever Sujan checks), along with feedback on the viewer.
+  - Next step: Sujan picks the demos and writes the answers. Then Claude writes a scoring script that compares the viewer's output on them with those answers, and adds a rule to `AGENTS.md`: no session opens `holdout-demos` unless Sujan asks for a hold-out score.
+  - Decided so far: a hold-out demo used to fix a bug moves to `test-demos` (with its row in `tests/DEMOS.md` and `tests/demos-manifest.md`) and is replaced by a fresh one (Sujan, 1 Nov 2026).
+
 **Sliver kills** (30 Oct 2026; built in 0.26.0)
 - Done, in the archive: **The sight points see a sliver the picture doesn't** (built in 0.26.0, 30 Oct 2026: strict at 0 pixels, LOOSE from 1 to 49); **Railings and Nuke vents** (railings built in 0.26.0; the vent exception withdrawn, 30 Oct 2026); **Sliver kills, by eye (0.26.0)** (confirmed by Sujan, 31 Oct 2026).
 - [ ] **One line for strict: 0 pixels for hidden kills too?** (for later, Sujan, 30 Oct 2026)

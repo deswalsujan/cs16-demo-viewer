@@ -4,7 +4,10 @@ from playwright.sync_api import sync_playwright
 
 W, H, DPR = 1440, 900, 2
 THREE = os.environ.get('THREE_JS', os.path.join(os.path.dirname(os.path.abspath(__file__)), '..', 'src', 'vendor', 'three.min.js'))
-HL = os.environ['HALF_LIFE_DIR']
+import demo_dirs  # the Half-Life folder and DEMO_DIRS (1 Nov 2026)
+_hl, _inside, _outside = demo_dirs.collect()
+DEMO = demo_dirs.find('navi-vs-fx-sec2011-final-1110091531', _inside, _outside)
+HL = demo_dirs.stage(_outside)
 html = open(os.environ.get('PAGE', os.path.join(os.path.dirname(os.path.abspath(__file__)), '..', 'index.html')), encoding='utf-8').read()
 i = html.rindex('})();'); html = html[:i] + 'window.__v = (c) => eval(c);\n' + html[i:]
 open(os.path.join(os.path.dirname(os.path.abspath(__file__)), '_all.html'), 'w', encoding='utf-8').write(html)
@@ -24,7 +27,7 @@ with sync_playwright() as p:
     v = lambda c: pg.evaluate('(c) => __v(c)', c)
     pg.set_input_files('#fFolder', HL)
     pg.wait_for_function('__v("files.demos.length > 0")', timeout=30000)
-    v("loadDemoFile(files.demos.find(f => f.name.includes('dust2')))")
+    v(f"loadDemoFile(files.demos.find(f => f.name === '{DEMO}'))")
     pg.wait_for_function('__v("!!(D && M && MAP && R3 && view3.map === MAP.name)")', timeout=240000)
     pg.wait_for_timeout(2500); v('closeSummary()')
     v("setView('3d'); T = M.liveR[0].start + 20; selected = alivePlayers()[0]; setCam('eyes', true); TH.hint = true; setTheatre(true);")

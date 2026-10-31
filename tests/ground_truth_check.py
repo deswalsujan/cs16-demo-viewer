@@ -8,56 +8,39 @@ kill is found by round, killer and victim, names exactly as the viewer has them 
 and gun are compared only where the file has them. A kill with "known_gap" is printed when it differs, never failed.
 How the files were filled: tests/README.md, "Wallbang ground truth" (Sujan, 30 Oct 2026).
 
-Usage:  HALF_LIFE_DIR=~/Downloads/Half-Life python3 ground_truth_check.py [--demo TEXT] [--save DIR] [page.html]
+Usage:  HALF_LIFE_DIR=~/code/cs16-data/Half-Life DEMO_DIRS=~/code/cs16-data/test-demos python3 ground_truth_check.py [--demo TEXT] [--save DIR] [page.html]
 Runs every expected file whose demo is found, on every release (1.3 minutes for 45 demos on Sujan's Mac, 30 Oct
-2026; Sujan dropped a quicker run on 5 of them the same day). Looks in HALF_LIFE_DIR's cstrike and under
-EXTRA_DEMO_DIRS (folders separated by ":", subfolders included); those demos go into an APFS clone of HALF_LIFE_DIR
-for the run (macOS; it takes no disk space), as for 0.25.0's comparison.
+2026; Sujan dropped a quicker run on 5 of them the same day). Looks in HALF_LIFE_DIR and DEMO_DIRS (demo_dirs.py:
+subfolders included, the DEMO_DIRS demos added to an APFS clone of the Half-Life folder for the run).
   --demo TEXT: only the expected files whose name contains TEXT.   --save DIR: keep each run's output there.
-Demos are matched by hash; a missing demo, or one whose map isn't in the folder, is skipped with a note. JOBS runs at
-once (default 6), TIMEOUT seconds each (default 600). Needs game files, so it can't run in check.yml. Exit 1 on any
-mismatch.
+Demos are matched by hash. An expected file whose demo, joined part or map isn't found is skipped, listed in a
+warning before the run and again at the end; more than 3 skipped, or none run, is a failure, so a missing folder
+never reads as PASS (Sujan, 1 Nov 2026). JOBS runs at once (default 6), TIMEOUT seconds each (default 600). Needs game
+files, so it can't run in check.yml. Exit 1 on any mismatch, or too many skipped.
 """
-import argparse, glob, hashlib, json, os, shutil, subprocess, sys, tempfile, time
+import argparse, glob, json, os, shutil, subprocess, sys, tempfile, time
 from concurrent.futures import ThreadPoolExecutor
+import demo_dirs
 
 here = os.path.dirname(os.path.abspath(__file__))
 LEVELS = {'strict', 'loose', 'loose-damage', 'none', 'wallbang'}
-
-
-def sha256(path):
-    h = hashlib.sha256()
-    with open(path, 'rb') as f:
-        for b in iter(lambda: f.read(1 << 20), b''):
-            h.update(b)
-    return h.hexdigest()
-
-
-def find_demos(hl, extra_dirs):
-    """{sha256: path} of every demo found, the Half-Life folder's first"""
-    paths = sorted(p for p in glob.glob(os.path.join(hl, 'cstrike', '*')) if p.lower().endswith('.dem'))
-    for d in extra_dirs:
-        paths += sorted(p for p in glob.glob(os.path.join(d, '**', '*'), recursive=True) if p.lower().endswith('.dem'))
-    found = {}
-    for p in paths:
-        found.setdefault(sha256(p), p)
-    return found
+MAX_SKIPPED = 3  # more skipped expected files than this fails the run (Sujan, 1 Nov 2026)
 
 
 def maps_in(hl):
     return {os.path.basename(p).lower()[:-4] for p in glob.glob(os.path.join(hl, '*', 'maps', '*')) if p.lower().endswith('.bsp')}
 
 
-def clone_with(hl, extra):
-    """an APFS clone of the Half-Life folder with the demos in `extra` added to its cstrike, or None"""
-    tmp = tempfile.mkdtemp(prefix='ground_truth_')
-    dst = os.path.join(tmp, 'Half-Life')
-    if subprocess.run(['cp', '-cR', hl, dst], capture_output=True).returncode:
-        shutil.rmtree(tmp, ignore_errors=True)
-        return None, None
-    for p in extra:
-        subprocess.run(['cp', '-c', p, os.path.join(dst, 'cstrike', os.path.basename(p))], check=True)
-    return dst, tmp
+def warn_skipped(skipped, total, where):
+    """the skipped expected files, in a block that can't be missed (Sujan, 1 Nov 2026)"""
+    if not skipped:
+        return
+    bar = '!' * 100
+    print(bar)
+    print(f'!!! WARNING: {len(skipped)} of {total} expected files skipped ({where}); more than {MAX_SKIPPED} fails the run')
+    for x in skipped:
+        print('!!!   skipped ' + x)
+    print(bar, flush=True)
 
 
 def harness(page, scripts, demo, folder, work, n, gt=None, save=None):
@@ -70,7 +53,7 @@ def harness(page, scripts, demo, folder, work, n, gt=None, save=None):
         with open(paths[0], 'w') as f:
             f.write(f'window.__gt = {json.dumps(gt)};\n')
     paths += [os.path.join(here, 'page', s) for s in scripts]
-    env = dict(os.environ, DEMO=demo.lower(), MAP_NEEDED='0', HALF_LIFE_DIR=folder)
+    env = dict(os.environ, DEMO=demo.lower(), MAP_NEEDED='0', HALF_LIFE_DIR=folder, DEMO_DIRS='')
     try:
         p = subprocess.run([sys.executable, os.path.join(here, 'harness.py'), copy, ','.join(paths)], env=env,
                            capture_output=True, text=True, timeout=int(os.environ.get('TIMEOUT', 600)))
@@ -126,10 +109,7 @@ def main():
     ap.add_argument('--demo', default='')
     ap.add_argument('--save')
     a = ap.parse_args()
-    hl = os.path.abspath(os.path.expanduser(os.environ.get('HALF_LIFE_DIR', '')))
-    if not os.path.isdir(os.path.join(hl, 'cstrike')):
-        sys.exit('Set HALF_LIFE_DIR to the Half-Life folder (the one with cstrike)')
-    extra_dirs = [os.path.expanduser(d) for d in os.environ.get('EXTRA_DEMO_DIRS', '').split(':') if d]
+    hl, inside, outside = demo_dirs.collect()
     page = os.path.abspath(a.page)
     t0 = time.time()
 
@@ -143,29 +123,25 @@ def main():
         if bad:
             sys.exit(f"{w['demo']}: a kill with an unknown expected value or no source: {bad[0]}")
 
-    found = find_demos(hl, extra_dirs)
+    found = {}
+    for p in inside + outside:
+        found.setdefault(demo_dirs.sha256(p), p)
     maps = maps_in(hl)
-    in_hl = lambda p: os.path.dirname(p) == os.path.join(hl, 'cstrike')
-    notes, runs = [], []
+    notes, skipped, runs = [], [], []
     for w in want:
         need = [w['sha256']] + (w['joined']['sha256'] if 'joined' in w else [])
         missing = [h for h in need if h not in found]
         if missing:
-            notes.append(f"skipped {w['match']} ({w['demo']}): {'demo' if w['sha256'] in missing else 'a part of the joined map'} not found")
-            continue
-        if w['map'].lower() not in maps:
-            notes.append(f"skipped {w['match']} ({w['demo']}): map {w['map']} not in the Half-Life folder")
-            continue
-        runs.append(w)
+            skipped.append(f"{w['match']} ({w['demo']}): {'demo' if w['sha256'] in missing else 'a part of the joined map'} not found")
+        elif w['map'].lower() not in maps:
+            skipped.append(f"{w['match']} ({w['demo']}): map {w['map']} not in the Half-Life folder")
+        else:
+            runs.append(w)
+    where = f"HALF_LIFE_DIR={hl}, DEMO_DIRS={os.environ.get('DEMO_DIRS') or '(not set)'}"
+    warn_skipped(skipped, len(want), where)
 
-    extra = sorted({found[h] for w in runs for h in [w['sha256']] + w.get('joined', {}).get('sha256', []) if not in_hl(found[h])})
-    folder, tmp = hl, None
-    if extra:
-        folder, tmp = clone_with(hl, extra)
-        if not folder:
-            notes.append('skipped the demos outside the Half-Life folder: an APFS clone (cp -c) did not work here')
-            runs = [w for w in runs if in_hl(found[w['sha256']])]
-            folder = hl
+    # the viewer gets the Half-Life folder with every DEMO_DIRS demo in its cstrike, as harness.py gives it
+    folder = demo_dirs.stage(outside)
     name = lambda h: os.path.basename(found[h])
     jobs = []
     for w in runs:
@@ -185,8 +161,6 @@ def main():
             results = list(ex.map(lambda ij: harness(page, ij[1][3], ij[1][2], folder, work, ij[0], ij[1][4], a.save), enumerate(jobs)))
     finally:
         shutil.rmtree(work, ignore_errors=True)
-        if tmp:
-            shutil.rmtree(tmp, ignore_errors=True)
 
     fails, gaps, count = [], [], {'kills': 0, 'totals': 0}
     for (w, kind, demo, _, _), (res, errors, err) in zip(jobs, results):
@@ -231,11 +205,18 @@ def main():
         print('KNOWN GAP', g)
     for f in fails:
         print('FAIL', f)
+    warn_skipped(skipped, len(want), where)
+    too_many, none_ran = len(skipped) > MAX_SKIPPED, not runs
+    if too_many:
+        print(f'FAIL {len(skipped)} of {len(want)} expected files skipped, more than {MAX_SKIPPED}: are HALF_LIFE_DIR and DEMO_DIRS right?')
+    if none_ran:
+        print('FAIL no expected file ran')
     mins = (time.time() - t0) / 60
     print(f"{count['kills']} kills and {count['totals']} scores and K-D on {len(runs)} demos: "
-          f"{len(fails)} mismatches, {len(gaps)} known gaps, {sum(n.startswith('skipped') for n in notes)} skipped ({mins:.1f} minutes)")
-    print('PASS' if not fails else 'FAIL')
-    sys.exit(1 if fails else 0)
+          f"{len(fails)} mismatches, {len(gaps)} known gaps, {len(skipped)} skipped ({mins:.1f} minutes)")
+    bad = fails or too_many or none_ran
+    print('FAIL' if bad else f'PASS, {len(skipped)} expected file{"s" * (len(skipped) != 1)} skipped (see the warning above)' if skipped else 'PASS')
+    sys.exit(1 if bad else 0)
 
 
 if __name__ == '__main__':

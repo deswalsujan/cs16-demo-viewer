@@ -1,7 +1,8 @@
 #!/usr/bin/env bash
-# Run one page script on every demo in the Half-Life folder, 6 at a time (JOBS=2 for a small machine), and collect what it returns.
+# Run one page script on every demo in the Half-Life folder and DEMO_DIRS (one per file name; demo_dirs.py), 6 at a time
+# (JOBS=2 for a small machine), and collect what it returns.
 #
-#   HALF_LIFE_DIR=/path/to/Half-Life bash compare_all.sh OUT_DIR PAGE_A [PAGE_B] [SCRIPT]
+#   HALF_LIFE_DIR=/path/to/Half-Life DEMO_DIRS=/path/to/test-demos bash compare_all.sh OUT_DIR PAGE_A [PAGE_B] [SCRIPT]
 #
 # One page: writes OUT_DIR/a/<demo>.out for each demo (for a fresh batch: score, rounds and K-D to check
 # against known results). Two pages (say main's build and a branch): also OUT_DIR/b/<demo>.out, then lists
@@ -19,6 +20,9 @@ mkdir -p "$1"; OUT=$(realpath "$1"); A=$(realpath "$2"); B=${3:+$(realpath "$3")
 [ -n "${4:-}" ] && [ -f "$4" ] && SCRIPT=$(realpath "$4")
 cd "$(dirname "$0")"
 [ -n "${HALF_LIFE_DIR:-}" ] || { echo "Set HALF_LIFE_DIR to the Half-Life folder"; exit 1; }
+# the list first, so a bad setting (a DEMO_DIRS folder that isn't there, two demos with one name) stops here
+DEMOS=$(python3 demo_dirs.py list) || exit 1
+[ -n "$DEMOS" ] || { echo "No demos in HALF_LIFE_DIR or DEMO_DIRS"; exit 1; }
 mkdir -p "$OUT/a"; [ -n "$B" ] && mkdir -p "$OUT/b"
 one() {
   n="$1"; side="$2"; src="$3"; i="$4"; page="_p_${side}_$i.html"
@@ -29,7 +33,7 @@ one() {
 }
 export -f one; export OUT SCRIPT
 i=0
-ls "$HALF_LIFE_DIR/cstrike" | grep -i '\.dem$' | while read -r n; do
+printf '%s\n' "$DEMOS" | while read -r n; do
   i=$((i + 1)); echo "\"$n\" a $A $i"; [ -n "$B" ] && echo "\"$n\" b $B $i"
 done | xargs -P "${JOBS:-6}" -L 1 bash -c 'one "$0" "$1" "$2" "$3"'
 python3 - "$OUT" "$B" <<'EOF'

@@ -1,18 +1,22 @@
 """Checks the search box over the demo list on the start screen (0.15.2).
 
-Usage: HALF_LIFE_DIR=/path/to/Half-Life python3 demo_search_check.py [page.html] [screenshot.png]
-Needs the Half-Life folder (for its demos), not maps or sounds. Under a minute.
+Usage: HALF_LIFE_DIR=/path/to/Half-Life DEMO_DIRS=... python3 demo_search_check.py [page.html] [screenshot.png]
+Needs the Half-Life folder and DEMO_DIRS (for the demos, demo_dirs.py), not maps or sounds. Opens SK vs Na`Vi, Train,
+DreamHack Winter 2011 from a filtered row. Under a minute.
 """
 import os, sys, http.server, functools, threading
 from playwright.sync_api import sync_playwright
+import demo_dirs
 
 page_path = os.path.abspath(sys.argv[1] if len(sys.argv) > 1 else os.path.join(os.path.dirname(__file__), '..', 'index.html'))
 shot = sys.argv[2] if len(sys.argv) > 2 else None
-HL = os.environ['HALF_LIFE_DIR']
+_hl, _inside, _outside = demo_dirs.collect()
+HL = demo_dirs.stage(_outside)
 here = os.path.dirname(os.path.abspath(__file__))
 h = functools.partial(http.server.SimpleHTTPRequestHandler, directory=os.path.dirname(page_path)); h.log_message = lambda *a: None
 srv = http.server.ThreadingHTTPServer(('127.0.0.1', 0), h); threading.Thread(target=srv.serve_forever, daemon=True).start()
-names = sorted(f for f in os.listdir(os.path.join(HL, 'cstrike')) if f.lower().endswith('.dem'))
+# every demo the viewer lists: the whole folder it's given, subfolders included
+names = sorted(os.path.basename(p) for p in demo_dirs.dems(HL))
 fails = []
 def check(label, ok, extra=''):
     print(('PASS ' if ok else 'FAIL ') + label + (f'  ({extra})' if extra else ''))
@@ -47,7 +51,10 @@ with sync_playwright() as p:
     check('Esc in the box does not open the shortcuts list', pg.locator('#keys').is_hidden())
     pg.fill('#demoQ', 'tu'); pg.click('#demoQx')
     check('Clear empties the box and brings back the full list', pg.input_value('#demoQ') == '' and len(rows()) == len(names) and pg.locator('#demoQx').is_hidden())
-    pg.fill('#demoQ', 'sk train'); pg.click('#demoList button')
+    # one row only: "sk train" also matches SK vs eSTRO's 13-second warmup files (WCG 2008) since the test demos joined
+    pg.fill('#demoQ', 'sk navi train')
+    check('"sk navi train": one row, SK vs Na`Vi, Train, DreamHack Winter 2011', rows() == ['sk-vs-navi-dhwinter2011-1111261019-de_train.dem'], ', '.join(rows()))
+    pg.click('#demoList button')
     pg.wait_for_function('() => document.getElementById("load").hidden', timeout=120000)
     check('a filtered row opens its demo', True)
     b.close()
