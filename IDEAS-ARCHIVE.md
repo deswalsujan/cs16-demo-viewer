@@ -12,7 +12,13 @@ Items moved out of [IDEAS.md](IDEAS.md) so that it holds only what is open (work
 ## Open follow-ups (checklist, updated 28 Oct 2026, 0.24.0)
 
 **Damage numbers and the moment a kill is judged** (Sujan, 31 Oct 2026, after his by-eye checks of 0.23.0 to 0.26.1; a plan for each before anything is built)
-- [ ] **The moment the finder judges a kill at** (measurement only, no change to `src/` on main)
+- [x] **The moment the finder judges a kill at** (measurement only, no change to `src/` on main): closed 1 Nov 2026: the finder keeps judging at the moment of the shot (Sujan, 1 Nov 2026). No variant fit more of his answers than the current build, and moving the victim back broke 11 answers, among them ones he confirmed by eye on 31 Oct 2026 (KUBEN on RARA). Sujan's caveat: the ground truth test leans toward the current finder, since his answers were mostly given on its own pictures. THREAT on LoordB stays loose with its `known_gap`, now pointing at this decision; the limit is in `LIMITS.md` (`STATE.md` Decisions).
+  - Its header in IDEAS.md when closed:
+    - **The moment the finder judges a kill at** (measurement only, no change to `src/` on main)
+      - Status: measured 1 Nov 2026, on Sujan's go: no variant fits more of his 225 answers than the current build (218): the victim 0.1 s back 199, 0.03 s back 200, victim and killer 0.1 s back 175. Reading the victim from the viewer's estimate between snapshots, which every variant needs, already loses 10 answers at 0 s. The full measurement is in IDEAS-ARCHIVE.md under this item.
+      - Next step: Sujan decides.
+      - Decided so far: nothing yet; the finder judges at the killing shot since 0.13.0 (`LIMITS.md`). THREAT on LoordB stays a `known_gap` until then.
+  - The text before:
   - Status: the finder judges at the server's moment of the kill, but the server's lag compensation checks the shot against where the victim was on the shooter's screen (his ping plus `ex_interp`, 0.1 s by default or 0.01 s on 101 updaterate; HLTV doesn't record which), and Sujan's by-eye answers come from the game's demo player at the kill feed, which draws players about 0.1 s back. THREAT on LoordB (FX vs Lions, Nuke, DreamHack Winter 2010, R22 0:47) is LOOSE by eye and strict in the viewer, a `known_gap` until this is decided.
   - Next step: Claude brings a plan, warns before any long run, then runs `ground_truth_check.py` and `compare_all.sh` with the finder judging at the kill less 0.1 s, and less 0.03 s if that's cheap, against the current build; reports in under 10 lines how many of Sujan's answers each fits, which known gaps it closes and which kills flip on the 64 demos. Sujan decides.
   - Decided so far: nothing yet; the finder judges at the killing shot since 0.13.0 (`LIMITS.md`).

@@ -4,16 +4,11 @@ Parked ideas and features we've discussed but not built yet. Each entry keeps en
 
 Only what is open stays here. An open item keeps a three-line header (Status, Next step, Decided so far; each answer in Decided so far also has its line in `STATE.md`); a parked item keeps one line, since nothing happens until Sujan picks it up. Done items, and the full text of open ones, go to [IDEAS-ARCHIVE.md](IDEAS-ARCHIVE.md) word for word, under the same section and block names (since 29 Oct 2026). A section that older notes, code comments, `tests/README.md` or `tests/DEMOS.md` point to and that isn't here, such as "Tell exactly why a demo is broken", is in the archive under the same name.
 
-## Open follow-ups (checklist, updated 31 Oct 2026, 0.26.2)
+## Open follow-ups (checklist, updated 1 Nov 2026, 0.26.4)
 
 Everything raised in conversation that isn't finished, in one place. Each item says who does it. Ideas for new features are further down; this list is for loose ends.
 
-**Damage numbers and the moment a kill is judged** (Sujan, 31 Oct 2026, after his by-eye checks of 0.23.0 to 0.26.1; a plan for each before anything is built)
-- Done, in the archive: **Bug: damage numbers 0.1 s after the kill feed** (fixed in 0.26.3, 1 Nov 2026); **Bug: wallbang kills with no damage numbers** (fixed in 0.26.4, 1 Nov 2026).
-- [ ] **The moment the finder judges a kill at** (measurement only, no change to `src/` on main)
-  - Status: measured 1 Nov 2026, on Sujan's go: no variant fits more of his 225 answers than the current build (218): the victim 0.1 s back 199, 0.03 s back 200, victim and killer 0.1 s back 175. Reading the victim from the viewer's estimate between snapshots, which every variant needs, already loses 10 answers at 0 s. The full measurement is in IDEAS-ARCHIVE.md under this item.
-  - Next step: Sujan decides.
-  - Decided so far: nothing yet; the finder judges at the killing shot since 0.13.0 (`LIMITS.md`). THREAT on LoordB stays a `known_gap` until then.
+**Damage numbers and the moment a kill is judged** (Sujan, 31 Oct 2026): done, the block is in the archive: the two bugs fixed in 0.26.3 and 0.26.4, and **The moment the finder judges a kill at** closed: the finder keeps judging at the moment of the shot (Sujan, 1 Nov 2026).
 
 **Wallbang ground truth** (30 Oct 2026; `tests/ground_truth_check.py`, `tests/expected/`, rules in `tests/README.md`)
 - Done, in the archive: the 10 kills where Sujan's answer and the viewer disagreed (answered 30 Oct 2026); **The 0.5 s window misses a hit at 0.5 s by rounding** (fixed in 0.26.1, 30 Oct 2026).
