@@ -1,0 +1,18 @@
+{
+ "demo": "2011-10-24_16h08_NaVi_SK-1110241609-de_inferno.dem",
+ "sha256": "77ab7d2ba4b5ecec576e383cffd99fe0c807fa9b011e59209d430c6fd92cb2ad",
+ "match": "Na`Vi vs SK, Inferno, recorded 24 Oct 2011, event not known",
+ "event": "not known; recorded 24 Oct 2011 from 16:08 by the file names",
+ "map": "de_inferno",
+ "kills": [
+  {
+   "round": 14,
+   "timer": "0:26",
+   "killer": "Na`Vi starix /A/",
+   "victim": "SK.RobbaN",
+   "gun": "ak47",
+   "expected": "loose-damage",
+   "source": "Sujan, by eye in the viewer (31 Oct 2026, 0.26.2): a wallbang, LOOSE is right (loose from damage since 0.26.1: his 12 HP hit through cover 0.500488 s before the kill; tests/logs/0.26.1.md)"
+  }
+ ]
+}

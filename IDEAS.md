@@ -4,34 +4,36 @@ Parked ideas and features we've discussed but not built yet. Each entry keeps en
 
 Only what is open stays here. An open item keeps a three-line header (Status, Next step, Decided so far; each answer in Decided so far also has its line in `STATE.md`); a parked item keeps one line, since nothing happens until Sujan picks it up. Done items, and the full text of open ones, go to [IDEAS-ARCHIVE.md](IDEAS-ARCHIVE.md) word for word, under the same section and block names (since 29 Oct 2026). A section that older notes, code comments, `tests/README.md` or `tests/DEMOS.md` point to and that isn't here, such as "Tell exactly why a demo is broken", is in the archive under the same name.
 
-## Open follow-ups (checklist, updated 30 Oct 2026, 0.26.1)
+## Open follow-ups (checklist, updated 31 Oct 2026, 0.26.2)
 
 Everything raised in conversation that isn't finished, in one place. Each item says who does it. Ideas for new features are further down; this list is for loose ends.
+
+**Damage numbers and the moment a kill is judged** (Sujan, 31 Oct 2026, after his by-eye checks of 0.23.0 to 0.26.1; a plan for each before anything is built)
+- [ ] **Bug: damage numbers 0.1 s after the kill feed**
+  - Status: found by Sujan 31 Oct 2026. The numbers and the ✕ are drawn in the 3D pass (`drawHitNumbers`, `src/view3d.part.js`), which runs `LAG3` (0.1 s) behind the kill feed, so the killing bullet's number shows 0.1 s after the kill feed.
+  - Next step: Claude brings a plan; Sujan approves it before it's built.
+  - Decided so far: the killing bullet's number and the ✕ appear at the same instant as the kill feed (Sujan, 31 Oct 2026); the 3D view itself stays 0.1 s behind (Sujan, 26 Oct 2026).
+- [ ] **Bug: wallbang kills with no damage numbers**
+  - Status: found by Sujan 31 Oct 2026 on starix on RobbaN (Na`Vi vs SK, Inferno, recorded 24 Oct 2011, event not known, R14 0:26), whose 12 HP hit through cover and the kill show no numbers. Cause (Claude, 31 Oct 2026): `computeHits` (`src/ui/wallbangs.js`) ties a burst to its wallbang kill, then drops bursts under 35 HP; the kill still points at the dropped burst, so the pass that gives every wallbang kill its numbers skips it. On the 64 demos, 115 of 634 wallbang kills have no number (62 strict, 52 loose from damage, 1 loose), every one for this reason, with 10 to 34 HP in the burst.
+  - Next step: Sujan approves a fix (Claude's plan of 31 Oct 2026: the 35 HP minimum only for bursts that don't end in a kill); nothing is fixed before.
+  - Decided so far: every wallbang kill gets its numbers (Sujan, 26 Oct 2026); wallbang damage listed from 35 HP (Sujan, 23 and 25 Oct 2026).
+- [ ] **The moment the finder judges a kill at** (measurement only, no change to `src/` on main)
+  - Status: the finder judges at the server's moment of the kill, but the server's lag compensation checks the shot against where the victim was on the shooter's screen (his ping plus `ex_interp`, 0.1 s by default or 0.01 s on 101 updaterate; HLTV doesn't record which), and Sujan's by-eye answers come from the game's demo player at the kill feed, which draws players about 0.1 s back. THREAT on LoordB (FX vs Lions, Nuke, DreamHack Winter 2010, R22 0:47) is LOOSE by eye and strict in the viewer, a `known_gap` until this is decided.
+  - Next step: Claude brings a plan, warns before any long run, then runs `ground_truth_check.py` and `compare_all.sh` with the finder judging at the kill less 0.1 s, and less 0.03 s if that's cheap, against the current build; reports in under 10 lines how many of Sujan's answers each fits, which known gaps it closes and which kills flip on the 64 demos. Sujan decides.
+  - Decided so far: nothing yet; the finder judges at the killing shot since 0.13.0 (`LIMITS.md`).
 
 **Wallbang ground truth** (30 Oct 2026; `tests/ground_truth_check.py`, `tests/expected/`, rules in `tests/README.md`)
 - Done, in the archive: the 10 kills where Sujan's answer and the viewer disagreed (answered 30 Oct 2026); **The 0.5 s window misses a hit at 0.5 s by rounding** (fixed in 0.26.1, 30 Oct 2026).
 
 **Sliver kills** (30 Oct 2026; built in 0.26.0)
-- Done, in the archive: **The sight points see a sliver the picture doesn't** (built in 0.26.0, 30 Oct 2026: strict at 0 pixels, LOOSE from 1 to 49); **Railings and Nuke vents** (railings built in 0.26.0; the vent exception withdrawn, 30 Oct 2026).
-- [ ] **Sliver kills, by eye (0.26.0)**
-  - Status: built in 0.26.0; not yet checked by Sujan in the viewer (the 10 kills were answered on the review page).
-  - Next step: Sujan opens FX vs eSahara, Dust2, DreamHack Winter 2010: R18 0:21 KUBEN on RARA reads LOOSE, its tag's hover saying the sight lines reach him; NoA vs Pentagram, Train 2006: R18 1:22 MJE on kubenB reads strict; SK vs Na`Vi, Train, DreamHack Winter 2011: R31 C4 0:09 GeT_RiGhT on markeloff isn't listed (the railing).
-  - Decided so far: a kill the sight points see with the crosshair through cover is listed under 50 pixels in the picture, strict at 0, LOOSE from 1 to 49, with both guards (Sujan, 30 Oct 2026); railings aren't cover (Sujan, 30 Oct 2026).
+- Done, in the archive: **The sight points see a sliver the picture doesn't** (built in 0.26.0, 30 Oct 2026: strict at 0 pixels, LOOSE from 1 to 49); **Railings and Nuke vents** (railings built in 0.26.0; the vent exception withdrawn, 30 Oct 2026); **Sliver kills, by eye (0.26.0)** (confirmed by Sujan, 31 Oct 2026).
 - [ ] **One line for strict: 0 pixels for hidden kills too?** (for later, Sujan, 30 Oct 2026)
   - Status: kills the finder's sight points call hidden read strict under 50 pixels of the victim in the picture (0.23.0), but sliver kills need 0 pixels for strict (0.26.0), so two kills with the same picture can get different tags.
   - Next step: Claude, later: check whether 0 pixels should be the strict line for both, against Sujan's answers in `tests/expected/` (which hidden kills at 1 to 49 pixels he answered, and whether he called them strict or loose); then Sujan decides.
   - Decided so far: hidden kills strict under 50 pixels, LOOSE from 50 (Sujan, 25 Oct 2026); sliver kills strict at 0, LOOSE from 1 to 49 (Sujan, 30 Oct 2026).
 
 **Sujan's feedback of 23 Oct 2026** (HLTV viewer; built in 0.22.0 unless said; demos and events in `tests/DEMOS.md`)
-- Done, in the archive: **Republish the claude.ai viewer**, closed 29 Oct 2026 without republishing (the claude.ai copy stays at 0.23.0, GitHub Pages is the only live viewer, Sujan 29 Oct 2026); Sujan's answers on the 23 Oct review page (24 Oct 2026, on the 0.22.0 fixes), the three levels of wallbang (0.23.0 and 0.24.0), wallbang hits that didn't kill and the damage per wallbang (0.24.0).
-- [ ] **Strict and LOOSE wallbangs, by eye (0.23.0)**
-  - Status: built in 0.23.0; not yet checked by Sujan. The 21 LOOSE kills on the 50 demos are listed in CHANGELOG.md, 0.23.0.
-  - Next step: Sujan opens FX vs Lions, Nuke, DreamHack Winter 2010: R13 1:19 NIKO on LoordB should read LOOSE, R22 0:47 THREAT on LoordB strict, in the Wallbangs and Kills lists (tag after the gun, pixels on hover); the heading counts both.
-  - Decided so far: strict under 50 pixels of the victim in view, LOOSE from 50, still listed (Sujan, 25 Oct 2026).
-- [ ] **Light purple for loose wallbangs, by eye (0.24.0)**
-  - Status: built in 0.24.0, live since 28 Oct 2026; not yet checked by Sujan.
-  - Next step: Sujan opens k1ck vs eq, Nuke, DreamHack Winter 2011, R2 1:18, spekz on DECE (loose from damage): light purple on the LOOSE WB crosshair marker in **Player's eyes**, the ring, the kill line, the timeline diamond, the ✕ on the numbers and the death banner; strict ones stay pink.
-  - Decided so far: loose light purple wherever it's marked, strict pink; a kill is loose from damage when a bullet of the killer's that only a surface explains lands 0.5 s or less before it, same spray only (Sujan, 28 Oct 2026).
+- Done, in the archive: **Republish the claude.ai viewer**, closed 29 Oct 2026 without republishing (the claude.ai copy stays at 0.23.0, GitHub Pages is the only live viewer, Sujan 29 Oct 2026); Sujan's answers on the 23 Oct review page (24 Oct 2026, on the 0.22.0 fixes), the three levels of wallbang (0.23.0 and 0.24.0), wallbang hits that didn't kill and the damage per wallbang (0.24.0); **Strict and LOOSE wallbangs, by eye (0.23.0)** and **Light purple for loose wallbangs, by eye (0.24.0)** (checked by Sujan, 31 Oct 2026; THREAT on LoordB moved to **The moment the finder judges a kill at**).
 - [ ] **Bug: short names leave a bracket**
   - Status: found 27 Oct 2026, not fixed. "[fnaticMSI.cArn]" reads "cArn]" in the lists and over the players (fnatic vs Moscow Five, Nuke, DreamHack Summer 2011).
   - Next step: Claude fixes `shortNames` in `src/ui/names.js`, which cuts the shared "[fnaticMSI." but not the closing "]".

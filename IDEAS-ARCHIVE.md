@@ -25,6 +25,10 @@ Items moved out of [IDEAS.md](IDEAS.md) so that it holds only what is open (work
   - Decided so far: how the expected files are filled and judged, and the quick and full runs (Sujan, 30 Oct 2026, `STATE.md`).
 
 **Sliver kills** (30 Oct 2026; built in 0.26.0)
+- [x] **Sliver kills, by eye (0.26.0)**: confirmed by Sujan by eye in the viewer, 31 Oct 2026 (0.26.2): KUBEN on RARA loose, MJE on kubenB strict, GeT_RiGhT on markeloff not listed (`STATE.md` Decisions; the three kills' sources in `tests/expected/` say so).
+  - Status: built in 0.26.0; not yet checked by Sujan in the viewer (the 10 kills were answered on the review page).
+  - Next step: Sujan opens FX vs eSahara, Dust2, DreamHack Winter 2010: R18 0:21 KUBEN on RARA reads LOOSE, its tag's hover saying the sight lines reach him; NoA vs Pentagram, Train 2006: R18 1:22 MJE on kubenB reads strict; SK vs Na`Vi, Train, DreamHack Winter 2011: R31 C4 0:09 GeT_RiGhT on markeloff isn't listed (the railing).
+  - Decided so far: a kill the sight points see with the crosshair through cover is listed under 50 pixels in the picture, strict at 0, LOOSE from 1 to 49, with both guards (Sujan, 30 Oct 2026); railings aren't cover (Sujan, 30 Oct 2026).
 - [x] **Railings and Nuke vents**: closed 30 Oct 2026. Railings built in 0.26.0 (pull request #18); the vent exception withdrawn by Sujan the same day: breakable surfaces are never cover, his 23 Oct rule restored, and the vent pull request dropped (STATE.md Decisions).
   - Status: railings built in 0.26.0: the picture check leaves out what the map draws but bullets pass at full damage (a `func_illusionary` in a see-through render mode: de_train's `{rail2` on the highway slope, Inferno's `{cufence` and `{woodrail`, also Inferno's vines and Nuke's wires), as the sight lines already did; no other wallbang on the 50 test demos changed with it. Nuke's vents not built: the finder takes everything bullets break as never cover (`shootable` in `src/bsp.js`).
   - Next step: Sujan says whether Nuke's upper windows and Inferno's shutters work like the vents (cover for the first bullet only) or stay not cover; then Claude builds the vents (and those, if so) in its own pull request, with what it does on the 50 demos and `ground_truth_check.py`.
@@ -38,6 +42,14 @@ Items moved out of [IDEAS.md](IDEAS.md) so that it holds only what is open (work
   - Decided so far: strict under 50 pixels, LOOSE from 50 (Sujan, 25 Oct 2026); the hidden check stays as in 0.17.0 (Sujan, 5 Oct 2026); loose from damage, same spray only (Sujan, 28 Oct 2026); markeloff on Delpan strict, from his POV video (Sujan, 30 Oct 2026); option A, with both guards (Sujan, 30 Oct 2026).
 
 **Sujan's feedback of 23 Oct 2026** (HLTV viewer; built in 0.22.0 unless said; demos and events in `tests/README.md`)
+- [x] **Strict and LOOSE wallbangs, by eye (0.23.0)**: checked by Sujan by eye in the viewer, 31 Oct 2026 (0.26.2): NIKO on LoordB LOOSE, confirmed; THREAT on LoordB is LOOSE by eye where the viewer reads strict (his elbow shows at the kill feed, he's hidden at the killing bullet's damage number), in `tests/expected/` as loose with a `known_gap` until Sujan decides on **The moment the finder judges a kill at** (IDEAS.md) (`STATE.md` Decisions).
+  - Status: built in 0.23.0; not yet checked by Sujan. The 21 LOOSE kills on the 50 demos are listed in CHANGELOG.md, 0.23.0.
+  - Next step: Sujan opens FX vs Lions, Nuke, DreamHack Winter 2010: R13 1:19 NIKO on LoordB should read LOOSE, R22 0:47 THREAT on LoordB strict, in the Wallbangs and Kills lists (tag after the gun, pixels on hover); the heading counts both.
+  - Decided so far: strict under 50 pixels of the victim in view, LOOSE from 50, still listed (Sujan, 25 Oct 2026).
+- [x] **Light purple for loose wallbangs, by eye (0.24.0)**: confirmed by Sujan by eye in the viewer, 31 Oct 2026 (0.26.2): spekz on DECE light purple everywhere it's marked (`STATE.md` Decisions).
+  - Status: built in 0.24.0, live since 28 Oct 2026; not yet checked by Sujan.
+  - Next step: Sujan opens k1ck vs eq, Nuke, DreamHack Winter 2011, R2 1:18, spekz on DECE (loose from damage): light purple on the LOOSE WB crosshair marker in **Player's eyes**, the ring, the kill line, the timeline diamond, the ✕ on the numbers and the death banner; strict ones stay pink.
+  - Decided so far: loose light purple wherever it's marked, strict pink; a kill is loose from damage when a bullet of the killer's that only a surface explains lands 0.5 s or less before it, same spray only (Sujan, 28 Oct 2026).
 - Closed 29 Oct 2026 without republishing, moved from IDEAS.md: the claude.ai copy of the viewer (https://claude.ai/artifact/KHjQXfeVe17XXPrqarFDrS) stays at 0.23.0 and isn't updated; GitHub Pages is the only live viewer (Sujan, 29 Oct 2026).
 - [x] **Republish the claude.ai viewer**
   - Status: https://claude.ai/artifact/KHjQXfeVe17XXPrqarFDrS shows 0.23.0; GitHub Pages is on 0.24.0. Tried 28 Oct 2026: the Artifact tool wanted the whole live page (7,066 lines) read first, which didn't fit in that session.

@@ -30,7 +30,7 @@
    "victim": "ESAHARA.net RARA",
    "gun": "ak47",
    "expected": "loose",
-   "source": "docs/review-answers.md, \"Wallbang sliver check\" (30 Oct 2026), g01: loose"
+   "source": "docs/review-answers.md, \"Wallbang sliver check\" (30 Oct 2026), g01: loose; confirmed by eye in the viewer (Sujan, 31 Oct 2026, 0.26.2)"
   },
   {
    "round": 26,
