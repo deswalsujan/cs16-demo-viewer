@@ -114,7 +114,8 @@ function computeWallbangs() {
 // landing after a fall of 100 units or more (the game plays the same hit sound for fall damage), more damage than
 // the gun can do through a wall (0.6 x headshot 4 or stomach 1.25, per hit sound), guns whose bullets stop at the
 // first surface. Hits on one victim within 2 s of the last make a burst; hits in the open neither break it nor count.
-// A burst ending in a wallbang kill (strict or loose) joins it, the kill taking what he had left. Listed from 35 HP.
+// A burst ending in a wallbang kill (strict or loose) joins it, the kill taking what he had left. Listed from 35 HP, or
+// whatever its total when it ends in a wallbang kill (1 Nov 2026).
 const HITS_MIN = 35;
 function computeHits() {
   M.bursts = []; M.hitByV = {};
@@ -282,7 +283,12 @@ function computeHits() {
     b.main = +Object.keys(b.share).sort((x, y) => b.share[y] - b.share[x])[0];
     const r = M.rounds.find((x) => b.start >= x.start && (x.end == null || b.start <= x.end + 0.5)); b.round = r ? r.n : 0;
   }
-  M.bursts = M.bursts.filter((b) => b.total >= HITS_MIN && M.liveR.some((r) => r.n === b.round)).sort((x, y) => x.start - y.start);
+  // the 35 HP minimum is for damage that didn't kill (the DAMAGE rows); a burst ending in a wallbang kill stays
+  // whatever its total, so the kill shows its numbers (Sujan, 1 Nov 2026: 115 of 634 wallbang kills on the 64 demos had
+  // none, with 10 to 34 HP in the burst: starix's 12 HP through cover and the 7 he had left on RobbaN, Na`Vi vs SK,
+  // Inferno, recorded 24 Oct 2011, R14 0:26). A kill whose burst is dropped all the same gets the killing bullet alone below.
+  M.bursts = M.bursts.filter((b) => (b.kill || b.total >= HITS_MIN) && M.liveR.some((r) => r.n === b.round)).sort((x, y) => x.start - y.start);
+  for (const k of D.kills) if (k.burst && !M.bursts.includes(k.burst)) k.burst = null;
   // every wallbang kill gets its numbers (Sujan, 26 Oct 2026), also one with no hit through cover before it: then the
   // killing bullet alone, taking what he had left
   for (const k of D.kills) {

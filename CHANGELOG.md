@@ -4,6 +4,7 @@ What changed in the viewer, newest first. The version shows in the viewer's shor
 
 ## Versions
 
+- [0.26.4](#0264-2026-11-01) 2026-11-01: Numbers on every wallbang kill
 - [0.26.3](#0263-2026-11-01) 2026-11-01: Damage numbers with the kill feed
 - [0.26.2](#0262-2026-10-30) 2026-10-30: three.js built into the page
 - [0.26.1](#0261-2026-10-30) 2026-10-30: Loose wallbang rounding fix
@@ -61,6 +62,18 @@ What changed in the viewer, newest first. The version shows in the viewer's shor
 
 ## Known limits
 Moved to [LIMITS.md](LIMITS.md) on 30 Oct 2026; release entries below still say "Known limits" for that list.
+
+## 0.26.4 (2026-11-01)
+
+### Fixed
+- **Damage numbers on every wallbang kill**: 115 of the 634 wallbang kills on the 64 test demos showed no numbers in the 3D view (62 strict, 52 loose from damage, 1 loose). Their hits through cover came to under 35 HP, and the 35 HP minimum dropped them after the kill had been tied to them, so the killing bullet's own number and ✕ were skipped too: starix on RobbaN (Na`Vi vs SK, Inferno, recorded 24 Oct 2011, event not known, R14 0:26), 12 HP through cover and the 7 he had left, was one (Sujan, 31 Oct 2026). The 35 HP minimum now holds only for damage that didn't kill, so the DAMAGE rows, the **Damage** filter and the timeline's damage marks are as before (Sujan, 1 Nov 2026).
+
+### How it was tested
+- `regress_summary.js` (with `compare_all.sh`) on the 64 demos, 0.26.2's build against this one: the 115 bursts added, each ending in its wallbang kill; no wallbang, score or K-D changed. `page/wb_no_numbers.js` (new): 115 kills with no numbers before, 0 now.
+- `ground_truth_check.py` (0 mismatches, 7 known gaps) and the other six checks pass on Sujan's Mac.
+- Full log: `tests/logs/0.26.4.md`.
+### Discussed, not changed
+- Showing only the killing bullet on such kills: it would hide the hit through cover that makes 52 of them loose from damage (Sujan, 1 Nov 2026, approving the plan).
 
 ## 0.26.3 (2026-11-01)
 
