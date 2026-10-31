@@ -6,8 +6,8 @@ positions and aim from the killing shot. Checks every late kill, and the one Suj
 2 Oct 2026 (round 22, 0:55, neo's M4 on ave): the kill feed stays empty at the shot and just before the death
 sound, and shows the kill at it.
 
-Usage:  HALF_LIFE_DIR=~/Downloads/Half-Life python3 late_kill_timing_check.py [page.html]
-Needs noa.penta-0610211800-de_train.dem in cstrike (no map needed). About a minute. Exit code 0 = pass.
+Usage:  HALF_LIFE_DIR=~/code/cs16-data/Half-Life DEMO_DIRS=~/code/cs16-data/test-demos python3 late_kill_timing_check.py [page.html]
+Needs noa.penta-0610211800-de_train.dem in the Half-Life folder or DEMO_DIRS (demo_dirs.py; no map needed). About a minute. Exit code 0 = pass.
 """
 import json, os, subprocess, sys
 

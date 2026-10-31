@@ -15,15 +15,17 @@ Settings (environment variables):
 
 | Name | What it is | Default |
 |---|---|---|
-| `HALF_LIFE_DIR` | Your Half-Life folder (the one with `cstrike` and `valve`). Required for the browser checks. | none |
+| `HALF_LIFE_DIR` | Your Half-Life folder (the one with `cstrike` and `valve`). Required for the browser checks. On Sujan's Mac `~/code/cs16-data/Half-Life` (since 1 Nov 2026). Every `.dem` in it counts, subfolders included, as the viewer lists them | none |
 | `THREE_JS` | Path to three.min.js r128, served to builds before 0.26.2 in place of the CDN | `src/vendor/three.min.js` |
-| `DEMO` | Part of the demo file name to open (`harness.py` only) | `dust2` |
+| `DEMO` | The demo to open (`harness.py` only): its file name, or a part of it that only one demo's name has. A part that several names have stops with the list of them (Sujan, 1 Nov 2026), so older notes' short values (`DEMO=fx-vs-lions`, `DEMO=tuscan`) need more of the name | `navi-vs-fx-sec2011-final-1110091531` (Na`Vi vs FX, Dust2, SEC 2011 final) |
 | `CHROME` | A Chromium to run instead of Playwright's own (`harness.py` only; for the Linux VM on Sujan's Mac, which can't download Playwright's) | Playwright's |
 | `MAP_NEEDED` | `0` to start without waiting for the map (for a demo whose map isn't in the folder) | `1` |
 | `POV_MODE` | `1` to tick the **POV mode** setting before the demo opens (`harness.py` only; since 0.25.0). The scripts marked "on `../pov/pov.html`" ran on the POV branch's own page before 0.25.0; on main they run on `index.html` with `POV_MODE=1`. The branch that held that page, `wip/pov-mode`, was deleted on 30 Oct 2026. | off |
 | `PAGE` | Page to test (Theatre checks) | `../index.html` |
-| `EXTRA_DEMO_DIRS` | Folders outside the Half-Life folder to look for demos in, subfolders included, separated by `:` (`ground_truth_check.py` only; on Sujan's Mac `~/Downloads/test demos` and `~/Downloads/test-demos-2`). Those demos go into an APFS clone of the Half-Life folder for the run, which takes no disk space (macOS); elsewhere they're skipped with a note | none |
+| `DEMO_DIRS` | The one setting for demos outside the Half-Life folder, used by every test that opens a demo (Sujan, 1 Nov 2026; it replaced `EXTRA_DEMO_DIRS`, which now stops a test with a note): folders separated by `:` (`;` on Windows), subfolders included. On Sujan's Mac `~/code/cs16-data/test-demos`, which holds every test demo (`DEMOS.md`). The viewer only lists the demos in the folder it's given, so the tests give it an APFS clone of the Half-Life folder with these demos added to its `cstrike` (macOS: no disk space, under a second; elsewhere a copy made of hard links), deleted at the end. A byte-identical copy of a demo already there is left out; two different demos with one file name, or a folder that doesn't exist, stop the test (`demo_dirs.py`) | none |
 | `JOBS`, `TIMEOUT` | Runs at once and seconds per run (`compare_all.sh`, `ground_truth_check.py`) | 6; 500 and 600 |
+
+On Sujan's Mac, `HALF_LIFE_DIR` and `DEMO_DIRS` are exported in `~/.zshrc` (1 Nov 2026), so every new Terminal window has them, and so do Claude Code sessions there, whose shell starts from that file; a session already open when they were added sets them itself.
 
 The demos on each machine are listed in [DEMOS.md](DEMOS.md). Most checks default to Na`Vi vs FX on Dust2 (SEC 2011 final).
 
@@ -31,12 +33,13 @@ The section "Demos and their events", with its subsections and "Notes moved from
 
 ## Browser checks (headless Chromium)
 
-`harness.py` loads a built page, feeds it the Half-Life folder, opens a demo, waits for the 3D map, then runs one or more page scripts in order and prints what each returns. It copies the page and adds a small hook (`window.__v`) so scripts can reach the viewer's internals; the shipped page is never changed.
+`harness.py` loads a built page, feeds it the Half-Life folder (with the `DEMO_DIRS` demos added), opens a demo, waits for the 3D map, then runs one or more page scripts in order and prints what each returns. It copies the page and adds a small hook (`window.__v`) so scripts can reach the viewer's internals; the shipped page is never changed.
 
 ```
 cd tests
-HALF_LIFE_DIR=~/Downloads/Half-Life python3 harness.py ../index.html page/smoothness_and_frame_cost.js
-HALF_LIFE_DIR=~/Downloads/Half-Life python3 harness.py ../index.html page/see_through_walls.js,page/team_colours.js,page/figure_fallback.js shot
+export HALF_LIFE_DIR=~/code/cs16-data/Half-Life DEMO_DIRS=~/code/cs16-data/test-demos
+python3 harness.py ../index.html page/smoothness_and_frame_cost.js
+python3 harness.py ../index.html page/see_through_walls.js,page/team_colours.js,page/figure_fallback.js shot
 ```
 A third argument saves a screenshot after each script (`shot0.png`, `shot1.png`, ...). Loading the Dust2 demo with its map takes 1 to 3 minutes.
 
@@ -139,18 +142,19 @@ Stand-alone checks:
 
 | Script | Checks | Time |
 |---|---|---|
-| `notes_check.py` | The notes agree with the repo (agent brief, 30 Oct 2026): every path in backticks in STATE.md, AGENTS.md, IDEAS.md and README.md exists (branch names, the player's game folder, placeholders and a short ignore list left out); CHANGELOG.md's newest version is `VERSION`; the entries at or above it don't say "until then", "not yet decided" or "In progress", and an "In progress" entry is only on a `wip/` branch; every `src/` file has a line in AGENTS.md, "Where the code is". Fails (exit code 1) with the file and line. No browser, no game files; runs in `check.yml` | a second |
+| `demo_dirs.py list`, `expected`, `check FOLDER` | Where the tests find demos (`HALF_LIFE_DIR` and `DEMO_DIRS`, above), shared by every test that opens one. On its own: `list` prints every demo's file name; `expected` checks that every demo of `tests/expected/`, joined parts too, is found by SHA-256 there; `check FOLDER` checks a folder against `demos-manifest.md` (every test demo's size and SHA-256), finding each demo by hash under any name or subfolder, for the copy Sujan keeps on Google Drive (Sujan, 1 Nov 2026). Exit code 1 when one is missing. No browser | a few seconds |
+| `notes_check.py` | The notes agree with the repo (agent brief, 30 Oct 2026): every path in backticks in STATE.md, AGENTS.md, IDEAS.md and README.md exists (branch names, the player's game folder, placeholders and a short ignore list left out); CHANGELOG.md's newest version is `VERSION`; the entries at or above it don't say "until then", "not yet decided" or "In progress", and an "In progress" entry is only on a `wip/` branch; every `src/` file has a line in AGENTS.md, "Where the code is"; every demo of `tests/expected/` has a row in `demos-manifest.md` with the same name and SHA-256 (1 Nov 2026). Fails (exit code 1) with the file and line. No browser, no game files; runs in `check.yml` | a second |
 | `theatre_test.py <page> <label> <width> <height> <scale>` | 39 Theatre mode checks with a real mouse and keyboard, for one screen setup | about 10 minutes |
 | `theatre_all_setups.sh` | The above for five setups: 14-inch and 13-inch MacBook (2x), Windows at 100%, 125% and 150% | about 45 minutes |
 | `theatre_side_panel_test.py`, `theatre_together_test.py` | The 0.9.1 and 0.9.2 checks: the side panel doesn't bring in the header; all panels come and go together | about 5 minutes each |
 | `start_screen_check.py` | Theatre and Full screen are greyed out before a demo is open; the footer's **Source on GitHub** link points at the repo and opens in a new tab, and at 375 px the footer wraps without the version, the link and **Clear saved files** overlapping (since 0.25.1) (no Half-Life folder needed) | under a minute |
 | `folder_row_test.py` | The Half-Life folder row (0.12.0, 0.12.1): first visit, picking, changes applied by themselves, Reconnect, opening by itself on the next visit, wrong folders and no demos, Clear saved files, dropping a demo with no folder, the ordinary folder pick, and the page inside a frame from another site. Uses a stand-in for Chrome's folder access, since its picker and prompts can't be driven headless (no Half-Life folder needed) | under a minute |
-| `demo_search_check.py [page] [screenshot]` | The search box over the demo list (0.15.2): hidden before a folder is chosen, filtering by every word typed, the "N of M" count, highlighting, the no-match line, Esc and Clear, opening a filtered row. Needs `HALF_LIFE_DIR` (demos only, no maps) | under a minute |
+| `demo_search_check.py [page] [screenshot]` | The search box over the demo list (0.15.2): hidden before a folder is chosen, filtering by every word typed, the "N of M" count, highlighting, the no-match line, Esc and Clear, opening a filtered row (SK vs Na`Vi, Train, DreamHack Winter 2011, the one "sk navi train" leaves). Expects every demo of `HALF_LIFE_DIR` and `DEMO_DIRS` in the list (demos only, no maps) | under a minute |
 | `prefs_check.py` | Viewing settings restored on the next visit, and defaults when the saved ones are damaged; **POV mode** off on a first visit (since 0.25.0) (no Half-Life folder needed) | a few seconds |
-| `panel_click_check.py [page]` | Clicks on the side panel during playback (0.18.0): at 8x on the Kills tab, press a row, hold it 0.3 s, release, and the kill must be picked, three times; the same on the Players tab across deaths. Fails (exit code 1) on 0.17.0, where the list was rebuilt under the mouse. Needs `HALF_LIFE_DIR` with Na`Vi vs FX, Dust2 (no map). Run on every release | about a minute |
-| `late_kill_timing_check.py [page]` | Fails (exit code 1) if late kills in NoA vs Pentagram, Train 2006, stop being shown at the victim's death sound (0.15.5): all 135, and R22 0:55 neo on ave with the kill feed at the shot, just before and at the death sound. Needs `HALF_LIFE_DIR` with that demo (no map). Run on every release | about a minute |
-| `ground_truth_check.py [--demo TEXT] [--save DIR] [page]` | The viewer against what Sujan confirmed (`tests/expected/`, see "Wallbang ground truth" below): every kill's wallbang tag, scores, live rounds and K-D. Fails (exit code 1) on any mismatch, one line each ("demo, round, timer, killer on victim: expected X, got Y"); a known gap is printed, never failed. Takes every expected file whose demo is found, in `HALF_LIFE_DIR` and `EXTRA_DEMO_DIRS`; run it on every release (Sujan, 30 Oct 2026; a quicker run on 5 demos was dropped the same day, since the whole takes 1.3 minutes). Demos are matched by hash; one that's missing, or whose map isn't in the folder, is skipped with a note. Needs `HALF_LIFE_DIR` and the maps, so it can't run in `check.yml` | 1.3 minutes for 45 demos on Sujan's Mac (30 Oct 2026) |
-| `compare_all.sh OUT PAGE_A [PAGE_B] [SCRIPT]` | A page script (default `page/match_summary.js`) on every demo in `HALF_LIFE_DIR`, 6 at a time (`JOBS=2` on a 2-core machine; `TIMEOUT` seconds per demo, 500 by default; pass `""` as PAGE_B to give a script with one page). With two pages (main's build and a branch, say `git show origin/main:index.html > old.html`) it lists the demos whose results differ; with one it collects the results, for checking a fresh batch against known scores and K-D (`page/match_detail.js` gives round by round and T/CT). Needs no maps | about 4 minutes for 25 demos |
+| `panel_click_check.py [page]` | Clicks on the side panel during playback (0.18.0): at 8x on the Kills tab, press a row, hold it 0.3 s, release, and the kill must be picked, three times; the same on the Players tab across deaths. Fails (exit code 1) on 0.17.0, where the list was rebuilt under the mouse. Needs Na`Vi vs FX, Dust2 in `HALF_LIFE_DIR` or `DEMO_DIRS` (no map). Run on every release | about a minute |
+| `late_kill_timing_check.py [page]` | Fails (exit code 1) if late kills in NoA vs Pentagram, Train 2006, stop being shown at the victim's death sound (0.15.5): all 135, and R22 0:55 neo on ave with the kill feed at the shot, just before and at the death sound. Needs that demo in `HALF_LIFE_DIR` or `DEMO_DIRS` (no map). Run on every release | about a minute |
+| `ground_truth_check.py [--demo TEXT] [--save DIR] [page]` | The viewer against what Sujan confirmed (`tests/expected/`, see "Wallbang ground truth" below): every kill's wallbang tag, scores, live rounds and K-D. Fails (exit code 1) on any mismatch, one line each ("demo, round, timer, killer on victim: expected X, got Y"); a known gap is printed, never failed. Takes every expected file whose demo is found, in `HALF_LIFE_DIR` and `DEMO_DIRS`; run it on every release (Sujan, 30 Oct 2026; a quicker run on 5 demos was dropped the same day, since the whole takes 1.3 minutes). Demos are matched by hash; an expected file whose demo, joined part or map isn't found is skipped, listed in a block of `!` lines before the run and again at the end, and more than 3 skipped (or none run) fails the run, so a missing folder never reads as PASS (Sujan, 1 Nov 2026); 1 to 3 skipped ends in "PASS, N expected files skipped". Needs `HALF_LIFE_DIR` and the maps, so it can't run in `check.yml` | 1.3 minutes for 45 demos on Sujan's Mac (30 Oct 2026) |
+| `compare_all.sh OUT PAGE_A [PAGE_B] [SCRIPT]` | A page script (default `page/match_summary.js`) on every demo in `HALF_LIFE_DIR` and `DEMO_DIRS` (one per file name, `demo_dirs.py list`; 64 on Sujan's Mac since 1 Nov 2026), 6 at a time (`JOBS=2` on a 2-core machine; `TIMEOUT` seconds per demo, 500 by default; pass `""` as PAGE_B to give a script with one page). With two pages (main's build and a branch, say `git show origin/main:index.html > old.html`) it lists the demos whose results differ; with one it collects the results, for checking a fresh batch against known scores and K-D (`page/match_detail.js` gives round by round and T/CT). Needs no maps | about 4 minutes for 25 demos |
 
 ## Wallbang ground truth
 
@@ -173,7 +177,7 @@ For finding out what a demo file records, without the browser. `make_probe.py` w
 ```
 cd tests/demo-probes
 python3 make_probe.py
-node zoom.mjs ~/Downloads/Half-Life/cstrike/<demo>.dem
+node zoom.mjs ~/code/cs16-data/test-demos/<demo>.dem
 ```
 
 | Script | Finds | Used for |
@@ -204,6 +208,8 @@ node rounds_and_people.mjs <demo>        # 0.14.1: server messages, every round 
 ```
 
 ## Testing on Sujan's Mac files from a cloud session
+
+Since 1 Nov 2026 the Mac's files are in `~/code/cs16-data/Half-Life` and `~/code/cs16-data/test-demos` (the demos), so a cloud session needs access to both; the notes below name the old `~/Downloads/Half-Life`.
 
 The Claude session runs on a cloud machine, while the files are on the Mac. On 3 Oct 2026 the folder was reached through the linked desktop app: access granted to `~/Downloads/Half-Life` only, then everything but the demos packed into one archive (`_claude_transfer/assets.tar.zst`, 227 MB, made on the Mac with `tar` and `zstd`) and copied over together with the 31 demos, and unpacked on the test machine. The Mac's sandboxed shell can't download a browser, so the tests themselves run on the cloud machine. The `_claude_transfer` folder was left in the Half-Life folder (the session couldn't delete files there without asking) and Sujan deleted it on 3 Oct 2026. Next time, ask for delete permission (the device's delete permission prompt) and remove it at the end of the session, or ask Sujan first.
 

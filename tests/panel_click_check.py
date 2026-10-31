@@ -6,11 +6,16 @@ This plays at 8x on the Kills tab, pauses to aim at a row, presses it, plays on 
 rebuilds' worth before the fix), releases, and checks the click went through: the row is the picked kill and playback jumped to it. Then the same
 on the Players tab around a death, which also rebuilt the list. Exit code 1 on a failure.
 
-Usage: HALF_LIFE_DIR=... python3 panel_click_check.py [page]   (no map needed; opens Na`Vi vs FX, Dust2, SEC 2011 final)
+Usage: HALF_LIFE_DIR=... DEMO_DIRS=... python3 panel_click_check.py [page]   (no map needed; opens Na`Vi vs FX, Dust2, SEC
+2011 final, from the Half-Life folder or DEMO_DIRS: demo_dirs.py)
 """
 import os, sys, threading, http.server, functools
 from playwright.sync_api import sync_playwright
+import demo_dirs
 
+_hl, _inside, _outside = demo_dirs.collect()
+DEMO = demo_dirs.find('navi-vs-fx-sec2011-final-1110091531', _inside, _outside)
+HL = demo_dirs.stage(_outside)
 page = os.path.abspath(sys.argv[1] if len(sys.argv) > 1 else os.path.join(os.path.dirname(os.path.abspath(__file__)), '..', 'index.html'))
 html = open(page, encoding='utf-8').read()
 i = html.rindex('})();')
@@ -28,9 +33,9 @@ try:
         pg.route('**/three.min.js', lambda r: r.fulfill(path=THREE, content_type='application/javascript'))
         pg.route('https://fonts.googleapis.com/**', lambda r: r.fulfill(body='', content_type='text/css'))
         pg.goto(f'http://127.0.0.1:{srv.server_port}/_test_panelclick.html')
-        pg.set_input_files('#fFolder', os.environ['HALF_LIFE_DIR'])
+        pg.set_input_files('#fFolder', HL)
         pg.wait_for_function('__v("files.demos.length > 0")', timeout=60000)
-        pg.evaluate("__v(\"loadDemoFile(files.demos.find(f => f.name.includes('1110091531')))\")")
+        pg.evaluate('(n) => __v(`loadDemoFile(files.demos.find((f) => f.name === ${JSON.stringify(n)}))`)', DEMO)
         pg.wait_for_function('__v("!!(D && M)")', timeout=240000)
         pg.evaluate('__v("closeSummary(); setView(\'2d\')")')
 
