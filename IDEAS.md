@@ -9,10 +9,7 @@ Only what is open stays here. An open item keeps a three-line header (Status, Ne
 Everything raised in conversation that isn't finished, in one place. Each item says who does it. Ideas for new features are further down; this list is for loose ends.
 
 **Damage numbers and the moment a kill is judged** (Sujan, 31 Oct 2026, after his by-eye checks of 0.23.0 to 0.26.1; a plan for each before anything is built)
-- [ ] **Bug: damage numbers 0.1 s after the kill feed**
-  - Status: found by Sujan 31 Oct 2026. The numbers and the ✕ are drawn in the 3D pass (`drawHitNumbers`, `src/view3d.part.js`), which runs `LAG3` (0.1 s) behind the kill feed, so the killing bullet's number shows 0.1 s after the kill feed.
-  - Next step: Claude brings a plan; Sujan approves it before it's built.
-  - Decided so far: the killing bullet's number and the ✕ appear at the same instant as the kill feed (Sujan, 31 Oct 2026); the 3D view itself stays 0.1 s behind (Sujan, 26 Oct 2026).
+- Done, in the archive: **Bug: damage numbers 0.1 s after the kill feed** (fixed in 0.26.3, 1 Nov 2026).
 - [ ] **Bug: wallbang kills with no damage numbers**
   - Status: found by Sujan 31 Oct 2026 on starix on RobbaN (Na`Vi vs SK, Inferno, recorded 24 Oct 2011, event not known, R14 0:26), whose 12 HP hit through cover and the kill show no numbers. Cause (Claude, 31 Oct 2026): `computeHits` (`src/ui/wallbangs.js`) ties a burst to its wallbang kill, then drops bursts under 35 HP; the kill still points at the dropped burst, so the pass that gives every wallbang kill its numbers skips it. On the 64 demos, 115 of 634 wallbang kills have no number (62 strict, 52 loose from damage, 1 loose), every one for this reason, with 10 to 34 HP in the burst.
   - Next step: Sujan approves a fix (Claude's plan of 31 Oct 2026: the 35 HP minimum only for bursts that don't end in a kill); nothing is fixed before.

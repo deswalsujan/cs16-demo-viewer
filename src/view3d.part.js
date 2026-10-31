@@ -321,12 +321,15 @@ let lastFrame3 = performance.now();
 // while it shows a kill message as soon as it arrives (fnatic vs Moscow Five, Nuke, DreamHack Summer 2011, R2 1:13:
 // the game showed cArn in the doorway at the kill feed, where the viewer showed him behind the wall a moment later).
 const LAG3 = 0.1;
+// the moment itself while update3 draws (T is LAG3 behind there): the damage numbers, the ✕ and the glow follow it, so
+// they come with the kill feed and the hit sounds (Sujan, 1 Nov 2026; see drawHitNumbers)
+let tNow3 = 0;
 function update3() {
   // Sujan, 26 Oct 2026: keep it like the game, no switch. POV mode: the recorder's own view, HUD and gun stay on the
   // moment itself (POV.t, his own frames); the delay for everyone else there is POV.lag, measured at 0 and 0.1 s for
   // Sujan to pick (29 Oct 2026; main's 0.1 s until he does)
   const T0 = T, lag = D ? (POV.on ? POV.lag : LAG3) : 0;
-  POV.t = T0;
+  POV.t = T0; tNow3 = T0;
   if (lag) T = Math.max(D.start || 0, T - lag);
   try { update3Now(); } finally { T = T0; }
 }
@@ -642,8 +645,15 @@ const XHAIR = { small: { gap: 3, end: 8, w: 1.25 }, medium: { gap: 4, end: 12, w
 // The killing bullet's number is the health he had left (the demo doesn't carry that bullet's own damage), so it ends
 // with a kill mark, "−8 HS ✕" (option A, Sujan 27 Oct 2026: whimp's "−8 HS" on Go, tyloo vs mTw, Nuke, e-Stars
 // Seoul 2009, R23 1:09, read like an 8-damage headshot).
+// On the kill feed's clock (Sujan, 1 Nov 2026): each number, the ✕ and the glow come at the moment itself (tNow3), as
+// the hit sounds and the kill feed do, so the killing bullet's ✕ shows in the same frame as the kill feed; before, they
+// came with the 3D view, 0.1 s late. They sit on the player as the 3D view draws him (T, 0.1 s behind), so at the kill
+// the ✕ shows beside him for a tenth of a second before he falls.
 function drawHitNumbers(lx, W, H, camera, mono) {
   if (!M.bursts || !M.bursts.length) return;
+  const tn = tNow3;
+  // the killing bullet with the same test as the kill feed (k.t <= T), so neither comes a frame before the other
+  const due = (h) => h.t <= tn + (h.kill ? 0 : 1e-4);
   // through a player's eyes or from behind him, only his own hits are shown (Sujan, 26 Oct 2026: in whimp's view at
   // R23 1:10, tyloo vs mTw, Nuke, the hits of four other players showed too); in Free view everyone's
   const mine = (h) => !(selected != null && (cam3.mode === 'eyes' || cam3.mode === 'chase')) || h.s === selected;
@@ -651,14 +661,14 @@ function drawHitNumbers(lx, W, H, camera, mono) {
   // 0.3 s; also on the killing bullet (Sujan, 26 Oct 2026)
   if ($('glow3').checked) for (const b of M.bursts) {
     const tEnd = b.kill ? b.kill.t : b.end;
-    if (T < b.start - 0.05 || T > tEnd + 0.3 || (cam3.mode === 'eyes' && b.v === selected)) continue;
-    const h = b.hits.filter((x) => x.t <= T + 1e-4 && mine(x)).pop(); if (!h || T - h.t > 0.3) continue;
+    if (tn < b.start - 0.05 || tn > tEnd + 0.3 || (cam3.mode === 'eyes' && b.v === selected)) continue;
+    const h = b.hits.filter((x) => due(x) && mine(x)).pop(); if (!h || tn - h.t > 0.3) continue;
     let st = playerState(b.v, T);
     if ((!st || st.state <= 0) && h.kill && b.kill.vpos) st = { x: b.kill.vpos[0], y: b.kill.vpos[1], z: b.kill.vpos[2], duck: b.kill.vduck, state: 1 };
     if (!st || st.state <= 0) continue;
     const top = g3(st.x, st.y, st.z + (st.duck ? 22 : 36)).project(camera), bot = g3(st.x, st.y, st.z - (st.duck ? 18 : 36)).project(camera);
     if (top.z > 1 || top.z < -1) continue;
-    const tx = (top.x + 1) / 2 * W, ty = (1 - top.y) / 2 * H, by = (1 - bot.y) / 2 * H, hgt = Math.max(12, by - ty), cy = (ty + by) / 2, a = 1 - (T - h.t) / 0.3;
+    const tx = (top.x + 1) / 2 * W, ty = (1 - top.y) / 2 * H, by = (1 - bot.y) / 2 * H, hgt = Math.max(12, by - ty), cy = (ty + by) / 2, a = 1 - (tn - h.t) / 0.3;
     const g = lx.createRadialGradient(tx, cy, 1, tx, cy, hgt * 0.75);
     g.addColorStop(0, `rgba(255,79,216,${0.55 * a})`); g.addColorStop(1, 'rgba(255,79,216,0)');
     lx.fillStyle = g; lx.beginPath(); lx.ellipse(tx, cy, hgt * 0.45, hgt * 0.75, 0, 0, Math.PI * 2); lx.fill();
@@ -667,15 +677,15 @@ function drawHitNumbers(lx, W, H, camera, mono) {
   const scr = (x, y, z) => { const v = g3(x, y, z).project(camera); return v.z > 1 || v.z < -1 ? null : [(v.x + 1) / 2 * W, (1 - v.y) / 2 * H]; };
   lx.lineWidth = 3; lx.strokeStyle = 'rgba(8,10,12,.9)';
   for (const b of M.bursts) {
-    if (T < b.start - 0.05 || T > (b.kill ? b.kill.t + 1 : b.end + 1)) continue;
+    if (tn < b.start - 0.05 || tn > (b.kill ? b.kill.t + 1 : b.end + 1)) continue;
     if (cam3.mode === 'eyes' && b.v === selected) continue;
-    const live = b.hits.filter((h) => h.t <= T + 1e-4 && T - h.t <= 0.9 && mine(h));
+    const live = b.hits.filter((h) => due(h) && tn - h.t <= 0.9 && mine(h));
     if (!live.length) continue;
     const st = playerState(b.v, T);
     const base = st && st.state > 0 ? scr(st.x, st.y, st.z + (st.duck ? 26 : 44) + 10) : (b.kill ? scr(b.kill.vpos[0], b.kill.vpos[1], b.kill.vpos[2] + 20) : null);
     if (!base) continue;
     live.forEach((h, k) => {
-      const age = T - h.t, a = age < 0.15 ? 1 : Math.max(0, 1 - (age - 0.15) / 0.75);
+      const age = tn - h.t, a = age < 0.15 ? 1 : Math.max(0, 1 - (age - 0.15) / 0.75);
       let px = base[0] + 18, py = base[1] - 6 - age * 40 - (live.length - 1 - k) * 13;
       if (cam3.mode === 'eyes' && Math.abs(px + 20 - W / 2) < arm + 24 && Math.abs(py - H / 2) < arm + 8) py = H / 2 - arm - 10;
       lx.globalAlpha = a; lx.textAlign = 'left';

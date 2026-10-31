@@ -18,6 +18,7 @@ function frame(now) {
       const s = playerState(selected, T);
       if (s && s.state > 0) { const [px, py] = w2i(s.x, s.y); const S = base.s * view.s; view.x += ((cw / 2 - (base.x * view.s + px * S)) - view.x) * 0.08; view.y += ((ch / 2 - (base.y * view.s + py * S)) - view.y) * 0.08; }
     }
+    updateFeed(); // before the 3D view draws the ✕, so both come in the same frame
     if (viewMode !== '3d') draw();
     drawPlayhead(); updateCentre();
     if (viewMode !== '2d') { if (MAP && view3.map !== MAP.name) build3d(); update3(); }

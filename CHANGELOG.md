@@ -4,6 +4,7 @@ What changed in the viewer, newest first. The version shows in the viewer's shor
 
 ## Versions
 
+- [0.26.3](#0263-2026-11-01) 2026-11-01: Damage numbers with the kill feed
 - [0.26.2](#0262-2026-10-30) 2026-10-30: three.js built into the page
 - [0.26.1](#0261-2026-10-30) 2026-10-30: Loose wallbang rounding fix
 - [0.26.0](#0260-2026-10-30) 2026-10-30: Sliver kills; railings aren't cover
@@ -60,6 +61,19 @@ What changed in the viewer, newest first. The version shows in the viewer's shor
 
 ## Known limits
 Moved to [LIMITS.md](LIMITS.md) on 30 Oct 2026; release entries below still say "Known limits" for that list.
+
+## 0.26.3 (2026-11-01)
+
+### Fixed
+- **Damage numbers on time**: the numbers, the killing bullet's ✕ and **Glow on hits** come at the moment itself, with the kill feed and the hit sounds, in place of 0.1 s later with the rest of the 3D view (Sujan, 31 Oct 2026). They still sit on the player as the 3D view draws him, so at a kill the ✕ shows beside the victim for a tenth of a second before he falls.
+- **The kill feed** is brought up to date every frame, not every 0.1 s with the rest of the HUD, so a kill shows in it in the same frame as its ✕ (Sujan, 1 Nov 2026); before, it could come up to 0.1 s late.
+
+### How it was tested
+- `page/hit_numbers_timing.js` (new) on k1ck vs eq, Nuke, DreamHack Winter 2011 and Na`Vi vs FX, Dust2, SEC 2011: on every kill played, the ✕ comes in the same frame as the kill feed; on 0.26.2's build it came 0.1 s after the kill on every one.
+- `ground_truth_check.py` (0 mismatches, 7 known gaps) and the other six checks pass on Sujan's Mac.
+- Full log: `tests/logs/0.26.3.md`.
+### Discussed, not changed
+- Kill rings and kill lines in the 3D view stay on the 3D view's time, 0.1 s behind (Sujan asked for the numbers and the ✕).
 
 ## 0.26.2 (2026-10-30)
 

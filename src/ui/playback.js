@@ -106,6 +106,24 @@ function showScoreboard(v) {
 }
 
 // ---------------- HUD ----------------
+// the kill feed: every frame (frame, loop.js), not with the rest of the HUD every 0.1 s, so a kill shows in it in the
+// same frame as the killing bullet's ✕ on the damage numbers (Sujan, 1 Nov 2026); it's rebuilt only when it changes
+function updateFeed() {
+  const feed = D.kills.filter((k) => k.t <= T && k.t > T - 6).slice(-5);
+  const key = feed.map((k) => k.t).join();
+  if (key !== lastFeedKey) {
+    lastFeedKey = key;
+    $('feed').innerHTML = feed.map((k) => {
+      const ks = k.kteam === 'TERRORIST' ? 1 : 2, vs = k.vteam === 'TERRORIST' ? 1 : 2;
+      // the weapon's kill feed icon and the headshot icon from the game's own sprites, as in the game's kill
+      // feed (Sujan, 14 Oct 2026); the words when those files aren't in the folder
+      const gun = KICONS[k.weapon] ? `<span class="w">${kicon(k.weapon)}</span>` : `<span class="w">${esc(k.weapon)}</span>`;
+      const hs = k.hs ? (KICONS.headshot ? `<span class="hs">${kicon('headshot')}</span>` : '<span class="hs">HS</span>') : '';
+      if (k.killer === k.victim || !k.kp) return `<div>${nameHtml(k.vp, vs, true)}${gun}</div>`;
+      return `<div>${nameHtml(k.kp, ks, true)}${gun}${hs}${nameHtml(k.vp, vs, true)}</div>`;
+    }).join('');
+  }
+}
 let lastRound = null, lastFeedKey = '', lastPaneT = 0, lastAliveKey = '';
 function updateHud(force) {
   const r = roundAt(T);
@@ -121,21 +139,7 @@ function updateHud(force) {
   const scSide = (i) => side(i) === 'side-t' ? 'kt' : side(i) === 'side-ct' ? 'kct' : '';
   const thsc = `<span class="thsc"><span class="${scSide(0)}">${esc(M.tnames[0])}</span> <b>${sc[0]} : ${sc[1]}</b> <span class="${scSide(1)}">${esc(M.tnames[1])}</span> · </span>`;
   $('rclock').innerHTML = thsc + (r ? `${r.live ? 'Round <b>' + r.ln + (r.ot ? ' (OT)' : '') + '</b>' : '<b>Not counted</b>'} · <b>${clockText(T, true) || fmt(T - r.start)}</b>`: '') + (paused ? ' · <b>match paused</b>' : '');
-  // kill feed
-  const feed = D.kills.filter((k) => k.t <= T && k.t > T - 6).slice(-5);
-  const key = feed.map((k) => k.t).join();
-  if (key !== lastFeedKey) {
-    lastFeedKey = key;
-    $('feed').innerHTML = feed.map((k) => {
-      const ks = k.kteam === 'TERRORIST' ? 1 : 2, vs = k.vteam === 'TERRORIST' ? 1 : 2;
-      // the weapon's kill feed icon and the headshot icon from the game's own sprites, as in the game's kill
-      // feed (Sujan, 14 Oct 2026); the words when those files aren't in the folder
-      const gun = KICONS[k.weapon] ? `<span class="w">${kicon(k.weapon)}</span>` : `<span class="w">${esc(k.weapon)}</span>`;
-      const hs = k.hs ? (KICONS.headshot ? `<span class="hs">${kicon('headshot')}</span>` : '<span class="hs">HS</span>') : '';
-      if (k.killer === k.victim || !k.kp) return `<div>${nameHtml(k.vp, vs, true)}${gun}</div>`;
-      return `<div>${nameHtml(k.kp, ks, true)}${gun}${hs}${nameHtml(k.vp, vs, true)}</div>`;
-    }).join('');
-  }
+  updateFeed();
   // the players list greys out whoever is dead right now, so redraw it when someone dies or respawns
   let aliveKey = '';
   if (tab === 'players') aliveKey = Object.keys(D.slots).filter((e) => isDeadNow(+e)).join();
