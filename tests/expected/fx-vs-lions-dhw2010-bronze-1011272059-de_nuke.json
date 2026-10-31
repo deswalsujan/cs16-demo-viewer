@@ -48,7 +48,7 @@
    "victim": "Frag eXecutors  LoordB",
    "gun": null,
    "expected": "loose",
-   "source": "docs/review-answers.md, \"Wallbang fix check, 0.22.1\" (24 Oct 2026), \"Dropped: part of the victim in view\": Yes, part of him was in view (Sujan, 24 Oct 2026); LOOSE from 50 pixels in view, still listed (STATE.md Decisions, Sujan, 25 Oct 2026)"
+   "source": "docs/review-answers.md, \"Wallbang fix check, 0.22.1\" (24 Oct 2026), \"Dropped: part of the victim in view\": Yes, part of him was in view (Sujan, 24 Oct 2026); LOOSE from 50 pixels in view, still listed (STATE.md Decisions, Sujan, 25 Oct 2026); confirmed by eye in the viewer (Sujan, 31 Oct 2026, 0.26.2)"
   },
   {
    "round": 18,
@@ -58,6 +58,16 @@
    "gun": "ak47",
    "expected": "wallbang",
    "source": "docs/review-answers.md, \"Wallbang hits check\" (25 and 26 Oct 2026), b04: yes (the burst ends in this wallbang kill); strict or LOOSE not said"
+  },
+  {
+   "round": 22,
+   "timer": "0:47",
+   "killer": "LIONS THREAT * KASPERSKY",
+   "victim": "Frag eXecutors  LoordB",
+   "gun": "m4a1",
+   "expected": "loose",
+   "source": "Sujan, by eye in the viewer (31 Oct 2026, 0.26.2): LOOSE, where the viewer reads strict; at the kill feed LoordB's elbow shows, at the killing bullet's damage number he's hidden",
+   "known_gap": "reads strict: the finder judges at the killing shot, where he's hidden; Sujan sees his elbow at the kill feed, which the game's demo player draws about 0.1 s back. Kept loose with this known gap until Sujan decides on the moment the finder judges at (IDEAS.md, \"The moment the finder judges a kill at\"; Sujan, 31 Oct 2026)"
   }
  ]
 }
