@@ -12,6 +12,8 @@ Rules for agents working in this repo, so nothing is lost between chats and mach
 - Think about the user experience in every change (Sujan, 25 Oct 2026): what a first-time user sees, whether a feature or option needs a tooltip, and whether the UI could be simpler. Open UX items are under "User experience" in IDEAS.md.
 
 ## How each change ships
+Before starting any branch, run `git fetch` and branch from `origin/main`; if a branch has to stack on an open pull request, say which one in the handover (Sujan, 1 Nov 2026).
+
 1. Change `src/`, then `python3 build.py` (writes `index.html` and `dist/artifact.html`).
 2. Bump `VERSION` for anything user-facing; add a CHANGELOG entry (Fixed / Changed / Added, "How it was tested", "Discussed, not changed") and its line in the index at the top of CHANGELOG.md (version, date, five words), and update `LIMITS.md` (the known limits). From 0.26.0 on, "How it was tested" is at most five lines: the scripts that passed, on which demos, and a pointer to `tests/logs/<version>.md`, which holds the full log, the measurements that used to go in the CHANGELOG; entries before 0.26.0 stay as they are (agent brief, 30 Oct 2026).
 3. Move built items out of IDEAS.md into IDEAS-ARCHIVE.md, word for word, at the top of their block, and add new loose ends to its checklist.

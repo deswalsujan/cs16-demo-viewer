@@ -11,6 +11,12 @@ Items moved out of [IDEAS.md](IDEAS.md) so that it holds only what is open (work
 
 ## Open follow-ups (checklist, updated 28 Oct 2026, 0.24.0)
 
+**Damage numbers and the moment a kill is judged** (Sujan, 31 Oct 2026, after his by-eye checks of 0.23.0 to 0.26.1; a plan for each before anything is built)
+- [x] **Bug: damage numbers 0.1 s after the kill feed**: fixed in 0.26.3 (1 Nov 2026, approved by Sujan as planned, no mockup): the numbers, the ✕ and **Glow on hits** come at the moment itself, beside the player as drawn, and the kill feed is brought up to date every frame, so the ✕ comes in the same frame as the kill feed (`tests/page/hit_numbers_timing.js`).
+  - Status: found by Sujan 31 Oct 2026. The numbers and the ✕ are drawn in the 3D pass (`drawHitNumbers`, `src/view3d.part.js`), which runs `LAG3` (0.1 s) behind the kill feed, so the killing bullet's number shows 0.1 s after the kill feed.
+  - Next step: Claude brings a plan; Sujan approves it before it's built.
+  - Decided so far: the killing bullet's number and the ✕ appear at the same instant as the kill feed (Sujan, 31 Oct 2026); the 3D view itself stays 0.1 s behind (Sujan, 26 Oct 2026).
+
 **Wallbang ground truth** (30 Oct 2026; `tests/ground_truth_check.py`, `tests/expected/`, rules in `tests/README.md`)
 - [x] **The 0.5 s window misses a hit at 0.5 s by rounding**: fixed in 0.26.1 (30 Oct 2026, pull request #20): the window allows a millisecond for the demo's 32-bit times; Darky on n0rx reads loose from damage and its `known_gap` is gone. One more kill on the 64 demos changed with it: starix on RobbaN, Na`Vi vs SK, Inferno (24 Oct 2011, event not known), R14 0:26, now loose from damage.
   - Status: found 30 Oct 2026 by the ground truth check: Darky on n0rx, k1ck vs eq, Nuke, DreamHack Winter 2011, R15 C4 0:10, has a bullet only a surface explains 0.500244 s before the kill, so `k.t - p.t <= 0.5` in `computeHits` (`src/ui/wallbangs.js`) leaves it out by a quarter of a millisecond; the expected file has it as `loose-damage` with a `known_gap`.
