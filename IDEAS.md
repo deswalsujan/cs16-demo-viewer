@@ -9,15 +9,11 @@ Only what is open stays here. An open item keeps a three-line header (Status, Ne
 Everything raised in conversation that isn't finished, in one place. Each item says who does it. Ideas for new features are further down; this list is for loose ends.
 
 **Damage numbers and the moment a kill is judged** (Sujan, 31 Oct 2026, after his by-eye checks of 0.23.0 to 0.26.1; a plan for each before anything is built)
-- Done, in the archive: **Bug: damage numbers 0.1 s after the kill feed** (fixed in 0.26.3, 1 Nov 2026).
-- [ ] **Bug: wallbang kills with no damage numbers**
-  - Status: found by Sujan 31 Oct 2026 on starix on RobbaN (Na`Vi vs SK, Inferno, recorded 24 Oct 2011, event not known, R14 0:26), whose 12 HP hit through cover and the kill show no numbers. Cause (Claude, 31 Oct 2026): `computeHits` (`src/ui/wallbangs.js`) ties a burst to its wallbang kill, then drops bursts under 35 HP; the kill still points at the dropped burst, so the pass that gives every wallbang kill its numbers skips it. On the 64 demos, 115 of 634 wallbang kills have no number (62 strict, 52 loose from damage, 1 loose), every one for this reason, with 10 to 34 HP in the burst.
-  - Next step: Sujan approves a fix (Claude's plan of 31 Oct 2026: the 35 HP minimum only for bursts that don't end in a kill); nothing is fixed before.
-  - Decided so far: every wallbang kill gets its numbers (Sujan, 26 Oct 2026); wallbang damage listed from 35 HP (Sujan, 23 and 25 Oct 2026).
+- Done, in the archive: **Bug: damage numbers 0.1 s after the kill feed** (fixed in 0.26.3, 1 Nov 2026); **Bug: wallbang kills with no damage numbers** (fixed in 0.26.4, 1 Nov 2026).
 - [ ] **The moment the finder judges a kill at** (measurement only, no change to `src/` on main)
-  - Status: the finder judges at the server's moment of the kill, but the server's lag compensation checks the shot against where the victim was on the shooter's screen (his ping plus `ex_interp`, 0.1 s by default or 0.01 s on 101 updaterate; HLTV doesn't record which), and Sujan's by-eye answers come from the game's demo player at the kill feed, which draws players about 0.1 s back. THREAT on LoordB (FX vs Lions, Nuke, DreamHack Winter 2010, R22 0:47) is LOOSE by eye and strict in the viewer, a `known_gap` until this is decided.
-  - Next step: Claude brings a plan, warns before any long run, then runs `ground_truth_check.py` and `compare_all.sh` with the finder judging at the kill less 0.1 s, and less 0.03 s if that's cheap, against the current build; reports in under 10 lines how many of Sujan's answers each fits, which known gaps it closes and which kills flip on the 64 demos. Sujan decides.
-  - Decided so far: nothing yet; the finder judges at the killing shot since 0.13.0 (`LIMITS.md`).
+  - Status: measured 1 Nov 2026, on Sujan's go: no variant fits more of his 225 answers than the current build (218): the victim 0.1 s back 199, 0.03 s back 200, victim and killer 0.1 s back 175. Reading the victim from the viewer's estimate between snapshots, which every variant needs, already loses 10 answers at 0 s. The full measurement is in IDEAS-ARCHIVE.md under this item.
+  - Next step: Sujan decides.
+  - Decided so far: nothing yet; the finder judges at the killing shot since 0.13.0 (`LIMITS.md`). THREAT on LoordB stays a `known_gap` until then.
 
 **Wallbang ground truth** (30 Oct 2026; `tests/ground_truth_check.py`, `tests/expected/`, rules in `tests/README.md`)
 - Done, in the archive: the 10 kills where Sujan's answer and the viewer disagreed (answered 30 Oct 2026); **The 0.5 s window misses a hit at 0.5 s by rounding** (fixed in 0.26.1, 30 Oct 2026).
