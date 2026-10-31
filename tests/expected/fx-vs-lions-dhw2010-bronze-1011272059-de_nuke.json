@@ -67,7 +67,7 @@
    "gun": "m4a1",
    "expected": "loose",
    "source": "Sujan, by eye in the viewer (31 Oct 2026, 0.26.2): LOOSE, where the viewer reads strict; at the kill feed LoordB's elbow shows, at the killing bullet's damage number he's hidden",
-   "known_gap": "reads strict: the finder judges at the killing shot, where he's hidden; Sujan sees his elbow at the kill feed, which the game's demo player draws about 0.1 s back. Kept loose with this known gap until Sujan decides on the moment the finder judges at (IDEAS.md, \"The moment the finder judges a kill at\"; Sujan, 31 Oct 2026)"
+   "known_gap": "reads strict: the finder judges at the killing shot, where he's hidden; Sujan sees his elbow at the kill feed, which the game's demo player draws about 0.1 s back. Kept loose with this known gap: the finder keeps judging at the moment of the shot (STATE.md Decisions, Sujan, 1 Nov 2026; LIMITS.md)"
   }
  ]
 }
