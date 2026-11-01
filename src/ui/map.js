@@ -99,6 +99,7 @@ async function loadMap(map) {
     // doors and other brushes that move: model -> where the map file puts them (the demo says where they really are)
     MAP.movers = new Map(bsp.solids.filter((s) => MOVERS.test(s.cls)).map((s) => [s.model, s.origin]));
     status3('');
+    await loadMaterials();
     computeWallbangs();
     if (view3.ready === false || view3.map !== key) build3d();
     return MAP;

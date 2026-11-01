@@ -35,7 +35,9 @@ const ONE_SURFACE = new Set(['usp', 'glock18', 'p228', 'fiveseven', 'elite', 'ma
 // bullets landing after the last reading count: the killer's shots from that reading, and at most 0.6 s before
 // the kill (two bullets can land between two readings, and in the 2006 NoA vs Pentagram demo fire events come
 // about 0.2 s ahead of their hits, with the kill message 0.2 s after).
-// True when even every one of those shots, each through a wall at the best case, couldn't have done it.
+// True when even every one of those shots, each through a wall at the best case, couldn't have done it. The wall is
+// one surface on the killer's crosshair line, the one whose material lets the most through (wallKeeps; wood's 0.6 for
+// every wall before 0.26.7).
 function tooMuchDamage(k) {
   const per = MAX_DMG[k.weapon]; if (!per) return false;
   const a = hpIdx && hpIdx[k.victim]; if (!a || !a.length) return false;
@@ -49,7 +51,73 @@ function tooMuchDamage(k) {
   // no shot of the killer's recorded around the kill (a jump in the recording, where the dead player's
   // health and his respawn arrive at the same instant): the number of bullets isn't known, so leave it
   if (!shots) return false;
-  return per * 0.6 * (k.hs ? 4 : 1.25) * shots < hp;
+  return per * wallKeeps(k) * (k.hs ? 4 : 1.25) * shots < hp;
+}
+// Each wall's own material (Sujan, 2 Nov 2026, 0.26.7). After a surface a bullet keeps a share of its damage that
+// depends on the surface's texture: FireBullets3 (ReGameDLL cbase.cpp) looks it up in the game's materials list,
+// cstrike/sound/materials.txt (TEXTURETYPE_Find, sound.cpp; a texture not listed is concrete), and multiplies the
+// damage left by metal 0.2, grate 0.4, vent 0.45, computer 0.45, tile 0.3, wood 0.6, anything else 0.5. Through
+// several surfaces the game multiplies them, but the crosshair line, recorded ten times a second and up to about 1.5
+// degrees off, can cross more surfaces than the bullet did: multiplying broke one of Sujan's answers (Delpan's AWP
+// headshot on RashiE, Sweden vs Norway, Dust2, ASUS ENC 2010, R24 1:40, three concrete surfaces on the line). So the
+// rule takes one surface, the line's best material: all 229 answers kept, and on the 64 test demos two strict
+// wallbangs become normal kills, both AWP body hits through one concrete wall on more health than 115 x 0.5 x 1.25
+// leaves, which Sujan confirmed: Delpan on markeloff (SK vs Na`Vi, Train, DreamHack Winter 2011, R23 1:21, 77 HP,
+// through the train car's side) and Fox on Zeus (Na`Vi vs Moscow 5, Inferno, DreamHack Winter 2011, R5 0:17, 74 HP;
+// Sujan's own AWP through that wall does about 53). Measured in tests/logs/wall-material-2026-11-02.md. Without the
+// materials list in the folder, or a surface whose texture isn't found, wood's 0.6, the rule before. Damage bursts
+// (computeHits) keep 0.6 (Sujan, 2 Nov 2026).
+const MAT_KEEP = { M: 0.2, G: 0.4, V: 0.45, T: 0.3, P: 0.45, W: 0.6 };
+let MATS = null, matsFor = null;
+// the materials list, read from the folder once per file (folder.js finds it): texture name (16 characters, lower
+// case) -> type letter, the first line for a name winning, as TEXTURETYPE_Init and TEXTURETYPE_Find read it
+async function loadMaterials() {
+  const f = files.materials;
+  if (f === matsFor) return MATS;
+  matsFor = f; MATS = null;
+  if (!f) return null;
+  let txt; try { txt = await f.text(); } catch (e) { noteStale(e, 'materials.txt'); return null; }
+  if (matsFor !== f) return MATS;
+  // a line is a letter, then the name up to a space; a last line with no line break after it is skipped, and the game
+  // keeps at most 1,024 lines (MAX_TEXTURES, pm_materials.h)
+  const m = new Map(), lines = txt.split('\n');
+  if (!txt.endsWith('\n')) lines.pop();
+  let n = 0;
+  for (const line of lines) {
+    const x = /^\s*([A-Za-z])\s*(\S+)\s/.exec(line + '\n');
+    if (!x || n >= 1024) continue;
+    n++;
+    const name = x[2].slice(0, 16).toLowerCase();
+    if (!m.has(name)) m.set(name, x[1].toUpperCase());
+  }
+  return (MATS = m);
+}
+// the material letter of a texture as UTIL_TextureHit (util.cpp) reads it: without a leading -0 or +0 (animated and
+// tiled textures) and one { ! ~ or space (see-through, water, lights)
+function materialOf(tex) {
+  let n = tex; if (n[0] === '-' || n[0] === '+') n = n.slice(2); if ('{!~ '.includes(n[0])) n = n.slice(1);
+  return MATS.get(n.slice(0, 16).toLowerCase()) || 'C';
+}
+// the share of damage a bullet keeps through the best surface on the killer's crosshair line at the shot
+function wallKeeps(k) {
+  if (k.keep != null) return k.keep;
+  let keep = 0.6;
+  const line = MATS && MAP && k.kang && aimLine(k);
+  if (line) {
+    const tP = k.tPos != null ? k.tPos : k.t, skip = brokenSet(tP - 0.05), poses = posesAt(tP - 0.05);
+    for (const s of MAP.bsp.solids) if (s.shootable) skip.add(s.model);
+    const res = solidAlong(MAP.bsp, line[0], line[1], 2, skip, poses, 'bullet');
+    if (res.hit.length) keep = Math.max(...hitTextures(MAP.bsp, line[0], line[1], res, 2, poses).map((t) => (t == null ? 0.6 : MAT_KEEP[materialOf(t)] || 0.5)));
+  }
+  return (k.keep = keep);
+}
+// the killer's crosshair line at the shot, from his eye to the victim's distance: [eye, end]
+function aimLine(k) {
+  const eye = [k.kpos[0], k.kpos[1], k.kpos[2] + (k.kduck ? 12 : 17)];
+  let raw = k.kang ? k.kang[0] : 0; if (raw > 180) raw -= 360;
+  const pitch = -raw * 3 * Math.PI / 180, yaw = (k.kang ? k.kang[1] : 0) * Math.PI / 180;
+  const dist = Math.hypot(k.vpos[0] - eye[0], k.vpos[1] - eye[1], k.vpos[2] - eye[2]);
+  return [eye, [eye[0] + Math.cos(pitch) * Math.cos(yaw) * dist, eye[1] + Math.cos(pitch) * Math.sin(yaw) * dist, eye[2] - Math.sin(pitch) * dist]];
 }
 function computeWallbangs() {
   if (!MAP || !D) return;
@@ -69,7 +137,7 @@ function computeWallbangs() {
   // one reads LOOSE (Sujan, 2 Nov 2026). Invisible brushes are never cover (solidAlong in bsp.js).
   const notCover = bsp.solids.filter((s) => s.shootable).map((s) => s.model);
   for (const k of D.kills) {
-    k.wb = null; k.seenPx = null; k.seenAim = null;
+    k.wb = null; k.seenPx = null; k.seenAim = null; k.keep = null;
     if (!k.kpos || !k.vpos || k.killer === k.victim || NO_WB.has(k.weapon) || ONE_SURFACE.has(k.weapon)) continue;
     const kNow = [...k.kpos, k.kduck], vNow = [...k.vpos, k.vduck];
     const tP = k.tPos != null ? k.tPos : k.t;
@@ -77,11 +145,7 @@ function computeWallbangs() {
     poses = posesAt(tP - 0.05);
     const seen = bodyVisible(eyeOf(kNow), vNow);
     if (!seen && tooMuchDamage(k)) continue;
-    const eye = eyeOf(kNow);
-    let raw = k.kang ? k.kang[0] : 0; if (raw > 180) raw -= 360;
-    const pitch = -raw * 3 * Math.PI / 180, yaw = (k.kang ? k.kang[1] : 0) * Math.PI / 180;
-    const dist = Math.hypot(k.vpos[0] - eye[0], k.vpos[1] - eye[1], k.vpos[2] - eye[2]);
-    const end = [eye[0] + Math.cos(pitch) * Math.cos(yaw) * dist, eye[1] + Math.cos(pitch) * Math.sin(yaw) * dist, eye[2] - Math.sin(pitch) * dist];
+    const [eye, end] = aimLine(k);
     // the crosshair line goes through what a bullet hits (the 15 points above are sight lines)
     const aim = solidAlong(bsp, eye, end, 2, skip, poses, 'bullet');
     const mid = solidAlong(bsp, eye, [k.vpos[0], k.vpos[1], k.vpos[2] + (k.vduck ? 4 : 6)], 2, skip, poses, 'bullet');

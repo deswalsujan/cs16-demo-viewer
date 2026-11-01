@@ -74,6 +74,15 @@
    "source": "docs/review-answers.md, \"Loose wallbang check\" (27 and 28 Oct 2026), k19025: loose"
   },
   {
+   "round": 23,
+   "timer": "1:21",
+   "killer": "SK.Delpan <3 Johan Wedel",
+   "victim": "Na`Vi markeloff ~~~",
+   "gun": "awp",
+   "expected": "none",
+   "source": "Sujan's feedback of 1 Nov 2026 (77 HP on a kill that looks normal, demo 44:25), a normal kill (Sujan, 2 Nov 2026). Read strict up to 0.26.6; a normal kill since 0.26.7, which takes the wall's own material (trainside01-2, the train car's side, concrete: an AWP body hit keeps at most 72 of 77 HP) (tests/logs/wall-material-2026-11-02.md; STATE.md Decisions)"
+  },
+  {
    "round": 25,
    "timer": "1:09",
    "killer": "SK.RobbaN",

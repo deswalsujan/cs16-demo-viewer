@@ -8,7 +8,7 @@ Rules for agents working in this repo, so nothing is lost between chats and mach
 - `STATE.md` and `LIMITS.md` are already loaded (Claude Code imports them; with another tool, read them first). Then read the last two release entries of CHANGELOG.md, then only the IDEAS.md item you are about to touch. IDEAS.md starts with the checklist of everything open, each item as a short header; IDEAS-ARCHIVE.md holds, word for word and under the same block names, the full text of every item IDEAS.md had on 29 Oct 2026, so search it when a header isn't enough; some headers were shortened, renamed or added since, so search a distinctive word from the header, not the whole header; CHANGELOG.md says what was built, how it was tested, and what was "Discussed, not changed".
 - Don't read CHANGELOG.md, IDEAS-ARCHIVE.md or `docs/review-answers.md` end to end, or all of IDEAS.md: they are long, and `STATE.md` says which part matters. In `docs/review-answers.md`, search for the page's section.
 - Discuss issues with Sujan before changing code when he asks for that, and before building any visible change, ask whether he wants to see a mockup first; make one only when he says yes (see `docs/` for the approved ones). Rule set 2 Oct 2026, replacing "always make a side-by-side image".
-- Warn before anything that runs a long time (a full test run, a big measurement), or stop partway to ask.
+- Before any run that takes more than a few minutes (a full test run, a big measurement), say how long it will take and wait for Sujan's go (Sujan, 2 Nov 2026; it replaced "warn before anything that runs a long time").
 - Think about the user experience in every change (Sujan, 25 Oct 2026): what a first-time user sees, whether a feature or option needs a tooltip, and whether the UI could be simpler. Open UX items are under "User experience" in IDEAS.md.
 
 ## How each change ships
@@ -56,7 +56,7 @@ Before starting any branch, run `git fetch` and branch from `origin/main`; if a 
 - `src/template.html`: the page itself: header, view, side panel, bottom bar, cards and panels, with an `/*INLINE name*/` line for each file below.
 - `src/app.css`: the page's styles.
 - `src/demo.js`: the .dem reader (`parseDemo`): players, sampled positions, kills, rounds, bomb events, shots, sounds, health; message layouts from hlviewer.js.
-- `src/bsp.js`: the .bsp and .wad reader: what's solid to sight and to bullets (`solidModels`, `solidAlong`), doors and other movers (`brushPose`), the mesh the 3D view draws (`buildMesh`).
+- `src/bsp.js`: the .bsp and .wad reader: what's solid to sight and to bullets (`solidModels`, `solidAlong`), the texture a bullet enters at each surface (`hitTextures`), doors and other movers (`brushPose`), the mesh the 3D view draws (`buildMesh`).
 - `src/mdl.js`: studio model (.mdl v10) reader and posing (`parseMdl`, `mdlPose`).
 - `src/players3d.js`: player models in 3D: loading (`modelEntry`), gait and aim (`posePlayer`), deaths and corpses, the gun in **Player's eyes**.
 - `src/audio.js`: sound: .wav decoding, gunshots, footsteps and radio lines placed around the listener (`soundTick`).
@@ -68,7 +68,7 @@ Before starting any branch, run `git fetch` and branch from `origin/main`; if a 
 - `src/ui/open.js`: opening a demo in the Web Worker (`loadDemoFile`), and joining a map recorded in parts (`joinDemos`, `openJoined`).
 - `src/ui/join.js`: finding a map's other parts and their order (`findOtherParts`, `suggestOrder`), and the Join card.
 - `src/ui/map.js`: the overview image and the map geometry (`loadMap`).
-- `src/ui/wallbangs.js`: the wallbang finder (`computeWallbangs`, `tooMuchDamage`), wallbang damage and loose wallbangs from damage (`computeHits`), and the stretches the server announced as live (`liveWindows`).
+- `src/ui/wallbangs.js`: the wallbang finder (`computeWallbangs`, `tooMuchDamage`, each wall's material `wallKeeps`), wallbang damage and loose wallbangs from damage (`computeHits`), and the stretches the server announced as live (`liveWindows`).
 - `src/ui/match.js`: kills moved back to the real moment (`retimeKills`) and the match structure: rounds, live rounds, score, teams (`derive`).
 - `src/ui/skips.js`: skips in the recording (`findSkips`), and the STRICT WB, LOOSE WB and UNSURE tags with their tooltips.
 - `src/ui/names.js`: short names without the clan tag or sponsor (`shortNames`).

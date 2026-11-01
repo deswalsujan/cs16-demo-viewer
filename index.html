@@ -524,7 +524,7 @@ body:has(.app.theatre) { overflow: hidden; }
     <div class="overlay sumwrap" id="sumCard" hidden></div>
     <div class="overlay keys" id="keys" hidden>
       <div class="keys-card">
-        <div class="keys-head"><b>Shortcuts and kill markers</b><div class="kh-r"><span class="ver">Version 0.26.6 · <a href="https://github.com/deswalsujan/cs16-demo-viewer/blob/main/CHANGELOG.md" target="_blank" rel="noopener">What's new</a> · <a href="https://github.com/deswalsujan/cs16-demo-viewer/issues/new/choose" target="_blank" rel="noopener">Report a bug</a></span><button class="btn" id="bDebug" type="button" title="Copies details for a bug report: browser, demo name, what loaded, errors. No file contents.">Copy debug info</button><button class="btn" id="bKeysClose" type="button">Close</button></div></div>
+        <div class="keys-head"><b>Shortcuts and kill markers</b><div class="kh-r"><span class="ver">Version 0.26.7 · <a href="https://github.com/deswalsujan/cs16-demo-viewer/blob/main/CHANGELOG.md" target="_blank" rel="noopener">What's new</a> · <a href="https://github.com/deswalsujan/cs16-demo-viewer/issues/new/choose" target="_blank" rel="noopener">Report a bug</a></span><button class="btn" id="bDebug" type="button" title="Copies details for a bug report: browser, demo name, what loaded, errors. No file contents.">Copy debug info</button><button class="btn" id="bKeysClose" type="button">Close</button></div></div>
         <textarea class="dbgbox" id="dbgBox" readonly hidden aria-label="Debug info"></textarea>
         <div class="keys-grid">
           <section><h3>Playback</h3>
@@ -627,7 +627,7 @@ body:has(.app.theatre) { overflow: hidden; }
         <div class="drophint">Or drop a .dem file, or an overview .bmp and .txt pair, anywhere on this page</div>
         <div class="prog" id="prog" hidden><i id="progBar"></i></div>
         <div class="msg" id="msg"></div>
-        <div class="loadfoot"><span>Version 0.26.6 · <a href="https://github.com/deswalsujan/cs16-demo-viewer" target="_blank" rel="noopener">Source on GitHub</a></span><button class="btn" id="bClear" type="button" title="Forgets your Half-Life folder and deletes the maps, models, sounds and overviews this browser saved from it, as on a first visit">Clear saved files</button></div>
+        <div class="loadfoot"><span>Version 0.26.7 · <a href="https://github.com/deswalsujan/cs16-demo-viewer" target="_blank" rel="noopener">Source on GitHub</a></span><button class="btn" id="bClear" type="button" title="Forgets your Half-Life folder and deletes the maps, models, sounds and overviews this browser saved from it, as on a first visit">Clear saved files</button></div>
       </div>
     </div>
   </section>
@@ -1797,6 +1797,16 @@ function pointContents(bsp, head, x, y, z) {
   return bsp.leafContents[-1 - n];
 }
 
+// A point in a brush entity's own frame: where it is at that moment (poses, see solidAlong) or where the map puts it.
+// Into a turned brush's frame the way the engine traces against it.
+function localPoint(s, poses, x, y, z) {
+  const ps = poses && s.model !== 0 ? poses.get(s.model) : null;
+  if (!ps) return [x - s.origin[0], y - s.origin[1], z - s.origin[2]];
+  const tx = x - ps.o[0], ty = y - ps.o[1], tz = z - ps.o[2];
+  if (!ps.f) return [tx, ty, tz];
+  return [tx * ps.f[0] + ty * ps.f[1] + tz * ps.f[2], -(tx * ps.r[0] + ty * ps.r[1] + tz * ps.r[2]), tx * ps.u[0] + ty * ps.u[1] + tz * ps.u[2]];
+}
+
 // Returns the amount of solid (in units) along the segment a->b, sampled every `step` units.
 // Walls, sky and blocking brush entities count; water does not.
 // skip: optional Set of brush model numbers to ignore (e.g. vents that are already broken)
@@ -1816,14 +1826,7 @@ function solidAlong(bsp, a, b, step = 2, skip = null, poses = null, use = 'sight
     for (const s of bsp.solids) {
       if ((bullet ? s.sightOnly : s.invisible) || (skip && skip.has(s.model))) continue;
       const mdl = bsp.models[s.model];
-      let lx, ly, lz;
-      const ps = poses && s.model !== 0 ? poses.get(s.model) : null;
-      if (ps) {
-        // into the brush's own frame, the way the engine traces against a turned brush
-        const tx = x - ps.o[0], ty = y - ps.o[1], tz = z - ps.o[2];
-        if (ps.f) { lx = tx * ps.f[0] + ty * ps.f[1] + tz * ps.f[2]; ly = -(tx * ps.r[0] + ty * ps.r[1] + tz * ps.r[2]); lz = tx * ps.u[0] + ty * ps.u[1] + tz * ps.u[2]; }
-        else { lx = tx; ly = ty; lz = tz; }
-      } else { lx = x - s.origin[0]; ly = y - s.origin[1]; lz = z - s.origin[2]; }
+      const [lx, ly, lz] = localPoint(s, poses, x, y, z);
       if (s.model !== 0 && (lx < mdl.mins[0] || ly < mdl.mins[1] || lz < mdl.mins[2] || lx > mdl.maxs[0] || ly > mdl.maxs[1] || lz > mdl.maxs[2])) continue;
       const c = pointContents(bsp, mdl.head, lx, ly, lz);
       if (c === -2 || c === -6) {
@@ -1836,6 +1839,42 @@ function solidAlong(bsp, a, b, step = 2, skip = null, poses = null, use = 'sight
     }
   }
   return { solid, len, hit };
+}
+
+// The texture where the line a->b enters each surface solidAlong found on it (res, run with use 'bullet' and the same
+// step and poses), as the game reads it for a bullet (TRACE_TEXTURE in UTIL_TextureHit, ReGameDLL util.cpp): the edge
+// is found between the last sample outside and the first inside, then the face of that brush model it lies on. null
+// for a surface whose face isn't found. For the wallbang finder's damage rule (0.26.7).
+function hitTextures(bsp, a, b, res, step = 2, poses = null) {
+  const at = (f) => [a[0] + (b[0] - a[0]) * f, a[1] + (b[1] - a[1]) * f, a[2] + (b[2] - a[2]) * f];
+  const P = bsp.planes;
+  return res.hit.map((h) => {
+    const s = bsp.solids.find((x) => x.model === h.model && !x.sightOnly);
+    if (!s) return null;
+    const head = bsp.models[s.model].head;
+    const inside = (f) => { const q = localPoint(s, poses, ...at(f)); const c = pointContents(bsp, head, q[0], q[1], q[2]); return c === -2 || c === -6; };
+    let lo = Math.max(0, h.f0 - 2 * step / res.len), hi = h.f0;
+    for (let i = 0; i < 14; i++) { const mid = (lo + hi) / 2; if (inside(mid)) hi = mid; else lo = mid; }
+    const q = localPoint(s, poses, ...at(hi));
+    const md = bsp.models[s.model]; let best = null;
+    for (let i = 0; i < md.numFaces; i++) {
+      const f = bsp.faces[md.firstFace + i], pi = f.plane * 4, n = [P[pi], P[pi + 1], P[pi + 2]];
+      const d = Math.abs(n[0] * q[0] + n[1] * q[1] + n[2] * q[2] - P[pi + 3]);
+      if (d > 1.5 || (best && d >= best.d)) continue;
+      // inside the face's polygon: q on the same side of every edge
+      let pos = 0, neg = 0;
+      for (let e = 0; e < f.numEdges; e++) {
+        const v = (k) => { const se = bsp.surfedges[f.firstEdge + (k % f.numEdges)]; const vi = se >= 0 ? bsp.edges[se * 2] : bsp.edges[-se * 2 + 1]; return [bsp.verts[vi * 3], bsp.verts[vi * 3 + 1], bsp.verts[vi * 3 + 2]]; };
+        const p0 = v(e), p1 = v(e + 1), e1 = [p1[0] - p0[0], p1[1] - p0[1], p1[2] - p0[2]], e2 = [q[0] - p0[0], q[1] - p0[1], q[2] - p0[2]];
+        const sg = (e1[1] * e2[2] - e1[2] * e2[1]) * n[0] + (e1[2] * e2[0] - e1[0] * e2[2]) * n[1] + (e1[0] * e2[1] - e1[1] * e2[0]) * n[2];
+        if (sg > 0.5) pos++; else if (sg < -0.5) neg++;
+      }
+      if (pos && neg) continue;
+      const ti = bsp.texinfo[f.tex], t = ti && bsp.textures[ti.mip];
+      best = { d, tex: t ? t.name : null };
+    }
+    return best ? best.tex : null;
+  });
 }
 
 // ---- textures ----
@@ -1991,7 +2030,7 @@ const opts = { names: true, nades: true, lines: true, xray: false, teamColours: 
 const flashes = [];
 let prevT = null;
 const FLASH_MS = 750;
-const files = { overviews: {}, demos: [], maps: {}, wads: {}, mdl: {}, snd: {}, sentences: null, lang: null, hud: { txt: null, spr: {} } }; // from folder pick
+const files = { overviews: {}, demos: [], maps: {}, wads: {}, mdl: {}, snd: {}, sentences: null, materials: null, lang: null, hud: { txt: null, spr: {} } }; // from folder pick
 let M = null;            // derived match data
 // Theatre mode state (see the Theatre mode section)
 const TH = { on: false, before: false, hint: false, timers: {}, idle: null, drag: false, x: -1, y: -1 };
@@ -2052,7 +2091,7 @@ $('fFolder').onchange = (e) => { const list = [...e.target.files]; e.target.valu
 // The whole folder is read again each time, so files deleted since the last pick drop out
 function indexFolder(list) {
   let nOv = 0;
-  files.demos = []; files.overviews = {}; files.maps = {}; files.wads = {}; files.mdl = {}; files.snd = {}; files.sentences = null; files.lang = null; files.hud = { txt: null, spr: {} }; files.cfg = null;
+  files.demos = []; files.overviews = {}; files.maps = {}; files.wads = {}; files.mdl = {}; files.snd = {}; files.sentences = null; files.materials = null; files.lang = null; files.hud = { txt: null, spr: {} }; files.cfg = null;
   STALE.clear();
   for (const f of list) {
     const p = (f.relPath || f.webkitRelativePath || f.name).replace(/\\/g, '/').toLowerCase();
@@ -2075,6 +2114,10 @@ function indexFolder(list) {
       const sm = /(?:^|\/)(cstrike|cstrike_downloads|valve)\/sound\/(.+\.wav)$/.exec(p);
       if (sm) { const o = files.snd[sm[2]]; if (!o || rank(sm[1]) > o.rank) { f.rank = rank(sm[1]); files.snd[sm[2]] = f; } continue; }
       if (/(?:^|\/)cstrike\/sound\/sentences\.txt$/.test(p)) files.sentences = f;
+      // the game's materials list, for each wall's material in the wallbang finder (0.26.7): cstrike's, else Half-Life's,
+      // as the game's file system looks for sound/materials.txt
+      const mt = /(?:^|\/)(cstrike|valve)\/sound\/materials\.txt$/.exec(p);
+      if (mt) { if (!files.materials || mt[1] === 'cstrike') files.materials = f; continue; }
       if (/(?:^|\/)cstrike\/resource\/cstrike_english\.txt$/.test(p)) files.lang = f;
       if (/(?:^|\/)cstrike\/config\.cfg$/.test(p)) files.cfg = f; // POV mode: the crosshair settings
       // the kill feed's weapon icons: where they sit (hud.txt) and the sprite sheets they're on
@@ -2267,7 +2310,7 @@ const HL_EXAMPLE = 'C:\\Program Files (x86)\\Steam\\steamapps\\common\\Half-Life
 const HL_HELP = `The Half-Life folder from your Steam install, the one that contains cstrike and valve. On Windows that's usually ${HL_EXAMPLE}.`;
 const fsaOK = () => { try { return !HL.fsaBroken && typeof window.showDirectoryPicker === 'function' && window.isSecureContext && window.self === window.top; } catch (e) { return false; } };
 // the files the viewer reads; everything else in the folder is skipped
-const HL_WANT = /(?:^|\/)(?:cstrike|cstrike_downloads|valve)\/(?:maps\/[^/]+\.bsp|overviews\/[^/]+\.(?:bmp|txt)|models\/.+\.mdl|sound\/.+\.wav|sound\/sentences\.txt|resource\/cstrike_english\.txt|sprites\/hud\.txt|sprites\/640hud\d+\.spr|[^/]+\.wad)$|\.dem$/;
+const HL_WANT = /(?:^|\/)(?:cstrike|cstrike_downloads|valve)\/(?:maps\/[^/]+\.bsp|overviews\/[^/]+\.(?:bmp|txt)|models\/.+\.mdl|sound\/.+\.wav|sound\/(?:sentences|materials)\.txt|resource\/cstrike_english\.txt|sprites\/hud\.txt|sprites\/640hud\d+\.spr|[^/]+\.wad)$|\.dem$/;
 // path inside the chosen folder, lower case, without the folder's own name
 const hlKey = (f) => (f.relPath || f.webkitRelativePath || f.name).replace(/\\/g, '/').toLowerCase().split('/').slice(1).join('/');
 function hlSnap(list, name, gameDirs) {
@@ -3127,6 +3170,7 @@ async function loadMap(map) {
     // doors and other brushes that move: model -> where the map file puts them (the demo says where they really are)
     MAP.movers = new Map(bsp.solids.filter((s) => MOVERS.test(s.cls)).map((s) => [s.model, s.origin]));
     status3('');
+    await loadMaterials();
     computeWallbangs();
     if (view3.ready === false || view3.map !== key) build3d();
     return MAP;
@@ -3171,7 +3215,9 @@ const ONE_SURFACE = new Set(['usp', 'glock18', 'p228', 'fiveseven', 'elite', 'ma
 // bullets landing after the last reading count: the killer's shots from that reading, and at most 0.6 s before
 // the kill (two bullets can land between two readings, and in the 2006 NoA vs Pentagram demo fire events come
 // about 0.2 s ahead of their hits, with the kill message 0.2 s after).
-// True when even every one of those shots, each through a wall at the best case, couldn't have done it.
+// True when even every one of those shots, each through a wall at the best case, couldn't have done it. The wall is
+// one surface on the killer's crosshair line, the one whose material lets the most through (wallKeeps; wood's 0.6 for
+// every wall before 0.26.7).
 function tooMuchDamage(k) {
   const per = MAX_DMG[k.weapon]; if (!per) return false;
   const a = hpIdx && hpIdx[k.victim]; if (!a || !a.length) return false;
@@ -3185,7 +3231,73 @@ function tooMuchDamage(k) {
   // no shot of the killer's recorded around the kill (a jump in the recording, where the dead player's
   // health and his respawn arrive at the same instant): the number of bullets isn't known, so leave it
   if (!shots) return false;
-  return per * 0.6 * (k.hs ? 4 : 1.25) * shots < hp;
+  return per * wallKeeps(k) * (k.hs ? 4 : 1.25) * shots < hp;
+}
+// Each wall's own material (Sujan, 2 Nov 2026, 0.26.7). After a surface a bullet keeps a share of its damage that
+// depends on the surface's texture: FireBullets3 (ReGameDLL cbase.cpp) looks it up in the game's materials list,
+// cstrike/sound/materials.txt (TEXTURETYPE_Find, sound.cpp; a texture not listed is concrete), and multiplies the
+// damage left by metal 0.2, grate 0.4, vent 0.45, computer 0.45, tile 0.3, wood 0.6, anything else 0.5. Through
+// several surfaces the game multiplies them, but the crosshair line, recorded ten times a second and up to about 1.5
+// degrees off, can cross more surfaces than the bullet did: multiplying broke one of Sujan's answers (Delpan's AWP
+// headshot on RashiE, Sweden vs Norway, Dust2, ASUS ENC 2010, R24 1:40, three concrete surfaces on the line). So the
+// rule takes one surface, the line's best material: all 229 answers kept, and on the 64 test demos two strict
+// wallbangs become normal kills, both AWP body hits through one concrete wall on more health than 115 x 0.5 x 1.25
+// leaves, which Sujan confirmed: Delpan on markeloff (SK vs Na`Vi, Train, DreamHack Winter 2011, R23 1:21, 77 HP,
+// through the train car's side) and Fox on Zeus (Na`Vi vs Moscow 5, Inferno, DreamHack Winter 2011, R5 0:17, 74 HP;
+// Sujan's own AWP through that wall does about 53). Measured in tests/logs/wall-material-2026-11-02.md. Without the
+// materials list in the folder, or a surface whose texture isn't found, wood's 0.6, the rule before. Damage bursts
+// (computeHits) keep 0.6 (Sujan, 2 Nov 2026).
+const MAT_KEEP = { M: 0.2, G: 0.4, V: 0.45, T: 0.3, P: 0.45, W: 0.6 };
+let MATS = null, matsFor = null;
+// the materials list, read from the folder once per file (folder.js finds it): texture name (16 characters, lower
+// case) -> type letter, the first line for a name winning, as TEXTURETYPE_Init and TEXTURETYPE_Find read it
+async function loadMaterials() {
+  const f = files.materials;
+  if (f === matsFor) return MATS;
+  matsFor = f; MATS = null;
+  if (!f) return null;
+  let txt; try { txt = await f.text(); } catch (e) { noteStale(e, 'materials.txt'); return null; }
+  if (matsFor !== f) return MATS;
+  // a line is a letter, then the name up to a space; a last line with no line break after it is skipped, and the game
+  // keeps at most 1,024 lines (MAX_TEXTURES, pm_materials.h)
+  const m = new Map(), lines = txt.split('\n');
+  if (!txt.endsWith('\n')) lines.pop();
+  let n = 0;
+  for (const line of lines) {
+    const x = /^\s*([A-Za-z])\s*(\S+)\s/.exec(line + '\n');
+    if (!x || n >= 1024) continue;
+    n++;
+    const name = x[2].slice(0, 16).toLowerCase();
+    if (!m.has(name)) m.set(name, x[1].toUpperCase());
+  }
+  return (MATS = m);
+}
+// the material letter of a texture as UTIL_TextureHit (util.cpp) reads it: without a leading -0 or +0 (animated and
+// tiled textures) and one { ! ~ or space (see-through, water, lights)
+function materialOf(tex) {
+  let n = tex; if (n[0] === '-' || n[0] === '+') n = n.slice(2); if ('{!~ '.includes(n[0])) n = n.slice(1);
+  return MATS.get(n.slice(0, 16).toLowerCase()) || 'C';
+}
+// the share of damage a bullet keeps through the best surface on the killer's crosshair line at the shot
+function wallKeeps(k) {
+  if (k.keep != null) return k.keep;
+  let keep = 0.6;
+  const line = MATS && MAP && k.kang && aimLine(k);
+  if (line) {
+    const tP = k.tPos != null ? k.tPos : k.t, skip = brokenSet(tP - 0.05), poses = posesAt(tP - 0.05);
+    for (const s of MAP.bsp.solids) if (s.shootable) skip.add(s.model);
+    const res = solidAlong(MAP.bsp, line[0], line[1], 2, skip, poses, 'bullet');
+    if (res.hit.length) keep = Math.max(...hitTextures(MAP.bsp, line[0], line[1], res, 2, poses).map((t) => (t == null ? 0.6 : MAT_KEEP[materialOf(t)] || 0.5)));
+  }
+  return (k.keep = keep);
+}
+// the killer's crosshair line at the shot, from his eye to the victim's distance: [eye, end]
+function aimLine(k) {
+  const eye = [k.kpos[0], k.kpos[1], k.kpos[2] + (k.kduck ? 12 : 17)];
+  let raw = k.kang ? k.kang[0] : 0; if (raw > 180) raw -= 360;
+  const pitch = -raw * 3 * Math.PI / 180, yaw = (k.kang ? k.kang[1] : 0) * Math.PI / 180;
+  const dist = Math.hypot(k.vpos[0] - eye[0], k.vpos[1] - eye[1], k.vpos[2] - eye[2]);
+  return [eye, [eye[0] + Math.cos(pitch) * Math.cos(yaw) * dist, eye[1] + Math.cos(pitch) * Math.sin(yaw) * dist, eye[2] - Math.sin(pitch) * dist]];
 }
 function computeWallbangs() {
   if (!MAP || !D) return;
@@ -3205,7 +3317,7 @@ function computeWallbangs() {
   // one reads LOOSE (Sujan, 2 Nov 2026). Invisible brushes are never cover (solidAlong in bsp.js).
   const notCover = bsp.solids.filter((s) => s.shootable).map((s) => s.model);
   for (const k of D.kills) {
-    k.wb = null; k.seenPx = null; k.seenAim = null;
+    k.wb = null; k.seenPx = null; k.seenAim = null; k.keep = null;
     if (!k.kpos || !k.vpos || k.killer === k.victim || NO_WB.has(k.weapon) || ONE_SURFACE.has(k.weapon)) continue;
     const kNow = [...k.kpos, k.kduck], vNow = [...k.vpos, k.vduck];
     const tP = k.tPos != null ? k.tPos : k.t;
@@ -3213,11 +3325,7 @@ function computeWallbangs() {
     poses = posesAt(tP - 0.05);
     const seen = bodyVisible(eyeOf(kNow), vNow);
     if (!seen && tooMuchDamage(k)) continue;
-    const eye = eyeOf(kNow);
-    let raw = k.kang ? k.kang[0] : 0; if (raw > 180) raw -= 360;
-    const pitch = -raw * 3 * Math.PI / 180, yaw = (k.kang ? k.kang[1] : 0) * Math.PI / 180;
-    const dist = Math.hypot(k.vpos[0] - eye[0], k.vpos[1] - eye[1], k.vpos[2] - eye[2]);
-    const end = [eye[0] + Math.cos(pitch) * Math.cos(yaw) * dist, eye[1] + Math.cos(pitch) * Math.sin(yaw) * dist, eye[2] - Math.sin(pitch) * dist];
+    const [eye, end] = aimLine(k);
     // the crosshair line goes through what a bullet hits (the 15 points above are sight lines)
     const aim = solidAlong(bsp, eye, end, 2, skip, poses, 'bullet');
     const mid = solidAlong(bsp, eye, [k.vpos[0], k.vpos[1], k.vpos[2] + (k.vduck ? 4 : 6)], 2, skip, poses, 'bullet');
@@ -8097,7 +8205,7 @@ window.addEventListener('unhandledrejection', (e) => { ERRLOG.push('Promise: ' +
 function debugInfo() {
   let gpu = '';
   try { const gl = document.createElement('canvas').getContext('webgl'); const x = gl && gl.getExtension('WEBGL_debug_renderer_info'); gpu = gl ? (x ? gl.getParameter(x.UNMASKED_RENDERER_WEBGL) : 'WebGL available') : 'no WebGL'; } catch (e) { gpu = 'unknown'; }
-  const L = [`CS 1.6 Demo Viewer 0.26.6`, `Browser: ${navigator.userAgent}`, `Screen: ${screen.width}x${screen.height} at ${devicePixelRatio}x, window ${innerWidth}x${innerHeight}`, `Graphics: ${gpu}`];
+  const L = [`CS 1.6 Demo Viewer 0.26.7`, `Browser: ${navigator.userAgent}`, `Screen: ${screen.width}x${screen.height} at ${devicePixelRatio}x, window ${innerWidth}x${innerHeight}`, `Graphics: ${gpu}`];
   L.push(`Folder: ${Object.keys(files.maps).length} maps, ${Object.keys(files.overviews).length} overviews, ${Object.keys(files.mdl).length} models, ${Object.keys(files.snd).length} sounds, ${files.demos.length} demos`);
   if (D) {
     L.push(`Demo: ${D.fileName}, protocol ${(D.header && D.header.netProtocol) || '?'}, ${D.pov ? 'POV (recorded by a player)' : 'HLTV'}, map ${D.mapName}, length ${fmt(D.end - D.start)}, ${M.liveR.length} live rounds, final ${M.liveR.length ? M.liveR[M.liveR.length - 1].scoreAfter.join(':') : '-'}`);
