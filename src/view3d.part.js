@@ -147,9 +147,6 @@ function build3d() {
       transparent: see, depthWrite: !see, side: water ? THREE.DoubleSide : THREE.BackSide,
     });
     const m3 = new THREE.Mesh(geo, mat);
-    // a fence, grate or ladder that bullets hit, see-through where its texture has holes; func_illusionary ones
-    // (Inferno's vines, Nuke's wires) are left out, since bullets pass them
-    if (g.name[0] === '{' && g.solid) m3.userData.holes = true;
     // drawn but not solid, so bullets pass it at full damage and the sight lines don't count it: a func_illusionary in
     // a see-through render mode (de_train's and Inferno's railings, Inferno's vines, Nuke's wires). Not cover: the
     // picture check leaves it out (Sujan, 30 Oct 2026, GeT_RiGhT on markeloff through the highway slope's railing,
@@ -778,8 +775,11 @@ function placeCam(p, yaw, pitch) {
 // the victim's body alone in flat magenta, posed for that moment. If SEEN_PX or more of his pixels show past the
 // walls, part of him was in view: a loose wallbang (0.22.0 dropped these; 0.23.0 keeps them, tagged). The picture is always the same size around the victim
 // (640 x 400, 220 units high at his distance), so the count doesn't depend on the screen: 100 pixels is a patch
-// about 5 by 6 units, a piece of a head. As for the points, what bullets break doesn't hide him, and fences and
-// grates do (Sujan, 23 Oct 2026: they count as cover), so their holes are filled in for this picture.
+// about 5 by 6 units, a piece of a head. As for the points, what bullets break doesn't hide him. Fences, grates and
+// invisible walls (a brush drawn see-through, render mode 4) stay cover for the points (Sujan, 23 Oct 2026), so a
+// kill through one is a wallbang, but the picture draws them as the game does, holes open: a victim seen through
+// one reads LOOSE (Sujan, 2 Nov 2026; 0.22.0 to 0.26.5 filled the holes in, so Delpan on markeloff through two
+// chain-link fences, Na`Vi vs SK, Inferno, ESWC 2011, R31, read strict with 446 pixels showing).
 // Measured 23 Oct 2026 on 145 wallbangs: Sujan's three showed 210, 371 and 907 pixels; 8 showed 100 or more.
 // Since 0.23.0 the count splits wallbangs instead of cutting them (Sujan's three levels, 24 Oct 2026): under SEEN_PX
 // a strict wallbang, SEEN_PX or more a loose one (k.wb.loose holds the count), still listed and tagged LOOSE. The
@@ -817,7 +817,6 @@ async function checkSeen() {
   const rt = new THREE.WebGLRenderTarget(SEEN_W, SEEN_H);
   const cam = new THREE.PerspectiveCamera(30, SEEN_W / SEEN_H, 1, 20000);
   const MAG = new THREE.MeshBasicMaterial({ color: 0xff00ff, fog: false, side: THREE.DoubleSide });
-  const SOLID = new THREE.MeshBasicMaterial({ color: 0x000000, side: THREE.DoubleSide });
   const buf = new Uint8Array(SEEN_W * SEEN_H * 4);
   const notCover = new Set(MAP.bsp.solids.filter((s) => s.shootable).map((s) => s.model));
   for (const k of cands) {
@@ -839,11 +838,8 @@ async function checkSeen() {
     if (R3.brk) for (const m in R3.brk) { const vis = !notCover.has(+m) && !brokenAt(+m, tP - 0.05); for (const x of R3.brk[m]) x.visible = vis; }
     const poses = posesAt(tP - 0.05);
     if (R3.mov) for (const m in R3.mov) placeMover(R3.mov[m], poses.get(+m) || brushPose(MAP.movers.get(+m), null));
-    const swapped = [], hidden = [];
-    for (const c of R3.world.children) {
-      if (c.userData.holes) { swapped.push([c, c.material]); c.material = SOLID; }
-      if (c.userData.passable && c.visible) { c.visible = false; hidden.push(c); }
-    }
+    const hidden = [];
+    for (const c of R3.world.children) if (c.userData.passable && c.visible) { c.visible = false; hidden.push(c); }
     for (const c of R3.scene.children) if (c !== R3.world && c !== R3.dyn && c.visible && !c.isLight) { c.visible = false; hidden.push(c); }
     for (const c of R3.dyn.children) if (c !== r.g && c.visible) { c.visible = false; hidden.push(c); }
     const mats = r.parts.map((pt) => pt.mesh.material); for (const pt of r.parts) pt.mesh.material = MAG;
@@ -858,7 +854,6 @@ async function checkSeen() {
     // put everything back as it was (update3 redraws breakables and doors for the moment playing on the next frame)
     R3.scene.background = bg;
     r.parts.forEach((pt, i) => { pt.mesh.material = mats[i]; });
-    for (const [c, m] of swapped) c.material = m;
     for (const c of hidden) c.visible = true;
     r.g.visible = false;
     k.seenPx = n;
@@ -866,7 +861,7 @@ async function checkSeen() {
     else if (n >= SEEN_PX) k.wb.loose = n;
     await new Promise((res) => setTimeout(res, 0)); // let the page breathe between pictures
   }
-  rt.dispose(); MAG.dispose(); SOLID.dispose();
+  rt.dispose(); MAG.dispose();
   done();
 }
 
