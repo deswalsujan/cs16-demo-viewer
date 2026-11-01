@@ -11,6 +11,31 @@ Items moved out of [IDEAS.md](IDEAS.md) so that it holds only what is open (work
 
 ## Open follow-ups (checklist, updated 28 Oct 2026, 0.24.0)
 
+**Sujan's feedback of 1 Nov 2026** (from watching Na`Vi vs SK, Inferno, ESWC 2011; AGAiN vs Na`Vi, Train, recorded 24 Oct 2011; SK vs Na`Vi, Train, DreamHack Winter 2011; investigated by Claude the same day on 0.26.4; Sujan answered 2 Nov 2026; demos and events in `tests/DEMOS.md`)
+- Done: SeDaN on fox LOOSE confirmed by eye (k1ck vs eq, Nuke, DreamHack Winter 2011, R15 1:10; in `tests/expected/` since 30 Oct 2026; `STATE.md`).
+- [x] **Round keys skip a round, jump or do nothing**: built in 0.26.5 (2 Nov 2026). ↑ goes to the previous round and ↓ to the next from anywhere in a round, as the shortcuts list already said (Sujan, 2 Nov 2026); a held key moves one round; with the volume slider, a checkbox or a list in **View settings** focused, the keys work and the control keeps its value. Checked on AGAiN vs Na`Vi, Train, recorded 24 Oct 2011: 300 presses in every view, paused and at 1x, 2x and 8x, none wrong (`tests/page/v0265_keys_timer.js`).
+  - Its header in IDEAS.md when closed:
+    - **Round keys skip a round, jump or do nothing**: Up more than 3 s into a round goes to the start of that round (`jumpRound` in `src/ui/playback.js`), though the shortcuts list says "Previous or next round"; while playing, 3 s of the demo pass in 1.5 s at 2x and 0.4 s at 8x, so pressing Up again lands past 3 s again and goes back to the same start. Tested 1 Nov 2026 on SK vs Na`Vi, Train, DreamHack Winter 2011: 400 presses in 2D, 3D Free, **Player's eyes**, **Behind player** and split, paused and at 1x, 2x and 8x; Down right every time; Up from 10 s into a round wrong all 160 times, the same in every view and speed. With the focus on the volume slider, a checkbox or a list in **View settings**, the keys do nothing. A held key repeats (not ignored), which would skip rounds. Next step: Sujan picks what Up does; Claude fixes.
+- [x] **Kills tab opens scrolled down**: fixed in 0.26.5 (2 Nov 2026): the Kills, Players and Wallbangs tabs open at the top, and the Kills tab goes back to the top at each new round.
+  - Its header in IDEAS.md when closed:
+    - **Kills tab opens scrolled down**: the panel keeps the Rounds list's scroll, so the round's header is off the top. Next step: Claude fixes.
+- [x] **// in the Wallbangs list**: built in 0.26.5 (2 Nov 2026), under the demo time, no mockup (Sujan, 2 Nov 2026).
+  - Its header in IDEAS.md when closed:
+    - **// in the Wallbangs list** for a wallbang on a skip in the recording, as in the Kills list. Next step: Claude adds it.
+- [x] **The round timer runs on through a pause** (Sujan, 2 Nov 2026; found while investigating: AGAiN vs Na`Vi, Train, recorded 24 Oct 2011, R7, where every kill after 66:09 read 0:00): fixed in 0.26.5. The server stopped for 40 s at 64:26 and the demo's clock ran on; the round and C4 timers now leave out every stretch where the server's own clock stood still (R7's kills read 0:42 to 0:10).
+- [x] **EdwardwOw~ on Delpan**: closed 2 Nov 2026: in `tests/expected/` as LOOSE with a `known_gap`, like THREAT on LoordB; the finder keeps judging at the shot (Sujan, 2 Nov 2026).
+  - Its header in IDEAS.md when closed:
+    - **EdwardwOw~ on Delpan reads strict, Sujan sees his head** (Na`Vi vs SK, Inferno, ESWC 2011, R2 0:58, demo 20:08, Galil)
+      - Status: 0 pixels at the shot and 0.1 and 0.2 s before; Delpan's head shows over a window sill until about 0.3 s before the kill (194 pixels), then drops under it before the last two bullets (9 HP through the wall, then the killing bullet). The same kind of case as THREAT on LoordB, with the top of his head within a few units of the sill.
+      - Next step: Sujan decides: `loose` with a `known_gap` in `tests/expected/` (as THREAT on LoordB), or strict.
+      - Decided so far: the finder judges at the moment of the shot (Sujan, 1 Nov 2026).
+- [x] **A minimum damage for LOOSE?**: closed 2 Nov 2026: no minimum (Sujan). The list is in `tests/logs/loose-kills-0.26.4.md`.
+  - Its header in IDEAS.md when closed:
+    - **A minimum damage for LOOSE?**
+      - Status: the 210 LOOSE kills on the 64 demos (0.26.4), with the number each one shows, run 1 Nov 2026: the number on a kill is the killer's hits through cover plus the health the victim had left, so a low one often means the victim was already hurt. Any minimum turns confirmed answers into normal kills: 10 HP drops 6 kills, 4 of them confirmed (KUBEN on RARA at 5); 20 HP drops 33, 25 confirmed.
+      - Next step: Sujan decides; Claude's suggestion: no minimum.
+- Still open on 2 Nov 2026, in IDEAS.md under the same block: see-through cover, the 77 HP kill (each wall's own material), kill details, the damage numbers setting with the skull and **Vanilla**, sizes on big screens.
+
 **Damage numbers and the moment a kill is judged** (Sujan, 31 Oct 2026, after his by-eye checks of 0.23.0 to 0.26.1; a plan for each before anything is built)
 - [x] **The moment the finder judges a kill at** (measurement only, no change to `src/` on main): closed 1 Nov 2026: the finder keeps judging at the moment of the shot (Sujan, 1 Nov 2026). No variant fit more of his answers than the current build, and moving the victim back broke 11 answers, among them ones he confirmed by eye on 31 Oct 2026 (KUBEN on RARA). Sujan's caveat: the ground truth test leans toward the current finder, since his answers were mostly given on its own pictures. THREAT on LoordB stays loose with its `known_gap`, now pointing at this decision; the limit is in `LIMITS.md` (`STATE.md` Decisions).
   - Its header in IDEAS.md when closed:

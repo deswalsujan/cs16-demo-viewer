@@ -30,12 +30,12 @@
   },
   {
    "round": 13,
-   "timer": "0:05",
+   "timer": "0:40",
    "killer": "Na`Vi Edward4[a]",
    "victim": "PASHA[t]",
    "gun": null,
    "expected": "loose-damage",
-   "source": "docs/review-answers.md, \"Loose wallbang check\" (27 and 28 Oct 2026), k15012: loose"
+   "source": "docs/review-answers.md, \"Loose wallbang check\" (27 and 28 Oct 2026), k15012: loose; timer 0:05 in the source, 0:40 since 0.26.5: the server stood still for 35 s in R13 and 0.26.4 counted it (the round timer stands still through a pause, Sujan, 2 Nov 2026)"
   },
   {
    "round": 15,

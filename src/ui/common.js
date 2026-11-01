@@ -50,6 +50,11 @@ const cleanName = (s) => (s || '?').replace(/[\x00-\x1f]/g, '');
 function setMsg(t, err) { $('msg').textContent = t || ''; $('msg').classList.toggle('err', !!err); if (err && t && !$('load').hidden) $('msg').scrollIntoView({ block: 'nearest' }); }
 function sideCol(side) { return side === 1 ? COL.t : side === 2 ? COL.ct : COL.muted; }
 function weaponShort(m) { if (!m) return ''; const x = /p_(\w+)\.mdl/.exec(m); return x ? x[1] : ''; }
+// Keys typed into a text box (the demo search, a team name) stay there. With a slider, checkbox or list focused (the
+// volume, View settings), the viewer's keys work as anywhere else and the control doesn't take them (Sujan, 2 Nov 2026:
+// ↑ and ↓ did nothing after using one; the volume slider moved instead)
+const typingIn = (el) => !!el && (el.isContentEditable || el.tagName === 'TEXTAREA' || (el.tagName === 'INPUT' && !/^(range|checkbox|radio|button|submit|reset|color|file)$/i.test(el.type)));
+const formControl = (el) => !!el && (el.tagName === 'INPUT' || el.tagName === 'SELECT');
 // A file picked from the folder that can't be read any more: it was deleted, moved, renamed or
 // changed on disk after the folder was chosen. The browser only lets the page read the files as they
 // were at that moment, so the fix is to choose the folder again.

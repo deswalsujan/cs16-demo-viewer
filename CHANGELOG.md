@@ -4,6 +4,7 @@ What changed in the viewer, newest first. The version shows in the viewer's shor
 
 ## Versions
 
+- [0.26.5](#0265-2026-11-02) 2026-11-02: Round keys, timers through pauses
 - [0.26.4](#0264-2026-11-01) 2026-11-01: Numbers on every wallbang kill
 - [0.26.3](#0263-2026-11-01) 2026-11-01: Damage numbers with the kill feed
 - [0.26.2](#0262-2026-10-30) 2026-10-30: three.js built into the page
@@ -62,6 +63,24 @@ What changed in the viewer, newest first. The version shows in the viewer's shor
 
 ## Known limits
 Moved to [LIMITS.md](LIMITS.md) on 30 Oct 2026; release entries below still say "Known limits" for that list.
+
+## 0.26.5 (2026-11-02)
+
+### Fixed
+- **↑ and ↓ go to the previous and next round** from anywhere in a round, as the shortcuts list says (Sujan, 2 Nov 2026). More than 3 s into a round, ↑ went to the start of that round, so while playing at 2x or faster a second press went back to the same start: ↑ seemed to jump back a little or do nothing. A held key now moves one round, and the keys work with the volume slider, a checkbox or a list in **View settings** focused, which kept them before (the slider moved instead).
+- **The round and C4 timers stand still through a pause**, as the game's do. In AGAiN vs Na`Vi, Train, recorded 24 Oct 2011, R7, the server stopped for 40 s and the timer counted on, so every kill after 66:09 read 0:00 (Sujan finds moments in the game and in Copy list by round and timer). The reader now notes where the server's own clock stands still while the demo's runs on; the timers and the round lengths in the Rounds tab leave those stretches out. R7's kills read 0:42 to 0:10; on the 64 test demos 128 kill timers change, all in rounds with a pause, 41 of them 0:00 before.
+- **The Kills tab opens at its heading**: it kept the Rounds list's scroll, so "Round 23" was out of sight. The Kills, Players and Wallbangs tabs open at the top, and the Kills tab goes back to the top at each new round.
+
+### Added
+- **// in the Wallbangs list** under the demo time of a wallbang inside a skip in the recording, as in the Kills list (Sujan, 2 Nov 2026, no mockup).
+
+### How it was tested
+- `page/v0265_keys_timer.js` (new) on AGAiN vs Na`Vi, Train: 300 presses of ↑ and ↓ in every view, paused and at 1x, 2x and 8x, none wrong (160 of 400 wrong on 0.26.4, all ↑ from 10 s into a round); R7's timers; focus, held keys, the Kills tab. `compare_all.sh` on the 64 demos against 0.26.4: scores, K-D and wallbangs unchanged; only timers differ (`page/kill_timers.js`, new). `reader_compare.mjs`: the reader's only new field is the pause list.
+- `ground_truth_check.py` (226 kills, 0 mismatches, 8 known gaps; two expected timers updated for the pause, EdwardwOw~ on Delpan added) and the other six checks pass on Sujan's Mac.
+- Full log: `tests/logs/0.26.5.md`.
+### Discussed, not changed
+- ↑ to go back to the start of the round playing: gone; a click on the round in the Rounds tab does that (Sujan, 2 Nov 2026: ↑ always goes to the previous round). The shortcuts list already said "Previous or next round", so its text stays.
+- Playback through a pause still runs at the demo's pace: 40 s of everyone standing still in that R7 (`LIMITS.md`).
 
 ## 0.26.4 (2026-11-01)
 

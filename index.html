@@ -524,7 +524,7 @@ body:has(.app.theatre) { overflow: hidden; }
     <div class="overlay sumwrap" id="sumCard" hidden></div>
     <div class="overlay keys" id="keys" hidden>
       <div class="keys-card">
-        <div class="keys-head"><b>Shortcuts and kill markers</b><div class="kh-r"><span class="ver">Version 0.26.4 · <a href="https://github.com/deswalsujan/cs16-demo-viewer/blob/main/CHANGELOG.md" target="_blank" rel="noopener">What's new</a> · <a href="https://github.com/deswalsujan/cs16-demo-viewer/issues/new/choose" target="_blank" rel="noopener">Report a bug</a></span><button class="btn" id="bDebug" type="button" title="Copies details for a bug report: browser, demo name, what loaded, errors. No file contents.">Copy debug info</button><button class="btn" id="bKeysClose" type="button">Close</button></div></div>
+        <div class="keys-head"><b>Shortcuts and kill markers</b><div class="kh-r"><span class="ver">Version 0.26.5 · <a href="https://github.com/deswalsujan/cs16-demo-viewer/blob/main/CHANGELOG.md" target="_blank" rel="noopener">What's new</a> · <a href="https://github.com/deswalsujan/cs16-demo-viewer/issues/new/choose" target="_blank" rel="noopener">Report a bug</a></span><button class="btn" id="bDebug" type="button" title="Copies details for a bug report: browser, demo name, what loaded, errors. No file contents.">Copy debug info</button><button class="btn" id="bKeysClose" type="button">Close</button></div></div>
         <textarea class="dbgbox" id="dbgBox" readonly hidden aria-label="Debug info"></textarea>
         <div class="keys-grid">
           <section><h3>Playback</h3>
@@ -627,7 +627,7 @@ body:has(.app.theatre) { overflow: hidden; }
         <div class="drophint">Or drop a .dem file, or an overview .bmp and .txt pair, anywhere on this page</div>
         <div class="prog" id="prog" hidden><i id="progBar"></i></div>
         <div class="msg" id="msg"></div>
-        <div class="loadfoot"><span>Version 0.26.4 · <a href="https://github.com/deswalsujan/cs16-demo-viewer" target="_blank" rel="noopener">Source on GitHub</a></span><button class="btn" id="bClear" type="button" title="Forgets your Half-Life folder and deletes the maps, models, sounds and overviews this browser saved from it, as on a first visit">Clear saved files</button></div>
+        <div class="loadfoot"><span>Version 0.26.5 · <a href="https://github.com/deswalsujan/cs16-demo-viewer" target="_blank" rel="noopener">Source on GitHub</a></span><button class="btn" id="bClear" type="button" title="Forgets your Half-Life folder and deletes the maps, models, sounds and overviews this browser saved from it, as on a first visit">Clear saved files</button></div>
       </div>
     </div>
   </section>
@@ -952,6 +952,12 @@ export function parseDemo(buffer, onProgress, opts = {}) {
   // HLTV's slow motion: svc_timescale messages, the time each took effect and its value (0.5 = half speed).
   // Inside a slow stretch the demo's clock runs 1 / value times faster than the game's (0.18.0).
   const timescale = [];
+  // Where the server's own clock (svc_time) stood still while the demo's ran on: a pause. In AGAiN vs Na`Vi, Train,
+  // recorded 24 Oct 2011, R7, the demo jumps 40.2 s at 65:06 while the server's clock moves 0.05 s, so the round timer
+  // read 0:00 for the round's last 35 s (Sujan, 2 Nov 2026); other HLTV recordings write a frame every 2 s through a
+  // pause. [start, end, server seconds in between], from one svc_time to the next, when the demo ran on 0.5 s or more
+  // past the server. The round and C4 timers leave them out (clockSpan, src/ui/lookups.js), as the game's do.
+  const stops = []; let svT = null, svG = null;
 
   // position samples
   const samples = { t: [], slots: {} }; // slots[ent] = number[] of x,y,z,yaw,pitch,alive
@@ -1257,7 +1263,11 @@ export function parseDemo(buffer, onProgress, opts = {}) {
           r.bitsEnd();
           break;
         }
-        case 7: r.f(); break; // time
+        case 7: { // time: the server's clock
+          const g = r.f();
+          if (inPlayback) { if (svT != null && g - svG >= -0.01 && time - svT - (g - svG) >= 0.5) stops.push([svT, time, Math.max(0, g - svG)]); svT = time; svG = g; }
+          break;
+        }
         case 8: { const s = r.str(); if (inPlayback && s) notes.push({ t: time, s }); break; } // print
         case 9: r.str(); break; // stufftext
         case 10: r.skip(6); break; // setangle
@@ -1628,7 +1638,7 @@ export function parseDemo(buffer, onProgress, opts = {}) {
     times: new Float32Array(samples.t), slots,
     finalScore: { ...scores }, models: resources.models, stride: STRIDE,
     pmodels, sounds: resources.sounds, events: resources.events, snds: new Float32Array(snds), shots: new Float32Array(shots), booms: new Float32Array(booms), puffs: new Float32Array(puffs), radio, centre, corpses,
-    errors, errSamples, health, c4drops: new Float32Array(c4drops), slow,
+    errors, errSamples, health, c4drops: new Float32Array(c4drops), slow, stops,
     ...(povData ? { povData } : {}),
   };
 }
@@ -2015,6 +2025,11 @@ const cleanName = (s) => (s || '?').replace(/[\x00-\x1f]/g, '');
 function setMsg(t, err) { $('msg').textContent = t || ''; $('msg').classList.toggle('err', !!err); if (err && t && !$('load').hidden) $('msg').scrollIntoView({ block: 'nearest' }); }
 function sideCol(side) { return side === 1 ? COL.t : side === 2 ? COL.ct : COL.muted; }
 function weaponShort(m) { if (!m) return ''; const x = /p_(\w+)\.mdl/.exec(m); return x ? x[1] : ''; }
+// Keys typed into a text box (the demo search, a team name) stay there. With a slider, checkbox or list focused (the
+// volume, View settings), the viewer's keys work as anywhere else and the control doesn't take them (Sujan, 2 Nov 2026:
+// ↑ and ↓ did nothing after using one; the volume slider moved instead)
+const typingIn = (el) => !!el && (el.isContentEditable || el.tagName === 'TEXTAREA' || (el.tagName === 'INPUT' && !/^(range|checkbox|radio|button|submit|reset|color|file)$/i.test(el.type)));
+const formControl = (el) => !!el && (el.tagName === 'INPUT' || el.tagName === 'SELECT');
 // A file picked from the folder that can't be read any more: it was deleted, moved, renamed or
 // changed on disk after the folder was chosen. The browser only lets the page read the files as they
 // were at that moment, so the fix is to choose the folder again.
@@ -2525,7 +2540,7 @@ function joinDemos(parts) {
   const out = Object.assign({}, parts[0], {
     kills: [], rounds: [], bomb: [], chat: [], nades: [], roundTimes: [], pauses: [], occupants: [], notes: [], radio: [], centre: [], corpses: [], viewers: [],
     models: Object.assign({}, parts[0].models), sounds: Object.assign({}, parts[0].sounds), events: Object.assign({}, parts[0].events), pmodels: parts[0].pmodels.slice(),
-    players: {}, errors: 0, errSamples: [], parts: [], maps: parts[0].maps, health: null, slow: [],
+    players: {}, errors: 0, errSamples: [], parts: [], maps: parts[0].maps, health: null, slow: [], stops: [],
   });
   // one shared numbering for a file's resource list ({ index: name }): same name, same number
   const unify = (dst, src) => {
@@ -2585,6 +2600,7 @@ function joinDemos(parts) {
     flat(P.puffs, 5, (a, i) => { a[i] = sh(a[i]); }, puffsL);
     flat(P.c4drops || [], 5, (a, i) => { a[i] = sh(a[i]); a[i + 1] = sh(a[i + 1]); }, c4L);
     for (const [a, b, v] of P.slow || []) out.slow.push([sh(a), sh(b), v]);
+    for (const [a, b, g] of P.stops || []) out.stops.push([sh(a), sh(b), g]);
     if (povL) {
       const Q = P.povData, t0 = (a, i) => { a[i] = sh(a[i]); };
       flat(Q.view, Q.viewStride, t0, povL.view); flat(Q.ownPos, 4, () => {}, povL.ownPos); flat(Q.hpInfo, 3, t0, povL.hpInfo);
@@ -4280,6 +4296,18 @@ function hpAt(e, t) {
 function slowAt(t) { const L = D && D.slow; if (L) for (const s of L) { if (t < s[0]) break; if (t < s[1]) return s[2]; } return 1; }
 function gameTime(t) { let g = t; const L = D && D.slow; if (L) for (const [a, b, v] of L) { if (a >= t) break; g -= (Math.min(t, b) - a) * (1 - v); } return g; }
 const gameSpan = (a, b) => gameTime(b) - gameTime(a);
+// The round and C4 timers stand still while the server is paused, as the game's do (0.26.5): inside each stretch where
+// the demo's clock ran on and the server's didn't (D.stops, from the reader), only the server's own seconds count. The
+// rest of the viewer (playback, the skip finder, the centre messages) keeps gameSpan.
+function clockSpan(a, b) {
+  let s = gameSpan(a, b);
+  for (const [x, y, g] of (D && D.stops) || []) {
+    if (x >= b) break;
+    const p = Math.max(a, x), q = Math.min(b, y);
+    if (q > p) s -= gameSpan(p, q) - (q - p) * g / (y - x);
+  }
+  return s;
+}
 
 // The in-game round timer: freeze time counting down, then the round time counting down.
 // After a plant, two readings. The lists (Kills, Wallbangs, Copy list, the timeline's hover) give the time since
@@ -4294,7 +4322,7 @@ function c4Countdown(plant, r, t) {
   const boom = end(/Target_Bombed/), defused = end(/Bomb_Defused/);
   if (boom && t >= boom.t) return 0;
   const stop = defused && t >= defused.t ? defused.t : t;
-  return Math.max(0, Math.floor(C4_FUSE - gameSpan(plant.t, stop) + 0.001));
+  return Math.max(0, Math.floor(C4_FUSE - clockSpan(plant.t, stop) + 0.001));
 }
 function clockAt(t, countdown) {
   const r = roundAt(t);
@@ -4304,8 +4332,8 @@ function clockAt(t, countdown) {
   if (!rt) return null;
   const freeze = Math.abs(rt.t - r.start) < 1 && D.roundTimes.some((x) => x.t > rt.t && x.t < r.end + 0.5);
   const plant = D.bomb.find((b) => b.type === 'plantpos' && b.t >= r.start && b.t <= r.end);
-  if (plant && t >= plant.t) return { text: 'C4 ' + fmt(countdown ? c4Countdown(plant, r, t) : gameSpan(plant.t, t)), phase: 'bomb' };
-  const rem = Math.max(0, Math.floor(rt.secs - gameSpan(rt.t, t) + 0.001));
+  if (plant && t >= plant.t) return { text: 'C4 ' + fmt(countdown ? c4Countdown(plant, r, t) : clockSpan(plant.t, t)), phase: 'bomb' };
+  const rem = Math.max(0, Math.floor(rt.secs - clockSpan(rt.t, t) + 0.001));
   return { text: (freeze ? 'freeze ' : '') + fmt(rem), phase: freeze ? 'freeze' : 'round' };
 }
 const clockText = (t, countdown) => { const c = clockAt(t, countdown); return c ? c.text : ''; };
@@ -4571,6 +4599,9 @@ document.querySelectorAll('.tabs button').forEach((b) => b.onclick = () => {
   // back on the Rounds tab, the round playing now is in view, in the middle of the list (it opened at the top
   // before, so at round 23 the list had to be scrolled by hand; Sujan, 23 Oct 2026)
   if (tab === 'rounds') { const cur = $('pane').querySelector('.row.cur'); if (cur) cur.scrollIntoView({ block: 'center' }); }
+  // the other tabs open at the top: the panel kept the Rounds list's scroll, so the Kills list opened scrolled down with
+  // its "Round 23" heading out of sight (Sujan, 2 Nov 2026)
+  else $('pane').scrollTop = 0;
 });
 const teamSpan = (r, e) => {
   const side = teamOfSlot(e, T) != null && r && r.tTeam != null ? (teamOfSlot(e, T) === r.tTeam ? 1 : 2) : 0;
@@ -4581,6 +4612,8 @@ function nameHtml(e, side, full) {
   const nm = M.pl[e] ? M.pl[e].name : '?', sn = full ? nm : shortName(e);
   return `<span class="${side === 1 ? 'kt' : side === 2 ? 'kct' : ''}"${sn !== nm ? ` title="${esc(nm)}"` : ''}>${esc(sn)}</span>`;
 }
+// a kill inside a skip in the recording: // by its time in the Kills list (0.20.0) and the Wallbangs list (0.26.5)
+const SKIP_MARK = `<span class="skipk" title="Happened inside a skip in the recording: you won't see it happen">//</span>`;
 function killHtml(k) {
   const ks = k.kteam === 'TERRORIST' ? 1 : k.kteam === 'CT' ? 2 : 0;
   const vs = k.vteam === 'TERRORIST' ? 1 : k.vteam === 'CT' ? 2 : 0;
@@ -4673,7 +4706,7 @@ function renderPane() {
       const after = r.afterMatch && !r.live;
       h += `<div class="row${r === cr ? ' cur' : ''}${after ? ' after16' : ''}" data-t="${r.start}"><span class="n">${r.live ? 'R' + r.ln : '·'}</span>
         <span class="main"><span class="pill ${side}">${r.winner || '—'}</span>${esc(who)}${after ? '<span class="tag16">after the match</span>' : ''}<div class="sub">${esc(r.reason || (r.live ? '' : 'not counted'))} · ${r.kills.length} kills${r.sides ? ' · ' + Math.max(0, Object.keys(r.sides).length - new Set(r.kills.map((k) => k.victim)).size) + ' alive at end' : ''}</div></span>
-        <span class="d">${sc}<br>${fmt(gameSpan(r.start, r.start + r.dur))}</span></div>`;
+        <span class="d">${sc}<br>${fmt(clockSpan(r.start, r.start + r.dur))}</span></div>`;
     }
     h += `<div class="joinrow"><span>${D.parts ? 'Another part of this map in a file of its own?' : 'Is this map split over two or more demo files?'}</span><button class="btn sm" type="button" id="bJoinWith">Join with another demo…</button></div>`;
     p.innerHTML = h;
@@ -4686,7 +4719,7 @@ function renderPane() {
     let h = `<div class="sechead"><span>${r && r.live ? 'Round ' + r.ln : 'This round'}</span><span>${r ? r.kills.length : 0} kills</span></div>`;
     if (r) for (const k of r.kills) {
       // a kill inside a skip in the recording: // by its time (0.20.0), wallbangs included since 0.21.0, which keep UNSURE too
-      const sk = skipNear(k.t) ? `<span class="skipk" title="Happened inside a skip in the recording: you won't see it happen">//</span>` : '';
+      const sk = skipNear(k.t) ? SKIP_MARK : '';
       h += `<div class="row krow kill3${killState(k)}" data-kill="${k.t}" data-ki="${D.kills.indexOf(k)}"><span class="n" title="Round timer as shown in game">${k === pickedKill ? MARK : ''}${killClock(k.t) ? cellClock(k.t) : '<span class="nw">+' + fmt(k.t - r.start) + '</span>'}${sk}</span><span class="main">${killRow3(k, true)}</span></div>`;
     }
     if (!r || !r.kills.length) h += `<div class="opt">No kills in this round.</div>`;
@@ -4711,8 +4744,9 @@ function renderPane() {
         if (wbFilter !== 'all' && x.kind !== wbFilter) continue;
         if (x.k) {
           const k = x.k, r = M.rounds.find((y) => y.n === k.round);
-          // the round, the round timer and the demo time on three lines; "C4 0:16" never splits (0.21.1, Sujan 15 Oct 2026)
-          h += `<div class="row krow wbrow kill3${killState(k)}" data-wb="${k.t}" data-ki="${D.kills.indexOf(k)}" title="Through ${k.wb.thick} units of ${k.wb.what === 'object' ? 'a breakable or door' : 'wall or crate'}"><span class="n">${k === pickedKill ? MARK : ''}R${r ? r.ln : '?'} ·<br>${cellClock(k.t)}<br>${fmt(k.t - D.start)}</span><span class="main">${killRow3(k, false)}</span></div>`;
+          // the round, the round timer and the demo time on three lines; "C4 0:16" never splits (0.21.1, Sujan 15 Oct 2026);
+          // // under them for a wallbang inside a skip in the recording, as in the Kills list (Sujan, 2 Nov 2026)
+          h += `<div class="row krow wbrow kill3${killState(k)}" data-wb="${k.t}" data-ki="${D.kills.indexOf(k)}" title="Through ${k.wb.thick} units of ${k.wb.what === 'object' ? 'a breakable or door' : 'wall or crate'}"><span class="n">${k === pickedKill ? MARK : ''}R${r ? r.ln : '?'} ·<br>${cellClock(k.t)}<br>${fmt(k.t - D.start)}${skipNear(k.t) ? SKIP_MARK : ''}</span><span class="main">${killRow3(k, false)}</span></div>`;
         } else {
           const b = x.b, r = M.rounds.find((y) => y.n === b.round), bi = M.bursts.indexOf(b);
           const sideOf = (e) => { const st = playerState(e, b.start); return st ? (Math.abs(st.state) === 1 ? 1 : 2) : 0; };
@@ -4806,13 +4840,17 @@ function togglePlay() { if (!D) return; closeSummary(); if (T >= D.end - 0.05) T
 $('bPlay').onclick = togglePlay;
 $('bBack').onclick = () => D && seek(T - 5);
 $('bFwd').onclick = () => D && seek(T + 5);
+// ↑ and ↓: the previous or next round in the list, from anywhere in a round (Sujan, 2 Nov 2026). Up used to go to the
+// start of the round playing when more than 3 s into it, so while playing at 2x or faster a second press landed past
+// 3 s again and went back to the same start: Up seemed to jump back a little or do nothing.
+// k: the last listed round started by now. Inside it, Up goes one before it; between listed rounds (a warmup, the
+// restarts between halves, after the match), Up goes to it and Down to the one after it.
 function jumpRound(dir) {
   if (!D) return;
   const rs = visibleRounds();
-  const cr = roundAt(T);
-  let i = rs.indexOf(cr);
-  if (dir < 0) { if (cr && T - cr.start > 3 && i >= 0) return seek(cr.start); i = i < 0 ? rs.findIndex((r) => r.start > T) - 1 : i - 1; }
-  else i = i < 0 ? rs.findIndex((r) => r.start > T) : i + 1;
+  let k = -1; for (let j = 0; j < rs.length && rs[j].start <= T + 0.001; j++) k = j;
+  const inside = k >= 0 && (rs[k].end == null || T <= rs[k].end + 0.001);
+  const i = dir > 0 ? k + 1 : inside ? k - 1 : k;
   if (i >= 0 && i < rs.length) seek(rs[i].start);
 }
 $('bPrevR').onclick = () => jumpRound(-1);
@@ -4827,18 +4865,20 @@ function setSpeed(s) { speed = s; [...spEl.children].forEach((b, i) => b.classLi
 
 // the shortcuts list works everywhere, including the start screen
 document.addEventListener('keydown', (e) => {
-  if (e.target.tagName === 'INPUT' || e.target.isContentEditable) return;
+  if (typingIn(e.target)) return;
   if (e.key === '?' && (!D || !$('load').hidden)) toggleKeys();
   if (e.key === 'Escape' && !$('keys').hidden) toggleKeys(false);
 });
 document.addEventListener('keydown', (e) => {
-  if (!D || !$('load').hidden || e.target.tagName === 'INPUT' || e.target.tagName === 'SELECT' || e.target.isContentEditable) return;
+  if (!D || !$('load').hidden || typingIn(e.target)) return;
   const k = e.key;
+  let used = true;
   if (k === ' ') { e.preventDefault(); togglePlay(); }
   else if (k === 'ArrowLeft') { e.preventDefault(); seek(T - (e.shiftKey ? 1 : 5)); }
   else if (k === 'ArrowRight') { e.preventDefault(); seek(T + (e.shiftKey ? 1 : 5)); }
-  else if (k === 'ArrowUp') { e.preventDefault(); jumpRound(-1); }
-  else if (k === 'ArrowDown') { e.preventDefault(); jumpRound(1); }
+  // a held key repeats: one round per press, so holding it a moment too long doesn't skip a round (Sujan, 2 Nov 2026)
+  else if (k === 'ArrowUp') { e.preventDefault(); if (!e.repeat) jumpRound(-1); }
+  else if (k === 'ArrowDown') { e.preventDefault(); if (!e.repeat) jumpRound(1); }
   else if (k === ',') { playing = false; setPlayIcon(); seek(T - 1 / 30); }
   else if (k === '.') { playing = false; setPlayIcon(); seek(T + 1 / 30); }
   else if (k === '[') { const i = SPEEDS.indexOf(speed); if (i > 0) setSpeed(SPEEDS[i - 1]); }
@@ -4858,6 +4898,9 @@ document.addEventListener('keydown', (e) => {
   else if (k === 'Tab') { e.preventDefault(); if (!e.repeat) showScoreboard(true); }
   else if (k === '?') toggleKeys();
   else if (k === 'Escape') { $('keys').hidden = true; showScoreboard(false); closeSummary(); if ($('joinCard') && !$('joinCard').hidden) closeJoinCard(); }
+  else used = false;
+  // a focused list or checkbox doesn't also take the key (a letter would pick an entry in the Quality list)
+  if (used && formControl(e.target)) e.preventDefault();
 });
 document.addEventListener('keyup', (e) => { if (e.key === 'Tab') showScoreboard(false); });
 window.addEventListener('blur', () => showScoreboard(false));
@@ -4951,6 +4994,8 @@ function updateHud(force) {
     if (changed && scope === 'round') drawTimeline();
     if (changed && heat && $('hmScope').value === 'round') heat = null;
     if (changed || force) { const cur = $('pane').querySelector('.row.cur'); if (cur && tab === 'rounds') cur.scrollIntoView({ block: 'nearest' }); }
+    // a new round on the Kills tab: its heading at the top, not wherever the last round's list was scrolled to
+    if (changed && tab === 'kills') $('pane').scrollTop = 0;
   }
 }
 
@@ -5734,12 +5779,12 @@ $('bNextP').onclick = () => { nextPlayer(1); if (cam3.mode === 'free') setCam('e
 $('bPrevP').onclick = () => { nextPlayer(-1); if (cam3.mode === 'free') setCam('eyes'); };
 const k3 = cam3.keys;
 document.addEventListener('keydown', (e) => {
-  if (viewMode === '2d' || !D || !$('load').hidden || e.target.tagName === 'INPUT' || e.target.tagName === 'SELECT' || e.target.isContentEditable) return;
+  if (viewMode === '2d' || !D || !$('load').hidden || typingIn(e.target)) return;
   const k = e.key.toLowerCase();
   if (POV.on) return;
-  if (k.length === 1 && 'wasdqe'.includes(k)) { k3[k] = true; if (cam3.mode !== 'free') { setCam('free', false, true); } }
+  if (k.length === 1 && 'wasdqe'.includes(k)) { k3[k] = true; if (cam3.mode !== 'free') { setCam('free', false, true); } if (formControl(e.target)) e.preventDefault(); }
   if (e.key === 'Shift') k3.shift = true;
-  if (k === 'v') setCam(cam3.mode === 'free' ? 'eyes' : cam3.mode === 'eyes' ? 'chase' : 'free');
+  if (k === 'v') { setCam(cam3.mode === 'free' ? 'eyes' : cam3.mode === 'eyes' ? 'chase' : 'free'); if (formControl(e.target)) e.preventDefault(); }
 });
 document.addEventListener('keyup', (e) => { k3[e.key.toLowerCase()] = false; if (e.key === 'Shift') k3.shift = false; });
 window.addEventListener('blur', () => { for (const k in k3) k3[k] = false; });
@@ -7528,7 +7573,7 @@ function povRoundTimer(t) {
   let rt = null; for (const x of D.roundTimes || []) { if (x.t > t + 0.001) break; rt = x; }
   if (!rt) return null;
   for (const b of D.bomb) { if (b.t > t) break; if (b.type === 'plantpos' && b.t >= rt.t) return null; }
-  return fmt(Math.max(0, Math.floor(rt.secs - gameSpan(rt.t, t) + 0.001)));
+  return fmt(Math.max(0, Math.floor(rt.secs - clockSpan(rt.t, t) + 0.001)));
 }
 function drawPovHud(lx, W, H) {
   loadHudSprites();
@@ -8056,7 +8101,7 @@ window.addEventListener('unhandledrejection', (e) => { ERRLOG.push('Promise: ' +
 function debugInfo() {
   let gpu = '';
   try { const gl = document.createElement('canvas').getContext('webgl'); const x = gl && gl.getExtension('WEBGL_debug_renderer_info'); gpu = gl ? (x ? gl.getParameter(x.UNMASKED_RENDERER_WEBGL) : 'WebGL available') : 'no WebGL'; } catch (e) { gpu = 'unknown'; }
-  const L = [`CS 1.6 Demo Viewer 0.26.4`, `Browser: ${navigator.userAgent}`, `Screen: ${screen.width}x${screen.height} at ${devicePixelRatio}x, window ${innerWidth}x${innerHeight}`, `Graphics: ${gpu}`];
+  const L = [`CS 1.6 Demo Viewer 0.26.5`, `Browser: ${navigator.userAgent}`, `Screen: ${screen.width}x${screen.height} at ${devicePixelRatio}x, window ${innerWidth}x${innerHeight}`, `Graphics: ${gpu}`];
   L.push(`Folder: ${Object.keys(files.maps).length} maps, ${Object.keys(files.overviews).length} overviews, ${Object.keys(files.mdl).length} models, ${Object.keys(files.snd).length} sounds, ${files.demos.length} demos`);
   if (D) {
     L.push(`Demo: ${D.fileName}, protocol ${(D.header && D.header.netProtocol) || '?'}, ${D.pov ? 'POV (recorded by a player)' : 'HLTV'}, map ${D.mapName}, length ${fmt(D.end - D.start)}, ${M.liveR.length} live rounds, final ${M.liveR.length ? M.liveR[M.liveR.length - 1].scoreAfter.join(':') : '-'}`);
