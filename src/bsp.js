@@ -140,6 +140,16 @@ function pointContents(bsp, head, x, y, z) {
   return bsp.leafContents[-1 - n];
 }
 
+// A point in a brush entity's own frame: where it is at that moment (poses, see solidAlong) or where the map puts it.
+// Into a turned brush's frame the way the engine traces against it.
+function localPoint(s, poses, x, y, z) {
+  const ps = poses && s.model !== 0 ? poses.get(s.model) : null;
+  if (!ps) return [x - s.origin[0], y - s.origin[1], z - s.origin[2]];
+  const tx = x - ps.o[0], ty = y - ps.o[1], tz = z - ps.o[2];
+  if (!ps.f) return [tx, ty, tz];
+  return [tx * ps.f[0] + ty * ps.f[1] + tz * ps.f[2], -(tx * ps.r[0] + ty * ps.r[1] + tz * ps.r[2]), tx * ps.u[0] + ty * ps.u[1] + tz * ps.u[2]];
+}
+
 // Returns the amount of solid (in units) along the segment a->b, sampled every `step` units.
 // Walls, sky and blocking brush entities count; water does not.
 // skip: optional Set of brush model numbers to ignore (e.g. vents that are already broken)
@@ -159,14 +169,7 @@ export function solidAlong(bsp, a, b, step = 2, skip = null, poses = null, use =
     for (const s of bsp.solids) {
       if ((bullet ? s.sightOnly : s.invisible) || (skip && skip.has(s.model))) continue;
       const mdl = bsp.models[s.model];
-      let lx, ly, lz;
-      const ps = poses && s.model !== 0 ? poses.get(s.model) : null;
-      if (ps) {
-        // into the brush's own frame, the way the engine traces against a turned brush
-        const tx = x - ps.o[0], ty = y - ps.o[1], tz = z - ps.o[2];
-        if (ps.f) { lx = tx * ps.f[0] + ty * ps.f[1] + tz * ps.f[2]; ly = -(tx * ps.r[0] + ty * ps.r[1] + tz * ps.r[2]); lz = tx * ps.u[0] + ty * ps.u[1] + tz * ps.u[2]; }
-        else { lx = tx; ly = ty; lz = tz; }
-      } else { lx = x - s.origin[0]; ly = y - s.origin[1]; lz = z - s.origin[2]; }
+      const [lx, ly, lz] = localPoint(s, poses, x, y, z);
       if (s.model !== 0 && (lx < mdl.mins[0] || ly < mdl.mins[1] || lz < mdl.mins[2] || lx > mdl.maxs[0] || ly > mdl.maxs[1] || lz > mdl.maxs[2])) continue;
       const c = pointContents(bsp, mdl.head, lx, ly, lz);
       if (c === -2 || c === -6) {
@@ -179,6 +182,42 @@ export function solidAlong(bsp, a, b, step = 2, skip = null, poses = null, use =
     }
   }
   return { solid, len, hit };
+}
+
+// The texture where the line a->b enters each surface solidAlong found on it (res, run with use 'bullet' and the same
+// step and poses), as the game reads it for a bullet (TRACE_TEXTURE in UTIL_TextureHit, ReGameDLL util.cpp): the edge
+// is found between the last sample outside and the first inside, then the face of that brush model it lies on. null
+// for a surface whose face isn't found. For the wallbang finder's damage rule (0.26.7).
+export function hitTextures(bsp, a, b, res, step = 2, poses = null) {
+  const at = (f) => [a[0] + (b[0] - a[0]) * f, a[1] + (b[1] - a[1]) * f, a[2] + (b[2] - a[2]) * f];
+  const P = bsp.planes;
+  return res.hit.map((h) => {
+    const s = bsp.solids.find((x) => x.model === h.model && !x.sightOnly);
+    if (!s) return null;
+    const head = bsp.models[s.model].head;
+    const inside = (f) => { const q = localPoint(s, poses, ...at(f)); const c = pointContents(bsp, head, q[0], q[1], q[2]); return c === -2 || c === -6; };
+    let lo = Math.max(0, h.f0 - 2 * step / res.len), hi = h.f0;
+    for (let i = 0; i < 14; i++) { const mid = (lo + hi) / 2; if (inside(mid)) hi = mid; else lo = mid; }
+    const q = localPoint(s, poses, ...at(hi));
+    const md = bsp.models[s.model]; let best = null;
+    for (let i = 0; i < md.numFaces; i++) {
+      const f = bsp.faces[md.firstFace + i], pi = f.plane * 4, n = [P[pi], P[pi + 1], P[pi + 2]];
+      const d = Math.abs(n[0] * q[0] + n[1] * q[1] + n[2] * q[2] - P[pi + 3]);
+      if (d > 1.5 || (best && d >= best.d)) continue;
+      // inside the face's polygon: q on the same side of every edge
+      let pos = 0, neg = 0;
+      for (let e = 0; e < f.numEdges; e++) {
+        const v = (k) => { const se = bsp.surfedges[f.firstEdge + (k % f.numEdges)]; const vi = se >= 0 ? bsp.edges[se * 2] : bsp.edges[-se * 2 + 1]; return [bsp.verts[vi * 3], bsp.verts[vi * 3 + 1], bsp.verts[vi * 3 + 2]]; };
+        const p0 = v(e), p1 = v(e + 1), e1 = [p1[0] - p0[0], p1[1] - p0[1], p1[2] - p0[2]], e2 = [q[0] - p0[0], q[1] - p0[1], q[2] - p0[2]];
+        const sg = (e1[1] * e2[2] - e1[2] * e2[1]) * n[0] + (e1[2] * e2[0] - e1[0] * e2[2]) * n[1] + (e1[0] * e2[1] - e1[1] * e2[0]) * n[2];
+        if (sg > 0.5) pos++; else if (sg < -0.5) neg++;
+      }
+      if (pos && neg) continue;
+      const ti = bsp.texinfo[f.tex], t = ti && bsp.textures[ti.mip];
+      best = { d, tex: t ? t.name : null };
+    }
+    return best ? best.tex : null;
+  });
 }
 
 // ---- textures ----

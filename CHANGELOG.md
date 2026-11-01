@@ -4,6 +4,7 @@ What changed in the viewer, newest first. The version shows in the viewer's shor
 
 ## Versions
 
+- [0.26.7](#0267-2026-11-02) 2026-11-02: Each wall's own material
 - [0.26.6](#0266-2026-11-02) 2026-11-02: Wallbangs seen through fences
 - [0.26.5](#0265-2026-11-02) 2026-11-02: Round keys, timers through pauses
 - [0.26.4](#0264-2026-11-01) 2026-11-01: Numbers on every wallbang kill
@@ -64,6 +65,19 @@ What changed in the viewer, newest first. The version shows in the viewer's shor
 
 ## Known limits
 Moved to [LIMITS.md](LIMITS.md) on 30 Oct 2026; release entries below still say "Known limits" for that list.
+
+## 0.26.7 (2026-11-02)
+
+### Fixed
+- **A kill with more damage than the wall lets through is a normal kill**, now judged by the wall's own material (Sujan, 2 Nov 2026). The wallbang finder rules out a hidden kill that needed more damage than a bullet keeps after a wall (0.15.5); it took wood's 0.6 for every wall. It now reads the texture where the killer's crosshair line enters each surface, looks it up in the game's materials list (`cstrike/sound/materials.txt` in your Half-Life folder) and takes what the game's code keeps for that material: metal 0.2, grate 0.4, vent and computer 0.45, tile 0.3, wood 0.6, concrete and anything not listed 0.5. Of the surfaces on the line it counts one, the one that lets the most through. On the 64 test demos two strict wallbangs become normal kills, both AWP body hits through one concrete wall on more health than it leaves (at most 72), and Sujan checked both: Delpan on markeloff (SK vs Na`Vi, Train, DreamHack Winter 2011, R23 1:21, 77 HP) and Fox on Zeus (Na`Vi vs Moscow 5, Inferno, DreamHack Winter 2011, R5 0:17, 74 HP; his own AWP through that wall does about 53).
+
+### How it was tested
+- `compare_all.sh` with `regress_summary.js` on the 64 demos against 0.26.6: only these two wallbangs change (and the two bursts that were only their killing bullets), the same as the measurement of 2 Nov 2026 (`tests/logs/wall-material-2026-11-02.md`, variant C).
+- `ground_truth_check.py` (231 kills, 0 mismatches, 8 known gaps; both kills added as none, each failing on 0.26.6) and the other six checks pass on Sujan's Mac.
+- Full log: `tests/logs/0.26.7.md`.
+### Discussed, not changed
+- Multiplying every surface on the crosshair line, as the game does: the line can cross more surfaces than the bullet did, and it broke a confirmed answer, Delpan's AWP headshot on RashiE (Sweden vs Norway, Dust2, ASUS ENC 2010, R24 1:40).
+- Damage bursts keep wood's 0.6 for every wall (Sujan, 2 Nov 2026).
 
 ## 0.26.6 (2026-11-02)
 
