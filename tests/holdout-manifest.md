@@ -20,6 +20,8 @@ The events aren't checked, since checking them means opening the demos: "From th
 | `swedenchinanuke-1112091737-de_nuke.dem` | 24,612,961 | `e27fb673fb35d191d6668d8051daa573e878d20f57dd8e86db267f1b5255d96d` | Sweden vs China, Nuke, recorded 9 Dec 2011 | reserve |
 | `swedenpolanddust2-1112111108-de_dust2.dem` | 39,322,425 | `96fc8e239fe642a7e59123a8d5472d18ac8b32519c6b4178bc9ee201be204d43` | Sweden vs Poland, Dust2, recorded 11 Dec 2011 | reserve |
 
+Sujan's answers go in `answers/` in the hold-out folder, and `tests/holdout_score.py` writes its per-kill reports to `scores/` there; no session reads either (format and counts: `tests/README.md`, `holdout_score.py`). Every other test stops when one of these demos is where it looks for demos (the hold-out guard, `tests/demo_dirs.py`), found by name or by size and SHA-256 from this table.
+
 To check a copy (Sujan, or a session he asks; it hashes the files and nothing else):
 
 ```
