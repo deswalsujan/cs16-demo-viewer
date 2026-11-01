@@ -122,6 +122,18 @@ function hpAt(e, t) {
 function slowAt(t) { const L = D && D.slow; if (L) for (const s of L) { if (t < s[0]) break; if (t < s[1]) return s[2]; } return 1; }
 function gameTime(t) { let g = t; const L = D && D.slow; if (L) for (const [a, b, v] of L) { if (a >= t) break; g -= (Math.min(t, b) - a) * (1 - v); } return g; }
 const gameSpan = (a, b) => gameTime(b) - gameTime(a);
+// The round and C4 timers stand still while the server is paused, as the game's do (0.26.5): inside each stretch where
+// the demo's clock ran on and the server's didn't (D.stops, from the reader), only the server's own seconds count. The
+// rest of the viewer (playback, the skip finder, the centre messages) keeps gameSpan.
+function clockSpan(a, b) {
+  let s = gameSpan(a, b);
+  for (const [x, y, g] of (D && D.stops) || []) {
+    if (x >= b) break;
+    const p = Math.max(a, x), q = Math.min(b, y);
+    if (q > p) s -= gameSpan(p, q) - (q - p) * g / (y - x);
+  }
+  return s;
+}
 
 // The in-game round timer: freeze time counting down, then the round time counting down.
 // After a plant, two readings. The lists (Kills, Wallbangs, Copy list, the timeline's hover) give the time since
@@ -136,7 +148,7 @@ function c4Countdown(plant, r, t) {
   const boom = end(/Target_Bombed/), defused = end(/Bomb_Defused/);
   if (boom && t >= boom.t) return 0;
   const stop = defused && t >= defused.t ? defused.t : t;
-  return Math.max(0, Math.floor(C4_FUSE - gameSpan(plant.t, stop) + 0.001));
+  return Math.max(0, Math.floor(C4_FUSE - clockSpan(plant.t, stop) + 0.001));
 }
 function clockAt(t, countdown) {
   const r = roundAt(t);
@@ -146,8 +158,8 @@ function clockAt(t, countdown) {
   if (!rt) return null;
   const freeze = Math.abs(rt.t - r.start) < 1 && D.roundTimes.some((x) => x.t > rt.t && x.t < r.end + 0.5);
   const plant = D.bomb.find((b) => b.type === 'plantpos' && b.t >= r.start && b.t <= r.end);
-  if (plant && t >= plant.t) return { text: 'C4 ' + fmt(countdown ? c4Countdown(plant, r, t) : gameSpan(plant.t, t)), phase: 'bomb' };
-  const rem = Math.max(0, Math.floor(rt.secs - gameSpan(rt.t, t) + 0.001));
+  if (plant && t >= plant.t) return { text: 'C4 ' + fmt(countdown ? c4Countdown(plant, r, t) : clockSpan(plant.t, t)), phase: 'bomb' };
+  const rem = Math.max(0, Math.floor(rt.secs - clockSpan(rt.t, t) + 0.001));
   return { text: (freeze ? 'freeze ' : '') + fmt(rem), phase: freeze ? 'freeze' : 'round' };
 }
 const clockText = (t, countdown) => { const c = clockAt(t, countdown); return c ? c.text : ''; };

@@ -288,6 +288,12 @@ export function parseDemo(buffer, onProgress, opts = {}) {
   // HLTV's slow motion: svc_timescale messages, the time each took effect and its value (0.5 = half speed).
   // Inside a slow stretch the demo's clock runs 1 / value times faster than the game's (0.18.0).
   const timescale = [];
+  // Where the server's own clock (svc_time) stood still while the demo's ran on: a pause. In AGAiN vs Na`Vi, Train,
+  // recorded 24 Oct 2011, R7, the demo jumps 40.2 s at 65:06 while the server's clock moves 0.05 s, so the round timer
+  // read 0:00 for the round's last 35 s (Sujan, 2 Nov 2026); other HLTV recordings write a frame every 2 s through a
+  // pause. [start, end, server seconds in between], from one svc_time to the next, when the demo ran on 0.5 s or more
+  // past the server. The round and C4 timers leave them out (clockSpan, src/ui/lookups.js), as the game's do.
+  const stops = []; let svT = null, svG = null;
 
   // position samples
   const samples = { t: [], slots: {} }; // slots[ent] = number[] of x,y,z,yaw,pitch,alive
@@ -593,7 +599,11 @@ export function parseDemo(buffer, onProgress, opts = {}) {
           r.bitsEnd();
           break;
         }
-        case 7: r.f(); break; // time
+        case 7: { // time: the server's clock
+          const g = r.f();
+          if (inPlayback) { if (svT != null && g - svG >= -0.01 && time - svT - (g - svG) >= 0.5) stops.push([svT, time, Math.max(0, g - svG)]); svT = time; svG = g; }
+          break;
+        }
         case 8: { const s = r.str(); if (inPlayback && s) notes.push({ t: time, s }); break; } // print
         case 9: r.str(); break; // stufftext
         case 10: r.skip(6); break; // setangle
@@ -964,7 +974,7 @@ export function parseDemo(buffer, onProgress, opts = {}) {
     times: new Float32Array(samples.t), slots,
     finalScore: { ...scores }, models: resources.models, stride: STRIDE,
     pmodels, sounds: resources.sounds, events: resources.events, snds: new Float32Array(snds), shots: new Float32Array(shots), booms: new Float32Array(booms), puffs: new Float32Array(puffs), radio, centre, corpses,
-    errors, errSamples, health, c4drops: new Float32Array(c4drops), slow,
+    errors, errSamples, health, c4drops: new Float32Array(c4drops), slow, stops,
     ...(povData ? { povData } : {}),
   };
 }

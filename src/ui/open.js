@@ -68,7 +68,7 @@ function joinDemos(parts) {
   const out = Object.assign({}, parts[0], {
     kills: [], rounds: [], bomb: [], chat: [], nades: [], roundTimes: [], pauses: [], occupants: [], notes: [], radio: [], centre: [], corpses: [], viewers: [],
     models: Object.assign({}, parts[0].models), sounds: Object.assign({}, parts[0].sounds), events: Object.assign({}, parts[0].events), pmodels: parts[0].pmodels.slice(),
-    players: {}, errors: 0, errSamples: [], parts: [], maps: parts[0].maps, health: null, slow: [],
+    players: {}, errors: 0, errSamples: [], parts: [], maps: parts[0].maps, health: null, slow: [], stops: [],
   });
   // one shared numbering for a file's resource list ({ index: name }): same name, same number
   const unify = (dst, src) => {
@@ -128,6 +128,7 @@ function joinDemos(parts) {
     flat(P.puffs, 5, (a, i) => { a[i] = sh(a[i]); }, puffsL);
     flat(P.c4drops || [], 5, (a, i) => { a[i] = sh(a[i]); a[i + 1] = sh(a[i + 1]); }, c4L);
     for (const [a, b, v] of P.slow || []) out.slow.push([sh(a), sh(b), v]);
+    for (const [a, b, g] of P.stops || []) out.stops.push([sh(a), sh(b), g]);
     if (povL) {
       const Q = P.povData, t0 = (a, i) => { a[i] = sh(a[i]); };
       flat(Q.view, Q.viewStride, t0, povL.view); flat(Q.ownPos, 4, () => {}, povL.ownPos); flat(Q.hpInfo, 3, t0, povL.hpInfo);

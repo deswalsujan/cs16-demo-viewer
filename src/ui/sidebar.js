@@ -6,6 +6,9 @@ document.querySelectorAll('.tabs button').forEach((b) => b.onclick = () => {
   // back on the Rounds tab, the round playing now is in view, in the middle of the list (it opened at the top
   // before, so at round 23 the list had to be scrolled by hand; Sujan, 23 Oct 2026)
   if (tab === 'rounds') { const cur = $('pane').querySelector('.row.cur'); if (cur) cur.scrollIntoView({ block: 'center' }); }
+  // the other tabs open at the top: the panel kept the Rounds list's scroll, so the Kills list opened scrolled down with
+  // its "Round 23" heading out of sight (Sujan, 2 Nov 2026)
+  else $('pane').scrollTop = 0;
 });
 const teamSpan = (r, e) => {
   const side = teamOfSlot(e, T) != null && r && r.tTeam != null ? (teamOfSlot(e, T) === r.tTeam ? 1 : 2) : 0;
@@ -16,6 +19,8 @@ function nameHtml(e, side, full) {
   const nm = M.pl[e] ? M.pl[e].name : '?', sn = full ? nm : shortName(e);
   return `<span class="${side === 1 ? 'kt' : side === 2 ? 'kct' : ''}"${sn !== nm ? ` title="${esc(nm)}"` : ''}>${esc(sn)}</span>`;
 }
+// a kill inside a skip in the recording: // by its time in the Kills list (0.20.0) and the Wallbangs list (0.26.5)
+const SKIP_MARK = `<span class="skipk" title="Happened inside a skip in the recording: you won't see it happen">//</span>`;
 function killHtml(k) {
   const ks = k.kteam === 'TERRORIST' ? 1 : k.kteam === 'CT' ? 2 : 0;
   const vs = k.vteam === 'TERRORIST' ? 1 : k.vteam === 'CT' ? 2 : 0;
@@ -108,7 +113,7 @@ function renderPane() {
       const after = r.afterMatch && !r.live;
       h += `<div class="row${r === cr ? ' cur' : ''}${after ? ' after16' : ''}" data-t="${r.start}"><span class="n">${r.live ? 'R' + r.ln : '·'}</span>
         <span class="main"><span class="pill ${side}">${r.winner || '—'}</span>${esc(who)}${after ? '<span class="tag16">after the match</span>' : ''}<div class="sub">${esc(r.reason || (r.live ? '' : 'not counted'))} · ${r.kills.length} kills${r.sides ? ' · ' + Math.max(0, Object.keys(r.sides).length - new Set(r.kills.map((k) => k.victim)).size) + ' alive at end' : ''}</div></span>
-        <span class="d">${sc}<br>${fmt(gameSpan(r.start, r.start + r.dur))}</span></div>`;
+        <span class="d">${sc}<br>${fmt(clockSpan(r.start, r.start + r.dur))}</span></div>`;
     }
     h += `<div class="joinrow"><span>${D.parts ? 'Another part of this map in a file of its own?' : 'Is this map split over two or more demo files?'}</span><button class="btn sm" type="button" id="bJoinWith">Join with another demo…</button></div>`;
     p.innerHTML = h;
@@ -121,7 +126,7 @@ function renderPane() {
     let h = `<div class="sechead"><span>${r && r.live ? 'Round ' + r.ln : 'This round'}</span><span>${r ? r.kills.length : 0} kills</span></div>`;
     if (r) for (const k of r.kills) {
       // a kill inside a skip in the recording: // by its time (0.20.0), wallbangs included since 0.21.0, which keep UNSURE too
-      const sk = skipNear(k.t) ? `<span class="skipk" title="Happened inside a skip in the recording: you won't see it happen">//</span>` : '';
+      const sk = skipNear(k.t) ? SKIP_MARK : '';
       h += `<div class="row krow kill3${killState(k)}" data-kill="${k.t}" data-ki="${D.kills.indexOf(k)}"><span class="n" title="Round timer as shown in game">${k === pickedKill ? MARK : ''}${killClock(k.t) ? cellClock(k.t) : '<span class="nw">+' + fmt(k.t - r.start) + '</span>'}${sk}</span><span class="main">${killRow3(k, true)}</span></div>`;
     }
     if (!r || !r.kills.length) h += `<div class="opt">No kills in this round.</div>`;
@@ -146,8 +151,9 @@ function renderPane() {
         if (wbFilter !== 'all' && x.kind !== wbFilter) continue;
         if (x.k) {
           const k = x.k, r = M.rounds.find((y) => y.n === k.round);
-          // the round, the round timer and the demo time on three lines; "C4 0:16" never splits (0.21.1, Sujan 15 Oct 2026)
-          h += `<div class="row krow wbrow kill3${killState(k)}" data-wb="${k.t}" data-ki="${D.kills.indexOf(k)}" title="Through ${k.wb.thick} units of ${k.wb.what === 'object' ? 'a breakable or door' : 'wall or crate'}"><span class="n">${k === pickedKill ? MARK : ''}R${r ? r.ln : '?'} ·<br>${cellClock(k.t)}<br>${fmt(k.t - D.start)}</span><span class="main">${killRow3(k, false)}</span></div>`;
+          // the round, the round timer and the demo time on three lines; "C4 0:16" never splits (0.21.1, Sujan 15 Oct 2026);
+          // // under them for a wallbang inside a skip in the recording, as in the Kills list (Sujan, 2 Nov 2026)
+          h += `<div class="row krow wbrow kill3${killState(k)}" data-wb="${k.t}" data-ki="${D.kills.indexOf(k)}" title="Through ${k.wb.thick} units of ${k.wb.what === 'object' ? 'a breakable or door' : 'wall or crate'}"><span class="n">${k === pickedKill ? MARK : ''}R${r ? r.ln : '?'} ·<br>${cellClock(k.t)}<br>${fmt(k.t - D.start)}${skipNear(k.t) ? SKIP_MARK : ''}</span><span class="main">${killRow3(k, false)}</span></div>`;
         } else {
           const b = x.b, r = M.rounds.find((y) => y.n === b.round), bi = M.bursts.indexOf(b);
           const sideOf = (e) => { const st = playerState(e, b.start); return st ? (Math.abs(st.state) === 1 ? 1 : 2) : 0; };

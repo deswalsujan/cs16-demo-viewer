@@ -6,6 +6,16 @@
  "map": "de_inferno",
  "kills": [
   {
+   "round": 2,
+   "timer": "0:58",
+   "killer": "Na`Vi EdwardwOw~",
+   "victim": "SK.Delpan <3 Johan Wedel",
+   "gun": "galil",
+   "expected": "loose",
+   "source": "Sujan, by eye in the viewer (1 Nov 2026, 0.26.4, demo 20:08): LOOSE, he sees Delpan's head; recorded as LOOSE with a known gap, like THREAT on LoordB (Sujan, 2 Nov 2026)",
+   "known_gap": "reads strict: the finder judges at the killing shot, where Delpan is hidden (0 pixels at the shot and 0.1 and 0.2 s before); his head shows over a window sill until about 0.3 s before the kill (194 pixels), then drops under it before the last two bullets (9 HP through the wall, then the killing bullet). Kept loose with this known gap: the finder keeps judging at the moment of the shot (STATE.md Decisions, Sujan, 1 Nov 2026; IDEAS-ARCHIVE.md, \"Sujan's feedback of 1 Nov 2026\")"
+  },
+  {
    "round": 14,
    "timer": "0:26",
    "killer": "Na`Vi starix /A/",

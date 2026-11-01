@@ -278,12 +278,12 @@ $('bNextP').onclick = () => { nextPlayer(1); if (cam3.mode === 'free') setCam('e
 $('bPrevP').onclick = () => { nextPlayer(-1); if (cam3.mode === 'free') setCam('eyes'); };
 const k3 = cam3.keys;
 document.addEventListener('keydown', (e) => {
-  if (viewMode === '2d' || !D || !$('load').hidden || e.target.tagName === 'INPUT' || e.target.tagName === 'SELECT' || e.target.isContentEditable) return;
+  if (viewMode === '2d' || !D || !$('load').hidden || typingIn(e.target)) return;
   const k = e.key.toLowerCase();
   if (POV.on) return;
-  if (k.length === 1 && 'wasdqe'.includes(k)) { k3[k] = true; if (cam3.mode !== 'free') { setCam('free', false, true); } }
+  if (k.length === 1 && 'wasdqe'.includes(k)) { k3[k] = true; if (cam3.mode !== 'free') { setCam('free', false, true); } if (formControl(e.target)) e.preventDefault(); }
   if (e.key === 'Shift') k3.shift = true;
-  if (k === 'v') setCam(cam3.mode === 'free' ? 'eyes' : cam3.mode === 'eyes' ? 'chase' : 'free');
+  if (k === 'v') { setCam(cam3.mode === 'free' ? 'eyes' : cam3.mode === 'eyes' ? 'chase' : 'free'); if (formControl(e.target)) e.preventDefault(); }
 });
 document.addEventListener('keyup', (e) => { k3[e.key.toLowerCase()] = false; if (e.key === 'Shift') k3.shift = false; });
 window.addEventListener('blur', () => { for (const k in k3) k3[k] = false; });
@@ -1128,7 +1128,7 @@ function povRoundTimer(t) {
   let rt = null; for (const x of D.roundTimes || []) { if (x.t > t + 0.001) break; rt = x; }
   if (!rt) return null;
   for (const b of D.bomb) { if (b.t > t) break; if (b.type === 'plantpos' && b.t >= rt.t) return null; }
-  return fmt(Math.max(0, Math.floor(rt.secs - gameSpan(rt.t, t) + 0.001)));
+  return fmt(Math.max(0, Math.floor(rt.secs - clockSpan(rt.t, t) + 0.001)));
 }
 function drawPovHud(lx, W, H) {
   loadHudSprites();

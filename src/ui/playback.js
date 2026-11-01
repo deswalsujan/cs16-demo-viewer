@@ -5,13 +5,17 @@ function togglePlay() { if (!D) return; closeSummary(); if (T >= D.end - 0.05) T
 $('bPlay').onclick = togglePlay;
 $('bBack').onclick = () => D && seek(T - 5);
 $('bFwd').onclick = () => D && seek(T + 5);
+// ↑ and ↓: the previous or next round in the list, from anywhere in a round (Sujan, 2 Nov 2026). Up used to go to the
+// start of the round playing when more than 3 s into it, so while playing at 2x or faster a second press landed past
+// 3 s again and went back to the same start: Up seemed to jump back a little or do nothing.
+// k: the last listed round started by now. Inside it, Up goes one before it; between listed rounds (a warmup, the
+// restarts between halves, after the match), Up goes to it and Down to the one after it.
 function jumpRound(dir) {
   if (!D) return;
   const rs = visibleRounds();
-  const cr = roundAt(T);
-  let i = rs.indexOf(cr);
-  if (dir < 0) { if (cr && T - cr.start > 3 && i >= 0) return seek(cr.start); i = i < 0 ? rs.findIndex((r) => r.start > T) - 1 : i - 1; }
-  else i = i < 0 ? rs.findIndex((r) => r.start > T) : i + 1;
+  let k = -1; for (let j = 0; j < rs.length && rs[j].start <= T + 0.001; j++) k = j;
+  const inside = k >= 0 && (rs[k].end == null || T <= rs[k].end + 0.001);
+  const i = dir > 0 ? k + 1 : inside ? k - 1 : k;
   if (i >= 0 && i < rs.length) seek(rs[i].start);
 }
 $('bPrevR').onclick = () => jumpRound(-1);
@@ -26,18 +30,20 @@ function setSpeed(s) { speed = s; [...spEl.children].forEach((b, i) => b.classLi
 
 // the shortcuts list works everywhere, including the start screen
 document.addEventListener('keydown', (e) => {
-  if (e.target.tagName === 'INPUT' || e.target.isContentEditable) return;
+  if (typingIn(e.target)) return;
   if (e.key === '?' && (!D || !$('load').hidden)) toggleKeys();
   if (e.key === 'Escape' && !$('keys').hidden) toggleKeys(false);
 });
 document.addEventListener('keydown', (e) => {
-  if (!D || !$('load').hidden || e.target.tagName === 'INPUT' || e.target.tagName === 'SELECT' || e.target.isContentEditable) return;
+  if (!D || !$('load').hidden || typingIn(e.target)) return;
   const k = e.key;
+  let used = true;
   if (k === ' ') { e.preventDefault(); togglePlay(); }
   else if (k === 'ArrowLeft') { e.preventDefault(); seek(T - (e.shiftKey ? 1 : 5)); }
   else if (k === 'ArrowRight') { e.preventDefault(); seek(T + (e.shiftKey ? 1 : 5)); }
-  else if (k === 'ArrowUp') { e.preventDefault(); jumpRound(-1); }
-  else if (k === 'ArrowDown') { e.preventDefault(); jumpRound(1); }
+  // a held key repeats: one round per press, so holding it a moment too long doesn't skip a round (Sujan, 2 Nov 2026)
+  else if (k === 'ArrowUp') { e.preventDefault(); if (!e.repeat) jumpRound(-1); }
+  else if (k === 'ArrowDown') { e.preventDefault(); if (!e.repeat) jumpRound(1); }
   else if (k === ',') { playing = false; setPlayIcon(); seek(T - 1 / 30); }
   else if (k === '.') { playing = false; setPlayIcon(); seek(T + 1 / 30); }
   else if (k === '[') { const i = SPEEDS.indexOf(speed); if (i > 0) setSpeed(SPEEDS[i - 1]); }
@@ -57,6 +63,9 @@ document.addEventListener('keydown', (e) => {
   else if (k === 'Tab') { e.preventDefault(); if (!e.repeat) showScoreboard(true); }
   else if (k === '?') toggleKeys();
   else if (k === 'Escape') { $('keys').hidden = true; showScoreboard(false); closeSummary(); if ($('joinCard') && !$('joinCard').hidden) closeJoinCard(); }
+  else used = false;
+  // a focused list or checkbox doesn't also take the key (a letter would pick an entry in the Quality list)
+  if (used && formControl(e.target)) e.preventDefault();
 });
 document.addEventListener('keyup', (e) => { if (e.key === 'Tab') showScoreboard(false); });
 window.addEventListener('blur', () => showScoreboard(false));
@@ -150,5 +159,7 @@ function updateHud(force) {
     if (changed && scope === 'round') drawTimeline();
     if (changed && heat && $('hmScope').value === 'round') heat = null;
     if (changed || force) { const cur = $('pane').querySelector('.row.cur'); if (cur && tab === 'rounds') cur.scrollIntoView({ block: 'nearest' }); }
+    // a new round on the Kills tab: its heading at the top, not wherever the last round's list was scrolled to
+    if (changed && tab === 'kills') $('pane').scrollTop = 0;
   }
 }
