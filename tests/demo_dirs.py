@@ -8,7 +8,12 @@ of hard links elsewhere, deleted when the test ends. A byte-identical copy of a 
 different demos with one file name stop the test (Sujan, 1 Nov 2026).
 
 Used by harness.py, ground_truth_check.py, compare_all.sh, demo_search_check.py, panel_click_check.py and the Theatre
-checks. On its own (no browser):
+checks.
+
+The hold-out guard (Sujan, 2 Nov 2026): every test stops when a hold-out demo (tests/holdout-manifest.md) is among the
+demos it finds in HALF_LIFE_DIR or DEMO_DIRS, by its name, by a folder named holdout-demos, or by its size and SHA-256
+(a renamed copy). Only holdout_score.py lets them through, for its own run (HOLDOUT_SCORE=1). Sujan copies a hold-out
+demo into cstrike to watch it in the game; the tests stop until the copy is deleted. On its own (no browser):
   python3 demo_dirs.py list              every demo's file name, one per line, the Half-Life folder's first
   python3 demo_dirs.py expected          every demo of tests/expected/ (joined parts too) is found by SHA-256
   python3 demo_dirs.py check FOLDER...   the folders against tests/demos-manifest.md: every test demo found by
@@ -19,6 +24,7 @@ import atexit, glob, hashlib, json, os, re, shutil, subprocess, sys, tempfile
 
 here = os.path.dirname(os.path.abspath(__file__))
 MANIFEST = os.path.join(here, 'demos-manifest.md')
+HOLDOUT_MANIFEST = os.path.join(here, 'holdout-manifest.md')
 
 
 def fail(msg):
@@ -68,6 +74,40 @@ def sha256(path):
     return _sha[key]
 
 
+def manifest_rows(path):
+    """[(file name, bytes, sha256)] from a manifest table: demos-manifest.md or holdout-manifest.md"""
+    rows = []
+    with open(path, encoding='utf-8') as f:
+        for line in f:
+            m = re.match(r'\|\s*`([^`]+\.dem)`\s*\|\s*([\d,]+)\s*\|\s*`([0-9a-f]{64})`', line)
+            if m:
+                rows.append((m.group(1), int(m.group(2).replace(',', '')), m.group(3)))
+    return rows
+
+
+def holdout_guard(paths):
+    """stop when a hold-out demo is among paths: by name (any case), a folder named holdout-demos, or size and SHA-256.
+    Reads only tests/holdout-manifest.md, never the hold-out folder; a file is hashed only when its size is a hold-out
+    demo's. HOLDOUT_SCORE=1 (set by holdout_score.py alone) lets them through."""
+    if os.environ.get('HOLDOUT_SCORE') == '1' or not os.path.exists(HOLDOUT_MANIFEST):
+        return
+    rows = manifest_rows(HOLDOUT_MANIFEST)
+    names, sizes = {n.lower() for n, _, _ in rows}, {}
+    for n, size, h in rows:
+        sizes.setdefault(size, set()).add(h)
+    hits = []
+    for p in paths:
+        n = os.path.basename(p).lower()
+        if n in names or 'holdout-demos' in os.path.normpath(p).lower().split(os.sep):
+            hits.append(p)
+        elif os.path.getsize(p) in sizes and sha256(p) in sizes[os.path.getsize(p)]:
+            hits.append(p)
+    if hits:
+        fail('a hold-out demo is where the tests look (AGENTS.md, "Hold-out demos"; tests/holdout-manifest.md):\n  '
+             + '\n  '.join(hits) + '\nHold-out demos stay in ~/code/cs16-data/holdout-demos. A copy put in cstrike to '
+             'watch it in the game: delete it, then run the test again.')
+
+
 def collect():
     """(hl, inside, outside): the Half-Life folder, its demos, and the DEMO_DIRS demos the viewer is to get on top.
     A DEMO_DIRS demo byte-identical to one already taken is left out; two different demos with one name (any case:
@@ -76,6 +116,7 @@ def collect():
     dirs = demo_dirs()
     inside = dems(hl)
     cand = inside + [p for d in dirs for p in dems(d)]
+    holdout_guard(cand)
     sizes = {}
     for p in cand:
         sizes.setdefault(os.path.getsize(p), []).append(p)
@@ -165,13 +206,7 @@ def expected():
 
 def manifest():
     """[(file name, bytes, sha256)] from tests/demos-manifest.md"""
-    rows = []
-    with open(MANIFEST, encoding='utf-8') as f:
-        for line in f:
-            m = re.match(r'\|\s*`([^`]+\.dem)`\s*\|\s*([\d,]+)\s*\|\s*`([0-9a-f]{64})`', line)
-            if m:
-                rows.append((m.group(1), int(m.group(2).replace(',', '')), m.group(3)))
-    return rows
+    return manifest_rows(MANIFEST)
 
 
 def main():
@@ -202,6 +237,7 @@ def main():
             if not os.path.isdir(os.path.expanduser(d)):
                 fail(f'not a folder: {d}')
             paths += dems(os.path.expanduser(d))
+        holdout_guard(paths)
         by_size = {}
         for p in paths:
             by_size.setdefault(os.path.getsize(p), []).append(p)
