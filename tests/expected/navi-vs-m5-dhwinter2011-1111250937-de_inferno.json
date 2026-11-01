@@ -22,6 +22,15 @@
    "source": "docs/review-answers.md, \"Loose wallbang check\" (27 and 28 Oct 2026), k16004: loose"
   },
   {
+   "round": 5,
+   "timer": "0:17",
+   "killer": "M5 Fox",
+   "victim": "Na`Vi Zeus /A/",
+   "gun": "awp",
+   "expected": "none",
+   "source": "Sujan, by eye (2 Nov 2026): a normal kill, \"the shot passes close to the wall's edge, not through it\"; his own AWP wallbang through that wall does about 53, so 74 is impossible through it. Read strict up to 0.26.6; a normal kill since 0.26.7, which takes the wall's own material (cuwlln, concrete: an AWP body hit keeps at most 72 of 74 HP) (tests/logs/wall-material-2026-11-02.md; STATE.md Decisions)"
+  },
+  {
    "round": 7,
    "timer": "1:15",
    "killer": "M5 XEK",
