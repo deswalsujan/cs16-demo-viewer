@@ -64,6 +64,15 @@
    "source": "docs/review-answers.md, \"Wallbang fix check, 0.22.1\" (24 Oct 2026), \"Inferno's lamp posts\": Yes, fully hidden (Sujan, 24 Oct 2026)"
   },
   {
+   "round": 12,
+   "timer": "1:15",
+   "killer": "Frag eXecutors  Loord",
+   "victim": "minet@mymTw.com",
+   "gun": "m4a1",
+   "expected": "loose",
+   "source": "Sujan, by eye in the viewer (2 Nov 2026, 0.26.5): minet is visible through the fence at the shot, so LOOSE. Read strict up to 0.26.5, which filled the fence's holes in (565 pixels show with them open). Sujan, 2 Nov 2026, answering the 1 Nov 2026 investigation: a victim seen through a fence, grate or invisible wall reads LOOSE (STATE.md Decisions; IDEAS-ARCHIVE.md, \"See-through cover hides the victim\")"
+  },
+  {
    "round": 15,
    "timer": "1:19",
    "killer": "ArcadioN@mymTw.com",

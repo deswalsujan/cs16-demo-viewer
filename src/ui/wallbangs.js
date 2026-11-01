@@ -65,7 +65,8 @@ function computeWallbangs() {
   const eyeOf = (p) => [p[0], p[1], p[2] + (p[3] ? 12 : 17)];
   // Not cover: what bullets break (Nuke's vents and upper windows; a kill through them isn't a wallbang, Sujan,
   // 23 Oct 2026). Glass that doesn't break (Nuke's sliding doors at the lower site) and fences, grates and ladders
-  // stay cover (Sujan, 23 Oct 2026). Invisible brushes are never cover (solidAlong in bsp.js).
+  // stay cover (Sujan, 23 Oct 2026); the picture check (checkSeen) draws their holes open, so a victim seen through
+  // one reads LOOSE (Sujan, 2 Nov 2026). Invisible brushes are never cover (solidAlong in bsp.js).
   const notCover = bsp.solids.filter((s) => s.shootable).map((s) => s.model);
   for (const k of D.kills) {
     k.wb = null; k.seenPx = null; k.seenAim = null;

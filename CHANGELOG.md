@@ -4,6 +4,7 @@ What changed in the viewer, newest first. The version shows in the viewer's shor
 
 ## Versions
 
+- [0.26.6](#0266-2026-11-02) 2026-11-02: Wallbangs seen through fences
 - [0.26.5](#0265-2026-11-02) 2026-11-02: Round keys, timers through pauses
 - [0.26.4](#0264-2026-11-01) 2026-11-01: Numbers on every wallbang kill
 - [0.26.3](#0263-2026-11-01) 2026-11-01: Damage numbers with the kill feed
@@ -63,6 +64,18 @@ What changed in the viewer, newest first. The version shows in the viewer's shor
 
 ## Known limits
 Moved to [LIMITS.md](LIMITS.md) on 30 Oct 2026; release entries below still say "Known limits" for that list.
+
+## 0.26.6 (2026-11-02)
+
+### Fixed
+- **A victim seen through a fence, grate or invisible wall reads LOOSE** (Sujan, 2 Nov 2026). Such a surface (a brush drawn see-through, render mode 4) stays cover, so a kill through it is still a wallbang, but the picture check now draws it as the game does, with its holes open; since 0.22.0 it filled them in, so a victim in plain view behind one read strict. Sujan's three, now LOOSE: Delpan on markeloff (Na`Vi vs SK, Inferno, ESWC 2011, the third file, `-1110241740-`, R31 as Sujan joined it, AWP, through two chain-link fences, 446 pixels), KUBEN on EdwardwOw~ (AGAiN vs Na`Vi, Train, recorded 24 Oct 2011, R7 0:17, M4A1, through an invisible wall beside the train's wheels, 2,064 pixels) and Loord on minet (FX vs mTw, Inferno, Xperia Play 2011, part 1, R12 1:15, M4A1, 565 pixels, checked by eye by Sujan first).
+
+### How it was tested
+- `compare_all.sh` with `regress_summary.js` on the 64 demos against 0.26.5: only these three wallbangs change, strict to LOOSE; scores, K-D, every other wallbang and every burst the same.
+- `ground_truth_check.py` (229 kills, 0 mismatches, 8 known gaps; the three added as loose, each failing on 0.26.5) and the other six checks pass on Sujan's Mac.
+- Full log: `tests/logs/0.26.6.md`.
+### Discussed, not changed
+- Making fences, grates and invisible walls no longer cover, which would turn these kills into normal kills: they stay cover for the finder's sight points (Sujan, 23 Oct 2026, kept on 2 Nov 2026).
 
 ## 0.26.5 (2026-11-02)
 

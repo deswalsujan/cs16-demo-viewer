@@ -1,6 +1,6 @@
 # Test demo manifest
 
-Every test demo on Sujan's Mac (`tests/DEMOS.md` has each one's event and status) with its size and SHA-256, so a copy of `~/code/cs16-data/test-demos` can be checked: Sujan keeps one on Google Drive (Sujan, 1 Nov 2026). The SHA-256 of the 48 demos in `tests/expected/` ("yes", or "joined part" for a part named only in another demo's file) is the one there; the other 16 were computed on the Mac on 1 Nov 2026, before the move. 64 demos, 2,215,772,863 bytes (2.2 GB). The two Windows-only bot test demos of 5 Oct 2026 (`bangtest.dem`, `full_match_demo-2610050843-de_train.dem`) aren't on the Mac, so they aren't listed.
+Every test demo on Sujan's Mac (`tests/DEMOS.md` has each one's event and status) with its size and SHA-256, so a copy of `~/code/cs16-data/test-demos` can be checked: Sujan keeps one on Google Drive (Sujan, 1 Nov 2026). The SHA-256 of the 50 demos in `tests/expected/` ("yes", or "joined part" for a part named only in another demo's file) is the one there; the other 14 were computed on the Mac on 1 Nov 2026, before the move (the two demos added to `tests/expected/` on 2 Nov 2026 took theirs from this table). 64 demos, 2,215,772,863 bytes (2.2 GB). The two Windows-only bot test demos of 5 Oct 2026 (`bangtest.dem`, `full_match_demo-2610050843-de_train.dem`) aren't on the Mac, so they aren't listed.
 
 Check a folder (any copy, subfolders included; demos are found by SHA-256, under any name):
 
@@ -15,12 +15,12 @@ When a test demo is added or deleted, change its row here along with its row in 
 | Demo file | Bytes | SHA-256 | In `tests/expected/` |
 |---|---|---|---|
 | `1110231216--auto_de_tuscan.dem_Fnatic-vs-mousesports.dem` | 76,839,319 | `9ae9201a2c7fc2c7c385b9bda83469d60cc8b159e69dc2725dc126cc76eab9df` | yes |
-| `1110240934--auto_de_train.dem_Again-vs-Navi.dem` | 73,217,242 | `73a7d0251644908b8d8801f8730125ea87ed142604bc7fcf95a90dc4ecd014b8` | no |
+| `1110240934--auto_de_train.dem_Again-vs-Navi.dem` | 73,217,242 | `73a7d0251644908b8d8801f8730125ea87ed142604bc7fcf95a90dc4ecd014b8` | yes |
 | `1110241407--auto_de_inferno.dem_mousesports-vs-AGAIN.dem` | 47,173,726 | `e0da33705ab4c165e8e84c6ded8ec52f56b4f0590892b88a9edd847a2e0b035c` | yes |
 | `2010-07-01_15h58_-1007021005-de_inferno Burning vs FairFrag.dem` | 32,061,267 | `52ce4534d1f6e60ffd844816cf13df95ce5d31f71e123e514aae6a0cea0af5dd` | yes |
 | `2011-10-24_16h08_NaVi_SK-1110241609-de_inferno.dem` | 50,533,200 | `77ab7d2ba4b5ecec576e383cffd99fe0c807fa9b011e59209d430c6fd92cb2ad` | yes |
 | `2011-10-24_16h08_NaVi_SK-1110241724-de_inferno.dem` | 8,810,337 | `e2164cfd2851b0376f1c044bc49711d2383f7129b1ade997be185ec491b2bae5` | no |
-| `2011-10-24_16h08_NaVi_SK-1110241740-de_inferno.dem` | 10,585,019 | `452739d62db2a74426d43094fac0984d81a1e7eb27cd27f0733570e097fe6af2` | no |
+| `2011-10-24_16h08_NaVi_SK-1110241740-de_inferno.dem` | 10,585,019 | `452739d62db2a74426d43094fac0984d81a1e7eb27cd27f0733570e097fe6af2` | yes |
 | `485.53.706623-0803162045-de_train.dem` | 13,568,495 | `2fbb765b8c61755ab9eb47a22fa5c2ae62d2af33a5b6f3314a4ce8edd7939f18` | yes |
 | `53.52.1646548-1005272144-de_dust2.dem` | 17,261,648 | `ffc4d90f9a5fc46e12ef6ed2837a9284723ca78a05b6e1f08fdb160fd67f1104` | yes |
 | `auto-server1-1106262105-de_tuscan.dem` | 37,679,527 | `2def4956ff8d8d932611cb6bb2fb0d2962b70195604af480b4549a109e1c28d7` | yes |

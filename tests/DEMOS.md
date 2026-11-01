@@ -8,6 +8,8 @@ Every demo used in testing: the event it's from, which of Sujan's machines has i
 
 **When demos are added or deleted:** add or change the rows here (file, event, how the event is known, which machines, status with the date), then add or change its row in `tests/demos-manifest.md` (size and SHA-256) and check the Mac folder with `python3 tests/demo_dirs.py check ~/code/cs16-data/test-demos`. Windows is checked by Sujan.
 
+The hold-out demos in `~/code/cs16-data/holdout-demos` (Sujan, 2 Nov 2026) aren't test demos and aren't in this table: they're in [holdout-manifest.md](holdout-manifest.md), and no session opens them unless Sujan asks for a hold-out score (AGENTS.md, "Sujan's files"). One that moves to the test demos gets its row here then.
+
 Status values: **regression set** (kept on purpose: K-D and scores Sujan confirmed, or a known quirk; compared on every release; the new batch of 2 Oct 2026 joined it on 3 Oct 2026, once Sujan had checked 0.15.1 by eye), **new batch, date** (added for an accuracy check in IDEAS.md), **deleted, date**.
 
 ### Where they are on the Mac (1 Nov 2026)
