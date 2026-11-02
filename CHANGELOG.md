@@ -4,6 +4,7 @@ What changed in the viewer, newest first. The version shows in the viewer's shor
 
 ## Versions
 
+- [0.26.9](#0269-2026-11-02) 2026-11-02: Fonts from your own computer
 - [0.26.8](#0268-2026-11-02) 2026-11-02: POV crosshair, ammo icons in Chrome
 - [0.26.7](#0267-2026-11-02) 2026-11-02: Each wall's own material
 - [0.26.6](#0266-2026-11-02) 2026-11-02: Wallbangs seen through fences
@@ -66,6 +67,19 @@ What changed in the viewer, newest first. The version shows in the viewer's shor
 
 ## Known limits
 Moved to [LIMITS.md](LIMITS.md) on 30 Oct 2026; release entries below still say "Known limits" for that list.
+
+## 0.26.9 (2026-11-02)
+
+### Changed
+- **The page uses fonts already on your computer, and loads nothing from another site** (Sujan, 2 Nov 2026: the viewer collects no user data). Zalando Sans and IBM Plex Mono came from Google Fonts, so every visit sent the visitor's IP address and browser details to Google. Now: Tahoma for interface text, numbers and file names, Verdana Bold for headings, round announcements Verdana as before; Liberation Sans, Arial and DejaVu Sans where they're missing, as on most Linux machines. No fixed-width font: numbers use tabular figures, so the stats columns still line up. As in `docs/fonts-tahoma-verdana-mock.png`, approved by Sujan the same day.
+
+### How it was tested
+- The start screen, the Players tab and the Wallbangs list (Na`Vi vs FX, Train, SEC 2011 final) are pixel for pixel the approved screenshots; every stats column of the Players tab and the Tab scoreboard lines up; no request to another site with a demo open.
+- The seven checks pass on Sujan's Mac; `start_screen_check.py` now fails on any request to another site, Google Fonts included.
+- Full log: `tests/logs/0.26.9.md`.
+
+### Discussed, not changed
+- Building Zalando Sans and IBM Plex Mono into the page (both under the SIL Open Font License, Zalando's confirmed in its own repo): Sujan chose the player's own fonts the same day, before anything was built.
 
 ## 0.26.8 (2026-11-02)
 

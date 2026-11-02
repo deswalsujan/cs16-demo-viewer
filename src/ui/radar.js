@@ -199,7 +199,7 @@ function draw() {
       ctx.fillStyle = `rgba(255,154,60,${0.25 + pulse * 0.35})`;
       ctx.beginPath(); ctx.arc(sx, sy, 10 + pulse * 4, 0, 7); ctx.fill();
       ctx.fillStyle = COL.kill; ctx.fillRect(sx - 5, sy - 4, 10, 8);
-      ctx.fillStyle = '#111'; ctx.font = '600 7px ' + monoFont(); ctx.textAlign = 'center'; ctx.fillText('C4', sx, sy + 2.5);
+      ctx.fillStyle = '#111'; ctx.font = '600 7px ' + textFont(); ctx.textAlign = 'center'; ctx.fillText('C4', sx, sy + 2.5);
     }
   }
   // the bomb on the floor, dropped or left by a dead carrier, until it's picked up (0.18.0, Sujan 14 Oct 2026).
@@ -287,7 +287,7 @@ function draw() {
 
   // players
   lastPlayers = [];
-  const mono = monoFont();
+  const mono = textFont();
   const rad = Math.max(5, Math.min(9, 6 * Math.sqrt(view.s)));
   for (const e in D.slots) {
     const s = playerState(+e, T);
@@ -326,7 +326,7 @@ function c4Tag(x, y, small) {
   const w = small ? 14 : 16, h = small ? 9 : 11;
   ctx.fillStyle = 'rgba(0,0,0,.7)'; ctx.fillRect(x - w / 2 - 1, y - h / 2 - 1, w + 2, h + 2);
   ctx.fillStyle = COL.kill; ctx.fillRect(x - w / 2, y - h / 2, w, h);
-  ctx.fillStyle = '#111'; ctx.font = `700 ${small ? 7 : 8}px ` + monoFont(); ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
+  ctx.fillStyle = '#111'; ctx.font = `700 ${small ? 7 : 8}px ` + textFont(); ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
   ctx.fillText('C4', x, y + 0.5); ctx.textBaseline = 'alphabetic';
 }
 

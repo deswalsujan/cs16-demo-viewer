@@ -31,7 +31,7 @@ function drawTimelineInto(cv, W, H, a, b) {
     if (x1 < 0 || x0 > W) continue;
     tctx.fillStyle = r.winner === 'T' ? 'rgba(232,87,77,.16)' : r.winner === 'CT' ? 'rgba(94,163,232,.16)' : 'rgba(255,255,255,.05)';
     tctx.fillRect(x0 + 0.5, 14, Math.max(1, x1 - x0 - 1), H - 14);
-    if (r.live && x1 - x0 > 16) { tctx.fillStyle = '#8d959c'; tctx.font = '10px ' + monoFont(); tctx.textAlign = 'left'; tctx.fillText(r.ln, x0 + 3, 11); }
+    if (r.live && x1 - x0 > 16) { tctx.fillStyle = '#8d959c'; tctx.font = '10px ' + textFont(); tctx.textAlign = 'left'; tctx.fillText(r.ln, x0 + 3, 11); }
   }
   // kills
   const liveSet = new Set(rs.map((r) => r.n));
