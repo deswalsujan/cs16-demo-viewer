@@ -44,10 +44,11 @@ function thOver(k, target) {
 }
 // what's under the pointer right now: a bar can slide in under a mouse that isn't moving
 function thUnder() { return TH.x >= 0 ? document.elementFromPoint(TH.x, TH.y) : null; }
+// the zones grow with the bars they bring in, at the Interface size (UI, 0.26.13)
 function thInZone(k, x, y) {
-  if (k === 't') return y <= TH_ZONE.t;
-  if (k === 'b') return y >= innerHeight - TH_ZONE.b;
-  return x >= innerWidth - TH_ZONE.r;
+  if (k === 't') return y <= TH_ZONE.t * UI;
+  if (k === 'b') return y >= innerHeight - TH_ZONE.b * UI;
+  return x >= innerWidth - TH_ZONE.r * UI;
 }
 // All three come in and go out together, so Theatre mode is simply the normal layout, hidden until needed
 const TH_KEYS = ['t', 'r', 'b'];

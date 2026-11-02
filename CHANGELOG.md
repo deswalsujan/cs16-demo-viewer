@@ -4,6 +4,7 @@ What changed in the viewer, newest first. The version shows in the viewer's shor
 
 ## Versions
 
+- [0.26.13](#02613-2026-11-03) 2026-11-03: Interface size for big screens
 - [0.26.12](#02612-2026-11-03) 2026-11-03: Start screen message line cleared
 - [0.26.11](#02611-2026-11-02) 2026-11-02: One folder pick, every browser
 - [0.26.10](#02610-2026-11-02) 2026-11-02: Steam's default folder in Chrome
@@ -70,6 +71,26 @@ What changed in the viewer, newest first. The version shows in the viewer's shor
 
 ## Known limits
 Moved to [LIMITS.md](LIMITS.md) on 30 Oct 2026; release entries below still say "Known limits" for that list.
+
+## 0.26.13 (2026-11-03)
+
+### Added
+- **Interface size**: text, buttons, menus, notes and the labels in the view grow on big screens (Sujan, 3 Nov 2026, no mockup: on a 27-inch 2560x1440 screen they were too small, since every size was fixed in pixels). One scale covers the page: the header, the side panel and its width, the bottom bar and the timeline, the kill feed and its gun icons, the round pill and the C4 countdown, the Tab scoreboard, the load summary, the Join card, the ? panel, **View settings**, the death cam's name bar, "Recording skips here", toasts and **POV mode**'s hidden-enemies note; and the labels drawn on the radar and in the 3D view: names, HP and gun, damage numbers, HS and ✕, the kill marker's label, the kill ring, the radar's dots, view cones and C4 tags, and the text in **POV mode**'s spectator bars.
+- **Auto**, the default: 100% up to a 1920x1080 window, so on a laptop the page is exactly as in 0.26.12; above that the smaller of width / 1920 and height / 1000, rounded down to 5%, at most 150%. A 2560x1440 window gets 130%. It follows the window when it's resized or moved to another screen, with no reload.
+- **Interface size** in **View settings** ("text, buttons and labels"): **Auto**, 100%, 125%, 150%, 175% or 200%, kept in this browser like Quality. A size too big for the window is lowered so the page keeps at least 1280x640 of room (200% reads 105% at 1366x768), so the phone layout stays as it was.
+- Left at their own sizes: the crosshair in **Player's eyes** (it has its own **Crosshair** setting) and the kill marker's ticks around it; **POV mode**'s crosshair, sniper scope, HUD and the height of its spectator bars, which follow the view as the game's do; the round announcements (sized by the view's height, as in the game); the wallbang picture check (640x400, so strict and LOOSE never depend on the screen); the map, smokes, trails and kill lines; 1px lines. The browser's own tooltips, open lists and scrollbars keep the system's size (`LIMITS.md`).
+
+### How it was tested
+- `start_screen_check.py`, 11 new checks: Auto at 1366x768, 1920x1080 and 2560x1440, a resize and a move between a 1x and a 2x screen with no reload, 150% kept after a reload, 200% lowered at 1366x768, the phone layout at 375 px (fails on 0.26.12, passes on 0.26.13).
+- Screenshots of 0.26.12 and 0.26.13 in Chromium at 1366x768, 1920x1080 and 2560x1440, at 2x and at 390x844, and in Playwright's WebKit (Safari's engine), on SK vs Na`Vi, Train, DreamHack Winter 2011, FX vs Lions, Nuke, DreamHack Winter 2010, Na`Vi vs SK, Inferno, ESWC 2011 and Match 1 CT (de_barcelona): at 100% the same pixels, apart from the version, the new row in **View settings** and timing.
+- The seven checks pass on Sujan's Mac (2 minutes 14 seconds; `ground_truth_check.py` 231 kills, 0 mismatches).
+- Full log: `tests/logs/0.26.13.md`.
+
+### Discussed, not changed
+- CSS `zoom` on the whole page: it changes the sizes and mouse positions the radar, the timeline and the 3D view read, and Chrome changed how zoom works in 2024 (Chrome 128), so Chrome and Safari could differ.
+- The setting is in **View settings**, in the 3D bar, so it can't be reached from the start screen or the 2D view; kept there (Sujan, 3 Nov 2026), and Auto covers the start screen.
+- The round announcements keep the game's rule (14, 20 or 24 px by the view's height), which already grows on big screens.
+- Seen in the screenshots, the same on 0.26.12, and left for later (Sujan, 3 Nov 2026): the Join card's suggested order for Na`Vi vs SK, Inferno, ESWC 2011, looked at with **A file that starts during a round**; **POV mode**'s hidden-enemies note over the HUD's health and armour, part of **The hidden-enemies note is easy to miss**; "Press ? for keyboard shortcuts" over the HUD's ammo (IDEAS.md).
 
 ## 0.26.12 (2026-11-03)
 

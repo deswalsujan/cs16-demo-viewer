@@ -574,13 +574,14 @@ function update3Now() {
     const sx = (v.x + 1) / 2 * W, sy = (1 - v.y) / 2 * H;
     const dist = camera.position.distanceTo(L.p);
     const nm = labelAt(L.e, T); // without the clan tag (0.18.0); the name bar below keeps the full name
-    lx.font = `500 ${dist < 1500 ? 12 : 10}px ${mono}`; lx.textAlign = 'center';
-    lx.lineWidth = 3; lx.strokeStyle = 'rgba(8,10,12,.85)';
+    // names, health and gun at the Interface size (UI, 0.26.13), like the rest of the page's text
+    lx.font = `500 ${(dist < 1500 ? 12 : 10) * UI}px ${mono}`; lx.textAlign = 'center';
+    lx.lineWidth = 3 * UI; lx.strokeStyle = 'rgba(8,10,12,.85)';
     lx.strokeText(nm, sx, sy); lx.fillStyle = L.e === selected ? COL.sand : sideCol(L.s.state); lx.fillText(nm, sx, sy);
     const w = weaponShort(L.s.weapon), hpv = hpAt(L.e, T);
     const sub = [hpv != null ? hpv + ' hp' : '', w].filter(Boolean).join(' · ');
     if (sub) { // at any distance, scoped or not (the 2500-unit limit was dropped in 0.16.0, Sujan)
-      lx.font = `400 10px ${mono}`; lx.strokeText(sub, sx, sy + 12); lx.fillStyle = '#d8d3c8'; lx.fillText(sub, sx, sy + 12); }
+      lx.font = `400 ${10 * UI}px ${mono}`; lx.strokeText(sub, sx, sy + 12 * UI); lx.fillStyle = '#d8d3c8'; lx.fillText(sub, sx, sy + 12 * UI); }
   }
   drawHitNumbers(lx, W, H, camera, mono);
   drawKillRings(lx, W, H, camera);
@@ -672,7 +673,9 @@ function drawHitNumbers(lx, W, H, camera, mono) {
   }
   const xh = XHAIR[$('xh3').value] || XHAIR.large, arm = xh.end + 6;
   const scr = (x, y, z) => { const v = g3(x, y, z).project(camera); return v.z > 1 || v.z < -1 ? null : [(v.x + 1) / 2 * W, (1 - v.y) / 2 * H]; };
-  lx.lineWidth = 3; lx.strokeStyle = 'rgba(8,10,12,.9)';
+  // the numbers at the Interface size (UI, 0.26.13); the crosshair they keep clear of doesn't scale
+  const u = UI;
+  lx.lineWidth = 3 * u; lx.strokeStyle = 'rgba(8,10,12,.9)';
   for (const b of M.bursts) {
     if (tn < b.start - 0.05 || tn > (b.kill ? b.kill.t + 1 : b.end + 1)) continue;
     if (cam3.mode === 'eyes' && b.v === selected) continue;
@@ -683,14 +686,14 @@ function drawHitNumbers(lx, W, H, camera, mono) {
     if (!base) continue;
     live.forEach((h, k) => {
       const age = tn - h.t, a = age < 0.15 ? 1 : Math.max(0, 1 - (age - 0.15) / 0.75);
-      let px = base[0] + 18, py = base[1] - 6 - age * 40 - (live.length - 1 - k) * 13;
-      if (cam3.mode === 'eyes' && Math.abs(px + 20 - W / 2) < arm + 24 && Math.abs(py - H / 2) < arm + 8) py = H / 2 - arm - 10;
+      let px = base[0] + 18 * u, py = base[1] - (6 + age * 40 + (live.length - 1 - k) * 13) * u;
+      if (cam3.mode === 'eyes' && Math.abs(px + 20 * u - W / 2) < arm + 24 * u && Math.abs(py - H / 2) < arm + 8 * u) py = H / 2 - arm - 10 * u;
       lx.globalAlpha = a; lx.textAlign = 'left';
-      lx.font = `600 ${h.head ? 13 : 11}px ${mono}`; const txt = `−${h.dmg}`;
+      lx.font = `600 ${(h.head ? 13 : 11) * u}px ${mono}`; const txt = `−${h.dmg}`;
       lx.strokeText(txt, px, py); lx.fillStyle = '#ffb347'; lx.fillText(txt, px, py);
       let w = lx.measureText(txt + ' ').width;
-      if (h.head) { lx.font = `700 10px ${mono}`; lx.strokeText('HS', px + w, py); lx.fillText('HS', px + w, py); w += lx.measureText('HS ').width; }
-      if (h.kill) { lx.font = `700 ${h.head ? 13 : 11}px ${mono}`; lx.fillStyle = b.kill && b.kill.wb && b.kill.wb.loose ? '#c9a3e8' : '#ff4fd8'; lx.strokeText('✕', px + w, py); lx.fillText('✕', px + w, py); }
+      if (h.head) { lx.font = `700 ${10 * u}px ${mono}`; lx.strokeText('HS', px + w, py); lx.fillText('HS', px + w, py); w += lx.measureText('HS ').width; }
+      if (h.kill) { lx.font = `700 ${(h.head ? 13 : 11) * u}px ${mono}`; lx.fillStyle = b.kill && b.kill.wb && b.kill.wb.loose ? '#c9a3e8' : '#ff4fd8'; lx.strokeText('✕', px + w, py); lx.fillText('✕', px + w, py); }
       lx.globalAlpha = 1;
     });
   }
@@ -713,8 +716,9 @@ function drawHitMarker(lx, cx, cy, xh = XHAIR.small) {
     lx.stroke();
   }
   const label = k.wb ? `${k.wb.loose ? 'LOOSE WB' : 'WALLBANG'}${k.hs ? ' · HS' : ''}` : k.hs ? 'HEADSHOT' : 'KILL';
-  lx.font = `500 10px ${textFont()}`; lx.textAlign = 'center';
-  lx.lineWidth = 2.5; lx.strokeStyle = 'rgba(0,0,0,.6)'; lx.strokeText(label, cx, cy + xh.end + 20); lx.fillStyle = col; lx.fillText(label, cx, cy + xh.end + 20);
+  // the label at the Interface size (UI, 0.26.13); the ticks above stay with the crosshair, which doesn't scale
+  lx.font = `500 ${10 * UI}px ${textFont()}`; lx.textAlign = 'center';
+  lx.lineWidth = 2.5 * UI; lx.strokeStyle = 'rgba(0,0,0,.6)'; lx.strokeText(label, cx, cy + xh.end + 20 * UI); lx.fillStyle = col; lx.fillText(label, cx, cy + xh.end + 20 * UI);
   lx.restore();
 }
 // The sniper scope over Player's eyes. Three styles exist; the viewer uses SCOPE_STYLE and has no menu
@@ -754,7 +758,7 @@ function drawKillRings(lx, W, H, camera) {
     const sx = (v.x + 1) / 2 * W, sy = (1 - v.y) / 2 * H;
     lx.globalAlpha = 1 - a; lx.lineWidth = 3;
     lx.strokeStyle = k.wb ? (k.wb.loose ? '#c9a3e8' : '#ff4fd8') : k.hs ? '#ff9a3c' : '#ffffff';
-    lx.beginPath(); lx.arc(sx, sy, 6 + a * 28, 0, 7); lx.stroke();
+    lx.beginPath(); lx.arc(sx, sy, (6 + a * 28) * UI, 0, 7); lx.stroke(); // at the Interface size (0.26.13)
     lx.globalAlpha = 1;
   }
 }
@@ -1139,7 +1143,7 @@ function drawPovHud(lx, W, H) {
   const v = povHudValues(POV.t); if (!v) return;
   const s = H / 768 * HUD_SCALE, haveSpr = !!HUDS.spr.number_0;
   const dh = haveSpr ? HUDS.spr.number_0.h * s : 25 * s, dw = haveSpr ? HUDS.spr.number_0.w * s : 20 * s;
-  const base = H - 46 - dh; // the bottom buttons sit below
+  const base = H - 46 * UI - dh; // the bottom buttons sit below (they grow with the Interface size; the HUD follows the view as the game's does)
   lx.save(); lx.globalCompositeOperation = 'lighter'; lx.globalAlpha = 0.8;
   const spr = (nm, x, y, red) => { const p = HUDS.spr[nm] || HUDS.ammo[nm]; if (!p) return 0; lx.drawImage(red ? p.r : p.y, x, y, p.w * s, p.h * s); return p.w * s; };
   const num = (n, x, y, red, rightAlign) => {
@@ -1181,7 +1185,7 @@ const SPEC_BAR = 40 / 480;
 function povBarsOn() { if (!POV.on || POV.mode === 0) return false; const [, tg] = povObs(POV.t); return !(tg === POV.v.rec && POV.mode !== 4) || false; }
 function drawSpecBars(lx, W, H) {
   const on = povBarsOn();
-  $('feed').style.top = on ? Math.round(H * SPEC_BAR + 8) + 'px' : '';
+  $('feed').style.top = on ? Math.round(H * SPEC_BAR + 8 * UI) + 'px' : '';
   if (!on) return false;
   const bh = Math.round(H * SPEC_BAR), mono = textFont();
   lx.save();
@@ -1190,17 +1194,18 @@ function drawSpecBars(lx, W, H) {
   const done = M.liveR.filter((r) => r.end != null && r.end <= POV.t), sc = done.length ? done[done.length - 1].scoreAfter : [0, 0];
   // the clock as above the view, the C4 countdown included (0.21.0)
   const c = clockAt(POV.t, true), clock = c ? c.text.replace(/^freeze /, '') : '';
-  const xr = W - W * 80 / 640 - 14, y1 = bh / 2 - 9, y2 = bh / 2 + 9;
-  lx.font = `600 14px ${mono}`; lx.textAlign = 'right'; lx.textBaseline = 'middle';
-  lx.fillStyle = '#e8e6e1'; lx.fillText('Counter-Terrorists : ', xr - 14, y1); lx.fillText('Terrorists : ', xr - 14, y2);
+  // the bars follow the view's height, as the game's do; their text is at the Interface size (UI, 0.26.13)
+  const u = UI, xr = W - W * 80 / 640 - 14 * u, y1 = bh / 2 - 9 * u, y2 = bh / 2 + 9 * u;
+  lx.font = `600 ${14 * u}px ${mono}`; lx.textAlign = 'right'; lx.textBaseline = 'middle';
+  lx.fillStyle = '#e8e6e1'; lx.fillText('Counter-Terrorists : ', xr - 14 * u, y1); lx.fillText('Terrorists : ', xr - 14 * u, y2);
   lx.fillStyle = '#5ea3e8'; lx.fillText(String(sc[1]), xr, y1); lx.fillStyle = '#e8574d'; lx.fillText(String(sc[0]), xr, y2);
   lx.fillStyle = 'rgba(232,230,225,.6)'; lx.fillRect(W - W * 64 / 640, bh * 0.2, 1, bh * 0.6);
-  lx.textAlign = 'left'; lx.fillStyle = '#e8e6e1'; lx.font = `600 15px ${mono}`; lx.fillText('◷ ' + clock, W - W * 56 / 640, (y1 + y2) / 2);
+  lx.textAlign = 'left'; lx.fillStyle = '#e8e6e1'; lx.font = `600 ${15 * u}px ${mono}`; lx.fillText('◷ ' + clock, W - W * 56 / 640, (y1 + y2) / 2);
   // whose view, and the camera mode
   const [, tg] = povObs(POV.t), who = POV.who != null ? POV.who : tg;
   if (who) {
     const s = playerState(who, T), hp = hpAt(who, T);
-    lx.textAlign = 'center'; lx.font = `600 16px ${mono}`;
+    lx.textAlign = 'center'; lx.font = `600 ${16 * u}px ${mono}`;
     const nm = nameAt(who, T), txt = nm + (hp != null ? ` (${hp})` : '');
     lx.fillStyle = s && s.state === 1 || s && s.state === -1 ? '#e8574d' : '#5ea3e8'; lx.fillText(txt, W / 2, H - bh / 2);
   }
@@ -1236,12 +1241,12 @@ function showHiddenEnemiesNote() {
   const b = $('tgXray'), host = $('gl').parentElement; if (!b || !host) return;
   if (!d) {
     d = document.createElement('div'); d.id = 'povNote'; d.setAttribute('role', 'status');
-    d.style.cssText = 'position:absolute;z-index:4;max-width:300px;background:rgba(10,12,14,.92);border:1px solid var(--sand, #f2b84b);border-radius:4px;padding:8px 11px;font-size:12.5px;line-height:1.45;color:#e8e6e1;cursor:pointer;transition:opacity .4s';
+    d.style.cssText = 'position:absolute;z-index:4;max-width:calc(300px * var(--ui));background:rgba(10,12,14,.92);border:1px solid var(--sand, #f2b84b);border-radius:calc(4px * var(--ui));padding:calc(8px * var(--ui)) calc(11px * var(--ui));font-size:calc(12.5px * var(--ui));line-height:1.45;color:#e8e6e1;cursor:pointer;transition:opacity .4s';
     d.onclick = () => { d.style.opacity = '0'; setTimeout(() => { d.hidden = true; }, 400); };
     host.appendChild(d);
   }
   const hr = host.getBoundingClientRect(), br = b.parentElement.getBoundingClientRect();
-  d.style.left = (br.left - hr.left) + 'px'; d.style.bottom = (hr.bottom - br.top + 8) + 'px';
+  d.style.left = (br.left - hr.left) + 'px'; d.style.bottom = (hr.bottom - br.top + 8 * UI) + 'px';
   // Wording (Sujan, 5 Oct 2026): a headline anyone understands, the detail and the numbers below; feature names in
   // bold (Sujan, 25 Oct 2026; they were in single quotes). "Seems": the demo shows the effect, not the plugin itself.
   d.innerHTML = `<b style="color:var(--sand, #f2b84b)">This server seems to use an anti-wallhack plugin</b><br>It only sent the recording player enemies who were about to come into view, so <b>See through walls</b> can show just those few (${h.en.toLocaleString()} enemy sightings against ${h.tm.toLocaleString()} for teammates). Once he was dead, it sent them all.`;

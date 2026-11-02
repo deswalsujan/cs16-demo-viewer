@@ -38,7 +38,7 @@ cv.addEventListener('wheel', (e) => {
 function pickPlayer(e) {
   if (!D) return;
   const r = cv.getBoundingClientRect(); const mx = e.clientX - r.left, my = e.clientY - r.top;
-  let best = null, bd = 18;
+  let best = null, bd = 18 * UI;
   for (const p of lastPlayers) { const d = Math.hypot(p.sx - mx, p.sy - my); if (d < bd) { bd = d; best = p.e; } }
   if (best) selectPlayer(best);
   else if (selected) selectPlayer(selected);
@@ -168,8 +168,11 @@ function playerStateAt(e, t) {
 }
 
 let lastPlayers = [];
+// The marks and labels on the map (player dots and cones, names, the bomb, death crosses, kill rings) are drawn at the
+// Interface size (UI, 0.26.13); the map, smokes, trails and kill lines are places on the map and keep their size.
 function draw() {
   ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+  const u = UI;
   ctx.clearRect(0, 0, cw, ch);
   if (!D) return;
   const r = roundAt(T);
@@ -197,9 +200,9 @@ function draw() {
       const [sx, sy] = toScreen(bp.pos[0], bp.pos[1]);
       const pulse = 0.5 + 0.5 * Math.sin((T - bp.t) * 6);
       ctx.fillStyle = `rgba(255,154,60,${0.25 + pulse * 0.35})`;
-      ctx.beginPath(); ctx.arc(sx, sy, 10 + pulse * 4, 0, 7); ctx.fill();
-      ctx.fillStyle = COL.kill; ctx.fillRect(sx - 5, sy - 4, 10, 8);
-      ctx.fillStyle = '#111'; ctx.font = '600 7px ' + textFont(); ctx.textAlign = 'center'; ctx.fillText('C4', sx, sy + 2.5);
+      ctx.beginPath(); ctx.arc(sx, sy, (10 + pulse * 4) * u, 0, 7); ctx.fill();
+      ctx.fillStyle = COL.kill; ctx.fillRect(sx - 5 * u, sy - 4 * u, 10 * u, 8 * u);
+      ctx.fillStyle = '#111'; ctx.font = `600 ${7 * u}px ` + textFont(); ctx.textAlign = 'center'; ctx.fillText('C4', sx, sy + 2.5 * u);
     }
   }
   // the bomb on the floor, dropped or left by a dead carrier, until it's picked up (0.18.0, Sujan 14 Oct 2026).
@@ -241,7 +244,7 @@ function draw() {
     let hx = 0, hy = 0;
     for (let i = 0; i < p.length && p[i] <= T; i += 4) { const [sx, sy] = toScreen(p[i + 1], p[i + 2]); if (i === 0) ctx.moveTo(sx, sy); else ctx.lineTo(sx, sy); hx = sx; hy = sy; }
     ctx.stroke(); ctx.setLineDash([]); ctx.globalAlpha = 1;
-    ctx.fillStyle = col; ctx.beginPath(); ctx.arc(hx, hy, 3, 0, 7); ctx.fill();
+    ctx.fillStyle = col; ctx.beginPath(); ctx.arc(hx, hy, 3 * u, 0, 7); ctx.fill();
   }
 
   // deaths this round, and kill lines
@@ -258,7 +261,7 @@ function draw() {
       ctx.beginPath(); ctx.moveTo(kx, ky); ctx.lineTo(vx, vy); ctx.stroke(); ctx.setLineDash([]);
     }
     ctx.strokeStyle = vs; ctx.globalAlpha = 0.75; ctx.lineWidth = 2;
-    const s = 5;
+    const s = 5 * u;
     ctx.beginPath(); ctx.moveTo(vx - s, vy - s); ctx.lineTo(vx + s, vy + s); ctx.moveTo(vx + s, vy - s); ctx.lineTo(vx - s, vy + s); ctx.stroke();
     ctx.globalAlpha = 1;
   }
@@ -270,7 +273,7 @@ function draw() {
     const [vx, vy] = toScreen(k.vpos[0], k.vpos[1]);
     ctx.strokeStyle = k.wb ? (k.wb.loose ? COL.loose : COL.wb) : k.hs ? COL.kill : '#ffffff';
     ctx.globalAlpha = 1 - a; ctx.lineWidth = 3;
-    ctx.beginPath(); ctx.arc(vx, vy, 8 + a * 26, 0, 7); ctx.stroke(); ctx.globalAlpha = 1;
+    ctx.beginPath(); ctx.arc(vx, vy, (8 + a * 26) * u, 0, 7); ctx.stroke(); ctx.globalAlpha = 1;
   }
 
   // selected player trail
@@ -288,7 +291,7 @@ function draw() {
   // players
   lastPlayers = [];
   const mono = textFont();
-  const rad = Math.max(5, Math.min(9, 6 * Math.sqrt(view.s)));
+  const rad = Math.max(5, Math.min(9, 6 * Math.sqrt(view.s))) * u;
   for (const e in D.slots) {
     const s = playerState(+e, T);
     if (!s || s.state < 0) continue;
@@ -303,31 +306,31 @@ function draw() {
     ctx.globalAlpha = 1;
     ctx.beginPath(); ctx.arc(sx, sy, rad, 0, 7); ctx.fill();
     ctx.strokeStyle = 'rgba(0,0,0,.6)'; ctx.lineWidth = 1.5; ctx.stroke();
-    if (+e === selected) { ctx.strokeStyle = COL.sand; ctx.lineWidth = 2; ctx.beginPath(); ctx.arc(sx, sy, rad + 4, 0, 7); ctx.stroke(); }
+    if (+e === selected) { ctx.strokeStyle = COL.sand; ctx.lineWidth = 2; ctx.beginPath(); ctx.arc(sx, sy, rad + 4 * u, 0, 7); ctx.stroke(); }
     // the Terrorist carrying the bomb: a C4 tag on his dot (0.18.0; the 3D models and the Tab scoreboard have it since 0.17.0)
     if (s.state === 1 && packAt(+e, T)) c4Tag(sx - rad - 1, sy + rad - 1, true);
     lastPlayers.push({ e: +e, sx, sy });
     if (opts.names) {
       const nm = labelAt(+e, T);
       const w = weaponShort(s.weapon);
-      ctx.font = `500 11px ${mono}`; ctx.textAlign = 'left';
+      ctx.font = `500 ${11 * u}px ${mono}`; ctx.textAlign = 'left';
       const label = nm.length > 16 ? nm.slice(0, 15) + '…' : nm;
-      ctx.lineWidth = 3; ctx.strokeStyle = 'rgba(8,10,12,.85)';
-      ctx.strokeText(label, sx + rad + 4, sy - 1); ctx.fillStyle = '#eee8dc'; ctx.fillText(label, sx + rad + 4, sy - 1);
+      ctx.lineWidth = 3 * u; ctx.strokeStyle = 'rgba(8,10,12,.85)';
+      ctx.strokeText(label, sx + rad + 4 * u, sy - u); ctx.fillStyle = '#eee8dc'; ctx.fillText(label, sx + rad + 4 * u, sy - u);
       const hpv = hpAt(+e, T);
       const sub = [hpv != null ? hpv + ' hp' : '', w].filter(Boolean).join(' · ');
-      if (sub) { ctx.font = `400 10px ${mono}`; ctx.strokeText(sub, sx + rad + 4, sy + 10); ctx.fillStyle = col; ctx.fillText(sub, sx + rad + 4, sy + 10); }
+      if (sub) { ctx.font = `400 ${10 * u}px ${mono}`; ctx.strokeText(sub, sx + rad + 4 * u, sy + 10 * u); ctx.fillStyle = col; ctx.fillText(sub, sx + rad + 4 * u, sy + 10 * u); }
     }
   }
 }
 
 // a small orange "C4" tag, as on the planted bomb; small: the one on a carrier's dot
 function c4Tag(x, y, small) {
-  const w = small ? 14 : 16, h = small ? 9 : 11;
+  const w = (small ? 14 : 16) * UI, h = (small ? 9 : 11) * UI;
   ctx.fillStyle = 'rgba(0,0,0,.7)'; ctx.fillRect(x - w / 2 - 1, y - h / 2 - 1, w + 2, h + 2);
   ctx.fillStyle = COL.kill; ctx.fillRect(x - w / 2, y - h / 2, w, h);
-  ctx.fillStyle = '#111'; ctx.font = `700 ${small ? 7 : 8}px ` + textFont(); ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
-  ctx.fillText('C4', x, y + 0.5); ctx.textBaseline = 'alphabetic';
+  ctx.fillStyle = '#111'; ctx.font = `700 ${(small ? 7 : 8) * UI}px ` + textFont(); ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
+  ctx.fillText('C4', x, y + 0.5 * UI); ctx.textBaseline = 'alphabetic';
 }
 
 // ---------------- heatmap ----------------

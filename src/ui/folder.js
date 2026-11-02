@@ -157,7 +157,7 @@ async function loadKillIcons() {
       g.putImageData(img, 0, 0);
       const url = cv.toDataURL();
       KICONS[k] = Math.round(r.w * 16 / r.h);
-      css.push(`.ki-${k}{width:${KICONS[k]}px;-webkit-mask-image:url(${url});mask-image:url(${url})}`);
+      css.push(`.ki-${k}{width:calc(${KICONS[k]}px * var(--ui));-webkit-mask-image:url(${url});mask-image:url(${url})}`);
     }
   } catch (e) { }
   let st = $('kiconCss'); if (!st) { st = document.createElement('style'); st.id = 'kiconCss'; document.head.appendChild(st); }
