@@ -6,13 +6,20 @@ Needs the Half-Life folder and DEMO_DIRS (for the demos, demo_dirs.py), not maps
 DreamHack Winter 2011 from a filtered row, then again from a temporary Half-Life folder holding only that demo (a
 clone or hard link, never moved) and a stand-in demo, so its map has no overview: up to 0.26.11 the message line still
 said "Reading name…" when the start screen came back (Sujan, 3 Nov 2026). In 2D, the map ends above the controls along
-the bottom of the view where it opens and after Reset view, at three window sizes (0.26.14). Under a minute.
+the bottom of the view where it opens and after Reset view, at three window sizes (0.26.14). In 3D, Player's eyes keeps
+the game's 4:3 view top to bottom at three window sizes, unzoomed and through the AWP's scope (0.26.15); this part needs
+de_train's map and models in the Half-Life folder. Under a minute.
 """
 import os, sys, http.server, functools, threading, tempfile, shutil, subprocess, atexit
 from playwright.sync_api import sync_playwright
 import demo_dirs
 
 page_path = os.path.abspath(sys.argv[1] if len(sys.argv) > 1 else os.path.join(os.path.dirname(__file__), '..', 'index.html'))
+# a copy of the page with the test hook (window.__v), for the field of view checks in 3D; the shipped page is never changed
+_html = open(page_path, encoding='utf-8').read(); _i = _html.rindex('})();')
+hooked = os.path.join(os.path.dirname(page_path), '_test_demosearch.html')
+open(hooked, 'w', encoding='utf-8').write(_html[:_i] + 'window.__v = (c) => eval(c);\n' + _html[_i:])
+atexit.register(lambda: os.path.exists(hooked) and os.remove(hooked))
 shot = sys.argv[2] if len(sys.argv) > 2 else None
 _hl, _inside, _outside = demo_dirs.collect()
 HL = demo_dirs.stage(_outside)
@@ -27,10 +34,10 @@ def check(label, ok, extra=''):
     if not ok: fails.append(label)
 
 with sync_playwright() as p:
-    b = p.chromium.launch(); pg = b.new_page(viewport={'width': 880, 'height': 1300})
+    b = p.chromium.launch(args=['--use-gl=angle', '--use-angle=swiftshader', '--enable-unsafe-swiftshader', '--ignore-gpu-blocklist']); pg = b.new_page(viewport={'width': 880, 'height': 1300})
     pg.route('**/three.min.js', lambda r: r.fulfill(path=os.environ.get('THREE_JS', os.path.join(here, '..', 'src', 'vendor', 'three.min.js')), content_type='application/javascript'))
     pg.route('https://fonts.googleapis.com/**', lambda r: r.fulfill(body='', content_type='text/css'))
-    pg.goto(f'http://127.0.0.1:{srv.server_port}/{os.path.basename(page_path)}')
+    pg.goto(f'http://127.0.0.1:{srv.server_port}/{os.path.basename(hooked)}')
     check('no search box before a folder is chosen', pg.locator('#demoFind').is_hidden())
     pg.set_input_files('#fFolder', HL)
     pg.wait_for_selector('#demoList button')
@@ -86,6 +93,28 @@ with sync_playwright() as p:
           f"zoomed: {zoomed['below']} pixels under; after Reset view: {reset['below']}")
     pg.set_viewport_size({'width': 880, 'height': 1300})
 
+    # Player's eyes keeps the game's 4:3 view top to bottom (0.26.15, Sujan, 3 Nov 2026): the game's 90 degrees, or a
+    # zoom level, is the width of a 4:3 picture, so on any view wider than 4:3 three.js's fov (top to bottom) is 73.74
+    # unzoomed and 30.54 at the AWP's first zoom (40); a view narrower than 4:3 keeps the fov across its width. Up to
+    # 0.26.14 every view kept 90 across, so at 2560x1440 it read 61.08 and guns and players looked 27% too big.
+    # markeloff with the AWP at R23 1:22, 0.35 s before his kill on GeT_RiGhT, then at that kill (the pull request's moment)
+    pg.click('#viewSeg button[data-v="3d"]')
+    pg.wait_for_function('__v("!!(MAP && R3 && view3.map === MAP.name)")', timeout=120000)
+    pg.evaluate('(c) => __v(c)', """(() => { const me = D.kills.find((k) => M.pl[k.kp] && /markeloff/.test(M.pl[k.kp].name)).killer;
+      const k = D.kills.find((x) => x.killer === me && x.weapon === 'awp' && Math.abs(x.t - D.start - 2663.65) < 0.05);
+      window.__fov = { me, eyes: D.start + 2663.3, scope: k.t - 0.05 }; selected = me; setCam('eyes', true); playing = false; })()""")
+    at = lambda key: pg.evaluate('(c) => __v(c)', f"(async () => {{ T = __fov.{key}; await new Promise((r) => setTimeout(r, 400)); return {{ fov: R3.camera.fov, aspect: R3.camera.aspect, zoom: zoomLevel(__fov.me, T), clock: (clockAt(T) || {{}}).text }}; }})()")
+    import math
+    want = lambda game, aspect: 2 * math.degrees(math.atan(math.tan(math.radians(game / 2)) * max(0.75, 1 / aspect)))
+    for w, h, label in [(1512, 982, 'a MacBook window, 1512x982'), (2560, 1440, '2560x1440'), (880, 1300, 'the test\'s own 880x1300, narrower than 4:3')]:
+        pg.set_viewport_size({'width': w, 'height': h}); pg.wait_for_timeout(600)
+        e, z = at('eyes'), at('scope')
+        shape = (e['aspect'] > 4 / 3) == (w > 880)
+        check(f"Player's eyes at {label}: 90 degrees across a 4:3 picture, and the AWP's first zoom by the same rule",
+              shape and e['zoom'] == 0 and z['zoom'] == 1 and abs(e['fov'] - want(90, e['aspect'])) < 0.01 and abs(z['fov'] - want(40, z['aspect'])) < 0.01,
+              f"view {e['aspect']:.3f} wide; fov top to bottom {e['fov']:.2f} unzoomed (want {want(90, e['aspect']):.2f}), {z['fov']:.2f} zoomed (want {want(40, z['aspect']):.2f}); R23 {e['clock']}")
+    pg.click('#viewSeg button[data-v="2d"]')
+
     # the message line when the start screen comes back (0.26.12): empty, whether or not an overview loaded
     msg = lambda pg: pg.evaluate("document.getElementById('msg').textContent")
     def back_to_start(pg):
@@ -103,7 +132,7 @@ with sync_playwright() as p:
     # a new browser profile: the overviews the first pick saved in the browser would stand in for the missing one
     ctx2 = b.new_context(viewport={'width': 880, 'height': 1300}); pg2 = ctx2.new_page()
     pg2.route('**/three.min.js', lambda r: r.fulfill(path=os.environ.get('THREE_JS', os.path.join(here, '..', 'src', 'vendor', 'three.min.js')), content_type='application/javascript'))
-    pg2.goto(f'http://127.0.0.1:{srv.server_port}/{os.path.basename(page_path)}')
+    pg2.goto(f'http://127.0.0.1:{srv.server_port}/{os.path.basename(hooked)}')
     pg2.set_input_files('#fFolder', hl2)
     pg2.wait_for_function("() => document.getElementById('hlStatus').textContent.includes('2 demos found.')", timeout=10000)
     pg2.click(f'#demoList button:has-text("{SK}")')

@@ -4,6 +4,7 @@ What changed in the viewer, newest first. The version shows in the viewer's shor
 
 ## Versions
 
+- [0.26.15](#02615-2026-11-03) 2026-11-03: Game's 4:3 view, wide screens
 - [0.26.14](#02614-2026-11-03) 2026-11-03: 2D map above its controls
 - [0.26.13](#02613-2026-11-03) 2026-11-03: Interface size for big screens
 - [0.26.12](#02612-2026-11-03) 2026-11-03: Start screen message line cleared
@@ -72,6 +73,24 @@ What changed in the viewer, newest first. The version shows in the viewer's shor
 
 ## Known limits
 Moved to [LIMITS.md](LIMITS.md) on 30 Oct 2026; release entries below still say "Known limits" for that list.
+
+## 0.26.15 (2026-11-03)
+
+### Fixed
+- **Player's eyes** and **POV mode** keep the game's 4:3 picture whole (Sujan, 3 Nov 2026, no mockup): on a 27-inch 2560x1440 screen, guns and players looked much bigger than in the game. The view kept 90 degrees across its width, so a wide view showed less top to bottom: 61 degrees at 2560x1440 against the game's 73.74 (90 degrees across a 4:3 picture), everything drawn 27% too big; at a MacBook window (1512x982), 5%. Now a wider view adds room at the sides, as the game does in 4:3 stretched, 4:3 with black bars and 16:9 with "Allow widescreen Field of View"; a narrower one (a 5:4 monitor at 1280x1024, a 1024x768 window, half of a 1920x1080 screen) keeps 90 degrees across and adds room top and bottom, as before. Sniper zooms follow the same rule, and so do the gun in hand and the death cam. Free view and **Behind player** keep their own view; the wallbang picture check doesn't change.
+- **POV mode**'s crosshair and the kill marker's ticks around it are sized from the view's height times 4/3 on a view wider than 4:3, and from its width on a narrower one (Sujan, 3 Nov 2026): sized from the width, they'd have been 27% too big against the scene at 2560x1440 once the scene kept the 4:3 height.
+
+### How it was tested
+- `demo_search_check.py`, 3 new checks on SK vs Na`Vi, Train, DreamHack Winter 2011, R23 1:22 (markeloff's AWP): 73.74 degrees top to bottom unzoomed and 30.54 at the first zoom at 1512x982 and 2560x1440, 90 across at 880x1300 (the two wide sizes fail on 0.26.14). **POV mode** on Match 1 CT and Ts (de_barcelona): 73.74 unzoomed, 7.51 at zoom 10.
+- Screenshots of 0.26.14 and 0.26.15 at 1512x982 and 2560x1440: **Player's eyes** and the AWP's scope (SK vs Na`Vi), the POV crosshair (Match 1 CT, R1 0:49) and a POV scope (Match 1 Ts, R6 0:40), on `screenshots/0.26.15`.
+- The seven checks pass on Sujan's Mac (2 minutes 23 seconds; `ground_truth_check.py` 231 kills, 27 scores and K-D, 0 mismatches, 8 known gaps, the same counts as on 0.26.14); phone width dropped from `start_screen_check.py` and `folder_row_test.py` (Sujan, 3 Nov 2026).
+- Full log: `tests/logs/0.26.15.md`.
+
+### Discussed, not changed
+- A 4:3 view option (black bars or stretched, as in the game) for POV and admin checks: parked (Sujan, 3 Nov 2026).
+- The crosshair in **Player's eyes** on HLTV demos keeps the fixed sizes of the **Crosshair** setting.
+- No AUG or SG552 zoom, the only zoom that keeps a crosshair, is in the POV test demos, and the recorder never zooms himself in them; the scoped POV picture is a teammate's AWP scope, which has no crosshair, as in the game. The kill marker's ticks show only while playback runs through a kill, so a paused picture doesn't have them.
+- Phone width is no longer checked or pictured (Sujan, 3 Nov 2026: no phone has a Half-Life folder): `start_screen_check.py` drops the phone layout and footer at 375 px, `folder_row_test.py` drops B14.
 
 ## 0.26.14 (2026-11-03)
 

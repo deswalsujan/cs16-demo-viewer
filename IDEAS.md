@@ -4,9 +4,18 @@ Parked ideas and features we've discussed but not built yet. Each entry keeps en
 
 Only what is open stays here. An open item keeps a three-line header (Status, Next step, Decided so far; each answer in Decided so far also has its line in `STATE.md`); a parked item keeps one line, since nothing happens until Sujan picks it up. Done items, and the full text of open ones, go to [IDEAS-ARCHIVE.md](IDEAS-ARCHIVE.md) word for word, under the same section and block names (since 29 Oct 2026). A section that older notes, code comments, `tests/README.md` or `tests/DEMOS.md` point to and that isn't here, such as "Tell exactly why a demo is broken", is in the archive under the same name.
 
-## Open follow-ups (checklist, updated 3 Nov 2026, 0.26.13)
+## Open follow-ups (checklist, updated 3 Nov 2026, 0.26.15)
 
 Everything raised in conversation that isn't finished, in one place. Each item says who does it. Ideas for new features are further down; this list is for loose ends.
+
+**Sujan's report and rules of 3 Nov 2026** (rules in `AGENTS.md`: no pull request for notes alone; things found while building go here for later, unless the change caused them; related features batched into one mockup round, one build and one test run; phones aren't a target)
+- Done, in the archive: **Guns and players too big in Player's eyes on a wide screen** (0.26.15, 3 Nov 2026: the view keeps the game's 4:3 picture whole, adding room at the sides on a wider view and top and bottom on a narrower one; **POV mode**'s crosshair sized to match).
+- [ ] **Widescreen view, by eye (0.26.15)** (Sujan, after the merge, on GitHub Pages)
+  - Status: built in 0.26.15 (3 Nov 2026); before-and-after screenshots at 1512x982 and 2560x1440 in the pull request, from headless Chromium; not seen on a real screen or next to the game.
+  - Next step: Sujan, on the 27-inch 2560x1440 screen: SK vs Na`Vi, Train, DreamHack Winter 2011, R23 1:22, **Player's eyes** on markeloff: the AWP in his hands and GeT_RiGhT and RobbaN ahead look the size they do in the game, unzoomed and through the AWP's scope; on the MacBook they look as before, about 5% smaller. With **POV mode** on, Match 1 CT (public server, de_barcelona, 27 Mar 2025), R1 0:49: his crosshair against H@rDRoCk the size it is in the game.
+  - Decided so far: the widescreen view, narrow views, and **POV mode**'s crosshair (`STATE.md`, **Widescreen view**, Sujan, 3 Nov 2026).
+- [ ] **The start screen on a phone** (for later, Sujan, 3 Nov 2026): at phone width the start screen reads properly and says the viewer needs a computer with CS 1.6 installed, since no phone has a Half-Life folder.
+- [ ] Parked (Sujan, 3 Nov 2026): a 4:3 view option (black bars or stretched, as in the game) for POV and admin checks.
 
 **Sujan's report and rules of 2 Nov 2026** (rules in `AGENTS.md`: the viewer collects no user data; the same experience on Mac and Windows, in Chrome and Edge, on any screen size, so a bug on one platform only is a real bug)
 - Done, in the archive: **Google Fonts and the no user data rule** (0.26.9, 2 Nov 2026: Tahoma and Verdana from the player's computer); **Bug, top priority: Chrome won't open a Half-Life folder under Program Files** (0.26.10, 2 Nov 2026: **Choose it this way**); **Steam's default folder, by eye (0.26.10)** (passed on Windows, Sujan, 2 Nov 2026); **One way to choose the Half-Life folder** (0.26.11; passed by eye in Chrome on the Mac and on Windows and in Safari on the Mac, Sujan, 3 Nov 2026; Firefox parked below); **"Reading …" left on the start screen** (0.26.12, 3 Nov 2026).
@@ -28,7 +37,7 @@ Everything raised in conversation that isn't finished, in one place. Each item s
 - [ ] **Radar labels cut off at the right edge of the 3D view's radar**: in **3D + radar**, the name and the HP and gun line of a player near the radar's right edge run past it and are cut: "ceh9 32-3", "100 hp · al", "m4a" (SK vs Na`Vi, Train, DreamHack Winter 2011, R7 0:23, demo 19:33). The same in 0.26.12 (Sujan; checked in its screenshot, 3 Nov 2026). For later.
 - [ ] **2D radar labels overlap when players stand together**: edzie's and starix's names and HP and gun lines run into each other at T spawn, and GeT_RiGhT's and f0rest's at CT spawn (SK vs Na`Vi, Train, DreamHack Winter 2011, R1 freeze 0:12, demo 8:49). The same in 0.26.12 (checked in its screenshot, 3 Nov 2026). For later.
 - Done, in the archive: **The Heatmap, Both sides and Whole match controls cover player labels in 2D** (0.26.14, 3 Nov 2026: the 2D map ends above them where it opens or resets).
-- [ ] **At phone width, the Heatmap and Both sides lists sit over the buttons beside them** (Names to See through walls), at 390x844 in 2D; and the round pill sits on the map's top left corner. The same on 0.26.13 (seen 3 Nov 2026 while checking 0.26.14 at phone width, SK vs Na`Vi, Train, DreamHack Winter 2011, R1 freeze 0:12). For later.
+- [ ] Parked (Sujan, 3 Nov 2026: phones aren't a target): **At phone width, the Heatmap and Both sides lists sit over the buttons beside them** (Names to See through walls), at 390x844 in 2D; and the round pill sits on the map's top left corner. The same on 0.26.13 (seen 3 Nov 2026 while checking 0.26.14 at phone width, SK vs Na`Vi, Train, DreamHack Winter 2011, R1 freeze 0:12).
 
 **Damage numbers and the moment a kill is judged** (Sujan, 31 Oct 2026): done, the block is in the archive: the two bugs fixed in 0.26.3 and 0.26.4, and **The moment the finder judges a kill at** closed: the finder keeps judging at the moment of the shot (Sujan, 1 Nov 2026).
 

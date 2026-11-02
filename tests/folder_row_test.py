@@ -161,9 +161,7 @@ with sync_playwright() as p:
     pg.wait_for_timeout(300); m = pg.inner_text('#msg')
     check('B12 dropping a demo with no folder chosen asks for the folder first', 'Choose your Half-Life folder first' in m, m)
     check('B13 no page errors, and the folder access never used', not errors and not pg.evaluate('window.__picked || 0'), errors)
-    pg.set_viewport_size({'width': 375, 'height': 800}); pg.wait_for_timeout(200); shot(pg, 'b14_phone_width')
-    wide = pg.evaluate("document.documentElement.scrollWidth")
-    check('B14 at 375 px wide: no sideways scrolling', wide <= 375, wide)
+    # B14, at 375 px wide no sideways scrolling, dropped 3 Nov 2026: phone width isn't checked (Sujan: no phone has a Half-Life folder)
     ctx.close(); shutil.rmtree(tmp)
 
     # ---- C: inside a frame from another site (like the claude.ai artifact) ----
