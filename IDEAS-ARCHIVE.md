@@ -11,6 +11,14 @@ Items moved out of [IDEAS.md](IDEAS.md) so that it holds only what is open (work
 
 ## Open follow-ups (checklist, updated 28 Oct 2026, 0.24.0)
 
+**Seen while building 0.26.13** (3 Nov 2026, in the 0.26.13 screenshots at 2560x1440, `tests/logs/0.26.13.md`; for later, no fixes now (Sujan, 3 Nov 2026). The Join card's order for Na`Vi vs SK, Inferno went to **A file that starts during a round** above, and the two overlays on the POV HUD, the hidden-enemies note and "Press ? for keyboard shortcuts", to **The hidden-enemies note is easy to miss** (Sujan, 3 Nov 2026))
+- [x] **The Heatmap, Both sides and Whole match controls cover player labels in 2D**: fixed in 0.26.14 (3 Nov 2026). The 2D map ends above the controls along the bottom of the view where it opens, after **Reset view** and when the window changes, at every window size and **Interface size**; dragged or zoomed it can still go under them (`tests/logs/0.26.14.md`).
+  - Its header in IDEAS.md when closed:
+    - **The Heatmap, Both sides and Whole match controls cover player labels in 2D**: at the same moment, GeT_RiGhT's and f0rest's labels at CT spawn are under **Heatmap** at 2560x1440 on 0.26.13. Checked on 0.26.12 (3 Nov 2026): at 2560x1440 the map ended above the controls and the labels were clear; at 1366x768 the controls sit over the bottom of the map and hide those two labels, as on 0.26.13. So it's older than 0.26.13, which brought it to big screens: the controls grew and the map's area shrank.
+    - Status: being fixed as 0.26.14 (3 Nov 2026).
+    - Next step: Claude builds it, no mockup, with before-and-after screenshots at 1366x768 and 2560x1440 on SK vs Na`Vi, Train, DreamHack Winter 2011, R1 freeze 0:12, a check in an existing test, and a pull request.
+    - Decided so far (Sujan, 3 Nov 2026, after merging #44): fix it now, since on big screens it's new in 0.26.13: the 2D map ends above the **Heatmap**, **Both sides** and **Whole match** controls at every window size and **Interface size**, which also fixes the 1366x768 case 0.26.12 already had. It's about where the map sits when it opens or resets; a map the player drags or zooms can still go under the controls.
+
 **Sujan's feedback of 1 Nov 2026** (from watching Na`Vi vs SK, Inferno, ESWC 2011; AGAiN vs Na`Vi, Train, recorded 24 Oct 2011; SK vs Na`Vi, Train, DreamHack Winter 2011; investigated by Claude the same day on 0.26.4; Sujan answered 2 Nov 2026; demos and events in `tests/DEMOS.md`)
 - [x] **Sizes on big screens**: built in 0.26.13 (3 Nov 2026) as **Interface size**: one scale for the page, **Auto** by default (100% up to a 1920x1080 window, 130% at 2560x1440, at most 150%) and 100% to 200% in **View settings**; at 100% the page is pixel for pixel as 0.26.12 (`tests/logs/0.26.13.md`). Sujan's check by eye is the open item **Interface size, by eye (0.26.13)** in IDEAS.md.
   - Its header in IDEAS.md when closed:
