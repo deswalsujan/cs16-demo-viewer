@@ -4,6 +4,7 @@ What changed in the viewer, newest first. The version shows in the viewer's shor
 
 ## Versions
 
+- [0.26.12](#02612-2026-11-03) 2026-11-03: Start screen message line cleared
 - [0.26.11](#02611-2026-11-02) 2026-11-02: One folder pick, every browser
 - [0.26.10](#02610-2026-11-02) 2026-11-02: Steam's default folder in Chrome
 - [0.26.9](#0269-2026-11-02) 2026-11-02: Fonts from your own computer
@@ -69,6 +70,19 @@ What changed in the viewer, newest first. The version shows in the viewer's shor
 
 ## Known limits
 Moved to [LIMITS.md](LIMITS.md) on 30 Oct 2026; release entries below still say "Known limits" for that list.
+
+## 0.26.12 (2026-11-03)
+
+### Fixed
+- **The start screen's message line no longer says "Reading *name*…" after a demo** (Sujan, 3 Nov 2026, no mockup). After opening a demo whose map has no overview in the Half-Life folder, going back to the start screen still said "Reading *name*…", since the line was cleared only once an overview loaded; 0.26.10 and 0.26.11 did the same. Now the line is cleared each time the start screen comes back, whether or not an overview loaded. The note on a demo deleted since the pick still shows there.
+
+### How it was tested
+- `demo_search_check.py` has three new checks, on SK vs Na`Vi, Train, DreamHack Winter 2011: back to the start screen after a demo with its overview, and after the same demo from a temporary folder with no overview (fails on 0.26.11, passes on 0.26.12); a demo deleted while another was open still gets its note.
+- The seven checks pass on Sujan's Mac (2 minutes 8 seconds; `ground_truth_check.py` 231 kills, 0 mismatches).
+- Full log: `tests/logs/0.26.12.md`.
+
+### Discussed, not changed
+- Clearing the line when the demo opens rather than when the start screen comes back: Sujan asked for the start screen (3 Nov 2026), and the line is on the start screen only, so it's the same to the player.
 
 ## 0.26.11 (2026-11-02)
 

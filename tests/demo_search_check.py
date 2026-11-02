@@ -1,10 +1,13 @@
-"""Checks the search box over the demo list on the start screen (0.15.2).
+"""Checks the search box over the demo list on the start screen (0.15.2), and the start screen's message line when
+it comes back after a demo (0.26.12).
 
 Usage: HALF_LIFE_DIR=/path/to/Half-Life DEMO_DIRS=... python3 demo_search_check.py [page.html] [screenshot.png]
 Needs the Half-Life folder and DEMO_DIRS (for the demos, demo_dirs.py), not maps or sounds. Opens SK vs Na`Vi, Train,
-DreamHack Winter 2011 from a filtered row. Under a minute.
+DreamHack Winter 2011 from a filtered row, then again from a temporary Half-Life folder holding only that demo (a
+clone or hard link, never moved) and a stand-in demo, so its map has no overview: up to 0.26.11 the message line still
+said "Reading name…" when the start screen came back (Sujan, 3 Nov 2026). Under a minute.
 """
-import os, sys, http.server, functools, threading
+import os, sys, http.server, functools, threading, tempfile, shutil, subprocess, atexit
 from playwright.sync_api import sync_playwright
 import demo_dirs
 
@@ -57,6 +60,41 @@ with sync_playwright() as p:
     pg.click('#demoList button')
     pg.wait_for_function('() => document.getElementById("load").hidden', timeout=120000)
     check('a filtered row opens its demo', True)
+
+    # the message line when the start screen comes back (0.26.12): empty, whether or not an overview loaded
+    msg = lambda pg: pg.evaluate("document.getElementById('msg').textContent")
+    def back_to_start(pg):
+        pg.click('#btnOpen'); pg.wait_for_function('() => !document.getElementById("load").hidden', timeout=5000); pg.wait_for_timeout(500)
+    back_to_start(pg)
+    check('back to the start screen after a demo whose overview loaded: the message line is empty', msg(pg) == '', msg(pg))
+    SK = 'sk-vs-navi-dhwinter2011-1111261019-de_train.dem'
+    tmp = tempfile.mkdtemp(prefix='reading_msg_'); atexit.register(shutil.rmtree, tmp, True)
+    hl2 = os.path.join(tmp, 'Half-Life'); os.makedirs(os.path.join(hl2, 'cstrike'))
+    src = next(q for q in demo_dirs.dems(HL) if os.path.basename(q) == SK); dst = os.path.join(hl2, 'cstrike', SK)
+    if not (sys.platform == 'darwin' and subprocess.run(['cp', '-c', src, dst], capture_output=True).returncode == 0):
+        try: os.link(src, dst)
+        except OSError: shutil.copy2(src, dst)
+    stand_in = os.path.join(hl2, 'cstrike', 'deleted-later.dem'); open(stand_in, 'wb').write(b'\0' * 2000)
+    # a new browser profile: the overviews the first pick saved in the browser would stand in for the missing one
+    ctx2 = b.new_context(viewport={'width': 880, 'height': 1300}); pg2 = ctx2.new_page()
+    pg2.route('**/three.min.js', lambda r: r.fulfill(path=os.environ.get('THREE_JS', os.path.join(here, '..', 'src', 'vendor', 'three.min.js')), content_type='application/javascript'))
+    pg2.goto(f'http://127.0.0.1:{srv.server_port}/{os.path.basename(page_path)}')
+    pg2.set_input_files('#fFolder', hl2)
+    pg2.wait_for_function("() => document.getElementById('hlStatus').textContent.includes('2 demos found.')", timeout=10000)
+    pg2.click(f'#demoList button:has-text("{SK}")')
+    pg2.wait_for_function('() => document.getElementById("load").hidden', timeout=120000)
+    behind = msg(pg2)
+    back_to_start(pg2)
+    check('back to the start screen after a demo with no overview in the folder: the message line is empty (it said "Reading …" up to 0.26.11)',
+          behind.startswith(f'Reading {SK}') and msg(pg2) == '', f'behind the view: {behind!r}; on the start screen: {msg(pg2)!r}')
+    pg2.click('#btnOpen'); pg2.wait_for_function('() => document.getElementById("load").hidden', timeout=5000)
+    os.remove(stand_in)
+    pg2.click('#btnOpen')
+    try: pg2.wait_for_function("() => document.getElementById('msg').textContent.includes('taken off the list')", timeout=5000)
+    except Exception: pass
+    check('a demo deleted while a demo was open: back on the start screen, its note still shows and the count says 1',
+          msg(pg2).startswith('deleted-later.dem is no longer in your folder') and pg2.inner_text('#hlStatus') == '1 demo found.', f'{msg(pg2)!r}, {pg2.inner_text("#hlStatus")!r}')
+    ctx2.close()
     b.close()
 print(f'{len(fails)} failed' if fails else 'all passed')
 sys.exit(1 if fails else 0)
