@@ -56,7 +56,8 @@ FAKE = r"""
 BASE = {'cstrike/maps/de_dust2.bsp': [4000, 1000], 'cstrike/overviews/de_dust2.bmp': [300, 1000],
         'cstrike/overviews/de_dust2.txt': [40, 1000], 'cstrike/models/player/leet/leet.mdl': [900, 1000],
         'cstrike/sound/weapons/ak47-1.wav': [200, 1000], 'cstrike/navi-vs-fx.dem': [3000, 1000],
-        'cstrike/old-2006.dem': [2000, 1000], 'cstrike/readme.txt': [10, 1000], 'valve/halflife.wad': [500, 1000]}
+        'cstrike/old-2006.dem': [2000, 1000], 'cstrike/readme.txt': [10, 1000], 'valve/halflife.wad': [500, 1000],
+        'cstrike/config.cfg': [300, 1000], 'cstrike/sprites/weapon_ak47.txt': [200, 1000]}
 
 results = []
 def check(name, ok, detail=''):
@@ -92,6 +93,10 @@ with sync_playwright() as p:
     r = row(pg); check('A1 first visit: asks for the folder, example path shown, Open .dem greyed out', r['title'] == 'Choose your Half-Life folder' and 'Program Files (x86)' in r['status'] and r['demo_off'] and not r['done'], r); shot(pg, 'a1_first_visit')
     pg.click('#btnFolder'); wait_status(pg, 'Up to date.')
     r = row(pg); check('A2 picked: "Folder selected", up to date, 2 demos, Open .dem on', r['title'] == 'Folder selected: Half-Life' and '2 demos found' in r['status'] and r['demos'] == 2 and r['done'] and not r['demo_off'], r); shot(pg, 'a2_up_to_date')
+    # the files kept from the folder, as saved for the next visit (the same list HL_WANT gives the folder's scan)
+    pg.wait_for_timeout(200)
+    kept = pg.evaluate("""() => new Promise((res) => { const o = indexedDB.open('wallbang-viewer', 1); o.onsuccess = () => { const q = o.result.transaction('overviews').objectStore('overviews').get('hl:snap'); q.onsuccess = () => res(Object.keys((q.result && q.result.files) || {})); q.onerror = () => res([]); }; o.onerror = () => res([]); })""")
+    check('A2b POV mode\'s files are kept from the folder: cstrike/config.cfg and sprites/weapon_*.txt (0.26.8), not readme.txt', 'cstrike/config.cfg' in kept and 'cstrike/sprites/weapon_ak47.txt' in kept and 'cstrike/readme.txt' not in kept, kept)
     fs2 = dict(BASE); fs2.pop('cstrike/old-2006.dem')
     for n in ('a', 'b', 'c'): fs2[f'cstrike/new-{n}.dem'] = [1000, 2000]
     fs2['cstrike/models/player/leet/leet.mdl'] = [950, 2000]

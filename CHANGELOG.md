@@ -4,6 +4,7 @@ What changed in the viewer, newest first. The version shows in the viewer's shor
 
 ## Versions
 
+- [0.26.8](#0268-2026-11-02) 2026-11-02: POV crosshair, ammo icons in Chrome
 - [0.26.7](#0267-2026-11-02) 2026-11-02: Each wall's own material
 - [0.26.6](#0266-2026-11-02) 2026-11-02: Wallbangs seen through fences
 - [0.26.5](#0265-2026-11-02) 2026-11-02: Round keys, timers through pauses
@@ -65,6 +66,20 @@ What changed in the viewer, newest first. The version shows in the viewer's shor
 
 ## Known limits
 Moved to [LIMITS.md](LIMITS.md) on 30 Oct 2026; release entries below still say "Known limits" for that list.
+
+## 0.26.8 (2026-11-02)
+
+### Fixed
+- **POV mode reads your crosshair settings and the guns' ammo icons in Chrome and Edge** (Sujan's go, 2 Nov 2026). Chrome and Edge read the Half-Life folder through the browser's folder access, and the viewer kept only the files on its list (`HL_WANT` in `src/ui/folder.js`). `cstrike/config.cfg` and `cstrike/sprites/weapon_*.txt` weren't on it, so there **POV mode** drew the game's default crosshair (green, medium) and no ammo icon next to the ammo count. Firefox and Safari, which get every file of the folder, found them. Both are on the list now.
+- With them: a `config.cfg` that changed since (Chrome and Edge read the folder again when you come back after playing) is read again, and a folder without one goes back to the defaults; it was read once a visit. A second POV demo in the same visit gets the ammo icons for the guns the first one didn't use.
+
+### How it was tested
+- `tests/pov_folder_check.py` (new): Sujan's Half-Life folder through a stand-in for Chrome's folder handle, a stand-in `config.cfg`, Match 1 CT (public server, de_barcelona, 27 Mar 2025) with **POV mode** on: 7 of 7 passed; on 0.26.7, 3 of 7 (no `config.cfg`, no weapon files, no ammo icons).
+- `folder_row_test.py` (21 of 21, its new A2b fails on 0.26.7), `start_screen_check.py` and `prefs_check.py` passed; the four checks with game files wait for Sujan's go.
+- Full log: `tests/logs/0.26.8.md`.
+### Discussed, not changed
+- Adding `pov_folder_check.py` to the checks run on every release: `folder_row_test.py`'s A2b already fails when a file the viewer reads is left off the list, and it runs on GitHub on every pull request.
+- Chrome refusing a Half-Life folder under Program Files (Sujan, 2 Nov 2026): a separate fix, proposed to Sujan first (`STATE.md`, Open now).
 
 ## 0.26.7 (2026-11-02)
 

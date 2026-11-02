@@ -965,9 +965,14 @@ const POV_XHAIR = [[8, 3], [4, 3], [5, 3], [8, 3], [9, 4], [6, 3], [9, 3], [3, 3
 const NO_XHAIR = { 3: 1, 13: 1, 18: 1, 24: 1 };
 // weapon ids by the p_ model name the snapshots give (CS 1.6 weapon numbering, as CurWeapon uses)
 const P_WEAPON_ID = { p228: 1, scout: 3, hegrenade: 4, xm1014: 5, c4: 6, mac10: 7, aug: 8, smokegrenade: 9, elite: 10, fiveseven: 11, ump45: 12, sg550: 13, galil: 14, famas: 15, usp: 16, glock18: 17, awp: 18, mp5: 19, m249: 20, m3: 21, m4a1: 22, tmp: 23, g3sg1: 24, flashbang: 25, deagle: 26, sg552: 27, ak47: 28, knife: 29, p90: 30 };
-const XCFG = { r: 50, g: 250, b: 50, base: 800, additive: true, read: false, scale: 0.7 }; // scale: 70%, Sujan's pick from docs/pov-crosshair-size-mock.png (4 Oct 2026: 100%, the game's own size, looked large)
+const XCFG_GAME = { r: 50, g: 250, b: 50, base: 800, additive: true }; // the game's defaults, without a config.cfg
+const XCFG = { ...XCFG_GAME, from: null, scale: 0.7 }; // scale: 70%, Sujan's pick from docs/pov-crosshair-size-mock.png (4 Oct 2026: 100%, the game's own size, looked large)
+// read again whenever the folder gives another config.cfg (Chrome and Edge rescan the folder on coming back, after
+// a game that saved new settings) or none, back to the defaults (0.26.8; it was read once a visit)
 async function readCrosshairCfg() {
-  if (XCFG.read || !files.cfg) return; XCFG.read = true;
+  if (XCFG.from === (files.cfg || null)) return;
+  XCFG.from = files.cfg || null; Object.assign(XCFG, XCFG_GAME);
+  if (!files.cfg) return;
   try {
     const txt = await files.cfg.text(), get = (k) => { const m = new RegExp('^\\s*' + k + '\\s+"?([^"\\n]*)"?', 'mi').exec(txt); return m ? m[1].trim() : null; };
     const col = get('cl_crosshair_color'); if (col) { const c = col.split(/\s+/).map(Number); if (c.length === 3 && c.every(Number.isFinite)) [XCFG.r, XCFG.g, XCFG.b] = c.map((x) => Math.max(0, Math.min(255, x))); }
@@ -1058,7 +1063,7 @@ function povFov(t) {
 const HUD_SCALE = 1;
 const HUD_COL = [255, 160, 0], HUD_RED = [250, 0, 0];
 const W_NAME = { 1: 'p228', 3: 'scout', 4: 'hegrenade', 5: 'xm1014', 6: 'c4', 7: 'mac10', 8: 'aug', 9: 'smokegrenade', 10: 'elite', 11: 'fiveseven', 12: 'ump45', 13: 'sg550', 14: 'galil', 15: 'famas', 16: 'usp', 17: 'glock18', 18: 'awp', 19: 'mp5navy', 20: 'm249', 21: 'm3', 22: 'm4a1', 23: 'tmp', 24: 'g3sg1', 25: 'flashbang', 26: 'deagle', 27: 'sg552', 28: 'ak47', 29: 'knife', 30: 'p90' };
-const HUDS = { from: null, spr: {}, ammo: {}, loading: false };
+const HUDS = { from: null, spr: {}, ammo: {}, loading: false, forD: null };
 // one sprite from a sheet as two canvases, yellow and red: the sheet's brightness is how solid each pixel is
 function hudSprite(sheet, r) {
   if (!sheet || r.w <= 0 || r.h <= 0 || r.x + r.w > sheet.w || r.y + r.h > sheet.h) return null;
@@ -1074,10 +1079,14 @@ function hudSprite(sheet, r) {
   };
   return { y: mk(HUD_COL), r: mk(HUD_RED), w: r.w, h: r.h };
 }
+// read once per folder for the HUD, and the ammo icons again for each demo, for the guns he used (0.26.8: a second
+// POV demo in the same visit had none for a gun the first didn't use)
 async function loadHudSprites() {
   const txt = files.hud && files.hud.txt;
-  if (!txt || HUDS.from === txt || HUDS.loading) return;
+  if (!txt || (HUDS.from === txt && HUDS.forD === D) || HUDS.loading) return;
   HUDS.loading = true;
+  const forD = D;
+  if (HUDS.from !== txt) { HUDS.spr = {}; HUDS.ammo = {}; }
   try {
     const sheets = {};
     const sheet = async (nm) => { if (!(nm in sheets)) { const f = files.hud.spr[nm]; sheets[nm] = f ? decodeSpr(await readPicked(f, `sprites/${nm}.spr`) || new Uint8Array(0)) : null; } return sheets[nm]; };
@@ -1087,7 +1096,7 @@ async function loadHudSprites() {
       if (f.length === 7 && want.has(f[0]) && f[1] === '640') { const sp = hudSprite(await sheet(f[2].toLowerCase()), { x: +f[3], y: +f[4], w: +f[5], h: +f[6] }); if (sp) HUDS.spr[f[0]] = sp; }
     }
     // ammo icons, for the guns he used
-    const ids = new Set(); for (let i = 1; i < (D.ownAmmo || []).length; i += 3) ids.add(D.ownAmmo[i]);
+    const ids = new Set(), own = (forD && forD.ownAmmo) || []; for (let i = 1; i < own.length; i += 3) ids.add(own[i]);
     for (const id of ids) {
       const nm = W_NAME[id], f = nm && files.hud.wtxt && files.hud.wtxt['weapon_' + nm]; if (!f) continue;
       for (const line of (await f.text()).split(/\r?\n/)) {
@@ -1096,7 +1105,7 @@ async function loadHudSprites() {
       }
     }
   } catch (e) { }
-  HUDS.from = txt; HUDS.loading = false;
+  HUDS.from = txt; HUDS.forD = forD; HUDS.loading = false;
 }
 // the last value at or before t in a flat (time, value...) array of stride n, column k
 function lastAt(a, n, t, k = 1, from = 0) {
