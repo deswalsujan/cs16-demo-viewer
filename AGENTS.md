@@ -11,6 +11,7 @@ Rules for agents working in this repo, so nothing is lost between chats and mach
 - Before any run that takes more than a few minutes (a full test run, a big measurement), say how long it will take and wait for Sujan's go (Sujan, 2 Nov 2026; it replaced "warn before anything that runs a long time").
 - Think about the user experience in every change (Sujan, 25 Oct 2026): what a first-time user sees, whether a feature or option needs a tooltip, and whether the UI could be simpler. Open UX items are under "User experience" in IDEAS.md.
 - Every user gets the same experience on Mac and Windows, in Chrome and Edge, on any screen size. A bug that hits one platform only counts as a real bug (Sujan, 2 Nov 2026).
+- Never script the Mac's interface: no System Events, keystrokes or clicks in the Mac's own windows and dialogs. A check that needs a click in a system dialog is Sujan's to do (Sujan, 2 Nov 2026).
 
 ## How each change ships
 Before starting any branch, run `git fetch` and branch from `origin/main`; if a branch has to stack on an open pull request, say which one in the handover (Sujan, 1 Nov 2026).
@@ -34,7 +35,7 @@ Before starting any branch, run `git fetch` and branch from `origin/main`; if a 
 - Verify factual claims before stating them, and say plainly when unsure.
 - **Guns:** before saying what a gun can or can't do (wallbangs, penetration, damage), read that weapon's own code in ReGameDLL (`regamedll/dlls/wpn_shared/wpn_<gun>.cpp`, and `FireBullets3` / `FireBullets` in `cbase.cpp`), never a general number. ReGameDLL is a reverse-engineered copy of CS 1.6's game code. Sujan's in-game checks outrank code readings. (Rule set 1 Oct 2026 after a wrong claim that the USP could wallbang thin cover; it can't.)
 - Never bundle or host Valve's files. Everything game-related (maps, overviews, models, sounds, kill feed icons) is read from the player's own Half-Life folder.
-- The viewer collects no user data (Sujan's rule, 2 Nov 2026). The fonts loaded from Google Fonts send each visitor's IP address and browser details to Google; whether to keep them is open (`STATE.md`, Open now).
+- The viewer collects no user data (Sujan's rule, 2 Nov 2026). The fonts loaded from Google Fonts send each visitor's IP address and browser details to Google, so they are to go: the page will use Tahoma and Verdana from the player's own computer (`STATE.md`, Open now).
 
 ## Sujan's files
 - Windows: `D:\SteamLibrary\steamapps\common\Half-Life`. Mac: `~/code/cs16-data/Half-Life` (moved from `~/Downloads/Half-Life` on 1 Nov 2026), a copy of the Windows folder; on 3 Oct 2026 Sujan added de_nuke32, de_zovine, de_forge, de_mirage_32 and css_cache to it, and put back de_tuscan and de_tuscan32 (lost while copying; all checked by listing), so both machines have the same maps. If a Tuscan demo shows no 3D map on the Mac, check `cstrike_downloads/maps/de_tuscan.bsp` first. On 23 Oct 2026 Sujan added de_mirage (map and overview) to the Mac's `cstrike_downloads`; Windows not checked.

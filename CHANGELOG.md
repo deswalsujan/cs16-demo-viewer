@@ -75,7 +75,7 @@ Moved to [LIMITS.md](LIMITS.md) on 30 Oct 2026; release entries below still say 
 
 ### How it was tested
 - `tests/pov_folder_check.py` (new): Sujan's Half-Life folder through a stand-in for Chrome's folder handle, a stand-in `config.cfg`, Match 1 CT (public server, de_barcelona, 27 Mar 2025) with **POV mode** on: 7 of 7 passed; on 0.26.7, 3 of 7 (no `config.cfg`, no weapon files, no ammo icons).
-- `folder_row_test.py` (21 of 21, its new A2b fails on 0.26.7), `start_screen_check.py` and `prefs_check.py` passed; the four checks with game files wait for Sujan's go.
+- The seven checks pass on Sujan's Mac: `folder_row_test.py` (21 of 21, its new A2b fails on 0.26.7), `start_screen_check.py`, `prefs_check.py`, `demo_search_check.py`, `late_kill_timing_check.py`, `panel_click_check.py`, `ground_truth_check.py` (231 kills on 48 demos, 0 mismatches, 8 known gaps).
 - Full log: `tests/logs/0.26.8.md`.
 ### Discussed, not changed
 - Adding `pov_folder_check.py` to the checks run on every release: `folder_row_test.py`'s A2b already fails when a file the viewer reads is left off the list, and it runs on GitHub on every pull request.
