@@ -41,7 +41,9 @@ FAKE = r"""
         }
       } };
   }
-  window.showDirectoryPicker = async () => { window.__picked = (window.__picked || 0) + 1; return dirHandle('', fs().name); };
+  // __refuse: the picker refuses the folder, as Chrome does for Steam's default folder; the page gets an AbortError,
+  // like a closed picker (0.26.10)
+  window.showDirectoryPicker = async () => { window.__picked = (window.__picked || 0) + 1; if (localStorage.getItem('__refuse')) throw new DOMException('The user aborted a request.', 'AbortError'); return dirHandle('', fs().name); };
   const put = IDBObjectStore.prototype.put, get = IDBObjectStore.prototype.get;
   const res = Object.getOwnPropertyDescriptor(IDBRequest.prototype, 'result').get;
   IDBObjectStore.prototype.put = function (v, k) { return put.call(this, v && v.__fake ? 'FAKE' : v, k); };
@@ -61,13 +63,15 @@ BASE = {'cstrike/maps/de_dust2.bsp': [4000, 1000], 'cstrike/overviews/de_dust2.b
 
 results = []
 def check(name, ok, detail=''):
-    results.append(ok); print(('PASS ' if ok else 'FAIL ') + name + (f'  ({detail})' if detail and not ok else ''))
+    ok = bool(ok); results.append(ok); print(('PASS ' if ok else 'FAIL ') + name + (f'  ({detail})' if detail and not ok else ''))
 
 def row(pg):
     return pg.evaluate("({ title: document.getElementById('hlTitle').textContent, status: document.getElementById('hlStatus').textContent,"
                        " refresh: document.getElementById('btnHlRefresh').hidden ? null : document.getElementById('btnHlRefresh').textContent,"
                        " pick: document.getElementById('btnFolder').textContent, demos: document.querySelectorAll('#demoList button').length,"
-                       " done: document.getElementById('stepFolder').classList.contains('done'), demo_off: document.getElementById('btnDemo').disabled })")
+                       " done: document.getElementById('stepFolder').classList.contains('done'), demo_off: document.getElementById('btnDemo').disabled,"
+                       " paths: document.getElementById('hlPaths').hidden ? null : document.getElementById('hlPaths').textContent,"
+                       " alt: document.getElementById('hlAlt').hidden ? null : document.getElementById('hlAlt').textContent, hot: document.getElementById('hlAlt').classList.contains('hot') })")
 
 def wait_status(pg, text, ms=10000):
     pg.wait_for_function("t => document.getElementById('hlStatus').textContent.includes(t)", arg=text, timeout=ms)
@@ -90,7 +94,7 @@ with sync_playwright() as p:
     look = lambda: (pg.wait_for_timeout(2300), pg.evaluate("window.dispatchEvent(new Event('focus'))"), pg.wait_for_timeout(700))
     pg.goto(url); pg.evaluate('localStorage.clear()'); setfs('Half-Life', BASE)
     pg.reload(); pg.wait_for_timeout(600)
-    r = row(pg); check('A1 first visit: asks for the folder, example path shown, Open .dem greyed out', r['title'] == 'Choose your Half-Life folder' and 'Program Files (x86)' in r['status'] and r['demo_off'] and not r['done'], r); shot(pg, 'a1_first_visit')
+    r = row(pg); check('A1 first visit: asks for the folder, where Steam puts it on Windows and Mac shown, Open .dem greyed out', r['title'] == 'Choose your Half-Life folder' and r['paths'] and 'Program Files (x86)' in r['paths'] and 'Library/Application Support/Steam' in r['paths'] and r['demo_off'] and not r['done'], r); shot(pg, 'a1_first_visit')
     pg.click('#btnFolder'); wait_status(pg, 'Up to date.')
     r = row(pg); check('A2 picked: "Folder selected", up to date, 2 demos, Open .dem on', r['title'] == 'Folder selected: Half-Life' and '2 demos found' in r['status'] and r['demos'] == 2 and r['done'] and not r['demo_off'], r); shot(pg, 'a2_up_to_date')
     # the files kept from the folder, as saved for the next visit (the same list HL_WANT gives the folder's scan)
@@ -113,7 +117,7 @@ with sync_playwright() as p:
     r = row(pg); check('A7 next visit with access kept: opens by itself, with the new demo', pg.evaluate('window.__picked || 0') == 0 and r['demos'] == 6, r)
     setfs('sprint-builds-review', {'src/index.ts': [100, 1], 'README.md': [10, 1], 'old/match.dem': [500, 1]})
     pg.click('#btnFolder'); wait_status(pg, 'Not the Half-Life folder')
-    r = row(pg); check('A8 a folder without cstrike: "Not the Half-Life folder" with the example path, nothing loaded', 'sprint-builds-review' in r['title'] and 'no cstrike folder inside' in r['status'] and 'Program Files (x86)' in r['status'] and r['demos'] == 0 and r['demo_off'] and not r['done'], r); shot(pg, 'a8_wrong_folder')
+    r = row(pg); check('A8 a folder without cstrike: "Not the Half-Life folder" with where Steam puts it, nothing loaded', 'sprint-builds-review' in r['title'] and 'no cstrike folder inside' in r['status'] and r['paths'] and 'Program Files (x86)' in r['paths'] and r['demos'] == 0 and r['demo_off'] and not r['done'], r); shot(pg, 'a8_wrong_folder')
     setfs('cstrike', {'maps/de_dust2.bsp': [4000, 1], 'navi.dem': [3000, 1]})
     pg.click('#btnFolder'); wait_status(pg, 'one level up')
     r = row(pg); check('A9 the cstrike folder itself: asks for the folder one level up', 'one level up' in r['status'] and r['demo_off'], r); shot(pg, 'a9_cstrike_picked')
@@ -153,6 +157,30 @@ with sync_playwright() as p:
     pg.set_input_files('#fFolder', hl); wait_status(pg, '4 demos found')
     pg.reload(); pg.wait_for_timeout(800)
     r = row(pg); check('B4 next visit: folder name remembered, asks to choose it again', 'Half-Life' in r['title'] and 'Choose it again' in r['status'] and r['pick'] == 'Choose folder', r); shot(pg, 'b4_fallback_remembered')
+    ctx.close(); shutil.rmtree(tmp)
+
+    # ---- D: Steam's default folder, which Chrome and Edge's folder access refuses (0.26.10) ----
+    tmp = tempfile.mkdtemp(); hl = os.path.join(tmp, 'Half-Life'); write_tree(BASE)
+    ctx = b.new_context(viewport={'width': 1280, 'height': 800}); ctx.add_init_script(FAKE)
+    pg = ctx.new_page(); setup(pg); errors = []; pg.on('pageerror', lambda e: errors.append(str(e)))
+    pg.goto(url); pg.evaluate('localStorage.clear()'); setfs('Half-Life', BASE); pg.evaluate("localStorage.setItem('__refuse', '1')"); pg.reload(); pg.wait_for_timeout(600)
+    r = row(pg); help_ = 'The Half-Life folder from your Steam install, the one with cstrike and valve inside.'
+    check('D1 first visit in Chrome: the help in one sentence, both paths, the line for Steam\'s default folder with Choose it this way', r['status'] == help_ and r['paths'] and r['alt'] and 'Choose it this way' in r['alt'] and 'nothing leaves your computer' in r['alt'] and not r['hot'], r); shot(pg, 'd1_steam_default')
+    pg.click('#btnFolder'); wait_status(pg, 'No folder chosen.')
+    r = row(pg); check('D2 Chrome refuses the folder: "No folder chosen", Choose it this way below, the line brighter, the paths hidden', 'below' in r['status'] and r['hot'] and r['alt'] and not r['paths'] and r['demo_off'] and pg.evaluate('window.__picked') == 1, r); shot(pg, 'd2_refused')
+    with pg.expect_file_chooser() as fc: pg.click('#btnHlInput')
+    fc.value.set_files(hl); wait_status(pg, 'Up to date.')
+    r = row(pg); check('D3 Choose it this way opens the ordinary folder pick: up to date, 2 demos', r['demos'] == 2 and 'Half-Life' in r['title'] and not r['alt'], r)
+    pg.reload(); pg.wait_for_timeout(800)
+    r = row(pg); check('D4 next visit: chosen once per visit, said why, no line for Steam\'s default folder', 'Choose it again for this visit' in r['status'] and "Steam's default folder" in r['status'] and not r['alt'] and r['demo_off'], r); shot(pg, 'd4_next_visit')
+    with pg.expect_file_chooser() as fc: pg.click('#btnFolder')
+    fc.value.set_files(hl); wait_status(pg, 'Up to date.')
+    r = row(pg); check('D5 and Choose folder opens the ordinary pick, not the folder access', r['demos'] == 2 and not pg.evaluate('window.__picked || 0'), r)
+    pg.click('#bClear'); pg.wait_for_timeout(300); pg.click('#bClear'); pg.wait_for_timeout(700)
+    r = row(pg); check('D6 Clear saved files: back to the folder access, the line for Steam\'s default folder again', r['status'] == help_ and r['alt'] and r['paths'], r)
+    pg.click('#btnFolder'); wait_status(pg, 'No folder chosen.')
+    check('D7 and Choose folder uses the folder access again', pg.evaluate('window.__picked') == 1)
+    check('D8 no page errors', not errors, errors)
     ctx.close(); shutil.rmtree(tmp)
 
     # ---- C: inside a frame from another site (like the claude.ai artifact) ----

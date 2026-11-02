@@ -68,7 +68,7 @@ Before starting any branch, run `git fetch` and branch from `origin/main`; if a 
 - `src/vendor/three.min.js`: three.js r128 (MIT), the file cdnjs serves, built into the page; the tests serve it to older builds.
 - `src/view3d.part.js`: the 3D view (three.js): cameras, each frame (`update3`), hit numbers, kill rings, the sniper scope (`SCOPE_STYLE`); the wallbang picture check (`checkSeen`); **POV mode**: his view, crosshair, HUD, spectator bars, the hidden-enemies note.
 - `src/ui/common.js`: shared state (`D` the demo, `M` the match, `T` the time), colours, saved settings, small helpers (`weaponShort`).
-- `src/ui/folder.js`: the Half-Life folder, picked and remembered between visits (`pickFolder`, `hlInit`), the demo list, centre-screen messages, kill feed icons.
+- `src/ui/folder.js`: the Half-Life folder, picked and remembered between visits (`pickFolder`, `hlInit`), or picked once per visit for Steam's default folder, which Chrome refuses (**Choose it this way**, 0.26.10), the demo list, centre-screen messages, kill feed icons.
 - `src/ui/open.js`: opening a demo in the Web Worker (`loadDemoFile`), and joining a map recorded in parts (`joinDemos`, `openJoined`).
 - `src/ui/join.js`: finding a map's other parts and their order (`findOtherParts`, `suggestOrder`), and the Join card.
 - `src/ui/map.js`: the overview image and the map geometry (`loadMap`).
