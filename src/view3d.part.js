@@ -542,7 +542,7 @@ function update3Now() {
   lx.setTransform(dpr, 0, 0, dpr, 0, 0);
   const W = lc.width / dpr, H = lc.height / dpr;
   lx.clearRect(0, 0, W, H);
-  const mono = monoFont();
+  const mono = textFont();
   const camW = [camera.position.x, -camera.position.z, camera.position.y];
   let visBudget = 3; // routine re-checks this frame; the rest wait a frame or two
   // Which players are behind walls, for "See through walls" (their bodies are drawn on top of the walls)
@@ -713,7 +713,7 @@ function drawHitMarker(lx, cx, cy, xh = XHAIR.small) {
     lx.stroke();
   }
   const label = k.wb ? `${k.wb.loose ? 'LOOSE WB' : 'WALLBANG'}${k.hs ? ' · HS' : ''}` : k.hs ? 'HEADSHOT' : 'KILL';
-  lx.font = `500 10px ${monoFont()}`; lx.textAlign = 'center';
+  lx.font = `500 10px ${textFont()}`; lx.textAlign = 'center';
   lx.lineWidth = 2.5; lx.strokeStyle = 'rgba(0,0,0,.6)'; lx.strokeText(label, cx, cy + xh.end + 20); lx.fillStyle = col; lx.fillText(label, cx, cy + xh.end + 20);
   lx.restore();
 }
@@ -1144,7 +1144,7 @@ function drawPovHud(lx, W, H) {
   const spr = (nm, x, y, red) => { const p = HUDS.spr[nm] || HUDS.ammo[nm]; if (!p) return 0; lx.drawImage(red ? p.r : p.y, x, y, p.w * s, p.h * s); return p.w * s; };
   const num = (n, x, y, red, rightAlign) => {
     const str = String(Math.max(0, Math.round(n)));
-    if (!haveSpr) { lx.font = `700 ${Math.round(dh)}px ${monoFont()}`; lx.fillStyle = `rgb(${(red ? HUD_RED : HUD_COL).join(',')})`; lx.textBaseline = 'top'; lx.textAlign = rightAlign ? 'right' : 'left'; lx.fillText(str, x, y); return lx.measureText(str).width; }
+    if (!haveSpr) { lx.font = `700 ${Math.round(dh)}px ${textFont()}`; lx.fillStyle = `rgb(${(red ? HUD_RED : HUD_COL).join(',')})`; lx.textBaseline = 'top'; lx.textAlign = rightAlign ? 'right' : 'left'; lx.fillText(str, x, y); return lx.measureText(str).width; }
     let w = str.length * dw, x0 = rightAlign ? x - w : x;
     for (const ch of str) { spr('number_' + ch, x0, y, red); x0 += dw; }
     return w;
@@ -1183,7 +1183,7 @@ function drawSpecBars(lx, W, H) {
   const on = povBarsOn();
   $('feed').style.top = on ? Math.round(H * SPEC_BAR + 8) + 'px' : '';
   if (!on) return false;
-  const bh = Math.round(H * SPEC_BAR), mono = monoFont();
+  const bh = Math.round(H * SPEC_BAR), mono = textFont();
   lx.save();
   lx.fillStyle = 'rgba(0,0,0,.6)'; lx.fillRect(0, 0, W, bh); lx.fillRect(0, H - bh, W, bh);
   // score and clock

@@ -5,12 +5,12 @@ h = functools.partial(http.server.SimpleHTTPRequestHandler, directory=os.path.jo
 srv = http.server.ThreadingHTTPServer(('127.0.0.1', 0), h); threading.Thread(target=srv.serve_forever, daemon=True).start()
 with sync_playwright() as p:
     b = p.chromium.launch(); pg = b.new_page(viewport={'width': 1440, 'height': 900})
-    # the network blocked but for Google Fonts (0.26.2): three.js is in the page, so nothing else may be asked for
+    # the network blocked: three.js is in the page (0.26.2) and the fonts are the player's own (0.26.9), so nothing may
+    # be asked for from another site (Sujan, 2 Nov 2026: the viewer collects no user data)
     outside = []
     def net(r):
         u = r.request.url
         if u.startswith('http://127.0.0.1:'): r.continue_()
-        elif u.startswith(('https://fonts.googleapis.com/', 'https://fonts.gstatic.com/')): r.fulfill(body='', content_type='text/css')
         else: outside.append(u); r.abort()
     pg.route('**/*', net)
     pg.goto(f'http://127.0.0.1:{srv.server_port}/index.html'); pg.wait_for_timeout(800)

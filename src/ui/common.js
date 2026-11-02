@@ -43,9 +43,10 @@ const ls = {
 // ---------------- helpers ----------------
 const fmt = (s) => { s = Math.max(0, s); const m = Math.floor(s / 60), x = Math.floor(s % 60); return m + ':' + String(x).padStart(2, '0'); };
 const esc = (s) => String(s).replace(/[&<>"]/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c]));
-// the monospace font stack, read from the page styles once (reading styles every frame is slow)
-let MONO = null;
-const monoFont = () => MONO || (MONO = getComputedStyle(document.body).getPropertyValue('--f-mono'));
+// the page's text font stack (Tahoma, 0.26.9), for text drawn on the radar, the timeline and the 3D view; read from the
+// page styles once (reading styles every frame is slow)
+let TEXT_FONT = null;
+const textFont = () => TEXT_FONT || (TEXT_FONT = getComputedStyle(document.body).getPropertyValue('--f-body'));
 const cleanName = (s) => (s || '?').replace(/[\x00-\x1f]/g, '');
 function setMsg(t, err) { $('msg').textContent = t || ''; $('msg').classList.toggle('err', !!err); if (err && t && !$('load').hidden) $('msg').scrollIntoView({ block: 'nearest' }); }
 function sideCol(side) { return side === 1 ? COL.t : side === 2 ? COL.ct : COL.muted; }
