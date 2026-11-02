@@ -78,7 +78,7 @@ Moved to [LIMITS.md](LIMITS.md) on 30 Oct 2026; release entries below still say 
 
 ### How it was tested
 - `demo_search_check.py` has three new checks, on SK vs Na`Vi, Train, DreamHack Winter 2011: back to the start screen after a demo with its overview, and after the same demo from a temporary folder with no overview (fails on 0.26.11, passes on 0.26.12); a demo deleted while another was open still gets its note.
-- The seven checks: not run yet, waiting for Sujan's go (about 2 minutes).
+- The seven checks pass on Sujan's Mac (2 minutes 8 seconds; `ground_truth_check.py` 231 kills, 0 mismatches).
 - Full log: `tests/logs/0.26.12.md`.
 
 ### Discussed, not changed
