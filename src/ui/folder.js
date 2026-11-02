@@ -227,8 +227,11 @@ const HL = { handle: null, snap: null, loaded: false, checking: false, lastCheck
 const HL_EXAMPLE = 'C:\\Program Files (x86)\\Steam\\steamapps\\common\\Half-Life';
 const HL_HELP = `The Half-Life folder from your Steam install, the one that contains cstrike and valve. On Windows that's usually ${HL_EXAMPLE}.`;
 const fsaOK = () => { try { return !HL.fsaBroken && typeof window.showDirectoryPicker === 'function' && window.isSecureContext && window.self === window.top; } catch (e) { return false; } };
-// the files the viewer reads; everything else in the folder is skipped
-const HL_WANT = /(?:^|\/)(?:cstrike|cstrike_downloads|valve)\/(?:maps\/[^/]+\.bsp|overviews\/[^/]+\.(?:bmp|txt)|models\/.+\.mdl|sound\/.+\.wav|sound\/(?:sentences|materials)\.txt|resource\/cstrike_english\.txt|sprites\/hud\.txt|sprites\/640hud\d+\.spr|[^/]+\.wad)$|\.dem$/;
+// the files the viewer reads; everything else in the folder is skipped. Every file indexFolder looks for has to be
+// here too, or Chrome and Edge, which read the folder through its handle, never see it (0.26.8: POV mode's
+// cstrike/config.cfg and sprites/weapon_*.txt were missing, so its crosshair and ammo icons were only found in
+// Firefox and Safari; folder_row_test.py checks both)
+const HL_WANT = /(?:^|\/)(?:cstrike|cstrike_downloads|valve)\/(?:maps\/[^/]+\.bsp|overviews\/[^/]+\.(?:bmp|txt)|models\/.+\.mdl|sound\/.+\.wav|sound\/(?:sentences|materials)\.txt|resource\/cstrike_english\.txt|sprites\/hud\.txt|sprites\/640hud\d+\.spr|[^/]+\.wad)$|(?:^|\/)cstrike\/(?:config\.cfg|sprites\/weapon_\w+\.txt)$|\.dem$/;
 // path inside the chosen folder, lower case, without the folder's own name
 const hlKey = (f) => (f.relPath || f.webkitRelativePath || f.name).replace(/\\/g, '/').toLowerCase().split('/').slice(1).join('/');
 function hlSnap(list, name, gameDirs) {
