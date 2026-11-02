@@ -83,7 +83,7 @@ Before starting any branch, run `git fetch` and branch from `origin/main`; if a 
 - `src/ui/after-load.js`: what runs once a demo is open (`onDemo`), **POV mode**'s data (`povApply`), closing a demo.
 - `src/ui/sidebar.js`: the side panel's Rounds, Kills, Players and Wallbangs tabs (`renderPane`, `killHtml`).
 - `src/ui/playback.js`: play, seek, speed and rounds, the Tab scoreboard, the HUD (`updateHud`).
-- `src/ui/radar.js`: the 2D radar (`draw`), where a player is between snapshots (`playerState`), picking players, the heatmap.
+- `src/ui/radar.js`: the 2D radar (`draw`), fitting the map above its controls (`fitView`), where a player is between snapshots (`playerState`), picking players, the heatmap.
 - `src/ui/timeline.js`: the timeline under the view (`drawTimeline`).
 - `src/ui/loop.js`: the frame loop (`frame`) and full screen.
 - `src/ui/theatre.js`: Theatre mode, and the saved view settings (`savePrefs`).

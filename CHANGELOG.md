@@ -4,6 +4,7 @@ What changed in the viewer, newest first. The version shows in the viewer's shor
 
 ## Versions
 
+- [0.26.14](#02614-2026-11-03) 2026-11-03: 2D map above its controls
 - [0.26.13](#02613-2026-11-03) 2026-11-03: Interface size for big screens
 - [0.26.12](#02612-2026-11-03) 2026-11-03: Start screen message line cleared
 - [0.26.11](#02611-2026-11-02) 2026-11-02: One folder pick, every browser
@@ -71,6 +72,20 @@ What changed in the viewer, newest first. The version shows in the viewer's shor
 
 ## Known limits
 Moved to [LIMITS.md](LIMITS.md) on 30 Oct 2026; release entries below still say "Known limits" for that list.
+
+## 0.26.14 (2026-11-03)
+
+### Fixed
+- **The 2D map ends above the controls along the bottom of the view** (Sujan, 3 Nov 2026, no mockup): **Heatmap**, **Both sides** and **Whole match** on the right, **Names** to **Reset view** on the left. On SK vs Na`Vi, Train, DreamHack Winter 2011, R1 freeze 0:12, GeT_RiGhT's and f0rest's labels at CT spawn were under **Heatmap** at 2560x1440 since 0.26.13 (bigger controls, smaller map area) and at 1366x768 before that. The map now fits the space above the controls where it opens, after **Reset view** and when the window changes, at every window size and **Interface size**. A map the player drags or zooms can still go under them. Theatre mode keeps the whole view, since its controls come in only with the bottom bar.
+
+### How it was tested
+- `demo_search_check.py`, 4 new checks on SK vs Na`Vi, Train, DreamHack Winter 2011, R1 freeze 0:12: nothing drawn under the controls at 1366x768, 2560x1440 (130%) and 880x1300, and **Reset view** after zooming in (fails at 1366x768, 2560x1440 and after **Reset view** on 0.26.13).
+- Measured and pictured at 1366x768 and 2560x1440 against 0.26.13, and measured at 2560x1440 from 100% to 200%, 1920x1080 from 100% to 150%, 1280x720, 900x700 and 390x844: the map ends above the controls at every one.
+- Full log: `tests/logs/0.26.14.md`.
+
+### Discussed, not changed
+- A map the player drags or zooms can still go under the controls (Sujan, 3 Nov 2026: this is about where the map sits when it opens or resets).
+- At phone width (390x844), the **Heatmap** and **Both sides** lists sit over the buttons beside them, and the round pill sits on the map's top left corner; the same on 0.26.13 (IDEAS.md, **Seen while building 0.26.13**).
 
 ## 0.26.13 (2026-11-03)
 

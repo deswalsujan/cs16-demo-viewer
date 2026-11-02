@@ -5,7 +5,8 @@ Usage: HALF_LIFE_DIR=/path/to/Half-Life DEMO_DIRS=... python3 demo_search_check.
 Needs the Half-Life folder and DEMO_DIRS (for the demos, demo_dirs.py), not maps or sounds. Opens SK vs Na`Vi, Train,
 DreamHack Winter 2011 from a filtered row, then again from a temporary Half-Life folder holding only that demo (a
 clone or hard link, never moved) and a stand-in demo, so its map has no overview: up to 0.26.11 the message line still
-said "Reading name…" when the start screen came back (Sujan, 3 Nov 2026). Under a minute.
+said "Reading name…" when the start screen came back (Sujan, 3 Nov 2026). In 2D, the map ends above the controls along
+the bottom of the view where it opens and after Reset view, at three window sizes (0.26.14). Under a minute.
 """
 import os, sys, http.server, functools, threading, tempfile, shutil, subprocess, atexit
 from playwright.sync_api import sync_playwright
@@ -60,6 +61,30 @@ with sync_playwright() as p:
     pg.click('#demoList button')
     pg.wait_for_function('() => document.getElementById("load").hidden', timeout=120000)
     check('a filtered row opens its demo', True)
+
+    # the 2D map ends above the controls along the bottom of the view (0.26.14, Sujan, 3 Nov 2026): where the map sits
+    # when it opens or resets, at R1 freeze 0:12 (the moment the demo opens). The radar canvas is see-through outside
+    # the map's image, so nothing drawn from the controls' top down means the map and its labels end above them
+    under = """() => { const cv = document.getElementById('cv'), r = cv.getBoundingClientRect(), k = cv.width / r.width;
+      const top = Math.min(...['legend', 'heatbar'].map((id) => document.getElementById(id).getBoundingClientRect().top)) - r.top;
+      const y = Math.max(0, Math.floor(top * k)), g = cv.getContext('2d'), n = (y0, y1) => { let c = 0; const d = g.getImageData(0, y0, cv.width, Math.max(1, y1 - y0)).data; for (let i = 3; i < d.length; i += 4) if (d[i]) c++; return c; };
+      return { below: n(y, cv.height), above: n(0, y), top: Math.round(top), clock: document.getElementById('rclock').textContent }; }"""
+    pg.keyboard.press('Escape')  # the load summary, which would take the click on Reset view below
+    pg.click('#viewSeg button[data-v="2d"]')
+    pg.wait_for_function("() => { const c = document.getElementById('cv'); return c.width > 0 && c.getContext('2d').getImageData(c.width >> 1, c.height >> 1, 1, 1).data[3] > 0; }", timeout=30000)
+    for w, h, label in [(1366, 768, '1366x768'), (2560, 1440, '2560x1440 (Interface size Auto, 130%)'), (880, 1300, 'the test\'s own 880x1300')]:
+        pg.set_viewport_size({'width': w, 'height': h}); pg.wait_for_timeout(600)
+        u = pg.evaluate(under)
+        check(f'2D map at {label}: it ends above the Heatmap, Both sides and Whole match controls and the buttons beside them', u['below'] == 0 and u['above'] > 0,
+              f"{u['below']} pixels drawn under the controls' top ({u['top']} px down), {u['above']} above it; {u['clock'].split('·', 1)[-1].strip()}")
+    pg.set_viewport_size({'width': 1366, 'height': 768}); pg.wait_for_timeout(400)
+    box = pg.locator('#cv').bounding_box(); pg.mouse.move(box['x'] + box['width'] / 2, box['y'] + box['height'] / 2)
+    for _ in range(4): pg.mouse.wheel(0, -300); pg.wait_for_timeout(80)
+    pg.wait_for_timeout(300); zoomed = pg.evaluate(under)
+    pg.click('#tgFit'); pg.wait_for_timeout(500); reset = pg.evaluate(under)
+    check('2D map zoomed in goes under the controls, Reset view brings it back above them (1366x768)', zoomed['below'] > 0 and reset['below'] == 0 and reset['above'] > 0,
+          f"zoomed: {zoomed['below']} pixels under; after Reset view: {reset['below']}")
+    pg.set_viewport_size({'width': 880, 'height': 1300})
 
     # the message line when the start screen comes back (0.26.12): empty, whether or not an overview loaded
     msg = lambda pg: pg.evaluate("document.getElementById('msg').textContent")

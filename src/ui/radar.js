@@ -15,10 +15,22 @@ new ResizeObserver(resize).observe(cv);
 new ResizeObserver(resize).observe($('tl'));
 
 let base = { s: 1, x: 0, y: 0 };
+// The 2D map fits above the controls along the bottom of the view (Names to Reset view on the left, Heatmap, Both sides
+// and Whole match on the right) at every window size and Interface size (Sujan, 3 Nov 2026, 0.26.14: at 2560x1440 they
+// covered player labels at CT spawn on Train since 0.26.13, and at 1366x768 since before). Only where the map sits
+// when it opens, resets or the window changes: a map the player drags or zooms can still go under them. Theatre mode
+// keeps the whole view, since its controls come in only with the bottom bar.
+function controlsTop() {
+  if (viewMode !== '2d' || (typeof theatreActive === 'function' && theatreActive())) return ch;
+  const top = cv.getBoundingClientRect().top;
+  let y = ch;
+  for (const id of ['legend', 'heatbar']) { const r = $(id).getBoundingClientRect(); if (r.height > 0) y = Math.min(y, r.top - top); }
+  return y < ch ? Math.max(ch * 0.5, y - 6 * UI) : ch;
+}
 function fitView(keepUser) {
-  const iw = OV ? OV.w : 1024, ih = OV ? OV.h : 768;
-  const s = Math.min(cw / iw, ch / ih) * 0.98;
-  base = { s, x: (cw - iw * s) / 2, y: (ch - ih * s) / 2 };
+  const iw = OV ? OV.w : 1024, ih = OV ? OV.h : 768, h = controlsTop();
+  const s = Math.min(cw / iw, h / ih) * 0.98;
+  base = { s, x: (cw - iw * s) / 2, y: (h - ih * s) / 2 };
   if (!keepUser) view = { s: 1, x: 0, y: 0 };
 }
 const tx = (px, py) => [base.x * view.s + view.x + px * base.s * view.s, base.y * view.s + view.y + py * base.s * view.s];

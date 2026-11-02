@@ -588,7 +588,7 @@ addEventListener('resize', () => { if (applyUiSize()) dispatchEvent(new Event('u
     <div class="overlay sumwrap" id="sumCard" hidden></div>
     <div class="overlay keys" id="keys" hidden>
       <div class="keys-card">
-        <div class="keys-head"><b>Shortcuts and kill markers</b><div class="kh-r"><span class="ver">Version 0.26.13 · <a href="https://github.com/deswalsujan/cs16-demo-viewer/blob/main/CHANGELOG.md" target="_blank" rel="noopener">What's new</a> · <a href="https://github.com/deswalsujan/cs16-demo-viewer/issues/new/choose" target="_blank" rel="noopener">Report a bug</a></span><button class="btn" id="bDebug" type="button" title="Copies details for a bug report: browser, demo name, what loaded, errors. No file contents.">Copy debug info</button><button class="btn" id="bKeysClose" type="button">Close</button></div></div>
+        <div class="keys-head"><b>Shortcuts and kill markers</b><div class="kh-r"><span class="ver">Version 0.26.14 · <a href="https://github.com/deswalsujan/cs16-demo-viewer/blob/main/CHANGELOG.md" target="_blank" rel="noopener">What's new</a> · <a href="https://github.com/deswalsujan/cs16-demo-viewer/issues/new/choose" target="_blank" rel="noopener">Report a bug</a></span><button class="btn" id="bDebug" type="button" title="Copies details for a bug report: browser, demo name, what loaded, errors. No file contents.">Copy debug info</button><button class="btn" id="bKeysClose" type="button">Close</button></div></div>
         <textarea class="dbgbox" id="dbgBox" readonly hidden aria-label="Debug info"></textarea>
         <div class="keys-grid">
           <section><h3>Playback</h3>
@@ -692,7 +692,7 @@ addEventListener('resize', () => { if (applyUiSize()) dispatchEvent(new Event('u
         <div class="drophint">Or drop a .dem file, or an overview .bmp and .txt pair, anywhere on this page</div>
         <div class="prog" id="prog" hidden><i id="progBar"></i></div>
         <div class="msg" id="msg"></div>
-        <div class="loadfoot"><span>Version 0.26.13 · <a href="https://github.com/deswalsujan/cs16-demo-viewer" target="_blank" rel="noopener">Source on GitHub</a></span><button class="btn" id="bClear" type="button" title="Deletes the maps, models, sounds and overviews this browser saved from your Half-Life folder, and starts over as on a first visit">Clear saved files</button></div>
+        <div class="loadfoot"><span>Version 0.26.14 · <a href="https://github.com/deswalsujan/cs16-demo-viewer" target="_blank" rel="noopener">Source on GitHub</a></span><button class="btn" id="bClear" type="button" title="Deletes the maps, models, sounds and overviews this browser saved from your Half-Life folder, and starts over as on a first visit">Clear saved files</button></div>
       </div>
     </div>
   </section>
@@ -5130,10 +5130,22 @@ new ResizeObserver(resize).observe(cv);
 new ResizeObserver(resize).observe($('tl'));
 
 let base = { s: 1, x: 0, y: 0 };
+// The 2D map fits above the controls along the bottom of the view (Names to Reset view on the left, Heatmap, Both sides
+// and Whole match on the right) at every window size and Interface size (Sujan, 3 Nov 2026, 0.26.14: at 2560x1440 they
+// covered player labels at CT spawn on Train since 0.26.13, and at 1366x768 since before). Only where the map sits
+// when it opens, resets or the window changes: a map the player drags or zooms can still go under them. Theatre mode
+// keeps the whole view, since its controls come in only with the bottom bar.
+function controlsTop() {
+  if (viewMode !== '2d' || (typeof theatreActive === 'function' && theatreActive())) return ch;
+  const top = cv.getBoundingClientRect().top;
+  let y = ch;
+  for (const id of ['legend', 'heatbar']) { const r = $(id).getBoundingClientRect(); if (r.height > 0) y = Math.min(y, r.top - top); }
+  return y < ch ? Math.max(ch * 0.5, y - 6 * UI) : ch;
+}
 function fitView(keepUser) {
-  const iw = OV ? OV.w : 1024, ih = OV ? OV.h : 768;
-  const s = Math.min(cw / iw, ch / ih) * 0.98;
-  base = { s, x: (cw - iw * s) / 2, y: (ch - ih * s) / 2 };
+  const iw = OV ? OV.w : 1024, ih = OV ? OV.h : 768, h = controlsTop();
+  const s = Math.min(cw / iw, h / ih) * 0.98;
+  base = { s, x: (cw - iw * s) / 2, y: (h - ih * s) / 2 };
   if (!keepUser) view = { s: 1, x: 0, y: 0 };
 }
 const tx = (px, py) => [base.x * view.s + view.x + px * base.s * view.s, base.y * view.s + view.y + py * base.s * view.s];
@@ -8236,7 +8248,7 @@ window.addEventListener('unhandledrejection', (e) => { ERRLOG.push('Promise: ' +
 function debugInfo() {
   let gpu = '';
   try { const gl = document.createElement('canvas').getContext('webgl'); const x = gl && gl.getExtension('WEBGL_debug_renderer_info'); gpu = gl ? (x ? gl.getParameter(x.UNMASKED_RENDERER_WEBGL) : 'WebGL available') : 'no WebGL'; } catch (e) { gpu = 'unknown'; }
-  const L = [`CS 1.6 Demo Viewer 0.26.13`, `Browser: ${navigator.userAgent}`, `Screen: ${screen.width}x${screen.height} at ${devicePixelRatio}x, window ${innerWidth}x${innerHeight}`, `Graphics: ${gpu}`];
+  const L = [`CS 1.6 Demo Viewer 0.26.14`, `Browser: ${navigator.userAgent}`, `Screen: ${screen.width}x${screen.height} at ${devicePixelRatio}x, window ${innerWidth}x${innerHeight}`, `Graphics: ${gpu}`];
   L.push(`Folder: ${Object.keys(files.maps).length} maps, ${Object.keys(files.overviews).length} overviews, ${Object.keys(files.mdl).length} models, ${Object.keys(files.snd).length} sounds, ${files.demos.length} demos`);
   if (D) {
     L.push(`Demo: ${D.fileName}, protocol ${(D.header && D.header.netProtocol) || '?'}, ${D.pov ? 'POV (recorded by a player)' : 'HLTV'}, map ${D.mapName}, length ${fmt(D.end - D.start)}, ${M.liveR.length} live rounds, final ${M.liveR.length ? M.liveR[M.liveR.length - 1].scoreAfter.join(':') : '-'}`);
