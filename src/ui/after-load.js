@@ -71,7 +71,7 @@ function afterOverview(ok, quiet) {
 let toastTimer = null;
 function toast(t, ms = 9000) {
   let el = $('toast');
-  if (!el) { el = document.createElement('div'); el.id = 'toast'; el.className = 'rclock'; el.style.cssText = 'top:auto;bottom:56px;left:12px;right:12px;max-width:520px;color:var(--fg)'; $('radar').appendChild(el); }
+  if (!el) { el = document.createElement('div'); el.id = 'toast'; el.className = 'rclock'; el.style.cssText = 'top:auto;bottom:calc(56px * var(--ui));left:calc(12px * var(--ui));right:calc(12px * var(--ui));max-width:calc(520px * var(--ui));color:var(--fg)'; $('radar').appendChild(el); }
   el.textContent = t; el.hidden = false;
   clearTimeout(toastTimer); toastTimer = setTimeout(() => el.hidden = true, ms);
 }

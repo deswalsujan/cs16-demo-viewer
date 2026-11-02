@@ -8,11 +8,13 @@ function tlRange() {
 // The timeline (rounds, kills, pauses, wallbangs, plants) only changes when its range, size or content
 // changes, so it's drawn once into a hidden canvas and copied each frame; only the playhead moves.
 const tlCache = { cv: document.createElement('canvas'), key: '' };
+// Drawn at the Interface size (0.26.13): the whole strip is drawn UI times larger, in a space UI times smaller, so its
+// marks and round numbers grow with the bar it sits in and look exactly as before at 100%.
 function drawTimeline() {
   if (!D) return;
-  const W = tlc.width / dpr, H = tlc.height / dpr;
+  const W = tlc.width / dpr / UI, H = tlc.height / dpr / UI;
   const [a, b] = tlRange();
-  const key = [D.fileName, D.end, tlc.width, tlc.height, dpr, a, b, showAll, visibleRounds().length, M.wbs ? M.wbs.length : -1, M.skipT ? M.skipT.length : 0].join('|');
+  const key = [D.fileName, D.end, tlc.width, tlc.height, dpr, UI, a, b, showAll, visibleRounds().length, M.wbs ? M.wbs.length : -1, M.skipT ? M.skipT.length : 0].join('|');
   if (tlCache.key !== key) { tlCache.key = key; drawTimelineInto(tlCache.cv, W, H, a, b); }
   tctx.setTransform(1, 0, 0, 1, 0, 0);
   tctx.clearRect(0, 0, tlc.width, tlc.height);
@@ -21,7 +23,7 @@ function drawTimeline() {
 function drawTimelineInto(cv, W, H, a, b) {
   cv.width = tlc.width; cv.height = tlc.height;
   const tctx = cv.getContext('2d');
-  tctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+  tctx.setTransform(dpr * UI, 0, 0, dpr * UI, 0, 0);
   tctx.clearRect(0, 0, W, H);
   const X = (t) => (t - a) / (b - a) * W;
   // rounds
@@ -64,11 +66,11 @@ function drawTimelineInto(cv, W, H, a, b) {
 }
 function drawPlayhead() {
   if (!D) return;
-  const W = tlc.width / dpr, H = tlc.height / dpr;
+  const W = tlc.width / dpr / UI, H = tlc.height / dpr / UI;
   const [a, b] = tlRange();
   const x = (T - a) / (b - a) * W;
   drawTimeline();
-  tctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+  tctx.setTransform(dpr * UI, 0, 0, dpr * UI, 0, 0);
   tctx.fillStyle = COL.sand; tctx.fillRect(Math.round(x) - 1, 0, 2, H);
   tctx.beginPath(); tctx.moveTo(x - 5, 0); tctx.lineTo(x + 5, 0); tctx.lineTo(x, 6); tctx.fill();
 }
@@ -81,14 +83,14 @@ tl.addEventListener('pointermove', (e) => {
   if (tlDrag) seek(t);
   // tooltip: nearest kill within 6px
   const r = tlc.getBoundingClientRect(); const [a, b] = tlRange();
-  let best = null, bd = 6;
+  let best = null, bd = 6 * UI;
   const liveSet = new Set(visibleRounds().map((x) => x.n));
   for (const k of D.kills) { if (!liveSet.has(k.round)) continue; const x = (k.t - a) / (b - a) * r.width; const d = Math.abs(x - (e.clientX - r.left)); if (d < bd) { bd = d; best = k; } }
   const tip = $('tip');
   const rr = roundAt(t);
   tip.innerHTML = best ? `${rr && rr.live ? 'R' + rr.ln + ' ' : ''}${killClock(best.t)} · ${killHtml(best)}` : `${fmt(t - D.start)}${rr && rr.live ? ' · round ' + rr.ln + ' · ' + clockText(t) : ''}`;
   // a skip in the recording within 6 px: say what the // means, above the rest
-  const sk = (M.skipT || []).find((st) => Math.abs((st - a) / (b - a) * r.width - (e.clientX - r.left)) < 6);
+  const sk = (M.skipT || []).find((st) => Math.abs((st - a) / (b - a) * r.width - (e.clientX - r.left)) < 6 * UI);
   if (sk != null) tip.innerHTML = `<b>Recording skips here</b>: HLTV left part of the game out, so players jump<br>` + tip.innerHTML;
   // centred on the mouse, but kept whole inside the window: measured after filling it, since a skip note is far
   // wider than a kill (it ran off the left edge at round 3 and the right edge at the last rounds; Sujan, 23 Oct 2026)

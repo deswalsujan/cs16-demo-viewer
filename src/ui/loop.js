@@ -49,6 +49,12 @@ $('q3').onchange = () => { ls.set('quality', $('q3').value); applyQuality(true);
 { const old = ls.get('crosshair'), now = ls.get('crosshair2');
   $('xh3').value = ['small', 'medium', 'large'].includes(now) ? now : old === 'small' ? 'medium' : 'large'; }
 $('xh3').onchange = () => { ls.set('crosshair2', $('xh3').value); };
+// Interface size (0.26.13, src/ui/size.js): Auto or a size from 100% to 200%, kept in this browser like Quality. A new
+// scale, or a screen with another pixel density, sizes the canvases again; the radar, the timeline and the 3D labels
+// are drawn with UI on the next frame.
+$('ui3').value = uiSizeSetting();
+$('ui3').onchange = () => { ls.set('uiSize', $('ui3').value); if (applyUiSize()) dispatchEvent(new Event('uisize')); };
+addEventListener('uisize', () => { resize(); applyQuality(false); if (theatreActive()) measureTheatre(); });
 $('glow3').checked = ls.get('hitGlow') !== 'off';
 $('glow3').onchange = () => { ls.set('hitGlow', $('glow3').checked ? 'on' : 'off'); };
 // POV mode (0.25.0, Sujan 29 Oct 2026): off by default until Sujan signs it off; with it off every demo plays as in 0.24.0

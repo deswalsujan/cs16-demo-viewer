@@ -55,10 +55,11 @@ Before starting any branch, run `git fetch` and branch from `origin/main`; if a 
 - Writing style for docs and messages: plain words, no em dashes, no "not X but Y" framing. Feature and button names in **bold**, capitalized as on screen (**See through walls**, **Player's eyes**), in docs, messages and the viewer's own text; no quotes around them (Sujan, 25 Oct 2026, following Microsoft's and Google's style guides).
 
 ## Where the code is
-`build.py` makes `index.html` from these: `src/template.html` is the page, each `src/ui/` file and `app.css` go in at its own `/*INLINE name*/` line in page order, the reader runs in a Web Worker, and `stock.js`, `mdl.js`, `players3d.js` and `audio.js` go into the 3D view's script. One line per file, from its header comment; code locations in notes from before the split of 29 Oct 2026 point at the old one-file `src/template.html`.
+`build.py` makes `index.html` from these: `src/template.html` is the page, each `src/ui/` file and `app.css` go in at its own `/*INLINE name*/` line in page order (`src/ui/size.js` in the page's head, the rest in the page's script), the reader runs in a Web Worker, and `stock.js`, `mdl.js`, `players3d.js` and `audio.js` go into the 3D view's script. One line per file, from its header comment; code locations in notes from before the split of 29 Oct 2026 point at the old one-file `src/template.html`.
 
 - `src/template.html`: the page itself: header, view, side panel, bottom bar, cards and panels, with an `/*INLINE name*/` line for each file below.
-- `src/app.css`: the page's styles.
+- `src/app.css`: the page's styles, every size written `calc(Npx * var(--ui))` for **Interface size** (0.26.13).
+- `src/ui/size.js`: **Interface size**: the scale (`UI`, `--ui`) from the window and the setting (`applyUiSize`), run in the page's head; Auto follows a resize or a move to another screen.
 - `src/demo.js`: the .dem reader (`parseDemo`): players, sampled positions, kills, rounds, bomb events, shots, sounds, health; message layouts from hlviewer.js.
 - `src/bsp.js`: the .bsp and .wad reader: what's solid to sight and to bullets (`solidModels`, `solidAlong`), the texture a bullet enters at each surface (`hitTextures`), doors and other movers (`brushPose`), the mesh the 3D view draws (`buildMesh`).
 - `src/mdl.js`: studio model (.mdl v10) reader and posing (`parseMdl`, `mdlPose`).
