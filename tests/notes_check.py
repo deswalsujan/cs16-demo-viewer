@@ -25,7 +25,7 @@ NOTES = ['STATE.md', 'AGENTS.md', 'IDEAS.md', 'README.md']
 EXT = re.compile(r'\.(md|js|mjs|py|html|json|yml|yaml|txt|sh|css|png|jpg|svg)$')
 # paths that aren't the repo's: branches, the player's Half-Life folder and its files, build.py's output in dist/
 # (gitignored, so a fresh clone has none until it builds), placeholders
-NOT_REPO = re.compile(r'^(wip/|origin/|refs/|~|/|https?:)|[<>*{}]|\.\.\.|^(cstrike|cstrike_downloads|valve|dist)(/|$)|\.(cfg|dem|bsp|wad|mdl|wav|spr)$')
+NOT_REPO = re.compile(r'^(wip/|screenshots/|origin/|refs/|~|/|https?:)|[<>*{}]|\.\.\.|^(cstrike|cstrike_downloads|valve|dist)(/|$)|\.(cfg|dem|bsp|wad|mdl|wav|spr)$')
 # the short list of paths named on purpose that aren't in the repo
 IGNORE = {
     'regamedll/dlls/wpn_shared/wpn_<gun>.cpp',  # ReGameDLL's own source (AGENTS.md, "Facts")

@@ -83,13 +83,14 @@ Moved to [LIMITS.md](LIMITS.md) on 30 Oct 2026; release entries below still say 
 ### How it was tested
 - `start_screen_check.py`, 11 new checks: Auto at 1366x768, 1920x1080 and 2560x1440, a resize and a move between a 1x and a 2x screen with no reload, 150% kept after a reload, 200% lowered at 1366x768, the phone layout at 375 px (fails on 0.26.12, passes on 0.26.13).
 - Screenshots of 0.26.12 and 0.26.13 in Chromium at 1366x768, 1920x1080 and 2560x1440, at 2x and at 390x844, and in Playwright's WebKit (Safari's engine), on SK vs Na`Vi, Train, DreamHack Winter 2011, FX vs Lions, Nuke, DreamHack Winter 2010, Na`Vi vs SK, Inferno, ESWC 2011 and Match 1 CT (de_barcelona): at 100% the same pixels, apart from the version, the new row in **View settings** and timing.
+- The seven checks pass on Sujan's Mac (2 minutes 14 seconds; `ground_truth_check.py` 231 kills, 0 mismatches).
 - Full log: `tests/logs/0.26.13.md`.
 
 ### Discussed, not changed
 - CSS `zoom` on the whole page: it changes the sizes and mouse positions the radar, the timeline and the 3D view read, and Chrome changed how zoom works in 2024 (Chrome 128), so Chrome and Safari could differ.
 - The setting is in **View settings**, in the 3D bar, so it can't be reached from the start screen or the 2D view; kept there (Sujan, 3 Nov 2026), and Auto covers the start screen.
 - The round announcements keep the game's rule (14, 20 or 24 px by the view's height), which already grows on big screens.
-- Seen in the screenshots, the same on 0.26.12: the Join card's suggested order for Na`Vi vs SK, Inferno, ESWC 2011, and **POV mode**'s hidden-enemies note over the HUD (IDEAS.md, **Seen while building 0.26.13**).
+- Seen in the screenshots, the same on 0.26.12, and left for later (Sujan, 3 Nov 2026): the Join card's suggested order for Na`Vi vs SK, Inferno, ESWC 2011, looked at with **A file that starts during a round**; **POV mode**'s hidden-enemies note over the HUD's health and armour, part of **The hidden-enemies note is easy to miss**; "Press ? for keyboard shortcuts" over the HUD's ammo (IDEAS.md).
 
 ## 0.26.12 (2026-11-03)
 
