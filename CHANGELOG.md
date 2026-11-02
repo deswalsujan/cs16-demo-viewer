@@ -81,6 +81,7 @@ Moved to [LIMITS.md](LIMITS.md) on 30 Oct 2026; release entries below still say 
 ### How it was tested
 - `demo_search_check.py`, 4 new checks on SK vs Na`Vi, Train, DreamHack Winter 2011, R1 freeze 0:12: nothing drawn under the controls at 1366x768, 2560x1440 (130%) and 880x1300, and **Reset view** after zooming in (fails at 1366x768, 2560x1440 and after **Reset view** on 0.26.13).
 - Measured and pictured at 1366x768 and 2560x1440 against 0.26.13, and measured at 2560x1440 from 100% to 200%, 1920x1080 from 100% to 150%, 1280x720, 900x700 and 390x844: the map ends above the controls at every one.
+- The seven checks pass on Sujan's Mac (2 minutes 15 seconds; `ground_truth_check.py` 231 kills, 0 mismatches).
 - Full log: `tests/logs/0.26.14.md`.
 
 ### Discussed, not changed
