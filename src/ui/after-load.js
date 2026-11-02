@@ -98,7 +98,7 @@ function showLoad(v) {
   $('load').hidden = !v;
   applyTheatre(); // the start screen needs the header, so Theatre mode pauses while it's open
   // the load summary goes at once rather than counting down behind the start screen (Sujan, 14 Oct 2026)
-  if (v) { playing = false; setPlayIcon(); $('prog').hidden = true; if (D && $('sumCard') && !$('sumCard').hidden) closeSummary(); hlCheck(HL_GAP); }
+  if (v) { playing = false; setPlayIcon(); $('prog').hidden = true; if (D && $('sumCard') && !$('sumCard').hidden) closeSummary(); checkDemoList(); }
   setControls(!v && !!D);
 }
 // Everything that needs a demo stays disabled until one is loaded (Shortcuts always works)

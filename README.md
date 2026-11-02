@@ -13,18 +13,15 @@ This is an unofficial fan project. It is not affiliated with or endorsed by Valv
 ## How to use it
 
 1. Open the viewer at **https://deswalsujan.github.io/cs16-demo-viewer/** in Chrome or Edge. It always has the latest version, so there's nothing to download.
-2. Click **Choose folder** and pick your `Half-Life` folder (the one that contains `cstrike` and `valve`). Chrome asks whether to let the page view the folder; the files stay on your computer.
-   On your next visit (after closing the tab) Chrome asks once more. Choose **Allow on every visit**, and from then on the folder opens by itself (Chrome and Edge 122 or later). This also works with a downloaded copy of `index.html` opened from your disk.
+2. Click **Choose folder** and pick your `Half-Life` folder (the one that contains `cstrike` and `valve`); the start screen shows where Steam puts it on your computer. Your browser may ask whether to "upload" the files (Chrome and Edge do): that's its word for letting the page read a folder, and nothing leaves your computer. You choose the folder this way on each visit.
 3. Pick a demo from the list (type in the search box above it to narrow it down, for example "sk train"), or open any `.dem` file.
 4. Press `?` for keyboard shortcuts.
 
 Three ways to watch: **Normal** shows everything. **Theatre** (`T`) fills the browser window with the view and hides the viewer's own controls until you move the mouse to the top, right or bottom edge. **Full screen** (`F`) is Theatre mode with the browser's tabs and address bar gone too.
 
-The start screen shows which folder is selected and whether it's the right one. Choosing a folder without a `cstrike` folder inside, or the `cstrike` folder itself, says so and explains what to pick. When you add or remove demos, maps, models or sounds, the viewer picks up the changes by itself when you come back to the page. **Open .dem** works once the folder is chosen, for demos kept anywhere.
+The start screen shows which folder is selected and whether it's the right one. Choosing a folder without a `cstrike` folder inside, or the `cstrike` folder itself, says so and explains what to pick. The viewer sees the folder as it was when you chose it: to pick up demos, maps, models or sounds added or changed since, click **Choose again**. A demo deleted since is taken off the list when you click it or come back to the page. **Open .dem** works once the folder is chosen, for demos kept anywhere.
 
-To start over as on a first visit, click **Clear saved files** on the start screen (it forgets the folder and the files this browser saved), then click the icon left of the address bar and choose **Remove access**.
-
-Firefox and Safari can't keep folder access, so there you pick the folder on each visit. The viewer still remembers the folder's name and its list of files, never their contents, so it can show which folder you used last time.
+To start over as on a first visit, click **Clear saved files** on the start screen: it deletes the maps, models, sounds and overviews this browser saved from your folder. Nothing else about the folder is kept between visits.
 
 Custom maps work too, as long as the map's `.bsp` (and its `.wad` files if it uses any) are in `cstrike/maps` or `cstrike_downloads/maps`.
 
@@ -57,7 +54,6 @@ Custom maps work too, as long as the map's `.bsp` (and its `.wad` files if it us
 - Cut-off and unfinished demos (an interrupted download, a recording that was never closed) play up to where the file stops, and the viewer says exactly what's wrong with the file, read from its own structure
 - Old demos too. CS 1.6 recorded demos as protocol 47 until the update of 23 October 2008 ([announced](https://www.hltv.org/news/1779/cs-16-update-coming-soon) and [released](https://www.hltv.org/news/1787/cs-16-update-live) on HLTV.org). The Steam version only plays protocol 48, so it refuses those older demos unless they're converted. The viewer plays both as they are
 - Search your demos: type part of a file name ("tu", "sk train", "dhwinter") and the list keeps only the demos whose names contain every word
-- Remembers your Half-Life folder between visits (Chrome and Edge) and tells you when demos, maps, models or sounds in it change
 - Breakable vents and windows disappear in 3D when they are shot out, and doors open and close as they did in the match (the wallbang finder uses where each door really was)
 
 ## Project layout

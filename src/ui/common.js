@@ -34,6 +34,7 @@ const idb = {
   },
   async get(k) { try { const db = await this.open(); return await new Promise((res) => { const q = db.transaction('overviews').objectStore('overviews').get(k); q.onsuccess = () => res(q.result); q.onerror = () => res(null); }); } catch { return null; } },
   async put(k, v) { try { const db = await this.open(); db.transaction('overviews', 'readwrite').objectStore('overviews').put(v, k); } catch { } },
+  async del(k) { try { const db = await this.open(); db.transaction('overviews', 'readwrite').objectStore('overviews').delete(k); } catch { } },
 };
 const ls = {
   get(k) { try { return JSON.parse(localStorage.getItem(k)); } catch { return null; } },

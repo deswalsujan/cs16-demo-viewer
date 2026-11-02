@@ -29,10 +29,10 @@ async function loadDemoFile(f, opts = {}) {
     $('prog').hidden = true;
     if (isStale(e)) {
       // the file was moved, renamed or deleted after the folder was chosen: say so, and drop it from the list
-      files.demos = files.demos.filter((x) => x !== f); renderDemoList();
+      dropDemos([f]);
       // The browser can't read a file that changed after the folder was read: a demo still being recorded
       // keeps growing, so it lands here as well as one that was moved, renamed or deleted.
-      setMsg(`${f.name} couldn't be read. It changed after the folder was read, or it was moved, renamed or deleted. If you're still recording it, stop the recording first. Then ${HL.handle ? 'come back to this page' : 'choose the folder again'} and open it from the list.`, true);
+      setMsg(`${f.name} couldn't be read. It changed after the folder was read, or it was moved, renamed or deleted. If you're still recording it, stop the recording first. Then choose the folder again and open it from the list.`, true);
     } else setMsg(`Could not read ${f.name}. ${e.message || ''}`, true);
     return;
   }

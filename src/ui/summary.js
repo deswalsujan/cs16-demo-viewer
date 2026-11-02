@@ -124,7 +124,7 @@ async function loadSummary(sndDone) {
   }
   // files that were there when the folder was chosen but can't be read now (deleted, moved or replaced since)
   // listed first, since it's usually the reason for the misses below
-  if (STALE.size) rows.splice(1, 0, { s: 'warn', t: 'Your Half-Life folder changed after you chose it', n: `${STALE.size} ${STALE.size === 1 ? 'file' : 'files'} couldn't be read, for example ${few([...STALE].map((n) => n.split('/').pop()))}. ${HL.handle ? 'Go back to the start screen (Open another demo) to pick up the changes' : 'Choose the folder again to pick up the changes'}.` });
+  if (STALE.size) rows.splice(1, 0, { s: 'warn', t: 'Your Half-Life folder changed after you chose it', n: `${STALE.size} ${STALE.size === 1 ? 'file' : 'files'} couldn't be read, for example ${few([...STALE].map((n) => n.split('/').pop()))}. Choose the folder again to pick up the changes.` });
 
   const onlyDemo = !map && !OV && !players.found && !sounds.found;
   const anyBad = rows.some((r) => r.s === 'warn' || r.s === 'fail');
@@ -191,7 +191,7 @@ function renderSummary(r) {
   el.innerHTML = `<div class="sum" role="dialog" aria-live="polite" aria-labelledby="sumTitle">
     <div class="sum-top ${r.state}"><div class="ti"><h2 id="sumTitle">${esc(r.title)}</h2><p>${esc(r.text)}</p></div><button class="sum-x" type="button" id="sumX" title="Close (Esc)" aria-label="Close">×</button></div>
     ${r.rows.length ? `<ul class="sum-list">${r.rows.map((x) => `<li><span class="sum-ic ${x.s}" aria-hidden="true">${icon[x.s]}</span><span>${esc(x.t)}${x.n ? `<small>${esc(x.n)}</small>` : ''}${x.btn ? `<div class="li-btn"><button class="btn sm" type="button" id="${x.btn.id}">${esc(x.btn.label)}</button></div>` : ''}</span></li>`).join('')}</ul>` : ''}
-    ${r.state === 'busy' ? '' : `<div class="sum-foot">${r.folder ? `<button class="btn" type="button" id="sumFolder">${HL.handle ? 'Refresh Half-Life folder' : 'Choose Half-Life folder'}</button>` : ''}<span class="sp"></span><span id="sumCount"></span></div>`}
+    ${r.state === 'busy' ? '' : `<div class="sum-foot">${r.folder ? `<button class="btn" type="button" id="sumFolder">Choose Half-Life folder</button>` : ''}<span class="sp"></span><span id="sumCount"></span></div>`}
     ${r.state === 'busy' || r.state === 'fail' ? '' : '<div class="sum-bar"><i id="sumBar"></i></div>'}
   </div>`;
   el.hidden = false;
@@ -199,7 +199,7 @@ function renderSummary(r) {
   if ($('sumCount30')) $('sumCount30').onclick = () => setCount30(!M.count30);
   if ($('sumPov')) $('sumPov').onclick = () => { closeSummary(); $('pov3').checked = true; $('pov3').onchange(); };
   if ($('sumJoin')) $('sumJoin').onclick = () => { if (SUM.joinList) openJoinCard(SUM.joinList); };
-  if ($('sumFolder')) $('sumFolder').onclick = () => { closeSummary(); refreshOrPick(); };
+  if ($('sumFolder')) $('sumFolder').onclick = () => { closeSummary(); pickFolder(); };
   el.onclick = (e) => { if (e.target === el && r.state !== 'busy') closeSummary(); };
   clearInterval(SUM.timer); SUM.timer = null;
   const card = el.querySelector('.sum');
