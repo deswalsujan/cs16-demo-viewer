@@ -391,10 +391,7 @@ kbd { font-family: var(--f-body); font-size: 11px; background: var(--panel-2); b
 #stepFolder .hlpaths { margin-top: -4px; }
 #stepFolder .hlpaths .p { color: var(--fg); overflow-wrap: anywhere; }
 #stepFolder .hlpaths .hltip { font-style: italic; }
-#stepFolder .hlalt { border-top: 1px solid var(--line); padding-top: 8px; margin-top: -2px; }
-#stepFolder .hlalt.hot { color: var(--fg); }
-#stepFolder .hlalt b, #hlStatus b.in { display: inline; font-weight: 600; color: var(--fg); margin: 0; white-space: nowrap; }
-#stepFolder .lnk { font: inherit; font-weight: 600; white-space: nowrap; color: var(--sand); background: none; border: 0; padding: 0; text-decoration: underline; cursor: pointer; }
+#stepFolder .hlpaths .hlup { margin-top: 6px; }
 @media (max-width: 520px) { .steps:not(.ready) #stepFolder .hlbtns { grid-column: 2; grid-row: auto; } }
 .demos { display: grid; gap: 6px; max-height: 220px; overflow-y: auto; }
 /* search over the demo list (approved design: docs/demo-search-mock-2.png): an inset field, a "Your demos" heading

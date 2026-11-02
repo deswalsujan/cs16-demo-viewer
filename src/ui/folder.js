@@ -1,7 +1,5 @@
 // ---------------- file loading ----------------
 $('btnFolder').onclick = () => pickFolder();
-$('btnHlRefresh').onclick = () => hlReconnect();
-$('btnHlInput').onclick = () => $('fFolder').click(); // "Choose it this way": the ordinary folder pick (0.26.10)
 $('btnDemo').onclick = () => $('fDemo').click();
 $('btnOpen').onclick = () => { showLoad($('load').hidden); };
 $('fDemo').onchange = (e) => { const f = e.target.files[0]; if (f) loadDemoFile(f); e.target.value = ''; };
@@ -13,7 +11,7 @@ function indexFolder(list) {
   files.demos = []; files.overviews = {}; files.maps = {}; files.wads = {}; files.mdl = {}; files.snd = {}; files.sentences = null; files.materials = null; files.lang = null; files.hud = { txt: null, spr: {} }; files.cfg = null;
   STALE.clear();
   for (const f of list) {
-    const p = (f.relPath || f.webkitRelativePath || f.name).replace(/\\/g, '/').toLowerCase();
+    const p = (f.webkitRelativePath || f.name).replace(/\\/g, '/').toLowerCase();
     const m = /(?:^|\/)(cstrike(?:_downloads)?)\/overviews\/([^/]+)\.(bmp|txt)$/.exec(p);
     if (m) {
       const key = m[2];
@@ -202,77 +200,65 @@ function renderDemoList() {
 $('demoQ').oninput = () => { renderDemoList(); $('demoList').scrollTop = 0; };
 $('demoQ').onkeydown = (e) => { if (e.key === 'Escape' && $('demoQ').value) { e.preventDefault(); e.stopPropagation(); $('demoQ').value = ''; renderDemoList(); } };
 $('demoQx').onclick = () => { $('demoQ').value = ''; renderDemoList(); $('demoQ').focus(); };
-// Coming back to the page (for example after deleting demos in Finder or Explorer): check the listed
-// demos are still there, and take the ones that aren't off the list with a note, instead of failing later.
-async function checkDemoList() {
-  if (HL.handle || $('load').hidden || !files.demos.length) return; // a remembered folder is rescanned instead (see below)
-  const gone = [];
-  for (const f of files.demos) { try { await f.slice(0, 4).arrayBuffer(); } catch (e) { if (isStale(e)) gone.push(f); } }
-  if (!gone.length) return;
+// Take demos that can't be read any more off the list, and bring the folder row's count up to date.
+function dropDemos(gone) {
   files.demos = files.demos.filter((f) => !gone.includes(f)); renderDemoList();
-  setMsg(`${gone.length === 1 ? gone[0].name + ' is' : gone.length + ' demos are'} no longer in your folder and ${gone.length === 1 ? 'was' : 'were'} taken off the list. Choose the folder again to pick up new or changed files.`, true);
+  if (HL.ok) hlRender('ok');
+}
+// The folder is read once per pick, so the page only learns that a listed demo was deleted, moved or changed when it
+// tries to read it. It tries in two places: here, reading the first 4 bytes of every listed demo whenever the start
+// screen is showing and the player comes back to the page (the window gets focus or the tab becomes visible, as after
+// deleting demos in Finder or Explorer) or goes back to it from a demo; and when a demo is clicked (loadDemoFile).
+let demoChecking = false;
+async function checkDemoList() {
+  if (demoChecking || $('load').hidden || !files.demos.length) return;
+  demoChecking = true;
+  const gone = [];
+  try { for (const f of files.demos) { try { await f.slice(0, 4).arrayBuffer(); } catch (e) { if (isStale(e)) gone.push(f); } } }
+  finally { demoChecking = false; }
+  if (!gone.length) return;
+  dropDemos(gone);
+  setMsg(`${gone.length === 1 ? gone[0].name + ' is' : gone.length + ' demos are'} no longer in your folder, or changed since you chose it, and ${gone.length === 1 ? 'was' : 'were'} taken off the list. Choose the folder again to pick up new or changed files.`, true);
 }
 window.addEventListener('focus', checkDemoList);
 document.addEventListener('visibilitychange', () => { if (!document.hidden) checkDemoList(); });
 
-// ---------------- the Half-Life folder, remembered between visits ----------------
-// In Chrome and Edge on an https page (or a copy opened from disk), the viewer keeps a handle to the folder
-// (File System Access API). On the next visit Chrome asks once more and offers "Allow on every visit"
-// (Chrome 122+); after that the folder opens by itself. Elsewhere (Firefox, Safari, the claude.ai artifact,
-// which is an embedded page) the folder is picked on every visit. Either way the viewer remembers the
-// folder's name and its list of files (names, sizes, dates, never contents) in this browser.
-// Changes in the folder (demos, maps, models, sounds added or removed) are picked up by themselves whenever
-// you come back to the page or to the start screen. A demo can only be opened once a folder is chosen: the
-// maps, overviews, models and sounds all come from it.
-// Steam's default folder, Program Files on Windows and Library on a Mac, is one Chrome and Edge's folder access
-// refuses ("can't open this folder because it contains system files"; Sujan, on both, 2 Nov 2026). The refusal reaches
-// the page like a closed picker. For it, "Choose it this way" picks the folder with the ordinary folder input, as in
-// Firefox, which opens it; it can't be kept, so it's picked once per visit (input: true, saved with the folder and
-// forgotten with it by Clear saved files) (0.26.10, docs/folder-steam-default-mock.png).
-const HL = { handle: null, snap: null, loaded: false, checking: false, lastCheck: 0, fsaBroken: false, ok: false, input: false };
+// ---------------- the Half-Life folder, chosen on every visit ----------------
+// One way to choose the folder, in every browser, on every visit: Choose folder opens the browser's ordinary folder
+// pick (<input webkitdirectory>), and the player accepts its "upload" question (Chrome and Edge's word for reading a
+// folder; nothing leaves the computer). Sujan, 2 Nov 2026 (0.26.11, docs/folder-one-pick-mock.png): up to 0.26.10
+// Chrome and Edge kept the folder between visits through their folder access (showDirectoryPicker), which refuses
+// Steam's default folder (Program Files on Windows, Library on a Mac), so 0.26.10 offered the ordinary pick as a
+// second way, and two ways would confuse players. The page sees the files as they were at the pick: new or changed
+// ones show up when the folder is chosen again. Nothing about the folder is kept between visits; the copies of maps,
+// models, sounds and overviews saved from it (map.js, players3d.js, audio.js) stay until Clear saved files.
+const HL = { snap: null, ok: false };
 const HL_EXAMPLE = 'C:\\Program Files (x86)\\Steam\\steamapps\\common\\Half-Life';
 const HL_EXAMPLE_MAC = '~/Library/Application Support/Steam/steamapps/common/Half-Life';
 const HL_HELP = 'The Half-Life folder from your Steam install, the one with cstrike and valve inside.';
-const fsaOK = () => { try { return !HL.fsaBroken && typeof window.showDirectoryPicker === 'function' && window.isSecureContext && window.self === window.top; } catch (e) { return false; } };
-// the folder is picked through the folder access (and kept between visits), not the ordinary pick
-const useHandle = () => fsaOK() && !HL.input;
+// the player's system, from what the browser says about it (read in the page, sent nowhere): 'win', 'mac', or ''
+// when it says neither (Linux, or nothing), and the row then gives both paths
+function hlOS() {
+  let p = '';
+  try { p = (navigator.userAgentData && navigator.userAgentData.platform) || navigator.platform || ''; } catch (e) { }
+  return /^win/i.test(p) ? 'win' : /^mac/i.test(p) ? 'mac' : '';
+}
 $('hlPathWin').textContent = HL_EXAMPLE; $('hlPathMac').textContent = HL_EXAMPLE_MAC;
-// the files the viewer reads; everything else in the folder is skipped. Every file indexFolder looks for has to be
-// here too, or Chrome and Edge, which read the folder through its handle, never see it (0.26.8: POV mode's
-// cstrike/config.cfg and sprites/weapon_*.txt were missing, so its crosshair and ammo icons were only found in
-// Firefox and Safari; folder_row_test.py checks both)
+{ const os = hlOS(); $('hlWin').hidden = os === 'mac'; $('hlMac').hidden = $('hlTip').hidden = os === 'win'; }
+// the files the viewer reads, for telling what changed between two picks in one visit (hlApply)
 const HL_WANT = /(?:^|\/)(?:cstrike|cstrike_downloads|valve)\/(?:maps\/[^/]+\.bsp|overviews\/[^/]+\.(?:bmp|txt)|models\/.+\.mdl|sound\/.+\.wav|sound\/(?:sentences|materials)\.txt|resource\/cstrike_english\.txt|sprites\/hud\.txt|sprites\/640hud\d+\.spr|[^/]+\.wad)$|(?:^|\/)cstrike\/(?:config\.cfg|sprites\/weapon_\w+\.txt)$|\.dem$/;
 // path inside the chosen folder, lower case, without the folder's own name
-const hlKey = (f) => (f.relPath || f.webkitRelativePath || f.name).replace(/\\/g, '/').toLowerCase().split('/').slice(1).join('/');
+const hlKey = (f) => (f.webkitRelativePath || f.name).replace(/\\/g, '/').toLowerCase().split('/').slice(1).join('/');
 function hlSnap(list, name, gameDirs) {
   const out = {};
   for (const f of list) { const k = hlKey(f); if (HL_WANT.test('/' + k)) out[k] = [f.size, f.lastModified]; }
-  return { name, files: out, at: Date.now(), gameDirs: gameDirs || [] };
+  return { name, files: out, gameDirs: gameDirs || [] };
 }
 // paths that differ between two file lists (added, removed or replaced)
 function hlChanged(a, b) {
   const out = [];
   for (const p in b) if (!a[p] || a[p][0] !== b[p][0] || a[p][1] !== b[p][1]) out.push(p);
   for (const p in a) if (!b[p]) out.push(p);
-  return out;
-}
-// read the folder through its handle: the files the viewer uses, with their paths, plus the names of the
-// game folders directly inside it (to tell a Half-Life folder from some other folder)
-async function hlScanHandle(dir) {
-  const out = [], top = [];
-  const walk = async (d, path, depth) => {
-    if (depth > 10 || out.length > 200000) return;
-    const subs = [], gets = [];
-    for await (const [name, h] of d.entries()) {
-      const p = path + '/' + name;
-      if (h.kind === 'directory') { subs.push([h, p]); if (!depth) top.push(name.toLowerCase()); }
-      else if (HL_WANT.test(p.toLowerCase())) gets.push(h.getFile().then((f) => { f.relPath = p; out.push(f); }, () => {}));
-    }
-    await Promise.all(gets);
-    for (const [h, p] of subs) await walk(h, p, depth + 1);
-  };
-  await walk(dir, dir.name, 0);
-  out.gameDirs = top.filter((n) => /^(cstrike|cstrike_downloads|valve)$/.test(n));
   return out;
 }
 // Is this the Half-Life folder? null when it is, otherwise what's wrong with it
@@ -282,48 +268,35 @@ function hlProblem(name, gameDirs) {
   if (!gameDirs.includes('cstrike')) return 'It has no cstrike folder inside. Choose the Half-Life folder from your Steam install, the one with cstrike and valve inside.';
   return null;
 }
-// the row on the start screen, and whether a demo can be opened
+// the row on the start screen, and whether a demo can be opened: 'none' (nothing chosen yet), 'wrong' or 'ok'
 function hlRender(state, o = {}) {
-  const title = $('hlTitle'), st = $('hlStatus'), pick = $('btnFolder'), rec = $('btnHlRefresh');
-  const name = o.name || (HL.snap && HL.snap.name) || '';
+  const title = $('hlTitle'), st = $('hlStatus'), pick = $('btnFolder');
+  const name = state === 'none' ? '' : (o.name || (HL.snap && HL.snap.name) || '');
   title.innerHTML = name ? `Folder selected: <span class="nm">${esc(name)}</span>` : 'Choose your Half-Life folder';
   title.title = HL_HELP;
-  rec.hidden = true; pick.textContent = name ? 'Change' : 'Choose folder';
   const line = (cls, head, rest) => `<span class="hlst ${cls}">${esc(head)}</span>${rest ? ' ' + esc(rest) : ''}`;
   HL.ok = state === 'ok';
   $('stepFolder').classList.toggle('done', HL.ok);
   $('stepFolder').querySelector('.k').textContent = HL.ok ? '✓' : '1';
-  // where Steam puts the folder, before one is chosen and after a wrong one; the line for Steam's default folder where
-  // the folder access is in use, and brighter after a refusal
-  $('hlPaths').hidden = !(state === 'none' || state === 'wrong');
-  $('hlAlt').hidden = !(useHandle() && (state === 'none' || state === 'refused' || state === 'wrong'));
-  $('hlAlt').classList.toggle('hot', state === 'refused');
-  if (state === 'none') st.innerHTML = esc(o.note || HL_HELP) + (useHandle() ? '' : ' ' + esc('Nothing leaves your computer.')
-    + (fsaOK() ? '' : ' ' + esc('Chrome asks whether to "upload" the files: that is its standard wording for picking a folder.')));
-  else if (state === 'refused') st.innerHTML = line('wait', 'No folder chosen.', 'If Chrome said the folder "contains system files", it\'s Steam\'s default folder: use')
-    + ' <b class="in">Choose it this way</b> below.';
-  else if (state === 'scanning') st.innerHTML = line('wait', 'Reading the folder…');
-  else if (state === 'reconnect') {
-    st.innerHTML = line('wait', 'Chrome needs your OK again.', 'Click Reconnect, then choose "Allow on every visit" so it opens by itself next time.');
-    rec.textContent = 'Reconnect'; rec.hidden = false;
-  } else if (state === 'remembered') {
-    st.innerHTML = line('wait', 'Choose it again for this visit.', fsaOK() ? (HL.input ? 'Chrome can\'t keep access to Steam\'s default folder, so it\'s chosen once per visit. Chrome calls it an upload, but nothing leaves your computer.' : '')
-      : 'This page can\'t keep folder access (Firefox, Safari and the claude.ai copy can\'t), so it\'s picked once per visit. Chrome or Edge at deswalsujan.github.io/cs16-demo-viewer remember it, unless it\'s in Steam\'s default place.');
-    pick.textContent = 'Choose folder';
-  } else if (state === 'wrong') { st.innerHTML = line('bad', 'Not the Half-Life folder.', o.text); pick.textContent = 'Choose again'; }
-  else if (state === 'ok') {
+  // where Steam puts the folder and the "upload" line, before a folder is chosen and after a wrong one
+  $('hlPaths').hidden = HL.ok;
+  pick.textContent = state === 'none' ? 'Choose folder' : 'Choose again';
+  pick.title = HL.ok ? 'New demos show up when you choose the folder again.' : '';
+  if (state === 'none') st.textContent = HL_HELP;
+  else if (state === 'wrong') st.innerHTML = line('bad', 'Not the Half-Life folder.', o.text);
+  else {
+    // no dot beside the count: the folder isn't watched, so there's no "Up to date" to show (Sujan, 2 Nov 2026)
     const n = files.demos.length;
-    st.innerHTML = n ? line('ok', 'Up to date.', `${n} ${n === 1 ? 'demo' : 'demos'} found.`)
+    st.innerHTML = n ? esc(`${n} ${n === 1 ? 'demo' : 'demos'} found.`)
       : line('chg', 'No demos found.', 'The folder is fine, but has no .dem files. Put demos in cstrike, or open one from anywhere with Open .dem.');
   }
-  else if (state === 'error') st.innerHTML = line('bad', o.head || 'Couldn\'t open the folder.', o.text || 'It may have been moved or renamed. Choose it again.');
   $('btnDemo').disabled = !HL.ok;
   $('btnDemo').title = HL.ok ? '' : 'Choose your Half-Life folder first';
   // option A (0.18.0): the folder step goes quiet and "Open a demo" takes the eye once the folder is fine
   document.querySelector('.steps').classList.toggle('ready', HL.ok);
   $('btnDemo').textContent = HL.ok ? 'Open .dem from elsewhere' : 'Open .dem';
 }
-// use a freshly read folder: index it, remember its file list, and drop anything cached from changed files
+// use a freshly picked folder: index it, and drop anything loaded from files that changed since the last pick
 function hlApply(list, snap) {
   const prev = HL.snap;
   if (prev && prev.name === snap.name) for (const p of hlChanged(prev.files, snap.files)) {
@@ -333,104 +306,39 @@ function hlApply(list, snap) {
     else if (m[2]) delete SND.bufs[m[2]];
     else delete MODELS[m[1]];
   }
-  HL.snap = snap; HL.loaded = true;
-  idb.put('hl:snap', snap);
+  HL.snap = snap;
   indexFolder(list);
 }
-// a folder was read (through the handle or the ordinary pick): check it's the Half-Life folder, then use it
+// a folder was picked: check it's the Half-Life folder, then use it
 function hlUse(list, name, gameDirs) {
   const bad = hlProblem(name, gameDirs);
   if (bad) {
     // keep nothing from a wrong folder: an earlier good folder's files stay out too, so it's clear what's loaded
-    HL.loaded = false; HL.snap = { name, files: {}, gameDirs };
+    HL.snap = { name, files: {}, gameDirs };
     indexFolder([]); hlRender('wrong', { name, text: bad }); return false;
   }
   hlApply(list, hlSnap(list, name, gameDirs));
   hlRender('ok');
   return true;
 }
-// read the remembered folder and use what's there now. quiet: a routine look on coming back (no "Reading" note)
-async function hlScan(quiet) {
-  if (!HL.handle || HL.checking) return;
-  HL.checking = true;
-  if (!quiet) hlRender('scanning');
-  try {
-    const list = await hlScanHandle(HL.handle);
-    const snap = hlSnap(list, HL.handle.name, list.gameDirs);
-    // nothing changed since the last look: leave everything as it is
-    if (quiet && HL.loaded && HL.snap && HL.snap.name === snap.name && !hlChanged(HL.snap.files, snap.files).length) hlRender('ok');
-    else hlUse(list, HL.handle.name, list.gameDirs);
-  } catch (e) {
-    HL.loaded = false;
-    hlRender('error', e && e.name === 'NotFoundError' ? { head: 'The folder is gone.', text: 'It was moved, renamed or deleted. Choose it again.' } : {});
-  } finally { HL.checking = false; HL.lastCheck = Date.now(); }
-}
-async function pickFolder() {
-  if (!useHandle()) { $('fFolder').click(); return; }
-  let h;
-  try { h = await window.showDirectoryPicker({ id: 'halflife', mode: 'read' }); }
-  catch (e) {
-    // closed the picker, or Chrome refused the folder (Steam's default folder): the page can't tell which, so with no
-    // folder in use it says so and points to "Choose it this way" (0.26.10)
-    if (e && e.name === 'AbortError') { if (!HL.ok) hlRender('refused'); return; }
-    // the browser won't show this picker here: use the ordinary folder pick from now on
-    HL.fsaBroken = true; hlRender('none', { note: 'Choose the folder again (this page can\'t keep folder access). ' + HL_HELP }); return;
-  }
-  HL.handle = h; idb.put('hl:handle', h);
-  await hlScan(false);
-}
-// the ordinary folder pick (no handle to keep)
+// Choose folder, Choose again, and the "Choose Half-Life folder" buttons in the 3D view and the load summary
+function pickFolder() { $('fFolder').click(); }
 function hlPicked(list) {
   const name = ((list[0].webkitRelativePath || '').split('/')[0]) || 'folder';
   const dirs = new Set();
   for (const f of list) { const seg = (f.webkitRelativePath || '').split('/'); if (seg.length > 2) dirs.add(seg[1].toLowerCase()); }
-  const ok = hlUse(list, name, [...dirs].filter((n) => /^(cstrike|cstrike_downloads|valve)$/.test(n)));
-  // in Chrome or Edge this pick is "Choose it this way" (0.26.10): from now on Choose folder opens it too, and the
-  // folder access's kept folder is dropped, so the next visit doesn't open that one instead
-  if (ok && fsaOK() && !HL.input) { HL.input = true; idb.put('hl:input', true); HL.handle = null; idb.put('hl:handle', null); hlRender('ok'); }
+  hlUse(list, name, [...dirs].filter((n) => /^(cstrike|cstrike_downloads|valve)$/.test(n)));
 }
-// Reconnect: Chrome asks again (with "Allow on every visit"), then the folder is read
-async function hlReconnect() {
-  if (!HL.handle) { pickFolder(); return; }
-  let perm = 'granted';
-  try { perm = await HL.handle.requestPermission({ mode: 'read' }); } catch (e) { perm = 'denied'; }
-  if (perm !== 'granted') { hlRender('error', { head: 'Access wasn\'t allowed.', text: 'Click Reconnect and allow it, or choose the folder again.' }); $('btnHlRefresh').textContent = 'Reconnect'; $('btnHlRefresh').hidden = false; return; }
-  await hlScan(false);
-}
-// "Choose Half-Life folder" buttons elsewhere (the 3D view, the load summary): read the remembered folder again when there is one
-function refreshOrPick() { if (HL.handle && HL.loaded) hlScan(false); else if (HL.handle) hlReconnect(); else pickFolder(); }
-// coming back to the page, or to the start screen: pick up whatever changed in the folder
-async function hlCheck(minGap) {
-  if (!HL.handle || !HL.loaded || HL.checking || document.hidden || Date.now() - HL.lastCheck < minGap) return;
-  let perm = 'prompt';
-  try { perm = await HL.handle.queryPermission({ mode: 'read' }); } catch (e) { }
-  if (perm !== 'granted') { HL.loaded = false; hlRender('reconnect'); return; }
-  hlScan(true);
-}
-const HL_GAP = 2000; // at most one look every 2 seconds
-window.addEventListener('focus', () => hlCheck(HL_GAP));
-document.addEventListener('visibilitychange', () => hlCheck(HL_GAP));
-async function hlInit() {
-  HL.snap = (await idb.get('hl:snap')) || null;
-  if (HL.snap && !HL.snap.files) HL.snap = null;
-  HL.input = !!(await idb.get('hl:input'));
-  const h = useHandle() ? await idb.get('hl:handle') : null;
-  if (h && typeof h.queryPermission === 'function') {
-    HL.handle = h;
-    let perm = 'prompt';
-    try { perm = await h.queryPermission({ mode: 'read' }); } catch (e) { }
-    if (perm === 'granted') { await hlScan(false); return; }
-    hlRender('reconnect', { name: h.name }); return;
-  }
-  hlRender(HL.snap && Object.keys(HL.snap.files).length ? 'remembered' : 'none');
-}
-// back to a first visit: forget the folder, its file list and everything loaded from it
+// Up to 0.26.10 the browser kept the folder's handle, its file list and the 0.26.10 choice of the ordinary pick:
+// delete them, so nothing about the folder stays in this browser
+for (const k of ['hl:handle', 'hl:input', 'hl:snap']) idb.del(k);
+hlRender('none');
+// back to a first visit: let go of the folder and everything loaded from it
 function hlForget() {
-  HL.handle = null; HL.snap = null; HL.loaded = false; HL.input = false;
+  HL.snap = null;
   indexFolder([]); setMsg('');
   hlRender('none');
 }
-hlInit();
 
 // drag and drop anywhere
 let dragDepth = 0;

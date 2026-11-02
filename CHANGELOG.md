@@ -4,6 +4,7 @@ What changed in the viewer, newest first. The version shows in the viewer's shor
 
 ## Versions
 
+- [0.26.11](#02611-2026-11-02) 2026-11-02: One folder pick, every browser
 - [0.26.10](#02610-2026-11-02) 2026-11-02: Steam's default folder in Chrome
 - [0.26.9](#0269-2026-11-02) 2026-11-02: Fonts from your own computer
 - [0.26.8](#0268-2026-11-02) 2026-11-02: POV crosshair, ammo icons in Chrome
@@ -68,6 +69,22 @@ What changed in the viewer, newest first. The version shows in the viewer's shor
 
 ## Known limits
 Moved to [LIMITS.md](LIMITS.md) on 30 Oct 2026; release entries below still say "Known limits" for that list.
+
+## 0.26.11 (2026-11-02)
+
+### Changed
+- **One way to choose the Half-Life folder, in every browser, on every visit** (Sujan, 2 Nov 2026, after 0.26.10 passed on Windows: two ways to choose the folder would confuse players). **Choose folder** opens the browser's ordinary folder pick, 0.26.10's **Choose it this way**; the row says "Your browser may call it an upload, but nothing leaves your computer." Chrome and Edge no longer keep the folder between visits: **Allow on every visit**, **Reconnect**, 0.26.10's "No folder chosen." state and the **Choose it this way** line are gone, and the folder's name and file list are no longer kept in the browser (what 0.26.10 kept is deleted on the first visit). Steam's default folder needs nothing of its own any more: the ordinary pick opens it in every browser.
+- The folder row shows only the player's own path: Windows, or the Mac with its Cmd+Shift+G tip, from what the browser says about the system (read in the page, sent nowhere), and both on other systems such as Linux. After picking: "64 demos found." with no dot, since "Up to date." is gone, and **Choose again**, whose tooltip says "New demos show up when you choose the folder again." As in `docs/folder-one-pick-mock.png`, approved by Sujan with those changes.
+- The page sees the folder as it was at the pick. A demo added while the page is open shows up after **Choose again**. A demo deleted or changed after the pick is found when it's clicked, or when the player comes back to the page (the window gets focus or the tab shows again) with the start screen showing, now also when going back to the start screen from a demo; it's taken off the list with a note, and the folder row's count follows.
+- "Refresh Half-Life folder" in the 3D view and the load summary is now "Choose Half-Life folder". **Clear saved files** deletes the maps, models, sounds and overviews saved from the folder and starts over; with no folder access left to forget, its **Remove access** note is gone.
+
+### How it was tested
+- Built, and the row looked at in headless Chrome on stand-in Windows, Mac and Linux and after a pick. The seven checks and Sujan's deleted-demo test run after his go; this section is completed then.
+- `tests/pov_folder_check.py` removed: it guarded the folder access's file filter (0.26.8), which is gone; every test now reads the folder through the ordinary pick, which hands the page every file.
+
+### Discussed, not changed
+- The upload line says "may": Chrome and Edge call it an upload (Sujan saw it on Windows); Sujan checks what Firefox shows on the Mac when he tests the build.
+- A second line under the folder row for new demos: its text went into **Choose again**'s tooltip instead (Sujan, 2 Nov 2026).
 
 ## 0.26.10 (2026-11-02)
 

@@ -143,10 +143,9 @@
         <div class="steps">
           <div class="step" id="stepFolder">
             <div class="k">1</div>
-            <div class="tx"><b id="hlTitle">Choose your Half-Life folder</b><small id="hlStatus">The folder that contains cstrike and valve. It gives the viewer your maps, textures, player models, sounds and demos. Nothing leaves your computer.</small></div>
-            <div class="hlbtns"><button class="btn primary" id="btnHlRefresh" type="button" hidden>Refresh</button><button class="btn" id="btnFolder" type="button">Choose folder</button></div>
-            <div class="hlx hlpaths" id="hlPaths" hidden><div>Windows: <span class="p" id="hlPathWin"></span></div><div>Mac: <span class="p" id="hlPathMac"></span></div><div class="hltip">In the Mac's dialog, press Cmd+Shift+G and paste it.</div></div>
-            <div class="hlx hlalt" id="hlAlt" hidden>Steam in its default place? Chrome won't open Program Files or Library with <b>Choose folder</b>. Use <button class="lnk" id="btnHlInput" type="button">Choose it this way</button>. Chrome calls it an upload, but nothing leaves your computer.</div>
+            <div class="tx"><b id="hlTitle">Choose your Half-Life folder</b><small id="hlStatus">The Half-Life folder from your Steam install, the one with cstrike and valve inside.</small></div>
+            <div class="hlbtns"><button class="btn" id="btnFolder" type="button">Choose folder</button></div>
+            <div class="hlx hlpaths" id="hlPaths" hidden><div id="hlWin">Windows: <span class="p" id="hlPathWin"></span></div><div id="hlMac">Mac: <span class="p" id="hlPathMac"></span></div><div class="hltip" id="hlTip">In the Mac's dialog, press Cmd+Shift+G and paste it.</div><div class="hlup">Your browser may call it an upload, but nothing leaves your computer.</div></div>
           </div>
           <div class="step" id="stepDemo">
             <div class="k">2</div>
@@ -164,7 +163,7 @@
         <div class="drophint">Or drop a .dem file, or an overview .bmp and .txt pair, anywhere on this page</div>
         <div class="prog" id="prog" hidden><i id="progBar"></i></div>
         <div class="msg" id="msg"></div>
-        <div class="loadfoot"><span>Version __VERSION__ · <a href="https://github.com/deswalsujan/cs16-demo-viewer" target="_blank" rel="noopener">Source on GitHub</a></span><button class="btn" id="bClear" type="button" title="Forgets your Half-Life folder and deletes the maps, models, sounds and overviews this browser saved from it, as on a first visit">Clear saved files</button></div>
+        <div class="loadfoot"><span>Version __VERSION__ · <a href="https://github.com/deswalsujan/cs16-demo-viewer" target="_blank" rel="noopener">Source on GitHub</a></span><button class="btn" id="bClear" type="button" title="Deletes the maps, models, sounds and overviews this browser saved from your Half-Life folder, and starts over as on a first visit">Clear saved files</button></div>
       </div>
     </div>
   </section>

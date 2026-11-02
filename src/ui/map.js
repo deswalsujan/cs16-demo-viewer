@@ -72,7 +72,7 @@ async function loadMap(map) {
       const c = await idb.get('map2:' + key);
       if (c) { bspBlob = c.bsp; tex = c.tex; bspU8 = new Uint8Array(await bspBlob.arrayBuffer()); }
     }
-    if (!bspU8) { clear3d(); status3(STALE.has(`maps/${key}.bsp`) ? `${map}.bsp changed on disk after you chose the folder. ${HL.handle ? 'Refresh' : 'Choose'} your Half-Life folder again.` : `The map file ${map}.bsp was not found.`, true); return null; }
+    if (!bspU8) { clear3d(); status3(STALE.has(`maps/${key}.bsp`) ? `${map}.bsp changed on disk after you chose the folder. Choose your Half-Life folder again.` : `The map file ${map}.bsp was not found.`, true); return null; }
     let bsp;
     try { bsp = parseBsp(bspU8); }
     catch (e) { status3(`Could not read ${map}.bsp: ${e.message}`, true); return null; }
