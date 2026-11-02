@@ -22,13 +22,13 @@ with sync_playwright() as p:
     t = pg.evaluate("!document.querySelector('.app').classList.contains('theatre') && !document.fullscreenElement")
     print('T and F do nothing on the start screen:', t)
     pg.screenshot(path='start_disabled.png', clip={'x': 1000, 'y': 0, 'width': 440, 'height': 60})
-    # the footer's Source on GitHub link (0.25.1): the repo, in a new tab, and at phone width the version, the link and
-    # Clear saved files don't overlap (the footer wraps) and the page doesn't scroll sideways
+    # the footer's Source on GitHub link (0.25.1): the repo, in a new tab. Phone width is no longer checked (Sujan, 3 Nov
+    # 2026: the viewer needs a Half-Life folder, which no phone has)
     g = pg.eval_on_selector('.loadfoot a', "a => a.href + ' ' + a.target + ' ' + a.rel + ' ' + a.textContent")
     print('Footer link:', g); gl = g == 'https://github.com/deswalsujan/cs16-demo-viewer _blank noopener Source on GitHub'
     # Interface size (0.26.13, Sujan, 3 Nov 2026): Auto keeps a laptop's page exactly as 0.26.12 (text 14 px, side panel
     # 340 px) and grows on a big window; it follows a resize and a move to a screen of another density with no reload;
-    # a picked size is saved, and lowered when the window is too small for it; the phone layout stays
+    # a picked size is saved, and lowered when the window is too small for it
     ui = lambda: pg.evaluate("""() => ({ ui: getComputedStyle(document.documentElement).getPropertyValue('--ui').trim(),
       font: getComputedStyle(document.body).fontSize, side: Math.round(document.querySelector('.side').getBoundingClientRect().width),
       mark: window.__mark === 1, dpr: devicePixelRatio, cv: document.getElementById('cv').width, cvCss: document.getElementById('cv').getBoundingClientRect().width })""")
@@ -55,10 +55,5 @@ with sync_playwright() as p:
     sz.append(size(2560, 1440, ('1.5', '21px', 510), '150% after a reload' + ('' if kept else ' (the list lost it)')) and kept)
     pg.evaluate("() => { const s = document.getElementById('ui3'); s.value = '200'; s.dispatchEvent(new Event('change')); }")
     sz.append(size(1366, 768, ('1.05', '14.7px', 357), '200% at 1366x768, lowered to fit'))
-    pg.set_viewport_size({'width': 375, 'height': 812}); pg.wait_for_timeout(300)
-    ph1 = pg.evaluate("() => getComputedStyle(document.documentElement).getPropertyValue('--ui').trim() === '1' && getComputedStyle(document.querySelector('.app')).gridTemplateAreas.includes('side') && getComputedStyle(document.querySelector('.app')).gridTemplateColumns.split(' ').length === 1")
-    print('Interface size, 200% at 375x812: --ui 1 and the phone layout:', ph1); sz.append(ph1)
-    ph = pg.evaluate("""() => { const r = (q) => document.querySelector(q).getBoundingClientRect(), s = r('.loadfoot span'), c = r('#bClear');
-      return !(s.left < c.right && c.left < s.right && s.top < c.bottom && c.top < s.bottom) && document.documentElement.scrollWidth <= innerWidth; }""")
-    print('At 375 px the footer wraps without overlapping:', ph); b.close()
-sys.exit(0 if all(d) and t and gl and ph and tj and all(sz) else 1)
+    b.close()
+sys.exit(0 if all(d) and t and gl and tj and all(sz) else 1)

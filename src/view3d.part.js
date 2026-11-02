@@ -86,6 +86,15 @@ function qualityTick(dt) {
   if (fps < 45) { Q.lowered = true; applyQuality(false); toast('3D sharpness lowered to keep playback smooth. Choose "Quality: high" in the 3D bar to change it back.', 7000); }
 }
 function fwd(yaw, pitch) { const y = yaw * Math.PI / 180, p = pitch * Math.PI / 180; return [Math.cos(p) * Math.cos(y), Math.cos(p) * Math.sin(y), -Math.sin(p)]; }
+// The field of view through a player's eyes, for three.js (which takes it top to bottom), from the game's fov: 90, or a
+// zoom level (Sujan, 3 Nov 2026). The game's fov is the width of a 4:3 picture, and a wider view keeps that picture's
+// height and shows more at the sides, as CS 1.6 does in 4:3 stretched, 4:3 with black bars and 16:9 with "Allow
+// widescreen Field of View". A view narrower than 4:3 (a tall, narrow window) keeps the fov across its width, as before
+// 0.26.15, so the whole 4:3 picture always fits. Up to 0.26.14 every view kept the fov across its width, so a wide view
+// showed less top to bottom and guns and players looked bigger than in the game.
+function eyeFov(fov, aspect) {
+  return 2 * Math.atan(Math.tan(fov * Math.PI / 360) * Math.max(0.75, 1 / aspect)) * 180 / Math.PI;
+}
 function resize3() {
   if (!R3) return;
   const r = $('gl').getBoundingClientRect();
@@ -452,7 +461,7 @@ function update3Now() {
     const v = povFollow(POV.t);
     // his zoom, or while he spectates someone in first person, theirs (the server sends him the watched player's)
     const fov = POV.who != null ? povFov(POV.t) : 90;
-    camera.fov = 2 * Math.atan(Math.tan(fov * Math.PI / 360) / camera.aspect) * 180 / Math.PI;
+    camera.fov = eyeFov(fov, camera.aspect);
     placeCam(v.pos, v.yaw, v.pitch);
   } else if (cam3.mode === 'free') {
     const sp = (k3.shift ? 1500 : 550) * dt;
@@ -473,11 +482,11 @@ function update3Now() {
     const s = selected && playerState(selected, T);
     if (s && s.state > 0) {
       if (cam3.mode === 'eyes') {
-        // CS 1.6 uses a 90 degree horizontal field of view
-        camera.fov = 2 * Math.atan(Math.tan(Math.PI / 4) / camera.aspect) * 180 / Math.PI;
-        // zoomed in with a sniper rifle: narrower view, like the game's scope
+        // CS 1.6's 90 degrees across a 4:3 picture (eyeFov)
+        camera.fov = eyeFov(90, camera.aspect);
+        // zoomed in with a sniper rifle: narrower view, like the game's scope, by the same rule
         const zl = zoomLevel(selected, T), zw = SNIPERS[weaponShort(s.weapon)];
-        if (zl && zw) camera.fov = 2 * Math.atan(Math.tan(zw.fov[zl] * Math.PI / 360) / camera.aspect) * 180 / Math.PI;
+        if (zl && zw) camera.fov = eyeFov(zw.fov[zl], camera.aspect);
         const yaw = s.yaw, pitch = s.pitch;
         placeCam([s.x, s.y, s.z + (s.duck ? 12 : 17)], yaw, pitch);
       } else {
@@ -524,7 +533,7 @@ function update3Now() {
           pitch1 = -Math.atan2(death.kpos[2] + 17 - z, Math.hypot(death.kpos[0] - death.vpos[0], death.kpos[1] - death.vpos[1])) * 180 / Math.PI;
         }
         let dy = yaw1 - yaw0; while (dy > 180) dy -= 360; while (dy < -180) dy += 360;
-        camera.fov = 2 * Math.atan(Math.tan(Math.PI / 4) / camera.aspect) * 180 / Math.PI;
+        camera.fov = eyeFov(90, camera.aspect);
         placeCam([death.vpos[0], death.vpos[1], z], yaw0 + dy * ease(turn), pitch0 + (pitch1 - pitch0) * ease(turn));
       }
     }
@@ -1027,21 +1036,26 @@ function povCrosshairNow() {
 }
 // the kill marker's size in POV mode, in the form of XHAIR's sizes: its ticks start just past his crosshair's arms as
 // they open and close (option A of 5 Oct 2026); with no crosshair (a sniper rifle) as with the large size
+// The width his crosshair and the kill marker's ticks are sized from (the game sizes them from the screen's width):
+// the 4:3 picture's, H * 4 / 3, on a view wider than 4:3, and the view's own on a narrower one, so they keep their size
+// against the scene, which keeps the 4:3 picture's height (eyeFov; Sujan, 3 Nov 2026). Up to 0.26.14 they were sized
+// from the view's width, about a third too big against the scene on a 16:9 view once the scene kept the 4:3 height.
+const povXhW = (W, H) => Math.min(W, H * 4 / 3);
 function povXh(W, H) {
   readCrosshairCfg();
   const c = povCrosshairNow(); if (!c) return XHAIR.large;
-  const k = W / XCFG.base * XCFG.scale, g = c.gap * k;
-  return { gap: g, end: g + Math.max(1, c.len * k), w: Math.max(1, Math.round(W / 1280)) };
+  const X = povXhW(W, H), k = X / XCFG.base * XCFG.scale, g = c.gap * k;
+  return { gap: g, end: g + Math.max(1, c.len * k), w: Math.max(1, Math.round(X / 1280)) };
 }
 function drawPovCrosshair(lx, W, H) {
   readCrosshairCfg();
   const c = povCrosshairNow();
   if (!c) return;
-  const k = W / XCFG.base * XCFG.scale, g = c.gap * k, L = Math.max(1, c.len * k), cx = Math.round(W / 2), cy = Math.round(H / 2);
+  const X = povXhW(W, H), k = X / XCFG.base * XCFG.scale, g = c.gap * k, L = Math.max(1, c.len * k), cx = Math.round(W / 2), cy = Math.round(H / 2);
   lx.save();
   lx.globalCompositeOperation = XCFG.additive ? 'lighter' : 'source-over';
   lx.fillStyle = `rgba(${XCFG.r},${XCFG.g},${XCFG.b},${(c.alpha / 255).toFixed(3)})`;
-  const w = Math.max(1, Math.round(W / 1280));
+  const w = Math.max(1, Math.round(X / 1280));
   lx.fillRect(cx - g - L, cy, L, w); lx.fillRect(cx + g, cy, L, w); lx.fillRect(cx, cy - g - L, w, L); lx.fillRect(cx, cy + g, w, L);
   lx.restore();
 }
