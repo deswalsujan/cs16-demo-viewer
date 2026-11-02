@@ -97,8 +97,11 @@ function closeDemo() {
 function showLoad(v) {
   $('load').hidden = !v;
   applyTheatre(); // the start screen needs the header, so Theatre mode pauses while it's open
-  // the load summary goes at once rather than counting down behind the start screen (Sujan, 14 Oct 2026)
-  if (v) { playing = false; setPlayIcon(); $('prog').hidden = true; if (D && $('sumCard') && !$('sumCard').hidden) closeSummary(); checkDemoList(); }
+  // the load summary goes at once rather than counting down behind the start screen (Sujan, 14 Oct 2026).
+  // The message line starts empty each time the start screen comes back, whether or not an overview loaded: up to
+  // 0.26.11 "Reading name…" stayed there after a demo whose map has no overview (Sujan, 3 Nov 2026). checkDemoList
+  // runs after, so its note on a demo deleted since the pick still shows.
+  if (v) { playing = false; setPlayIcon(); $('prog').hidden = true; setMsg(''); if (D && $('sumCard') && !$('sumCard').hidden) closeSummary(); checkDemoList(); }
   setControls(!v && !!D);
 }
 // Everything that needs a demo stays disabled until one is loaded (Shortcuts always works)
