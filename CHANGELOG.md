@@ -79,8 +79,11 @@ Moved to [LIMITS.md](LIMITS.md) on 30 Oct 2026; release entries below still say 
 - "Refresh Half-Life folder" in the 3D view and the load summary is now "Choose Half-Life folder". **Clear saved files** deletes the maps, models, sounds and overviews saved from the folder and starts over; with no folder access left to forget, its **Remove access** note is gone.
 
 ### How it was tested
-- Built, and the row looked at in headless Chrome on stand-in Windows, Mac and Linux and after a pick. The seven checks and Sujan's deleted-demo test run after his go; this section is completed then.
-- `tests/pov_folder_check.py` removed: it guarded the folder access's file filter (0.26.8), which is gone; every test now reads the folder through the ordinary pick, which hands the page every file.
+- `folder_row_test.py` rewritten: 24 of 24 (the row on Windows, Mac and Linux, deleted and changed demos, the next visit). `tests/pov_folder_check.py` removed: it guarded the folder access's file filter (0.26.8), which is gone.
+- The seven checks pass on Sujan's Mac (2 minutes 2 seconds; `ground_truth_check.py` 231 kills, 0 mismatches), run on main after Sujan merged pull request #38.
+- Sujan's deleted-demo test on copies of Na`Vi vs SK, Inferno, ESWC 2011 (the second and third files): 7 of 7; the note shows when the deleted demo is clicked and when the player comes back to the page.
+- Not tried in a real Chrome, Edge, Firefox or Safari: Sujan checks it by eye on Windows and the Mac (`STATE.md`).
+- Full log: `tests/logs/0.26.11.md`.
 
 ### Discussed, not changed
 - The upload line says "may": Chrome and Edge call it an upload (Sujan saw it on Windows); Sujan checks what Firefox shows on the Mac when he tests the build.
