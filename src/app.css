@@ -379,6 +379,23 @@ kbd { font-family: var(--f-body); font-size: 11px; background: var(--panel-2); b
 .hlst.wait { color: var(--sand); } .hlst.wait::before { background: var(--sand); }
 .hlst.bad { color: var(--t); } .hlst.bad::before { background: var(--t); }
 @media (max-width: 520px) { .step { grid-template-columns: 28px minmax(0,1fr); } .step > .btn, .step > .hlbtns { grid-column: 2; justify-content: flex-start; } }
+/* The folder row before a folder is chosen (0.26.10, docs/folder-steam-default-mock.png): the title and Choose folder
+   on one line, then across the row the help, where Steam puts the folder, and the line for Steam's default folder,
+   which Chrome and Edge's folder access refuses (Program Files on Windows, Library on a Mac) */
+.steps:not(.ready) #stepFolder .tx { display: contents; }
+.steps:not(.ready) #stepFolder .k { grid-row: 1; }
+.steps:not(.ready) #hlTitle { grid-column: 2; grid-row: 1; margin: 0; }
+.steps:not(.ready) #stepFolder .hlbtns { grid-column: 3; grid-row: 1; }
+.steps:not(.ready) #hlStatus { grid-column: 2 / -1; margin-top: -6px; }
+#stepFolder .hlx { grid-column: 2 / -1; font-size: 12px; line-height: 1.45; color: var(--muted); }
+#stepFolder .hlpaths { margin-top: -4px; }
+#stepFolder .hlpaths .p { color: var(--fg); overflow-wrap: anywhere; }
+#stepFolder .hlpaths .hltip { font-style: italic; }
+#stepFolder .hlalt { border-top: 1px solid var(--line); padding-top: 8px; margin-top: -2px; }
+#stepFolder .hlalt.hot { color: var(--fg); }
+#stepFolder .hlalt b, #hlStatus b.in { display: inline; font-weight: 600; color: var(--fg); margin: 0; white-space: nowrap; }
+#stepFolder .lnk { font: inherit; font-weight: 600; white-space: nowrap; color: var(--sand); background: none; border: 0; padding: 0; text-decoration: underline; cursor: pointer; }
+@media (max-width: 520px) { .steps:not(.ready) #stepFolder .hlbtns { grid-column: 2; grid-row: auto; } }
 .demos { display: grid; gap: 6px; max-height: 220px; overflow-y: auto; }
 /* search over the demo list (approved design: docs/demo-search-mock-2.png): an inset field, a "Your demos" heading
    with the count, and the typed letters highlighted in each name */

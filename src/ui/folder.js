@@ -1,6 +1,7 @@
 // ---------------- file loading ----------------
 $('btnFolder').onclick = () => pickFolder();
 $('btnHlRefresh').onclick = () => hlReconnect();
+$('btnHlInput').onclick = () => $('fFolder').click(); // "Choose it this way": the ordinary folder pick (0.26.10)
 $('btnDemo').onclick = () => $('fDemo').click();
 $('btnOpen').onclick = () => { showLoad($('load').hidden); };
 $('fDemo').onchange = (e) => { const f = e.target.files[0]; if (f) loadDemoFile(f); e.target.value = ''; };
@@ -223,10 +224,19 @@ document.addEventListener('visibilitychange', () => { if (!document.hidden) chec
 // Changes in the folder (demos, maps, models, sounds added or removed) are picked up by themselves whenever
 // you come back to the page or to the start screen. A demo can only be opened once a folder is chosen: the
 // maps, overviews, models and sounds all come from it.
-const HL = { handle: null, snap: null, loaded: false, checking: false, lastCheck: 0, fsaBroken: false, ok: false };
+// Steam's default folder, Program Files on Windows and Library on a Mac, is one Chrome and Edge's folder access
+// refuses ("can't open this folder because it contains system files"; Sujan, on both, 2 Nov 2026). The refusal reaches
+// the page like a closed picker. For it, "Choose it this way" picks the folder with the ordinary folder input, as in
+// Firefox, which opens it; it can't be kept, so it's picked once per visit (input: true, saved with the folder and
+// forgotten with it by Clear saved files) (0.26.10, docs/folder-steam-default-mock.png).
+const HL = { handle: null, snap: null, loaded: false, checking: false, lastCheck: 0, fsaBroken: false, ok: false, input: false };
 const HL_EXAMPLE = 'C:\\Program Files (x86)\\Steam\\steamapps\\common\\Half-Life';
-const HL_HELP = `The Half-Life folder from your Steam install, the one that contains cstrike and valve. On Windows that's usually ${HL_EXAMPLE}.`;
+const HL_EXAMPLE_MAC = '~/Library/Application Support/Steam/steamapps/common/Half-Life';
+const HL_HELP = 'The Half-Life folder from your Steam install, the one with cstrike and valve inside.';
 const fsaOK = () => { try { return !HL.fsaBroken && typeof window.showDirectoryPicker === 'function' && window.isSecureContext && window.self === window.top; } catch (e) { return false; } };
+// the folder is picked through the folder access (and kept between visits), not the ordinary pick
+const useHandle = () => fsaOK() && !HL.input;
+$('hlPathWin').textContent = HL_EXAMPLE; $('hlPathMac').textContent = HL_EXAMPLE_MAC;
 // the files the viewer reads; everything else in the folder is skipped. Every file indexFolder looks for has to be
 // here too, or Chrome and Edge, which read the folder through its handle, never see it (0.26.8: POV mode's
 // cstrike/config.cfg and sprites/weapon_*.txt were missing, so its crosshair and ammo icons were only found in
@@ -269,7 +279,7 @@ async function hlScanHandle(dir) {
 function hlProblem(name, gameDirs) {
   const n = (name || '').toLowerCase();
   if (/^(cstrike|cstrike_downloads|valve)$/.test(n)) return `This is the ${name} folder inside Half-Life. Choose the folder one level up, Half-Life, which contains cstrike and valve.`;
-  if (!gameDirs.includes('cstrike')) return `It has no cstrike folder inside. Choose the Half-Life folder from your Steam install, which contains cstrike and valve. On Windows that's usually ${HL_EXAMPLE}.`;
+  if (!gameDirs.includes('cstrike')) return 'It has no cstrike folder inside. Choose the Half-Life folder from your Steam install, the one with cstrike and valve inside.';
   return null;
 }
 // the row on the start screen, and whether a demo can be opened
@@ -283,14 +293,22 @@ function hlRender(state, o = {}) {
   HL.ok = state === 'ok';
   $('stepFolder').classList.toggle('done', HL.ok);
   $('stepFolder').querySelector('.k').textContent = HL.ok ? '✓' : '1';
-  if (state === 'none') st.innerHTML = esc(o.note || HL_HELP) + ' ' + esc('Nothing leaves your computer.')
-    + (fsaOK() ? '' : ' ' + esc('Chrome asks whether to "upload" the files: that is its standard wording for picking a folder.'));
+  // where Steam puts the folder, before one is chosen and after a wrong one; the line for Steam's default folder where
+  // the folder access is in use, and brighter after a refusal
+  $('hlPaths').hidden = !(state === 'none' || state === 'wrong');
+  $('hlAlt').hidden = !(useHandle() && (state === 'none' || state === 'refused' || state === 'wrong'));
+  $('hlAlt').classList.toggle('hot', state === 'refused');
+  if (state === 'none') st.innerHTML = esc(o.note || HL_HELP) + (useHandle() ? '' : ' ' + esc('Nothing leaves your computer.')
+    + (fsaOK() ? '' : ' ' + esc('Chrome asks whether to "upload" the files: that is its standard wording for picking a folder.')));
+  else if (state === 'refused') st.innerHTML = line('wait', 'No folder chosen.', 'If Chrome said the folder "contains system files", it\'s Steam\'s default folder: use')
+    + ' <b class="in">Choose it this way</b> below.';
   else if (state === 'scanning') st.innerHTML = line('wait', 'Reading the folder…');
   else if (state === 'reconnect') {
     st.innerHTML = line('wait', 'Chrome needs your OK again.', 'Click Reconnect, then choose "Allow on every visit" so it opens by itself next time.');
     rec.textContent = 'Reconnect'; rec.hidden = false;
   } else if (state === 'remembered') {
-    st.innerHTML = line('wait', 'Choose it again for this visit.', fsaOK() ? '' : 'This page can\'t keep folder access (Firefox, Safari and the claude.ai copy can\'t), so it\'s picked once per visit. Chrome or Edge at deswalsujan.github.io/cs16-demo-viewer remember it.');
+    st.innerHTML = line('wait', 'Choose it again for this visit.', fsaOK() ? (HL.input ? 'Chrome can\'t keep access to Steam\'s default folder, so it\'s chosen once per visit. Chrome calls it an upload, but nothing leaves your computer.' : '')
+      : 'This page can\'t keep folder access (Firefox, Safari and the claude.ai copy can\'t), so it\'s picked once per visit. Chrome or Edge at deswalsujan.github.io/cs16-demo-viewer remember it, unless it\'s in Steam\'s default place.');
     pick.textContent = 'Choose folder';
   } else if (state === 'wrong') { st.innerHTML = line('bad', 'Not the Half-Life folder.', o.text); pick.textContent = 'Choose again'; }
   else if (state === 'ok') {
@@ -348,11 +366,13 @@ async function hlScan(quiet) {
   } finally { HL.checking = false; HL.lastCheck = Date.now(); }
 }
 async function pickFolder() {
-  if (!fsaOK()) { $('fFolder').click(); return; }
+  if (!useHandle()) { $('fFolder').click(); return; }
   let h;
   try { h = await window.showDirectoryPicker({ id: 'halflife', mode: 'read' }); }
   catch (e) {
-    if (e && e.name === 'AbortError') return; // closed the picker
+    // closed the picker, or Chrome refused the folder (Steam's default folder): the page can't tell which, so with no
+    // folder in use it says so and points to "Choose it this way" (0.26.10)
+    if (e && e.name === 'AbortError') { if (!HL.ok) hlRender('refused'); return; }
     // the browser won't show this picker here: use the ordinary folder pick from now on
     HL.fsaBroken = true; hlRender('none', { note: 'Choose the folder again (this page can\'t keep folder access). ' + HL_HELP }); return;
   }
@@ -364,7 +384,10 @@ function hlPicked(list) {
   const name = ((list[0].webkitRelativePath || '').split('/')[0]) || 'folder';
   const dirs = new Set();
   for (const f of list) { const seg = (f.webkitRelativePath || '').split('/'); if (seg.length > 2) dirs.add(seg[1].toLowerCase()); }
-  hlUse(list, name, [...dirs].filter((n) => /^(cstrike|cstrike_downloads|valve)$/.test(n)));
+  const ok = hlUse(list, name, [...dirs].filter((n) => /^(cstrike|cstrike_downloads|valve)$/.test(n)));
+  // in Chrome or Edge this pick is "Choose it this way" (0.26.10): from now on Choose folder opens it too, and the
+  // folder access's kept folder is dropped, so the next visit doesn't open that one instead
+  if (ok && fsaOK() && !HL.input) { HL.input = true; idb.put('hl:input', true); HL.handle = null; idb.put('hl:handle', null); hlRender('ok'); }
 }
 // Reconnect: Chrome asks again (with "Allow on every visit"), then the folder is read
 async function hlReconnect() {
@@ -390,7 +413,8 @@ document.addEventListener('visibilitychange', () => hlCheck(HL_GAP));
 async function hlInit() {
   HL.snap = (await idb.get('hl:snap')) || null;
   if (HL.snap && !HL.snap.files) HL.snap = null;
-  const h = fsaOK() ? await idb.get('hl:handle') : null;
+  HL.input = !!(await idb.get('hl:input'));
+  const h = useHandle() ? await idb.get('hl:handle') : null;
   if (h && typeof h.queryPermission === 'function') {
     HL.handle = h;
     let perm = 'prompt';
@@ -402,7 +426,7 @@ async function hlInit() {
 }
 // back to a first visit: forget the folder, its file list and everything loaded from it
 function hlForget() {
-  HL.handle = null; HL.snap = null; HL.loaded = false;
+  HL.handle = null; HL.snap = null; HL.loaded = false; HL.input = false;
   indexFolder([]); setMsg('');
   hlRender('none');
 }

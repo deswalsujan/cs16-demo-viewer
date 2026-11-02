@@ -4,6 +4,7 @@ What changed in the viewer, newest first. The version shows in the viewer's shor
 
 ## Versions
 
+- [0.26.10](#02610-2026-11-02) 2026-11-02: Steam's default folder in Chrome
 - [0.26.9](#0269-2026-11-02) 2026-11-02: Fonts from your own computer
 - [0.26.8](#0268-2026-11-02) 2026-11-02: POV crosshair, ammo icons in Chrome
 - [0.26.7](#0267-2026-11-02) 2026-11-02: Each wall's own material
@@ -67,6 +68,20 @@ What changed in the viewer, newest first. The version shows in the viewer's shor
 
 ## Known limits
 Moved to [LIMITS.md](LIMITS.md) on 30 Oct 2026; release entries below still say "Known limits" for that list.
+
+## 0.26.10 (2026-11-02)
+
+### Fixed
+- **Steam's default Half-Life folder can be chosen in Chrome and Edge** (Sujan, 2 Nov 2026: reproduced on Windows with a screen recording, checked on the Mac). Chrome's folder access refuses anything in Program Files on Windows or in Library on a Mac, where Steam installs the game, with "can't open this folder because it contains system files", and the page saw nothing; the start screen's own help even gave that Windows path. Now the folder row says where Steam puts the folder on Windows and Mac (with the Mac's Cmd+Shift+G tip), and a line under it offers **Choose it this way**: the ordinary folder pick, as in Firefox, which opens it. Chrome calls that an upload, but nothing leaves your computer. After the picker closes with no folder, which is all the page sees of Chrome's refusal, the row says "No folder chosen." and points to it. The choice is kept in that browser, so the folder is chosen once per visit until **Clear saved files**. As in `docs/folder-steam-default-mock.png`, approved by Sujan with two text fixes.
+
+### How it was tested
+- `folder_row_test.py` (29 of 29, new part D: Chrome's refusal stood in by the folder access giving an AbortError, **Choose it this way**, the next visit, **Clear saved files**); the row at 1280 and 375 px wide, nothing past its edge.
+- The seven checks pass on Sujan's Mac. Not tried in a real Chrome: Sujan checks it by eye on Windows and the Mac (`STATE.md`).
+- Full log: `tests/logs/0.26.10.md`.
+
+### Discussed, not changed
+- A phone-width design: nobody has a Half-Life folder on a phone (Sujan, 2 Nov 2026); at 375 px the row stacks and stays readable.
+- Telling Chrome's refusal from a closed picker: the page gets the same AbortError for both, so "No folder chosen." covers both, and only when no folder is in use.
 
 ## 0.26.9 (2026-11-02)
 
