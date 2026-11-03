@@ -12,6 +12,8 @@ let scope = 'match';
 let tab = 'rounds';
 let wbFilter = 'all', pickedBurst = null; // Wallbangs list filter and the clicked damage row (wip/wallbang-hits)
 const opts = { names: true, nades: true, lines: true, xray: false, teamColours: false };
+// Vanilla (0.26.16): on, and the settings it turned off, to bring back when it's switched off (setVanilla, src/ui/loop.js)
+const VAN = { on: false, saved: null };
 // kill moments that just happened, for the hit markers (timed in real seconds so they stay visible at any speed)
 const flashes = [];
 let prevT = null;

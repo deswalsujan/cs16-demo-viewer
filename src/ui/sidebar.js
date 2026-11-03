@@ -47,6 +47,40 @@ function killRow3(k, wbTag) {
   if (k.killer === k.victim || !k.kp) return `<span class="kname">${nameHtml(k.vp, vs)}</span>${gun}`;
   return `<span class="kname">${nameHtml(k.kp, ks)}</span>${gun}<span class="kname">${nameHtml(k.vp, vs)}</span>`;
 }
+// Kill details (0.26.16; docs/kill-details-damage-vanilla-mock.jpg, approved by Sujan 3 Nov 2026): the picked kill in the
+// Kills and Wallbangs lists opens to one line per bullet that hit (killHits): its damage, where it hit (bodyPart), through a
+// wall or in the open, and how long before the kill; a click on a line jumps playback to that bullet. "Earlier:" says where
+// the rest of his health went when he had less than 100 HP at the first hit (earlierDamage). In POV mode the recorder's demo
+// has only his teammates' health, so there's nothing to list.
+function killDetailsHtml(k) {
+  if (!k.kp || k.killer === k.victim) return '';
+  const box = (inner) => `<div class="kdet" data-kd="${D.kills.indexOf(k)}">${inner}</div>`;
+  if (D.povOn) {
+    // one of his teammates (or he himself): their health is in his demo, but the hit finder hasn't been checked on POV demos
+    const st = playerState(POV.v.rec, k.t - 0.05), side = st && st.state ? (Math.abs(st.state) === 1 ? 'TERRORIST' : 'CT') : null;
+    const mate = k.victim === POV.v.rec || (side && k.vteam === side);
+    return box(mate ? '<b>No hit details in POV mode.</b>' : `<b>No hit details.</b> A demo recorded by a player has only his teammates' health, not ${esc(labelAt(k.victim, k.t))}'s.`);
+  }
+  if (!MAP || MAP.name !== D.mapName.toLowerCase()) return box(`Hit details need the map file (${esc(D.mapName)}.bsp).`);
+  if (!M.liveR.some((r) => r.n === k.round)) return box('No hit details outside the rounds that count.');
+  const list = killHits(k);
+  if (!list) return box('Hit details come once the map has loaded.');
+  const n = list.length, walls = list.filter((h) => h.wall).length, total = list.reduce((a, h) => a + h.dmg, 0);
+  const gun = !!MAX_DMG[k.weapon] || ONE_SURFACE.has(k.weapon);
+  let h = `<div class="ksum"><b>${n} hit${n > 1 ? 's' : ''}</b>${walls && gun ? ` · ${walls} through a wall` : ''} · ${total} HP${n > 1 ? ` in ${(k.t - list[0].t).toFixed(2)} s` : ''}</div>`;
+  const earlier = earlierDamage(k, list);
+  if (earlier) h += `<div class="kpre">Earlier: ${earlier.map((x) => `<b>−${x.dmg}</b>${x.from ? ` from ${esc(x.from)}` : ''}${x.when ? ` at ${esc(x.when)}` : ''}${x.from ? '' : ', source unknown'}`).join(', ')}.</div>`;
+  let est = false;
+  list.forEach((x, i) => {
+    let where = bodyPart(x); if (where.endsWith('*')) est = true;
+    if (x.kill && !gun) where = /grenade/.test(k.weapon) ? 'grenade' : esc(k.weapon || '');
+    const how = gun ? ` · ${x.wall ? 'through a wall' : 'in the open'}` : '';
+    h += `<button type="button" class="kb" data-bt="${x.t}" title="Jump to this ${x.kill ? 'kill' : 'bullet'}"><span class="i">${i + 1}</span><span><span class="d ${x.wall ? 'w' : 'o'}">−${x.dmg}</span>${x.head ? '<span class="hs">HS</span>' : ''}${x.kill ? `<span class="sk" aria-label="the kill">${SKULL}</span>` : ''}</span><span class="wh">${where}${how}</span><span class="tm">${x.kill ? 'kill' : '−' + (k.t - x.t).toFixed(2) + ' s'}</span></button>`;
+  });
+  const last = list[n - 1];
+  h += `<div class="knote">−${last.dmg}${last.head ? ' HS' : ''}: the health he had left.${est ? ' *Estimated from the damage; the demo says only head or body.' : ''}</div>`;
+  return box(h);
+}
 // The kill last clicked in the Kills or Wallbangs list: it keeps its highlight until another kill is
 // clicked or another demo is opened. A kill that playback is passing gets a lighter one.
 let pickedKill = null;
@@ -128,6 +162,7 @@ function renderPane() {
       // a kill inside a skip in the recording: // by its time (0.20.0), wallbangs included since 0.21.0, which keep UNSURE too
       const sk = skipNear(k.t) ? SKIP_MARK : '';
       h += `<div class="row krow kill3${killState(k)}" data-kill="${k.t}" data-ki="${D.kills.indexOf(k)}"><span class="n" title="Round timer as shown in game">${k === pickedKill ? MARK : ''}${killClock(k.t) ? cellClock(k.t) : '<span class="nw">+' + fmt(k.t - r.start) + '</span>'}${sk}</span><span class="main">${killRow3(k, true)}</span></div>`;
+      if (k === pickedKill) h += killDetailsHtml(k);
     }
     if (!r || !r.kills.length) h += `<div class="opt">No kills in this round.</div>`;
     p.innerHTML = h;
@@ -154,6 +189,7 @@ function renderPane() {
           // the round, the round timer and the demo time on three lines; "C4 0:16" never splits (0.21.1, Sujan 15 Oct 2026);
           // // under them for a wallbang inside a skip in the recording, as in the Kills list (Sujan, 2 Nov 2026)
           h += `<div class="row krow wbrow kill3${killState(k)}" data-wb="${k.t}" data-ki="${D.kills.indexOf(k)}" title="Through ${k.wb.thick} units of ${k.wb.what === 'object' ? 'a breakable or door' : 'wall or crate'}"><span class="n">${k === pickedKill ? MARK : ''}R${r ? r.ln : '?'} ·<br>${cellClock(k.t)}<br>${fmt(k.t - D.start)}${skipNear(k.t) ? SKIP_MARK : ''}</span><span class="main">${killRow3(k, false)}</span></div>`;
+          if (k === pickedKill) h += killDetailsHtml(k);
         } else {
           const b = x.b, r = M.rounds.find((y) => y.n === b.round), bi = M.bursts.indexOf(b);
           const sideOf = (e) => { const st = playerState(e, b.start); return st ? (Math.abs(st.state) === 1 ? 1 : 2) : 0; };
@@ -219,6 +255,12 @@ function renderPane() {
     if (!k) return;
     pickedKill = k;
     watchKill(k, 4); renderPane();
+  });
+  p.querySelectorAll('[data-bt]').forEach((el) => el.onclick = () => {
+    const k = D.kills[+el.closest('.kdet').dataset.kd]; if (!k) return;
+    selected = k.killer; playing = false; setPlayIcon();
+    seek(+el.dataset.bt + 0.03); // just past it, so its damage number and the kill feed show
+    if (viewMode !== '2d') setCam('eyes', true);
   });
   p.querySelectorAll('[data-p]').forEach((el) => el.onclick = () => {
     const e = M.slotOf(el.dataset.p, T);

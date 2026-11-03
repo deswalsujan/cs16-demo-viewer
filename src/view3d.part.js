@@ -614,14 +614,16 @@ function update3Now() {
       const a = POV.on ? Math.max(0, 0.6 - age * 0.6) : Math.max(0.3, 0.8 - age * 0.35);
       const g = lx.createRadialGradient(W / 2, H / 2, Math.min(W, H) * 0.15, W / 2, H / 2, Math.max(W, H) * 0.7);
       g.addColorStop(0, `rgba(120,0,0,${a * 0.35})`); g.addColorStop(1, `rgba(150,0,0,${a})`);
-      lx.fillStyle = g; lx.fillRect(0, 0, W, H);
+      if (!VAN.on) { lx.fillStyle = g; lx.fillRect(0, 0, W, H); } // Vanilla (0.26.16): no red wash
       const rr = M.rounds.find((r) => r.n === death.round);
       const kside = rr && rr.tTeam != null && death.kp ? (M.teamOf[death.kp] === rr.tTeam ? 'kt' : 'kct') : '';
       const kn = death.kp && death.killer !== death.victim
         ? `killed by <span class="${kside}">${esc(M.pl[death.kp].name)}</span> · ${esc(death.weapon)}${death.hs ? ' · <span class="khs">HS</span>' : ''}${death.wb ? (death.wb.loose ? ' · <span class="kwb loose">loose wallbang</span>' : ' · <span class="kwb">wallbang</span>') : ''}`
         : (death.weapon === 'world' ? 'died' : 'killed themselves');
       pov.hidden = false; pov.classList.add('dead');
-      pov.innerHTML = `<b>${esc(nameAt(selected, T))}</b> ${kn}${POV.on ? '' : ` <span class="kw">· ${playing && age < 2.5 ? 'switching to a teammate' : 'press X for the next player'}</span>`}`;
+      // Vanilla (0.26.16): the name bar stays (Sujan, 3 Nov 2026), without the death cam's banner
+      if (VAN.on) pov.innerHTML = `<b>${esc(nameAt(selected, T))}</b>${POV.on ? '' : ` <span class="kw">· ${playing && age < 2.5 ? 'switching to a teammate' : 'press X for the next player'}</span>`}`;
+      else pov.innerHTML = `<b>${esc(nameAt(selected, T))}</b> ${kn}${POV.on ? '' : ` <span class="kw">· ${playing && age < 2.5 ? 'switching to a teammate' : 'press X for the next player'}</span>`}`;
     } else { pov.hidden = false; pov.classList.add('dead'); pov.innerHTML = `<span class="kw">${esc(nameAt(selected, T))} is dead.${POV.on ? '' : ' Press X for the next player.'}</span>`; }
     // like CS spectating: after a moment, follow a living teammate (or anyone alive)
     if (!POV.on && death && T - death.t > 2.5 && playing) {
@@ -656,8 +658,27 @@ const XHAIR = { small: { gap: 3, end: 8, w: 1.25 }, medium: { gap: 4, end: 12, w
 // the hit sounds and the kill feed do, so the killing bullet's ✕ shows in the same frame as the kill feed; before, they
 // came with the 3D view, 0.1 s late. They sit on the player as the 3D view draws him (T, 0.1 s behind), so at the kill
 // the ✕ shows beside him for a tenth of a second before he falls.
+// Damage numbers (0.26.16; Sujan, 3 Nov 2026, docs/kill-details-damage-vanilla-mock.jpg), in View settings: Wallbangs, the
+// default and the numbers as before (hits through cover in a burst, and every wallbang kill's killing bullet); Direct hits
+// (hits in the open, and the killing bullet of a kill that isn't a wallbang); Both (every hit pinned on a shooter, and every
+// kill's killing bullet); Off. Direct hits in white, hits through a wall orange; the killing bullet ends in a red skull,
+// one for strict and loose alike (in place of the ✕ of 27 Oct 2026). Vanilla sets it to Off.
+const SKULL_RED = '#ff3b30', HIT_WALL = '#ffb347', HIT_OPEN = '#f4f1ea';
+let SKULL_P = null;
+function numberGroups(tn) {
+  const mode = $('dn3').value;
+  if (mode === 'off') return [];
+  if (mode !== 'direct' && mode !== 'both') return M.bursts || [];
+  const G = new Map(), add = (h, k) => { let g = G.get(h.v); if (!g) G.set(h.v, g = { v: h.v, hits: [], start: h.t, end: h.t, kill: null }); g.hits.push(h); g.end = h.t; if (k) g.kill = k; };
+  for (const h of M.hits || []) if (h.t <= tn + 1e-4 && tn - h.t <= 0.9 && (mode === 'both' || !h.wall)) add(h);
+  if (M.hpBefore) for (const k of D.kills) {
+    if (k.t > tn || tn - k.t > 0.9 || !k.kp || k.killer === k.victim || (mode === 'direct' && k.wb) || !M.liveR.some((r) => r.n === k.round)) continue;
+    add({ t: k.t, v: k.victim, s: k.killer, dmg: M.hpBefore(k.victim, k.tMsg != null ? k.tMsg : k.t), head: !!k.hs, wall: !!k.wb, kill: true }, k);
+  }
+  return [...G.values()];
+}
 function drawHitNumbers(lx, W, H, camera, mono) {
-  if (!M.bursts || !M.bursts.length) return;
+  if ((!M.bursts || !M.bursts.length) && (!M.hits || !M.hits.length)) return;
   const tn = tNow3;
   // the killing bullet with the same test as the kill feed (k.t <= T), so neither comes a frame before the other
   const due = (h) => h.t <= tn + (h.kill ? 0 : 1e-4);
@@ -685,7 +706,7 @@ function drawHitNumbers(lx, W, H, camera, mono) {
   // the numbers at the Interface size (UI, 0.26.13); the crosshair they keep clear of doesn't scale
   const u = UI;
   lx.lineWidth = 3 * u; lx.strokeStyle = 'rgba(8,10,12,.9)';
-  for (const b of M.bursts) {
+  for (const b of numberGroups(tn)) {
     if (tn < b.start - 0.05 || tn > (b.kill ? b.kill.t + 1 : b.end + 1)) continue;
     if (cam3.mode === 'eyes' && b.v === selected) continue;
     const live = b.hits.filter((h) => due(h) && tn - h.t <= 0.9 && mine(h));
@@ -699,16 +720,21 @@ function drawHitNumbers(lx, W, H, camera, mono) {
       if (cam3.mode === 'eyes' && Math.abs(px + 20 * u - W / 2) < arm + 24 * u && Math.abs(py - H / 2) < arm + 8 * u) py = H / 2 - arm - 10 * u;
       lx.globalAlpha = a; lx.textAlign = 'left';
       lx.font = `600 ${(h.head ? 13 : 11) * u}px ${mono}`; const txt = `−${h.dmg}`;
-      lx.strokeText(txt, px, py); lx.fillStyle = '#ffb347'; lx.fillText(txt, px, py);
+      lx.strokeText(txt, px, py); lx.fillStyle = h.wall === false ? HIT_OPEN : HIT_WALL; lx.fillText(txt, px, py);
       let w = lx.measureText(txt + ' ').width;
       if (h.head) { lx.font = `700 ${10 * u}px ${mono}`; lx.strokeText('HS', px + w, py); lx.fillText('HS', px + w, py); w += lx.measureText('HS ').width; }
-      if (h.kill) { lx.font = `700 ${(h.head ? 13 : 11) * u}px ${mono}`; lx.fillStyle = b.kill && b.kill.wb && b.kill.wb.loose ? '#c9a3e8' : '#ff4fd8'; lx.strokeText('✕', px + w, py); lx.fillText('✕', px + w, py); }
+      if (h.kill) {
+        const sz = (h.head ? 15 : 13) * u, P = SKULL_P || (SKULL_P = new Path2D(SKULL_D));
+        lx.save(); lx.translate(px + w, py - sz * 0.86); lx.scale(sz / 24, sz / 24);
+        lx.lineWidth = 3.2; lx.strokeStyle = 'rgba(8,10,12,.9)'; lx.stroke(P); lx.fillStyle = SKULL_RED; lx.fill(P); lx.restore();
+      }
       lx.globalAlpha = 1;
     });
   }
   lx.textAlign = 'center';
 }
 function drawHitMarker(lx, cx, cy, xh = XHAIR.small) {
+  if (VAN.on) return; // Vanilla (0.26.16): no kill markers
   const f = flashes.filter((x) => x.k.killer === selected).pop();
   if (!f) return;
   const a = (performance.now() - f.at) / MARK_MS; if (a >= 1) return;
@@ -757,8 +783,8 @@ function drawScope(lx, W, H) {
 // A ring that bursts out from the victim in 3D, for every kill. Not in Player's eyes: there the victim is
 // usually at the crosshair, so the ring covered it (0.17.0); the crosshair marker says it instead.
 function drawKillRings(lx, W, H, camera) {
-  // POV mode: no ring while the view is in someone's eyes; on his death and spectator cameras it shows
-  if (POV.on ? POV.who != null : cam3.mode === 'eyes') return;
+  // POV mode: no ring while the view is in someone's eyes; on his death and spectator cameras it shows. Vanilla: never
+  if (VAN.on || (POV.on ? POV.who != null : cam3.mode === 'eyes')) return;
   for (const f of flashes) {
     const k = f.k; if (!k.vpos) continue;
     const a = (performance.now() - f.at) / FLASH_MS; if (a >= 1) continue;
@@ -919,6 +945,7 @@ function povInit() {
   $('cam3').querySelector('.camseg').hidden = POV.on;
   $('bPrevP').hidden = POV.on; $('bNextP').hidden = POV.on;
   $('xh3').closest('.vrow').hidden = POV.on; $('glow3').closest('.vrow').hidden = POV.on;
+  $('dn3').closest('.vrow').hidden = POV.on; // and Damage numbers: POV mode shows no damage (Sujan, 3 Nov 2026)
   if (POV.on) { cam3.mode = 'eyes'; cam3.chase = null; cam3.cYaw = null; povFollow(T); if (opts.xray) setTimeout(showHiddenEnemiesNote, 1500); }
 }
 // The view at time t, between the two frames around it. Angles turn the short way round. Across a jump (a

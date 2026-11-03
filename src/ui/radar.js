@@ -278,8 +278,8 @@ function draw() {
     ctx.globalAlpha = 1;
   }
 
-  // hit markers: a ring that bursts out from the victim when the kill lands
-  for (const f of flashes) {
+  // hit markers: a ring that bursts out from the victim when the kill lands (none with Vanilla, 0.26.16)
+  if (!VAN.on) for (const f of flashes) {
     const k = f.k; if (!k.vpos) continue;
     const a = (performance.now() - f.at) / FLASH_MS;
     const [vx, vy] = toScreen(k.vpos[0], k.vpos[1]);

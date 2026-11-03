@@ -72,24 +72,24 @@ Before starting any branch, run `git fetch` and branch from `origin/main`; if a 
 - `src/audio.js`: sound: .wav decoding, gunshots, footsteps and radio lines placed around the listener (`soundTick`).
 - `src/stock.js`: fingerprints of the stock CS 1.6 models, to spot custom ones.
 - `src/vendor/three.min.js`: three.js r128 (MIT), the file cdnjs serves, built into the page; the tests serve it to older builds.
-- `src/view3d.part.js`: the 3D view (three.js): cameras, each frame (`update3`), hit numbers, kill rings, the sniper scope (`SCOPE_STYLE`); the wallbang picture check (`checkSeen`); **POV mode**: his view, crosshair, HUD, spectator bars, the hidden-enemies note.
+- `src/view3d.part.js`: the 3D view (three.js): cameras, each frame (`update3`), hit numbers by **Damage numbers** (`numberGroups`) with the red skull, kill rings, the sniper scope (`SCOPE_STYLE`); the wallbang picture check (`checkSeen`); **POV mode**: his view, crosshair, HUD, spectator bars, the hidden-enemies note.
 - `src/ui/common.js`: shared state (`D` the demo, `M` the match, `T` the time), colours, saved settings, small helpers (`weaponShort`).
 - `src/ui/folder.js`: the Half-Life folder, chosen with the browser's ordinary folder pick on every visit (`pickFolder`, `hlPicked`, `hlRender`; 0.26.11), the demo list and its check for demos deleted since the pick (`checkDemoList`), centre-screen messages, kill feed icons.
 - `src/ui/open.js`: opening a demo in the Web Worker (`loadDemoFile`), and joining a map recorded in parts (`joinDemos`, `openJoined`).
 - `src/ui/join.js`: finding a map's other parts and their order (`findOtherParts`, `suggestOrder`), and the Join card.
 - `src/ui/map.js`: the overview image and the map geometry (`loadMap`).
-- `src/ui/wallbangs.js`: the wallbang finder (`computeWallbangs`, `tooMuchDamage`, each wall's material `wallKeeps`), wallbang damage and loose wallbangs from damage (`computeHits`), and the stretches the server announced as live (`liveWindows`).
+- `src/ui/wallbangs.js`: the wallbang finder (`computeWallbangs`, `tooMuchDamage`, each wall's material `wallKeeps`), wallbang damage and loose wallbangs from damage (`computeHits`, which also keeps every hit pinned on a shooter), kill details' bullets, body parts and earlier damage (`killHits`, `bodyPart`, `earlierDamage`), and the stretches the server announced as live (`liveWindows`).
 - `src/ui/match.js`: kills moved back to the real moment (`retimeKills`) and the match structure: rounds, live rounds, score, teams (`derive`).
 - `src/ui/skips.js`: skips in the recording (`findSkips`), and the STRICT WB, LOOSE WB and UNSURE tags with their tooltips.
-- `src/ui/names.js`: short names without the clan tag or sponsor (`shortNames`).
+- `src/ui/names.js`: short names without the clan tag or sponsor (`shortNames`), and the skull (`SKULL`, `SKULL_D`).
 - `src/ui/grenades.js`: smokes, HE and flash bursts the demo has no object for (`addNadesFromEvents`).
 - `src/ui/lookups.js`: what's true at a moment: sniper zoom (`zoomLevel`), health (`hpAt`), kit and bomb (`packAt`), HLTV slow motion (`slowAt`), the round and C4 timers (`clockAt`, `c4Countdown`), team names, player stats (`statsFor`), broken breakables and doors (`brokenAt`, `posesAt`), the round at a time (`roundAt`).
 - `src/ui/after-load.js`: what runs once a demo is open (`onDemo`), **POV mode**'s data (`povApply`), closing a demo.
-- `src/ui/sidebar.js`: the side panel's Rounds, Kills, Players and Wallbangs tabs (`renderPane`, `killHtml`).
+- `src/ui/sidebar.js`: the side panel's Rounds, Kills, Players and Wallbangs tabs (`renderPane`, `killHtml`), kill details under the picked kill (`killDetailsHtml`).
 - `src/ui/playback.js`: play, seek, speed and rounds, the Tab scoreboard, the HUD (`updateHud`).
 - `src/ui/radar.js`: the 2D radar (`draw`), fitting the map above its controls (`fitView`), where a player is between snapshots (`playerState`), picking players, the heatmap.
 - `src/ui/timeline.js`: the timeline under the view (`drawTimeline`).
-- `src/ui/loop.js`: the frame loop (`frame`) and full screen.
+- `src/ui/loop.js`: the frame loop (`frame`), full screen, and **View settings**: its saved settings and **Vanilla** (`setVanilla`).
 - `src/ui/theatre.js`: Theatre mode, and the saved view settings (`savePrefs`).
 - `src/ui/summary.js`: the load summary (what loaded, what's custom or missing), the card for a demo that can't play, **Count them** (`setCount30`).
 - `src/ui/debug.js`: **Copy debug info** for bug reports (`debugInfo`).

@@ -183,7 +183,7 @@ function computeWallbangs() {
 // whatever its total when it ends in a wallbang kill (1 Nov 2026).
 const HITS_MIN = 35;
 function computeHits() {
-  M.bursts = []; M.hitByV = {};
+  M.bursts = []; M.hitByV = {}; M.hits = null; M.drops = null; M.hpBefore = null;
   if (D) for (const k of D.kills) k.burst = null; // run again once the picture check lists a sliver kill (checkSeen)
   // POV mode: no wallbang damage, and with it no loose wallbang from damage (Sujan, 29 Oct 2026). The server sends a
   // player his teammates' health only, so most hits can't be seen; the damage finder hasn't been checked there.
@@ -236,7 +236,7 @@ function computeHits() {
     const off = Math.hypot(rel[0] - dir[0] * along, rel[1] - dir[1] * along, rel[2] - dir[2] * along);
     return { eye, dir, along, off, tgt };
   };
-  const cover = [], proven = [];
+  const cover = [], proven = [], all = [];
   // Each health drop is paired with its hit sound (26 Oct 2026). The sound comes at the moment of the hit; in some demos
   // the health follows it by a tenth of a second or more, several readings at once (tyloo vs mTw, Nuke, e-Stars Seoul
   // 2009, R15: zonic's 58 to 48, 38 and 0 arrive 0.1 to 0.33 s after their hit sounds; NoA vs Pentagram, Train 2006,
@@ -264,8 +264,8 @@ function computeHits() {
     const i = idx(th), v = D.slots[d.e]; if (!v || isNaN(v[i * S])) continue;
     const vp = [v[i * S], v[i * S + 1], v[i * S + 2]], vduck = v[i * S + 7];
     let zTop = vp[2]; for (let j = i; j >= 0 && times[j] >= th - 1; j--) if (!isNaN(v[j * S + 2])) zTop = Math.max(zTop, v[j * S + 2]);
-    if (zTop - vp[2] >= 100 && (i >= 2 ? v[(i - 2) * S + 2] : vp[2]) - vp[2] >= 20) { note(d, 'fall'); continue; }
-    if (booms.some(([t, x, y, z]) => th - t >= -0.05 && th - t < 0.4 && Math.hypot(x - vp[0], y - vp[1], z - vp[2]) < 450)) { note(d, 'grenade'); continue; }
+    if (zTop - vp[2] >= 100 && (i >= 2 ? v[(i - 2) * S + 2] : vp[2]) - vp[2] >= 20) { d.from = 'fall'; note(d, 'fall'); continue; }
+    if (booms.some(([t, x, y, z]) => th - t >= -0.05 && th - t < 0.4 && Math.hypot(x - vp[0], y - vp[1], z - vp[2]) < 450)) { d.from = 'grenade'; note(d, 'grenade'); continue; }
     const vt = team(d.e, i), cands = [], seen = new Set();
     for (const e in shots) {
       const se = +e; if (se === d.e) continue;
@@ -289,6 +289,10 @@ function computeHits() {
     const c = cands[0];
     // the only enemy near his line may aim a little wider when the demo has his shot (aim is recorded about ten times a second)
     if (c.off > (cands.length === 1 && c.shot ? 96 : 64) || (cands[1] && cands[1].off - c.off < 16)) { note(d, `unknown ${cands.slice(0, 2).map((x) => x.e + ':' + Math.round(x.off)).join(' ')}`); continue; }
+    // pinned on one shooter: kept for kill details and Damage numbers (0.26.16), in the order of the demo's health
+    // readings; wall turns true below when the hit goes into cover, so the wallbang results don't change
+    const hr = d.hit = { t: th, tHp: d.t, v: d.e, s: c.e, dmg: d.dmg, head, gun: c.gun, snd: hs.map((h) => h[2]), dist: Math.hypot(c.tgt[0] - c.eye[0], c.tgt[1] - c.eye[1], c.tgt[2] - c.eye[2]), wall: false };
+    d.from = c.e; all.push(hr);
     // less damage than his gun does in the open at that distance, for that hit sound: only a surface explains it
     // (level 2 by damage, Sujan 28 Oct 2026). Not when a teammate of the victim fired and aimed near him (team damage
     // is cut), and not when another player stood on the line (a bullet through a player keeps 0.75: cArNaGe on
@@ -304,7 +308,7 @@ function computeHits() {
         const al = (rel[0] * u[0] + rel[1] * u[1] + rel[2] * u[2]) / L;
         if (al > 20 && al < L - 10 && Math.hypot(...rel.map((x, j) => x - u[j] / L * al)) < 32) { other = true; break; }
       }
-      if (!other) proven.push({ t: th, v: d.e, s: c.e, dmg: d.dmg, head, gun: c.gun, open: lo });
+      if (!other) proven.push({ t: th, v: d.e, s: c.e, dmg: d.dmg, head, gun: c.gun, open: lo, hit: hr });
     }
     const per = MAX_DMG[c.gun];
     if (per && d.dmg > per * 0.6 * (head ? 4 : 1.25) * Math.max(1, hs.length)) { note(d, 'too much for a wall'); continue; }
@@ -314,7 +318,7 @@ function computeHits() {
     const aimS = solidAlong(bsp, c.eye, end, 2, skip, poses, 'bullet').solid, zoneS = solidAlong(bsp, c.eye, c.tgt, 2, skip, poses, 'bullet').solid;
     if (aimS === 0 || zoneS === 0) { note(d, `open aim ${Math.round(aimS)} zone ${Math.round(zoneS)} off ${Math.round(c.off)} by ${c.e}`); continue; }
     note(d, `cover by ${c.e} off ${Math.round(c.off)}`);
-    cover.push({ t: th, v: d.e, s: c.e, dmg: d.dmg, head, gun: c.gun });
+    cover.push({ t: th, v: d.e, s: c.e, dmg: d.dmg, head, gun: c.gun }); hr.wall = true;
   }
   // seen kills with the crosshair through cover (computeWallbangs) become loose wallbangs when a bullet of the
   // killer's that only a surface explains landed 0.5 s or less before the kill (Sujan, 28 Oct 2026: the same spray
@@ -328,7 +332,7 @@ function computeHits() {
     const near = mine.filter((p) => k.t - p.t <= 0.501);
     if (!near.length) continue;
     k.wb = Object.assign({}, k.seenAim, { loose: 'dmg', dmg: near[near.length - 1] }); k.seenPx = -2;
-    for (const p of mine) if (!cover.some((x) => x.t === p.t && x.v === p.v)) cover.push(p);
+    for (const p of mine) if (!cover.some((x) => x.t === p.t && x.v === p.v)) { cover.push(p); p.hit.wall = true; }
   }
   M.wbs = D.kills.filter((k) => k.wb && M.liveR.some((r) => r.n === k.round));
   cover.sort((x, y) => x.t - y.t);
@@ -364,6 +368,9 @@ function computeHits() {
   }
   M.bursts.sort((x, y) => x.start - y.start);
   for (const b of M.bursts) (M.hitByV[b.v] || (M.hitByV[b.v] = [])).push(b);
+  // kill details and Damage numbers (0.26.16): every hit pinned on one shooter, the live rounds' health drops with
+  // where each came from (a shooter, a grenade, a fall, or not known), and the health a player had before a moment
+  M.hits = all; M.drops = drops.filter((d) => !d.dead && live(d.t)); M.hpBefore = hpBefore;
   renderPane(); drawTimeline();
 }
 // the other shooters in a burst go on a line of their own under the damage, so a long name isn't cut off (Sujan,
@@ -373,6 +380,52 @@ const dmore = (list) => list.length ? `<span class="dmore">${list.join(' · ')}<
 function hitCounts(b, t) {
   const so = b.hits.filter((h) => h.t <= t + 1e-4), nh = so.filter((h) => h.head).length, nb = so.length - nh;
   return [nh ? `${nh} HS` : '', nb ? `${nb} hit${nb > 1 ? 's' : ''}` : ''].filter(Boolean).join(', ');
+}
+// Kill details (0.26.16; docs/kill-details-damage-vanilla-mock.jpg, approved by Sujan 3 Nov 2026): the killer's bullets
+// that hit the victim up to the kill, each within 2 s of the next (the burst rule), in the order of the demo's health
+// readings (two hits in one frame keep it: −30, then −17 on Delpan, SK vs Na`Vi, Train, DreamHack Winter 2011, R24 0:35),
+// then the killing bullet, which takes the health he had left. Null without the map (computeHits needs it) or in POV mode.
+function killHits(k) {
+  if (!M.hits || !M.hpBefore || !k.kp || k.killer === k.victim) return null;
+  const mine = M.hits.filter((h) => h.v === k.victim && h.s === k.killer && h.t <= k.t + 1e-4);
+  const out = []; let next = k.t;
+  for (let i = mine.length - 1; i >= 0 && next - mine[i].t <= 2; i--) { out.unshift(mine[i]); next = mine[i].t; }
+  out.push({ t: k.t, v: k.victim, s: k.killer, dmg: M.hpBefore(k.victim, k.tMsg != null ? k.tMsg : k.t), head: !!k.hs, gun: k.weapon, wall: !!k.wb, kill: true });
+  return out;
+}
+// Where a bullet hit. The hit sound says head or body (helmet or headshot for the head, kevlar for an armoured body, flesh for a
+// leg or a body without armour); the rest is an estimate from the damage, marked *, by the game's multipliers and armour
+// (GUN_DMG, GUN_ARMOR above: stomach 1.25, chest and arms 1, legs 0.75), within 30 units of the recorded distance either way.
+// "body" when more than one part fits, through a wall (the wall's share isn't known), and for the killing bullet (its number
+// is what he had left).
+function bodyPart(h) {
+  if (h.head) return 'head';
+  if (h.kill || h.wall || !GUN_DMG[h.gun] || !h.snd || h.snd.length !== 1 || h.dist == null) return 'body';
+  const arm = h.snd[0] === 'kevlar';
+  const parts = arm ? [['chest or arm', 1], ['stomach', 1.25]] : [['leg', 0.75], ['chest or arm', 1], ['stomach', 1.25]];
+  const fits = parts.filter(([, m]) => GUN_DMG[h.gun].some(([dm, r]) => {
+    const at = (dist) => Math.floor(Math.floor(dm * Math.pow(r, Math.max(0, dist) / 500)) * m * (arm && m > 0.75 ? GUN_ARMOR[h.gun] : 1) + 1e-6);
+    return h.dmg >= at(h.dist + 30) - 1 && h.dmg <= at(h.dist - 30) + 1;
+  }));
+  return fits.length === 1 ? fits[0][0] + '*' : 'body';
+}
+// "Earlier:" in kill details (Sujan, 3 Nov 2026): when the victim had less than 100 HP at the first hit listed, where the
+// rest went in that round, oldest first: a shooter the hit finder pinned it on, a grenade, a fall, or "source unknown",
+// never a guess; health the readings don't account for is "source unknown" too. Delpan: "Earlier: −7 from a grenade at 0:45."
+function earlierDamage(k, list) {
+  const had = list.reduce((a, h) => a + h.dmg, 0), lost = 100 - had;
+  if (lost <= 0) return null;
+  const r = M.rounds.find((x) => x.n === k.round), first = list[0];
+  const before = first.kill ? (k.tMsg != null ? k.tMsg : k.t) : first.tHp;
+  const prior = (M.drops || []).filter((d) => d.e === k.victim && r && d.t >= r.start - 1e-3 && d.t < before - 1e-4 && !(d.hit && list.includes(d.hit)));
+  const items = prior.map((d) => {
+    const when = clockText(d.t);
+    if (typeof d.from === 'number') return { dmg: d.dmg, from: labelAt(d.from, d.t), when };
+    return { dmg: d.dmg, from: d.from === 'grenade' ? 'a grenade' : d.from === 'fall' ? 'a fall' : null, when };
+  });
+  const rest = lost - prior.reduce((a, d) => a + d.dmg, 0);
+  if (rest > 0) items.push({ dmg: rest, from: null, when: null });
+  return items;
 }
 // the burst a player is in at time t, from his first hit until 1.5 s after the last (or his death)
 function burstAt(e, t) {

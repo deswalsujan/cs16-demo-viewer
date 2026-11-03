@@ -8,9 +8,10 @@ clone or hard link, never moved) and a stand-in demo, so its map has no overview
 said "Reading name…" when the start screen came back (Sujan, 3 Nov 2026). In 2D, the map ends above the controls along
 the bottom of the view where it opens and after Reset view, at three window sizes (0.26.14). In 3D, Player's eyes keeps
 the game's 4:3 view top to bottom at three window sizes, unzoomed and through the AWP's scope (0.26.15); this part needs
-de_train's map and models in the Half-Life folder. Under a minute.
+de_train's map and models in the Half-Life folder. Kill details, Damage numbers, the red skull and Vanilla on that demo, and
+kill details and View settings in POV mode on Match 1 CT (de_barcelona's map needed) (0.26.16). Under a minute.
 """
-import os, sys, http.server, functools, threading, tempfile, shutil, subprocess, atexit
+import os, re, sys, http.server, functools, threading, tempfile, shutil, subprocess, atexit
 from playwright.sync_api import sync_playwright
 import demo_dirs
 
@@ -113,6 +114,52 @@ with sync_playwright() as p:
         check(f"Player's eyes at {label}: 90 degrees across a 4:3 picture, and the AWP's first zoom by the same rule",
               shape and e['zoom'] == 0 and z['zoom'] == 1 and abs(e['fov'] - want(90, e['aspect'])) < 0.01 and abs(z['fov'] - want(40, z['aspect'])) < 0.01,
               f"view {e['aspect']:.3f} wide; fov top to bottom {e['fov']:.2f} unzoomed (want {want(90, e['aspect']):.2f}), {z['fov']:.2f} zoomed (want {want(40, z['aspect']):.2f}); R23 {e['clock']}")
+
+    # Kill details, Damage numbers, the red skull and Vanilla (0.26.16; Sujan, 3 Nov 2026, docs/kill-details-damage-vanilla-mock.jpg):
+    # R24 0:35, ceh9 kills Delpan with an M4A1 headshot through a wall (strict); before it one hit in the open (-30) and three
+    # through the wall (-17), the first two in one frame, -30 first by the demo's health readings; the headshot takes the 12
+    # HP he had left, and an HE grenade had taken 7 at 0:45. At a MacBook window, Player's eyes on ceh9, paused 0.03 s after.
+    pg.set_viewport_size({'width': 1512, 'height': 982}); pg.wait_for_timeout(400)
+    JS = lambda c: pg.evaluate('(c) => __v(c)', c)
+    try:
+        kd = JS(r"""(async () => { const w = (ms) => new Promise((r) => setTimeout(r, ms));
+          const k = window.__kd = D.kills.find((x) => Math.abs(x.t - D.start - 2790.34) < 0.05);
+          selected = k.killer; setCam('eyes', true); playing = false; T = k.t + 0.03; pickedKill = k; tab = 'kills'; renderPane(); await w(300);
+          const read = () => { const b = document.querySelector('.kdet'); return b ? [b.querySelector('.ksum'), b.querySelector('.kpre')].map((e) => e ? e.innerText.trim() : '').concat([...b.querySelectorAll('.kb')].map((x) => x.innerText.replace(/\s+/g, ' ').trim())) : null; };
+          const kills = read(); tab = 'wb'; renderPane(); await w(300); const wb = read(); tab = 'kills'; renderPane(); await w(200);
+          document.querySelectorAll('.kdet .kb')[1].click(); await w(300);
+          const jump = { t: +(T - D.start).toFixed(2), paused: !playing, eyes: cam3.mode === 'eyes' && selected === k.killer };
+          return { kills, wb, jump }; })()""")
+        want = ['5 hits · 4 through a wall · 93 HP in 0.30 s', 'Earlier: −7 from a grenade at 0:45.', '1 −30 chest or arm* · in the open −0.30 s',
+                '2 −17 body · through a wall −0.30 s', '3 −17 body · through a wall −0.21 s', '4 −17 body · through a wall −0.11 s', '5 −12HS head · through a wall kill']
+        check('kill details: the picked kill in the Kills list opens to one line per bullet, the "Earlier:" line and the order of the demo', kd['kills'] == want, ' | '.join(kd['kills'] or ['no box']))
+        check('kill details: the same in the Wallbangs list', kd['wb'] == want, ' | '.join(kd['wb'] or ['no box']))
+        check("kill details: a bullet's line jumps playback to it, paused, through the killer's eyes", kd['jump'] == {'t': 2790.07, 'paused': True, 'eyes': True}, str(kd['jump']))
+        # the floating numbers, read from the label canvas: white for a hit in the open, orange through a wall, the red skull
+        px = r"""(async (mode, van) => { const w = (ms) => new Promise((r) => setTimeout(r, ms));
+          if (mode) $('dn3').value = mode; if (van != null) setVanilla(van); // Vanilla after: it turns the numbers off
+          T = __kd.t + 0.03; await w(500); const c = $('lbl'), d = c.getContext('2d').getImageData(0, 0, c.width, c.height).data; let red = 0, white = 0, orange = 0, pink = 0;
+          for (let i = 0; i < d.length; i += 4) { const r = d[i], g = d[i + 1], b = d[i + 2]; if (d[i + 3] < 120) continue; // numbers fade after 0.15 s
+            if (r > 245 && g < 80 && b < 70) red++; else if (r > 170 && g > 165 && b > 155 && r - b < 30) white++; else if (r > 245 && g > 165 && g < 190 && b < 90) orange++; else if (r > 245 && g < 100 && b > 200) pink++; }
+          return { red, white, orange, pink, names: opts.names, pill: $('rclock').innerText }; })"""
+        JS("$('glow3').checked = false")  # its pink glow would read as the ✕ of 0.26.15
+        n = {m: JS(f"({px})('{m}', null)") for m in ['wb', 'both', 'direct', 'off']}
+        check('Damage numbers: Wallbangs as before, orange through a wall, the killing bullet a red skull in place of the pink ✕',
+              n['wb']['orange'] > 40 and n['wb']['red'] > 20 and n['wb']['white'] < 5 and n['wb']['pink'] < 5, str(n['wb']))
+        check('Damage numbers: Both adds the hit in the open in white', n['both']['white'] > 20 and n['both']['orange'] > 40 and n['both']['red'] > 20, str(n['both']))
+        check('Damage numbers: Direct hits shows only the hit in the open (the kill is a wallbang), Off none', n['direct']['white'] > 20 and n['direct']['orange'] < 5 and n['direct']['red'] < 5
+              and n['off']['white'] < 5 and n['off']['orange'] < 5 and n['off']['red'] < 5, f"direct {n['direct']}, off {n['off']}")
+        v = JS(f"({px})('both', true)")
+        check('Vanilla: no damage numbers, no names, with Damage numbers on Both before it', v['white'] < 5 and v['orange'] < 5 and v['red'] < 5 and not v['names'], str(v))
+        # the C4 countdown: the round pill says "C4" alone after the plant with Vanilla on
+        c4 = JS(r"""(async () => { const w = (ms) => new Promise((r) => setTimeout(r, ms)); let t = null;
+          for (const r of M.liveR) for (let x = r.start; x < r.end; x += 1) if (t == null && (clockAt(x, true) || {}).phase === 'bomb') t = x + 3;
+          T = t; updateHud(true); await w(200); const on = $('rclock').innerText; setVanilla(false); updateHud(true); await w(200); return { on, off: $('rclock').innerText }; })()""")
+        check('Vanilla: the round pill says "C4" without the countdown after the plant, and counts down again with Vanilla off',
+              c4['on'].endswith('· C4') and re.search(r'C4 \d:\d\d$', c4['off']) is not None, f"{c4['on']!r}, then {c4['off']!r}")
+    except Exception as e:
+        check('kill details, Damage numbers, the red skull and Vanilla', False, str(e).split('\n')[0])
+    JS("pickedKill = null; if ($('dn3')) $('dn3').value = 'wb'; $('glow3').checked = true")
     pg.click('#viewSeg button[data-v="2d"]')
 
     # the message line when the start screen comes back (0.26.12): empty, whether or not an overview loaded
@@ -149,6 +196,32 @@ with sync_playwright() as p:
     check('a demo deleted while a demo was open: back on the start screen, its note still shows and the count says 1',
           msg(pg2).startswith('deleted-later.dem is no longer in your folder') and pg2.inner_text('#hlStatus') == '1 demo found.', f'{msg(pg2)!r}, {pg2.inner_text("#hlStatus")!r}')
     ctx2.close()
+
+    # POV mode (0.26.16; Sujan, 3 Nov 2026): kill details have nothing to list, since the recorder's demo has only his
+    # teammates' health, and View settings hides Damage numbers, as it hides Glow on hits and Crosshair. Match 1 CT (public
+    # server, de_barcelona, 27 Mar 2025): his M4A1 kill on H@rDRoCk at R1 0:49, and Nnewys' kill on his teammate nsnd at 0:46
+    POVD = next((n for n in names if n.lower().startswith('match-1_de_barcelona-cts')), None)
+    ctx3 = b.new_context(viewport={'width': 1512, 'height': 982}); pg3 = ctx3.new_page()
+    pg3.route('**/three.min.js', lambda r: r.fulfill(path=os.environ.get('THREE_JS', os.path.join(here, '..', 'src', 'vendor', 'three.min.js')), content_type='application/javascript'))
+    try:
+        pg3.goto(f'http://127.0.0.1:{srv.server_port}/{os.path.basename(hooked)}')
+        pg3.evaluate("__v(\"$('pov3').checked = true\")")
+        pg3.set_input_files('#fFolder', HL)
+        pg3.wait_for_function('__v("files.demos.length > 0")', timeout=30000)
+        pg3.evaluate('(n) => __v(`loadDemoFile(files.demos.find((f) => f.name === ${JSON.stringify(n)}))`)', POVD)
+        pg3.wait_for_function('__v("!!(D && M && MAP && R3 && view3.map === MAP.name)")', timeout=120000)
+        pv = pg3.evaluate('(c) => __v(c)', r"""(async () => { const w = (ms) => new Promise((r) => setTimeout(r, ms)); closeSummary(); setView('3d'); await w(500);
+          const rec = POV.v.rec, near = (t) => D.kills.find((x) => Math.abs(x.t - D.start - t) < 0.3);
+          const box = async (k) => { T = k.t + 0.03; playing = false; pickedKill = k; tab = 'kills'; renderPane(); await w(200); const b = document.querySelector('.kdet'); return b ? b.innerText.trim() : null; };
+          const his = near(71.99), mate = D.kills.find((x) => x.t > his.t && x.t - his.t < 5 && x.killer !== rec && x.victim !== rec && x.weapon === 'ak47');
+          return { his: his && his.killer === rec ? await box(his) : 'not his kill', mate: mate ? await box(mate) : 'no teammate death', mateName: mate && M.pl[mate.vp].name,
+            dnHidden: $('dn3').closest('.vrow').hidden, glowHidden: $('glow3').closest('.vrow').hidden, vanShown: !$('van3').closest('.vrow').hidden }; })()""")
+        check("POV mode: kill details on an enemy's death say there's nothing to list, naming him", pv['his'] == "No hit details. A demo recorded by a player has only his teammates' health, not H@rDRoCk's.", repr(pv['his']))
+        check('POV mode: kill details on a teammate\'s death say "No hit details in POV mode."', pv['mate'] == 'No hit details in POV mode.', f"{pv['mateName']}: {pv['mate']!r}")
+        check('POV mode: View settings hides Damage numbers, as it hides Glow on hits; Vanilla stays', pv['dnHidden'] and pv['glowHidden'] and pv['vanShown'], str(pv))
+    except Exception as e:
+        check('POV mode: kill details and View settings', False, (POVD or 'Match 1 CT not found') + ': ' + str(e).split('\n')[0])
+    ctx3.close()
     b.close()
 print(f'{len(fails)} failed' if fails else 'all passed')
 sys.exit(1 if fails else 0)

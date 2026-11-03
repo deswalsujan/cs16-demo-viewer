@@ -10,7 +10,9 @@
 //     "LIONS kHRYSTAL * KASPERSKY" -> "Xizt", "kHRYSTAL" (FX vs Lions, Nuke, DreamHack Winter 2010)
 // A note only one player has stays ("fnatic.Archi      *Bday 19!"). The kill feed at the top right, the name
 // bar under the view, the Tab scoreboard and Copy list keep the full names, as the game shows them.
-const SKULL = '<svg width="12" height="12" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><path d="M12 2C6.9 2 3 5.7 3 10.5c0 2.8 1.4 4.9 3.5 6.1V19a1 1 0 0 0 1 1h1.5v2h2v-2h2v2h2v-2h1.5a1 1 0 0 0 1-1v-2.4c2.1-1.2 3.5-3.3 3.5-6.1C21 5.7 17.1 2 12 2Zm-3.5 7.5a2 2 0 1 1 0 4 2 2 0 0 1 0-4Zm7 0a2 2 0 1 1 0 4 2 2 0 0 1 0-4ZM12 14l1.3 2.3h-2.6L12 14Z"/></svg>';
+// the skull: the Players tab's dead mark, and since 0.26.16 the killing bullet's mark in the view and in kill details (red)
+const SKULL_D = 'M12 2C6.9 2 3 5.7 3 10.5c0 2.8 1.4 4.9 3.5 6.1V19a1 1 0 0 0 1 1h1.5v2h2v-2h2v2h2v-2h1.5a1 1 0 0 0 1-1v-2.4c2.1-1.2 3.5-3.3 3.5-6.1C21 5.7 17.1 2 12 2Zm-3.5 7.5a2 2 0 1 1 0 4 2 2 0 0 1 0-4Zm7 0a2 2 0 1 1 0 4 2 2 0 0 1 0-4ZM12 14l1.3 2.3h-2.6L12 14Z';
+const SKULL = `<svg width="12" height="12" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><path d="${SKULL_D}"/></svg>`;
 function tagCuts(names) {
   const isSep = (c) => !/[\p{L}\p{N}]/u.test(c);
   const need = Math.max(2, Math.ceil(names.length * 0.6));
