@@ -4,6 +4,7 @@ What changed in the viewer, newest first. The version shows in the viewer's shor
 
 ## Versions
 
+- [0.26.16](#02616-2026-11-03) 2026-11-03: Kill details, damage numbers, Vanilla
 - [0.26.15](#02615-2026-11-03) 2026-11-03: Game's 4:3 view, wide screens
 - [0.26.14](#02614-2026-11-03) 2026-11-03: 2D map above its controls
 - [0.26.13](#02613-2026-11-03) 2026-11-03: Interface size for big screens
@@ -73,6 +74,30 @@ What changed in the viewer, newest first. The version shows in the viewer's shor
 
 ## Known limits
 Moved to [LIMITS.md](LIMITS.md) on 30 Oct 2026; release entries below still say "Known limits" for that list.
+
+## 0.26.16 (2026-11-03)
+
+Built as one batch from the approved mockup, `docs/kill-details-damage-vanilla-mock.jpg` (Sujan, 3 Nov 2026).
+
+### Added
+- **Kill details**: click a kill in the Kills or Wallbangs list and it opens to one line per bullet that hit: its damage, where it hit, through a wall or in the open, and how long before the kill, then the killing bullet with the health he had left and a red skull. Above them, the count and total ("5 hits · 4 through a wall · 93 HP in 0.30 s"), and when part of his health that round went to anything but those bullets, before them or between them as in a crossfire, "Earlier:" with each health drop's source and time, oldest first ("Earlier: −7 from a grenade at 0:45."), "source unknown" when the viewer can't tell, never a guess. Where a bullet hit: head from the hit sound; chest or arm, stomach or leg estimated from the damage, marked *; body through a wall. Click a line to jump to that bullet, paused, through the killer's eyes. In **POV mode** it says there's nothing to list, since the recorder's demo has only his teammates' health.
+- **Damage numbers** in **View settings**, next to **Glow on hits**: Wallbangs (the default, the numbers as before), Direct hits, Both or Off. Direct hits in white, hits through a wall orange. Hidden in **POV mode**, which shows no damage, as **Glow on hits** and **Crosshair** are.
+- **Vanilla** at the top of **View settings**: one switch for every overlay the game's own demo player doesn't have. It turns off **Names**, **Grenades**, **Kill lines**, **See through walls**, **Glow on hits** and the damage numbers, which still work one by one after, and hides the kill markers and the ring, the death cam's red wash and banner, and the C4 countdown. The kill feed, round timer, score, crosshair, Tab scoreboard, "Recording skips here" and the name bar under the view stay. Off, it brings back what it turned off. Kept in this browser.
+
+### Changed
+- The killing bullet's number ends in a red skull, the same for strict and loose wallbangs, in place of the pink or light purple ✕.
+- Two hits in one frame read in the demo's order, in the floating numbers and in kill details alike (−30 above −17 on Delpan, SK vs Na`Vi, Train, DreamHack Winter 2011, R24 0:35).
+
+### How it was tested
+- `prefs_check.py`: **Vanilla** and **Damage numbers** on a first visit, kept after a reload, a single switch working with **Vanilla** on, and everything back with it off. `demo_search_check.py`, 12 new checks on SK vs Na`Vi, Train, DreamHack Winter 2011, R24 0:35 (ceh9 on Delpan) and R23 1:18 (edzie on face, a crossfire: starix's −21 between edzie's bullets), and on Match 1 CT (de_barcelona) with **POV mode** on. Both fail on 0.26.15; the crossfire check also fails on this branch as first pushed (Sujan's catch before the merge).
+- Screenshots of 0.26.15 and 0.26.16 at 1512x982 and 2560x1440, on `screenshots/0.26.16`; the **POV mode** pair retaken at R2 1:07 of Match 1 CT, where none of the public server's crude player names is on screen.
+- The seven checks pass on Sujan's Mac (2 minutes 34 seconds, after the crossfire fix; 2 minutes 33 seconds before it); `ground_truth_check.py` gives the same counts as on 0.26.15: 231 kills, 27 scores and K-D on 48 demos, 0 mismatches, 8 known gaps, 0 skipped.
+- Full log: `tests/logs/0.26.16.md`.
+
+### Discussed, not changed
+- **Glow on hits** stays for hits through walls only, whatever **Damage numbers** says.
+- In **POV mode**, a teammate's death has his health in the demo, but the hit finder hasn't been checked on POV demos, so kill details say "No hit details in POV mode." there too.
+- The demo doesn't say who threw a grenade, so "Earlier:" says "from a grenade" without a name.
 
 ## 0.26.15 (2026-11-03)
 

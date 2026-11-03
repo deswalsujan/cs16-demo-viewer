@@ -57,6 +57,35 @@ $('ui3').onchange = () => { ls.set('uiSize', $('ui3').value); if (applyUiSize())
 addEventListener('uisize', () => { resize(); applyQuality(false); if (theatreActive()) measureTheatre(); });
 $('glow3').checked = ls.get('hitGlow') !== 'off';
 $('glow3').onchange = () => { ls.set('hitGlow', $('glow3').checked ? 'on' : 'off'); };
+// Damage numbers (0.26.16; Sujan, 3 Nov 2026): Wallbangs, the default and the numbers as before, Direct hits, Both or Off,
+// kept in this browser like Quality (numberGroups, src/view3d.part.js)
+$('dn3').value = ['wb', 'direct', 'both', 'off'].includes(ls.get('dmgNumbers')) ? ls.get('dmgNumbers') : 'wb';
+$('dn3').onchange = () => { ls.set('dmgNumbers', $('dn3').value); };
+// Vanilla (0.26.16; Sujan, 1 to 3 Nov 2026, docs/kill-details-damage-vanilla-mock.jpg): one switch for every overlay the
+// game's own demo player doesn't have. On, it turns off Names, Grenades, Kill lines, See through walls, Glow on hits and the
+// damage numbers, which still work one by one after, and hides what has no switch of its own: kill markers and the ring,
+// the death cam's red wash and banner, and the C4 countdown (VAN.on). Off, it brings back the settings it turned off.
+// The kill feed, round timer, score, crosshair, Tab scoreboard, "Recording skips here" and the name bar stay.
+function setVanilla(on) {
+  if (on === VAN.on) return;
+  const ids = { names: 'tgNames', nades: 'tgNades', lines: 'tgLines', xray: 'tgXray' };
+  if (on) {
+    VAN.saved = { names: opts.names, nades: opts.nades, lines: opts.lines, xray: opts.xray, glow: $('glow3').checked, dn: $('dn3').value };
+    for (const k in ids) { opts[k] = false; $(ids[k]).classList.remove('on'); }
+    $('glow3').checked = false; $('dn3').value = 'off';
+  } else if (VAN.saved) {
+    const o = VAN.saved;
+    for (const k in ids) { opts[k] = !!o[k]; $(ids[k]).classList.toggle('on', opts[k]); }
+    $('glow3').checked = o.glow !== false; $('dn3').value = ['wb', 'direct', 'both', 'off'].includes(o.dn) ? o.dn : 'wb';
+  }
+  VAN.on = on; if (!on) VAN.saved = null; $('van3').checked = on;
+  ls.set('vanilla', on ? { on: true, saved: VAN.saved } : null);
+  ls.set('hitGlow', $('glow3').checked ? 'on' : 'off'); ls.set('dmgNumbers', $('dn3').value); savePrefs();
+  if (D) updateHud(true);
+}
+{ const v = ls.get('vanilla'); if (v && v.on === true) { VAN.on = true; VAN.saved = v.saved && typeof v.saved === 'object' ? v.saved : null; } }
+$('van3').checked = VAN.on;
+$('van3').onchange = () => setVanilla($('van3').checked);
 // POV mode (0.25.0, Sujan 29 Oct 2026): off by default until Sujan signs it off; with it off every demo plays as in 0.24.0
 $('pov3').checked = ls.get('povMode') === 'on';
 $('pov3').onchange = () => { ls.set('povMode', $('pov3').checked ? 'on' : 'off'); reopenForPov(); };

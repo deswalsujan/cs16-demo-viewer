@@ -1,4 +1,10 @@
 // ---------------- playback ----------------
+// the round pill's clock; with Vanilla (0.26.16) the C4 countdown goes and the pill says "C4" after the plant
+function pillClock(r) {
+  const c = clockAt(T, true);
+  if (VAN.on && c && c.phase === 'bomb') return 'C4';
+  return (c && c.text) || fmt(T - r.start);
+}
 function seek(t) { T = Math.max(D.start, Math.min(D.end, t)); updateHud(true); }
 function setPlayIcon() { $('playIcon').innerHTML = playing ? '<path d="M3 2h4v12H3zM9 2h4v12H9z"/>' : '<path d="M4 2l10 6-10 6z"/>'; }
 function togglePlay() { if (!D) return; closeSummary(); if (T >= D.end - 0.05) T = D.start; playing = !playing; setPlayIcon(); }
@@ -147,7 +153,7 @@ function updateHud(force) {
   // Theatre mode hides the header, so the round pill also carries the score (hidden otherwise)
   const scSide = (i) => side(i) === 'side-t' ? 'kt' : side(i) === 'side-ct' ? 'kct' : '';
   const thsc = `<span class="thsc"><span class="${scSide(0)}">${esc(M.tnames[0])}</span> <b>${sc[0]} : ${sc[1]}</b> <span class="${scSide(1)}">${esc(M.tnames[1])}</span> · </span>`;
-  $('rclock').innerHTML = thsc + (r ? `${r.live ? 'Round <b>' + r.ln + (r.ot ? ' (OT)' : '') + '</b>' : '<b>Not counted</b>'} · <b>${clockText(T, true) || fmt(T - r.start)}</b>`: '') + (paused ? ' · <b>match paused</b>' : '');
+  $('rclock').innerHTML = thsc + (r ? `${r.live ? 'Round <b>' + r.ln + (r.ot ? ' (OT)' : '') + '</b>' : '<b>Not counted</b>'} · <b>${pillClock(r)}</b>`: '') + (paused ? ' · <b>match paused</b>' : '');
   updateFeed();
   // the players list greys out whoever is dead right now, so redraw it when someone dies or respawns
   let aliveKey = '';

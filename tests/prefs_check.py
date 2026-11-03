@@ -1,4 +1,5 @@
-"""Viewing preferences are restored on the next visit (0.12.3), and POV mode is off on a first visit (0.25.0). No Half-Life folder needed; a few seconds.
+"""Viewing preferences are restored on the next visit (0.12.3), POV mode is off on a first visit (0.25.0), and Vanilla and
+Damage numbers are kept (0.26.16). No Half-Life folder needed; a few seconds.
     python3 prefs_check.py"""
 import os, sys, threading, functools, http.server
 from playwright.sync_api import sync_playwright
@@ -21,6 +22,27 @@ with sync_playwright() as p:
     pg.reload(); pg.wait_for_timeout(500)
     r = pg.evaluate("[...document.querySelectorAll('#legend .btn')].map(b => b.id + ':' + b.classList.contains('on')).join(' ') + ' | ' + document.getElementById('bScope').textContent")
     print('after a reload with saved settings:', r); ok &= r == 'tgNames:false tgNades:true tgLines:false tgXray:true tgFit:false | Timeline: round'
+    # Vanilla and Damage numbers (0.26.16, Sujan, 3 Nov 2026): Vanilla first in View settings, off on a first visit;
+    # Damage numbers Wallbangs by default. Vanilla on turns off Names to See through walls, Glow on hits and the damage
+    # numbers, and is kept after a reload; a single switch still works after; Vanilla off brings back what it turned off.
+    pg.evaluate("localStorage.clear()"); pg.reload(); pg.wait_for_timeout(500)
+    st = "(() => { const L = (id) => document.getElementById(id); return [...document.querySelectorAll('#legend .btn')].slice(0, 4).map(b => b.classList.contains('on') ? 1 : 0).join('') + ' glow:' + L('glow3').checked + ' dn:' + (L('dn3') || {}).value + ' van:' + (L('van3') || {}).checked; })()"
+    try:
+        first = pg.evaluate("document.querySelector('#vsetPanel .vrow input, #vsetPanel .vrow select, #vsetPanel .vrow button').id")
+        r = pg.evaluate(st)
+        print('Vanilla and Damage numbers on a first visit:', first, r); ok &= first == 'van3' and r == '1110 glow:true dn:wb van:false'
+        pg.evaluate("() => { const L = (id) => document.getElementById(id); L('dn3').value = 'both'; L('dn3').dispatchEvent(new Event('change')); L('tgXray').click(); L('van3').checked = true; L('van3').dispatchEvent(new Event('change')); }")
+        r = pg.evaluate(st); print('Vanilla on:', r); ok &= r == '0000 glow:false dn:off van:true'
+        pg.reload(); pg.wait_for_timeout(500)
+        r = pg.evaluate(st); print('Vanilla on, after a reload:', r); ok &= r == '0000 glow:false dn:off van:true'
+        pg.evaluate("document.getElementById('tgNames').click()")
+        r = pg.evaluate(st); print('Names clicked with Vanilla on:', r); ok &= r == '1000 glow:false dn:off van:true'
+        pg.evaluate("() => { const v = document.getElementById('van3'); v.checked = false; v.dispatchEvent(new Event('change')); }")
+        r = pg.evaluate(st); print('Vanilla off brings back what it turned off:', r); ok &= r == '1111 glow:true dn:both van:false'
+        pg.reload(); pg.wait_for_timeout(500)
+        r = pg.evaluate(st); print('after a reload:', r); ok &= r == '1111 glow:true dn:both van:false'
+    except Exception as e:
+        print('Vanilla and Damage numbers: FAIL,', str(e).split('\n')[0]); ok = False
     pg.evaluate("localStorage.setItem('prefs', '{broken')"); pg.reload(); pg.wait_for_timeout(500)
     r = pg.evaluate("document.getElementById('bScope').textContent"); errs = []
     print('with damaged saved settings the page still opens with defaults:', r); ok &= r == 'Timeline: match'
