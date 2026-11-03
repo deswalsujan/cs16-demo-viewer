@@ -409,21 +409,24 @@ function bodyPart(h) {
   }));
   return fits.length === 1 ? fits[0][0] + '*' : 'body';
 }
-// "Earlier:" in kill details (Sujan, 3 Nov 2026): when the victim had less than 100 HP at the first hit listed, where the
-// rest went in that round, oldest first: a shooter the hit finder pinned it on, a grenade, a fall, or "source unknown",
-// never a guess; health the readings don't account for is "source unknown" too. Delpan: "Earlier: −7 from a grenade at 0:45."
+// "Earlier:" in kill details (Sujan, 3 Nov 2026): when part of the victim's health that round went to something other than
+// the killer's listed bullets, where it went, oldest first: every health drop of his in that round up to the kill that isn't
+// one of those bullets, before the first of them or between them (a crossfire: Na`Vi vs FX, Dust2, SEC 2011 final, R22
+// 1:35, PASHA's −26 on Zeus between two of 742's bullets, read "source unknown" until Sujan's fix of 3 Nov 2026), with its
+// time and source: the shooter the hit finder pinned it on, a grenade, a fall, or "source unknown", never a guess; health no
+// drop accounts for is "source unknown" with no time. Delpan: "Earlier: −7 from a grenade at 0:45."
 function earlierDamage(k, list) {
   const had = list.reduce((a, h) => a + h.dmg, 0), lost = 100 - had;
   if (lost <= 0) return null;
-  const r = M.rounds.find((x) => x.n === k.round), first = list[0];
-  const before = first.kill ? (k.tMsg != null ? k.tMsg : k.t) : first.tHp;
-  const prior = (M.drops || []).filter((d) => d.e === k.victim && r && d.t >= r.start - 1e-3 && d.t < before - 1e-4 && !(d.hit && list.includes(d.hit)));
-  const items = prior.map((d) => {
+  const r = M.rounds.find((x) => x.n === k.round), kt = k.tMsg != null ? k.tMsg : k.t;
+  // the killing drop isn't in M.drops (he's dead after it), so nothing at the kill or after it can be counted twice
+  const other = (M.drops || []).filter((d) => d.e === k.victim && r && d.t >= r.start - 1e-3 && d.t <= kt + 0.05 && !(d.hit && list.includes(d.hit)));
+  const items = other.map((d) => {
     const when = clockText(d.t);
     if (typeof d.from === 'number') return { dmg: d.dmg, from: labelAt(d.from, d.t), when };
     return { dmg: d.dmg, from: d.from === 'grenade' ? 'a grenade' : d.from === 'fall' ? 'a fall' : null, when };
   });
-  const rest = lost - prior.reduce((a, d) => a + d.dmg, 0);
+  const rest = lost - other.reduce((a, d) => a + d.dmg, 0);
   if (rest > 0) items.push({ dmg: rest, from: null, when: null });
   return items;
 }

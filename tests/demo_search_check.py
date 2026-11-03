@@ -135,6 +135,16 @@ with sync_playwright() as p:
         check('kill details: the picked kill in the Kills list opens to one line per bullet, the "Earlier:" line and the order of the demo', kd['kills'] == want, ' | '.join(kd['kills'] or ['no box']))
         check('kill details: the same in the Wallbangs list', kd['wb'] == want, ' | '.join(kd['wb'] or ['no box']))
         check("kill details: a bullet's line jumps playback to it, paused, through the killer's eyes", kd['jump'] == {'t': 2790.07, 'paused': True, 'eyes': True}, str(kd['jump']))
+        # a crossfire (Sujan, 3 Nov 2026, before merging #47): R23 1:18, edzie kills face with the FAMAS; face had lost 33 HP to
+        # three grenades, and after edzie's −19 starix hit him for −21 and a −21 came the hit finder can't pin on anyone, before
+        # edzie's last bullet took the 6 he had left. "Earlier:" counts every drop of his in the round that isn't one of edzie's
+        # listed bullets; as first built it counted only those before edzie's first and read "−42, source unknown".
+        cf = JS(r"""(async () => { const w = (ms) => new Promise((r) => setTimeout(r, ms));
+          const k = D.kills.find((x) => Math.abs(x.t - D.start - 2667.38) < 0.05); T = k.t + 0.03; pickedKill = k; renderPane(); await w(300);
+          const p = document.querySelector('.kdet .kpre'), out = p ? p.innerText.trim() : null;
+          pickedKill = __kd; T = __kd.t + 0.03; renderPane(); await w(200); return out; })()""")
+        check('kill details: "Earlier:" names a crossfire hit between the killer\'s bullets (starix on face, R23 1:18), "source unknown" only with its time',
+              cf == 'Earlier: −12 from a grenade at 1:25, −8 from a grenade at 1:23, −13 from a grenade at 1:23, −21 from starix at 1:19, −21 at 1:19, source unknown.', repr(cf))
         # the floating numbers, read from the label canvas: white for a hit in the open, orange through a wall, the red skull
         px = r"""(async (mode, van) => { const w = (ms) => new Promise((r) => setTimeout(r, ms));
           if (mode) $('dn3').value = mode; if (van != null) setVanilla(van); // Vanilla after: it turns the numbers off
