@@ -9,6 +9,6 @@ The "before" pictures (`*-0.26.15.jpg`) come from a 0.26.15 build of main at `a1
 - `vset-*`: **View settings** open: **Vanilla** first, **Damage numbers** before **Glow on hits**.
 - `wblist-*`: the same kill picked in the Wallbangs list.
 - `vanilla-*`: **Vanilla** on.
-- `pov-*`: **POV mode** on Match 1 CT (public server, de_barcelona, 27 Mar 2025), R1 0:49, his M4A1 kill on H@rDRoCk picked ("No hit details."), **View settings** open without **Damage numbers**.
+- `pov-*`: **POV mode** on Match 1 CT (public server, de_barcelona, 27 Mar 2025), R2 1:07, his M4A1 kill on Nnewys picked ("No hit details."), **View settings** open without **Damage numbers**. Retaken 3 Nov 2026 (Sujan): the first pair, at R1 0:49, showed a crude player name from the public server in the Kills list; at R2 1:07 none is on screen at either size.
 
 Measurements: `tests/logs/0.26.16.md` on main.
