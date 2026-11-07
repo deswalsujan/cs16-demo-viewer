@@ -4,6 +4,7 @@ What changed in the viewer, newest first. The version shows in the viewer's shor
 
 ## Versions
 
+- [0.26.18](#02618-2026-11-07) 2026-11-07: One error can't freeze it
 - [0.26.17](#02617-2026-11-07) 2026-11-07: Damage numbers no longer freeze
 - [0.26.16](#02616-2026-11-03) 2026-11-03: Kill details, damage numbers, Vanilla
 - [0.26.15](#02615-2026-11-03) 2026-11-03: Game's 4:3 view, wide screens
@@ -75,6 +76,24 @@ What changed in the viewer, newest first. The version shows in the viewer's shor
 
 ## Known limits
 Moved to [LIMITS.md](LIMITS.md) on 30 Oct 2026; release entries below still say "Known limits" for that list.
+
+## 0.26.18 (2026-11-07)
+
+Built from the approved mockup, `docs/frame-error-toast-mock.png` (Sujan, 7 Nov 2026).
+
+### Changed
+- An error while drawing no longer freezes the viewer (Sujan, 7 Nov 2026). Up to 0.26.17, any error in the frame loop stopped it for good, as 0.26.16's **Damage numbers** bug did. Now the next frame is asked for first, and each part of a frame (playback, the 3D view, the radar, the kill feed, the timeline, the HUD) runs on its own, so an error in one leaves playback and the others drawing.
+- Each different error caught there goes into **Copy debug info**'s list and the browser's console once per page, with where it was thrown, so an error that comes back every frame doesn't push the others out of the list's 20 places.
+- The first error caught in a page shows a note at the view's bottom left, once, for 9 seconds: "Something went wrong drawing this moment, so part of the view may be missing. Press ? and click Copy debug info to report it."
+
+### How it was tested
+- `demo_search_check.py`, 3 new checks on EG vs eXecutors, Train, EM4 finals: `drawHitNumbers` made to throw every frame for 3 s of playback, then `updateCentre` another error for 1 s; playback keeps moving (2.97 s of demo in the 3 s), the note shows once with its words, and each error is listed once. On 0.26.17 all three fail: playback stops after 0.04 s and no note shows.
+- The seven checks pass on Sujan's Mac (2 minutes 59 seconds); `ground_truth_check.py` gives the same counts as on 0.26.17: 231 kills, 27 scores and K-D on 48 demos, 0 mismatches, 8 known gaps, 0 skipped.
+- Full log: `tests/logs/0.26.18.md`.
+
+### Discussed, not changed
+- The note covers the left half of the name bar under the view in **Player's eyes** at a 1512x982 window, as every note there does: left for later (Sujan, 7 Nov 2026; IDEAS.md, **Toasts cover the name bar in Player's eyes**).
+- Each part of a frame in its own try/catch, where the decision said "the rest of the frame inside try/catch": one around the whole rest would stop everything after the failing part each frame, so an error in the kill feed would still freeze the radar, the 3D view and the HUD. Claude's choice while building, for Sujan to approve in the pull request.
 
 ## 0.26.17 (2026-11-07)
 

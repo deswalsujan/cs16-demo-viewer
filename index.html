@@ -611,7 +611,7 @@ addEventListener('resize', () => { if (applyUiSize()) dispatchEvent(new Event('u
     <div class="overlay sumwrap" id="sumCard" hidden></div>
     <div class="overlay keys" id="keys" hidden>
       <div class="keys-card">
-        <div class="keys-head"><b>Shortcuts and kill markers</b><div class="kh-r"><span class="ver">Version 0.26.17 · <a href="https://github.com/deswalsujan/cs16-demo-viewer/blob/main/CHANGELOG.md" target="_blank" rel="noopener">What's new</a> · <a href="https://github.com/deswalsujan/cs16-demo-viewer/issues/new/choose" target="_blank" rel="noopener">Report a bug</a></span><button class="btn" id="bDebug" type="button" title="Copies details for a bug report: browser, demo name, what loaded, errors. No file contents.">Copy debug info</button><button class="btn" id="bKeysClose" type="button">Close</button></div></div>
+        <div class="keys-head"><b>Shortcuts and kill markers</b><div class="kh-r"><span class="ver">Version 0.26.18 · <a href="https://github.com/deswalsujan/cs16-demo-viewer/blob/main/CHANGELOG.md" target="_blank" rel="noopener">What's new</a> · <a href="https://github.com/deswalsujan/cs16-demo-viewer/issues/new/choose" target="_blank" rel="noopener">Report a bug</a></span><button class="btn" id="bDebug" type="button" title="Copies details for a bug report: browser, demo name, what loaded, errors. No file contents.">Copy debug info</button><button class="btn" id="bKeysClose" type="button">Close</button></div></div>
         <textarea class="dbgbox" id="dbgBox" readonly hidden aria-label="Debug info"></textarea>
         <div class="keys-grid">
           <section><h3>Playback</h3>
@@ -715,7 +715,7 @@ addEventListener('resize', () => { if (applyUiSize()) dispatchEvent(new Event('u
         <div class="drophint">Or drop a .dem file, or an overview .bmp and .txt pair, anywhere on this page</div>
         <div class="prog" id="prog" hidden><i id="progBar"></i></div>
         <div class="msg" id="msg"></div>
-        <div class="loadfoot"><span>Version 0.26.17 · <a href="https://github.com/deswalsujan/cs16-demo-viewer" target="_blank" rel="noopener">Source on GitHub</a></span><button class="btn" id="bClear" type="button" title="Deletes the maps, models, sounds and overviews this browser saved from your Half-Life folder, and starts over as on a first visit">Clear saved files</button></div>
+        <div class="loadfoot"><span>Version 0.26.18 · <a href="https://github.com/deswalsujan/cs16-demo-viewer" target="_blank" rel="noopener">Source on GitHub</a></span><button class="btn" id="bClear" type="button" title="Deletes the maps, models, sounds and overviews this browser saved from your Half-Life folder, and starts over as on a first visit">Clear saved files</button></div>
       </div>
     </div>
   </section>
@@ -8005,31 +8005,38 @@ function showHiddenEnemiesNote() {
 
 // ---------------- loop ----------------
 let lastNow = performance.now(), hudAcc = 0;
+// One error can't stop the loop (0.26.18; Sujan, 7 Nov 2026, docs/frame-error-toast-mock.png): the next frame is asked
+// for first, and each part of a frame runs on its own, so an error in one (the 3D view, the radar, the kill feed, the
+// HUD) leaves playback and the other parts drawing; frameError (debug.js) records each different error once. Up to
+// 0.26.17 any error stopped the loop for good and the viewer froze (0.26.16's Damage numbers bug, EG vs eXecutors,
+// Train, EM4 finals, R21 1:30).
+const framePart = (f) => { try { f(); } catch (e) { frameError(e); } };
 function frame(now) {
+  requestAnimationFrame(frame);
   const dt = Math.min(0.1, (now - lastNow) / 1000); lastNow = now;
-  if (D && playing && !tlDrag) {
+  if (!D) return;
+  framePart(() => {
+    if (!playing || tlDrag) return;
     T += dt * speed / slowAt(T); // slow-motion stretches play at real speed (see slowAt)
     if (T >= D.end) { T = D.end; playing = false; setPlayIcon(); }
-  }
-  if (D) {
+  });
+  framePart(() => {
     // a kill "lands" when playback moves forward past it (not when you jump around)
     if (prevT != null && T > prevT && T - prevT < 1) for (const k of D.kills) if (k.t > prevT && k.t <= T && k.killer !== k.victim && k.kp) flashes.push({ k, at: now });
     if (prevT != null && playing && !tlDrag) soundTick(prevT, T);
-    prevT = T;
-    while (flashes.length && now - flashes[0].at > FLASH_MS) flashes.shift();
-  }
-  if (D) {
-    if (selected && view.s > 1.3 && playing) {
-      const s = playerState(selected, T);
-      if (s && s.state > 0) { const [px, py] = w2i(s.x, s.y); const S = base.s * view.s; view.x += ((cw / 2 - (base.x * view.s + px * S)) - view.x) * 0.08; view.y += ((ch / 2 - (base.y * view.s + py * S)) - view.y) * 0.08; }
-    }
-    updateFeed(); // before the 3D view draws the ✕, so both come in the same frame
-    if (viewMode !== '3d') draw();
-    drawPlayhead(); updateCentre();
-    if (viewMode !== '2d') { if (MAP && view3.map !== MAP.name) build3d(); update3(); }
-    hudAcc += dt; if (hudAcc > 0.1) { hudAcc = 0; updateHud(false); }
-  }
-  requestAnimationFrame(frame);
+  });
+  prevT = T;
+  while (flashes.length && now - flashes[0].at > FLASH_MS) flashes.shift();
+  framePart(() => {
+    if (!(selected && view.s > 1.3 && playing)) return;
+    const s = playerState(selected, T);
+    if (s && s.state > 0) { const [px, py] = w2i(s.x, s.y); const S = base.s * view.s; view.x += ((cw / 2 - (base.x * view.s + px * S)) - view.x) * 0.08; view.y += ((ch / 2 - (base.y * view.s + py * S)) - view.y) * 0.08; }
+  });
+  framePart(updateFeed); // before the 3D view draws the ✕, so both come in the same frame
+  if (viewMode !== '3d') framePart(draw);
+  framePart(drawPlayhead); framePart(updateCentre);
+  if (viewMode !== '2d') framePart(() => { if (MAP && view3.map !== MAP.name) build3d(); update3(); });
+  hudAcc += dt; if (hudAcc > 0.1) { hudAcc = 0; framePart(() => updateHud(false)); }
 }
 requestAnimationFrame(frame);
 
@@ -8447,10 +8454,25 @@ function renderSummary(r) {
 const ERRLOG = [];
 window.addEventListener('error', (e) => { ERRLOG.push(`${e.message} (${(e.filename || '').split('/').pop()}:${e.lineno})`); if (ERRLOG.length > 20) ERRLOG.shift(); });
 window.addEventListener('unhandledrejection', (e) => { ERRLOG.push('Promise: ' + (e.reason && e.reason.message || e.reason)); if (ERRLOG.length > 20) ERRLOG.shift(); });
+// Errors caught in the frame loop (0.26.18; Sujan, 7 Nov 2026, docs/frame-error-toast-mock.png): each different message
+// goes into the list above and the console once per page, so one that comes back every frame doesn't push the others
+// out; the first one in the page shows a toast, once, for 9 seconds like the others.
+const FRAME_ERRS = new Set();
+function frameError(e) {
+  const msg = String((e && e.message) || e);
+  if (FRAME_ERRS.has(msg)) return;
+  FRAME_ERRS.add(msg);
+  // where it was thrown: the stack's first place with a line number, without the page's address
+  const at = String((e && e.stack) || '').split('\n').map((l) => l.trim()).find((l) => /:\d+:\d+\)?$/.test(l));
+  ERRLOG.push(`${msg} (caught in the frame loop${at ? ', ' + at.replace(/^at /, '').replace(/(https?|file|blob):\/\/\S*\//g, '') : ''})`);
+  if (ERRLOG.length > 20) ERRLOG.shift();
+  console.error(e);
+  if (FRAME_ERRS.size === 1) toast('Something went wrong drawing this moment, so part of the view may be missing. Press ? and click Copy debug info to report it.');
+}
 function debugInfo() {
   let gpu = '';
   try { const gl = document.createElement('canvas').getContext('webgl'); const x = gl && gl.getExtension('WEBGL_debug_renderer_info'); gpu = gl ? (x ? gl.getParameter(x.UNMASKED_RENDERER_WEBGL) : 'WebGL available') : 'no WebGL'; } catch (e) { gpu = 'unknown'; }
-  const L = [`CS 1.6 Demo Viewer 0.26.17`, `Browser: ${navigator.userAgent}`, `Screen: ${screen.width}x${screen.height} at ${devicePixelRatio}x, window ${innerWidth}x${innerHeight}`, `Graphics: ${gpu}`];
+  const L = [`CS 1.6 Demo Viewer 0.26.18`, `Browser: ${navigator.userAgent}`, `Screen: ${screen.width}x${screen.height} at ${devicePixelRatio}x, window ${innerWidth}x${innerHeight}`, `Graphics: ${gpu}`];
   L.push(`Folder: ${Object.keys(files.maps).length} maps, ${Object.keys(files.overviews).length} overviews, ${Object.keys(files.mdl).length} models, ${Object.keys(files.snd).length} sounds, ${files.demos.length} demos`);
   if (D) {
     L.push(`Demo: ${D.fileName}, protocol ${(D.header && D.header.netProtocol) || '?'}, ${D.pov ? 'POV (recorded by a player)' : 'HLTV'}, map ${D.mapName}, length ${fmt(D.end - D.start)}, ${M.liveR.length} live rounds, final ${M.liveR.length ? M.liveR[M.liveR.length - 1].scoreAfter.join(':') : '-'}`);

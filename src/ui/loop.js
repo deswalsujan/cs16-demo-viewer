@@ -1,30 +1,37 @@
 // ---------------- loop ----------------
 let lastNow = performance.now(), hudAcc = 0;
+// One error can't stop the loop (0.26.18; Sujan, 7 Nov 2026, docs/frame-error-toast-mock.png): the next frame is asked
+// for first, and each part of a frame runs on its own, so an error in one (the 3D view, the radar, the kill feed, the
+// HUD) leaves playback and the other parts drawing; frameError (debug.js) records each different error once. Up to
+// 0.26.17 any error stopped the loop for good and the viewer froze (0.26.16's Damage numbers bug, EG vs eXecutors,
+// Train, EM4 finals, R21 1:30).
+const framePart = (f) => { try { f(); } catch (e) { frameError(e); } };
 function frame(now) {
+  requestAnimationFrame(frame);
   const dt = Math.min(0.1, (now - lastNow) / 1000); lastNow = now;
-  if (D && playing && !tlDrag) {
+  if (!D) return;
+  framePart(() => {
+    if (!playing || tlDrag) return;
     T += dt * speed / slowAt(T); // slow-motion stretches play at real speed (see slowAt)
     if (T >= D.end) { T = D.end; playing = false; setPlayIcon(); }
-  }
-  if (D) {
+  });
+  framePart(() => {
     // a kill "lands" when playback moves forward past it (not when you jump around)
     if (prevT != null && T > prevT && T - prevT < 1) for (const k of D.kills) if (k.t > prevT && k.t <= T && k.killer !== k.victim && k.kp) flashes.push({ k, at: now });
     if (prevT != null && playing && !tlDrag) soundTick(prevT, T);
-    prevT = T;
-    while (flashes.length && now - flashes[0].at > FLASH_MS) flashes.shift();
-  }
-  if (D) {
-    if (selected && view.s > 1.3 && playing) {
-      const s = playerState(selected, T);
-      if (s && s.state > 0) { const [px, py] = w2i(s.x, s.y); const S = base.s * view.s; view.x += ((cw / 2 - (base.x * view.s + px * S)) - view.x) * 0.08; view.y += ((ch / 2 - (base.y * view.s + py * S)) - view.y) * 0.08; }
-    }
-    updateFeed(); // before the 3D view draws the ✕, so both come in the same frame
-    if (viewMode !== '3d') draw();
-    drawPlayhead(); updateCentre();
-    if (viewMode !== '2d') { if (MAP && view3.map !== MAP.name) build3d(); update3(); }
-    hudAcc += dt; if (hudAcc > 0.1) { hudAcc = 0; updateHud(false); }
-  }
-  requestAnimationFrame(frame);
+  });
+  prevT = T;
+  while (flashes.length && now - flashes[0].at > FLASH_MS) flashes.shift();
+  framePart(() => {
+    if (!(selected && view.s > 1.3 && playing)) return;
+    const s = playerState(selected, T);
+    if (s && s.state > 0) { const [px, py] = w2i(s.x, s.y); const S = base.s * view.s; view.x += ((cw / 2 - (base.x * view.s + px * S)) - view.x) * 0.08; view.y += ((ch / 2 - (base.y * view.s + py * S)) - view.y) * 0.08; }
+  });
+  framePart(updateFeed); // before the 3D view draws the ✕, so both come in the same frame
+  if (viewMode !== '3d') framePart(draw);
+  framePart(drawPlayhead); framePart(updateCentre);
+  if (viewMode !== '2d') framePart(() => { if (MAP && view3.map !== MAP.name) build3d(); update3(); });
+  hudAcc += dt; if (hudAcc > 0.1) { hudAcc = 0; framePart(() => updateHud(false)); }
 }
 requestAnimationFrame(frame);
 
