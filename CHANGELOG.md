@@ -4,6 +4,7 @@ What changed in the viewer, newest first. The version shows in the viewer's shor
 
 ## Versions
 
+- [0.26.17](#02617-2026-11-07) 2026-11-07: Damage numbers no longer freeze
 - [0.26.16](#02616-2026-11-03) 2026-11-03: Kill details, damage numbers, Vanilla
 - [0.26.15](#02615-2026-11-03) 2026-11-03: Game's 4:3 view, wide screens
 - [0.26.14](#02614-2026-11-03) 2026-11-03: 2D map above its controls
@@ -74,6 +75,19 @@ What changed in the viewer, newest first. The version shows in the viewer's shor
 
 ## Known limits
 Moved to [LIMITS.md](LIMITS.md) on 30 Oct 2026; release entries below still say "Known limits" for that list.
+
+## 0.26.17 (2026-11-07)
+
+### Fixed
+- **Damage numbers** on Direct hits or Both froze the viewer at a kill whose victim was never in a snapshot before he died, as happens on a skip in the recording (Sujan, 7 Nov 2026): EG vs eXecutors, Train, EM4 finals, R21 1:30, demo 36:18, where Loord on Storm[A]_, n0thing on neo and gfn on Loord land in one snapshot. The killing bullet's number is drawn where the victim died; with no death spot, the 3D view read the missing spot ("Cannot read properties of null (reading '0') at drawHitNumbers") and the error stopped the frame loop for good. Such a kill now shows no number, the same check **Glow on hits** already had; nothing else changes. Wallbangs, the default, was never hit: every wallbang kill has a death spot, since the wallbang finder needs one.
+
+### How it was tested
+- `demo_search_check.py`, 5 new checks on EG vs eXecutors, Train, EM4 finals (`fx.eg.em4finals-1003021929-de_train.dem`, a new test demo): the three kills have no death spot, and **Damage numbers** on Both and on Direct hits, in **Player's eyes** on gfn and in Free view, play from 36:17 to 36:20 with no page error. On 0.26.16 each of the four freezes at about 36:18.7, each in a page of its own.
+- The seven checks pass on Sujan's Mac (2 minutes 50 seconds); `ground_truth_check.py` gives the same counts as on 0.26.16: 231 kills, 27 scores and K-D on 48 demos, 0 mismatches, 8 known gaps, 0 skipped.
+- Full log: `tests/logs/0.26.17.md`.
+
+### Discussed, not changed
+- Any error inside the frame loop stops it for good, since it asks for the next frame on its last line, so one bad frame can freeze the whole viewer. Whether the loop should keep running after an error is for Sujan to decide (IDEAS.md, **One error stops the frame loop for good**); not built.
 
 ## 0.26.16 (2026-11-03)
 

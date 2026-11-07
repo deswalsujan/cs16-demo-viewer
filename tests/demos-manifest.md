@@ -1,6 +1,6 @@
 # Test demo manifest
 
-Every test demo on Sujan's Mac (`tests/DEMOS.md` has each one's event and status) with its size and SHA-256, so a copy of `~/code/cs16-data/test-demos` can be checked: Sujan keeps one on Google Drive (Sujan, 1 Nov 2026). The SHA-256 of the 50 demos in `tests/expected/` ("yes", or "joined part" for a part named only in another demo's file) is the one there; the other 14 were computed on the Mac on 1 Nov 2026, before the move (the two demos added to `tests/expected/` on 2 Nov 2026 took theirs from this table). 64 demos, 2,215,772,863 bytes (2.2 GB). The two Windows-only bot test demos of 5 Oct 2026 (`bangtest.dem`, `full_match_demo-2610050843-de_train.dem`) aren't on the Mac, so they aren't listed.
+Every test demo on Sujan's Mac (`tests/DEMOS.md` has each one's event and status) with its size and SHA-256, so a copy of `~/code/cs16-data/test-demos` can be checked: Sujan keeps one on Google Drive (Sujan, 1 Nov 2026). The SHA-256 of the 50 demos in `tests/expected/` ("yes", or "joined part" for a part named only in another demo's file) is the one there; the other 14 were computed on the Mac on 1 Nov 2026, before the move (the two demos added to `tests/expected/` on 2 Nov 2026 took theirs from this table), and EG vs eXecutors, Train, EM4 finals on 7 Nov 2026, when it joined the test demos. 65 demos, 2,242,482,108 bytes (2.2 GB). The two Windows-only bot test demos of 5 Oct 2026 (`bangtest.dem`, `full_match_demo-2610050843-de_train.dem`) aren't on the Mac, so they aren't listed.
 
 Check a folder (any copy, subfolders included; demos are found by SHA-256, under any name):
 
@@ -40,6 +40,7 @@ When a test demo is added or deleted, change its row here along with its row in 
 | `fx-vs-mtw-xperia2011-1104240212-de_nuke.dem` | 32,467,997 | `efee36e1bd4762abb70c01350a8adc025f2b7a41f14701a47f9847d3d21ca63b` | yes |
 | `fx-vs-mtw-xperia2011-1104240242-de_nuke.dem` | 79,219,864 | `08363d9e17484c9289848a1f79c6dc8b070e81cb7ef23feba26aafc1a736b3af` | yes |
 | `FX-vs-sk-iem5-inf.dem` | 33,855,804 | `7647cceb130aead0ae7007661b35f5abe39ef744c51c71fe95795985f7309a36` | yes |
+| `fx.eg.em4finals-1003021929-de_train.dem` | 26,709,245 | `6fdcfe04e35244583d154a933d30a0491977055ea77e572512d9cc2bf877bdd6` | no |
 | `k1ck-vs-eq-dhwinter2011-1111260056-de_nuke.dem` | 15,222,316 | `893580d1af6c7fd4e89b61792684185b7464c12fe5526742b5019c5b0de4d439` | yes |
 | `match-1_de_barcelona-Cts_27-03-2025_15.10.23.dem` | 78,486,607 | `9d27e92ca71e930152661b390bbb14ff9baf001d6aa61686fd0d78e4304106f4` | no |
 | `match-1_de_barcelona-Ts_27-03-2025_15.32.54.dem` | 39,742,118 | `a22f6e3826bc1a02e10cf8118c5687f7d2805378c902ab814e4aac591a88be40` | no |

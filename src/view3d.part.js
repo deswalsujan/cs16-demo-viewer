@@ -712,7 +712,8 @@ function drawHitNumbers(lx, W, H, camera, mono) {
     const live = b.hits.filter((h) => due(h) && tn - h.t <= 0.9 && mine(h));
     if (!live.length) continue;
     const st = playerState(b.v, T);
-    const base = st && st.state > 0 ? scr(st.x, st.y, st.z + (st.duck ? 26 : 44) + 10) : (b.kill ? scr(b.kill.vpos[0], b.kill.vpos[1], b.kill.vpos[2] + 20) : null);
+    // a kill with no death spot (the victim never in a snapshot before he died, as on a skip) has no number (0.26.17)
+    const base = st && st.state > 0 ? scr(st.x, st.y, st.z + (st.duck ? 26 : 44) + 10) : (b.kill && b.kill.vpos ? scr(b.kill.vpos[0], b.kill.vpos[1], b.kill.vpos[2] + 20) : null);
     if (!base) continue;
     live.forEach((h, k) => {
       const age = tn - h.t, a = age < 0.15 ? 1 : Math.max(0, 1 - (age - 0.15) / 0.75);
