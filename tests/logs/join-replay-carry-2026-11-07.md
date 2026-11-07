@@ -164,4 +164,4 @@ A narrower version, measured for Sujan to choose from: only Steam account number
 
 ## The mockup (7 Nov 2026)
 
-`docs/proposed/join-replay-carry-mock.png`: drawn on the scratch build with the join rules and the narrower Steam ID version, in headless Chrome at a 1512x982 window at 2x, the approved words put in by hand. The Rounds tab's replayed rows show their result today ("elimination · 7 kills") and no "not counted", which shows only on rounds with no result, so the mockup puts "replayed from 0:0" before the result.
+`docs/join-replay-carry-mock.png`: drawn on the scratch build with the join rules and the narrower Steam ID version, in headless Chrome at a 1512x982 window at 2x, the approved words put in by hand. The Rounds tab's replayed rows show their result today ("elimination · 7 kills") and no "not counted", which shows only on rounds with no result, so the mockup puts "replayed from 0:0" before the result.
