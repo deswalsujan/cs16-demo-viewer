@@ -371,7 +371,7 @@ with sync_playwright() as p:
         check("Join card: part 1's line, its 4 rounds and the 13 replayed before them (the approved words)",
               c['parts'][:1] == ['4 rounds count, ending at WeMadeFox 4 : 0 Ravens, no winner. 13 earlier rounds were replayed: restarted from 0:0 on the same sides.'], repr(c['parts'][:1]))
         check("Join card: part 2's line says where the map stands, not its own 0:0",
-              c['parts'][1:] == ['Carries on at WeMadeFox 4 : 0 Ravens after the crash, 26 rounds, no winner.'], repr(c['parts'][1:]))
+              c['parts'][1:] == ['Carries on at WeMadeFox 4 : 0 Ravens, 26 rounds, no winner.'], repr(c['parts'][1:]))
         check("Join card: Part 2 carries on part 1's half, with the half's numbers",
               {'s': 'info', 't': "Part 2 carries on part 1's half Same sides: part 1's 4 rounds count, and part 2's 11 complete the half of 15. 3 rounds at its start were replayed."} in c['checks'],
               '; '.join(f"[{x['s']}] {x['t']}" for x in c['checks']))

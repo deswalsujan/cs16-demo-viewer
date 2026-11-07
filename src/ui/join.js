@@ -266,11 +266,12 @@ function useSuggested() {
   JOIN.keep = false; JOIN.moved = false; renderJoinCard();
 }
 // one part's line under its file name. cf: carryFacts for this part, when it carries on the previous part's half; it then says
-// where the map stands, since its own scoreboard starts again from 0:0 (Sujan, 7 Nov 2026)
+// where the map stands, since its own scoreboard starts again from 0:0 (Sujan, 7 Nov 2026). It doesn't say why the recording
+// broke: the viewer can't tell a server crash from a recording that stopped (Sujan, 7 Nov 2026, before the merge).
 function partLine(f, i, cf) {
   if (!f.live) return 'no rounds in it';
   const [a, b] = f.score, [tA, tB] = f.tnames, end = f.won ? `${f.wonBy} won the map` : 'no winner';
-  if (cf) return `Carries on at ${cf.tnames[0]} ${cf.score[0]} : ${cf.score[1]} ${cf.tnames[1]} after the crash, ${plural(f.live, 'round')}, ${end}.`;
+  if (cf) return `Carries on at ${cf.tnames[0]} ${cf.score[0]} : ${cf.score[1]} ${cf.tnames[1]}, ${plural(f.live, 'round')}, ${end}.`;
   if (i === 0 && !f.startsLate && f.replayed) return `${plural(f.live, 'round')} ${f.live === 1 ? 'counts' : 'count'}, ending at ${tA} ${a} : ${b} ${tB}, ${end}. ${plural(f.replayed, 'earlier round')} ${f.replayed === 1 ? 'was' : 'were'} replayed: restarted from 0:0 on the same sides.`;
   if (i === 0 && !f.startsLate) return `${plural(f.live, 'round')}, ends at ${tA} ${a} : ${b} ${tB}, ${end}`;
   const how = f.partway ? `Starts partway into a round, then ${plural(f.live - 1, 'more round')}` : f.startsLate ? `Starts with ${plural(f.sb[0] + f.sb[1], 'round')} already played, then ${plural(f.live, 'round')}` : `Starts from 0:0, ${plural(f.live, 'round')}`;
