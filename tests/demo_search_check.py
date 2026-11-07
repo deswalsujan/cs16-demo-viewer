@@ -9,7 +9,9 @@ said "Reading name…" when the start screen came back (Sujan, 3 Nov 2026). In 2
 the bottom of the view where it opens and after Reset view, at three window sizes (0.26.14). In 3D, Player's eyes keeps
 the game's 4:3 view top to bottom at three window sizes, unzoomed and through the AWP's scope (0.26.15); this part needs
 de_train's map and models in the Half-Life folder. Kill details, Damage numbers, the red skull and Vanilla on that demo, and
-kill details and View settings in POV mode on Match 1 CT (de_barcelona's map needed) (0.26.16). Under a minute.
+kill details and View settings in POV mode on Match 1 CT (de_barcelona's map needed) (0.26.16). Damage numbers on Both and
+Direct hits through three kills with no death spot, on EG vs eXecutors, Train, EM4 finals: no page error, and playback keeps
+moving (0.26.17). Under a minute.
 """
 import os, re, sys, http.server, functools, threading, tempfile, shutil, subprocess, atexit
 from playwright.sync_api import sync_playwright
@@ -232,6 +234,47 @@ with sync_playwright() as p:
     except Exception as e:
         check('POV mode: kill details and View settings', False, (POVD or 'Match 1 CT not found') + ': ' + str(e).split('\n')[0])
     ctx3.close()
+
+    # A kill with no death spot (0.26.17; Sujan, 7 Nov 2026): EG vs eXecutors, Train, EM4 finals, R21 1:30, demo 36:18. The
+    # recording skips there, and three kills in that snapshot (Loord on Storm[A]_, n0thing on neo, gfn on Loord) have no
+    # vpos, since the victim was never in a snapshot before he died. In 0.26.16, Damage numbers on Direct hits or Both read
+    # the missing spot for the killing bullet's number ("Cannot read properties of null (reading '0') at drawHitNumbers"),
+    # and the error stopped the frame loop for good: the viewer froze. Played from 36:17 to 36:20 at 1x, in Player's eyes
+    # on gfn and in Free view; no page error, and playback time keeps moving.
+    EMD = 'fx.eg.em4finals-1003021929-de_train.dem'
+    ctx4 = b.new_context(viewport={'width': 1512, 'height': 982}); pg4 = ctx4.new_page()
+    pg4.route('**/three.min.js', lambda r: r.fulfill(path=os.environ.get('THREE_JS', os.path.join(here, '..', 'src', 'vendor', 'three.min.js')), content_type='application/javascript'))
+    errs = []; pg4.on('pageerror', lambda e: errs.append(str(e).split('\n')[0]))
+    try:
+        if EMD not in names: raise Exception(f'{EMD} not found in HALF_LIFE_DIR or DEMO_DIRS')
+        pg4.goto(f'http://127.0.0.1:{srv.server_port}/{os.path.basename(hooked)}')
+        pg4.set_input_files('#fFolder', HL)
+        pg4.wait_for_function('__v("files.demos.length > 0")', timeout=30000)
+        pg4.evaluate('(n) => __v(`loadDemoFile(files.demos.find((f) => f.name === ${JSON.stringify(n)}))`)', EMD)
+        pg4.wait_for_function('__v("!!(D && M && MAP && R3 && view3.map === MAP.name)")', timeout=120000)
+        JS4 = lambda c: pg4.evaluate('(c) => __v(c)', c)
+        nv = JS4(r"""(() => { closeSummary(); setView('3d'); playing = false; setSpeed(1);
+          const nm = (i) => (M.pl[i] || {}).name || '?';
+          return D.kills.filter((k) => !k.vpos && k.kp && Math.abs(k.t - D.start - 2178) < 2).map((k) => ({ killer: k.killer, k: nm(k.kp), v: nm(k.vp), t: +(k.t - D.start).toFixed(2) })); })()""")
+        trio = [(x['k'], x['v']) for x in nv]
+        found = all(any(re.search(a, k) and re.search(v, w) for k, w in trio) for a, v in [('Loord', 'Storm'), ('n0thing', 'neo'), ('gfn', 'Loord')])
+        check('EG vs eXecutors, Train, EM4 finals, R21 1:30: Loord on Storm[A]_, n0thing on neo and gfn on Loord have no death spot (the case this checks)',
+              found, '; '.join(f"{k} on {v} at {t}" for (k, v), t in zip(trio, [x['t'] for x in nv])) or 'none without a death spot')
+        gfn = next((x['killer'] for x in nv if re.search('gfn', x['k'])), None)
+        for mode, label in [('both', 'Both'), ('direct', 'Direct hits')]:
+            for cam in ['eyes', 'free']:
+                before = len(errs)
+                JS4(f"""(() => {{ $('dn3').value = '{mode}'; playing = false; T = D.start + 2177; prevT = null;
+                  {'selected = ' + str(gfn) + "; setCam('eyes', true);" if cam == 'eyes' else "setCam('free');"} playing = true; }})()""")
+                try: pg4.wait_for_function('__v("T - D.start >= 2180")', timeout=30000); moved = True
+                except Exception: moved = False
+                st = JS4("({ t: +(T - D.start).toFixed(2), playing, cam: cam3.mode })"); JS4('playing = false')
+                where = "Player's eyes on gfn" if cam == 'eyes' else 'Free view'
+                check(f'Damage numbers on {label}, {where}: playing 36:17 to 36:20 through the kills with no death spot, no page error and playback keeps moving',
+                      moved and len(errs) == before, f"demo {int(st['t'] // 60)}:{st['t'] % 60:05.2f}, {st['cam']}" + (f"; {errs[before]}" if len(errs) > before else '') + ('' if moved else '; playback stopped'))
+    except Exception as e:
+        check('a kill with no death spot, EG vs eXecutors, Train, EM4 finals', False, str(e).split('\n')[0])
+    ctx4.close()
     b.close()
 print(f'{len(fails)} failed' if fails else 'all passed')
 sys.exit(1 if fails else 0)
