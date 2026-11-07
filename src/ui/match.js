@@ -79,10 +79,24 @@ function derive() {
   // Steam ID alone (enough to find the live rounds), then again with the names used during the live rounds.
   // A name used only in the warmup doesn't join two connections, so two players who both sat on a placeholder
   // nick ("Player") before the match stay apart.
-  // the earliest connection stays the root, so a person keeps the same id however they were joined
-  const join = (x, y) => { const a = ofind(x), b = ofind(y); if (a !== b) opar[Math.max(a, b)] = Math.min(a, b); };
+  // Two Steam accounts are never one person by a name (Sujan, 7 Nov 2026). In part 1 of WeMadeFox vs Ravens, Nuke, EM4
+  // finals, SIA, bail and BERRY sat on "Player" and "(1)Player" in the warmup and BERRY came back as "Player" after a
+  // reboot, which made the three one person. A name both connections used during the live rounds still joins two accounts,
+  // unless it's a placeholder: MAHE in FX vs eSahara, Dust2, DreamHack Winter 2010 played on a second account from 105:25
+  // under the same name. Only Steam account numbers count: on public servers a non-Steam ID changes at every reconnect.
+  const account = (o) => (o.sid && !sidBad.has(o.sid) && /^7656119\d{10}$/.test(o.sid) ? o.sid : null);
+  const placeholder = (nm) => /^(\(\d+\))?\s*player$/i.test(String(nm).trim());
+  const accOf = {}; // a group's root: the Steam account its connections hold, if any
+  // the earliest connection stays the root, so a person keeps the same id however they were joined. nm: the name that
+  // joins them (none for a Steam ID); live: both connections used it during the live rounds
+  const join = (x, y, nm, live) => {
+    const a = ofind(x), b = ofind(y); if (a === b) return;
+    if (nm != null && accOf[a] && accOf[b] && accOf[a] !== accOf[b] && (!live || placeholder(nm))) return;
+    const r = Math.min(a, b); opar[Math.max(a, b)] = r; accOf[r] = accOf[a] || accOf[b];
+  };
   const group = (nameOK) => {
     for (let i = 0; i < opar.length; i++) opar[i] = i;
+    for (const o of occ) accOf[o.id] = account(o);
     const bySid = {};
     for (const o of occ) if (o.sid && !sidBad.has(o.sid)) { if (bySid[o.sid] != null) join(o.id, bySid[o.sid]); else bySid[o.sid] = o.id; }
     if (nameOK) {
@@ -92,11 +106,11 @@ function derive() {
       // "Na`Vi Edward /A/" both times and played as "EdwardwOw~", while two players who both sat on "Player"
       // in the warmup and then played the match are two people.
       const byName = {};
-      for (const o of occ) for (const [a, b, nm] of nameSpans(o)) { if (!nameOK(a, b)) continue; if (byName[nm] != null) join(o.id, byName[nm]); else byName[nm] = o.id; }
+      for (const o of occ) for (const [a, b, nm] of nameSpans(o)) { if (!nameOK(a, b)) continue; if (byName[nm] != null) join(o.id, byName[nm], nm, true); else byName[nm] = o.id; }
       const played = (o) => nameSpans(o).some(([a, b]) => nameOK(a, b));
       const other = {};
-      for (const o of occ) for (const [a, b, nm] of nameSpans(o)) if (!nameOK(a, b)) { if (byName[nm] != null) join(o.id, byName[nm]); else (other[nm] || (other[nm] = new Set())).add(o); }
-      for (const nm in other) { const L = [...other[nm]]; if (L.filter(played).length <= 1) for (const o of L) join(o.id, L[0].id); }
+      for (const o of occ) for (const [a, b, nm] of nameSpans(o)) if (!nameOK(a, b)) { if (byName[nm] != null) join(o.id, byName[nm], nm, false); else (other[nm] || (other[nm] = new Set())).add(o); }
+      for (const nm in other) { const L = [...other[nm]]; if (L.filter(played).length <= 1) for (const o of L) join(o.id, L[0].id, nm, false); }
     }
     for (const k in pl) delete pl[k];
     for (const o of occ) {
@@ -174,6 +188,12 @@ function derive() {
     liveSegs = best != null ? [best] : [];
   }
   const counts = (r) => r.kills.length > 0 && r.dur > 5 && r.winner != null;
+  // Who is on T 5 seconds into a round, and whether two rounds have the teams on the same sides (more than half of the
+  // smaller T side in both)
+  const tSide = (r) => { const t = Math.min(r.start + 5, r.end), s = new Set(); for (const e in D.slots) { const a = D.slots[e]; if (Math.abs(a[idxAt(t) * S + 5]) === 1) s.add(personAt(+e, t)); } return s; };
+  const sameSides = (a, b) => { const x = tSide(a), y = tSide(b); let n = 0; for (const p of x) if (y.has(p)) n++; return n > Math.min(x.size, y.size) / 2; };
+  // Half ends: 15, 30, then every 3 rounds of overtime
+  const atHalfEnd = (x) => x === 15 || x === 30 || (x > 30 && (x - 30) % 3 === 0);
   // What the server's admin plugin announced beats guessing. Tournament servers print "Live !" (or
   // "LIVE LIVE LIVE") when a half starts, "End of 1st set" or "half time" when it ends, and "Current
   // set canceled" when a start is thrown away. When the demo has these, a round counts only if it
@@ -199,7 +219,20 @@ function derive() {
       // start at 11:48 was followed by "Warmup Settings have been loaded".)
       const w = winOf(rs[rs.length - 1]);
       const closedByEnd = w >= 0 && windows[w][2] === 'end';
-      if (next && (winOf(next) === w || !closedByEnd) && rs.length < (total >= 24 ? 3 : 12)) { for (const r of rs) r.live = false; continue; }
+      const sameWin = !!next && (winOf(next) === w || !closedByEnd);
+      // Sides compared at the stretch's first round: its last can be the side swap itself, with the players already on
+      // their new teams 5 seconds in (part 2 of WeMadeFox vs Ravens, Nuke, EM4 finals, 23:55).
+      const laterPart = !!next && next.part !== rs[rs.length - 1].part, same = !!next && sameSides(rs[0], next);
+      // A later recording that picks up on the same sides partway through a half carries the half on: what this one
+      // counted still counts (Sujan, 7 Nov 2026: WeMadeFox's 4-0 before the server crashed, "4-0 score stays", then 11
+      // more rounds of the half in part 2). A stretch that ends at a half end is a whole half: the first overtime starts
+      // on the second half's sides (Na`Vi vs SK, Inferno, ESWC 2011). Checked against the half's length further down.
+      if (sameWin && laterPart && same && !atHalfEnd(total + rs.length)) { for (const r of rs) r.carry = true; total += rs.length; continue; }
+      // In the same recording, a restart with the teams on the same sides before the half is over replays the half
+      // (Sujan, 7 Nov 2026): part 1 of WeMadeFox vs Ravens was restarted from 0:0 after 12 rounds, when a player had
+      // rebooted. With the sides kept, 12 rounds can't be a whole MR12 half.
+      if (sameWin && !laterPart && same && rs.length < (total >= 24 ? 3 : 15)) { for (const r of rs) { r.live = false; r.replayed = true; } continue; }
+      if (sameWin && rs.length < (total >= 24 ? 3 : 12)) { for (const r of rs) r.live = false; continue; }
       total += rs.length;
     }
   } else if (D.pov) {
@@ -269,6 +302,22 @@ function derive() {
   // A round played between two recordings of a joined map (in neither file) counts when its part has live
   // rounds. It's in the stretch of the part's start, often not the one the part's live rounds are in.
   for (const r of rounds) if (r.missing) r.live = rounds.some((x) => x.part === r.part && x.live && !x.missing);
+  // A carried stretch and the rounds after it on the same sides have to fit in one half. When they don't, the later
+  // recording replayed the half (as some rules have it for a crash in its first rounds), and the carried rounds don't count.
+  {
+    const lr = rounds.filter((r) => r.live);
+    let pos = 0;
+    for (let i = 0; i < lr.length;) {
+      if (!lr[i].carry) { pos++; i++; continue; }
+      const st = lr.filter((x) => x.seg === lr[i].seg && x.carry);
+      let n = 0;
+      for (let j = i; j < lr.length && (lr[j].missing || sameSides(st[0], lr[j])); j++) n++;
+      const end = pos < 15 ? 15 : pos < 30 ? 30 : 30 + 3 * (Math.floor((pos - 30) / 3) + 1);
+      if (pos + n > end) for (const x of st) { x.live = false; x.carry = false; x.replayed = true; }
+      else pos += st.length;
+      i += st.length;
+    }
+  }
   // A stretch can't run past the end of a half when a restart and more play follow. Both Xperia Play FX vs mTw
   // matches played on for 5 (Inferno) and 6 (Nuke) rounds at 15:15 on the same sides, then the admins
   // restarted and played the overtime from its start. Half ends: 15, 30, then every 3 rounds of overtime.
@@ -278,8 +327,6 @@ function derive() {
   // Xperia parts were joined: part 2's stretch starts at 15 and runs to 35, crossing 30 and 33, so it was
   // cut at 33 and 3 rounds played on at 15:15 became overtime.)
   {
-    const tSide = (r) => { const t = Math.min(r.start + 5, r.end), s = new Set(); for (const e in D.slots) { const a = D.slots[e]; if (Math.abs(a[idxAt(t) * S + 5]) === 1) s.add(personAt(+e, t)); } return s; };
-    const sameSides = (a, b) => { const x = tSide(a), y = tSide(b); let n = 0; for (const p of x) if (y.has(p)) n++; return n > Math.min(x.size, y.size) / 2; };
     const segs = [...new Set(rounds.filter((r) => r.live).map((r) => r.seg))].sort((a, b) => a - b);
     let total = 0;
     for (let i = 0; i < segs.length; i++) {

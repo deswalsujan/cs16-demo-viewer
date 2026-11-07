@@ -4,6 +4,7 @@ What changed in the viewer, newest first. The version shows in the viewer's shor
 
 ## Versions
 
+- [0.26.19](#02619-2026-11-07) 2026-11-07: Replayed and carried halves joined
 - [0.26.18](#02618-2026-11-07) 2026-11-07: One error can't freeze it
 - [0.26.17](#02617-2026-11-07) 2026-11-07: Damage numbers no longer freeze
 - [0.26.16](#02616-2026-11-03) 2026-11-03: Kill details, damage numbers, Vanilla
@@ -76,6 +77,31 @@ What changed in the viewer, newest first. The version shows in the viewer's shor
 
 ## Known limits
 Moved to [LIMITS.md](LIMITS.md) on 30 Oct 2026; release entries below still say "Known limits" for that list.
+
+## 0.26.19 (2026-11-07)
+
+Built from the approved mockup, `docs/join-replay-carry-mock.png` (Sujan, 7 Nov 2026), with his one wording change for part 2's line.
+
+### Fixed
+- WeMadeFox vs Ravens, Nuke, EM4 finals, joined from its two files, read Ravens 16-9; it reads WeMadeFox 16-13, and 17-13 in 30 rounds with **Count them**, 9-6 at half time (Sujan, 7 Nov 2026: the result is WeMadeFox 17-13). Inside a match the admin's plugin announced, three rules (Sujan, 7 Nov 2026): a restart in one file with the teams on the same sides, before the half's 15 rounds (3 in overtime), replays the half, so part 1's 12 rounds to 6:6, replayed after a player rebooted, no longer count; a later file that picks up on the same sides partway through a half carries it on, so WeMadeFox's 4-0 before the server crashed counts ("4-0 score stays"); and carried rounds that would make the half too long count as replayed. Part 1 opened alone reads WeMadeFox 4:0 in 4 rounds.
+- SIA, bail and BERRY counted as one person in part 1 of that map. Two Steam accounts are now one person by a name only when both used it during the live rounds and it isn't a placeholder such as Player or (1)Player (Sujan, 7 Nov 2026). MAHE, on two accounts under one name in FX vs eSahara, Dust2, DreamHack Winter 2010, stays one person; public servers' IDs, which aren't Steam accounts, are left as they were.
+- The Join card suggested 1609, 1740, 1724 for Na`Vi vs SK, Inferno, ESWC 2011, with "the rounds agree": it read the recording time from "2011-10-24_16h08", which starts all three names. HLTV's own time in a name comes first now, so it suggests 1609, 1724, 1740 (Sujan, 7 Nov 2026; the "freeze 0:17" part of that item stays open).
+
+### Changed
+- The Join card says what the rules count: the first part's line gives the rounds that count and the rounds replayed ("4 rounds count, ending at WeMadeFox 4 : 0 Ravens, no winner. 13 earlier rounds were replayed: restarted from 0:0 on the same sides."); a part that carries on the previous part's half says where the map stands ("Carries on at WeMadeFox 4 : 0 Ravens, 26 rounds, no winner."); and **Part 2 carries on part 1's half**, with the half's numbers, takes the place of "Teams on the same sides between the parts".
+- The Join card refuses two more wrong orders (Sujan, 7 Nov 2026): a first part whose teams change sides before a whole half (check A), and parts where the teams are on other sides partway through a half, or on the same sides at half time (check B). Where B fails, the sides line is a warning, not a green tick; and the file names' recording times are named whenever the player's order differs from them.
+- The Rounds tab, with **Show warmup, restarts and idle rounds** on: a replayed round reads "replayed from 0:0" before its result. So do the short false starts the viewer already left out where the teams kept their sides, in 7 other test demos and the Forge parts of fnatic vs mousesports joined (8 rounds in FX vs SK, Inferno, IEM5).
+
+### How it was tested
+- `demo_search_check.py`, 11 new checks on WeMadeFox vs Ravens and Na`Vi vs SK, Inferno, ESWC 2011: the Join card in the suggested order and with part 2 first, the joined score, players and Rounds tab, the suggested order; all 11 fail on 0.26.18.
+- `ground_truth_check.py`, which now reads **Count them** on a joined map and a score's halves: a new expected file for this map (17:13 in 30 rounds, halves 9:6 and 8:7, the 10 players' K-D); it fails on 0.26.18 with 12 mismatches.
+- Score, rounds round by round and K-D of the 67 test demos alone and the joined maps, against 0.26.18: only WeMadeFox vs Ravens changes. The seven checks pass on Sujan's Mac (3 minutes 15 seconds); `ground_truth_check.py`: 231 kills and 38 scores and K-D on 49 demos, 0 mismatches, 8 known gaps, 0 skipped.
+- Full log: `tests/logs/0.26.19.md`; the measurements before the build: `tests/logs/join-replay-carry-2026-11-07.md`.
+
+### Discussed, not changed
+- Claude's choices while building, approved by Sujan before the merge (7 Nov 2026): check B refuses the same sides at 15 rounds only, not at 12 as measured, since in MR15 a file can stop after the 12th round of a half and the next carry it on; the words of checks A and B, and "carry on the half of 15" in place of "complete the half of 15" for a carrying part that ends before the half does; "replayed from 0:0" also on the false starts the old rule left out on the same sides. The carry line said "after the crash" as first built, Sujan's words for this map; he dropped them before the merge (7 Nov 2026), since the viewer can't tell a server crash from a recording that stopped.
+- The Join card works the carry out by joining the parts on a copy, once per order of the parts.
+- Two kinds of wrong order the rounds still can't refuse in the test maps: the Forge parts of fnatic vs mousesports, IEM6 Guangzhou swapped (part 2 holds 12 rounds, a whole MR12 half), and the three overtime files of mTw vs Na`Vi, Tuscan, ESWC 2010 among themselves. The recording times are named for both.
 
 ## 0.26.18 (2026-11-07)
 

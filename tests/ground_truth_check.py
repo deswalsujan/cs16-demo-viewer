@@ -3,7 +3,8 @@
 tests/expected/ holds one file per demo, named by the demo's file name without .dem: its SHA-256, event, map, the
 expected score and live rounds, the K-D numbers Sujan confirmed, and kills with round, timer, killer, victim, gun and
 expected (strict, loose, loose-damage, none, or wallbang: strict or loose of either kind), each with its source. A
-joined map's numbers sit under "joined" in its first part's file; numbers with Count them on, under "count_them". A
+joined map's numbers sit under "joined" in its first part's file; numbers with Count them on, under "count_them" (a
+joined map's under "joined", "count_them"; 7 Nov 2026). A score can name its halves ("halves": ["9:6", "8:7"]). A
 kill is found by round, killer and victim, names exactly as the viewer has them (a player dies once a round); timer
 and gun are compared only where the file has them. A kill with "known_gap" is printed when it differs, never failed.
 How the files were filled: tests/README.md, "Wallbang ground truth" (Sujan, 30 Oct 2026).
@@ -95,6 +96,8 @@ def check_totals(label, want, got, fails):
             fails.append(f"{label}, score: expected {want['score']['value']}, got {got['score']}")
         if 'live' in want['score'] and want['score']['live'] != got['live']:
             fails.append(f"{label}, live rounds: expected {want['score']['live']}, got {got['live']}")
+        if 'halves' in want['score'] and want['score']['halves'] != got.get('halves'):
+            fails.append(f"{label}, halves: expected {', '.join(want['score']['halves'])}, got {', '.join(got.get('halves') or ['none'])}")
     have = kd_of(got['kd'])
     for e in want.get('kd', []):
         n += 1
@@ -149,8 +152,11 @@ def main():
         if 'count_them' in w:
             jobs.append((w, 'count_them', name(w['sha256']), ['ground_truth_totals.js'], {'count30': True}))
         if 'joined' in w:
-            parts = [name(h) for h in w['joined']['sha256']]
-            jobs.append((w, 'joined', parts[0], ['ground_truth_totals.js'], {'parts': [p.lower() for p in parts]}))
+            parts = [p.lower() for p in (name(h) for h in w['joined']['sha256'])]
+            if 'score' in w['joined'] or 'kd' in w['joined']:
+                jobs.append((w, 'joined', parts[0], ['ground_truth_totals.js'], {'parts': parts}))
+            if 'count_them' in w['joined']:
+                jobs.append((w, 'joined_count_them', parts[0], ['ground_truth_totals.js'], {'parts': parts, 'count30': True}))
     print(f"{len(runs)} of {len(want)} expected files, {len(jobs)} runs, {os.environ.get('JOBS', 6)} at a time", flush=True)
 
     work = tempfile.mkdtemp(prefix='ground_truth_pages_')
@@ -164,14 +170,14 @@ def main():
 
     fails, gaps, count = [], [], {'kills': 0, 'totals': 0}
     for (w, kind, demo, _, _), (res, errors, err) in zip(jobs, results):
-        label = f"{w['match']} ({w['demo'][:-4]}{', joined' if kind == 'joined' else ', Count them' if kind == 'count_them' else ''})"
+        label = f"{w['match']} ({w['demo'][:-4]}{', joined' if kind.startswith('joined') else ''}{', Count them' if kind.endswith('count_them') else ''})"
         if errors:
             notes.append(f"{label}: page errors: {errors[:300]}")
         if kind != 'main':
             if not res or 'kd' not in res[-1]:
                 fails.append(f"{label}: no result ({err.strip()[-200:] or 'see --save'})")
             else:
-                count['totals'] += check_totals(label, w[kind], res[-1], fails)
+                count['totals'] += check_totals(label, w['joined']['count_them'] if kind == 'joined_count_them' else w[kind], res[-1], fails)
             continue
         if len(res) < 2 or 'kills' not in res[-1]:
             fails.append(f"{label}: no result ({(res[0].get('cant_play') if res else None) or err.strip()[-200:] or 'see --save'})")

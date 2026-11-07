@@ -1,6 +1,6 @@
 # Test demo manifest
 
-Every test demo on Sujan's Mac (`tests/DEMOS.md` has each one's event and status) with its size and SHA-256, so a copy of `~/code/cs16-data/test-demos` can be checked: Sujan keeps one on Google Drive (Sujan, 1 Nov 2026). The SHA-256 of the 50 demos in `tests/expected/` ("yes", or "joined part" for a part named only in another demo's file) is the one there; the other 14 were computed on the Mac on 1 Nov 2026, before the move (the two demos added to `tests/expected/` on 2 Nov 2026 took theirs from this table), and EG vs eXecutors, Train, EM4 finals on 7 Nov 2026, when it joined the test demos. 65 demos, 2,242,482,108 bytes (2.2 GB). The two Windows-only bot test demos of 5 Oct 2026 (`bangtest.dem`, `full_match_demo-2610050843-de_train.dem`) aren't on the Mac, so they aren't listed.
+Every test demo on Sujan's Mac (`tests/DEMOS.md` has each one's event and status) with its size and SHA-256, so a copy of `~/code/cs16-data/test-demos` can be checked: Sujan keeps one on Google Drive (Sujan, 1 Nov 2026). The SHA-256 of the 50 demos in `tests/expected/` ("yes", or "joined part" for a part named only in another demo's file) is the one there; the other 14 were computed on the Mac on 1 Nov 2026, before the move (the two demos added to `tests/expected/` on 2 Nov 2026 took theirs from this table), EG vs eXecutors, Train, EM4 finals on 7 Nov 2026, when it joined the test demos, and the two files of WeMadeFox vs Ravens, Nuke, EM4 finals the same day, when they did. 67 demos, 2,272,233,643 bytes (2.3 GB). The two Windows-only bot test demos of 5 Oct 2026 (`bangtest.dem`, `full_match_demo-2610050843-de_train.dem`) aren't on the Mac, so they aren't listed.
 
 Check a folder (any copy, subfolders included; demos are found by SHA-256, under any name):
 
@@ -63,6 +63,8 @@ When a test demo is added or deleted, change its row here along with its row in 
 | `navi-vs-fx-sec2011-final-1110091531-de_dust2.dem` | 21,035,975 | `e5214ee5ce39af8bf3285aa299bb9bb7d4e39445c9828ece20dc7ae3e928cea2` | yes |
 | `navi-vs-m5-dhwinter2011-1111250937-de_inferno.dem` | 23,811,901 | `c73716f64bc259082427ee0301d9b2fd0826eb55c896a2e0fd311208e22d2959` | yes |
 | `noa.penta-0610211800-de_train.dem` | 15,258,833 | `aefb97aa3b55f887ec5d9765868d5875057b308d20abe71f53c3abc2d2a08f4a` | yes |
+| `ravens.wmf.em4finals-1003030951-de_nuke.dem` | 11,917,010 | `25a9117808cb4c94d18a3434ca0a76086dd763a0f253d233ef788837607c7ca3` | no |
+| `ravens.wmf.em4finals-1003031026-de_nuke.dem` | 17,834,525 | `deae6889eacc7c8bdc4fa27cca4336731f1f3cbc579fb4c6f44edd38a3de77a0` | no |
 | `roccat.estro.EMII.cebit-0803081202-de_inferno.dem` | 14,645,288 | `c81ba62865c826a4c0fbeb21a65b590c52b9b181acf782facaab4a9a17e066da` | no |
 | `roccat.fnatic.EMII-0803071948-de_inferno.dem` | 24,203,004 | `040d89a0ffbbf70cc32a067a04b6e480ecbb58224344af7518460647d6bbb84d` | yes |
 | `sk-vs-dateam-iolfinal4-1106181158-de_dust2.dem` | 19,548,376 | `94cdb3747ed31678dded5538679f1ac1d371f0e94799e68825b91b2185dc9114` | yes |

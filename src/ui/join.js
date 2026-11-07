@@ -2,14 +2,16 @@
 // Approved design: docs/split-map-mock.png. Background and decisions: IDEAS.md, "Join a map split over several
 // demo files". Words: "map", never "match" (a match is often several maps, each its own demo or demos).
 const MON = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
-// The recording time in a file name, when it has one: "1104240025" is 24 Apr 2011 at 00:25 (yymmddhhmm),
-// "1110231216--auto_..." the same form, "2006-07-02_15h00_..." another. Names like FX-vs-sk-iem5-inf.dem have none.
+// The recording time in a file name, when it has one: HLTV's own "1104240025" is 24 Apr 2011 at 00:25 (yymmddhhmm),
+// "1110231216--auto_..." the same form, "2006-07-02_15h00_..." another. HLTV's comes first: the three parts of Na`Vi vs SK,
+// Inferno, ESWC 2011 all start "2011-10-24_16h08_NaVi_SK-", and only their 1609, 1724 and 1740 put them in order (Sujan,
+// 7 Nov 2026; the Join card suggested 1609, 1740, 1724 up to 0.26.18). Names like FX-vs-sk-iem5-inf.dem have none.
 function fileTime(name) {
-  let m = /(\d{4})-(\d\d)-(\d\d)_(\d\d)h(\d\d)/.exec(name);
-  if (m) return Date.UTC(+m[1], +m[2] - 1, +m[3], +m[4], +m[5]);
-  m = /(?:^|\D)(\d\d)(\d\d)(\d\d)(\d\d)(\d\d)(?=\D|$)/.exec(name);
-  if (m && +m[2] >= 1 && +m[2] <= 12 && +m[3] >= 1 && +m[3] <= 31 && +m[4] < 24 && +m[5] < 60) return Date.UTC(2000 + +m[1], +m[2] - 1, +m[3], +m[4], +m[5]);
-  return null;
+  for (const m of name.matchAll(/(?:^|\D)(\d\d)(\d\d)(\d\d)(\d\d)(\d\d)(?=\D|$)/g)) {
+    if (+m[2] >= 1 && +m[2] <= 12 && +m[3] >= 1 && +m[3] <= 31 && +m[4] < 24 && +m[5] < 60) return Date.UTC(2000 + +m[1], +m[2] - 1, +m[3], +m[4], +m[5]);
+  }
+  const m = /(\d{4})-(\d\d)-(\d\d)_(\d\d)h(\d\d)/.exec(name);
+  return m ? Date.UTC(+m[1], +m[2] - 1, +m[3], +m[4], +m[5]) : null;
 }
 const hhmm = (d) => String(d.getUTCHours()).padStart(2, '0') + ':' + String(d.getUTCMinutes()).padStart(2, '0');
 const dayOf = (d) => `${d.getUTCDate()} ${MON[d.getUTCMonth()]} ${d.getUTCFullYear()}`;
@@ -106,11 +108,24 @@ function partFacts(P) {
       sb, partway: !!lead, leadWinner: lead && lead.winner ? (lead.winner === 'T' ? teamOnT : teamOnCT) : null,
       missT, missCT, teamOnT, teamOnCT, startsLate: missT + missCT > 0 || !!lead,
       players, byName: [...players].every((p) => p.startsWith('name:')), firstT: onT(first), lastT: onT(last),
+      // rounds replayed from 0:0 (see derive), and how many rounds count before the teams first change sides (null: never)
+      replayed: M.rounds.filter((r) => r.replayed).length,
+      swapAt: first ? (((i) => (i < 0 ? null : i))(live.findIndex((r) => r.tTeam !== first.tTeam))) : null,
     };
   } finally { D = keep[0]; M = keep[1]; }
 }
+// Whether the teams are on other sides from part a to part b: who was on T in a's last round that counts and b's first
+const sidesSwap = (a, b) => { let same = 0; for (const p of a.lastT) if (b.firstT.has(p)) same++; return same <= Math.min(a.lastT.size, b.firstT.size) / 2; };
+// How many rounds of the map come before part i + 1: the parts before it, with the rounds no file holds
+const roundsBefore = (F, i) => { let n = 0; for (let j = 0; j <= i; j++) n += F[j].live + (j ? F[j].missT + F[j].missCT : 0); return n; };
+// A half's end in MR15 (15, 30, every 3 rounds of overtime) or MR12 (12, 24, every 3 after)
+const halfEndAny = (x) => x === 12 || x === 15 || x === 24 || x === 30 || (x > 24 && x < 30 && (x - 24) % 3 === 0) || (x > 30 && (x - 30) % 3 === 0);
 // Why the rounds don't allow this order (null when they do): the first part must start from 0:0, and only the
-// last part can have a winner.
+// last part can have a winner. Then (Sujan, 7 Nov 2026, from WeMadeFox vs Ravens, Nuke, EM4 finals with part 2 put first):
+// A, the first part's teams change sides only after a whole half, or its first half began in an earlier recording;
+// B, the teams are on other sides from one part to the next only at a half end, and on the same sides not at half time.
+// Tested on every order of the six joined maps of 7 Nov 2026, no right order caught (tests/logs/join-replay-carry-2026-11-07.md).
+// The same sides after 12 rounds aren't refused: in MR15 that's a crash after the 12th round of a half, which carries on.
 function orderProblem(F) {
   const head = (f) => f.partway ? 'starts partway into a round' : `starts with ${plural(f.sb[0] + f.sb[1], 'round')} already on the scoreboard`;
   if (F[0].startsLate) {
@@ -118,7 +133,36 @@ function orderProblem(F) {
     return `Part 1 ${head(F[0])}${fresh > 0 ? `, and part ${fresh + 1} starts from 0:0 with the first half` : ''}.`;
   }
   for (let i = 0; i < F.length - 1; i++) if (F[i].won) return `Part ${i + 1} ends with ${F[i].wonBy} winning the map, so no part can come after it.`;
+  if (F[0].swapAt != null && F[0].swapAt !== 15 && F[0].swapAt !== 12) return `Part 1's teams change sides after ${plural(F[0].swapAt, 'round')}, so its first half began in an earlier recording.`;
+  for (let i = 0; i < F.length - 1; i++) {
+    if (!F[i].live || !F[i + 1].live) continue;
+    const n = roundsBefore(F, i), swap = sidesSwap(F[i], F[i + 1]);
+    if (swap && !halfEndAny(n)) return `The map is ${plural(n, 'round')} in when part ${i + 1} ends, partway through a half, but the teams are on other sides in part ${i + 2}.`;
+    if (!swap && n === 15) return `The map is at half time when part ${i + 1} ends, after 15 rounds, but the teams are on the same sides in part ${i + 2}.`;
+  }
   return null;
+}
+// What Join them would count for these parts in this order (Ps parsed, F their facts), for the card's words on a half carried
+// on across two recordings (see derive): for each part, null, or where the map stands when it starts and how the half goes
+// on. Joined and counted on a copy, as openJoined does; nothing else is kept.
+function carryFacts(Ps, F) {
+  const keep = [D, M];
+  try {
+    D = joinDemos(Ps.map((P, i) => Object.assign({}, P, { kills: P.kills.map((k) => Object.assign({}, k)), joinMiss: { T: F[i].missT, CT: F[i].missCT } })));
+    derive();
+    return Ps.map((P, k) => {
+      const carried = k ? M.rounds.filter((r) => r.part === k - 1 && r.carry && r.live) : [];
+      const mine = M.liveR.filter((r) => r.part === k), first = mine[0];
+      if (!carried.length || !first) return null;
+      let n = 0; for (const r of mine) { if (r.tTeam !== carried[0].tTeam) break; n++; }
+      const pos = M.liveR.indexOf(carried[0]), end = pos < 15 ? 15 : pos < 30 ? 30 : 30 + 3 * (Math.floor((pos - 30) / 3) + 1);
+      return {
+        carried: carried.length, n, half: pos < 30 ? 15 : 3, complete: pos + carried.length + n === end,
+        replayed: M.rounds.filter((r) => r.part === k && r.replayed && r.start < first.start).length,
+        score: first.scoreBefore.slice(), tnames: M.tnames.slice(),
+      };
+    });
+  } catch (e) { return Ps.map(() => null); } finally { D = keep[0]; M = keep[1]; }
 }
 const perms = (a) => a.length <= 1 ? [a] : a.flatMap((x, i) => perms([...a.slice(0, i), ...a.slice(i + 1)]).map((p) => [x, ...p]));
 // The order to suggest, in this order of trust: the recording times in the file names when every part has
@@ -157,7 +201,7 @@ function splitJoined() {
 }
 
 // ---- the Join card ----
-const JOIN = { list: [], P: new Map(), F: new Map(), keep: false, moved: false, sugg: null, err: null, picking: false, reading: null };
+const JOIN = { list: [], P: new Map(), F: new Map(), keep: false, moved: false, sugg: null, err: null, picking: false, reading: null, carry: null };
 function joinEl() {
   let el = $('joinCard');
   if (!el) { el = document.createElement('div'); el.className = 'overlay sumwrap'; el.id = 'joinCard'; el.hidden = true; $('sumCard').after(el); }
@@ -221,11 +265,15 @@ function useSuggested() {
   if (o) JOIN.list = o.map((i) => JOIN.list[i]);
   JOIN.keep = false; JOIN.moved = false; renderJoinCard();
 }
-// one part's line under its file name
-function partLine(f, i) {
+// one part's line under its file name. cf: carryFacts for this part, when it carries on the previous part's half; it then says
+// where the map stands, since its own scoreboard starts again from 0:0 (Sujan, 7 Nov 2026). It doesn't say why the recording
+// broke: the viewer can't tell a server crash from a recording that stopped (Sujan, 7 Nov 2026, before the merge).
+function partLine(f, i, cf) {
   if (!f.live) return 'no rounds in it';
-  const [a, b] = f.score, [tA, tB] = f.tnames;
-  if (i === 0 && !f.startsLate) return `${plural(f.live, 'round')}, ends at ${tA} ${a} : ${b} ${tB}, ${f.won ? `${f.wonBy} won the map` : 'no winner'}`;
+  const [a, b] = f.score, [tA, tB] = f.tnames, end = f.won ? `${f.wonBy} won the map` : 'no winner';
+  if (cf) return `Carries on at ${cf.tnames[0]} ${cf.score[0]} : ${cf.score[1]} ${cf.tnames[1]}, ${plural(f.live, 'round')}, ${end}.`;
+  if (i === 0 && !f.startsLate && f.replayed) return `${plural(f.live, 'round')} ${f.live === 1 ? 'counts' : 'count'}, ending at ${tA} ${a} : ${b} ${tB}, ${end}. ${plural(f.replayed, 'earlier round')} ${f.replayed === 1 ? 'was' : 'were'} replayed: restarted from 0:0 on the same sides.`;
+  if (i === 0 && !f.startsLate) return `${plural(f.live, 'round')}, ends at ${tA} ${a} : ${b} ${tB}, ${end}`;
   const how = f.partway ? `Starts partway into a round, then ${plural(f.live - 1, 'more round')}` : f.startsLate ? `Starts with ${plural(f.sb[0] + f.sb[1], 'round')} already played, then ${plural(f.live, 'round')}` : `Starts from 0:0, ${plural(f.live, 'round')}`;
   return how + (f.won ? `, ${f.wonBy} won the map` : ', no winner');
 }
@@ -250,9 +298,13 @@ function renderJoinCard() {
     return;
   }
   const problem = F.length === JOIN.list.length && F.length > 1 ? orderProblem(F) : null;
+  // what joining in this order would count (a half carried on from one part to the next), worked out once per order
+  const key = JOIN.list.map((f) => f.name).join('|');
+  if (F.length === JOIN.list.length && F.length > 1 && !JOIN.reading && (!JOIN.carry || JOIN.carry.key !== key)) JOIN.carry = { key, facts: carryFacts(JOIN.list.map((f) => JOIN.P.get(f.name)), F) };
+  const CF = JOIN.carry && JOIN.carry.key === key ? JOIN.carry.facts : [];
   const rows = JOIN.list.map((f, i) => {
     const fa = JOIN.F.get(f.name);
-    const meta = fa ? esc(partLine(fa, i)) : JOIN.reading === f.name ? `Reading… <span class="jbar"><i id="jProg"></i></span>` : 'Waiting to be read';
+    const meta = fa ? esc(partLine(fa, i, CF[i])) : JOIN.reading === f.name ? `Reading… <span class="jbar"><i id="jProg"></i></span>` : 'Waiting to be read';
     return `<li><span class="jn">Part ${i + 1}</span><span class="jf"><span class="jname">${fileNameHtml(f.name)}</span><small>${meta}</small></span>
       <span class="ja"><button class="btn sq" type="button" data-mv="${i},-1" ${i ? '' : 'disabled'} title="Move up" aria-label="Move part ${i + 1} up">↑</button><button class="btn sq" type="button" data-mv="${i},1" ${i < JOIN.list.length - 1 ? '' : 'disabled'} title="Move down" aria-label="Move part ${i + 1} down">↓</button></span></li>`;
   }).join('');
@@ -260,7 +312,11 @@ function renderJoinCard() {
   let order = '';
   if (F.length === JOIN.list.length && F.length > 1) {
     const s = JOIN.sugg;
-    if (JOIN.moved) order = problem ? 'Your order.' : 'Your order. The rounds agree.';
+    if (JOIN.moved) {
+      // the file names' recording times named whenever the player's order differs from them (Sujan, 7 Nov 2026)
+      const t = F.map((f) => f.time), off = t.every((x) => x != null) && t.some((x, k) => k && t[k - 1] > x);
+      order = (problem ? 'Your order.' : 'Your order. The rounds agree.') + (off ? ` The recording times in the file names, ${fileTimesText(t.slice().sort((x, y) => x - y))}, put them ${F.length === 2 ? 'the other way round' : 'in another order'}.` : '');
+    }
     else if (s && s.by === 'times') order = `from the recording times in the file names, ${fileTimesText(F.map((f) => f.time))}.${s.agree ? ' The rounds agree.' : ''}`;
     else if (s) order = 'from the rounds: the first part starts from 0:0 and only the last one has a winner, and no other order does that.';
     else order = "the files don't say. Put the parts in order with the arrows.";
@@ -277,9 +333,12 @@ function renderJoinCard() {
     for (let i = 0; i < F.length - 1; i++) {
       const a = F[i], b = F[i + 1];
       if (!a.live || !b.live) continue;
-      let same = 0; for (const p of a.lastT) if (b.firstT.has(p)) same++;
       const between = F.length > 2 ? ` between parts ${i + 1} and ${i + 2}` : ' between the parts';
-      if (same <= Math.min(a.lastT.size, b.firstT.size) / 2) checks.push({ s: 'ok', t: `Teams swapped sides${between}` });
+      const cf = CF[i + 1];
+      if (cf) {
+        const c = cf.carried, r = cf.replayed;
+        checks.push({ s: 'info', t: `Part ${i + 2} carries on part ${i + 1}'s half`, n: `Same sides: part ${i + 1}'s ${plural(c, 'round')} ${c === 1 ? 'counts' : 'count'}, and part ${i + 2}'s ${cf.n} ${cf.complete ? `${cf.n === 1 ? 'completes' : 'complete'} the half of ${cf.half}` : `${cf.n === 1 ? 'carries' : 'carry'} on the half of ${cf.half}`}.${r ? ` ${plural(r, 'round')} at its start ${r === 1 ? 'was' : 'were'} replayed.` : ''}` });
+      } else if (sidesSwap(a, b)) checks.push({ s: halfEndAny(roundsBefore(F, i)) ? 'ok' : 'warn', t: `Teams swapped sides${between}` });
       else checks.push({ s: 'info', t: `Teams on the same sides${between}`, n: `Part ${i + 2} probably picks up partway through a half.` });
     }
     F.forEach((f, i) => {
@@ -298,8 +357,8 @@ function renderJoinCard() {
   if (problem && !JOIN.keep) {
     const s = suggestOrder(F);
     const better = s && (s.agree ? s.order : s.roundsOrder);
-    const timesNote = s && s.by === 'times' && JOIN.moved && s.agree && s.order.some((v, k) => v !== k) ? ` The file names' recording times put them ${F.length === 2 ? 'the other way round' : 'in another order'}.` : '';
-    wrong = `<div class="jwrong"><h3>This order doesn't add up</h3><p>${esc(problem)}${timesNote}</p>
+    // (the recording times are in the order line above when the order is the player's)
+    wrong = `<div class="jwrong"><h3>This order doesn't add up</h3><p>${esc(problem)}</p>
       <div class="jbtns"><button class="btn" type="button" id="jKeep">Keep my order</button>${better && better.some((v, k) => v !== k) ? '<button class="btn primary" type="button" id="jSugg">Use the suggested order</button>' : ''}</div></div>`;
   }
   // picking another part: the folder's demos, the same map first, or a file from elsewhere
@@ -337,7 +396,7 @@ function renderJoinCard() {
     rememberJoin(names, JOIN.keep && !!problem, problem);
     const parsed = JOIN.list.map((f) => JOIN.P.get(f.name));
     closeJoinCard();
-    JOIN.P.clear(); JOIN.F.clear(); // the read parts go to the joined map; nothing else keeps them
+    JOIN.P.clear(); JOIN.F.clear(); JOIN.carry = null; // the read parts go to the joined map; nothing else keeps them
     openJoinedUI(JOIN.list.slice(), parsed);
   };
 }
