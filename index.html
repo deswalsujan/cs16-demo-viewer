@@ -611,7 +611,7 @@ addEventListener('resize', () => { if (applyUiSize()) dispatchEvent(new Event('u
     <div class="overlay sumwrap" id="sumCard" hidden></div>
     <div class="overlay keys" id="keys" hidden>
       <div class="keys-card">
-        <div class="keys-head"><b>Shortcuts and kill markers</b><div class="kh-r"><span class="ver">Version 0.26.18 · <a href="https://github.com/deswalsujan/cs16-demo-viewer/blob/main/CHANGELOG.md" target="_blank" rel="noopener">What's new</a> · <a href="https://github.com/deswalsujan/cs16-demo-viewer/issues/new/choose" target="_blank" rel="noopener">Report a bug</a></span><button class="btn" id="bDebug" type="button" title="Copies details for a bug report: browser, demo name, what loaded, errors. No file contents.">Copy debug info</button><button class="btn" id="bKeysClose" type="button">Close</button></div></div>
+        <div class="keys-head"><b>Shortcuts and kill markers</b><div class="kh-r"><span class="ver">Version 0.26.19 · <a href="https://github.com/deswalsujan/cs16-demo-viewer/blob/main/CHANGELOG.md" target="_blank" rel="noopener">What's new</a> · <a href="https://github.com/deswalsujan/cs16-demo-viewer/issues/new/choose" target="_blank" rel="noopener">Report a bug</a></span><button class="btn" id="bDebug" type="button" title="Copies details for a bug report: browser, demo name, what loaded, errors. No file contents.">Copy debug info</button><button class="btn" id="bKeysClose" type="button">Close</button></div></div>
         <textarea class="dbgbox" id="dbgBox" readonly hidden aria-label="Debug info"></textarea>
         <div class="keys-grid">
           <section><h3>Playback</h3>
@@ -715,7 +715,7 @@ addEventListener('resize', () => { if (applyUiSize()) dispatchEvent(new Event('u
         <div class="drophint">Or drop a .dem file, or an overview .bmp and .txt pair, anywhere on this page</div>
         <div class="prog" id="prog" hidden><i id="progBar"></i></div>
         <div class="msg" id="msg"></div>
-        <div class="loadfoot"><span>Version 0.26.18 · <a href="https://github.com/deswalsujan/cs16-demo-viewer" target="_blank" rel="noopener">Source on GitHub</a></span><button class="btn" id="bClear" type="button" title="Deletes the maps, models, sounds and overviews this browser saved from your Half-Life folder, and starts over as on a first visit">Clear saved files</button></div>
+        <div class="loadfoot"><span>Version 0.26.19 · <a href="https://github.com/deswalsujan/cs16-demo-viewer" target="_blank" rel="noopener">Source on GitHub</a></span><button class="btn" id="bClear" type="button" title="Deletes the maps, models, sounds and overviews this browser saved from your Half-Life folder, and starts over as on a first visit">Clear saved files</button></div>
       </div>
     </div>
   </section>
@@ -2756,14 +2756,16 @@ async function openJoined(list, onProgress, parsed) {
 // Approved design: docs/split-map-mock.png. Background and decisions: IDEAS.md, "Join a map split over several
 // demo files". Words: "map", never "match" (a match is often several maps, each its own demo or demos).
 const MON = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
-// The recording time in a file name, when it has one: "1104240025" is 24 Apr 2011 at 00:25 (yymmddhhmm),
-// "1110231216--auto_..." the same form, "2006-07-02_15h00_..." another. Names like FX-vs-sk-iem5-inf.dem have none.
+// The recording time in a file name, when it has one: HLTV's own "1104240025" is 24 Apr 2011 at 00:25 (yymmddhhmm),
+// "1110231216--auto_..." the same form, "2006-07-02_15h00_..." another. HLTV's comes first: the three parts of Na`Vi vs SK,
+// Inferno, ESWC 2011 all start "2011-10-24_16h08_NaVi_SK-", and only their 1609, 1724 and 1740 put them in order (Sujan,
+// 7 Nov 2026; the Join card suggested 1609, 1740, 1724 up to 0.26.18). Names like FX-vs-sk-iem5-inf.dem have none.
 function fileTime(name) {
-  let m = /(\d{4})-(\d\d)-(\d\d)_(\d\d)h(\d\d)/.exec(name);
-  if (m) return Date.UTC(+m[1], +m[2] - 1, +m[3], +m[4], +m[5]);
-  m = /(?:^|\D)(\d\d)(\d\d)(\d\d)(\d\d)(\d\d)(?=\D|$)/.exec(name);
-  if (m && +m[2] >= 1 && +m[2] <= 12 && +m[3] >= 1 && +m[3] <= 31 && +m[4] < 24 && +m[5] < 60) return Date.UTC(2000 + +m[1], +m[2] - 1, +m[3], +m[4], +m[5]);
-  return null;
+  for (const m of name.matchAll(/(?:^|\D)(\d\d)(\d\d)(\d\d)(\d\d)(\d\d)(?=\D|$)/g)) {
+    if (+m[2] >= 1 && +m[2] <= 12 && +m[3] >= 1 && +m[3] <= 31 && +m[4] < 24 && +m[5] < 60) return Date.UTC(2000 + +m[1], +m[2] - 1, +m[3], +m[4], +m[5]);
+  }
+  const m = /(\d{4})-(\d\d)-(\d\d)_(\d\d)h(\d\d)/.exec(name);
+  return m ? Date.UTC(+m[1], +m[2] - 1, +m[3], +m[4], +m[5]) : null;
 }
 const hhmm = (d) => String(d.getUTCHours()).padStart(2, '0') + ':' + String(d.getUTCMinutes()).padStart(2, '0');
 const dayOf = (d) => `${d.getUTCDate()} ${MON[d.getUTCMonth()]} ${d.getUTCFullYear()}`;
@@ -2860,11 +2862,24 @@ function partFacts(P) {
       sb, partway: !!lead, leadWinner: lead && lead.winner ? (lead.winner === 'T' ? teamOnT : teamOnCT) : null,
       missT, missCT, teamOnT, teamOnCT, startsLate: missT + missCT > 0 || !!lead,
       players, byName: [...players].every((p) => p.startsWith('name:')), firstT: onT(first), lastT: onT(last),
+      // rounds replayed from 0:0 (see derive), and how many rounds count before the teams first change sides (null: never)
+      replayed: M.rounds.filter((r) => r.replayed).length,
+      swapAt: first ? (((i) => (i < 0 ? null : i))(live.findIndex((r) => r.tTeam !== first.tTeam))) : null,
     };
   } finally { D = keep[0]; M = keep[1]; }
 }
+// Whether the teams are on other sides from part a to part b: who was on T in a's last round that counts and b's first
+const sidesSwap = (a, b) => { let same = 0; for (const p of a.lastT) if (b.firstT.has(p)) same++; return same <= Math.min(a.lastT.size, b.firstT.size) / 2; };
+// How many rounds of the map come before part i + 1: the parts before it, with the rounds no file holds
+const roundsBefore = (F, i) => { let n = 0; for (let j = 0; j <= i; j++) n += F[j].live + (j ? F[j].missT + F[j].missCT : 0); return n; };
+// A half's end in MR15 (15, 30, every 3 rounds of overtime) or MR12 (12, 24, every 3 after)
+const halfEndAny = (x) => x === 12 || x === 15 || x === 24 || x === 30 || (x > 24 && x < 30 && (x - 24) % 3 === 0) || (x > 30 && (x - 30) % 3 === 0);
 // Why the rounds don't allow this order (null when they do): the first part must start from 0:0, and only the
-// last part can have a winner.
+// last part can have a winner. Then (Sujan, 7 Nov 2026, from WeMadeFox vs Ravens, Nuke, EM4 finals with part 2 put first):
+// A, the first part's teams change sides only after a whole half, or its first half began in an earlier recording;
+// B, the teams are on other sides from one part to the next only at a half end, and on the same sides not at half time.
+// Tested on every order of the six joined maps of 7 Nov 2026, no right order caught (tests/logs/join-replay-carry-2026-11-07.md).
+// The same sides after 12 rounds aren't refused: in MR15 that's a crash after the 12th round of a half, which carries on.
 function orderProblem(F) {
   const head = (f) => f.partway ? 'starts partway into a round' : `starts with ${plural(f.sb[0] + f.sb[1], 'round')} already on the scoreboard`;
   if (F[0].startsLate) {
@@ -2872,7 +2887,36 @@ function orderProblem(F) {
     return `Part 1 ${head(F[0])}${fresh > 0 ? `, and part ${fresh + 1} starts from 0:0 with the first half` : ''}.`;
   }
   for (let i = 0; i < F.length - 1; i++) if (F[i].won) return `Part ${i + 1} ends with ${F[i].wonBy} winning the map, so no part can come after it.`;
+  if (F[0].swapAt != null && F[0].swapAt !== 15 && F[0].swapAt !== 12) return `Part 1's teams change sides after ${plural(F[0].swapAt, 'round')}, so its first half began in an earlier recording.`;
+  for (let i = 0; i < F.length - 1; i++) {
+    if (!F[i].live || !F[i + 1].live) continue;
+    const n = roundsBefore(F, i), swap = sidesSwap(F[i], F[i + 1]);
+    if (swap && !halfEndAny(n)) return `The map is ${plural(n, 'round')} in when part ${i + 1} ends, partway through a half, but the teams are on other sides in part ${i + 2}.`;
+    if (!swap && n === 15) return `The map is at half time when part ${i + 1} ends, after 15 rounds, but the teams are on the same sides in part ${i + 2}.`;
+  }
   return null;
+}
+// What Join them would count for these parts in this order (Ps parsed, F their facts), for the card's words on a half carried
+// on across two recordings (see derive): for each part, null, or where the map stands when it starts and how the half goes
+// on. Joined and counted on a copy, as openJoined does; nothing else is kept.
+function carryFacts(Ps, F) {
+  const keep = [D, M];
+  try {
+    D = joinDemos(Ps.map((P, i) => Object.assign({}, P, { kills: P.kills.map((k) => Object.assign({}, k)), joinMiss: { T: F[i].missT, CT: F[i].missCT } })));
+    derive();
+    return Ps.map((P, k) => {
+      const carried = k ? M.rounds.filter((r) => r.part === k - 1 && r.carry && r.live) : [];
+      const mine = M.liveR.filter((r) => r.part === k), first = mine[0];
+      if (!carried.length || !first) return null;
+      let n = 0; for (const r of mine) { if (r.tTeam !== carried[0].tTeam) break; n++; }
+      const pos = M.liveR.indexOf(carried[0]), end = pos < 15 ? 15 : pos < 30 ? 30 : 30 + 3 * (Math.floor((pos - 30) / 3) + 1);
+      return {
+        carried: carried.length, n, half: pos < 30 ? 15 : 3, complete: pos + carried.length + n === end,
+        replayed: M.rounds.filter((r) => r.part === k && r.replayed && r.start < first.start).length,
+        score: first.scoreBefore.slice(), tnames: M.tnames.slice(),
+      };
+    });
+  } catch (e) { return Ps.map(() => null); } finally { D = keep[0]; M = keep[1]; }
 }
 const perms = (a) => a.length <= 1 ? [a] : a.flatMap((x, i) => perms([...a.slice(0, i), ...a.slice(i + 1)]).map((p) => [x, ...p]));
 // The order to suggest, in this order of trust: the recording times in the file names when every part has
@@ -2911,7 +2955,7 @@ function splitJoined() {
 }
 
 // ---- the Join card ----
-const JOIN = { list: [], P: new Map(), F: new Map(), keep: false, moved: false, sugg: null, err: null, picking: false, reading: null };
+const JOIN = { list: [], P: new Map(), F: new Map(), keep: false, moved: false, sugg: null, err: null, picking: false, reading: null, carry: null };
 function joinEl() {
   let el = $('joinCard');
   if (!el) { el = document.createElement('div'); el.className = 'overlay sumwrap'; el.id = 'joinCard'; el.hidden = true; $('sumCard').after(el); }
@@ -2975,11 +3019,14 @@ function useSuggested() {
   if (o) JOIN.list = o.map((i) => JOIN.list[i]);
   JOIN.keep = false; JOIN.moved = false; renderJoinCard();
 }
-// one part's line under its file name
-function partLine(f, i) {
+// one part's line under its file name. cf: carryFacts for this part, when it carries on the previous part's half; it then says
+// where the map stands, since its own scoreboard starts again from 0:0 (Sujan, 7 Nov 2026)
+function partLine(f, i, cf) {
   if (!f.live) return 'no rounds in it';
-  const [a, b] = f.score, [tA, tB] = f.tnames;
-  if (i === 0 && !f.startsLate) return `${plural(f.live, 'round')}, ends at ${tA} ${a} : ${b} ${tB}, ${f.won ? `${f.wonBy} won the map` : 'no winner'}`;
+  const [a, b] = f.score, [tA, tB] = f.tnames, end = f.won ? `${f.wonBy} won the map` : 'no winner';
+  if (cf) return `Carries on at ${cf.tnames[0]} ${cf.score[0]} : ${cf.score[1]} ${cf.tnames[1]} after the crash, ${plural(f.live, 'round')}, ${end}.`;
+  if (i === 0 && !f.startsLate && f.replayed) return `${plural(f.live, 'round')} ${f.live === 1 ? 'counts' : 'count'}, ending at ${tA} ${a} : ${b} ${tB}, ${end}. ${plural(f.replayed, 'earlier round')} ${f.replayed === 1 ? 'was' : 'were'} replayed: restarted from 0:0 on the same sides.`;
+  if (i === 0 && !f.startsLate) return `${plural(f.live, 'round')}, ends at ${tA} ${a} : ${b} ${tB}, ${end}`;
   const how = f.partway ? `Starts partway into a round, then ${plural(f.live - 1, 'more round')}` : f.startsLate ? `Starts with ${plural(f.sb[0] + f.sb[1], 'round')} already played, then ${plural(f.live, 'round')}` : `Starts from 0:0, ${plural(f.live, 'round')}`;
   return how + (f.won ? `, ${f.wonBy} won the map` : ', no winner');
 }
@@ -3004,9 +3051,13 @@ function renderJoinCard() {
     return;
   }
   const problem = F.length === JOIN.list.length && F.length > 1 ? orderProblem(F) : null;
+  // what joining in this order would count (a half carried on from one part to the next), worked out once per order
+  const key = JOIN.list.map((f) => f.name).join('|');
+  if (F.length === JOIN.list.length && F.length > 1 && !JOIN.reading && (!JOIN.carry || JOIN.carry.key !== key)) JOIN.carry = { key, facts: carryFacts(JOIN.list.map((f) => JOIN.P.get(f.name)), F) };
+  const CF = JOIN.carry && JOIN.carry.key === key ? JOIN.carry.facts : [];
   const rows = JOIN.list.map((f, i) => {
     const fa = JOIN.F.get(f.name);
-    const meta = fa ? esc(partLine(fa, i)) : JOIN.reading === f.name ? `Reading… <span class="jbar"><i id="jProg"></i></span>` : 'Waiting to be read';
+    const meta = fa ? esc(partLine(fa, i, CF[i])) : JOIN.reading === f.name ? `Reading… <span class="jbar"><i id="jProg"></i></span>` : 'Waiting to be read';
     return `<li><span class="jn">Part ${i + 1}</span><span class="jf"><span class="jname">${fileNameHtml(f.name)}</span><small>${meta}</small></span>
       <span class="ja"><button class="btn sq" type="button" data-mv="${i},-1" ${i ? '' : 'disabled'} title="Move up" aria-label="Move part ${i + 1} up">↑</button><button class="btn sq" type="button" data-mv="${i},1" ${i < JOIN.list.length - 1 ? '' : 'disabled'} title="Move down" aria-label="Move part ${i + 1} down">↓</button></span></li>`;
   }).join('');
@@ -3014,7 +3065,11 @@ function renderJoinCard() {
   let order = '';
   if (F.length === JOIN.list.length && F.length > 1) {
     const s = JOIN.sugg;
-    if (JOIN.moved) order = problem ? 'Your order.' : 'Your order. The rounds agree.';
+    if (JOIN.moved) {
+      // the file names' recording times named whenever the player's order differs from them (Sujan, 7 Nov 2026)
+      const t = F.map((f) => f.time), off = t.every((x) => x != null) && t.some((x, k) => k && t[k - 1] > x);
+      order = (problem ? 'Your order.' : 'Your order. The rounds agree.') + (off ? ` The recording times in the file names, ${fileTimesText(t.slice().sort((x, y) => x - y))}, put them ${F.length === 2 ? 'the other way round' : 'in another order'}.` : '');
+    }
     else if (s && s.by === 'times') order = `from the recording times in the file names, ${fileTimesText(F.map((f) => f.time))}.${s.agree ? ' The rounds agree.' : ''}`;
     else if (s) order = 'from the rounds: the first part starts from 0:0 and only the last one has a winner, and no other order does that.';
     else order = "the files don't say. Put the parts in order with the arrows.";
@@ -3031,9 +3086,12 @@ function renderJoinCard() {
     for (let i = 0; i < F.length - 1; i++) {
       const a = F[i], b = F[i + 1];
       if (!a.live || !b.live) continue;
-      let same = 0; for (const p of a.lastT) if (b.firstT.has(p)) same++;
       const between = F.length > 2 ? ` between parts ${i + 1} and ${i + 2}` : ' between the parts';
-      if (same <= Math.min(a.lastT.size, b.firstT.size) / 2) checks.push({ s: 'ok', t: `Teams swapped sides${between}` });
+      const cf = CF[i + 1];
+      if (cf) {
+        const c = cf.carried, r = cf.replayed;
+        checks.push({ s: 'info', t: `Part ${i + 2} carries on part ${i + 1}'s half`, n: `Same sides: part ${i + 1}'s ${plural(c, 'round')} ${c === 1 ? 'counts' : 'count'}, and part ${i + 2}'s ${cf.n} ${cf.complete ? `${cf.n === 1 ? 'completes' : 'complete'} the half of ${cf.half}` : `${cf.n === 1 ? 'carries' : 'carry'} on the half of ${cf.half}`}.${r ? ` ${plural(r, 'round')} at its start ${r === 1 ? 'was' : 'were'} replayed.` : ''}` });
+      } else if (sidesSwap(a, b)) checks.push({ s: halfEndAny(roundsBefore(F, i)) ? 'ok' : 'warn', t: `Teams swapped sides${between}` });
       else checks.push({ s: 'info', t: `Teams on the same sides${between}`, n: `Part ${i + 2} probably picks up partway through a half.` });
     }
     F.forEach((f, i) => {
@@ -3052,8 +3110,8 @@ function renderJoinCard() {
   if (problem && !JOIN.keep) {
     const s = suggestOrder(F);
     const better = s && (s.agree ? s.order : s.roundsOrder);
-    const timesNote = s && s.by === 'times' && JOIN.moved && s.agree && s.order.some((v, k) => v !== k) ? ` The file names' recording times put them ${F.length === 2 ? 'the other way round' : 'in another order'}.` : '';
-    wrong = `<div class="jwrong"><h3>This order doesn't add up</h3><p>${esc(problem)}${timesNote}</p>
+    // (the recording times are in the order line above when the order is the player's)
+    wrong = `<div class="jwrong"><h3>This order doesn't add up</h3><p>${esc(problem)}</p>
       <div class="jbtns"><button class="btn" type="button" id="jKeep">Keep my order</button>${better && better.some((v, k) => v !== k) ? '<button class="btn primary" type="button" id="jSugg">Use the suggested order</button>' : ''}</div></div>`;
   }
   // picking another part: the folder's demos, the same map first, or a file from elsewhere
@@ -3091,7 +3149,7 @@ function renderJoinCard() {
     rememberJoin(names, JOIN.keep && !!problem, problem);
     const parsed = JOIN.list.map((f) => JOIN.P.get(f.name));
     closeJoinCard();
-    JOIN.P.clear(); JOIN.F.clear(); // the read parts go to the joined map; nothing else keeps them
+    JOIN.P.clear(); JOIN.F.clear(); JOIN.carry = null; // the read parts go to the joined map; nothing else keeps them
     openJoinedUI(JOIN.list.slice(), parsed);
   };
 }
@@ -3771,10 +3829,24 @@ function derive() {
   // Steam ID alone (enough to find the live rounds), then again with the names used during the live rounds.
   // A name used only in the warmup doesn't join two connections, so two players who both sat on a placeholder
   // nick ("Player") before the match stay apart.
-  // the earliest connection stays the root, so a person keeps the same id however they were joined
-  const join = (x, y) => { const a = ofind(x), b = ofind(y); if (a !== b) opar[Math.max(a, b)] = Math.min(a, b); };
+  // Two Steam accounts are never one person by a name (Sujan, 7 Nov 2026). In part 1 of WeMadeFox vs Ravens, Nuke, EM4
+  // finals, SIA, bail and BERRY sat on "Player" and "(1)Player" in the warmup and BERRY came back as "Player" after a
+  // reboot, which made the three one person. A name both connections used during the live rounds still joins two accounts,
+  // unless it's a placeholder: MAHE in FX vs eSahara, Dust2, DreamHack Winter 2010 played on a second account from 105:25
+  // under the same name. Only Steam account numbers count: on public servers a non-Steam ID changes at every reconnect.
+  const account = (o) => (o.sid && !sidBad.has(o.sid) && /^7656119\d{10}$/.test(o.sid) ? o.sid : null);
+  const placeholder = (nm) => /^(\(\d+\))?\s*player$/i.test(String(nm).trim());
+  const accOf = {}; // a group's root: the Steam account its connections hold, if any
+  // the earliest connection stays the root, so a person keeps the same id however they were joined. nm: the name that
+  // joins them (none for a Steam ID); live: both connections used it during the live rounds
+  const join = (x, y, nm, live) => {
+    const a = ofind(x), b = ofind(y); if (a === b) return;
+    if (nm != null && accOf[a] && accOf[b] && accOf[a] !== accOf[b] && (!live || placeholder(nm))) return;
+    const r = Math.min(a, b); opar[Math.max(a, b)] = r; accOf[r] = accOf[a] || accOf[b];
+  };
   const group = (nameOK) => {
     for (let i = 0; i < opar.length; i++) opar[i] = i;
+    for (const o of occ) accOf[o.id] = account(o);
     const bySid = {};
     for (const o of occ) if (o.sid && !sidBad.has(o.sid)) { if (bySid[o.sid] != null) join(o.id, bySid[o.sid]); else bySid[o.sid] = o.id; }
     if (nameOK) {
@@ -3784,11 +3856,11 @@ function derive() {
       // "Na`Vi Edward /A/" both times and played as "EdwardwOw~", while two players who both sat on "Player"
       // in the warmup and then played the match are two people.
       const byName = {};
-      for (const o of occ) for (const [a, b, nm] of nameSpans(o)) { if (!nameOK(a, b)) continue; if (byName[nm] != null) join(o.id, byName[nm]); else byName[nm] = o.id; }
+      for (const o of occ) for (const [a, b, nm] of nameSpans(o)) { if (!nameOK(a, b)) continue; if (byName[nm] != null) join(o.id, byName[nm], nm, true); else byName[nm] = o.id; }
       const played = (o) => nameSpans(o).some(([a, b]) => nameOK(a, b));
       const other = {};
-      for (const o of occ) for (const [a, b, nm] of nameSpans(o)) if (!nameOK(a, b)) { if (byName[nm] != null) join(o.id, byName[nm]); else (other[nm] || (other[nm] = new Set())).add(o); }
-      for (const nm in other) { const L = [...other[nm]]; if (L.filter(played).length <= 1) for (const o of L) join(o.id, L[0].id); }
+      for (const o of occ) for (const [a, b, nm] of nameSpans(o)) if (!nameOK(a, b)) { if (byName[nm] != null) join(o.id, byName[nm], nm, false); else (other[nm] || (other[nm] = new Set())).add(o); }
+      for (const nm in other) { const L = [...other[nm]]; if (L.filter(played).length <= 1) for (const o of L) join(o.id, L[0].id, nm, false); }
     }
     for (const k in pl) delete pl[k];
     for (const o of occ) {
@@ -3866,6 +3938,12 @@ function derive() {
     liveSegs = best != null ? [best] : [];
   }
   const counts = (r) => r.kills.length > 0 && r.dur > 5 && r.winner != null;
+  // Who is on T 5 seconds into a round, and whether two rounds have the teams on the same sides (more than half of the
+  // smaller T side in both)
+  const tSide = (r) => { const t = Math.min(r.start + 5, r.end), s = new Set(); for (const e in D.slots) { const a = D.slots[e]; if (Math.abs(a[idxAt(t) * S + 5]) === 1) s.add(personAt(+e, t)); } return s; };
+  const sameSides = (a, b) => { const x = tSide(a), y = tSide(b); let n = 0; for (const p of x) if (y.has(p)) n++; return n > Math.min(x.size, y.size) / 2; };
+  // Half ends: 15, 30, then every 3 rounds of overtime
+  const atHalfEnd = (x) => x === 15 || x === 30 || (x > 30 && (x - 30) % 3 === 0);
   // What the server's admin plugin announced beats guessing. Tournament servers print "Live !" (or
   // "LIVE LIVE LIVE") when a half starts, "End of 1st set" or "half time" when it ends, and "Current
   // set canceled" when a start is thrown away. When the demo has these, a round counts only if it
@@ -3891,7 +3969,20 @@ function derive() {
       // start at 11:48 was followed by "Warmup Settings have been loaded".)
       const w = winOf(rs[rs.length - 1]);
       const closedByEnd = w >= 0 && windows[w][2] === 'end';
-      if (next && (winOf(next) === w || !closedByEnd) && rs.length < (total >= 24 ? 3 : 12)) { for (const r of rs) r.live = false; continue; }
+      const sameWin = !!next && (winOf(next) === w || !closedByEnd);
+      // Sides compared at the stretch's first round: its last can be the side swap itself, with the players already on
+      // their new teams 5 seconds in (part 2 of WeMadeFox vs Ravens, Nuke, EM4 finals, 23:55).
+      const laterPart = !!next && next.part !== rs[rs.length - 1].part, same = !!next && sameSides(rs[0], next);
+      // A later recording that picks up on the same sides partway through a half carries the half on: what this one
+      // counted still counts (Sujan, 7 Nov 2026: WeMadeFox's 4-0 before the server crashed, "4-0 score stays", then 11
+      // more rounds of the half in part 2). A stretch that ends at a half end is a whole half: the first overtime starts
+      // on the second half's sides (Na`Vi vs SK, Inferno, ESWC 2011). Checked against the half's length further down.
+      if (sameWin && laterPart && same && !atHalfEnd(total + rs.length)) { for (const r of rs) r.carry = true; total += rs.length; continue; }
+      // In the same recording, a restart with the teams on the same sides before the half is over replays the half
+      // (Sujan, 7 Nov 2026): part 1 of WeMadeFox vs Ravens was restarted from 0:0 after 12 rounds, when a player had
+      // rebooted. With the sides kept, 12 rounds can't be a whole MR12 half.
+      if (sameWin && !laterPart && same && rs.length < (total >= 24 ? 3 : 15)) { for (const r of rs) { r.live = false; r.replayed = true; } continue; }
+      if (sameWin && rs.length < (total >= 24 ? 3 : 12)) { for (const r of rs) r.live = false; continue; }
       total += rs.length;
     }
   } else if (D.pov) {
@@ -3961,6 +4052,22 @@ function derive() {
   // A round played between two recordings of a joined map (in neither file) counts when its part has live
   // rounds. It's in the stretch of the part's start, often not the one the part's live rounds are in.
   for (const r of rounds) if (r.missing) r.live = rounds.some((x) => x.part === r.part && x.live && !x.missing);
+  // A carried stretch and the rounds after it on the same sides have to fit in one half. When they don't, the later
+  // recording replayed the half (as some rules have it for a crash in its first rounds), and the carried rounds don't count.
+  {
+    const lr = rounds.filter((r) => r.live);
+    let pos = 0;
+    for (let i = 0; i < lr.length;) {
+      if (!lr[i].carry) { pos++; i++; continue; }
+      const st = lr.filter((x) => x.seg === lr[i].seg && x.carry);
+      let n = 0;
+      for (let j = i; j < lr.length && (lr[j].missing || sameSides(st[0], lr[j])); j++) n++;
+      const end = pos < 15 ? 15 : pos < 30 ? 30 : 30 + 3 * (Math.floor((pos - 30) / 3) + 1);
+      if (pos + n > end) for (const x of st) { x.live = false; x.carry = false; x.replayed = true; }
+      else pos += st.length;
+      i += st.length;
+    }
+  }
   // A stretch can't run past the end of a half when a restart and more play follow. Both Xperia Play FX vs mTw
   // matches played on for 5 (Inferno) and 6 (Nuke) rounds at 15:15 on the same sides, then the admins
   // restarted and played the overtime from its start. Half ends: 15, 30, then every 3 rounds of overtime.
@@ -3970,8 +4077,6 @@ function derive() {
   // Xperia parts were joined: part 2's stretch starts at 15 and runs to 35, crossing 30 and 33, so it was
   // cut at 33 and 3 rounds played on at 15:15 became overtime.)
   {
-    const tSide = (r) => { const t = Math.min(r.start + 5, r.end), s = new Set(); for (const e in D.slots) { const a = D.slots[e]; if (Math.abs(a[idxAt(t) * S + 5]) === 1) s.add(personAt(+e, t)); } return s; };
-    const sameSides = (a, b) => { const x = tSide(a), y = tSide(b); let n = 0; for (const p of x) if (y.has(p)) n++; return n > Math.min(x.size, y.size) / 2; };
     const segs = [...new Set(rounds.filter((r) => r.live).map((r) => r.seg))].sort((a, b) => a - b);
     let total = 0;
     for (let i = 0; i < segs.length; i++) {
@@ -4936,7 +5041,7 @@ function renderPane() {
       const sc = r.live && r.scoreAfter ? `${r.scoreAfter[0]}:${r.scoreAfter[1]}` : '';
       const after = r.afterMatch && !r.live;
       h += `<div class="row${r === cr ? ' cur' : ''}${after ? ' after16' : ''}" data-t="${r.start}"><span class="n">${r.live ? 'R' + r.ln : '·'}</span>
-        <span class="main"><span class="pill ${side}">${r.winner || '—'}</span>${esc(who)}${after ? '<span class="tag16">after the match</span>' : ''}<div class="sub">${esc(r.reason || (r.live ? '' : 'not counted'))} · ${r.kills.length} kills${r.sides ? ' · ' + Math.max(0, Object.keys(r.sides).length - new Set(r.kills.map((k) => k.victim)).size) + ' alive at end' : ''}</div></span>
+        <span class="main"><span class="pill ${side}">${r.winner || '—'}</span>${esc(who)}${after ? '<span class="tag16">after the match</span>' : ''}<div class="sub">${esc(r.replayed ? 'replayed from 0:0' + (r.reason ? ' · ' + r.reason : '') : r.reason || (r.live ? '' : 'not counted'))} · ${r.kills.length} kills${r.sides ? ' · ' + Math.max(0, Object.keys(r.sides).length - new Set(r.kills.map((k) => k.victim)).size) + ' alive at end' : ''}</div></span>
         <span class="d">${sc}<br>${fmt(clockSpan(r.start, r.start + r.dur))}</span></div>`;
     }
     h += `<div class="joinrow"><span>${D.parts ? 'Another part of this map in a file of its own?' : 'Is this map split over two or more demo files?'}</span><button class="btn sm" type="button" id="bJoinWith">Join with another demo…</button></div>`;
@@ -8488,7 +8593,7 @@ function frameError(e) {
 function debugInfo() {
   let gpu = '';
   try { const gl = document.createElement('canvas').getContext('webgl'); const x = gl && gl.getExtension('WEBGL_debug_renderer_info'); gpu = gl ? (x ? gl.getParameter(x.UNMASKED_RENDERER_WEBGL) : 'WebGL available') : 'no WebGL'; } catch (e) { gpu = 'unknown'; }
-  const L = [`CS 1.6 Demo Viewer 0.26.18`, `Browser: ${navigator.userAgent}`, `Screen: ${screen.width}x${screen.height} at ${devicePixelRatio}x, window ${innerWidth}x${innerHeight}`, `Graphics: ${gpu}`];
+  const L = [`CS 1.6 Demo Viewer 0.26.19`, `Browser: ${navigator.userAgent}`, `Screen: ${screen.width}x${screen.height} at ${devicePixelRatio}x, window ${innerWidth}x${innerHeight}`, `Graphics: ${gpu}`];
   L.push(`Folder: ${Object.keys(files.maps).length} maps, ${Object.keys(files.overviews).length} overviews, ${Object.keys(files.mdl).length} models, ${Object.keys(files.snd).length} sounds, ${files.demos.length} demos`);
   if (D) {
     L.push(`Demo: ${D.fileName}, protocol ${(D.header && D.header.netProtocol) || '?'}, ${D.pov ? 'POV (recorded by a player)' : 'HLTV'}, map ${D.mapName}, length ${fmt(D.end - D.start)}, ${M.liveR.length} live rounds, final ${M.liveR.length ? M.liveR[M.liveR.length - 1].scoreAfter.join(':') : '-'}`);

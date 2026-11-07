@@ -13,7 +13,9 @@ kill details and View settings in POV mode on Match 1 CT (de_barcelona's map nee
 Direct hits through three kills with no death spot, on EG vs eXecutors, Train, EM4 finals: no page error, and playback keeps
 moving (0.26.17). On that demo, drawHitNumbers and then updateCentre made to throw every frame: playback keeps
 moving, the toast shows once and each error is listed once; a fade left by an error is gone the next frame; a 3D build that
-throws partway runs once, says the map couldn't be drawn, and is built again after resetForNewDemo (0.26.18). Under a minute.
+throws partway runs once, says the map couldn't be drawn, and is built again after resetForNewDemo (0.26.18). WeMadeFox vs
+Ravens, Nuke, EM4 finals, in 2 files: the Join card in the suggested order and with part 2 put first, the joined score and
+the Rounds tab's replayed rounds; the order the card suggests for Na`Vi vs SK, Inferno, ESWC 2011 (0.26.19). About a minute.
 """
 import os, re, sys, http.server, functools, threading, tempfile, shutil, subprocess, atexit
 from playwright.sync_api import sync_playwright
@@ -336,6 +338,82 @@ with sync_playwright() as p:
     except Exception as e:
         check('a kill with no death spot, EG vs eXecutors, Train, EM4 finals', False, str(e).split('\n')[0])
     ctx4.close()
+
+    # A half replayed from 0:0 and a half carried on across a crash (0.26.19; Sujan, 7 Nov 2026, docs/join-replay-carry-mock.png):
+    # WeMadeFox vs Ravens, Nuke, EM4 finals, in 2 files. Part 1's 12 rounds to 6:6 were replayed from 0:0 after a player
+    # rebooted, WeMadeFox won 4 on CT and the server crashed; part 2 carries the half on from 0:0 ("4-0 score stays"). The
+    # Join card in the suggested order, with part 2 put first (checks A and B, the recording times), the joined map's score
+    # and the Rounds tab; then the order the card suggests for Na`Vi vs SK, Inferno, ESWC 2011, whose three names all start
+    # "2011-10-24_16h08". Up to 0.26.18 the joined map read Ravens 16-9, the wrong order passed with a green tick, and the
+    # Na`Vi vs SK files came 1609, 1740, 1724. No map needed.
+    W1, W2 = 'ravens.wmf.em4finals-1003030951-de_nuke.dem', 'ravens.wmf.em4finals-1003031026-de_nuke.dem'
+    NS = ['2011-10-24_16h08_NaVi_SK-1110241609-de_inferno.dem', '2011-10-24_16h08_NaVi_SK-1110241740-de_inferno.dem', '2011-10-24_16h08_NaVi_SK-1110241724-de_inferno.dem']
+    ctx5 = b.new_context(viewport={'width': 1512, 'height': 982}); pg5 = ctx5.new_page()
+    pg5.route('**/three.min.js', lambda r: r.fulfill(path=os.environ.get('THREE_JS', os.path.join(here, '..', 'src', 'vendor', 'three.min.js')), content_type='application/javascript'))
+    errs5 = []; pg5.on('pageerror', lambda e: errs5.append(str(e).split('\n')[0]))
+    try:
+        for n in [W1, W2] + NS:
+            if n not in names: raise Exception(f'{n} not found in HALF_LIFE_DIR or DEMO_DIRS')
+        pg5.goto(f'http://127.0.0.1:{srv.server_port}/{os.path.basename(hooked)}')
+        pg5.set_input_files('#fFolder', HL)
+        pg5.wait_for_function('__v("files.demos.length > 0")', timeout=30000)
+        JS5 = lambda c: pg5.evaluate('(c) => __v(c)', c)
+        pg5.evaluate('(n) => __v(`loadDemoFile(files.demos.find((f) => f.name === ${JSON.stringify(n)}))`)', W1)
+        pg5.wait_for_function('__v("!!(D && M)")', timeout=120000)
+        card = lambda: JS5(r"""(() => { const el = $('joinCard'); const t = (s) => [...el.querySelectorAll(s)].map((x) => x.innerText.replace(/\s+/g, ' ').trim());
+          return { parts: t('.jparts li .jf small'), names: t('.jparts li .jname'), order: t('.jorder')[0] || '', checks: [...el.querySelectorAll('.sum-list li')].map((li) => ({ s: li.querySelector('.sum-ic').className.replace('sum-ic ', ''), t: li.innerText.replace(/\s+/g, ' ').trim().replace(/^[✓!i✕] /, '') })),
+            wrong: t('.jwrong p')[0] || null, go: !$('jGo').disabled }; })()""")
+        JS5(f"closeSummary(); openJoinCard([{W1!r}, {W2!r}].map((n) => files.demos.find((f) => f.name === n)))")
+        pg5.wait_for_function('__v("!JOIN.reading && JOIN.F.size === 2 && !!$(\'jGo\')")', timeout=120000)
+        c = card()
+        check('Join card, WeMadeFox vs Ravens in the suggested order: part 1 first, Join them on, no "doesn\'t add up"',
+              c['names'] == [W1, W2] and c['go'] and c['wrong'] is None, f"{c['names']}, Join them {'on' if c['go'] else 'off'}, {c['wrong']!r}")
+        check("Join card: part 1's line, its 4 rounds and the 13 replayed before them (the approved words)",
+              c['parts'][:1] == ['4 rounds count, ending at WeMadeFox 4 : 0 Ravens, no winner. 13 earlier rounds were replayed: restarted from 0:0 on the same sides.'], repr(c['parts'][:1]))
+        check("Join card: part 2's line says where the map stands, not its own 0:0",
+              c['parts'][1:] == ['Carries on at WeMadeFox 4 : 0 Ravens after the crash, 26 rounds, no winner.'], repr(c['parts'][1:]))
+        check("Join card: Part 2 carries on part 1's half, with the half's numbers",
+              {'s': 'info', 't': "Part 2 carries on part 1's half Same sides: part 1's 4 rounds count, and part 2's 11 complete the half of 15. 3 rounds at its start were replayed."} in c['checks'],
+              '; '.join(f"[{x['s']}] {x['t']}" for x in c['checks']))
+        check('Join card: the same 10 players by Steam ID (SIA, bail and BERRY were one person up to 0.26.18), the order from the recording times',
+              {'s': 'ok', 't': 'Same 10 players, by Steam ID'} in c['checks'] and c['order'] == 'Order: from the recording times in the file names, 3 Mar 2010 at 09:51 and at 10:26. The rounds agree.', c['order'])
+        JS5('joinMove(1, -1)')
+        c = card()
+        check("Join card, part 2 put first: check A says the order doesn't add up, and Join them is off",
+              c['names'] == [W2, W1] and c['wrong'] == "Part 1's teams change sides after 11 rounds, so its first half began in an earlier recording." and not c['go'], f"{c['wrong']!r}, Join them {'on' if c['go'] else 'off'}")
+        check('Join card, part 2 put first: the recording times named, and no green tick for the teams swapping sides',
+              c['order'] == 'Order: Your order. The recording times in the file names, 3 Mar 2010 at 09:51 and at 10:26, put them the other way round.'
+              and {'s': 'warn', 't': 'Teams swapped sides between the parts'} in c['checks'], f"{c['order']!r}; " + '; '.join(f"[{x['s']}] {x['t']}" for x in c['checks']))
+        B = JS5("orderProblem([JOIN.F.get(JOIN.list[0].name), Object.assign({}, JOIN.F.get(JOIN.list[1].name))].map((f, i) => i ? f : Object.assign({}, f, { swapAt: null })))")
+        check('check B on the same order (check A left out): other sides after 26 rounds, partway through a half',
+              B == 'The map is 26 rounds in when part 1 ends, partway through a half, but the teams are on other sides in part 2.', repr(B))
+        JS5('useSuggested()')
+        JS5("$('jGo').click()")
+        pg5.wait_for_function('__v("!!(D && D.parts && D.parts.length === 2 && M && M.liveR.length > 20)")', timeout=120000)
+        j = JS5(r"""(() => { closeSummary(); const L = M.liveR, last = L[L.length - 1], st = statsFor('all');
+          showAll = true; tab = 'rounds'; renderPane();
+          const subs = [...$('pane').querySelectorAll('.row .sub')].map((x) => x.textContent.replace(/\s+/g, ' ').trim());
+          const out = { score: `${M.tnames[0]} ${last.scoreAfter.join(':')} ${M.tnames[1]}`, live: L.length, ht: L[14].scoreAfter.join(':'),
+            replayed: subs.filter((s) => s.startsWith('replayed from 0:0 · ')).length, first: subs.find((s) => s.startsWith('replayed')) || null,
+            people: Object.keys(st).map((e) => M.pl[e].name).sort() };
+          setCount30(true); const l2 = M.liveR[M.liveR.length - 1]; out.c30 = `${l2.scoreAfter.join(':')} in ${M.liveR.length}`; setCount30(false); showAll = false; renderPane();
+          return out; })()""")
+        check('joined: WeMadeFox 9:6 at half time, 16:13 after 29 rounds, 17:13 in 30 with Count them (Ravens 16-9 up to 0.26.18)',
+              j['score'] == 'WeMadeFox 16:13 Ravens' and j['live'] == 29 and j['ht'] == '9:6' and j['c30'] == '17:13 in 30', f"{j['score']} in {j['live']}, {j['ht']} at half time, Count them {j['c30']}")
+        check('joined: 10 players in the stats, BERRY and bail among them', len(j['people']) == 10 and any('BERRY' in p for p in j['people']) and any('bail' in p for p in j['people']), ', '.join(j['people']))
+        check('Rounds tab with Show warmup, restarts and idle rounds: the 16 replayed rounds read "replayed from 0:0" before their result',
+              j['replayed'] == 16 and j['first'] == 'replayed from 0:0 · elimination · 6 kills', f"{j['replayed']} rows; the first {j['first']!r}")
+        # Na`Vi vs SK, Inferno, ESWC 2011: the order the Join card suggests, from the times later in the names
+        JS5("closeJoinCard(); openJoinCard(%s.map((n) => files.demos.find((f) => f.name === n)))" % repr(NS))
+        pg5.wait_for_function('__v("!JOIN.reading && JOIN.F.size >= 3 && !!$(\'jGo\')")', timeout=180000)
+        c = card()
+        check('Join card, Na`Vi vs SK, Inferno, ESWC 2011: suggests 1609, 1724, 1740 from the times later in the names (1609, 1740, 1724 up to 0.26.18)',
+              [re.search(r'-(\d{10})-', n).group(1)[-4:] for n in c['names']] == ['1609', '1724', '1740']
+              and c['order'] == 'Order: from the recording times in the file names, 24 Oct 2011 at 16:09, at 17:24 and at 17:40. The rounds agree.', f"{c['names']}; {c['order']!r}")
+        check('no page error on the joined map and the Join cards', not errs5, '; '.join(errs5[:3]))
+    except Exception as e:
+        check('a half replayed and a half carried on, WeMadeFox vs Ravens, Nuke, EM4 finals', False, str(e).split('\n')[0])
+    ctx5.close()
     b.close()
 print(f'{len(fails)} failed' if fails else 'all passed')
 sys.exit(1 if fails else 0)
