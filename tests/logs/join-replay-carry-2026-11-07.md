@@ -147,3 +147,21 @@ Scratch page scripts, run through `tests/harness.py` with a first script that se
 - Every demo alone and every joined map: each file read in a worker (`parseInWorker`), counted with `derive`, joined with `joinDemos` after `partFacts` (as `openJoined` does, without opening the map); score, live rounds, the score after 15, the winners round by round, and Count them where there are rounds after 16. 40 seconds a page, 0.26.18 and the candidate side by side.
 - The Join card: `partFacts` for each part, then for every order of the parts `orderProblem`, the sides from one part to the next, checks A and B, and whether the order follows the times.
 - WeMadeFox vs Ravens with the map: `openJoined`, then waiting for the picture check as `tests/page/regress_summary.js` does; wallbangs, damage bursts, K-D. The people list: each person's connections (slot, Steam ID, names) on 0.26.18.
+
+## Two real Steam IDs never one person, measured (7 Nov 2026, after Sujan's answers)
+
+Sujan's decision of 7 Nov 2026: two different real Steam IDs are never one person, whatever names they used; K-D measured on all 67 demos and the joined maps first, every change listed, and a stop if any score or K-D in `ground_truth_check.py` changes. Measured in scratch builds of 0.26.18: a join by name is refused when both sides already hold a real Steam ID and they differ (`group` in `derive`); "real" as `derive` has it today, any number that isn't all zeros and isn't held by two connections at once.
+
+The rule as decided, alone, against 0.26.18 (every demo alone and the joined maps above; score, live rounds, winners round by round, every K-D): 6 change.
+- WeMadeFox vs Ravens, part 1 alone, joined and joined the wrong way round: SIA, bail and BERRY three people, the intended change (part 1 alone: SIA 20-30 becomes SIA 11-13, bail 13-9, BERRY 1-8).
+- FX vs eSahara, Dust2, DreamHack Winter 2010: MAHE becomes two people, 21-18 split into 5-5 and 16-13, and eSahara has 6 players; the score is the same, FX 16-13, but the header lists the teams the other way round. MAHE is one player on two Steam accounts: slot 6, 76561198031824431 until 105:25, then 76561198030447374 from 105:25 to the end ("we got some trouble here" among its names), both named "ESAHARA.net MAHE" in the live rounds.
+- match-5 (public server, de_nuke32, 25 Aug 2021, POV): Dx, v!PeR_! and YoYo each become two people, and the score goes from 9:13 to 8:14. Their IDs (90071996842378312 to ...321) aren't Steam accounts: a new one at each reconnect.
+- Match 2 joined (public server, de_mirage_32, 27 Mar 2025, POV): BL@ck-Ops becomes two people (90071996842380288 and ...296).
+
+`ground_truth_check.py`: PASS with 0.26.18's counts on the rule alone and on the rule with the join rules (231 kills and 27 scores and K-D on 48 demos, 0 mismatches, 8 known gaps, 0 skipped). FX vs eSahara's expected file holds 4 kills and no score or K-D, so the check doesn't see MAHE.
+
+A narrower version, measured for Sujan to choose from: only Steam account numbers (`7656119` and 10 more digits) count, and a name both connections used in the live rounds still joins two accounts (MAHE). With the join rules, against 0.26.18, only WeMadeFox vs Ravens changes (part 1 alone, joined, the wrong order); MAHE stays one person, match-5 keeps 9:13, BL@ck-Ops stays one. `ground_truth_check.py`: PASS with the same counts. WeMadeFox vs Ravens joined (29 rounds, no Count them): Ravens.BERRY 22-25, Friis 16-19, Snappi 17-20, turkizh 17-22, zE- 20-22; WemadeFOX bail 16-20, glow_RAZER* 25-15, SIA 16-24, solo 24-18, termi[EU] 24-16 (0.26.18: 8 people, SIA 22-58).
+
+## The mockup (7 Nov 2026)
+
+`docs/proposed/join-replay-carry-mock.png`: drawn on the scratch build with the join rules and the narrower Steam ID version, in headless Chrome at a 1512x982 window at 2x, the approved words put in by hand. The Rounds tab's replayed rows show their result today ("elimination · 7 kills") and no "not counted", which shows only on rounds with no result, so the mockup puts "replayed from 0:0" before the result.
