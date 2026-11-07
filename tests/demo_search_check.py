@@ -12,7 +12,8 @@ de_train's map and models in the Half-Life folder. Kill details, Damage numbers,
 kill details and View settings in POV mode on Match 1 CT (de_barcelona's map needed) (0.26.16). Damage numbers on Both and
 Direct hits through three kills with no death spot, on EG vs eXecutors, Train, EM4 finals: no page error, and playback keeps
 moving (0.26.17). On that demo, drawHitNumbers and then updateCentre made to throw every frame: playback keeps
-moving, the toast shows once and each error is listed once (0.26.18). Under a minute.
+moving, the toast shows once and each error is listed once; a fade left by an error is gone the next frame; a 3D build that
+throws partway runs once, says the map couldn't be drawn, and is built again after resetForNewDemo (0.26.18). Under a minute.
 """
 import os, re, sys, http.server, functools, threading, tempfile, shutil, subprocess, atexit
 from playwright.sync_api import sync_playwright
@@ -297,6 +298,41 @@ with sync_playwright() as p:
               fe['shown'] == [TOAST] and fe['toast'] == TOAST, f"{len(fe['shown'])} toasts: {fe['shown']}")
         check("each different error in Copy debug info's list exactly once, marked as caught in the frame loop",
               fe['hits'] == 1 and fe['centre'] == 1 and 'caught in the frame loop' in (fe['line'] or ''), f"drawHitNumbers {fe['hits']}, updateCentre {fe['centre']}; {fe['line']!r}")
+
+        # No fade left behind (0.26.18; Sujan, 7 Nov 2026): drawHitNumbers made to set a number's fade (globalAlpha 0.2,
+        # textAlign left) and throw, every frame for 1 s. Each next frame still starts the label layer at full opacity,
+        # centred, so the names and the crosshair aren't drawn faded; as first built, 0.26.18 left them at 0.2.
+        fa = JS4(r"""(async () => { const w = (ms) => new Promise((r) => setTimeout(r, ms)); const hits = drawHitNumbers, seen = [];
+          drawHitNumbers = (lx) => { seen.push([lx.globalAlpha, lx.textAlign]); lx.globalAlpha = 0.2; lx.textAlign = 'left'; throw new Error('test: drawHitNumbers leaves a fade'); };
+          try { await w(1000); return seen; } finally { drawHitNumbers = hits; } })()""")
+        later = fa[1:]
+        check('an error partway through the label layer: each next frame starts it at full opacity, centred',
+              len(later) >= 10 and all(a == 1 and al == 'center' for a, al in later),
+              f"{len(fa)} frames; the first after the error {later[:1]}; {sum(1 for a, al in later if a != 1 or al != 'center')} started faded or not centred")
+
+        # A 3D build that throws partway (0.26.18; Sujan, 7 Nov 2026): buildMesh made to throw, and the map's 3D build
+        # started from the frame loop (clear3d, so view3.map no longer names the map). Over 2 s, build3d runs once, not
+        # every frame; nothing half-built stays, and the 3D view says the map couldn't be drawn. After resetForNewDemo, as
+        # opening a demo does, the map is built once more, and the note goes.
+        bf = JS4(r"""(async () => { const w = (ms) => new Promise((r) => setTimeout(r, ms));
+          const bm = buildMesh, b3 = build3d; let meshes = 0, builds = 0;
+          buildMesh = () => { meshes++; throw new Error('test: the 3D build throws partway'); };
+          build3d = () => { builds++; return b3(); };
+          try {
+            clear3d(); await w(2000);
+            const st = $('status3'), out = { builds, meshes, note: st.hidden ? null : st.innerText.trim(), left: R3.world.children.length,
+              log: ERRLOG.filter((e) => e.includes('test: the 3D build throws partway')).length };
+            buildMesh = bm; resetForNewDemo();
+            for (let i = 0; i < 100 && view3.map !== MAP.name; i++) await w(100);
+            return Object.assign(out, { again: builds, drawn: view3.map === MAP.name && R3.world.children.length > 0, noteGone: $('status3').hidden });
+          } finally { buildMesh = bm; build3d = b3; } })()""")
+        check('a 3D build that throws partway runs once in 2 s, not every frame, leaves nothing half-built and is listed once',
+              bf['builds'] == 1 and bf['meshes'] == 1 and bf['left'] == 0 and bf['log'] == 1,
+              f"build3d called {bf['builds']} times, the build reached {bf['meshes']} times, {bf['left']} meshes left, listed {bf['log']} times")
+        check("a 3D build that throws partway: the 3D view says the map couldn't be drawn",
+              bf['note'] == "de_train couldn't be drawn in 3D. The 2D view still works. Press ? and click Copy debug info to report it.", repr(bf['note']))
+        check('a 3D build that failed: after resetForNewDemo (as opening a demo does), built once more and drawn, the note gone',
+              bf['again'] == 2 and bf['drawn'] and bf['noteGone'], f"build3d called {bf['again']} times in all; drawn {bf['drawn']}; note gone {bf['noteGone']}")
     except Exception as e:
         check('a kill with no death spot, EG vs eXecutors, Train, EM4 finals', False, str(e).split('\n')[0])
     ctx4.close()

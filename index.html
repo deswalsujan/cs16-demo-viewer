@@ -5764,7 +5764,7 @@ tl.addEventListener('pointerleave', () => { $('tip').hidden = true; });
 // ---------------- 3D view ----------------
 let viewMode = '2d';
 let wbFocus = null;
-const view3 = { ready: false, map: null };
+const view3 = { ready: false, map: null, failed: null }; // failed: the MAP whose 3D build threw (see build3d)
 const cam3 = { mode: 'free', pos: [0, 0, 1500], yaw: 0, pitch: 60, keys: {} };
 const g3 = (x, y, z) => new THREE.Vector3(x, z, -y); // GoldSrc (z up) -> three (y up)
 function status3(t, withButton) {
@@ -5878,9 +5878,21 @@ const SHADER = {
       vec3 c = t.rgb * min(l * bright, vec3(1.8));
       gl_FragColor = vec4(pow(c, vec3(0.85)), opacity); }`,
 };
+// A build that throws partway (0.26.18; Sujan, 7 Nov 2026): view3.map is set only at its end, so the frame loop, which
+// now runs on after an error, would rebuild the whole map every frame. The map is marked failed instead, with nothing
+// half-built left on screen and a note in its place, and isn't tried again until another demo or map is opened
+// (resetForNewDemo; a new map is a new MAP).
 function build3d() {
   init3();
-  if (!R3 || !MAP) return;
+  if (!R3 || !MAP || view3.failed === MAP) return;
+  try { build3dNow(); }
+  catch (e) {
+    clear3d(); view3.failed = MAP;
+    status3(`${MAP.name} couldn't be drawn in 3D. The 2D view still works. Press ? and click Copy debug info to report it.`);
+    throw e;
+  }
+}
+function build3dNow() {
   const { world } = R3;
   while (world.children.length) { const c = world.children.pop(); c.geometry && c.geometry.dispose(); }
   const mesh = buildMesh(MAP.bsp, new Set([...MAP.breakables, ...MAP.movers.keys()]));
@@ -5947,6 +5959,7 @@ function resetForNewDemo() {
   }
   ANIM = {}; stopSounds();
   $('pov').hidden = true;
+  if (view3.failed) { view3.failed = null; status3(''); } // a map that failed to build is tried again (see build3d)
 }
 // remove the reused round overlays (a new round or a new demo starts a fresh set)
 function clearOverlays() {
@@ -7258,6 +7271,9 @@ function update3Now() {
   lx.setTransform(dpr, 0, 0, dpr, 0, 0);
   const W = lc.width / dpr, H = lc.height / dpr;
   lx.clearRect(0, 0, W, H);
+  // what an error partway through last frame's drawing can leave behind, now that the loop runs on after one (0.26.18;
+  // Sujan, 7 Nov 2026): drawHitNumbers' fade, and drawPovHud's and drawSpecBars' settings inside save and restore
+  lx.globalAlpha = 1; lx.textAlign = 'center'; lx.textBaseline = 'alphabetic'; lx.globalCompositeOperation = 'source-over';
   const mono = textFont();
   const camW = [camera.position.x, -camera.position.z, camera.position.y];
   let visBudget = 3; // routine re-checks this frame; the rest wait a frame or two
@@ -8035,7 +8051,7 @@ function frame(now) {
   framePart(updateFeed); // before the 3D view draws the ✕, so both come in the same frame
   if (viewMode !== '3d') framePart(draw);
   framePart(drawPlayhead); framePart(updateCentre);
-  if (viewMode !== '2d') framePart(() => { if (MAP && view3.map !== MAP.name) build3d(); update3(); });
+  if (viewMode !== '2d') framePart(() => { if (MAP && view3.map !== MAP.name && view3.failed !== MAP) build3d(); update3(); });
   hudAcc += dt; if (hudAcc > 0.1) { hudAcc = 0; framePart(() => updateHud(false)); }
 }
 requestAnimationFrame(frame);

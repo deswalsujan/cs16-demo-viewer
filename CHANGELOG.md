@@ -85,15 +85,18 @@ Built from the approved mockup, `docs/frame-error-toast-mock.png` (Sujan, 7 Nov 
 - An error while drawing no longer freezes the viewer (Sujan, 7 Nov 2026). Up to 0.26.17, any error in the frame loop stopped it for good, as 0.26.16's **Damage numbers** bug did. Now the next frame is asked for first, and each part of a frame (playback, the 3D view, the radar, the kill feed, the timeline, the HUD) runs on its own, so an error in one leaves playback and the others drawing.
 - Each different error caught there goes into **Copy debug info**'s list and the browser's console once per page, with where it was thrown, so an error that comes back every frame doesn't push the others out of the list's 20 places.
 - The first error caught in a page shows a note at the view's bottom left, once, for 9 seconds: "Something went wrong drawing this moment, so part of the view may be missing. Press ? and click Copy debug info to report it."
+- A 3D map whose build fails partway is no longer built again every frame (Sujan, 7 Nov 2026, before the merge): nothing half-built stays, the 3D view says "de_train couldn't be drawn in 3D. The 2D view still works. Press ? and click Copy debug info to report it.", and it's tried again only when another demo or map is opened.
+- The label layer over the 3D view starts each frame at full opacity, centred (Sujan, 7 Nov 2026, before the merge): an error partway through the damage numbers left it faded, so the next frame drew the names and the crosshair faded.
 
 ### How it was tested
 - `demo_search_check.py`, 3 new checks on EG vs eXecutors, Train, EM4 finals: `drawHitNumbers` made to throw every frame for 3 s of playback, then `updateCentre` another error for 1 s; playback keeps moving (2.97 s of demo in the 3 s), the note shows once with its words, and each error is listed once. On 0.26.17 all three fail: playback stops after 0.04 s and no note shows.
-- The seven checks pass on Sujan's Mac (2 minutes 59 seconds); `ground_truth_check.py` gives the same counts as on 0.26.17: 231 kills, 27 scores and K-D on 48 demos, 0 mismatches, 8 known gaps, 0 skipped.
+- 4 more, for the two fixes: a 3D build made to throw runs once in 2 s (99 times on this branch as first pushed), leaves nothing, says so, and is built again after a new demo; a fade left by an error is gone the next frame (21 of 22 frames faded as first pushed).
+- The seven checks pass on Sujan's Mac (2 minutes 58 seconds, after the two fixes); `ground_truth_check.py` gives the same counts as on 0.26.17: 231 kills, 27 scores and K-D on 48 demos, 0 mismatches, 8 known gaps, 0 skipped.
 - Full log: `tests/logs/0.26.18.md`.
 
 ### Discussed, not changed
 - The note covers the left half of the name bar under the view in **Player's eyes** at a 1512x982 window, as every note there does: left for later (Sujan, 7 Nov 2026; IDEAS.md, **Toasts cover the name bar in Player's eyes**).
-- Each part of a frame in its own try/catch, where the decision said "the rest of the frame inside try/catch": one around the whole rest would stop everything after the failing part each frame, so an error in the kill feed would still freeze the radar, the 3D view and the HUD. Claude's choice while building, for Sujan to approve in the pull request.
+- Each part of a frame in its own try/catch, where the decision said "the rest of the frame inside try/catch": one around the whole rest would stop everything after the failing part each frame, so an error in the kill feed would still freeze the radar, the 3D view and the HUD. Claude's choice while building, approved by Sujan before the merge (7 Nov 2026).
 
 ## 0.26.17 (2026-11-07)
 
