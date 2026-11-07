@@ -11,7 +11,9 @@ the game's 4:3 view top to bottom at three window sizes, unzoomed and through th
 de_train's map and models in the Half-Life folder. Kill details, Damage numbers, the red skull and Vanilla on that demo, and
 kill details and View settings in POV mode on Match 1 CT (de_barcelona's map needed) (0.26.16). Damage numbers on Both and
 Direct hits through three kills with no death spot, on EG vs eXecutors, Train, EM4 finals: no page error, and playback keeps
-moving (0.26.17). Under a minute.
+moving (0.26.17). On that demo, drawHitNumbers and then updateCentre made to throw every frame: playback keeps
+moving, the toast shows once and each error is listed once; a fade left by an error is gone the next frame; a 3D build that
+throws partway runs once, says the map couldn't be drawn, and is built again after resetForNewDemo (0.26.18). Under a minute.
 """
 import os, re, sys, http.server, functools, threading, tempfile, shutil, subprocess, atexit
 from playwright.sync_api import sync_playwright
@@ -272,6 +274,65 @@ with sync_playwright() as p:
                 where = "Player's eyes on gfn" if cam == 'eyes' else 'Free view'
                 check(f'Damage numbers on {label}, {where}: playing 36:17 to 36:20 through the kills with no death spot, no page error and playback keeps moving',
                       moved and len(errs) == before, f"demo {int(st['t'] // 60)}:{st['t'] % 60:05.2f}, {st['cam']}" + (f"; {errs[before]}" if len(errs) > before else '') + ('' if moved else '; playback stopped'))
+
+        # One error can't stop the frame loop (0.26.18; Sujan, 7 Nov 2026, docs/frame-error-toast-mock.png): drawHitNumbers
+        # made to throw every frame, 3 s of playback at 1x in Free view from demo 10:00; then updateCentre (the round
+        # announcements) throwing another error for 1 s more. Playback keeps moving, the toast shows once with the
+        # approved words, and each error is in Copy debug info's list exactly once. Up to 0.26.17 the first error stopped
+        # the loop for good.
+        TOAST = 'Something went wrong drawing this moment, so part of the view may be missing. Press ? and click Copy debug info to report it.'
+        fe = JS4(r"""(async () => { const w = (ms) => new Promise((r) => setTimeout(r, ms));
+          const hits = drawHitNumbers, centre = updateCentre, tst = toast, shown = [];
+          toast = (t, ms) => { shown.push(t); return tst(t, ms); };
+          drawHitNumbers = () => { throw new Error('test: drawHitNumbers throws'); };
+          try {
+            setCam('free'); playing = false; T = D.start + 600; prevT = null; playing = true; const t0 = T; await w(3000); const t1 = T;
+            updateCentre = () => { throw new Error('test: updateCentre throws'); }; await w(1000); const t2 = T; playing = false;
+            const n = (m) => ERRLOG.filter((e) => e.includes(m)).length, el = $('toast');
+            return { moved: +(t1 - t0).toFixed(2), moved2: +(t2 - t1).toFixed(2), shown, toast: el && !el.hidden ? el.textContent : null,
+              hits: n('test: drawHitNumbers throws'), centre: n('test: updateCentre throws'), line: ERRLOG.find((e) => e.includes('test: drawHitNumbers throws')) || null };
+          } finally { drawHitNumbers = hits; updateCentre = centre; toast = tst; playing = false; } })()""")
+        check('an error thrown every frame (drawHitNumbers): playback keeps moving through 3 s of playing', fe['moved'] >= 1 and fe['moved2'] > 0.3,
+              f"{fe['moved']} s of demo in the first 3 s, {fe['moved2']} s in the next 1 s")
+        check('an error thrown every frame: the toast shows once, with the approved words, also after a second, different error',
+              fe['shown'] == [TOAST] and fe['toast'] == TOAST, f"{len(fe['shown'])} toasts: {fe['shown']}")
+        check("each different error in Copy debug info's list exactly once, marked as caught in the frame loop",
+              fe['hits'] == 1 and fe['centre'] == 1 and 'caught in the frame loop' in (fe['line'] or ''), f"drawHitNumbers {fe['hits']}, updateCentre {fe['centre']}; {fe['line']!r}")
+
+        # No fade left behind (0.26.18; Sujan, 7 Nov 2026): drawHitNumbers made to set a number's fade (globalAlpha 0.2,
+        # textAlign left) and throw, every frame for 1 s. Each next frame still starts the label layer at full opacity,
+        # centred, so the names and the crosshair aren't drawn faded; as first built, 0.26.18 left them at 0.2.
+        fa = JS4(r"""(async () => { const w = (ms) => new Promise((r) => setTimeout(r, ms)); const hits = drawHitNumbers, seen = [];
+          drawHitNumbers = (lx) => { seen.push([lx.globalAlpha, lx.textAlign]); lx.globalAlpha = 0.2; lx.textAlign = 'left'; throw new Error('test: drawHitNumbers leaves a fade'); };
+          try { await w(1000); return seen; } finally { drawHitNumbers = hits; } })()""")
+        later = fa[1:]
+        check('an error partway through the label layer: each next frame starts it at full opacity, centred',
+              len(later) >= 10 and all(a == 1 and al == 'center' for a, al in later),
+              f"{len(fa)} frames; the first after the error {later[:1]}; {sum(1 for a, al in later if a != 1 or al != 'center')} started faded or not centred")
+
+        # A 3D build that throws partway (0.26.18; Sujan, 7 Nov 2026): buildMesh made to throw, and the map's 3D build
+        # started from the frame loop (clear3d, so view3.map no longer names the map). Over 2 s, build3d runs once, not
+        # every frame; nothing half-built stays, and the 3D view says the map couldn't be drawn. After resetForNewDemo, as
+        # opening a demo does, the map is built once more, and the note goes.
+        bf = JS4(r"""(async () => { const w = (ms) => new Promise((r) => setTimeout(r, ms));
+          const bm = buildMesh, b3 = build3d; let meshes = 0, builds = 0;
+          buildMesh = () => { meshes++; throw new Error('test: the 3D build throws partway'); };
+          build3d = () => { builds++; return b3(); };
+          try {
+            clear3d(); await w(2000);
+            const st = $('status3'), out = { builds, meshes, note: st.hidden ? null : st.innerText.trim(), left: R3.world.children.length,
+              log: ERRLOG.filter((e) => e.includes('test: the 3D build throws partway')).length };
+            buildMesh = bm; resetForNewDemo();
+            for (let i = 0; i < 100 && view3.map !== MAP.name; i++) await w(100);
+            return Object.assign(out, { again: builds, drawn: view3.map === MAP.name && R3.world.children.length > 0, noteGone: $('status3').hidden });
+          } finally { buildMesh = bm; build3d = b3; } })()""")
+        check('a 3D build that throws partway runs once in 2 s, not every frame, leaves nothing half-built and is listed once',
+              bf['builds'] == 1 and bf['meshes'] == 1 and bf['left'] == 0 and bf['log'] == 1,
+              f"build3d called {bf['builds']} times, the build reached {bf['meshes']} times, {bf['left']} meshes left, listed {bf['log']} times")
+        check("a 3D build that throws partway: the 3D view says the map couldn't be drawn",
+              bf['note'] == "de_train couldn't be drawn in 3D. The 2D view still works. Press ? and click Copy debug info to report it.", repr(bf['note']))
+        check('a 3D build that failed: after resetForNewDemo (as opening a demo does), built once more and drawn, the note gone',
+              bf['again'] == 2 and bf['drawn'] and bf['noteGone'], f"build3d called {bf['again']} times in all; drawn {bf['drawn']}; note gone {bf['noteGone']}")
     except Exception as e:
         check('a kill with no death spot, EG vs eXecutors, Train, EM4 finals', False, str(e).split('\n')[0])
     ctx4.close()

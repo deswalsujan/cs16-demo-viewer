@@ -4,16 +4,13 @@ Parked ideas and features we've discussed but not built yet. Each entry keeps en
 
 Only what is open stays here. An open item keeps a three-line header (Status, Next step, Decided so far; each answer in Decided so far also has its line in `STATE.md`); a parked item keeps one line, since nothing happens until Sujan picks it up. Done items, and the full text of open ones, go to [IDEAS-ARCHIVE.md](IDEAS-ARCHIVE.md) word for word, under the same section and block names (since 29 Oct 2026). A section that older notes, code comments, `tests/README.md` or `tests/DEMOS.md` point to and that isn't here, such as "Tell exactly why a demo is broken", is in the archive under the same name.
 
-## Open follow-ups (checklist, updated 7 Nov 2026, 0.26.17)
+## Open follow-ups (checklist, updated 7 Nov 2026, 0.26.18)
 
 Everything raised in conversation that isn't finished, in one place. Each item says who does it. Ideas for new features are further down; this list is for loose ends.
 
 **Sujan's report of 7 Nov 2026** (EG vs eXecutors, Train, EM4 finals, now a test demo, `tests/DEMOS.md`)
-- Done, in the archive: **Damage numbers freeze the viewer at a kill with no death spot** (0.26.17, 7 Nov 2026: such a kill shows no number).
-- [ ] **One error stops the frame loop for good** (Sujan, 7 Nov 2026: for him to decide, not built)
-  - Status: `frame()` in `src/ui/loop.js` asks for the next frame on its last line (`requestAnimationFrame(frame)`), so an error anywhere in it (the 3D view, the radar, the kill feed, the HUD) stops playback and all drawing for good: the viewer looks frozen until the page is reloaded. 0.26.16's **Damage numbers** bug did this at R21 1:30 of EG vs eXecutors, Train, EM4 finals (fixed in 0.26.17).
-  - Next step: Sujan decides whether the loop keeps running after an error, so one bad frame can't freeze the whole viewer: ask for the next frame first, at the top of `frame()`, or catch the error, log it and carry on. Either way, an error that comes back every frame would then be thrown about 60 times a second; **Copy debug info** keeps the last 20 page errors (`src/ui/debug.js`), so they'd all be copies of that one unless it's logged once.
-  - Decided so far: nothing yet.
+- Done, in the archive: **Damage numbers freeze the viewer at a kill with no death spot** (0.26.17, 7 Nov 2026: such a kill shows no number); **One error stops the frame loop for good** (0.26.18, 7 Nov 2026: the loop keeps running, each different error is recorded once, and the first one in a page shows a toast once).
+- [ ] **Toasts cover the name bar in Player's eyes** (seen 7 Nov 2026 in `docs/frame-error-toast-mock.png`): at a 1512x982 window, a two-line toast at the view's bottom left covers the left half of the name bar under the view ("Na`Vi ceh9 32-33y (100) m4a1", SK vs Na`Vi, Train, DreamHack Winter 2011, R24 0:39, **Player's eyes** on ceh9). Every toast sits there today (`toast()` in `src/ui/after-load.js`), so it isn't new with the error toast. For later (Sujan, 7 Nov 2026: not moved in 0.26.18).
 
 **Sujan's report and rules of 3 Nov 2026** (rules in `AGENTS.md`: no pull request for notes alone; things found while building go here for later, unless the change caused them; related features batched into one mockup round, one build and one test run; phones aren't a target)
 - Done, in the archive: **Guns and players too big in Player's eyes on a wide screen** (0.26.15, 3 Nov 2026: the view keeps the game's 4:3 picture whole, adding room at the sides on a wider view and top and bottom on a narrower one; **POV mode**'s crosshair sized to match).

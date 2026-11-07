@@ -89,8 +89,8 @@ Before starting any branch, run `git fetch` and branch from `origin/main`; if a 
 - `src/ui/playback.js`: play, seek, speed and rounds, the Tab scoreboard, the HUD (`updateHud`).
 - `src/ui/radar.js`: the 2D radar (`draw`), fitting the map above its controls (`fitView`), where a player is between snapshots (`playerState`), picking players, the heatmap.
 - `src/ui/timeline.js`: the timeline under the view (`drawTimeline`).
-- `src/ui/loop.js`: the frame loop (`frame`), full screen, and **View settings**: its saved settings and **Vanilla** (`setVanilla`).
+- `src/ui/loop.js`: the frame loop (`frame`), each part of a frame in its own try/catch (`framePart`), full screen, and **View settings**: its saved settings and **Vanilla** (`setVanilla`).
 - `src/ui/theatre.js`: Theatre mode, and the saved view settings (`savePrefs`).
 - `src/ui/summary.js`: the load summary (what loaded, what's custom or missing), the card for a demo that can't play, **Count them** (`setCount30`).
-- `src/ui/debug.js`: **Copy debug info** for bug reports (`debugInfo`).
+- `src/ui/debug.js`: **Copy debug info** for bug reports (`debugInfo`), and errors caught in the frame loop, each recorded once (`frameError`).
 - `src/ui/clear.js`: **Clear saved files**.

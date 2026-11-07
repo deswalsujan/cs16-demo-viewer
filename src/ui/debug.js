@@ -2,6 +2,21 @@
 const ERRLOG = [];
 window.addEventListener('error', (e) => { ERRLOG.push(`${e.message} (${(e.filename || '').split('/').pop()}:${e.lineno})`); if (ERRLOG.length > 20) ERRLOG.shift(); });
 window.addEventListener('unhandledrejection', (e) => { ERRLOG.push('Promise: ' + (e.reason && e.reason.message || e.reason)); if (ERRLOG.length > 20) ERRLOG.shift(); });
+// Errors caught in the frame loop (0.26.18; Sujan, 7 Nov 2026, docs/frame-error-toast-mock.png): each different message
+// goes into the list above and the console once per page, so one that comes back every frame doesn't push the others
+// out; the first one in the page shows a toast, once, for 9 seconds like the others.
+const FRAME_ERRS = new Set();
+function frameError(e) {
+  const msg = String((e && e.message) || e);
+  if (FRAME_ERRS.has(msg)) return;
+  FRAME_ERRS.add(msg);
+  // where it was thrown: the stack's first place with a line number, without the page's address
+  const at = String((e && e.stack) || '').split('\n').map((l) => l.trim()).find((l) => /:\d+:\d+\)?$/.test(l));
+  ERRLOG.push(`${msg} (caught in the frame loop${at ? ', ' + at.replace(/^at /, '').replace(/(https?|file|blob):\/\/\S*\//g, '') : ''})`);
+  if (ERRLOG.length > 20) ERRLOG.shift();
+  console.error(e);
+  if (FRAME_ERRS.size === 1) toast('Something went wrong drawing this moment, so part of the view may be missing. Press ? and click Copy debug info to report it.');
+}
 function debugInfo() {
   let gpu = '';
   try { const gl = document.createElement('canvas').getContext('webgl'); const x = gl && gl.getExtension('WEBGL_debug_renderer_info'); gpu = gl ? (x ? gl.getParameter(x.UNMASKED_RENDERER_WEBGL) : 'WebGL available') : 'no WebGL'; } catch (e) { gpu = 'unknown'; }
