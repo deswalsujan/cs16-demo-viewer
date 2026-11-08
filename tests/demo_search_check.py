@@ -23,7 +23,9 @@ full on compLexity vs WeMadeFox, Nuke, IEM4; the rounds after 16 counted by them
 Dust2, IEM4: Edward-FoCuS on Gux LOOSE, RobbaN's AWP leg hit on Zeus no damage row, a teamkill out of the Wallbangs list
 with the TK tag (0.26.22). The dialogs: the can't-play card's buttons, the shortcuts list's ×, the Join card's footer,
 View settings at the largest Interface size (0.26.23). dsn's AWP leg hit on Edward-FoCuS under the train car, Na`Vi vs fnatic,
-Train, IEM4 final: no damage row, the hit in the open (0.26.24). About two minutes.
+Train, IEM4 final: no damage row, the hit in the open (0.26.24). SK vs AGAiN, Train, Arbalet Cup Europe 2009: the header's AGAiN,
+the skip into R4's freeze time with its note and face's kill on taz out of the wallbangs, its kill details from before the skip,
+the kill feed wiped at R5's start and back when seeking before it (0.26.25). About two minutes.
 """
 import os, re, sys, http.server, functools, threading, tempfile, shutil, subprocess, atexit
 from playwright.sync_api import sync_playwright
@@ -648,6 +650,47 @@ with sync_playwright() as p:
     except Exception as e:
         check("the leg hit: dsn's AWP on Edward-FoCuS under the train car", False, str(e).split('\n')[0])
     ctx9.close()
+
+    # SK vs AGAiN, Train, Arbalet Cup Europe 2009 (0.26.25; Sujan, 8 Nov 2026), with its map: the header reads AGAiN (the
+    # file name's "AGAiN_ArbaletEU" cut to the tag its players share) and SK Gaming; the recording's jump from R3 0:14 into R4's
+    # freeze time at demo 14:10 is a skip across a restart, with its note, and face's kill on taz there is no wallbang, reads
+    # R3 0:14, and its kill details count taz's health from before the skip; Jimmy's kill on kubenB (R4 1:15) is gone from the
+    # kill feed at R5 freeze 0:09 and back half a second before R5's start. Up to 0.26.24: "AGAiN ArbaletEU", no skip, face
+    # on taz STRICT WB at "R3 freeze 0:10" with "−95 at freeze 0:10, source unknown", and Jimmy's kill still in the feed.
+    SA = 'SK_vs_AGAiN_ArbaletEU-0912051316-de_train.dem'
+    ctx10 = b.new_context(viewport={'width': 1512, 'height': 982}); pg10 = ctx10.new_page()
+    pg10.route('**/three.min.js', lambda r: r.fulfill(path=os.environ.get('THREE_JS', os.path.join(here, '..', 'src', 'vendor', 'three.min.js')), content_type='application/javascript'))
+    errs10 = []; pg10.on('pageerror', lambda e: errs10.append(str(e).split('\n')[0]))
+    try:
+        if SA not in names: raise Exception(f'{SA} not found in HALF_LIFE_DIR or DEMO_DIRS')
+        pg10.goto(f'http://127.0.0.1:{srv.server_port}/{os.path.basename(hooked)}')
+        pg10.set_input_files('#fFolder', HL)
+        pg10.wait_for_function('__v("files.demos.length > 0")', timeout=30000)
+        JS10 = lambda c: pg10.evaluate('(c) => __v(c)', c)
+        JS10(f"loadDemoFile(files.demos.find((f) => f.name === {SA!r}))")
+        pg10.wait_for_function('__v("!!(D && M && MAP && R3 && view3.map === MAP.name && M.bursts)")', timeout=120000)
+        pg10.wait_for_function('__v("!M.seenPending")', timeout=120000); pg10.wait_for_timeout(500)
+        JS10("closeSummary()")
+        n = JS10('M.tnames.slice()')
+        check('SK vs AGAiN, Arbalet Cup Europe 2009: the header reads AGAiN and SK Gaming ("AGAiN ArbaletEU" up to 0.26.24)', sorted(n) == ['AGAiN', 'SK Gaming'], str(n))
+        k = JS10(r"""(() => { const k = D.kills.find((x) => /face/.test(nameAt(x.killer, x.t)) && /taz/.test(nameAt(x.victim, x.t)) && Math.abs(x.t - D.start - 850.64) < 0.2);
+          const r = M.rounds.find((x) => x.n === k.round), div = document.createElement('div'); div.innerHTML = killDetailsHtml(k);
+          return { t: k.t, restart: (M.skipRestart || []).some((s) => Math.abs(s - k.t) < 0.06), skip: M.skipT.some((s) => Math.abs(s - k.t) <= 0.3), row: `R${r.ln} ${killClock(k.t)}`, wb: !!k.wb, listed: M.wbs.includes(k), details: div.textContent.replace(/\s+/g, ' ').trim() }; })()""")
+        check('the jump from R3 0:14 into R4\'s freeze time at demo 14:10: a skip across a restart; face\'s kill on taz no wallbang, out of the Wallbangs list, reading R3 0:14 (up to 0.26.24 no skip, STRICT WB at R3 freeze 0:10)',
+              k['restart'] and k['skip'] and not k['wb'] and not k['listed'] and k['row'] == 'R3 0:14', str({x: k[x] for x in k if x != 'details'}))
+        check('its kill details: "−27 at 0:14, source unknown" and the killing bullet "the recording skips here" (up to 0.26.24 "−95 at freeze 0:10" and through a wall)',
+              '−27 at 0:14, source unknown' in k['details'] and 'the recording skips here' in k['details'] and '−95' not in k['details'], k['details'])
+        JS10(f"seek({k['t']} - 0.5)"); pg10.wait_for_timeout(400)
+        check('"Recording skips here" shows half a second before it', JS10("!$('skipnote').hidden"), '')
+        f = JS10(r"""(() => { const r5 = M.rounds.find((x) => x.live && x.ln === 5), at = (t) => { seek(t); lastFeedKey = 'none'; updateFeed(); return [...$('feed').children].map((d) => d.textContent.replace(/\s+/g, ' ').trim()); };
+          const out = { inR5: at(r5.start + 1), before: at(r5.start - 0.5) }; out.again = at(r5.start + 1); return out; })()""")
+        jim = lambda xs: any('Jimmy' in x and 'kubenB' in x for x in xs)
+        check("the kill feed: Jimmy's kill on kubenB (R4 1:15) gone at R5 freeze 0:09, there half a second before R5's start, gone again after (still there at R5 freeze 0:09 up to 0.26.24)",
+              not jim(f['inR5']) and jim(f['before']) and not jim(f['again']), str(f))
+        check('no page error on the SK vs AGAiN checks', not errs10, '; '.join(errs10[:3]))
+    except Exception as e:
+        check('SK vs AGAiN: team names, the skip into R4, kill details on it, the kill feed', False, str(e).split('\n')[0])
+    ctx10.close()
     b.close()
 print(f'{len(fails)} failed' if fails else 'all passed')
 sys.exit(1 if fails else 0)

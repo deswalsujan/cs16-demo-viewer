@@ -76,7 +76,8 @@ function killDetailsHtml(k) {
   list.forEach((x, i) => {
     let where = bodyPart(x); if (where.endsWith('*')) est = true;
     if (x.kill && !gun) where = /grenade/.test(k.weapon) ? 'grenade' : esc(k.weapon || '');
-    const how = gun ? ` · ${x.wall ? 'through a wall' : 'in the open'}` : '';
+    // the killing bullet on a skip across a restart: where it came from isn't in the file (Sujan, 8 Nov 2026)
+    const how = gun ? ` · ${x.kill && onRestartSkip(k.t) ? 'the recording skips here' : x.wall ? 'through a wall' : 'in the open'}` : '';
     h += `<button type="button" class="kb" data-bt="${x.t}" title="Jump to this ${x.kill ? 'kill' : 'bullet'}"><span class="i">${i + 1}</span><span><span class="d ${x.wall ? 'w' : 'o'}">−${x.dmg}</span>${x.head ? '<span class="hs">HS</span>' : ''}${x.kill ? `<span class="sk" aria-label="the kill">${SKULL}</span>` : ''}</span><span class="wh">${where}${how}</span><span class="tm">${x.kill ? 'kill' : '−' + (k.t - x.t).toFixed(2) + ' s'}</span></button>`;
   });
   const last = list[n - 1];
