@@ -28,7 +28,7 @@ When a test demo is added or deleted, change its row here along with its row in 
 | `auto-1003032023-de_inferno.dem` | 29,849,852 | `b26dbe7390e392f20900f8bdd7b877faf20d1fc95dfd22cfc4851a9d6afca3af` | no |
 | `auto-1003051236-de_inferno.dem` | 32,552,698 | `dacc7f352eee72a2bb71115b53f35b3bdc20d54608d706958b85d74c10efad17` | no |
 | `auto-1003051321-de_train.dem` | 55,585,038 | `3fd1e174fe114b42bbaa03a9e2ce13a72b4747d14073c67304497a625e118251` | no |
-| `auto-1003061629-de_train.dem` | 41,365,263 | `1543fd4d5dfd0848e2b581496d96b5ab79d906616fb254d5dbeeb1d7c109b7bf` | no |
+| `auto-1003061629-de_train.dem` | 41,365,263 | `1543fd4d5dfd0848e2b581496d96b5ab79d906616fb254d5dbeeb1d7c109b7bf` | yes |
 | `auto-server1-1106262105-de_tuscan.dem` | 37,679,527 | `2def4956ff8d8d932611cb6bb2fb0d2962b70195604af480b4549a109e1c28d7` | yes |
 | `auto_ifng-1103030950-de_dust2.dem` | 46,398,471 | `35e1284f61ab95be44721c56dec61ce487f3873dc9009822b9fcb3d198d1039d` | yes |
 | `auto_ifng-1110042145-de_forge.dem` | 18,186,092 | `b9b0ad89ea107d59e7f3024919cde447f43724f7e5dc99a4a9df41e78d5b4b95` | yes |

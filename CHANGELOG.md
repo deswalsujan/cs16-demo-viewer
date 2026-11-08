@@ -4,6 +4,7 @@ What changed in the viewer, newest first. The version shows in the viewer's shor
 
 ## Versions
 
+- [0.26.24](#02624-2026-11-08) 2026-11-08: Leg hits on five heights
 - [0.26.23](#02623-2026-11-08) 2026-11-08: Dialogs and cards reworked
 - [0.26.22](#02622-2026-11-08) 2026-11-08: Teamkills, leg hits, open hits
 - [0.26.21](#02621-2026-11-08) 2026-11-08: When a match starts and ends
@@ -81,6 +82,22 @@ What changed in the viewer, newest first. The version shows in the viewer's shor
 
 ## Known limits
 Moved to [LIMITS.md](LIMITS.md) on 30 Oct 2026; release entries below still say "Known limits" for that list.
+
+## 0.26.24 (2026-11-08)
+
+From Sujan's report of 8 Nov 2026 on 0.26.23 and his answer to Claude's report of the same day (`tests/logs/leg-heights-2026-11-08.md`).
+
+### Fixed
+- A damage hit whose damage points to a leg is judged on lines to five heights on him, from his feet to his hips, in place of one at the knee; it's in the open when any of them is clear (Sujan, 8 Nov 2026). dsn's AWP hit on Edward-FoCuS (Na`Vi vs fnatic, Train, IEM4 final, R14 1:31) took 82, exactly a leg in the open at 1782 units, with him mid-jump and only his feet and shins in view under the train car; the knee line ran 2 units inside the car's underside, and the hit was a DAMAGE row. It's in the open now, leg* in kill details, white in **Damage numbers**.
+
+### How it was tested
+- `demo_search_check.py`, 1 new check on Na`Vi vs fnatic, Train, IEM4 final (dsn's 82), failing on 0.26.23.
+- 75 demos with their maps, the change on and off in one page: 8 hits move to the open, DAMAGE rows 620 to 617, one wallbang kill's numbers lose a hit, no wallbang kill changes.
+- `ground_truth_check.py`: Na`Vi vs fnatic, Train, IEM4 final added (16:13, navi.gg); 232 kills and 44 scores and K-D on 54 demos, 0 mismatches, the same 8 known gaps. The seven checks pass. Full log: `tests/logs/0.26.24.md`.
+
+### Discussed, not changed
+- THREAT's two M4A1 hits of 21 at R2 of the same demo, on Edward-FoCuS (1:31) and cehe4ka (1:32), move to the open too: their damage is a leg's in the open, and his feet were in view; on a player without armour it could also be a body hit through a wall, which the damage can't tell apart. Sujan checks them in the game (IDEAS.md, **By-eye round**).
+- At the snapshot 0.1 s before the hit, where the 3D view draws him, Edward-FoCuS was 14 units lower and the knee line was clear; the finder keeps judging at the shot (Sujan, 1 Nov 2026).
 
 ## 0.26.23 (2026-11-08)
 

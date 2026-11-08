@@ -325,9 +325,10 @@ function computeHits() {
     // RobbaN's AWP on Zeus (SK vs Na`Vi, Dust2, IEM4, R30 1:30) took 83, exactly a leg in the open at 1526 units, with his
     // legs in view and his body behind the wall; judged on the line to his middle alone, it read as through the wall. The
     // line to his middle still counts too: a hit with the damage of one in the open isn't made a wallbang by a blocked
-    // line to a leg (on the test demos that would have added 5 damage rows).
+    // line to a leg (on the test demos that would have added 5 damage rows). A leg is judged on five heights from his feet
+    // to his hips (PART_Z), since only part of it may show.
     const fit = head || hs.length !== 1 ? [] : openParts(c.gun, hr.dist, hs[0][2], d.dmg);
-    const zoneTo = [c.tgt, ...fit.map((pt) => [vp[0], vp[1], vp[2] + PART_Z[pt][vduck ? 1 : 0]])];
+    const zoneTo = [c.tgt, ...fit.flatMap((pt) => PART_Z[pt][vduck ? 1 : 0].map((z) => [vp[0], vp[1], vp[2] + z]))];
     const aimS = solidAlong(bsp, c.eye, end, 2, skip, poses, 'bullet').solid, zoneS = Math.min(...zoneTo.map((to) => solidAlong(bsp, c.eye, to, 2, skip, poses, 'bullet').solid));
     if (aimS === 0 || zoneS === 0) { note(d, `open aim ${Math.round(aimS)} zone ${Math.round(zoneS)} off ${Math.round(c.off)} by ${c.e}`); continue; }
     note(d, `cover by ${c.e} off ${Math.round(c.off)}`);
@@ -445,8 +446,12 @@ function openParts(gun, dist, snd, dmg) {
     return dmg >= at(dist + 30) - 1 && dmg <= at(dist - 30) + 1;
   })).map(([p]) => p);
 }
-// where each part is, above the player's origin, standing and ducking (the hull is 72 units high standing, 36 ducking)
-const PART_Z = { leg: [-20, -10], 'chest or arm': [16, 8], stomach: [4, 0] };
+// where each part is, above the player's origin, standing and ducking (the hull is 72 units high standing, 36 ducking).
+// A leg is five heights from the feet to the hips, standing (4 to 28 units above the feet) and three ducking: the hit is in
+// the open when the line to any of them is clear (Sujan, 8 Nov 2026). dsn's AWP on Edward-FoCuS (Na`Vi vs fnatic, Train,
+// IEM4 final, R14 1:31) took 82, exactly a leg in the open at 1782 units, with him mid-jump and only his feet and shins
+// under the train car's flat underside; the one line at the knee (-20 standing, 0.26.22) ran 2 units inside the car.
+const PART_Z = { leg: [[-32, -26, -20, -14, -8], [-16, -10, -4]], 'chest or arm': [[16], [8]], stomach: [[4], [0]] };
 // "Earlier:" in kill details (Sujan, 3 Nov 2026): when part of the victim's health that round went to something other than
 // the killer's listed bullets, where it went, oldest first: every health drop of his in that round up to the kill that isn't
 // one of those bullets, before the first of them or between them (a crossfire: Na`Vi vs FX, Dust2, SEC 2011 final, R22
