@@ -680,7 +680,7 @@ addEventListener('resize', () => { if (applyUiSize()) dispatchEvent(new Event('u
             <dt><kbd>?</kbd></dt><dd>Show this list</dd></dl>
           </section>
         </div>
-        <div class="keys-foot"><span class="ver">Version 0.26.25 · <a href="https://github.com/deswalsujan/cs16-demo-viewer/blob/main/CHANGELOG.md" target="_blank" rel="noopener">What's new</a> · <a href="https://github.com/deswalsujan/cs16-demo-viewer/issues/new/choose" target="_blank" rel="noopener">Report a bug</a></span><span class="sp"></span><button class="btn" id="bDebug" type="button" title="Copies details for a bug report: browser, demo name, what loaded, errors. No file contents.">Copy debug info</button><button class="btn" id="bKeysClose" type="button">Close</button></div>
+        <div class="keys-foot"><span class="ver">Version 0.26.26 · <a href="https://github.com/deswalsujan/cs16-demo-viewer/blob/main/CHANGELOG.md" target="_blank" rel="noopener">What's new</a> · <a href="https://github.com/deswalsujan/cs16-demo-viewer/issues/new/choose" target="_blank" rel="noopener">Report a bug</a></span><span class="sp"></span><button class="btn" id="bDebug" type="button" title="Copies details for a bug report: browser, demo name, what loaded, errors. No file contents.">Copy debug info</button><button class="btn" id="bKeysClose" type="button">Close</button></div>
       </div>
     </div>
     <canvas id="cv" aria-label="Radar view of the match"></canvas>
@@ -739,7 +739,7 @@ addEventListener('resize', () => { if (applyUiSize()) dispatchEvent(new Event('u
         <div class="drophint">Or drop a .dem file, or an overview .bmp and .txt pair, anywhere on this page</div>
         <div class="prog" id="prog" hidden><i id="progBar"></i></div>
         <div class="msg" id="msg"></div>
-        <div class="loadfoot"><span>Version 0.26.25 · <a href="https://github.com/deswalsujan/cs16-demo-viewer" target="_blank" rel="noopener">Source on GitHub</a></span><button class="btn" id="bClear" type="button" title="Deletes the maps, models, sounds and overviews this browser saved from your Half-Life folder, and starts over as on a first visit">Clear saved files</button></div>
+        <div class="loadfoot"><span>Version 0.26.26 · <a href="https://github.com/deswalsujan/cs16-demo-viewer" target="_blank" rel="noopener">Source on GitHub</a></span><button class="btn" id="bClear" type="button" title="Deletes the maps, models, sounds and overviews this browser saved from your Half-Life folder, and starts over as on a first visit">Clear saved files</button></div>
       </div>
     </div>
   </section>
@@ -1044,6 +1044,7 @@ export function parseDemo(buffer, onProgress, opts = {}) {
   const centre = [];    // { t, s: '#Terrorists_Win' and the like, a: its arguments } (centre-screen messages)
   const corpses = [];   // { t, start, model, pos, yaw, seq, team, e }
   const booms = [];     // time, x, y, z (grenade and C4 explosions)
+  const hitPoints = []; // time, x, y, z, size: where a bullet hit a player, as the server marked it (0.26.26)
   const puffs = [];     // smoke grenade events (createsmoke): time, kind (1 = it pops, 4 = a puff every second after), cloud centre x, y, z
   let pendingEv = [];
   let scores = { T: 0, CT: 0 };
@@ -1500,6 +1501,14 @@ export function parseDemo(buffer, onProgress, opts = {}) {
             const x = r.s() / 8, y = r.s() / 8, z = r.s() / 8; r.skip(4); const fl = r.ub();
             if (inPlayback && !(fl & 4)) booms.push(time, x, y, z);
           }
+          // where a bullet hit a player (0.26.26): the server sends a blood sprite at the hit point (TE_BLOODSPRITE, from
+          // UTIL_BloodDrips in ReGameDLL's TraceAttack), its size from the damage, and sparks on a helmet headshot
+          // (TE_STREAK_SPLASH, kept with size -1). None on a body hit through armour: the game makes no blood there
+          else if (t === 115 || t === 25) {
+            const x = r.s() / 8, y = r.s() / 8, z = r.s() / 8;
+            if (t === 115) { r.skip(5); const size = r.ub(); if (inPlayback) hitPoints.push(time, x, y, z, size); }
+            else { r.skip(13); if (inPlayback) hitPoints.push(time, x, y, z, -1); }
+          }
           else if (t === 13) { r.skip(8); if (r.s()) r.skip(2); }
           else if (t === 29) {
             r.skip(5);
@@ -1749,7 +1758,7 @@ export function parseDemo(buffer, onProgress, opts = {}) {
     occupants, brushEvents: new Float32Array(brushEvents), brushPose: new Float32Array(brushPose), viewers: hltvStatus, notes,
     times: new Float32Array(samples.t), slots,
     finalScore: { ...scores }, models: resources.models, stride: STRIDE,
-    pmodels, sounds: resources.sounds, events: resources.events, snds: new Float32Array(snds), shots: new Float32Array(shots), booms: new Float32Array(booms), puffs: new Float32Array(puffs), radio, centre, corpses,
+    pmodels, sounds: resources.sounds, events: resources.events, snds: new Float32Array(snds), shots: new Float32Array(shots), booms: new Float32Array(booms), hitPoints: new Float32Array(hitPoints), puffs: new Float32Array(puffs), radio, centre, corpses,
     errors, errSamples, health, c4drops: new Float32Array(c4drops), slow, stops,
     ...(povData ? { povData } : {}),
   };
@@ -2644,7 +2653,7 @@ function joinDemos(parts) {
     for (const k in src) { const nm = src[k]; if (byName[nm] == null) { byName[nm] = next; dst[next++] = nm; } map[k] = byName[nm]; }
     return (i) => (map[i] != null ? map[i] : i);
   };
-  const timesL = [], slotsL = {}, hpL = [], packL = [], brushEvL = [], brushPoseL = [], sndsL = [], shotsL = [], boomsL = [], puffsL = [], c4L = [];
+  const timesL = [], slotsL = {}, hpL = [], packL = [], brushEvL = [], brushPoseL = [], sndsL = [], shotsL = [], boomsL = [], hitPointsL = [], puffsL = [], c4L = [];
   // POV mode (0.25.0): the parts' POV data on the joined timeline, when every part is a POV demo. recs: for each part,
   // its first sample, its number of samples and the recording player's entity there
   const povL = parts.every((P) => P.povData) ? { view: [], ownPos: [], hpInfo: [], shotOrg: [], fovs: [], ownAmmo: [], wanims: [], vmodels: [], obs: [], hud: { hp: [], ap: [], helmet: [], money: [], ammox: [] }, gunAmmo: {}, recs: [] } : null;
@@ -2691,6 +2700,7 @@ function joinDemos(parts) {
     flat(P.snds, 10, (a, i) => { a[i] = sh(a[i]); a[i + 1] = mS(a[i + 1]); }, sndsL);
     flat(P.shots, 4, (a, i) => { a[i] = sh(a[i]); a[i + 2] = mE(a[i + 2]); }, shotsL);
     flat(P.booms, 4, (a, i) => { a[i] = sh(a[i]); }, boomsL);
+    flat(P.hitPoints || [], 5, (a, i) => { a[i] = sh(a[i]); }, hitPointsL);
     flat(P.puffs, 5, (a, i) => { a[i] = sh(a[i]); }, puffsL);
     flat(P.c4drops || [], 5, (a, i) => { a[i] = sh(a[i]); a[i + 1] = sh(a[i + 1]); }, c4L);
     for (const [a, b, v] of P.slow || []) out.slow.push([sh(a), sh(b), v]);
@@ -2731,7 +2741,7 @@ function joinDemos(parts) {
     ownAmmo: cat(povL.ownAmmo), wanims: cat(povL.wanims), vmodels: cat(povL.vmodels), obs: cat(povL.obs), recs: povL.recs,
     hud: Object.assign(Object.fromEntries(Object.keys(povL.hud).map((k) => [k, cat(povL.hud[k])])), { gunAmmo: povL.gunAmmo }),
   } : null;
-  out.pack = cat(packL); out.hp = cat(hpL); out.brushEvents = cat(brushEvL); out.brushPose = cat(brushPoseL); out.snds = cat(sndsL); out.shots = cat(shotsL); out.booms = cat(boomsL); out.puffs = cat(puffsL); out.c4drops = cat(c4L);
+  out.pack = cat(packL); out.hp = cat(hpL); out.brushEvents = cat(brushEvL); out.brushPose = cat(brushPoseL); out.snds = cat(sndsL); out.shots = cat(shotsL); out.booms = cat(boomsL); out.hitPoints = cat(hitPointsL); out.puffs = cat(puffsL); out.c4drops = cat(c4L);
   out.bomb.sort((a, b) => a.t - b.t);
   out.start = parts[0].start;
   out.fileName = parts[0].fileName;
@@ -3332,6 +3342,24 @@ const ONE_SURFACE = new Set(['usp', 'glock18', 'p228', 'fiveseven', 'elite', 'ma
 // True when even every one of those shots, each through a wall at the best case, couldn't have done it. The wall is
 // one surface on the killer's crosshair line, the one whose material lets the most through (wallKeeps; wood's 0.6 for
 // every wall before 0.26.7).
+// An AWP or Scout kill with no shot recorded counts one bullet (0.26.26; Sujan, 9 Nov 2026): neither gun fires twice in
+// the 0.6 s window (PrimaryAttack waits 1.45 s and 1.25 s between shots, wpn_awp.cpp and wpn_scout.cpp), and the fire
+// event goes missing on a quick switch after the shot (ED1KASDDSA to the flashbang after his AWP kill on face, SK vs
+// EYESports, Inferno, Arbalet Cup Europe 2009, R24 1:22: 100 HP, where one AWP body hit through concrete does 71). Left
+// alone when the recording skips in the window, and when the victim has a blood point or helmet sparks earlier in the
+// 0.6 s before the kill, so another bullet hit him after the health reading the rule trusts. Measured on the 77 test
+// demos before building (tests/logs/awp-one-bullet-2026-11-09.md): 3 listed wallbangs dropped, no confirmed answer changed.
+const ONE_BULLET = new Set(['awp', 'scout']);
+// a blood point or helmet sparks (D.hitPoints) on player e, within 40 units across and 48 up or down of him, in [from, before)
+function hitPointOn(e, from, before) {
+  const H = D.hitPoints; if (!H) return false;
+  for (let i = 0; i < H.length; i += 5) {
+    const t = H[i]; if (t < from || t >= before) continue;
+    const st = playerStateAt(e, t);
+    if (st && Math.hypot(H[i + 1] - st.x, H[i + 2] - st.y) <= 40 && Math.abs(H[i + 3] - st.z) <= 48) return true;
+  }
+  return false;
+}
 function tooMuchDamage(k) {
   const per = MAX_DMG[k.weapon]; if (!per) return false;
   const a = hpIdx && hpIdx[k.victim]; if (!a || !a.length) return false;
@@ -3343,8 +3371,15 @@ function tooMuchDamage(k) {
   let shots = 0; const sh = D.shots || [];
   for (let i = 0; i < sh.length; i += 4) if (sh[i + 1] === k.killer && sh[i] >= Math.max(at - 0.3, tEnd - 0.6) && sh[i] <= tEnd + 0.001) shots++;
   // no shot of the killer's recorded around the kill (a jump in the recording, where the dead player's
-  // health and his respawn arrive at the same instant): the number of bullets isn't known, so leave it
-  if (!shots) return false;
+  // health and his respawn arrive at the same instant): the number of bullets isn't known, so leave it, except for
+  // the AWP and the Scout, which can't have fired more than one (above)
+  if (!shots) {
+    if (!ONE_BULLET.has(k.weapon)) return false;
+    const w0 = Math.max(at - 0.3, tEnd - 0.6);
+    if ((M.skipT || []).some((x) => x >= w0 - 0.2 && x <= tEnd + 0.2)) return false;
+    if (hitPointOn(k.victim, tEnd - 0.6, Math.min(k.t, tEnd) - 0.005)) return false;
+    shots = 1;
+  }
   return per * wallKeeps(k) * (k.hs ? 4 : 1.25) * shots < hp;
 }
 // Each wall's own material (Sujan, 2 Nov 2026, 0.26.7). After a surface a bullet keeps a share of its damage that
@@ -8774,7 +8809,7 @@ function frameError(e) {
 function debugInfo() {
   let gpu = '';
   try { const gl = document.createElement('canvas').getContext('webgl'); const x = gl && gl.getExtension('WEBGL_debug_renderer_info'); gpu = gl ? (x ? gl.getParameter(x.UNMASKED_RENDERER_WEBGL) : 'WebGL available') : 'no WebGL'; } catch (e) { gpu = 'unknown'; }
-  const L = [`CS 1.6 Demo Viewer 0.26.25`, `Browser: ${navigator.userAgent}`, `Screen: ${screen.width}x${screen.height} at ${devicePixelRatio}x, window ${innerWidth}x${innerHeight}`, `Graphics: ${gpu}`];
+  const L = [`CS 1.6 Demo Viewer 0.26.26`, `Browser: ${navigator.userAgent}`, `Screen: ${screen.width}x${screen.height} at ${devicePixelRatio}x, window ${innerWidth}x${innerHeight}`, `Graphics: ${gpu}`];
   L.push(`Folder: ${Object.keys(files.maps).length} maps, ${Object.keys(files.overviews).length} overviews, ${Object.keys(files.mdl).length} models, ${Object.keys(files.snd).length} sounds, ${files.demos.length} demos`);
   if (D) {
     L.push(`Demo: ${D.fileName}, protocol ${(D.header && D.header.netProtocol) || '?'}, ${D.pov ? 'POV (recorded by a player)' : 'HLTV'}, map ${D.mapName}, length ${fmt(D.end - D.start)}, ${M.liveR.length} live rounds, final ${M.liveR.length ? M.liveR[M.liveR.length - 1].scoreAfter.join(':') : '-'}`);

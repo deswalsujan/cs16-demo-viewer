@@ -25,7 +25,9 @@ with the TK tag (0.26.22). The dialogs: the can't-play card's buttons, the short
 View settings at the largest Interface size (0.26.23). dsn's AWP leg hit on Edward-FoCuS under the train car, Na`Vi vs fnatic,
 Train, IEM4 final: no damage row, the hit in the open (0.26.24). SK vs AGAiN, Train, Arbalet Cup Europe 2009: the header's AGAiN,
 the skip into R4's freeze time with its note and face's kill on taz out of the wallbangs, its kill details from before the skip,
-the kill feed wiped at R5's start and back when seeking before it (0.26.25). About two minutes.
+the kill feed wiped at R5's start and back when seeking before it (0.26.25). SK vs EYESports, Inferno, Arbalet Cup Europe 2009:
+ED1KASDDSA's AWP kill on face, with no shot recorded, out of the wallbangs by the one-bullet rule; walle on XEK and RobbaN on
+ED1KASDDSA still STRICT WB; the blood points and helmet sparks read (0.26.26). About two minutes.
 """
 import os, re, sys, http.server, functools, threading, tempfile, shutil, subprocess, atexit
 from playwright.sync_api import sync_playwright
@@ -691,6 +693,40 @@ with sync_playwright() as p:
     except Exception as e:
         check('SK vs AGAiN: team names, the skip into R4, kill details on it, the kill feed', False, str(e).split('\n')[0])
     ctx10.close()
+
+    # SK vs EYESports, Inferno, Arbalet Cup Europe 2009 (0.26.26; Sujan, 9 Nov 2026), with its map: ED1KASDDSA's AWP kill on
+    # face at R24 1:22 has no fire event (he switched to the flashbang in the same snapshot), and face had 100 HP, where one
+    # AWP body hit through the concrete does 71: the one-bullet rule takes it out of the wallbangs. walle on XEK (R26 1:33)
+    # and RobbaN on ED1KASDDSA (R28 1:04), AK-47 sprays through one wall, stay STRICT WB (Sujan, 9 Nov 2026). Up to 0.26.25
+    # the kill on face read STRICT WB, and the reader kept no blood points.
+    SE = 'SK_vs_EYESports_ArbaletEU-0912051420-de_inferno.dem'
+    ctx11 = b.new_context(viewport={'width': 1512, 'height': 982}); pg11 = ctx11.new_page()
+    pg11.route('**/three.min.js', lambda r: r.fulfill(path=os.environ.get('THREE_JS', os.path.join(here, '..', 'src', 'vendor', 'three.min.js')), content_type='application/javascript'))
+    errs11 = []; pg11.on('pageerror', lambda e: errs11.append(str(e).split('\n')[0]))
+    try:
+        if SE not in names: raise Exception(f'{SE} not found in HALF_LIFE_DIR or DEMO_DIRS')
+        pg11.goto(f'http://127.0.0.1:{srv.server_port}/{os.path.basename(hooked)}')
+        pg11.set_input_files('#fFolder', HL)
+        pg11.wait_for_function('__v("files.demos.length > 0")', timeout=30000)
+        JS11 = lambda c: pg11.evaluate('(c) => __v(c)', c)
+        JS11(f"loadDemoFile(files.demos.find((f) => f.name === {SE!r}))")
+        pg11.wait_for_function('__v("!!(D && M && MAP && R3 && view3.map === MAP.name && M.bursts)")', timeout=120000)
+        pg11.wait_for_function('__v("!M.seenPending && !D.kills.some((k) => k.wb && k.seenPx == null)")', timeout=120000); pg11.wait_for_timeout(500)
+        w = JS11(r"""(() => { closeSummary(); const lnOf = (k) => { const r = M.rounds.find((x) => x.n === k.round); return r ? r.ln : null; };
+          const find = (kn, vn, w, ln) => D.kills.find((k) => k.weapon === w && lnOf(k) === ln && new RegExp(kn).test(nameAt(k.killer, k.t)) && new RegExp(vn).test(nameAt(k.victim, k.t)));
+          const st = (k) => k ? { at: `R${lnOf(k)} ${killClock(k.t)}`, wb: k.wb ? (k.wb.loose ? 'loose' : 'strict') : null, listed: M.wbs.includes(k) } : null;
+          const face = find('ED1KAS', 'face', 'awp', 24), sh = D.shots || [];
+          let shots = 0; for (let i = 0; i < sh.length; i += 4) if (sh[i + 1] === face.killer && Math.abs(sh[i] - face.t) < 1) shots++;
+          return { face: Object.assign(st(face), { shotsNear: shots, tooMuch: tooMuchDamage(face) }), xek: st(find('walle', 'XEK', 'ak47', 26)), ed1k: st(find('RobbaN', 'ED1KAS', 'ak47', 28)), hitPoints: (D.hitPoints || []).length / 5 }; })()""")
+        check("SK vs EYESports, Arbalet Cup Europe 2009: ED1KASDDSA's AWP on face, R24 1:22, no shot recorded, 100 HP: one bullet can't do it through a wall, so no wallbang and out of the Wallbangs list (STRICT WB up to 0.26.25)",
+              w['face']['at'] == 'R24 1:22' and w['face']['shotsNear'] == 0 and w['face']['tooMuch'] and w['face']['wb'] is None and not w['face']['listed'], str(w['face']))
+        check('walle on XEK (R26 1:33) and RobbaN on ED1KASDDSA (R28 1:04), AK-47 through one wall: still STRICT WB and listed',
+              all(x and x['wb'] == 'strict' and x['listed'] for x in (w['xek'], w['ed1k'])), str({'xek': w['xek'], 'ed1k': w['ed1k']}))
+        check('the blood points and helmet sparks read: 400 in the file (none kept up to 0.26.25)', w['hitPoints'] == 400, str(w['hitPoints']))
+        check('no page error on the SK vs EYESports checks', not errs11, '; '.join(errs11[:3]))
+    except Exception as e:
+        check("SK vs EYESports: ED1KASDDSA's AWP on face, the one-bullet rule", False, str(e).split('\n')[0])
+    ctx11.close()
     b.close()
 print(f'{len(fails)} failed' if fails else 'all passed')
 sys.exit(1 if fails else 0)

@@ -4,6 +4,7 @@ What changed in the viewer, newest first. The version shows in the viewer's shor
 
 ## Versions
 
+- [0.26.26](#02626-2026-11-09) 2026-11-09: AWP and Scout, one bullet
 - [0.26.25](#02625-2026-11-08) 2026-11-08: Skip into freeze, feed, names
 - [0.26.24](#02624-2026-11-08) 2026-11-08: Leg hits on five heights
 - [0.26.23](#02623-2026-11-08) 2026-11-08: Dialogs and cards reworked
@@ -83,6 +84,21 @@ What changed in the viewer, newest first. The version shows in the viewer's shor
 
 ## Known limits
 Moved to [LIMITS.md](LIMITS.md) on 30 Oct 2026; release entries below still say "Known limits" for that list.
+
+## 0.26.26 (2026-11-09)
+
+From Sujan's answers of 8 and 9 Nov 2026 on SK vs EYESports, Inferno, Arbalet Cup Europe 2009, and his go on Claude's measurement (`tests/logs/awp-one-bullet-2026-11-09.md`).
+
+### Fixed
+- An AWP or Scout kill with no shot recorded counts one bullet in the wallbang finder's damage rule (Sujan, 9 Nov 2026): neither gun fires twice in the rule's 0.6 s, and a demo can lose the fire event when the killer switches weapons right after the shot. ED1KASDDSA's AWP kill on face (R24 1:22, a switch to the flashbang) read STRICT WB on 100 HP, where one AWP body hit through that concrete wall does at most 71; it's a normal kill now. The rule leaves a kill alone when the recording skips there, or when the server marked a hit on the victim earlier in the 0.6 s before the kill: for that the reader now keeps where the server marked each bullet's hit on a player (a blood sprite, or a helmet headshot's sparks). On the 77 test demos two more listed wallbangs become normal kills: hee on Tentpole (SK vs eSTRO, Train, WCG 2008, R15 1:30) and Sunde on NEO (mTw vs MYM, Dust2, EM3 Global Finals 2009, R14 0:55), both AWP body hits on 100 HP.
+
+### How it was tested
+- Measured before building on a copy of 0.26.25, the rule on and off in one page: on the 77 demos 3 listed wallbangs leave the list and no damage row changes; this build gives exactly the same on all 77.
+- `demo_search_check.py`, 3 new checks on SK vs EYESports (the kill on face, walle on XEK and RobbaN on ED1KASDDSA still strict, the hit points read), 2 failing on 0.26.25. `ground_truth_check.py`: 0 mismatches, the same 9 known gaps. The seven checks pass. Full log: `tests/logs/0.26.26.md`.
+
+### Discussed, not changed
+- walle on XEK (R26 1:33) and RobbaN on ED1KASDDSA (R28 1:04), AK-47 sprays from banana, stay STRICT WB: `FireBullets3` jumps the bullet forward by its penetration power after each surface with no thickness check, so a wall's thickness doesn't stop it (Sujan, 9 Nov 2026). Their 903 and 606 units are the crosshair line without the recoil, running into the ground; on the bullet's line each crosses one wall, 212 and 162 units along it.
+- The thickness shown measured on the bullet's line (the recorded aim plus the recoil and spread each fire event carries) stays out: parked with letting the bullet's line decide wallbangs, the two settled together (Sujan, 9 Nov 2026; IDEAS.md, "Kept for later").
 
 ## 0.26.25 (2026-11-08)
 

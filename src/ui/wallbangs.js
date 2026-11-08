@@ -38,6 +38,24 @@ const ONE_SURFACE = new Set(['usp', 'glock18', 'p228', 'fiveseven', 'elite', 'ma
 // True when even every one of those shots, each through a wall at the best case, couldn't have done it. The wall is
 // one surface on the killer's crosshair line, the one whose material lets the most through (wallKeeps; wood's 0.6 for
 // every wall before 0.26.7).
+// An AWP or Scout kill with no shot recorded counts one bullet (0.26.26; Sujan, 9 Nov 2026): neither gun fires twice in
+// the 0.6 s window (PrimaryAttack waits 1.45 s and 1.25 s between shots, wpn_awp.cpp and wpn_scout.cpp), and the fire
+// event goes missing on a quick switch after the shot (ED1KASDDSA to the flashbang after his AWP kill on face, SK vs
+// EYESports, Inferno, Arbalet Cup Europe 2009, R24 1:22: 100 HP, where one AWP body hit through concrete does 71). Left
+// alone when the recording skips in the window, and when the victim has a blood point or helmet sparks earlier in the
+// 0.6 s before the kill, so another bullet hit him after the health reading the rule trusts. Measured on the 77 test
+// demos before building (tests/logs/awp-one-bullet-2026-11-09.md): 3 listed wallbangs dropped, no confirmed answer changed.
+const ONE_BULLET = new Set(['awp', 'scout']);
+// a blood point or helmet sparks (D.hitPoints) on player e, within 40 units across and 48 up or down of him, in [from, before)
+function hitPointOn(e, from, before) {
+  const H = D.hitPoints; if (!H) return false;
+  for (let i = 0; i < H.length; i += 5) {
+    const t = H[i]; if (t < from || t >= before) continue;
+    const st = playerStateAt(e, t);
+    if (st && Math.hypot(H[i + 1] - st.x, H[i + 2] - st.y) <= 40 && Math.abs(H[i + 3] - st.z) <= 48) return true;
+  }
+  return false;
+}
 function tooMuchDamage(k) {
   const per = MAX_DMG[k.weapon]; if (!per) return false;
   const a = hpIdx && hpIdx[k.victim]; if (!a || !a.length) return false;
@@ -49,8 +67,15 @@ function tooMuchDamage(k) {
   let shots = 0; const sh = D.shots || [];
   for (let i = 0; i < sh.length; i += 4) if (sh[i + 1] === k.killer && sh[i] >= Math.max(at - 0.3, tEnd - 0.6) && sh[i] <= tEnd + 0.001) shots++;
   // no shot of the killer's recorded around the kill (a jump in the recording, where the dead player's
-  // health and his respawn arrive at the same instant): the number of bullets isn't known, so leave it
-  if (!shots) return false;
+  // health and his respawn arrive at the same instant): the number of bullets isn't known, so leave it, except for
+  // the AWP and the Scout, which can't have fired more than one (above)
+  if (!shots) {
+    if (!ONE_BULLET.has(k.weapon)) return false;
+    const w0 = Math.max(at - 0.3, tEnd - 0.6);
+    if ((M.skipT || []).some((x) => x >= w0 - 0.2 && x <= tEnd + 0.2)) return false;
+    if (hitPointOn(k.victim, tEnd - 0.6, Math.min(k.t, tEnd) - 0.005)) return false;
+    shots = 1;
+  }
   return per * wallKeeps(k) * (k.hs ? 4 : 1.25) * shots < hp;
 }
 // Each wall's own material (Sujan, 2 Nov 2026, 0.26.7). After a surface a bullet keeps a share of its damage that
