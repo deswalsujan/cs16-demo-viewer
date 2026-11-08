@@ -21,15 +21,49 @@ Sujan's checks by eye of merged builds, kept for one sitting that he runs when h
 - [ ] **Kill details** in **POV mode** (0.26.16): **POV mode** on, Match 1 CT, R1 0:49, click his kill on H@rDRoCk in the Kills list: "No hit details. A demo recorded by a player has only his teammates' health, not H@rDRoCk's."; **View settings** has no **Damage numbers**.
 - [ ] **Join the parts**, a half replayed and a half carried on (0.26.19): WeMadeFox vs Ravens, Nuke, EM4 finals, both files cloned into `cstrike` (`tests/DEMOS.md` says how), part 1 open, **Join the parts**: the card as in `docs/join-replay-carry-mock.png`, part 2's line "Carries on at WeMadeFox 4 : 0 Ravens, 26 rounds, no winner."; part 2 moved first: "This order doesn't add up" and the recording times named, no green tick; joined: WeMadeFox 16-13, 17-13 with **Count them**, all 10 players in the Players tab, and with **Show warmup, restarts and idle rounds** on, "replayed from 0:0" on the 16 replayed rounds.
 - [ ] **Join the parts**, the order (0.26.19): Na`Vi vs SK, Inferno, ESWC 2011, its three files cloned into `cstrike`, the first open, **Join the parts**: 1609, 1724, 1740, "24 Oct 2011 at 16:09, at 17:24 and at 17:40".
+- [ ] The keys (0.26.20): any demo in **Player's eyes**: ↑ goes to the next player and ↓ to the previous one, Z and X to the previous and next round (held down, one round); press ?: the list says Z X for rounds, ↑ or click and ↓ or right-click for players; the tooltips of the round buttons and the player arrows name the keys.
+- [ ] **Join with another demo…** with no other demo (0.26.20): pick the Half-Life folder (its `cstrike` holds no test demo), open any test demo with **Open .dem from elsewhere**, Rounds tab, **Join with another demo…**: "There are no other demos in your Half-Life folder." beside **A file from elsewhere…**, no empty list.
 
 **Windows**
 - [ ] **Interface size** (0.26.13), in Chrome or Edge: as on the Mac above, on the Windows screen.
+- [ ] The keys (0.26.20), in Chrome or Edge: as on the Mac above; ↑ and ↓ don't scroll the side panel after clicking in it.
 - [ ] **POV mode** in main (0.25.0; check on 0.26.8 or later, which reads his crosshair settings and ammo icons from `cstrike/config.cfg` in Chrome and Edge): tick **POV mode** in **View settings** (or **Turn on POV mode** in a POV demo's load summary) and open Match 1 CT or one of his own recordings: the demo opens again at the same moment; his crosshair in the colour and size of his `config.cfg`, at 70%; at his kills, the marker's ticks just past his crosshair's arms; round announcements in the middle ("Target has been saved!"); the HUD's round timer gone after a plant (back at once on a server with `mp_show_bomb_timer 1`); the spectator bars' clock counting the C4 down; the C4 on a carrier's back and a CT's kit on the 3D models, and the C4 on the radar when his game had it (kits never on the radar); **View settings** without **Crosshair**, **Glow on hits** and **Damage numbers**. Untick it: the demo plays like an HLTV demo, the recording player at the map's zero point.
 - [ ] Kill feed icons in **POV mode** (0.25.0): **POV mode** on, any POV demo, the top right after a kill: the orange gun icon, the headshot icon on headshots, no "m4a1" or "HS" words.
 
-## Open follow-ups (checklist, updated 7 Nov 2026, 0.26.19)
+## Open follow-ups (checklist, updated 8 Nov 2026, 0.26.20)
 
 Everything raised in conversation that isn't finished, in one place. Each item says who does it. Ideas for new features are further down; this list is for loose ends.
+
+**Sujan's feedback of 8 Nov 2026: IEM4 World Championship** (CeBIT, March 2010; seven demos, now test demos, `tests/DEMOS.md`: compLexity vs WeMadeFox, Nuke; SK vs Na`Vi, Dust2; SK vs fnatic, Train; fnatic vs SK, Inferno; mousesports vs mTw, Inferno, in 2 files; SK vs compLexity, Inferno. Sujan's order: the keys and the Join card's empty list built at once, with no mockup; Claude's reports on the match rules and the wallbang finder, and one mockup round for the dialogs, all in one handover; nothing else built before he answers)
+- Done, in the archive: **↑ and ↓ pick players, Z and X move rounds** and **The Join card's empty list of demos** (0.26.20, 8 Nov 2026).
+- [ ] **Rounds count before both teams are full** (Sujan's point 5)
+  - Status: compLexity vs WeMadeFox, Nuke: R1 counts as a compLexity win with 1 kill while players were still joining.
+  - Next step: Claude reports the plan and its effect, every test demo whose score or round count changes, before and after; Sujan decides before any build.
+  - Decided so far: Sujan's rule: a round counts toward the score only when both teams have 5 players. To confirm (Claude's reading, in Sujan's brief): it decides where the live match starts, and a 4 against 5 round inside a live match (a drop, a late player, a ban) still counts.
+- [ ] **Team names from more sources** (Sujan's point 10)
+  - Status: with no file name or known team to go on, the header reads "Team 1" and "Team 2" unless the player names it.
+  - Next step: Claude reports what each source finds on every test demo (a clan tag a team's players share, chat and HUD messages from the admin or HLTV with the score and team names, the file name, the known teams), which wins, and any demo it names wrongly; Sujan decides before any build.
+  - Decided so far: a name the player picked still wins (Sujan, 8 Nov 2026).
+- [ ] **A wallbang on a teammate** (Sujan's point 6)
+  - Status: compLexity vs WeMadeFox, Nuke, R8 1:41: glow kills his teammate solo with the M4A1, listed as STRICT WB.
+  - Next step: Claude reports the cause first; Sujan decides before the finder changes.
+  - Decided so far: such a kill stays a wallbang but leaves the Wallbangs tab, its counts, **Copy list** and the timeline's wallbang diamonds, and still shows as TK in the Kills tab (Sujan, 8 Nov 2026).
+- [ ] **Edward-FoCuS on Gux reads strict where Gux was in view** (Sujan's point 7)
+  - Status: SK vs Na`Vi, Dust2, R11 0:52, M4A1: listed STRICT WB; Sujan saw Gux, so LOOSE WB at most.
+  - Next step: Claude finds why the picture check read him hidden and reports it; Sujan decides before the finder changes.
+  - Decided so far: nothing yet.
+- [ ] **AWP leg hits listed as wallbang damage** (Sujan's points 8 and 9)
+  - Status: listed as wallbang damage where Sujan sees direct leg shots: SK vs Na`Vi, Dust2, R30 1:30, RobbaN on Zeus, 83 HP; SK vs fnatic, Train, R15 1:36, RobbaN on cArn, 84 HP, and R15 1:33, RobbaN on face, 82 HP. In the Train screenshot cArn's legs look hidden behind a crate.
+  - Next step: Claude reads the AWP's code in ReGameDLL, works out the most an AWP does through one wall of each material the finder knows, per body part, with and without armour, says which explanation fits each hit (the victim's position or height wrong at the shot, or that much damage really possible), checks cArn's position and stance frame by frame, and why `tooMuchDamage` didn't throw them out; Sujan's check in the game has the final say.
+  - Decided so far: nothing yet.
+- [ ] **The Join card's "This order doesn't add up" box runs into the footer** (Sujan's point 3; mockup round)
+  - Status: the orange left bar and box run into the footer row (Sujan's screenshot, 8 Nov 2026).
+  - Next step: in the one mockup with point 4, in `docs/proposed/`.
+  - Decided so far: the box sits in the card's structure.
+- [ ] **Dialogs and cards reworked** (Sujan's point 4; mockup round)
+  - Status: the load summary, the Join card, the can't-play card, the shortcuts list and the **View settings** panel.
+  - Next step: Claude looks at how Anthropic's and Stripe's own websites lay out dialogs, cards and forms, lists the patterns borrowed (padding scale, header, body and footer, button order, warnings inside a card), and shows each dialog before and after, in one mockup with point 3, in `docs/proposed/`; nothing built before Sujan approves it.
+  - Decided so far: the viewer's colours and fonts stay (Sujan, 8 Nov 2026).
 
 **Sujan's report of 7 Nov 2026: WeMadeFox vs Ravens** (Nuke, EM4 finals, one map in 2 files, now test demos, `tests/DEMOS.md`; measured on 0.26.18, `tests/logs/join-replay-carry-2026-11-07.md`; Sujan answered the plan the same day: one batch, one mockup round, one build, on the branch feat/join-replay-carry)
 - Done, in the archive: **WeMadeFox vs Ravens joined reads Ravens 16-9**, **The Join card ticks a wrong order of WeMadeFox vs Ravens** and **Three players counted as one in WeMadeFox vs Ravens, part 1** (0.26.19, 7 Nov 2026: a half replayed from 0:0 in one file doesn't count and a half carried on into a later file does; the Join card's words for it, checks A and B and the recording times; two Steam accounts one person only by a name both used in the live rounds, never a placeholder), and the Join card's order for Na`Vi vs SK, Inferno, ESWC 2011 (`fileTime`, 0.26.19).

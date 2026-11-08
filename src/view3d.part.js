@@ -638,9 +638,9 @@ function update3Now() {
         : (death.weapon === 'world' ? 'died' : 'killed themselves');
       pov.hidden = false; pov.classList.add('dead');
       // Vanilla (0.26.16): the name bar stays (Sujan, 3 Nov 2026), without the death cam's banner
-      if (VAN.on) pov.innerHTML = `<b>${esc(nameAt(selected, T))}</b>${POV.on ? '' : ` <span class="kw">· ${playing && age < 2.5 ? 'switching to a teammate' : 'press X for the next player'}</span>`}`;
-      else pov.innerHTML = `<b>${esc(nameAt(selected, T))}</b> ${kn}${POV.on ? '' : ` <span class="kw">· ${playing && age < 2.5 ? 'switching to a teammate' : 'press X for the next player'}</span>`}`;
-    } else { pov.hidden = false; pov.classList.add('dead'); pov.innerHTML = `<span class="kw">${esc(nameAt(selected, T))} is dead.${POV.on ? '' : ' Press X for the next player.'}</span>`; }
+      if (VAN.on) pov.innerHTML = `<b>${esc(nameAt(selected, T))}</b>${POV.on ? '' : ` <span class="kw">· ${playing && age < 2.5 ? 'switching to a teammate' : 'press ↑ for the next player'}</span>`}`;
+      else pov.innerHTML = `<b>${esc(nameAt(selected, T))}</b> ${kn}${POV.on ? '' : ` <span class="kw">· ${playing && age < 2.5 ? 'switching to a teammate' : 'press ↑ for the next player'}</span>`}`;
+    } else { pov.hidden = false; pov.classList.add('dead'); pov.innerHTML = `<span class="kw">${esc(nameAt(selected, T))} is dead.${POV.on ? '' : ' Press ↑ for the next player.'}</span>`; }
     // like CS spectating: after a moment, follow a living teammate (or anyone alive)
     if (!POV.on && death && T - death.t > 2.5 && playing) {
       const alive = alivePlayers();
