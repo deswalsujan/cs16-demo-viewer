@@ -4,6 +4,7 @@ What changed in the viewer, newest first. The version shows in the viewer's shor
 
 ## Versions
 
+- [0.26.25](#02625-2026-11-08) 2026-11-08: Skip into freeze, feed, names
 - [0.26.24](#02624-2026-11-08) 2026-11-08: Leg hits on five heights
 - [0.26.23](#02623-2026-11-08) 2026-11-08: Dialogs and cards reworked
 - [0.26.22](#02622-2026-11-08) 2026-11-08: Teamkills, leg hits, open hits
@@ -82,6 +83,25 @@ What changed in the viewer, newest first. The version shows in the viewer's shor
 
 ## Known limits
 Moved to [LIMITS.md](LIMITS.md) on 30 Oct 2026; release entries below still say "Known limits" for that list.
+
+## 0.26.25 (2026-11-08)
+
+From Sujan's batch of 8 Nov 2026 on SK vs AGAiN, Train, Arbalet Cup Europe 2009, and his answers the same day to Claude's report (`tests/logs/sk-again-report-2026-11-08.md`).
+
+### Fixed
+- A skip across a round restart with only 1 or 2 players alive is found (Sujan, 8 Nov 2026): at a round start, a kill arriving in the snapshot where everyone appears at the spawns is the sign of it. SK vs AGAiN jumps from R3 0:14 into R4's freeze time at demo 14:10; the timeline marks it, "Recording skips here" shows, and face's kill on taz, judged from R4's spawns, is no longer STRICT WB at "R3 freeze 0:10": it reads R3 0:14 and leaves the Wallbangs tab. 13 more skips on 12 test demos, all across a restart; 4 listed wallbangs leave the list.
+- Kill details on a skip across a restart count the health that arrives with the skip in the round before it, with no source, and the killing bullet says the recording skips here (Sujan, 8 Nov 2026): taz reads "−27 at 0:14, source unknown" in place of "−95 at freeze 0:10". With it, a player who ended a round low or dead on such a skip starts the next round from 100, so his first hit there is found (3 kills' numbers change).
+- The kill feed is wiped when a new round starts, as in the game (Sujan, 8 Nov 2026, checked in the game): Jimmy's kill on kubenB at R4 1:15 no longer shows at R5 freeze 0:09.
+
+### Changed
+- A team whose part of the file name runs on past the clan tag all its players share reads the tag: "SK_vs_AGAiN_ArbaletEU" read "AGAiN ArbaletEU", now AGAiN (Sujan, 8 Nov 2026). Known teams keep their full names (Natus Vincere, SK Gaming); no other test demo's names change.
+
+### How it was tested
+- `demo_search_check.py`, 5 new checks on SK vs AGAiN (the header, the skip and its note, the kill, its kill details, the kill feed), all failing on 0.26.24.
+- 76 demos with their maps, 0.26.24 against this build: every name, skip, listed wallbang and burst that changes is in the log. `ground_truth_check.py`: SK vs AGAiN added (walle on Neo, a known gap). The seven checks pass. Full log: `tests/logs/0.26.25.md`.
+
+### Discussed, not changed
+- walle on Neo (SK vs AGAiN, R18 1:06) stays STRICT WB, a known gap like THREAT on LoordB: hidden at the shot, in view 0.1 s back, as walle's eye moved 5 units (Sujan, 8 Nov 2026).
 
 ## 0.26.24 (2026-11-08)
 

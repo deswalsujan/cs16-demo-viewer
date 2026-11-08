@@ -126,9 +126,13 @@ function showScoreboard(v) {
 
 // ---------------- HUD ----------------
 // the kill feed: every frame (frame, loop.js), not with the rest of the HUD every 0.1 s, so a kill shows in it in the
-// same frame as the killing bullet's ✕ on the damage numbers (Sujan, 1 Nov 2026); it's rebuilt only when it changes
+// same frame as the killing bullet's ✕ on the damage numbers (Sujan, 1 Nov 2026); it's rebuilt only when it changes.
+// Only the round playing now: a new round wipes the feed, as in the game (Sujan, 8 Nov 2026, checked in the game; Jimmy's
+// kill on kubenB at R4 1:15 stayed into R5's freeze time, SK vs AGAiN, Train, Arbalet Cup Europe 2009). An HLTV demo's
+// round starts at the server's round restart, which is also where freeze time starts.
 function updateFeed() {
-  const feed = D.kills.filter((k) => k.t <= T && k.t > T - 6).slice(-5);
+  const r = roundAt(T), from = r ? r.start - 1e-4 : -Infinity;
+  const feed = D.kills.filter((k) => k.t <= T && k.t > T - 6 && k.t >= from).slice(-5);
   const key = feed.map((k) => k.t).join();
   if (key !== lastFeedKey) {
     lastFeedKey = key;

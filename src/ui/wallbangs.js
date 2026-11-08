@@ -220,7 +220,10 @@ function computeHits() {
   const notCover = bsp.solids.filter((x) => x.shootable).map((x) => x.model);
   const live = (t) => M.liveR.find((r) => t >= r.start && (r.end == null || t <= r.end + 0.5));
   const starts = (M.rounds || []).map((r) => r.start).sort((x, y) => x - y);
-  const roundOf = (t) => { let k = -1; for (let j = 0; j < starts.length && starts[j] <= t; j++) k = j; return k; };
+  // health in the snapshot of a skip across a round restart counts in the round before it (Sujan, 8 Nov 2026): taz went
+  // from 32 to 5 in R3's missing end (SK vs AGAiN, Train, Arbalet Cup Europe 2009, demo 14:10), which counted from R4's
+  // 100 read "−95 at freeze 0:10"
+  const roundOf = (t) => { const at = onRestartSkip(t) ? t - 0.06 : t; let k = -1; for (let j = 0; j < starts.length && starts[j] <= at; j++) k = j; return k; };
   const last = {}, lastR = {}, drops = [], hpLog = {};
   for (let i = 0; i < D.hp.length; i += 3) {
     const t = D.hp[i], e = D.hp[i + 1], v = D.hp[i + 2], rn = roundOf(t);
@@ -264,6 +267,8 @@ function computeHits() {
   const note = (d, r) => { if (dv && d.e === dv.v && d.t >= dv.from && d.t <= dv.to) why.push(`${d.t.toFixed(3)} -${d.dmg} ${r}`); };
   for (const d of drops) {
     if (d.dead || !live(d.t) || !d.snd) { if (!d.dead) note(d, d.snd ? 'not live' : 'no hit sound'); continue; }
+    // a hit in the missing stretch of a skip across a restart: who fired it, and from where, isn't in the file
+    if (onRestartSkip(d.t)) { note(d, 'skip across a restart'); continue; }
     const hs = d.snd, th = hs[0][0];
     const head = hs.some(([, h]) => h);
     const i = idx(th), v = D.slots[d.e]; if (!v || isNaN(v[i * S])) continue;
@@ -465,7 +470,7 @@ function earlierDamage(k, list) {
   // the killing drop isn't in M.drops (he's dead after it), so nothing at the kill or after it can be counted twice
   const other = (M.drops || []).filter((d) => d.e === k.victim && r && d.t >= r.start - 1e-3 && d.t <= kt + 0.05 && !(d.hit && list.includes(d.hit)));
   const items = other.map((d) => {
-    const when = clockText(d.t);
+    const when = killClock(d.t); // on a skip across a restart, on the clock of the round before it (0:14, not freeze 0:10)
     if (typeof d.from === 'number') return { dmg: d.dmg, from: labelAt(d.from, d.t), when };
     return { dmg: d.dmg, from: d.from === 'grenade' ? 'a grenade' : d.from === 'fall' ? 'a fall' : null, when };
   });

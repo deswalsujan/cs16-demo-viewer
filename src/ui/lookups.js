@@ -218,7 +218,33 @@ function teamsFromFileName(file, rosters) {
   // which roster does each name belong to? count players whose name contains the team's tag
   const hits = (t, roster) => roster.filter((nm) => { const a = norm(nm); return (norm(t.raw).length >= 2 && a.includes(norm(t.raw))) || a.includes(norm(t.name)); }).length;
   const a0 = hits(A, rosters[0]) + hits(B, rosters[1]), a1 = hits(A, rosters[1]) + hits(B, rosters[0]);
-  return a1 > a0 ? [B.name, A.name] : [A.name, B.name];
+  // a team whose part of the file name runs on past the tag all its players share reads the tag, so the extra words go
+  // (Sujan, 8 Nov 2026: "SK_vs_AGAiN_ArbaletEU" read "AGAiN ArbaletEU", ArbaletEU being the event). Names stay full
+  // names: a known team keeps its own (Natus Vincere, SK Gaming), never the tag, and a tag that is a known team reads
+  // as that team. The players' tags stay in the Tab scoreboard and the kill feed.
+  const cut = (t, roster) => {
+    const n = norm(t.raw);
+    if (KNOWN_TEAMS[n]) return t.name;
+    const tag = sharedTags(roster).find((x) => n.startsWith(norm(x)) && n.length > norm(x).length);
+    return tag ? knownTeam(tag) || tag : t.name;
+  };
+  return a1 > a0 ? [cut(B, rosters[0]), cut(A, rosters[1])] : [cut(A, rosters[0]), cut(B, rosters[1])];
+}
+// The clan tag every name in a team shares, at the start of the names and at their end ("SK|walle", "SK|face": SK;
+// "AGAiN  Neo  ZOWiE": AGAiN and ZOWiE), cut back to a separator so a nickname's first letters don't join it, without the
+// separators around it. A backquote is part of a tag (Na`Vi). Tags of 2 letters or more; none for fewer than 2 names.
+function sharedTags(names) {
+  names = (names || []).filter(Boolean);
+  if (names.length < 2) return [];
+  const sep = (c) => !/[A-Za-z0-9`]/.test(c), m = Math.min(...names.map((x) => x.length));
+  let P = 0, Q = 0;
+  while (P < m && names.every((x) => x[P] === names[0][P])) P++;
+  while (Q < m && names.every((x) => x[x.length - 1 - Q] === names[0][names[0].length - 1 - Q])) Q++;
+  let pre = names[0].slice(0, P), suf = names[0].slice(names[0].length - Q);
+  if (!names.some((x) => x.length > P && sep(x[P]))) pre = pre.slice(0, Math.max(0, ...[...pre].map((c, i) => (sep(c) ? i + 1 : 0))));
+  if (!names.some((x) => x.length > Q && sep(x[x.length - 1 - Q]))) { const j = [...suf].findIndex(sep); suf = j < 0 ? '' : suf.slice(j); }
+  const clean = (x) => x.replace(/^[^A-Za-z0-9`]+|[^A-Za-z0-9`]+$/g, '');
+  return [clean(pre), clean(suf)].filter((x) => norm(x).length >= 2);
 }
 
 // Player stats from the kill feed only (no bonus points for plants or defuses).
