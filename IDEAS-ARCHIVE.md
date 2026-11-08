@@ -544,6 +544,15 @@ Items moved out of [IDEAS.md](IDEAS.md) so that it holds only what is open (work
 
 ## Kept for later
 
+- **Letting the bullet's line decide wallbangs** (parked 9 Nov 2026 by Sujan; in IDEAS.md's checklist the same day as **The crosshair line leaves out the recoil**, with the thickness fix from `tests/logs/awp-one-bullet-2026-11-09.md` joined to it).
+  - **Its text in IDEAS.md when parked:**
+    - **The crosshair line leaves out the recoil** (found 9 Nov 2026 while looking at walle on XEK, SK vs EYESports, Inferno, Arbalet Cup Europe 2009, R26 1:33; older than any change)
+      - Status: HLTV records the view angles, and the bullet flies along them plus the recoil, which each fire event carries (`iparam1` and `iparam2`, punchangle x 100, `fparam1` and `fparam2` the spread; ReGameDLL `wpn_ak47.cpp` and the other guns). The finder's crosshair line (`aimLine`, `src/ui/wallbangs.js`) uses the angles alone, so late in a spray it runs up to about 5 degrees below the bullet. On the 77 demos (`tests/logs/awp-one-bullet-2026-11-09.md`), of 664 listed wallbangs with the recoil recorded, 84 cross no wall on the bullet's line, 79 of them LOOSE and 49 Sujan's confirmed answers (a loose wallbang from damage gets its verdict from an earlier bullet of the spray, so its killing bullet can be in the open).
+      - Next step: Claude, later: measure the bullet's line in the crosshair test, and for the wall's material in the damage rule, against Sujan's answers before anything changes; the thickness shown is in the report's proposed fix for A.
+      - Decided so far: nothing.
+  - **The thickness fix it was joined with** (the report's proposed fix, kept out of 0.26.26): the thickness the viewer shows for a wallbang (the WB tag's tooltip, **Copy list**'s "(N units)") measured on the bullet's line, the recorded aim plus the killing shot's recoil and spread, when its fire event has them; as now otherwise, and the line to his middle when the bullet's line is clear. Measured on the 767 wallbangs listed with the one-bullet rule on: 664 with the recoil recorded, 391 within 10 units of today's number, 111 less wall, 78 more, 84 none (walle on XEK 903 to 212, RobbaN on ED1KASDDSA 606 to 162).
+  - **Sujan, 9 Nov 2026:** "The thickness fix stays out of A. Park it in IDEAS.md with the new item on letting the bullet's line (view angles plus recoil) decide wallbangs: the number shown and the line that decides get settled together, since on the bullet's line 84 listed wallbangs cross no wall (49 of them confirmed answers) and their thickness would contradict the list."
+
 - **Bullet marks (decals)** (parked 1 Oct 2026 by Sujan, after a feasibility check). For seeing where a spray actually lands while the crosshair is pulled down against recoil.
   - **Why parked:** HLTV demos don't record where the player was aiming at the moment of each shot, so marks on walls would land 1 to 2 degrees off and partly be made up. That goes against showing only what the demo recorded.
   - **Feasibility check, 1 Oct 2026 (Dust2, Na`Vi vs FX):**
