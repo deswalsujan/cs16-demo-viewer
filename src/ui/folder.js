@@ -8,7 +8,7 @@ $('fFolder').onchange = (e) => { const list = [...e.target.files]; e.target.valu
 // The whole folder is read again each time, so files deleted since the last pick drop out
 function indexFolder(list) {
   let nOv = 0;
-  files.demos = []; files.overviews = {}; files.maps = {}; files.wads = {}; files.mdl = {}; files.snd = {}; files.sentences = null; files.materials = null; files.lang = null; files.hud = { txt: null, spr: {} }; files.cfg = null;
+  files.demos = []; files.overviews = {}; files.maps = {}; files.wads = {}; files.mdl = {}; files.snd = {}; files.sentences = null; files.materials = null; files.lang = null; files.hud = { txt: null, spr: {} }; files.cfg = null; files.fx = {};
   STALE.clear();
   for (const f of list) {
     const p = (f.webkitRelativePath || f.name).replace(/\\/g, '/').toLowerCase();
@@ -43,6 +43,9 @@ function indexFolder(list) {
       if (hm) files.hud.spr[hm[1]] = f;
       const wt = /(?:^|\/)cstrike\/sprites\/(weapon_\w+)\.txt$/.exec(p); // POV HUD: each gun's ammo icon
       if (wt) (files.hud.wtxt ||= {})[wt[1]] = f;
+      // the gun flash's sprites, the blood puff's and the palette that colours it (0.26.27): cstrike's, else Half-Life's
+      const fx = /(?:^|\/)(cstrike|valve)\/(sprites\/(?:muzzleflash[1-3]|blood|bloodspray)\.spr|gfx\/palette\.lmp)$/.exec(p);
+      if (fx && (!files.fx[fx[2]] || fx[1] === 'cstrike')) files.fx[fx[2]] = f;
     }
   }
   files.demos.sort((a, b) => b.lastModified - a.lastModified);
@@ -246,7 +249,7 @@ function hlOS() {
 $('hlPathWin').textContent = HL_EXAMPLE; $('hlPathMac').textContent = HL_EXAMPLE_MAC;
 { const os = hlOS(); $('hlWin').hidden = os === 'mac'; $('hlMac').hidden = $('hlTip').hidden = os === 'win'; }
 // the files the viewer reads, for telling what changed between two picks in one visit (hlApply)
-const HL_WANT = /(?:^|\/)(?:cstrike|cstrike_downloads|valve)\/(?:maps\/[^/]+\.bsp|overviews\/[^/]+\.(?:bmp|txt)|models\/.+\.mdl|sound\/.+\.wav|sound\/(?:sentences|materials)\.txt|resource\/cstrike_english\.txt|sprites\/hud\.txt|sprites\/640hud\d+\.spr|[^/]+\.wad)$|(?:^|\/)cstrike\/(?:config\.cfg|sprites\/weapon_\w+\.txt)$|\.dem$/;
+const HL_WANT = /(?:^|\/)(?:cstrike|cstrike_downloads|valve)\/(?:maps\/[^/]+\.bsp|overviews\/[^/]+\.(?:bmp|txt)|models\/.+\.mdl|sound\/.+\.wav|sound\/(?:sentences|materials)\.txt|resource\/cstrike_english\.txt|sprites\/hud\.txt|sprites\/640hud\d+\.spr|sprites\/(?:muzzleflash[1-3]|blood|bloodspray)\.spr|gfx\/palette\.lmp|[^/]+\.wad)$|(?:^|\/)cstrike\/(?:config\.cfg|sprites\/weapon_\w+\.txt)$|\.dem$/;
 // path inside the chosen folder, lower case, without the folder's own name
 const hlKey = (f) => (f.webkitRelativePath || f.name).replace(/\\/g, '/').toLowerCase().split('/').slice(1).join('/');
 function hlSnap(list, name, gameDirs) {

@@ -269,6 +269,7 @@ export function parseDemo(buffer, onProgress, opts = {}) {
   const corpses = [];   // { t, start, model, pos, yaw, seq, team, e }
   const booms = [];     // time, x, y, z (grenade and C4 explosions)
   const hitPoints = []; // time, x, y, z, size: where a bullet hit a player, as the server marked it (0.26.26)
+  const brass = [];     // time, x, y, z, vx, vy, vz, yaw, model, sound type, life, entity: shells the server ejects (0.26.27)
   const puffs = [];     // smoke grenade events (createsmoke): time, kind (1 = it pops, 4 = a puff every second after), cloud centre x, y, z
   let pendingEv = [];
   let scores = { T: 0, CT: 0 };
@@ -482,6 +483,15 @@ export function parseDemo(buffer, onProgress, opts = {}) {
         case 'TeamScore': {
           const team = m.str(), score = m.s();
           if (team === 'TERRORIST') scores.T = score; else if (team === 'CT') scores.CT = score;
+          break;
+        }
+        // a shell the server ejects: the AWP's, Scout's and M3's, after the shot (ReGameDLL weapons.cpp, EjectBrassLate and
+        // EjectBrass, MSG_PVS), read as the client reads it (cs16-client ammo.cpp, MsgFunc_Brass); for the shells in
+        // Player's eyes (0.26.27)
+        case 'Brass': {
+          m.skip(1); const x = m.s() / 8, y = m.s() / 8, z = m.s() / 8; m.skip(6);
+          const vx = m.s() / 8, vy = m.s() / 8, vz = m.s() / 8, yaw = m.ub() * 360 / 256, model = m.s(), snd = m.ub(), life = m.ub(), ent = m.ub();
+          if (inPlayback) brass.push(time, x, y, z, vx, vy, vz, yaw, model, snd, life, ent);
           break;
         }
         case 'HLTV': {
@@ -982,7 +992,7 @@ export function parseDemo(buffer, onProgress, opts = {}) {
     occupants, brushEvents: new Float32Array(brushEvents), brushPose: new Float32Array(brushPose), viewers: hltvStatus, notes,
     times: new Float32Array(samples.t), slots,
     finalScore: { ...scores }, models: resources.models, stride: STRIDE,
-    pmodels, sounds: resources.sounds, events: resources.events, snds: new Float32Array(snds), shots: new Float32Array(shots), booms: new Float32Array(booms), hitPoints: new Float32Array(hitPoints), puffs: new Float32Array(puffs), radio, centre, corpses,
+    pmodels, sounds: resources.sounds, events: resources.events, snds: new Float32Array(snds), shots: new Float32Array(shots), booms: new Float32Array(booms), hitPoints: new Float32Array(hitPoints), brass: new Float32Array(brass), puffs: new Float32Array(puffs), radio, centre, corpses,
     errors, errSamples, health, c4drops: new Float32Array(c4drops), slow, stops,
     ...(povData ? { povData } : {}),
   };

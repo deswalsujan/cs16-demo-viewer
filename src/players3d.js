@@ -426,6 +426,8 @@ function drawViewModel(renderer, camera, e, s) {
   mdlBoneMats(M2.mdl, V.rig.p, V.rig.q, V.rig.mats);
   skinRig(V.rig);
   V.camera.fov = camera.fov; V.camera.aspect = camera.aspect; V.camera.updateProjectionMatrix();
+  // the gun flash at the gun's own attachment, drawn with it (shotfx.js, 0.26.27)
+  try { fxViewFlash(V, M2.mdl, name, e, own); } catch (err) { frameError(err); }
   // drawn last, over a cleared depth buffer, so the gun never pokes into walls
   const ac = renderer.autoClear; renderer.autoClear = false;
   renderer.clearDepth(); renderer.render(V.scene, V.camera);

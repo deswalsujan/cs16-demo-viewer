@@ -33,6 +33,8 @@ function demoSoundList() {
   for (let i = 1; i < (D.ownAmmo || []).length; i += 3) seen.add(WEAPON_EVENT[D.ownAmmo[i]]); // POV mode: his own guns
   for (const ev of seen) { const f = FIRE[ev]; if (!f) continue; for (const x of Array.isArray(f) ? f : [...f.on, ...f.off]) need.add('weapons/' + x + '.wav'); }
   if (D.booms && D.booms.length) for (const x of ['explode3', 'explode4', 'explode5']) need.add('weapons/' + x + '.wav');
+  // shells landing in Player's eyes (0.26.27)
+  if (sh.length || (D.ownShots && D.ownShots.length)) for (let k = 1; k <= 3; k++) { need.add(`player/pl_shell${k}.wav`); need.add(`weapons/sshell${k}.wav`); }
   if (SND.sentences) for (const r of D.radio || []) { const p = SND.sentences[r.s.toUpperCase()]; if (p) need.add(p); }
   return [...need];
 }
@@ -200,6 +202,8 @@ function soundTick(t0, t1) {
     const o = i * 4; playSound('weapons/explode' + (3 + i % 3) + '.wav', [b[o + 1], b[o + 2], b[o + 3]], 1, 0.3, 100, null, L);
   }
   if (SND.sentences) for (const r of D.radio || []) if (r.t > t0 && r.t <= t1) { const p = SND.sentences[r.s.toUpperCase()]; if (p) playSound(p, null, 0.8, 0, 100, 'radio', L); }
+  // the shells in Player's eyes landing, each sound where its shell hit (shotfx.js, 0.26.27)
+  if (!fast) for (const [name, pos, vol] of fxShellSounds(t0, t1)) playSound(name, pos, vol, 0.8, 100, null, L);
 }
 function stopSounds() { for (const k in SND.chans) try { SND.chans[k].stop(); } catch (e) { } SND.chans = {}; }
 function setVolume(v) {
