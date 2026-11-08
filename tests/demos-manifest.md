@@ -1,6 +1,6 @@
 # Test demo manifest
 
-Every test demo on Sujan's Mac (`tests/DEMOS.md` has each one's event and status) with its size and SHA-256, so a copy of `~/code/cs16-data/test-demos` can be checked: Sujan keeps one on Google Drive (Sujan, 1 Nov 2026). The SHA-256 of the 50 demos in `tests/expected/` ("yes", or "joined part" for a part named only in another demo's file) is the one there; the other 14 were computed on the Mac on 1 Nov 2026, before the move (the two demos added to `tests/expected/` on 2 Nov 2026 took theirs from this table), EG vs eXecutors, Train, EM4 finals on 7 Nov 2026, when it joined the test demos, the two files of WeMadeFox vs Ravens, Nuke, EM4 finals the same day, when they did, and the seven demos of the IEM4 World Championship on 8 Nov 2026, when they did. 74 demos, 2,524,447,936 bytes (2.5 GB). The two Windows-only bot test demos of 5 Oct 2026 (`bangtest.dem`, `full_match_demo-2610050843-de_train.dem`) aren't on the Mac, so they aren't listed.
+Every test demo on Sujan's Mac (`tests/DEMOS.md` has each one's event and status) with its size and SHA-256, so a copy of `~/code/cs16-data/test-demos` can be checked: Sujan keeps one on Google Drive (Sujan, 1 Nov 2026). The SHA-256 of the 50 demos in `tests/expected/` ("yes", or "joined part" for a part named only in another demo's file) is the one there; the other 14 were computed on the Mac on 1 Nov 2026, before the move (the two demos added to `tests/expected/` on 2 Nov 2026 took theirs from this table), EG vs eXecutors, Train, EM4 finals on 7 Nov 2026, when it joined the test demos, the two files of WeMadeFox vs Ravens, Nuke, EM4 finals the same day, when they did, the seven demos of the IEM4 World Championship on 8 Nov 2026, when they did, and Na`Vi vs fnatic, Train, IEM4 final the same day, when it did. 75 demos, 2,565,813,199 bytes (2.6 GB). The two Windows-only bot test demos of 5 Oct 2026 (`bangtest.dem`, `full_match_demo-2610050843-de_train.dem`) aren't on the Mac, so they aren't listed.
 
 Check a folder (any copy, subfolders included; demos are found by SHA-256, under any name):
 
@@ -28,6 +28,7 @@ When a test demo is added or deleted, change its row here along with its row in 
 | `auto-1003032023-de_inferno.dem` | 29,849,852 | `b26dbe7390e392f20900f8bdd7b877faf20d1fc95dfd22cfc4851a9d6afca3af` | no |
 | `auto-1003051236-de_inferno.dem` | 32,552,698 | `dacc7f352eee72a2bb71115b53f35b3bdc20d54608d706958b85d74c10efad17` | no |
 | `auto-1003051321-de_train.dem` | 55,585,038 | `3fd1e174fe114b42bbaa03a9e2ce13a72b4747d14073c67304497a625e118251` | no |
+| `auto-1003061629-de_train.dem` | 41,365,263 | `1543fd4d5dfd0848e2b581496d96b5ab79d906616fb254d5dbeeb1d7c109b7bf` | no |
 | `auto-server1-1106262105-de_tuscan.dem` | 37,679,527 | `2def4956ff8d8d932611cb6bb2fb0d2962b70195604af480b4549a109e1c28d7` | yes |
 | `auto_ifng-1103030950-de_dust2.dem` | 46,398,471 | `35e1284f61ab95be44721c56dec61ce487f3873dc9009822b9fcb3d198d1039d` | yes |
 | `auto_ifng-1110042145-de_forge.dem` | 18,186,092 | `b9b0ad89ea107d59e7f3024919cde447f43724f7e5dc99a4a9df41e78d5b4b95` | yes |
