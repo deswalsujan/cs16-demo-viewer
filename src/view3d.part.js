@@ -864,7 +864,7 @@ async function checkSeen() {
   M.seenPending = cands.length; renderPane();
   let added = 0;
   // a sliver kill listed here gets its numbers and joins its burst: computeHits again
-  const done = () => { if (gen === seenGen) { M.seenPending = 0; if (added) computeHits(); M.wbs = D.kills.filter((k) => k.wb && M.liveR.some((r) => r.n === k.round)); renderPane(); drawTimeline(); } };
+  const done = () => { if (gen === seenGen) { M.seenPending = 0; if (added) computeHits(); M.wbs = listedWbs(); renderPane(); drawTimeline(); } };
   // the models these victims wear, loaded first (the folder's files are read on demand)
   const names = new Set();
   for (const k of cands) { const a = D.slots[k.victim]; if (a) names.add(playerModelName(a[M.idxAt(k.tPos != null ? k.tPos : k.t) * D.stride + 8])); }

@@ -138,6 +138,8 @@ button { cursor: pointer; }
 /* a loose wallbang (0.23.0): the bullet went through cover, part of the victim was in view */
 .wbtag.loose { color: var(--loose); border-color: color-mix(in srgb, var(--loose) 55%, transparent); }
 /* wallbang damage (trial, wip/wallbang-hits): hits through cover that didn't kill, in the damage colour */
+/* a teamkill in the Kills list (0.26.22) */
+.wbtag.tk { color: var(--t); border-color: color-mix(in srgb, var(--t) 55%, transparent); }
 .wbtag.dmg { color: var(--hit); border-color: color-mix(in srgb, var(--hit) 55%, transparent); }
 .kill3 .dline { display: block; font: calc(12px * var(--ui)) var(--f-body); color: var(--muted); margin: 0 0 calc(3px * var(--ui)); }
 .kill3 .dline b { color: var(--hit); font-weight: 500; }

@@ -19,7 +19,9 @@ the Rounds tab's replayed rounds; the order the card suggests for Na`Vi vs SK, I
 Na`Vi: ↑ and ↓ for the next and previous player, Z and X for rounds, in 2D, 3D and split, a focused side panel left where it
 was, the shortcuts list and tooltips; the Join card's line when the folder holds no other demo (0.26.20). The match rules: the rounds before both teams were
 full on compLexity vs WeMadeFox, Nuke, IEM4; the rounds after 16 counted by themselves on SK vs Na`Vi, Dust2, IEM4, Stop at
-16 kept, Count them; the admin's team names on Burning vs FairFrag, Inferno, ESWC 2010 (0.26.21). About a minute and a half.
+16 kept, Count them; the admin's team names on Burning vs FairFrag, Inferno, ESWC 2010 (0.26.21). The wallbang finder on SK vs Na`Vi,
+Dust2, IEM4: Edward-FoCuS on Gux LOOSE, RobbaN's AWP leg hit on Zeus no damage row, a teamkill out of the Wallbangs list
+with the TK tag (0.26.22). About two minutes.
 """
 import os, re, sys, http.server, functools, threading, tempfile, shutil, subprocess, atexit
 from playwright.sync_api import sync_playwright
@@ -529,6 +531,47 @@ with sync_playwright() as p:
     except Exception as e:
         check('the match rules: rounds before both teams were full, rounds after 16, the admin\'s team names', False, str(e).split('\n')[0])
     ctx6.close()
+
+    # The wallbang finder (0.26.22; Sujan, 8 Nov 2026), SK vs Na`Vi, Dust2, IEM4, with its map: Edward-FoCuS on Gux, R11 0:52,
+    # reads LOOSE (the bullet 0.04 s before the kill did 21, the full damage of a hit in the open), with the reason in its
+    # tooltip; RobbaN's AWP hit on Zeus, R30 1:30, 83, exactly a leg in the open, is no damage row; a teamkill through a wall
+    # (a listed wallbang with its teams set the same, since no test demo has one in a live round) leaves the Wallbangs list
+    # and its count and gets the TK tag in the Kills list. Up to 0.26.21 Gux read STRICT WB and the 83 was a DAMAGE row.
+    ctx7 = b.new_context(viewport={'width': 1512, 'height': 982}); pg7 = ctx7.new_page()
+    pg7.route('**/three.min.js', lambda r: r.fulfill(path=os.environ.get('THREE_JS', os.path.join(here, '..', 'src', 'vendor', 'three.min.js')), content_type='application/javascript'))
+    errs7 = []; pg7.on('pageerror', lambda e: errs7.append(str(e).split('\n')[0]))
+    try:
+        if SN not in names: raise Exception(f'{SN} not found in HALF_LIFE_DIR or DEMO_DIRS')
+        pg7.goto(f'http://127.0.0.1:{srv.server_port}/{os.path.basename(hooked)}')
+        pg7.set_input_files('#fFolder', HL)
+        pg7.wait_for_function('__v("files.demos.length > 0")', timeout=30000)
+        JS7 = lambda c: pg7.evaluate('(c) => __v(c)', c)
+        JS7(f"loadDemoFile(files.demos.find((f) => f.name === {SN!r}))")
+        pg7.wait_for_function('__v("!!(D && M && MAP && R3 && view3.map === MAP.name && M.bursts)")', timeout=120000)
+        pg7.wait_for_function('__v("!M.seenPending")', timeout=120000); pg7.wait_for_timeout(500)
+        w = JS7(r"""(() => { closeSummary(); const lnOf = (t) => { const r = roundAt(t); return r && r.live ? r.ln : null; };
+          const k = D.kills.find((x) => lnOf(x.t) === 11 && nameAt(x.killer, x.t) === 'Edward-FoCuS' && nameAt(x.victim, x.t) === 'Gux');
+          tab = 'wb'; renderPane();
+          const row = [...$('pane').querySelectorAll('.wbrow')].find((r) => +r.dataset.ki === D.kills.indexOf(k));
+          const tag = row && row.querySelector('.wbtag.loose');
+          const dmg = (M.bursts || []).filter((b) => !b.kill).map((b) => `R${lnOf(b.start)} ${killClock(b.start)} ${nameAt(b.main, b.start)} > ${nameAt(b.v, b.start)} ${b.total}`);
+          const zeus = (M.hits || []).find((h) => lnOf(h.t) === 30 && nameAt(h.s, h.t) === 'RobbaN' && nameAt(h.v, h.t) === 'Zeus' && h.dmg === 83);
+          return { loose: k && k.wb && k.wb.loose, tag: tag ? tag.textContent : null, tip: tag ? tag.title : null, zeusRow: dmg.some((s) => s.startsWith('R30 1:30 RobbaN > Zeus')), zeusWall: zeus ? zeus.wall : 'no hit' }; })()""")
+        check('Edward-FoCuS on Gux, SK vs Na`Vi, IEM4, R11 0:52: LOOSE WB in the Wallbangs list, the tooltip saying why (STRICT WB up to 0.26.21)',
+              w['loose'] == 'open' and w['tag'] == 'LOOSE WB' and (w['tip'] or '').startswith("Loose wallbang: the killer's bullet on him 0.04 s before the kill did 21 HP, what his gun does in the open"), str(w))
+        check('RobbaN\'s AWP on Zeus, R30 1:30, 83 (a leg in the open): no damage row, the hit judged in the open (a DAMAGE row up to 0.26.21)', not w['zeusRow'] and w['zeusWall'] is False, str(w))
+        t = JS7(r"""(() => { const k = M.wbs.find((x) => !x.wb.loose), was = k.vteam, n0 = M.wbs.length;
+          k.vteam = k.kteam; M.wbs = listedWbs(); tab = 'wb'; renderPane();
+          const inWb = !!$('pane').querySelector(`.wbrow[data-ki="${D.kills.indexOf(k)}"]`), chip = $('pane').querySelector('[data-wf="all"]').textContent;
+          tab = 'kills'; seek(k.t - 1); renderPane(); const row = $('pane').querySelector(`[data-ki="${D.kills.indexOf(k)}"]`);
+          const out = { n0, n1: M.wbs.length, inWb, chip, tk: row && row.querySelector('.wbtag.tk') ? row.querySelector('.wbtag.tk').textContent : null, wbTag: row && row.querySelector('.wbtag:not(.tk)') ? row.querySelector('.wbtag:not(.tk)').textContent : null };
+          k.vteam = was; M.wbs = listedWbs(); renderPane(); return out; })()""")
+        check('a teamkill through a wall: out of the Wallbangs list and its count, WALLBANG and TK in the Kills list',
+              t['n1'] == t['n0'] - 1 and not t['inWb'] and t['tk'] == 'TK' and t['wbTag'] == 'WALLBANG', str(t))
+        check('no page error on the wallbang finder checks', not errs7, '; '.join(errs7[:3]))
+    except Exception as e:
+        check('the wallbang finder: Edward-FoCuS on Gux, RobbaN\'s AWP on Zeus, a teamkill', False, str(e).split('\n')[0])
+    ctx7.close()
     b.close()
 print(f'{len(fails)} failed' if fails else 'all passed')
 sys.exit(1 if fails else 0)

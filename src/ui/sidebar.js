@@ -29,6 +29,8 @@ function killHtml(k) {
 }
 // A kill on three lines, for the Kills and Wallbangs lists: killer, then the gun (its kill feed icon from the
 // player's own files, its name, and the headshot icon), then the victim.
+// a teamkill's tag in the Kills list (Sujan, 8 Nov 2026)
+const TK_TIP = 'Team kill: a kill of a teammate. It doesn\'t count as a kill in the stats, and a team kill through a wall isn\'t listed in the Wallbangs tab';
 function killRow3(k, wbTag) {
   const ks = k.kteam === 'TERRORIST' ? 1 : k.kteam === 'CT' ? 2 : 0;
   const vs = k.vteam === 'TERRORIST' ? 1 : k.vteam === 'CT' ? 2 : 0;
@@ -39,7 +41,7 @@ function killRow3(k, wbTag) {
   // LOOSE (0.23.0) follows WALLBANG in the Kills list and stands alone in the Wallbangs list, like UNSURE
   // Kills list: WALLBANG for a strict one, LOOSE WB for a loose one; Wallbangs list: STRICT WB or LOOSE WB (Sujan, 25 Oct 2026)
   const strict = k.wb && !k.wb.loose;
-  const tags = (strict ? (wbTag ? '<span class="wbtag">WALLBANG</span>' : `<span class="wbtag" title="${STRICT_TIP}">STRICT WB</span>`) : '') + looseTag(k) + unsureTag(k);
+  const tags = (strict ? (wbTag ? '<span class="wbtag">WALLBANG</span>' : `<span class="wbtag" title="${STRICT_TIP}">STRICT WB</span>`) : '') + looseTag(k) + unsureTag(k) + (wbTag && teamKill(k) ? `<span class="wbtag tk" title="${TK_TIP}">TK</span>` : '');
   // the damage line under the gun (Sujan's option 2, 25 Oct 2026): what this shooter took through walls in the burst, and teammates' share before it
   const b = !wbTag && k.burst;
   const dline = b ? `<span class="dline"><b>${b.share[k.killer]} HP</b> (${hitCounts({ hits: b.hits.filter((h) => h.s === k.killer) }, k.t)})${dmore(Object.keys(b.share).filter((e) => +e !== k.killer).map((e) => `${esc(labelAt(+e, k.t))} ${b.share[e]} before`))}</span>` : '';
