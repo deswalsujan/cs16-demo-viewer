@@ -126,7 +126,7 @@ function renderPane() {
       if (A && !noted && r.start > A.at.start) {
         noted = true;
         const who = esc(M.tnames[A.team]);
-        h += `<div class="note16"><span>${M.count30 ? `Counting the ${A.extra} ${A.extra === 1 ? 'round' : 'rounds'} played after ${who} reached 16.` : `${A.extra} ${A.extra === 1 ? 'round was' : 'rounds were'} played after ${who} reached 16. Some events count them.`}</span><button class="btn sm" type="button" id="bCount30">${M.count30 ? 'Stop at 16' : 'Count them'}</button></div>`;
+        h += `<div class="note16"><span>${M.count30 ? `Counting the ${A.extra} ${A.extra === 1 ? 'round' : 'rounds'} played after ${who} reached 16${M.auto30 ? ': the teams played on to round 30.' : '.'}` : `${A.extra} ${A.extra === 1 ? 'round was' : 'rounds were'} played after ${who} reached 16. Some events count them.`}</span><button class="btn sm" type="button" id="bCount30">${M.count30 ? 'Stop at 16' : 'Count them'}</button></div>`;
       }
       // where the file changes: the part's full file name
       if (prevPart != null && r.part != null && r.part !== prevPart) {
@@ -146,7 +146,7 @@ function renderPane() {
       const sc = r.live && r.scoreAfter ? `${r.scoreAfter[0]}:${r.scoreAfter[1]}` : '';
       const after = r.afterMatch && !r.live;
       h += `<div class="row${r === cr ? ' cur' : ''}${after ? ' after16' : ''}" data-t="${r.start}"><span class="n">${r.live ? 'R' + r.ln : '·'}</span>
-        <span class="main"><span class="pill ${side}">${r.winner || '—'}</span>${esc(who)}${after ? '<span class="tag16">after the match</span>' : ''}<div class="sub">${esc(r.replayed ? 'replayed from 0:0' + (r.reason ? ' · ' + r.reason : '') : r.reason || (r.live ? '' : 'not counted'))} · ${r.kills.length} kills${r.sides ? ' · ' + Math.max(0, Object.keys(r.sides).length - new Set(r.kills.map((k) => k.victim)).size) + ' alive at end' : ''}</div></span>
+        <span class="main"><span class="pill ${side}">${r.winner || '—'}</span>${esc(who)}${after ? '<span class="tag16">after the match</span>' : ''}<div class="sub">${esc(r.replayed ? 'replayed from 0:0' + (r.reason ? ' · ' + r.reason : '') : r.notFull ? 'teams not full yet' + (r.reason ? ' · ' + r.reason : '') : r.reason || (r.live ? '' : 'not counted'))} · ${r.kills.length} kills${r.sides ? ' · ' + Math.max(0, Object.keys(r.sides).length - new Set(r.kills.map((k) => k.victim)).size) + ' alive at end' : ''}</div></span>
         <span class="d">${sc}<br>${fmt(clockSpan(r.start, r.start + r.dur))}</span></div>`;
     }
     h += `<div class="joinrow"><span>${D.parts ? 'Another part of this map in a file of its own?' : 'Is this map split over two or more demo files?'}</span><button class="btn sm" type="button" id="bJoinWith">Join with another demo…</button></div>`;

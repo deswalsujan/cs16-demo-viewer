@@ -17,7 +17,9 @@ throws partway runs once, says the map couldn't be drawn, and is built again aft
 Ravens, Nuke, EM4 finals, in 2 files: the Join card in the suggested order and with part 2 put first, the joined score and
 the Rounds tab's replayed rounds; the order the card suggests for Na`Vi vs SK, Inferno, ESWC 2011 (0.26.19). The keys on SK vs
 Na`Vi: ↑ and ↓ for the next and previous player, Z and X for rounds, in 2D, 3D and split, a focused side panel left where it
-was, the shortcuts list and tooltips; the Join card's line when the folder holds no other demo (0.26.20). About a minute.
+was, the shortcuts list and tooltips; the Join card's line when the folder holds no other demo (0.26.20). The match rules: the rounds before both teams were
+full on compLexity vs WeMadeFox, Nuke, IEM4; the rounds after 16 counted by themselves on SK vs Na`Vi, Dust2, IEM4, Stop at
+16 kept, Count them; the admin's team names on Burning vs FairFrag, Inferno, ESWC 2010 (0.26.21). About a minute and a half.
 """
 import os, re, sys, http.server, functools, threading, tempfile, shutil, subprocess, atexit
 from playwright.sync_api import sync_playwright
@@ -479,6 +481,54 @@ with sync_playwright() as p:
     except Exception as e:
         check('a half replayed and a half carried on, WeMadeFox vs Ravens, Nuke, EM4 finals', False, str(e).split('\n')[0])
     ctx5.close()
+
+    # The match rules (0.26.21; Sujan, 8 Nov 2026), no map needed. compLexity vs WeMadeFox, Nuke, IEM4: the rounds before both
+    # teams were first full read "teams not full yet" with Show warmup, restarts and idle rounds; SK vs Na`Vi, Dust2,
+    # IEM4: the 6 rounds after SK reached 16 count by themselves (the teams played on to round 30), the Rounds tab and the
+    # load summary say so, Stop at 16 holds after the demo is opened again, and Count them brings them back; Burning vs
+    # FairFrag, Inferno, ESWC 2010: the team names from the admin's "1st Warmup - FAIRFRAG(CT) vs Burning!(T)".
+    # Scores are in tests/expected/ (ground_truth_check.py).
+    CW, SN, BF = 'auto-1003030847-de_nuke.dem', 'auto-1003031508-de_dust2.dem', '2010-07-01_15h58_-1007021005-de_inferno Burning vs FairFrag.dem'
+    ctx6 = b.new_context(viewport={'width': 1512, 'height': 982}); pg6 = ctx6.new_page()
+    pg6.route('**/three.min.js', lambda r: r.fulfill(path=os.environ.get('THREE_JS', os.path.join(here, '..', 'src', 'vendor', 'three.min.js')), content_type='application/javascript'))
+    errs6 = []; pg6.on('pageerror', lambda e: errs6.append(str(e).split('\n')[0]))
+    try:
+        for n in [CW, SN, BF]:
+            if n not in names: raise Exception(f'{n} not found in HALF_LIFE_DIR or DEMO_DIRS')
+        pg6.goto(f'http://127.0.0.1:{srv.server_port}/{os.path.basename(hooked)}')
+        pg6.set_input_files('#fFolder', HL)
+        pg6.wait_for_function('__v("files.demos.length > 0")', timeout=30000)
+        JS6 = lambda c: pg6.evaluate('(c) => __v(c)', c)
+        def open6(n):
+            JS6(f"(() => {{ window.__prevD = D; loadDemoFile(files.demos.find((f) => f.name === {n!r})); }})()")
+            pg6.wait_for_function('__v("!!(D && M && D !== window.__prevD && D.fileName === %s)")' % repr(n), timeout=120000)
+            JS6('closeSummary()')
+        open6(CW)
+        r = JS6(r"""(() => { showAll = true; tab = 'rounds'; renderPane();
+          const subs = [...$('pane').querySelectorAll('.row .sub')].map((x) => x.textContent.replace(/\s+/g, ' ').trim());
+          const out = { notFull: M.rounds.filter((x) => x.notFull).length, first: subs.find((s) => s.startsWith('teams not full yet')) || null, live: M.liveR.length, score: M.liveR[M.liveR.length - 1].scoreAfter.join(':') };
+          showAll = false; renderPane(); return out; })()""")
+        check('compLexity vs WeMadeFox, IEM4: the 5 rounds before both teams were full say so in the Rounds tab, and the match is the 30 rounds after the knife round',
+              r['notFull'] == 5 and r['first'] == 'teams not full yet · elimination · 1 kills' and r['live'] == 30 and r['score'] == '15:15', str(r))
+        open6(SN)
+        st = lambda: JS6(r"""(() => { tab = 'rounds'; renderPane(); const n = $('pane').querySelector('.note16'); return { live: M.liveR.length, score: M.liveR[M.liveR.length - 1].scoreAfter.join(':'), auto: !!M.auto30, count: !!M.count30, note: n ? n.innerText.replace(/\s+/g, ' ').trim() : null, saved: ls.get('count30:' + demoKey()) }; })()""")
+        a = st()
+        check('SK vs Na`Vi, IEM4: the 6 rounds after 16 count by themselves, and the Rounds tab says the teams played on to round 30',
+              a['live'] == 30 and a['score'] == '12:18' and a['auto'] and a['saved'] is None and a['note'] == 'Counting the 6 rounds played after Team 2 reached 16: the teams played on to round 30. Stop at 16', str(a))
+        JS6('setCount30(false)'); b1 = st()
+        open6(BF); open6(SN); b2 = st()
+        check('Stop at 16 stops at 16, is kept as false for the demo, and still holds when the demo is opened again',
+              b1['live'] == 24 and b1['saved'] is False and b2['live'] == 24 and b2['score'] == '8:16' and not b2['auto'], f"{b1}; again: {b2}")
+        JS6('setCount30(true)'); c = st()
+        check('Count them brings the 6 rounds back, as chosen for this demo', c['live'] == 30 and c['saved'] is True and not c['auto'] and c['note'].startswith('Counting the 6 rounds played after Team 2 reached 16. '), str(c))
+        JS6("ls.set('count30:' + demoKey(), null)")
+        open6(BF)
+        t = JS6('M.tnames.slice()')
+        check('Burning vs FairFrag, ESWC 2010: the team names from the admin\'s text, FAIRFRAG on CT at the warmup (the tags read FAiRFRAG and BURNING)', t == ['FAIRFRAG', 'Burning'], str(t))
+        check('no page error on the match rules checks', not errs6, '; '.join(errs6[:3]))
+    except Exception as e:
+        check('the match rules: rounds before both teams were full, rounds after 16, the admin\'s team names', False, str(e).split('\n')[0])
+    ctx6.close()
     b.close()
 print(f'{len(fails)} failed' if fails else 'all passed')
 sys.exit(1 if fails else 0)

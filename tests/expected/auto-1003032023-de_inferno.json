@@ -1,0 +1,14 @@
+{
+ "demo": "auto-1003032023-de_inferno.dem",
+ "sha256": "b26dbe7390e392f20900f8bdd7b877faf20d1fc95dfd22cfc4851a9d6afca3af",
+ "match": "SK vs compLexity, Inferno, IEM4",
+ "event": "IEM4 World Championship (Intel Extreme Masters season IV finals, CeBIT, March 2010); recorded 3 Mar 2010 at 20:23 by the file name; the teams from the player names",
+ "map": "de_inferno",
+ "score": {
+  "value": "16:3",
+  "live": 19,
+  "source": "Fragbite's IEM IV World Championship page, as Sujan gave it (8 Nov 2026): SK 16-3, the match stopping at 16 (one round played after it)",
+  "any_order": true
+ },
+ "kills": []
+}

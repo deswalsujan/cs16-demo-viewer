@@ -4,6 +4,7 @@ What changed in the viewer, newest first. The version shows in the viewer's shor
 
 ## Versions
 
+- [0.26.21](#02621-2026-11-08) 2026-11-08: When a match starts and ends
 - [0.26.20](#02620-2026-11-08) 2026-11-08: Arrow keys pick players
 - [0.26.19](#02619-2026-11-07) 2026-11-07: Replayed and carried halves joined
 - [0.26.18](#02618-2026-11-07) 2026-11-07: One error can't freeze it
@@ -78,6 +79,28 @@ What changed in the viewer, newest first. The version shows in the viewer's shor
 
 ## Known limits
 Moved to [LIMITS.md](LIMITS.md) on 30 Oct 2026; release entries below still say "Known limits" for that list.
+
+## 0.26.21 (2026-11-08)
+
+From Sujan's answers of 8 Nov 2026 on Claude's reports (`tests/logs/iem4-reports-2026-11-08.md`): when a match starts, when the rounds after 16 count, and where the team names come from.
+
+### Fixed
+- A match can't start before both teams are full (Sujan, 8 Nov 2026): rounds played before the first round of a file with 5 players on each side, 5 s into it, don't count. compLexity vs WeMadeFox, Nuke, IEM4 read WeMadeFox 16:6 in 22, the warmup before the knife round counted as the first half; it reads 15:15 in 30, Fragbite's 15-15. SK vs fnatic, Train, IEM4 read SK 16:2, counting the rounds GeT_RiGhT and f0rest missed, with SK's face on fnatic's side; it reads fnatic 16:6 in 22 from 21:30 (fnatic won, Fragbite).
+- The rounds after 16 count by themselves when the teams played on to round 30, with at least 4 rounds after the 16th win, each with a winner and 3 or more kills (Sujan, 8 Nov 2026: IEM4's group stage played all 30). mousesports vs mTw, Inferno, IEM4, joined, 16:8 in 24, reads 19:11 in 30 (Fragbite: 19-11); SK vs Na`Vi, Dust2, IEM4 reads SK 18:12 (Fragbite: 18-12); Burning vs FairFrag, Inferno, ESWC 2010, 2:16 in 18, reads 5:25 in 30, the admin's own "Finale score: 5 25"; EG vs eXecutors, Train, IEM4, 16:10 in 26, reads 18:12 in 30 (not confirmed). **Stop at 16** turns it off for a demo, and is kept now (up to 0.26.20 only **Count them** was).
+- Three names in the known teams: "MEET" reads MeetYourMakers (Wikipedia's spelling), "SWIIIIIDEEEN" Sweden (Liquipedia's ENC 2010 page), "Esahara" eSahara (EsportsEarnings, GosuGamers).
+
+### Changed
+- Team names come from the file name, then the admin's text, then the clan tag a team's players share (Sujan, 8 Nov 2026). The admin's text is ESWC's AdminBot, "1st Warmup - FAIRFRAG(CT) vs Burning!(T)": the team on CT then gets the CT name. Burning vs FairFrag reads FAIRFRAG and Burning (the tags read FAiRFRAG and BURNING).
+- The Rounds tab, with **Show warmup, restarts and idle rounds** on: a round before both teams were full reads "teams not full yet". The note after 16 and the load summary say when the rounds after 16 count because the teams played on to round 30.
+
+### How it was tested
+- `ground_truth_check.py`: 4 new expected files and a score for Burning vs FairFrag (compLexity vs WeMadeFox 15:15, SK vs Na`Vi 18:12, SK vs compLexity 16:3, mousesports vs mTw joined 19:11, Burning vs FairFrag 5:25); 8 mismatches on 0.26.20, none here.
+- `demo_search_check.py`, 6 new checks on those demos: the Rounds tab's words, **Stop at 16** kept after reopening, **Count them**, the admin's names.
+- Every test demo and joined map against 0.26.20: 9 of 81 change, every one listed in the log; no confirmed score or K-D changes. The seven checks pass. Full log: `tests/logs/0.26.21.md`.
+
+### Discussed, not changed
+- Claude's choices while building, for Sujan: the match starts at the first round of the file with both teams full, ever, not at the first live round with both full, as approved: the approved version dropped the first counted round of mousesports vs mTw, part 2 (2 against 5 while players reconnected after the crash, one of the 30 of the 19-11), and with it the joined map read 14:10 in 24. And 4 rounds after the 16th win before they count by themselves: 3 would also count fnatic vs EG, Dust2, EM3 Global Finals 2009 (its confirmed reading is 11:16, stopping at 16; the code's note says that event counted all 30, 17-13), and 1 or 2 would break iFNG FX vs fnatic's confirmed 16:13.
+- No folder name and no tags from other demos for the names (Sujan, 8 Nov 2026): SK vs Na`Vi, Dust2 and fnatic vs SK, Inferno and Train, IEM4, still read Team 1 and Team 2.
 
 ## 0.26.20 (2026-11-08)
 

@@ -182,6 +182,10 @@ const KNOWN_TEAMS = {
   checksix: 'Check-Six', lions: 'LIONS', lionsesport: 'LIONS e-Sport', zantwerpaces: 'Z-Antwerp Aces', dignitas: 'Team Dignitas',
   wicked: 'Wicked', ksp: 'KSP', lions_e_sport: 'LIONS e-Sport', mortal: 'Mortal Teamwork', aaa: 'against All authority',
   essential: 'eSsential', vs: null,
+  // spellings fixed 8 Nov 2026 (Sujan): "MEET LUq, YOUR MAKER" and the rest of MeetYourMakers' joke tag at EM3 2009
+  // (the spelling of Wikipedia's page; Liquipedia writes Meet Your Makers); Sweden's tag at ASUS ENC 2010 (Liquipedia's
+  // ENC 2010 page: Sweden); eSahara as EsportsEarnings and GosuGamers write it
+  meet: 'MeetYourMakers', swiiiiideeeen: 'Sweden', esahara: 'eSahara',
 };
 const norm = (x) => (x || '').toLowerCase().replace(/[^a-z0-9]/g, '');
 // A shared clan tag looked up in the known teams: the whole tag first, then its first part,

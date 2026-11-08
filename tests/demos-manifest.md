@@ -23,9 +23,9 @@ When a test demo is added or deleted, change its row here along with its row in 
 | `2011-10-24_16h08_NaVi_SK-1110241740-de_inferno.dem` | 10,585,019 | `452739d62db2a74426d43094fac0984d81a1e7eb27cd27f0733570e097fe6af2` | yes |
 | `485.53.706623-0803162045-de_train.dem` | 13,568,495 | `2fbb765b8c61755ab9eb47a22fa5c2ae62d2af33a5b6f3314a4ce8edd7939f18` | yes |
 | `53.52.1646548-1005272144-de_dust2.dem` | 17,261,648 | `ffc4d90f9a5fc46e12ef6ed2837a9284723ca78a05b6e1f08fdb160fd67f1104` | yes |
-| `auto-1003030847-de_nuke.dem` | 56,707,166 | `88a64f2f00c175cba11569c83fee59019ff1f72a1d51b11bd8a90d2eaa4fb2ed` | no |
-| `auto-1003031508-de_dust2.dem` | 47,103,099 | `3daa7eb64dfc70fe84890d8afe2fe1b9b7bb047d9e9c193bf067182bb3f606ff` | no |
-| `auto-1003032023-de_inferno.dem` | 29,849,852 | `b26dbe7390e392f20900f8bdd7b877faf20d1fc95dfd22cfc4851a9d6afca3af` | no |
+| `auto-1003030847-de_nuke.dem` | 56,707,166 | `88a64f2f00c175cba11569c83fee59019ff1f72a1d51b11bd8a90d2eaa4fb2ed` | yes |
+| `auto-1003031508-de_dust2.dem` | 47,103,099 | `3daa7eb64dfc70fe84890d8afe2fe1b9b7bb047d9e9c193bf067182bb3f606ff` | yes |
+| `auto-1003032023-de_inferno.dem` | 29,849,852 | `b26dbe7390e392f20900f8bdd7b877faf20d1fc95dfd22cfc4851a9d6afca3af` | yes |
 | `auto-1003051236-de_inferno.dem` | 32,552,698 | `dacc7f352eee72a2bb71115b53f35b3bdc20d54608d706958b85d74c10efad17` | no |
 | `auto-1003051321-de_train.dem` | 55,585,038 | `3fd1e174fe114b42bbaa03a9e2ce13a72b4747d14073c67304497a625e118251` | no |
 | `auto-server1-1106262105-de_tuscan.dem` | 37,679,527 | `2def4956ff8d8d932611cb6bb2fb0d2962b70195604af480b4549a109e1c28d7` | yes |
@@ -54,8 +54,8 @@ When a test demo is added or deleted, change its row here along with its row in 
 | `match-3_css_cache_00-23-35_28-07-2022.dem` | 187,783,131 | `24976ec9844b57a8b39ecba989bf36ccb02c967b1e0b8805a67bddc7d6289d84` | no |
 | `match-4-[PuB]_M-[de_nuke32]_D-[08_24_2021]_T-[00_44].dem` | 202,696,671 | `04d3924052e91e6b4268dd2a5dcc3eb1bc5c978d4dacd3ccf947ff4fbee31904` | no |
 | `match-5-[PuB]_M-[de_nuke32]_D-[08_25_2021]_T-[22_09].dem` | 165,298,050 | `6b801c12ad3249ebd101f1909aa15b418d00313fcf843ea96a7ff241b5f78337` | no |
-| `mouz.mtw.em4finals-1003021349-de_inferno.dem` | 8,306,441 | `7ae267d1a9115cdf932ff7ab989c07699cabec86de61014f5a264f3e7323bbf4` | no |
-| `mouz.mtw.em4finals-1003021512-de_inferno.dem` | 22,109,999 | `39900008946f6d1a5c0a2b3fd1b47842c1049ea0c53a3af5da1a12c07fc51788` | no |
+| `mouz.mtw.em4finals-1003021349-de_inferno.dem` | 8,306,441 | `7ae267d1a9115cdf932ff7ab989c07699cabec86de61014f5a264f3e7323bbf4` | yes |
+| `mouz.mtw.em4finals-1003021512-de_inferno.dem` | 22,109,999 | `39900008946f6d1a5c0a2b3fd1b47842c1049ea0c53a3af5da1a12c07fc51788` | joined part |
 | `mouz.SK.EM2.real-0803091025-de_nuke.dem` | 24,794,815 | `de052e0c8f2c91395290d17724244ad93aa7ea60456ff5d491a26215a645c2d9` | yes |
 | `mtw-vs-lions-dhs11-1106191044-de_nuke.dem` | 18,489,066 | `b726f7fdde0e5cd69f0f7a5e884163e6b70bacf3151d0d9ac01e787e75e22cae` | yes |
 | `mtw-vs-navi-eswc2010semi-real-1007031530-de_tuscan.dem` | 19,336,932 | `b0c1be388d6ba0813592d61ee15e8dfa134abf5ba7a64247b06bbc42a5bd47a7` | yes |

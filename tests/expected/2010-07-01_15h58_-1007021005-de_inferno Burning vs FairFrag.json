@@ -4,6 +4,12 @@
  "match": "Burning vs FairFrag, Inferno, ESWC 2010",
  "event": "ESWC 2010 (2 Jul 2010 by the file name)",
  "map": "de_inferno",
+ "score": {
+  "value": "5:25",
+  "live": 30,
+  "source": "The demo's own \"End of fight - Finale score: 5 25\" (ESWC's AdminBot, 77:28), read 8 Nov 2026; which team is written first isn't said. Up to 0.26.20 the viewer stopped at 16 (2:16 in 18)",
+  "any_order": true
+ },
  "kills": [
   {
    "round": 3,

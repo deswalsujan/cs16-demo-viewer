@@ -1,0 +1,14 @@
+{
+ "demo": "auto-1003031508-de_dust2.dem",
+ "sha256": "3daa7eb64dfc70fe84890d8afe2fe1b9b7bb047d9e9c193bf067182bb3f606ff",
+ "match": "SK vs Na`Vi, Dust2, IEM4",
+ "event": "IEM4 World Championship (Intel Extreme Masters season IV finals, CeBIT, March 2010); recorded 3 Mar 2010 at 15:08 by the file name",
+ "map": "de_dust2",
+ "score": {
+  "value": "18:12",
+  "live": 30,
+  "source": "Fragbite's IEM IV World Championship page, as Sujan gave it (8 Nov 2026): SK 18-12; all 30 rounds played, as in IEM4's group stage. The header reads Team 1 and Team 2 (nothing in the demo names the teams), so either order. Up to 0.26.20 the viewer stopped at 16 (8:16 in 24)",
+  "any_order": true
+ },
+ "kills": []
+}
