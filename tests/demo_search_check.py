@@ -22,7 +22,8 @@ full on compLexity vs WeMadeFox, Nuke, IEM4; the rounds after 16 counted by them
 16 kept, Count them; the admin's team names on Burning vs FairFrag, Inferno, ESWC 2010 (0.26.21). The wallbang finder on SK vs Na`Vi,
 Dust2, IEM4: Edward-FoCuS on Gux LOOSE, RobbaN's AWP leg hit on Zeus no damage row, a teamkill out of the Wallbangs list
 with the TK tag (0.26.22). The dialogs: the can't-play card's buttons, the shortcuts list's ×, the Join card's footer,
-View settings at the largest Interface size (0.26.23). About two minutes.
+View settings at the largest Interface size (0.26.23). dsn's AWP leg hit on Edward-FoCuS under the train car, Na`Vi vs fnatic,
+Train, IEM4 final: no damage row, the hit in the open (0.26.24). About two minutes.
 """
 import os, re, sys, http.server, functools, threading, tempfile, shutil, subprocess, atexit
 from playwright.sync_api import sync_playwright
@@ -618,6 +619,35 @@ with sync_playwright() as p:
     except Exception as e:
         check('the dialogs: the can\'t-play card, the shortcuts list, the Join card, View settings', False, str(e).split('\n')[0])
     ctx8.close()
+
+    # A leg hit judged on five heights from his feet to his hips (0.26.24; Sujan, 8 Nov 2026), Na`Vi vs fnatic, Train, IEM4
+    # final, with its map: dsn's AWP hit on Edward-FoCuS, R14 1:31, 82, exactly a leg in the open at 1782 units, with him
+    # mid-jump and only his feet and shins under the train car. Up to 0.26.23 the one line at his knee ran 2 units inside the
+    # car's underside, and the hit was a DAMAGE row.
+    NF = 'auto-1003061629-de_train.dem'
+    ctx9 = b.new_context(viewport={'width': 1512, 'height': 982}); pg9 = ctx9.new_page()
+    pg9.route('**/three.min.js', lambda r: r.fulfill(path=os.environ.get('THREE_JS', os.path.join(here, '..', 'src', 'vendor', 'three.min.js')), content_type='application/javascript'))
+    errs9 = []; pg9.on('pageerror', lambda e: errs9.append(str(e).split('\n')[0]))
+    try:
+        if NF not in names: raise Exception(f'{NF} not found in HALF_LIFE_DIR or DEMO_DIRS')
+        pg9.goto(f'http://127.0.0.1:{srv.server_port}/{os.path.basename(hooked)}')
+        pg9.set_input_files('#fFolder', HL)
+        pg9.wait_for_function('__v("files.demos.length > 0")', timeout=30000)
+        JS9 = lambda c: pg9.evaluate('(c) => __v(c)', c)
+        JS9(f"loadDemoFile(files.demos.find((f) => f.name === {NF!r}))")
+        pg9.wait_for_function('__v("!!(D && M && MAP && R3 && view3.map === MAP.name && M.bursts)")', timeout=120000)
+        pg9.wait_for_function('__v("!M.seenPending")', timeout=120000); pg9.wait_for_timeout(500)
+        w = JS9(r"""(() => { closeSummary(); const lnOf = (t) => { const r = roundAt(t); return r && r.live ? r.ln : null; };
+          const h = (M.hits || []).find((x) => lnOf(x.t) === 14 && nameAt(x.s, x.t) === 'dsn' && nameAt(x.v, x.t) === 'Edward-FoCuS' && x.dmg === 82);
+          tab = 'wb'; renderPane();
+          const rows = (M.bursts || []).filter((b) => !b.kill).map((b) => `R${lnOf(b.start)} ${killClock(b.start)} ${nameAt(b.main, b.start)} > ${nameAt(b.v, b.start)} ${b.total}`);
+          return { row: rows.find((x) => x.startsWith('R14 1:31 dsn > Edward-FoCuS')) || null, wall: h ? h.wall : 'no hit', part: h ? bodyPart(h) : null, rows: rows.length }; })()""")
+        check("dsn's AWP on Edward-FoCuS, Na`Vi vs fnatic, Train, IEM4 final, R14 1:31, 82 (a leg in the open, his feet under the train car): no damage row, the hit in the open, leg* (a DAMAGE row up to 0.26.23)",
+              w['row'] is None and w['wall'] is False and w['part'] == 'leg*', str(w))
+        check('no page error on the leg hit check', not errs9, '; '.join(errs9[:3]))
+    except Exception as e:
+        check("the leg hit: dsn's AWP on Edward-FoCuS under the train car", False, str(e).split('\n')[0])
+    ctx9.close()
     b.close()
 print(f'{len(fails)} failed' if fails else 'all passed')
 sys.exit(1 if fails else 0)
