@@ -302,6 +302,7 @@ kbd { font-family: var(--f-body); font-size: calc(11px * var(--ui)); background:
 .jbtns { display: flex; gap: calc(8px * var(--ui)); justify-content: flex-end; margin-top: calc(10px * var(--ui)); }
 .jpick { display: flex; flex-wrap: wrap; gap: calc(8px * var(--ui)); align-items: center; padding: calc(10px * var(--ui)) calc(16px * var(--ui)); border-top: 1px solid var(--line); font-size: calc(12px * var(--ui)); color: var(--muted); }
 .sum.join .sum-foot .btn, .sum.join .jbtns .btn { font-family: var(--f-body); }
+.jpick .jnone { flex: 1 1 calc(260px * var(--ui)); min-width: 0; }
 .jpick select { flex: 1 1 calc(260px * var(--ui)); min-width: 0; background: var(--panel-2); color: var(--fg); border: 1px solid var(--line); border-radius: calc(4px * var(--ui)); padding: calc(5px * var(--ui)) calc(6px * var(--ui)); font-size: calc(12px * var(--ui)); }
 .li-btn { margin-top: calc(6px * var(--ui)); }
 .pill { display: inline-block; font-size: calc(11px * var(--ui)); font-weight: 600; padding: 1px calc(6px * var(--ui)); border-radius: calc(3px * var(--ui)); margin-right: calc(6px * var(--ui)); letter-spacing: .04em; }
@@ -569,8 +570,8 @@ addEventListener('resize', () => { if (applyUiSize()) dispatchEvent(new Event('u
         <button data-c="eyes" type="button" title="Player's eyes: see what the player saw (V switches camera)">Eyes</button>
         <button data-c="chase" type="button" title="Behind player: follow from just behind (V switches camera)">Behind</button>
       </div>
-      <button class="btn arr" id="bPrevP" type="button" title="Previous player (Z or right-click)" aria-label="Previous player">‹</button>
-      <button class="btn arr" id="bNextP" type="button" title="Next player (X or click)" aria-label="Next player">›</button>
+      <button class="btn arr" id="bPrevP" type="button" title="Previous player (↓ or right-click)" aria-label="Previous player">‹</button>
+      <button class="btn arr" id="bNextP" type="button" title="Next player (↑ or click)" aria-label="Next player">›</button>
       <div class="vset">
         <button class="btn" id="bVset" type="button" aria-expanded="false" aria-controls="vsetPanel" title="Vanilla, team colours, quality, damage numbers, crosshair size, interface size and POV mode">View settings <svg viewBox="0 0 10 6" aria-hidden="true"><path d="M1 1l4 4 4-4"/></svg></button>
         <div class="vpanel" id="vsetPanel" role="group" aria-label="View settings" hidden>
@@ -611,7 +612,7 @@ addEventListener('resize', () => { if (applyUiSize()) dispatchEvent(new Event('u
     <div class="overlay sumwrap" id="sumCard" hidden></div>
     <div class="overlay keys" id="keys" hidden>
       <div class="keys-card">
-        <div class="keys-head"><b>Shortcuts and kill markers</b><div class="kh-r"><span class="ver">Version 0.26.19 · <a href="https://github.com/deswalsujan/cs16-demo-viewer/blob/main/CHANGELOG.md" target="_blank" rel="noopener">What's new</a> · <a href="https://github.com/deswalsujan/cs16-demo-viewer/issues/new/choose" target="_blank" rel="noopener">Report a bug</a></span><button class="btn" id="bDebug" type="button" title="Copies details for a bug report: browser, demo name, what loaded, errors. No file contents.">Copy debug info</button><button class="btn" id="bKeysClose" type="button">Close</button></div></div>
+        <div class="keys-head"><b>Shortcuts and kill markers</b><div class="kh-r"><span class="ver">Version 0.26.20 · <a href="https://github.com/deswalsujan/cs16-demo-viewer/blob/main/CHANGELOG.md" target="_blank" rel="noopener">What's new</a> · <a href="https://github.com/deswalsujan/cs16-demo-viewer/issues/new/choose" target="_blank" rel="noopener">Report a bug</a></span><button class="btn" id="bDebug" type="button" title="Copies details for a bug report: browser, demo name, what loaded, errors. No file contents.">Copy debug info</button><button class="btn" id="bKeysClose" type="button">Close</button></div></div>
         <textarea class="dbgbox" id="dbgBox" readonly hidden aria-label="Debug info"></textarea>
         <div class="keys-grid">
           <section><h3>Playback</h3>
@@ -619,12 +620,12 @@ addEventListener('resize', () => { if (applyUiSize()) dispatchEvent(new Event('u
             <dt><kbd>←</kbd> <kbd>→</kbd></dt><dd>Back or forward 5 seconds</dd>
             <dt><kbd>Shift</kbd> + <kbd>←</kbd> <kbd>→</kbd></dt><dd>Back or forward 1 second</dd>
             <dt><kbd>,</kbd> <kbd>.</kbd></dt><dd>One frame back or forward</dd>
-            <dt><kbd>↑</kbd> <kbd>↓</kbd></dt><dd>Previous or next round</dd>
+            <dt><kbd>Z</kbd> <kbd>X</kbd></dt><dd>Previous or next round</dd>
             <dt><kbd>[</kbd> <kbd>]</kbd></dt><dd>Slower or faster</dd></dl>
           </section>
           <section><h3>Players</h3>
-            <dl><dt><kbd>X</kbd> or click</dt><dd>Next player (while following one)</dd>
-            <dt><kbd>Z</kbd> or right-click</dt><dd>Previous player</dd>
+            <dl><dt><kbd>↑</kbd> or click</dt><dd>Next player (while following one)</dd>
+            <dt><kbd>↓</kbd> or right-click</dt><dd>Previous player</dd>
             <dt><kbd>1</kbd> … <kbd>0</kbd></dt><dd>Jump to a player, in scoreboard order</dd>
             <dt>Hold <kbd>Tab</kbd></dt><dd>Scoreboard</dd>
             <dt><kbd>N</kbd></dt><dd>Show or hide names</dd>
@@ -715,7 +716,7 @@ addEventListener('resize', () => { if (applyUiSize()) dispatchEvent(new Event('u
         <div class="drophint">Or drop a .dem file, or an overview .bmp and .txt pair, anywhere on this page</div>
         <div class="prog" id="prog" hidden><i id="progBar"></i></div>
         <div class="msg" id="msg"></div>
-        <div class="loadfoot"><span>Version 0.26.19 · <a href="https://github.com/deswalsujan/cs16-demo-viewer" target="_blank" rel="noopener">Source on GitHub</a></span><button class="btn" id="bClear" type="button" title="Deletes the maps, models, sounds and overviews this browser saved from your Half-Life folder, and starts over as on a first visit">Clear saved files</button></div>
+        <div class="loadfoot"><span>Version 0.26.20 · <a href="https://github.com/deswalsujan/cs16-demo-viewer" target="_blank" rel="noopener">Source on GitHub</a></span><button class="btn" id="bClear" type="button" title="Deletes the maps, models, sounds and overviews this browser saved from your Half-Life folder, and starts over as on a first visit">Clear saved files</button></div>
       </div>
     </div>
   </section>
@@ -733,11 +734,11 @@ addEventListener('resize', () => { if (applyUiSize()) dispatchEvent(new Event('u
   <footer class="transport">
     <div class="tl" id="tl"><canvas id="tlc" aria-label="Timeline"></canvas><div class="tip" id="tip" hidden></div></div>
     <div class="ctrls">
-      <button class="btn ib" id="bPrevR" type="button" title="Previous round (↑)"><svg viewBox="0 0 16 16"><path d="M3 2h2v12H3zM14 2v12L6 8z"/></svg></button>
+      <button class="btn ib" id="bPrevR" type="button" title="Previous round (Z)"><svg viewBox="0 0 16 16"><path d="M3 2h2v12H3zM14 2v12L6 8z"/></svg></button>
       <button class="btn ib" id="bBack" type="button" title="Back 5 seconds (←)"><svg viewBox="0 0 16 16"><path d="M8 3v10L1 8zM15 3v10L8 8z"/></svg></button>
       <button class="btn ib primary" id="bPlay" type="button" title="Play or pause (Space)"><svg viewBox="0 0 16 16" id="playIcon"><path d="M4 2l10 6-10 6z"/></svg></button>
       <button class="btn ib" id="bFwd" type="button" title="Forward 5 seconds (→)"><svg viewBox="0 0 16 16"><path d="M1 3v10l7-5zM8 3v10l7-5z"/></svg></button>
-      <button class="btn ib" id="bNextR" type="button" title="Next round (↓)"><svg viewBox="0 0 16 16"><path d="M11 2h2v12h-2zM2 2v12l8-6z"/></svg></button>
+      <button class="btn ib" id="bNextR" type="button" title="Next round (X)"><svg viewBox="0 0 16 16"><path d="M11 2h2v12h-2zM2 2v12l8-6z"/></svg></button>
       <span class="time" id="time"><b>0:00</b> / 0:00</span>
       <button class="btn" id="bScope" type="button" title="Timeline shows the whole match or only this round">Timeline: match</button>
       <span class="sndgrp"><button class="btn ib" id="bSnd" type="button" title="Sound on or off (M)" aria-pressed="true"><svg viewBox="0 0 16 16" id="sndIcon"></svg></button><input type="range" id="sndVol" min="0" max="1" step="0.01" aria-label="Volume" title="Volume"></span>
@@ -3116,14 +3117,18 @@ function renderJoinCard() {
       <div class="jbtns"><button class="btn" type="button" id="jKeep">Keep my order</button>${better && better.some((v, k) => v !== k) ? '<button class="btn primary" type="button" id="jSugg">Use the suggested order</button>' : ''}</div></div>`;
   }
   // picking another part: the folder's demos, the same map first, or a file from elsewhere
-  let picker = '';
+  let picker = '', noneHere = false;
   if (JOIN.picking) {
     const map = F[0] ? F[0].map : '';
     // the folder's demos, those with the map in their name first (the map in the file itself is checked once picked)
     const opts = (files && files.demos || []).filter((f) => !JOIN.list.some((x) => x.name === f.name));
     const onMap = (f) => !!map && f.name.toLowerCase().includes(map);
     const grp = (label, L) => L.length ? `<optgroup label="${esc(label)}">${L.map((f) => `<option value="${esc(f.name)}">${esc(f.name)}</option>`).join('')}</optgroup>` : '';
-    picker = `<div class="jpick"><label for="jSel">Add a part from your folder</label><select id="jSel"><option value="">Pick a demo…</option>${grp(map ? `${map} in the name` : 'Demos', opts.filter(onMap))}${grp('Other demos', opts.filter((f) => !onMap(f)))}</select>
+    // no other demos in the folder: one line in place of an empty list (Sujan, 8 Nov 2026)
+    noneHere = !opts.length;
+    const from = !noneHere ? `<label for="jSel">Add a part from your folder</label><select id="jSel"><option value="">Pick a demo…</option>${grp(map ? `${map} in the name` : 'Demos', opts.filter(onMap))}${grp('Other demos', opts.filter((f) => !onMap(f)))}</select>`
+      : '<span class="jnone">There are no other demos in your Half-Life folder.</span>';
+    picker = `<div class="jpick">${from}
       <button class="btn sm" type="button" id="jFile">A file from elsewhere…</button><input type="file" id="jFileIn" accept=".dem" hidden></div>`;
   }
   const busy = !!JOIN.reading || F.length < JOIN.list.length;
@@ -3133,7 +3138,7 @@ function renderJoinCard() {
     ${order ? `<div class="jorder"><b>Order:</b> ${esc(order)}</div>` : ''}
     ${checks.length ? `<ul class="sum-list">${checks.map((c) => `<li><span class="sum-ic ${c.s}" aria-hidden="true">${ic[c.s]}</span><span>${esc(c.t)}${c.n ? `<small>${esc(c.n)}</small>` : ''}</span></li>`).join('')}</ul>` : ''}
     ${wrong}${picker}
-    <div class="sum-foot"><span class="sp"></span><button class="btn" type="button" id="jAdd" ${busy || JOIN.picking ? 'disabled' : ''} ${JOIN.picking ? 'title="Pick a demo above, or a file from elsewhere"' : ''}>Add another part…</button><button class="btn" type="button" id="jCancel">Cancel</button><button class="btn primary" type="button" id="jGo" ${busy || JOIN.list.length < 2 || (problem && !JOIN.keep) ? 'disabled' : ''}>Join them</button></div>
+    <div class="sum-foot"><span class="sp"></span><button class="btn" type="button" id="jAdd" ${busy || JOIN.picking ? 'disabled' : ''} ${JOIN.picking ? `title="${noneHere ? 'Pick a file from elsewhere above' : 'Pick a demo above, or a file from elsewhere'}"` : ''}>Add another part…</button><button class="btn" type="button" id="jCancel">Cancel</button><button class="btn primary" type="button" id="jGo" ${busy || JOIN.list.length < 2 || (problem && !JOIN.keep) ? 'disabled' : ''}>Join them</button></div>
   </div>`;
   el.hidden = false;
   $('jX').onclick = closeJoinCard; $('jCancel').onclick = closeJoinCard;
@@ -5191,11 +5196,11 @@ function togglePlay() { if (!D) return; closeSummary(); if (T >= D.end - 0.05) T
 $('bPlay').onclick = togglePlay;
 $('bBack').onclick = () => D && seek(T - 5);
 $('bFwd').onclick = () => D && seek(T + 5);
-// ↑ and ↓: the previous or next round in the list, from anywhere in a round (Sujan, 2 Nov 2026). Up used to go to the
-// start of the round playing when more than 3 s into it, so while playing at 2x or faster a second press landed past
-// 3 s again and went back to the same start: Up seemed to jump back a little or do nothing.
-// k: the last listed round started by now. Inside it, Up goes one before it; between listed rounds (a warmup, the
-// restarts between halves, after the match), Up goes to it and Down to the one after it.
+// Z and X (↑ and ↓ up to 0.26.19; Sujan, 8 Nov 2026): the previous or next round in the list, from anywhere in a round
+// (Sujan, 2 Nov 2026). The previous round used to go to the start of the round playing when more than 3 s into it, so
+// while playing at 2x or faster a second press landed past 3 s again and went back to the same start.
+// k: the last listed round started by now. Inside it, Z goes one before it; between listed rounds (a warmup, the
+// restarts between halves, after the match), Z goes to it and X to the one after it.
 function jumpRound(dir) {
   if (!D) return;
   const rs = visibleRounds();
@@ -5227,9 +5232,14 @@ document.addEventListener('keydown', (e) => {
   if (k === ' ') { e.preventDefault(); togglePlay(); }
   else if (k === 'ArrowLeft') { e.preventDefault(); seek(T - (e.shiftKey ? 1 : 5)); }
   else if (k === 'ArrowRight') { e.preventDefault(); seek(T + (e.shiftKey ? 1 : 5)); }
-  // a held key repeats: one round per press, so holding it a moment too long doesn't skip a round (Sujan, 2 Nov 2026)
-  else if (k === 'ArrowUp') { e.preventDefault(); if (!e.repeat) jumpRound(-1); }
-  else if (k === 'ArrowDown') { e.preventDefault(); if (!e.repeat) jumpRound(1); }
+  // ↑ and ↓: the next or previous player, as a click and a right-click on the view; the default is stopped, so a focused
+  // side panel, slider or list doesn't also scroll or change (Sujan, 8 Nov 2026: the keys players had are Z and X)
+  else if (k === 'ArrowUp') { e.preventDefault(); nextPlayer(1); if (viewMode !== '2d' && cam3.mode === 'free') setCam('eyes'); }
+  else if (k === 'ArrowDown') { e.preventDefault(); nextPlayer(-1); if (viewMode !== '2d' && cam3.mode === 'free') setCam('eyes'); }
+  // Z and X: the previous or next round. A held key repeats: one round per press, so holding it a moment too long
+  // doesn't skip a round (Sujan, 2 Nov 2026)
+  else if (k === 'z' || k === 'Z') { if (!e.repeat) jumpRound(-1); }
+  else if (k === 'x' || k === 'X') { if (!e.repeat) jumpRound(1); }
   else if (k === ',') { playing = false; setPlayIcon(); seek(T - 1 / 30); }
   else if (k === '.') { playing = false; setPlayIcon(); seek(T + 1 / 30); }
   else if (k === '[') { const i = SPEEDS.indexOf(speed); if (i > 0) setSpeed(SPEEDS[i - 1]); }
@@ -5239,8 +5249,6 @@ document.addEventListener('keydown', (e) => {
   else if (k === 'm' || k === 'M') setSound(!SND.on);
   else if (k === 'f' || k === 'F') toggleFull();
   else if (k === 't' || k === 'T') setTheatre(!TH.on);
-  else if (k === 'x' || k === 'X') { nextPlayer(1); if (viewMode !== '2d' && cam3.mode === 'free') setCam('eyes'); }
-  else if (k === 'z' || k === 'Z') { nextPlayer(-1); if (viewMode !== '2d' && cam3.mode === 'free') setCam('eyes'); }
   else if (/^[0-9]$/.test(k) && !POV.on) {
     const pid = playerOrder()[(+k + 9) % 10]; const e = pid && M.slotOf(pid, T);
     if (e && isDeadNow(e)) toast(`${M.pl[pid].name} is dead until the next round.`, 2500);
@@ -7451,9 +7459,9 @@ function update3Now() {
         : (death.weapon === 'world' ? 'died' : 'killed themselves');
       pov.hidden = false; pov.classList.add('dead');
       // Vanilla (0.26.16): the name bar stays (Sujan, 3 Nov 2026), without the death cam's banner
-      if (VAN.on) pov.innerHTML = `<b>${esc(nameAt(selected, T))}</b>${POV.on ? '' : ` <span class="kw">· ${playing && age < 2.5 ? 'switching to a teammate' : 'press X for the next player'}</span>`}`;
-      else pov.innerHTML = `<b>${esc(nameAt(selected, T))}</b> ${kn}${POV.on ? '' : ` <span class="kw">· ${playing && age < 2.5 ? 'switching to a teammate' : 'press X for the next player'}</span>`}`;
-    } else { pov.hidden = false; pov.classList.add('dead'); pov.innerHTML = `<span class="kw">${esc(nameAt(selected, T))} is dead.${POV.on ? '' : ' Press X for the next player.'}</span>`; }
+      if (VAN.on) pov.innerHTML = `<b>${esc(nameAt(selected, T))}</b>${POV.on ? '' : ` <span class="kw">· ${playing && age < 2.5 ? 'switching to a teammate' : 'press ↑ for the next player'}</span>`}`;
+      else pov.innerHTML = `<b>${esc(nameAt(selected, T))}</b> ${kn}${POV.on ? '' : ` <span class="kw">· ${playing && age < 2.5 ? 'switching to a teammate' : 'press ↑ for the next player'}</span>`}`;
+    } else { pov.hidden = false; pov.classList.add('dead'); pov.innerHTML = `<span class="kw">${esc(nameAt(selected, T))} is dead.${POV.on ? '' : ' Press ↑ for the next player.'}</span>`; }
     // like CS spectating: after a moment, follow a living teammate (or anyone alive)
     if (!POV.on && death && T - death.t > 2.5 && playing) {
       const alive = alivePlayers();
@@ -8594,7 +8602,7 @@ function frameError(e) {
 function debugInfo() {
   let gpu = '';
   try { const gl = document.createElement('canvas').getContext('webgl'); const x = gl && gl.getExtension('WEBGL_debug_renderer_info'); gpu = gl ? (x ? gl.getParameter(x.UNMASKED_RENDERER_WEBGL) : 'WebGL available') : 'no WebGL'; } catch (e) { gpu = 'unknown'; }
-  const L = [`CS 1.6 Demo Viewer 0.26.19`, `Browser: ${navigator.userAgent}`, `Screen: ${screen.width}x${screen.height} at ${devicePixelRatio}x, window ${innerWidth}x${innerHeight}`, `Graphics: ${gpu}`];
+  const L = [`CS 1.6 Demo Viewer 0.26.20`, `Browser: ${navigator.userAgent}`, `Screen: ${screen.width}x${screen.height} at ${devicePixelRatio}x, window ${innerWidth}x${innerHeight}`, `Graphics: ${gpu}`];
   L.push(`Folder: ${Object.keys(files.maps).length} maps, ${Object.keys(files.overviews).length} overviews, ${Object.keys(files.mdl).length} models, ${Object.keys(files.snd).length} sounds, ${files.demos.length} demos`);
   if (D) {
     L.push(`Demo: ${D.fileName}, protocol ${(D.header && D.header.netProtocol) || '?'}, ${D.pov ? 'POV (recorded by a player)' : 'HLTV'}, map ${D.mapName}, length ${fmt(D.end - D.start)}, ${M.liveR.length} live rounds, final ${M.liveR.length ? M.liveR[M.liveR.length - 1].scoreAfter.join(':') : '-'}`);

@@ -2,11 +2,13 @@
 // the map): the round timer across a pause (R7, where the server stopped for 40 s at 65:06), the round keys in every
 // view, paused and playing at 1x, 2x and 8x, from 1 s and 10 s into a round, Up pressed twice 0.3 s apart, a held key's
 // repeats, keys with the volume slider, a checkbox or a list focused, and the side panel's scroll on the Kills tab.
+// The round keys are Z and X since 0.26.20 (↑ and ↓ up to 0.26.19; Sujan, 8 Nov 2026), so it presses those; on a build before
+// 0.26.20, put 'ArrowUp' and 'ArrowDown' back in UP and DOWN.
 (async () => {
   const wait = (ms) => new Promise((r) => setTimeout(r, ms));
   const t0 = Date.now();
   while (!(MAP && M && R3 && view3.map === MAP.name) && Date.now() - t0 < 200000) await wait(500);
-  const out = {};
+  const out = {}, UP = 'z', DOWN = 'x';
   // the timer: every kill of the round with the pause, and the stretches the reader found
   const r7 = M.liveR.find((r) => r.ln === 7);
   out.stops = (D.stops || []).map(([a, b, g]) => `${fmt(a - D.start)} +${(b - a).toFixed(1)}s demo, ${g.toFixed(2)}s server`);
@@ -27,7 +29,7 @@
         playing = false; seek(r.start + off); if (vm !== '2d' && cm !== 'free') { const al = alivePlayers(); selected = al[0] || null; }
         playing = pl; setPlayIcon(); await wait(120);
         const before = lnAt();
-        if (act === 'down') press('ArrowDown'); else if (act === 'up') press('ArrowUp'); else { press('ArrowUp'); await wait(300); press('ArrowUp'); }
+        if (act === 'down') press(DOWN); else if (act === 'up') press(UP); else { press(UP); await wait(300); press(UP); }
         const now = lnAt(); n++;
         const want = act === 'down' ? before + 1 : act === 'up' ? before - 1 : before - 2;
         if (now !== want) bad.push(`${vm}/${cm} ${pl ? 'play ' + sp + 'x' : 'paused'} R${before}+${off}s ${act}: R${now} (want R${want})`);
@@ -37,18 +39,18 @@
   playing = false; setPlayIcon(); setSpeed(1);
   out.keys = { pressed: n, wrong: bad.length, rows: bad.slice(0, 20) };
   // a held key: its repeats move no further
-  seek(picks[1].start + 10); { const b = lnAt(); press('ArrowDown'); press('ArrowDown', null, true); press('ArrowDown', null, true); out.held = `R${b} -> R${lnAt()} (want R${b + 1})`; }
+  seek(picks[1].start + 10); { const b = lnAt(); press(DOWN); press(DOWN, null, true); press(DOWN, null, true); out.held = `R${b} -> R${lnAt()} (want R${b + 1})`; }
   // with a control focused: the key works, and the control keeps its value
   out.focused = [];
   for (const id of ['sndVol', 'glow3', 'q3', 'xh3']) {
     const el = $(id); if (!el) continue;
     seek(picks[1].start + 10); const b = lnAt(), v0 = el.type === 'checkbox' ? el.checked : el.value;
-    el.focus(); const ev = new KeyboardEvent('keydown', { key: 'ArrowUp', bubbles: true, cancelable: true }); el.dispatchEvent(ev);
+    el.focus(); const ev = new KeyboardEvent('keydown', { key: UP, bubbles: true, cancelable: true }); el.dispatchEvent(ev);
     out.focused.push(`${id}: R${b} -> R${lnAt()} (want R${b - 1}), default prevented ${ev.defaultPrevented}, value kept ${String(el.type === 'checkbox' ? el.checked : el.value) === String(v0)}`);
     el.blur();
   }
   // a text box still takes its keys: the search box isn't on this screen, so a stand-in
-  { const tb = document.createElement('input'); tb.type = 'text'; document.body.appendChild(tb); tb.focus(); seek(picks[1].start + 10); const b = lnAt(); const ev = new KeyboardEvent('keydown', { key: 'ArrowUp', bubbles: true, cancelable: true }); tb.dispatchEvent(ev); out.textBox = `R${b} -> R${lnAt()} (want R${b}), default prevented ${ev.defaultPrevented}`; tb.remove(); }
+  { const tb = document.createElement('input'); tb.type = 'text'; document.body.appendChild(tb); tb.focus(); seek(picks[1].start + 10); const b = lnAt(); const ev = new KeyboardEvent('keydown', { key: UP, bubbles: true, cancelable: true }); tb.dispatchEvent(ev); out.textBox = `R${b} -> R${lnAt()} (want R${b}), default prevented ${ev.defaultPrevented}`; tb.remove(); }
   // the Kills tab opens at the top, and stays there at a new round
   const tabBtn = (t) => document.querySelector(`.tabs button[data-tab="${t}"]`);
   seek(rs[rs.length - 2].start + 20); updateHud(true);
@@ -57,7 +59,7 @@
   tabBtn('kills').click(); await wait(200);
   const head = $('pane').querySelector('.sechead');
   out.killsTab = { roundsScrolled: roundsTop, killsScroll: $('pane').scrollTop, heading: head ? head.innerText.replace(/\s+/g, ' ') : null, headingInView: head ? head.getBoundingClientRect().top >= $('pane').getBoundingClientRect().top - 1 : false };
-  $('pane').scrollTop = 200; press('ArrowUp'); await wait(250); updateHud(false); await wait(100);
+  $('pane').scrollTop = 200; press(UP); await wait(250); updateHud(false); await wait(100);
   out.killsTabNewRound = { scroll: $('pane').scrollTop, heading: $('pane').querySelector('.sechead') ? $('pane').querySelector('.sechead').innerText.replace(/\s+/g, ' ') : null };
   tabBtn('rounds').click();
   return out;

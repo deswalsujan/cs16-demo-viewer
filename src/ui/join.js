@@ -362,14 +362,18 @@ function renderJoinCard() {
       <div class="jbtns"><button class="btn" type="button" id="jKeep">Keep my order</button>${better && better.some((v, k) => v !== k) ? '<button class="btn primary" type="button" id="jSugg">Use the suggested order</button>' : ''}</div></div>`;
   }
   // picking another part: the folder's demos, the same map first, or a file from elsewhere
-  let picker = '';
+  let picker = '', noneHere = false;
   if (JOIN.picking) {
     const map = F[0] ? F[0].map : '';
     // the folder's demos, those with the map in their name first (the map in the file itself is checked once picked)
     const opts = (files && files.demos || []).filter((f) => !JOIN.list.some((x) => x.name === f.name));
     const onMap = (f) => !!map && f.name.toLowerCase().includes(map);
     const grp = (label, L) => L.length ? `<optgroup label="${esc(label)}">${L.map((f) => `<option value="${esc(f.name)}">${esc(f.name)}</option>`).join('')}</optgroup>` : '';
-    picker = `<div class="jpick"><label for="jSel">Add a part from your folder</label><select id="jSel"><option value="">Pick a demo…</option>${grp(map ? `${map} in the name` : 'Demos', opts.filter(onMap))}${grp('Other demos', opts.filter((f) => !onMap(f)))}</select>
+    // no other demos in the folder: one line in place of an empty list (Sujan, 8 Nov 2026)
+    noneHere = !opts.length;
+    const from = !noneHere ? `<label for="jSel">Add a part from your folder</label><select id="jSel"><option value="">Pick a demo…</option>${grp(map ? `${map} in the name` : 'Demos', opts.filter(onMap))}${grp('Other demos', opts.filter((f) => !onMap(f)))}</select>`
+      : '<span class="jnone">There are no other demos in your Half-Life folder.</span>';
+    picker = `<div class="jpick">${from}
       <button class="btn sm" type="button" id="jFile">A file from elsewhere…</button><input type="file" id="jFileIn" accept=".dem" hidden></div>`;
   }
   const busy = !!JOIN.reading || F.length < JOIN.list.length;
@@ -379,7 +383,7 @@ function renderJoinCard() {
     ${order ? `<div class="jorder"><b>Order:</b> ${esc(order)}</div>` : ''}
     ${checks.length ? `<ul class="sum-list">${checks.map((c) => `<li><span class="sum-ic ${c.s}" aria-hidden="true">${ic[c.s]}</span><span>${esc(c.t)}${c.n ? `<small>${esc(c.n)}</small>` : ''}</span></li>`).join('')}</ul>` : ''}
     ${wrong}${picker}
-    <div class="sum-foot"><span class="sp"></span><button class="btn" type="button" id="jAdd" ${busy || JOIN.picking ? 'disabled' : ''} ${JOIN.picking ? 'title="Pick a demo above, or a file from elsewhere"' : ''}>Add another part…</button><button class="btn" type="button" id="jCancel">Cancel</button><button class="btn primary" type="button" id="jGo" ${busy || JOIN.list.length < 2 || (problem && !JOIN.keep) ? 'disabled' : ''}>Join them</button></div>
+    <div class="sum-foot"><span class="sp"></span><button class="btn" type="button" id="jAdd" ${busy || JOIN.picking ? 'disabled' : ''} ${JOIN.picking ? `title="${noneHere ? 'Pick a file from elsewhere above' : 'Pick a demo above, or a file from elsewhere'}"` : ''}>Add another part…</button><button class="btn" type="button" id="jCancel">Cancel</button><button class="btn primary" type="button" id="jGo" ${busy || JOIN.list.length < 2 || (problem && !JOIN.keep) ? 'disabled' : ''}>Join them</button></div>
   </div>`;
   el.hidden = false;
   $('jX').onclick = closeJoinCard; $('jCancel').onclick = closeJoinCard;

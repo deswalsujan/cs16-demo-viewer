@@ -36,8 +36,8 @@
         <button data-c="eyes" type="button" title="Player's eyes: see what the player saw (V switches camera)">Eyes</button>
         <button data-c="chase" type="button" title="Behind player: follow from just behind (V switches camera)">Behind</button>
       </div>
-      <button class="btn arr" id="bPrevP" type="button" title="Previous player (Z or right-click)" aria-label="Previous player">‹</button>
-      <button class="btn arr" id="bNextP" type="button" title="Next player (X or click)" aria-label="Next player">›</button>
+      <button class="btn arr" id="bPrevP" type="button" title="Previous player (↓ or right-click)" aria-label="Previous player">‹</button>
+      <button class="btn arr" id="bNextP" type="button" title="Next player (↑ or click)" aria-label="Next player">›</button>
       <div class="vset">
         <button class="btn" id="bVset" type="button" aria-expanded="false" aria-controls="vsetPanel" title="Vanilla, team colours, quality, damage numbers, crosshair size, interface size and POV mode">View settings <svg viewBox="0 0 10 6" aria-hidden="true"><path d="M1 1l4 4 4-4"/></svg></button>
         <div class="vpanel" id="vsetPanel" role="group" aria-label="View settings" hidden>
@@ -86,12 +86,12 @@
             <dt><kbd>←</kbd> <kbd>→</kbd></dt><dd>Back or forward 5 seconds</dd>
             <dt><kbd>Shift</kbd> + <kbd>←</kbd> <kbd>→</kbd></dt><dd>Back or forward 1 second</dd>
             <dt><kbd>,</kbd> <kbd>.</kbd></dt><dd>One frame back or forward</dd>
-            <dt><kbd>↑</kbd> <kbd>↓</kbd></dt><dd>Previous or next round</dd>
+            <dt><kbd>Z</kbd> <kbd>X</kbd></dt><dd>Previous or next round</dd>
             <dt><kbd>[</kbd> <kbd>]</kbd></dt><dd>Slower or faster</dd></dl>
           </section>
           <section><h3>Players</h3>
-            <dl><dt><kbd>X</kbd> or click</dt><dd>Next player (while following one)</dd>
-            <dt><kbd>Z</kbd> or right-click</dt><dd>Previous player</dd>
+            <dl><dt><kbd>↑</kbd> or click</dt><dd>Next player (while following one)</dd>
+            <dt><kbd>↓</kbd> or right-click</dt><dd>Previous player</dd>
             <dt><kbd>1</kbd> … <kbd>0</kbd></dt><dd>Jump to a player, in scoreboard order</dd>
             <dt>Hold <kbd>Tab</kbd></dt><dd>Scoreboard</dd>
             <dt><kbd>N</kbd></dt><dd>Show or hide names</dd>
@@ -200,11 +200,11 @@
   <footer class="transport">
     <div class="tl" id="tl"><canvas id="tlc" aria-label="Timeline"></canvas><div class="tip" id="tip" hidden></div></div>
     <div class="ctrls">
-      <button class="btn ib" id="bPrevR" type="button" title="Previous round (↑)"><svg viewBox="0 0 16 16"><path d="M3 2h2v12H3zM14 2v12L6 8z"/></svg></button>
+      <button class="btn ib" id="bPrevR" type="button" title="Previous round (Z)"><svg viewBox="0 0 16 16"><path d="M3 2h2v12H3zM14 2v12L6 8z"/></svg></button>
       <button class="btn ib" id="bBack" type="button" title="Back 5 seconds (←)"><svg viewBox="0 0 16 16"><path d="M8 3v10L1 8zM15 3v10L8 8z"/></svg></button>
       <button class="btn ib primary" id="bPlay" type="button" title="Play or pause (Space)"><svg viewBox="0 0 16 16" id="playIcon"><path d="M4 2l10 6-10 6z"/></svg></button>
       <button class="btn ib" id="bFwd" type="button" title="Forward 5 seconds (→)"><svg viewBox="0 0 16 16"><path d="M1 3v10l7-5zM8 3v10l7-5z"/></svg></button>
-      <button class="btn ib" id="bNextR" type="button" title="Next round (↓)"><svg viewBox="0 0 16 16"><path d="M11 2h2v12h-2zM2 2v12l8-6z"/></svg></button>
+      <button class="btn ib" id="bNextR" type="button" title="Next round (X)"><svg viewBox="0 0 16 16"><path d="M11 2h2v12h-2zM2 2v12l8-6z"/></svg></button>
       <span class="time" id="time"><b>0:00</b> / 0:00</span>
       <button class="btn" id="bScope" type="button" title="Timeline shows the whole match or only this round">Timeline: match</button>
       <span class="sndgrp"><button class="btn ib" id="bSnd" type="button" title="Sound on or off (M)" aria-pressed="true"><svg viewBox="0 0 16 16" id="sndIcon"></svg></button><input type="range" id="sndVol" min="0" max="1" step="0.01" aria-label="Volume" title="Volume"></span>

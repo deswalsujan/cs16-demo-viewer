@@ -15,7 +15,9 @@ moving (0.26.17). On that demo, drawHitNumbers and then updateCentre made to thr
 moving, the toast shows once and each error is listed once; a fade left by an error is gone the next frame; a 3D build that
 throws partway runs once, says the map couldn't be drawn, and is built again after resetForNewDemo (0.26.18). WeMadeFox vs
 Ravens, Nuke, EM4 finals, in 2 files: the Join card in the suggested order and with part 2 put first, the joined score and
-the Rounds tab's replayed rounds; the order the card suggests for Na`Vi vs SK, Inferno, ESWC 2011 (0.26.19). About a minute.
+the Rounds tab's replayed rounds; the order the card suggests for Na`Vi vs SK, Inferno, ESWC 2011 (0.26.19). The keys on SK vs
+Na`Vi: ↑ and ↓ for the next and previous player, Z and X for rounds, in 2D, 3D and split, a focused side panel left where it
+was, the shortcuts list and tooltips; the Join card's line when the folder holds no other demo (0.26.20). About a minute.
 """
 import os, re, sys, http.server, functools, threading, tempfile, shutil, subprocess, atexit
 from playwright.sync_api import sync_playwright
@@ -178,6 +180,53 @@ with sync_playwright() as p:
     JS("pickedKill = null; if ($('dn3')) $('dn3').value = 'wb'; $('glow3').checked = true")
     pg.click('#viewSeg button[data-v="2d"]')
 
+    # The keys (Sujan, 8 Nov 2026): ↑ and ↓ pick the next and previous player, as a click and a right-click on the view do;
+    # Z and X move a round, one per press when held; 1 to 0 as before. Real key presses, so a key's default (scrolling the
+    # side panel, a slider's value) would happen if it weren't stopped; the Rounds tab, the one long enough to scroll at a
+    # MacBook window. Up to 0.26.19 ↑ and ↓ moved a round and Z and X a player.
+    try:
+        JS("(() => { window.__dp = []; window.addEventListener('keydown', (e) => __dp.push(e.key + ':' + e.defaultPrevented)); })()")
+        state = lambda: JS(r"""(() => { const r = roundAt(T); return { sel: selected, ln: r && r.live ? r.ln : null, t: +(T - D.start).toFixed(2), mode: cam3.mode, view: viewMode,
+          held: Object.keys(cam3.keys).filter((k) => cam3.keys[k]), scroll: $('pane').scrollTop }; })()""")
+        def setup(view, cam):
+            return JS(r"""(async (view, cam) => { const w = (ms) => new Promise((r) => setTimeout(r, ms)); playing = false; setPlayIcon(); setView(view); await w(300);
+              const r = M.liveR[10]; seek(r.start + 12); const al = alivePlayers(); selected = al[2]; if (view !== '2d') setCam(cam, true); tab = 'rounds'; renderPane(); await w(200);
+              const p = $('pane'); p.tabIndex = -1; p.scrollTop = Math.min(120, p.scrollHeight - p.clientHeight); p.focus(); __dp.length = 0;
+              return { al, scroll: p.scrollTop }; })""" + f"('{view}', '{cam}')")
+        for view, cam, label in [('3d', 'eyes', "3D, Player's eyes"), ('2d', 'free', '2D'), ('split', 'chase', 'split, Behind player')]:
+            st = setup(view, cam); al = st['al']; a = state()
+            pg.keyboard.press('ArrowUp'); up = state(); pg.keyboard.press('ArrowDown'); down = state()
+            check(f'{label}: ↑ picks the next player and ↓ the previous one, the round and the time unchanged',
+                  up['sel'] == al[3] and down['sel'] == al[2] and up['ln'] == down['ln'] == a['ln'] and up['t'] == down['t'] == a['t'], f"{a['sel']} -> {up['sel']} -> {down['sel']} (want {al[3]}, {al[2]}); R{a['ln']} -> R{up['ln']} -> R{down['ln']}")
+            dp = JS('__dp.slice()')
+            check(f'{label}: ↑ and ↓ leave the focused side panel where it was scrolled, their default stopped',
+                  up['scroll'] == down['scroll'] == a['scroll'] and a['scroll'] > 0 and dp == ['ArrowUp:true', 'ArrowDown:true'], f"scroll {a['scroll']} -> {up['scroll']} -> {down['scroll']}; {dp}")
+            pg.keyboard.press('x'); x = state(); pg.keyboard.press('z'); z = state()
+            check(f'{label}: X goes to the next round and Z back, the player kept', x['ln'] == a['ln'] + 1 and z['ln'] == a['ln'] and x['sel'] == z['sel'] == al[2], f"R{a['ln']} -> R{x['ln']} -> R{z['ln']}, player {x['sel']}, {z['sel']}")
+        pg.keyboard.down('x'); pg.keyboard.down('x'); pg.keyboard.down('x'); pg.keyboard.up('x'); held = state()
+        check('X held down (two repeats): one round, not three', held['ln'] == a['ln'] + 1, f"R{a['ln']} -> R{held['ln']}")
+        st = setup('3d', 'free'); al = st['al']
+        pg.keyboard.press('ArrowUp'); f = state()
+        check("3D Free view: ↑ holds no camera key (the free camera doesn't move) and goes to the next player's eyes, as X did up to 0.26.19",
+              f['held'] == [] and f['mode'] == 'eyes' and f['sel'] == al[3], f"keys held {f['held']}, camera {f['mode']}, player {f['sel']} (want {al[3]})")
+        # with the volume slider or the Quality list focused: the key works and the control keeps its value
+        st = setup('3d', 'eyes'); al = st['al']; a = state()
+        v0 = JS("(() => { const el = $('sndVol'); el.focus(); return el.value; })()"); pg.keyboard.press('ArrowUp'); v1 = JS("$('sndVol').value"); up = state()
+        q0 = JS("(() => { vsetOpen(true); const el = $('q3'); el.focus(); return el.value; })()"); pg.keyboard.press('x'); q1 = JS("(() => { const v = $('q3').value; $('q3').blur(); vsetOpen(false); return v; })()"); x = state()
+        check('↑ with the volume slider focused, X with the Quality list focused: player and round move, the controls keep their values',
+              up['sel'] == al[3] and v1 == v0 and x['ln'] == a['ln'] + 1 and q1 == q0, f"player {a['sel']} -> {up['sel']}, volume {v0} -> {v1}; R{a['ln']} -> R{x['ln']}, Quality {q0} -> {q1}")
+        k1 = JS("M.slotOf(playerOrder()[0], T)"); pg.keyboard.press('1')
+        check('1 still jumps to the first player in scoreboard order', state()['sel'] == k1, f"{state()['sel']} (want {k1})")
+        keys = pg.evaluate("[...document.querySelectorAll('#keys dt')].map((dt) => dt.innerText.replace(/\\s+/g, ' ').trim() + ' = ' + dt.nextElementSibling.innerText.trim())")
+        check('shortcuts list: Z X for rounds, ↑ and ↓ for players',
+              'Z X = Previous or next round' in keys and '↑ or click = Next player (while following one)' in keys and '↓ or right-click = Previous player' in keys and not any(k.startswith('↑ ↓') for k in keys),
+              ' | '.join(k for k in keys if 'round' in k or 'player' in k.lower()))
+        tips = pg.evaluate("['bPrevR', 'bNextR', 'bPrevP', 'bNextP'].map((id) => document.getElementById(id).title)")
+        check('tooltips name the new keys', tips == ['Previous round (Z)', 'Next round (X)', 'Previous player (↓ or right-click)', 'Next player (↑ or click)'], ' | '.join(tips))
+    except Exception as e:
+        check('the keys: ↑ and ↓ for players, Z and X for rounds', False, str(e).split('\n')[0])
+    JS("$('pane').removeAttribute('tabindex'); setView('2d'); setCam('free', true)")
+
     # the message line when the start screen comes back (0.26.12): empty, whether or not an overview loaded
     msg = lambda pg: pg.evaluate("document.getElementById('msg').textContent")
     def back_to_start(pg):
@@ -211,6 +260,18 @@ with sync_playwright() as p:
     except Exception: pass
     check('a demo deleted while a demo was open: back on the start screen, its note still shows and the count says 1',
           msg(pg2).startswith('deleted-later.dem is no longer in your folder') and pg2.inner_text('#hlStatus') == '1 demo found.', f'{msg(pg2)!r}, {pg2.inner_text("#hlStatus")!r}')
+    # the Join card with no other demo in the folder (Sujan, 8 Nov 2026): one line beside "A file from elsewhere…", no empty
+    # list. Up to 0.26.19 the card showed a list holding only "Pick a demo…"
+    try:
+        pg2.click(f'#demoList button:has-text("{SK}")')
+        pg2.wait_for_function('() => document.getElementById("load").hidden', timeout=120000)
+        pg2.evaluate("__v(\"closeSummary(); tab = 'rounds'; renderPane(); $('bJoinWith').click()\")")
+        pg2.wait_for_function("() => !!document.querySelector('#joinCard .jpick')", timeout=30000)
+        jp = pg2.evaluate(r"""(() => { const p = document.querySelector('#joinCard .jpick'); return { text: p.innerText.replace(/\s+/g, ' ').trim(), sel: !!p.querySelector('select'), file: !!p.querySelector('#jFile'), tip: document.getElementById('jAdd').title }; })()""")
+        check('Join card, no other demo in the folder: one line beside "A file from elsewhere…", no list',
+              jp['text'] == 'There are no other demos in your Half-Life folder. A file from elsewhere…' and not jp['sel'] and jp['file'] and jp['tip'] == 'Pick a file from elsewhere above', str(jp))
+    except Exception as e:
+        check('Join card, no other demo in the folder', False, str(e).split('\n')[0])
     ctx2.close()
 
     # POV mode (0.26.16; Sujan, 3 Nov 2026): kill details have nothing to list, since the recorder's demo has only his
@@ -377,6 +438,10 @@ with sync_playwright() as p:
               '; '.join(f"[{x['s']}] {x['t']}" for x in c['checks']))
         check('Join card: the same 10 players by Steam ID (SIA, bail and BERRY were one person up to 0.26.18), the order from the recording times',
               {'s': 'ok', 't': 'Same 10 players, by Steam ID'} in c['checks'] and c['order'] == 'Order: from the recording times in the file names, 3 Mar 2010 at 09:51 and at 10:26. The rounds agree.', c['order'])
+        JS5("JOIN.picking = true; renderJoinCard()")
+        jp = JS5("(() => { const p = document.querySelector('#joinCard .jpick'); return { sel: p.querySelectorAll('#jSel option').length, none: !!p.querySelector('.jnone') }; })()")
+        check('Join card with other demos in the folder: the list of them, no "no other demos" line', jp['sel'] > 2 and not jp['none'], str(jp))
+        JS5("JOIN.picking = false; renderJoinCard()")
         JS5('joinMove(1, -1)')
         c = card()
         check("Join card, part 2 put first: check A says the order doesn't add up, and Join them is off",

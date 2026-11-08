@@ -11,11 +11,11 @@ function togglePlay() { if (!D) return; closeSummary(); if (T >= D.end - 0.05) T
 $('bPlay').onclick = togglePlay;
 $('bBack').onclick = () => D && seek(T - 5);
 $('bFwd').onclick = () => D && seek(T + 5);
-// ↑ and ↓: the previous or next round in the list, from anywhere in a round (Sujan, 2 Nov 2026). Up used to go to the
-// start of the round playing when more than 3 s into it, so while playing at 2x or faster a second press landed past
-// 3 s again and went back to the same start: Up seemed to jump back a little or do nothing.
-// k: the last listed round started by now. Inside it, Up goes one before it; between listed rounds (a warmup, the
-// restarts between halves, after the match), Up goes to it and Down to the one after it.
+// Z and X (↑ and ↓ up to 0.26.19; Sujan, 8 Nov 2026): the previous or next round in the list, from anywhere in a round
+// (Sujan, 2 Nov 2026). The previous round used to go to the start of the round playing when more than 3 s into it, so
+// while playing at 2x or faster a second press landed past 3 s again and went back to the same start.
+// k: the last listed round started by now. Inside it, Z goes one before it; between listed rounds (a warmup, the
+// restarts between halves, after the match), Z goes to it and X to the one after it.
 function jumpRound(dir) {
   if (!D) return;
   const rs = visibleRounds();
@@ -47,9 +47,14 @@ document.addEventListener('keydown', (e) => {
   if (k === ' ') { e.preventDefault(); togglePlay(); }
   else if (k === 'ArrowLeft') { e.preventDefault(); seek(T - (e.shiftKey ? 1 : 5)); }
   else if (k === 'ArrowRight') { e.preventDefault(); seek(T + (e.shiftKey ? 1 : 5)); }
-  // a held key repeats: one round per press, so holding it a moment too long doesn't skip a round (Sujan, 2 Nov 2026)
-  else if (k === 'ArrowUp') { e.preventDefault(); if (!e.repeat) jumpRound(-1); }
-  else if (k === 'ArrowDown') { e.preventDefault(); if (!e.repeat) jumpRound(1); }
+  // ↑ and ↓: the next or previous player, as a click and a right-click on the view; the default is stopped, so a focused
+  // side panel, slider or list doesn't also scroll or change (Sujan, 8 Nov 2026: the keys players had are Z and X)
+  else if (k === 'ArrowUp') { e.preventDefault(); nextPlayer(1); if (viewMode !== '2d' && cam3.mode === 'free') setCam('eyes'); }
+  else if (k === 'ArrowDown') { e.preventDefault(); nextPlayer(-1); if (viewMode !== '2d' && cam3.mode === 'free') setCam('eyes'); }
+  // Z and X: the previous or next round. A held key repeats: one round per press, so holding it a moment too long
+  // doesn't skip a round (Sujan, 2 Nov 2026)
+  else if (k === 'z' || k === 'Z') { if (!e.repeat) jumpRound(-1); }
+  else if (k === 'x' || k === 'X') { if (!e.repeat) jumpRound(1); }
   else if (k === ',') { playing = false; setPlayIcon(); seek(T - 1 / 30); }
   else if (k === '.') { playing = false; setPlayIcon(); seek(T + 1 / 30); }
   else if (k === '[') { const i = SPEEDS.indexOf(speed); if (i > 0) setSpeed(SPEEDS[i - 1]); }
@@ -59,8 +64,6 @@ document.addEventListener('keydown', (e) => {
   else if (k === 'm' || k === 'M') setSound(!SND.on);
   else if (k === 'f' || k === 'F') toggleFull();
   else if (k === 't' || k === 'T') setTheatre(!TH.on);
-  else if (k === 'x' || k === 'X') { nextPlayer(1); if (viewMode !== '2d' && cam3.mode === 'free') setCam('eyes'); }
-  else if (k === 'z' || k === 'Z') { nextPlayer(-1); if (viewMode !== '2d' && cam3.mode === 'free') setCam('eyes'); }
   else if (/^[0-9]$/.test(k) && !POV.on) {
     const pid = playerOrder()[(+k + 9) % 10]; const e = pid && M.slotOf(pid, T);
     if (e && isDeadNow(e)) toast(`${M.pl[pid].name} is dead until the next round.`, 2500);

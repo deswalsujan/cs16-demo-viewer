@@ -4,6 +4,7 @@ What changed in the viewer, newest first. The version shows in the viewer's shor
 
 ## Versions
 
+- [0.26.20](#02620-2026-11-08) 2026-11-08: Arrow keys pick players
 - [0.26.19](#02619-2026-11-07) 2026-11-07: Replayed and carried halves joined
 - [0.26.18](#02618-2026-11-07) 2026-11-07: One error can't freeze it
 - [0.26.17](#02617-2026-11-07) 2026-11-07: Damage numbers no longer freeze
@@ -77,6 +78,24 @@ What changed in the viewer, newest first. The version shows in the viewer's shor
 
 ## Known limits
 Moved to [LIMITS.md](LIMITS.md) on 30 Oct 2026; release entries below still say "Known limits" for that list.
+
+## 0.26.20 (2026-11-08)
+
+From Sujan's feedback of 8 Nov 2026 on the IEM4 World Championship demos (CeBIT, March 2010), the two points he asked to have built at once, with no mockup.
+
+### Changed
+- ↑ and ↓ pick the next and previous player, as a click and a right-click on the view do; Z and X go to the previous and next round, the keys that picked players up to 0.26.19 (Sujan, 8 Nov 2026). Rounds still move one per press when Z or X is held, and 1 to 0 still jump to a player. The shortcuts list (?), the tooltips of the round buttons and the player arrows, and the name bar's "press ↑ for the next player" say so.
+
+### Fixed
+- The Join card's **Add another part…** showed a list holding only "Pick a demo…" when the Half-Life folder had no other demo. It now says "There are no other demos in your Half-Life folder." beside **A file from elsewhere…** (Sujan, 8 Nov 2026).
+
+### How it was tested
+- `demo_search_check.py`, 17 new checks on SK vs Na`Vi, Train, DreamHack Winter 2011 (the keys in 2D, 3D and split, a focused side panel, slider and list, the shortcuts list and tooltips) and on a folder holding only that demo (the Join card); 12 fail on 0.26.19, the other 5 guard what both versions do.
+- The seven checks pass on Sujan's Mac; `ground_truth_check.py` gives the same counts as on 0.26.19. Full log: `tests/logs/0.26.20.md`.
+
+### Discussed, not changed
+- ↑ and ↓ do what X and Z did, so in Free view ↑ also goes to the next player's eyes, while a click on the view in Free view picks no one, as before. The free camera itself moves only with W, A, S, D, Q and E.
+- The seven demos of the batch joined the test demos (`tests/DEMOS.md`). The other points of the batch (the match rules, the wallbang finder, the dialogs) wait for Sujan's answers on Claude's reports and one mockup round (IDEAS.md, **Sujan's feedback of 8 Nov 2026**).
 
 ## 0.26.19 (2026-11-07)
 
