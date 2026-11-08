@@ -4,6 +4,7 @@ What changed in the viewer, newest first. The version shows in the viewer's shor
 
 ## Versions
 
+- [0.26.22](#02622-2026-11-08) 2026-11-08: Teamkills, leg hits, open hits
 - [0.26.21](#02621-2026-11-08) 2026-11-08: When a match starts and ends
 - [0.26.20](#02620-2026-11-08) 2026-11-08: Arrow keys pick players
 - [0.26.19](#02619-2026-11-07) 2026-11-07: Replayed and carried halves joined
@@ -79,6 +80,24 @@ What changed in the viewer, newest first. The version shows in the viewer's shor
 
 ## Known limits
 Moved to [LIMITS.md](LIMITS.md) on 30 Oct 2026; release entries below still say "Known limits" for that list.
+
+## 0.26.22 (2026-11-08)
+
+From Sujan's answers of 8 Nov 2026 on Claude's reports (`tests/logs/iem4-reports-2026-11-08.md`): the wallbang finder's three fixes.
+
+### Fixed
+- A wallbang that kills a teammate leaves the Wallbangs tab, its counts, **Copy list** and the timeline's diamonds; in the Kills list it keeps WALLBANG and, like every teamkill there, gets a TK tag (Sujan, 8 Nov 2026; glow on his teammate solo, compLexity vs WeMadeFox, Nuke, IEM4).
+- A strict wallbang reads LOOSE when the killer's bullet on him 0.15 s or less before the kill did the full damage of a hit in the open (Sujan, 8 Nov 2026). Edward-FoCuS on Gux, SK vs Na`Vi, Dust2, IEM4, R11 0:52, read STRICT WB: Gux took 21 0.04 s before the kill, what an M4A1 does to an armoured chest in the open, while the recorded positions have him crouched behind the wall's top; the game hit him where Edward saw him, a moment back. It reads LOOSE WB, the tooltip saying why. No confirmed strict wallbang changes.
+- A damage hit is also judged on the line to the body part its damage points to (Sujan, 8 Nov 2026): RobbaN's AWP hits on Zeus (SK vs Na`Vi, Dust2, IEM4, R30 1:30, 83), cArn (84) and face (82) (SK vs fnatic, Train, IEM4) are what an AWP does to a leg in the open at those distances, with the legs in view and the body behind a wall; they were wallbang damage. The 0.6 cap for damage hits stays (2 Nov 2026).
+
+### How it was tested
+- `ground_truth_check.py`: Edward-FoCuS on Gux added as loose; 232 kills and 43 scores and K-D on 53 demos, 0 mismatches, the same 8 known gaps.
+- `demo_search_check.py`, 3 new checks on SK vs Na`Vi, Dust2, IEM4 (Gux, the 83 on Zeus, a teamkill), failing on 0.26.21.
+- 67 demos with their maps, the rules on and off in one page: 13 strict wallbangs turn LOOSE (Gux and 12 no answer covers), damage rows 624 to 611; every one in the log. The seven checks pass. Full log: `tests/logs/0.26.22.md`.
+
+### Discussed, not changed
+- Claude's choice while building, for Sujan: the line to his middle still counts beside the line to the part the damage points to, so a hit is in the open when either is clear. Judged on the part's line alone, 5 damage rows appeared on the test demos, hits with the damage of one in the open where a low wall covered the legs.
+- No test demo has a teamkill through a wall in a live round (glow on solo is in the warmup that 0.26.21 stopped counting), so the check sets a listed wallbang's teams the same.
 
 ## 0.26.21 (2026-11-08)
 

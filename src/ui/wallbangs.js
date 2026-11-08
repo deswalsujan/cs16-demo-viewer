@@ -119,6 +119,11 @@ function aimLine(k) {
   const dist = Math.hypot(k.vpos[0] - eye[0], k.vpos[1] - eye[1], k.vpos[2] - eye[2]);
   return [eye, [eye[0] + Math.cos(pitch) * Math.cos(yaw) * dist, eye[1] + Math.cos(pitch) * Math.sin(yaw) * dist, eye[2] - Math.sin(pitch) * dist]];
 }
+// The wallbangs the Wallbangs tab lists, with its counts, Copy list and the timeline's diamonds: those in the live rounds,
+// less a kill between two players on the same side, which stays a wallbang in the Kills tab, tagged TK there (Sujan, 8 Nov
+// 2026: glow on his teammate solo, compLexity vs WeMadeFox, Nuke, IEM4)
+function teamKill(k) { return k.killer !== k.victim && !!k.kp && !!k.kteam && k.kteam === k.vteam; }
+function listedWbs() { return D.kills.filter((k) => k.wb && !teamKill(k) && M.liveR.some((r) => r.n === k.round)); }
 function computeWallbangs() {
   if (!MAP || !D) return;
   const bsp = MAP.bsp;
@@ -162,7 +167,7 @@ function computeWallbangs() {
   // a kill that lands on a skip across a round restart was judged from the next round's spawns, thousands of units
   // apart (4,000 units of "wall" for Orwall's AWP kill on coNTE, roccat vs fnatic, Inferno, R21): nothing to judge
   for (const k of D.kills) if ((k.wb || k.seenAim) && (M.skipRestart || []).some((st) => Math.abs(st - k.t) <= 0.3)) { k.wb = null; k.seenAim = null; }
-  M.wbs = D.kills.filter((k) => k.wb && M.liveR.some((r) => r.n === k.round));
+  M.wbs = listedWbs();
   renderPane(); drawTimeline();
   // then the picture check (checkSeen, view3d.part.js), once the 3D map is built: loadMap builds it right after this
   setTimeout(() => { if (typeof checkSeen === 'function') checkSeen(); }, 0);
@@ -315,7 +320,15 @@ function computeHits() {
     const skip = brokenSet(th - 0.05); for (const m of notCover) skip.add(m);
     const poses = posesAt(th - 0.05);
     const end = [c.eye[0] + c.dir[0] * c.along, c.eye[1] + c.dir[1] * c.along, c.eye[2] + c.dir[2] * c.along];
-    const aimS = solidAlong(bsp, c.eye, end, 2, skip, poses, 'bullet').solid, zoneS = solidAlong(bsp, c.eye, c.tgt, 2, skip, poses, 'bullet').solid;
+    // the line to the part of him the damage points to (Sujan, 8 Nov 2026): a hit doing what his gun does in the open to a
+    // leg, the chest or the stomach at that distance is also judged on the line to that part, open when it's clear.
+    // RobbaN's AWP on Zeus (SK vs Na`Vi, Dust2, IEM4, R30 1:30) took 83, exactly a leg in the open at 1526 units, with his
+    // legs in view and his body behind the wall; judged on the line to his middle alone, it read as through the wall. The
+    // line to his middle still counts too: a hit with the damage of one in the open isn't made a wallbang by a blocked
+    // line to a leg (on the test demos that would have added 5 damage rows).
+    const fit = head || hs.length !== 1 ? [] : openParts(c.gun, hr.dist, hs[0][2], d.dmg);
+    const zoneTo = [c.tgt, ...fit.map((pt) => [vp[0], vp[1], vp[2] + PART_Z[pt][vduck ? 1 : 0]])];
+    const aimS = solidAlong(bsp, c.eye, end, 2, skip, poses, 'bullet').solid, zoneS = Math.min(...zoneTo.map((to) => solidAlong(bsp, c.eye, to, 2, skip, poses, 'bullet').solid));
     if (aimS === 0 || zoneS === 0) { note(d, `open aim ${Math.round(aimS)} zone ${Math.round(zoneS)} off ${Math.round(c.off)} by ${c.e}`); continue; }
     note(d, `cover by ${c.e} off ${Math.round(c.off)}`);
     cover.push({ t: th, v: d.e, s: c.e, dmg: d.dmg, head, gun: c.gun }); hr.wall = true;
@@ -334,7 +347,23 @@ function computeHits() {
     k.wb = Object.assign({}, k.seenAim, { loose: 'dmg', dmg: near[near.length - 1] }); k.seenPx = -2;
     for (const p of mine) if (!cover.some((x) => x.t === p.t && x.v === p.v)) { cover.push(p); p.hit.wall = true; }
   }
-  M.wbs = D.kills.filter((k) => k.wb && M.liveR.some((r) => r.n === k.round));
+  // A strict wallbang reads LOOSE when the killer's bullet on him just before the kill did the full damage of a hit in the
+  // open (Sujan, 8 Nov 2026): a health drop of his with a hit sound 0.15 s or less before the kill, the killer firing in the
+  // 0.2 s before it, at least what his gun does in the open at that distance for that hit sound. Edward-FoCuS on Gux
+  // (SK vs Na`Vi, Dust2, IEM4, R11 0:52): 21 on Gux's armour 0.04 s before the kill, as in the open (through the wall's top
+  // about half), while the recorded positions have him crouched behind it from 0.1 s before: the game hit him where the
+  // killer saw him, a moment back.
+  for (const k of D.kills) {
+    if (!k.wb || k.wb.loose || !k.kpos || !k.vpos || !M.liveR.some((r) => r.n === k.round)) continue;
+    const tk = k.tMsg != null ? k.tMsg : k.t;
+    const d = drops.filter((x) => x.e === k.victim && !x.dead && x.snd && x.snd[0][0] < tk - 0.001 && tk - x.snd[0][0] <= 0.15).pop();
+    if (!d) continue;
+    const th = d.snd[0][0];
+    if (!(shots[k.killer] || []).some((t) => t >= th - 0.2 && t <= th + 0.001)) continue;
+    const lo = openLow(k.weapon, Math.hypot(k.vpos[0] - k.kpos[0], k.vpos[1] - k.kpos[1], k.vpos[2] - k.kpos[2]), d.snd.map((h) => h[2]));
+    if (lo && d.dmg >= lo - 1) k.wb = Object.assign({}, k.wb, { loose: 'open', open: { dmg: d.dmg, low: lo, before: +(tk - th).toFixed(2) } });
+  }
+  M.wbs = listedWbs();
   cover.sort((x, y) => x.t - y.t);
   const byV = {}; for (const h of cover) (byV[h.v] || (byV[h.v] = [])).push(h);
   for (const v in byV) {
@@ -401,14 +430,23 @@ function killHits(k) {
 function bodyPart(h) {
   if (h.head) return 'head';
   if (h.kill || h.wall || !GUN_DMG[h.gun] || !h.snd || h.snd.length !== 1 || h.dist == null) return 'body';
-  const arm = h.snd[0] === 'kevlar';
-  const parts = arm ? [['chest or arm', 1], ['stomach', 1.25]] : [['leg', 0.75], ['chest or arm', 1], ['stomach', 1.25]];
-  const fits = parts.filter(([, m]) => GUN_DMG[h.gun].some(([dm, r]) => {
-    const at = (dist) => Math.floor(Math.floor(dm * Math.pow(r, Math.max(0, dist) / 500)) * m * (arm && m > 0.75 ? GUN_ARMOR[h.gun] : 1) + 1e-6);
-    return h.dmg >= at(h.dist + 30) - 1 && h.dmg <= at(h.dist - 30) + 1;
-  }));
-  return fits.length === 1 ? fits[0][0] + '*' : 'body';
+  const fits = openParts(h.gun, h.dist, h.snd[0], h.dmg);
+  return fits.length === 1 ? fits[0] + '*' : 'body';
 }
+// The parts a hit in the open could have struck, from its damage, the gun, the distance and the hit sound (kevlar: an
+// armoured chest, arm or stomach; flesh: a leg, or the body without armour). Empty when no part fits: less than the gun
+// does in the open, or more.
+function openParts(gun, dist, snd, dmg) {
+  if (!GUN_DMG[gun] || dist == null) return [];
+  const arm = snd === 'kevlar';
+  const parts = arm ? [['chest or arm', 1], ['stomach', 1.25]] : [['leg', 0.75], ['chest or arm', 1], ['stomach', 1.25]];
+  return parts.filter(([, m]) => GUN_DMG[gun].some(([dm, r]) => {
+    const at = (d) => Math.floor(Math.floor(dm * Math.pow(r, Math.max(0, d) / 500)) * m * (arm && m > 0.75 ? GUN_ARMOR[gun] : 1) + 1e-6);
+    return dmg >= at(dist + 30) - 1 && dmg <= at(dist - 30) + 1;
+  })).map(([p]) => p);
+}
+// where each part is, above the player's origin, standing and ducking (the hull is 72 units high standing, 36 ducking)
+const PART_Z = { leg: [-20, -10], 'chest or arm': [16, 8], stomach: [4, 0] };
 // "Earlier:" in kill details (Sujan, 3 Nov 2026): when part of the victim's health that round went to something other than
 // the killer's listed bullets, where it went, oldest first: every health drop of his in that round up to the kill that isn't
 // one of those bullets, before the first of them or between them (a crossfire: Na`Vi vs FX, Dust2, SEC 2011 final, R22
