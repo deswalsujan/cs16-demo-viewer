@@ -612,7 +612,7 @@ addEventListener('resize', () => { if (applyUiSize()) dispatchEvent(new Event('u
     <div class="overlay sumwrap" id="sumCard" hidden></div>
     <div class="overlay keys" id="keys" hidden>
       <div class="keys-card">
-        <div class="keys-head"><b>Shortcuts and kill markers</b><div class="kh-r"><span class="ver">Version 0.26.20 · <a href="https://github.com/deswalsujan/cs16-demo-viewer/blob/main/CHANGELOG.md" target="_blank" rel="noopener">What's new</a> · <a href="https://github.com/deswalsujan/cs16-demo-viewer/issues/new/choose" target="_blank" rel="noopener">Report a bug</a></span><button class="btn" id="bDebug" type="button" title="Copies details for a bug report: browser, demo name, what loaded, errors. No file contents.">Copy debug info</button><button class="btn" id="bKeysClose" type="button">Close</button></div></div>
+        <div class="keys-head"><b>Shortcuts and kill markers</b><div class="kh-r"><span class="ver">Version 0.26.21 · <a href="https://github.com/deswalsujan/cs16-demo-viewer/blob/main/CHANGELOG.md" target="_blank" rel="noopener">What's new</a> · <a href="https://github.com/deswalsujan/cs16-demo-viewer/issues/new/choose" target="_blank" rel="noopener">Report a bug</a></span><button class="btn" id="bDebug" type="button" title="Copies details for a bug report: browser, demo name, what loaded, errors. No file contents.">Copy debug info</button><button class="btn" id="bKeysClose" type="button">Close</button></div></div>
         <textarea class="dbgbox" id="dbgBox" readonly hidden aria-label="Debug info"></textarea>
         <div class="keys-grid">
           <section><h3>Playback</h3>
@@ -716,7 +716,7 @@ addEventListener('resize', () => { if (applyUiSize()) dispatchEvent(new Event('u
         <div class="drophint">Or drop a .dem file, or an overview .bmp and .txt pair, anywhere on this page</div>
         <div class="prog" id="prog" hidden><i id="progBar"></i></div>
         <div class="msg" id="msg"></div>
-        <div class="loadfoot"><span>Version 0.26.20 · <a href="https://github.com/deswalsujan/cs16-demo-viewer" target="_blank" rel="noopener">Source on GitHub</a></span><button class="btn" id="bClear" type="button" title="Deletes the maps, models, sounds and overviews this browser saved from your Half-Life folder, and starts over as on a first visit">Clear saved files</button></div>
+        <div class="loadfoot"><span>Version 0.26.21 · <a href="https://github.com/deswalsujan/cs16-demo-viewer" target="_blank" rel="noopener">Source on GitHub</a></span><button class="btn" id="bClear" type="button" title="Deletes the maps, models, sounds and overviews this browser saved from your Half-Life folder, and starts over as on a first visit">Clear saved files</button></div>
       </div>
     </div>
   </section>
@@ -3948,6 +3948,21 @@ function derive() {
   // smaller T side in both)
   const tSide = (r) => { const t = Math.min(r.start + 5, r.end), s = new Set(); for (const e in D.slots) { const a = D.slots[e]; if (Math.abs(a[idxAt(t) * S + 5]) === 1) s.add(personAt(+e, t)); } return s; };
   const sameSides = (a, b) => { const x = tSide(a), y = tSide(b); let n = 0; for (const p of x) if (y.has(p)) n++; return n > Math.min(x.size, y.size) / 2; };
+  // The match can't start before both teams are full (Sujan, 8 Nov 2026): rounds played before the first round of the
+  // file with 5 players on each side, 5 s into it, don't count, since players were still joining. compLexity vs WeMadeFox,
+  // Nuke, IEM4 began at 1 against 1 (its whole first stretch was a warmup, too short to be a half once those rounds are
+  // out); in SK vs fnatic, Train, IEM4, GeT_RiGhT and f0rest were gone and SK's face played on fnatic's side. Once both
+  // teams have been full, every round counts whatever the numbers: a drop, a late player or a ban inside the match
+  // doesn't take a round out (counting only full rounds broke confirmed scores), nor do players reconnecting after a
+  // crash (the first live round of mousesports vs mTw, Inferno, IEM4, part 2, was played 2 against 5 and is one of the
+  // 30 of the 19-11). A round the recording starts partway into is left as it is (not every player is in a snapshot
+  // yet), and so is a file where no round has both teams full (SK vs eSTRO, WCG 2008, the files with one team).
+  const fullTeams = (r) => { const t = Math.min(r.start + 5, r.end != null ? r.end : r.start + 5), n = [null, new Set(), new Set()]; for (const e in D.slots) { const sd = Math.abs(D.slots[e][idxAt(t) * S + 5]); if (sd === 1 || sd === 2) n[sd].add(personAt(+e, t)); } return n[1].size >= 5 && n[2].size >= 5; };
+  const startWhenFull = () => {
+    if (D.pov) return;
+    const first = rounds.find((r) => !r.missing && fullTeams(r)); if (!first) return;
+    for (const r of rounds) if (r.live && r.start < first.start && !r.partial && !r.partFirst) { r.live = false; r.notFull = true; }
+  };
   // Half ends: 15, 30, then every 3 rounds of overtime
   const atHalfEnd = (x) => x === 15 || x === 30 || (x > 30 && (x - 30) % 3 === 0);
   // What the server's admin plugin announced beats guessing. Tournament servers print "Live !" (or
@@ -3957,6 +3972,7 @@ function derive() {
   const windows = liveWindows(D.notes || [], (D.parts || []).slice(1).map((p) => p.start));
   if (windows.length) {
     for (const r of rounds) r.live = counts(r) && windows.some(([a, b]) => r.start >= a - 10 && r.start < b - 1);
+    startWhenFull();
     // Inside the announced match, a restart before a half is complete throws away what was played since
     // the last full half: the admins started again (a restart puts the score back to 0:0). In the FX vs SK
     // Inferno demo the second half was started, 7 rounds were played, then restarted with "live now,
@@ -3997,6 +4013,7 @@ function derive() {
     for (const r of rounds) r.live = counts(r);
   } else {
     for (const r of rounds) r.live = liveSegs.includes(String(r.seg)) && counts(r);
+    startWhenFull();
     // False starts: a live stretch where a half should begin (or an overtime) that stops short
     // of a full half and is followed by another live start. Typical case: a few practice rounds on a
     // fresh 0:0, then the admins restart "live on 3" for the real match.
@@ -4184,11 +4201,31 @@ function derive() {
   };
   const saved = ls.get('names:' + demoKey()) || [];
   const fromFile = teamsFromFileName(D.fileName, teams.map((g) => g.map((pid) => pl[pid].name)));
-  const tnames = [saved[0] || fromFile[0] || autoName(teams[0], 0), saved[1] || fromFile[1] || autoName(teams[1], 1)];
+  // the admin's text, after the file name and before the clan tags (Sujan, 8 Nov 2026): ESWC's AdminBot names both teams
+  // with their sides, "1st Warmup - Fnatic(CT) vs mousesports(T)", so the team with most players on CT then is the one
+  // it names CT. Its names go through the known teams ("Navi" reads Natus Vincere, "mTw.dk" mTw).
+  const fromAdmin = (() => {
+    for (const n of D.notes || []) {
+      const m = /Warmup - (.+?)\((CT|T)\) vs (.+?)\((CT|T)\)/.exec(n.s || '');
+      if (!m || m[2] === m[4]) continue;
+      const onCT = [0, 0];
+      for (const e in D.slots) { const sd = Math.abs(D.slots[e][idxAt(n.t) * S + 5]), ti = teamOf[personAt(+e, n.t)]; if (sd && ti != null) onCT[ti] += sd === 2 ? 1 : -1; }
+      if (onCT[0] === onCT[1]) continue;
+      const nm = (raw) => { const r = raw.trim().replace(/[^A-Za-z0-9]+$/, ''); return knownTeam(r) || r; };
+      const ct = nm(m[2] === 'CT' ? m[1] : m[3]), t = nm(m[2] === 'CT' ? m[3] : m[1]);
+      return onCT[0] > onCT[1] ? [ct, t] : [t, ct];
+    }
+    return [null, null];
+  })();
+  const named = fromFile[0] && fromFile[1] ? fromFile : fromAdmin[0] && fromAdmin[1] ? fromAdmin : [null, null];
+  const tnames = [saved[0] || named[0] || autoName(teams[0], 0), saved[1] || named[1] || autoName(teams[1], 1)];
 
   // per round: which team was T; winner team; running score
-  let sc = [0, 0], played = 0, after16 = null, wonAt = null;
-  const count30 = ls.get('count30:' + demoKey()) === true;
+  let sc, played, after16, wonAt;
+  const live0 = rounds.map((r) => r.live);
+  const score = (count30) => {
+  sc = [0, 0]; played = 0; after16 = null; wonAt = null;
+  rounds.forEach((r, i) => { r.live = live0[i]; r.afterMatch = false; });
   for (const r of rounds) {
     r.scoreBefore = sc.slice();
     if (!r.live) {
@@ -4218,6 +4255,20 @@ function derive() {
       if (!wonAt) wonAt = r;
       for (const x of rounds) if (x.start > r.start && x.live) { x.live = false; x.afterMatch = true; }
     }
+  }
+  };
+  // Count them: what the player chose for this demo, or by itself when the teams played on to round 30 (Sujan, 8 Nov
+  // 2026: IEM4's group stage played all 30 rounds and counted them; mousesports vs mTw, Inferno, joined, read 16:8 in
+  // 24 where the result is 19-11). At least 4 rounds after the 16th win, every one with a winner and 3 or more kills,
+  // and the last of them the 30th: a server that plays on after the match plays a round or two (iFNG FX vs fnatic, Dust2:
+  // a 30th round after 16:13, confirmed 16:13), and fewer rounds than that leaves fnatic vs EG, Dust2, EM3 Global
+  // Finals 2009 at its confirmed 11:16 (3 rounds after it). Count them or Stop at 16 overrides it, per demo.
+  const chosen30 = ls.get('count30:' + demoKey());
+  let count30 = chosen30 === true, auto30 = false;
+  score(count30);
+  if (chosen30 == null && after16) {
+    const rest = rounds.filter((x) => x.afterMatch && x.start > after16.at.start);
+    if (rest.length >= 4 && played + rest.length === 30 && rest.every((x) => x.winner && x.kills.length >= 3)) { auto30 = true; count30 = true; score(true); }
   }
   if (after16) after16.extra = rounds.filter((x) => x.start > after16.at.start && (x.afterMatch || x.live) && x.kills.length).length;
   liveR = rounds.filter((r) => r.live);
@@ -4250,7 +4301,7 @@ function derive() {
   const k = Math.min(960 / (x1 - x0 || 1), 700 / (y1 - y0 || 1));
   const bounds = { x0, y1, k, px: (1024 - (x1 - x0) * k) / 2, py: (768 - (y1 - y0) * k) / 2 };
 
-  M = { idxAt, pl, rounds, liveR, teams, teamOf, tnames, nades, bounds, reg, hasOT: liveR.some((r) => r.ot), personAt, slotOf, specs, wbs: [], after16: after16 && after16.extra ? after16 : null, count30, wonAt: wonAt || (after16 && after16.at) || null };
+  M = { idxAt, pl, rounds, liveR, teams, teamOf, tnames, nades, bounds, reg, hasOT: liveR.some((r) => r.ot), personAt, slotOf, specs, wbs: [], after16: after16 && after16.extra ? after16 : null, count30, auto30, wonAt: wonAt || (after16 && after16.at) || null };
   buildShort();
   findSkips();
 }
@@ -4661,6 +4712,10 @@ const KNOWN_TEAMS = {
   checksix: 'Check-Six', lions: 'LIONS', lionsesport: 'LIONS e-Sport', zantwerpaces: 'Z-Antwerp Aces', dignitas: 'Team Dignitas',
   wicked: 'Wicked', ksp: 'KSP', lions_e_sport: 'LIONS e-Sport', mortal: 'Mortal Teamwork', aaa: 'against All authority',
   essential: 'eSsential', vs: null,
+  // spellings fixed 8 Nov 2026 (Sujan): "MEET LUq, YOUR MAKER" and the rest of MeetYourMakers' joke tag at EM3 2009
+  // (the spelling of Wikipedia's page; Liquipedia writes Meet Your Makers); Sweden's tag at ASUS ENC 2010 (Liquipedia's
+  // ENC 2010 page: Sweden); eSahara as EsportsEarnings and GosuGamers write it
+  meet: 'MeetYourMakers', swiiiiideeeen: 'Sweden', esahara: 'eSahara',
 };
 const norm = (x) => (x || '').toLowerCase().replace(/[^a-z0-9]/g, '');
 // A shared clan tag looked up in the known teams: the whole tag first, then its first part,
@@ -5027,7 +5082,7 @@ function renderPane() {
       if (A && !noted && r.start > A.at.start) {
         noted = true;
         const who = esc(M.tnames[A.team]);
-        h += `<div class="note16"><span>${M.count30 ? `Counting the ${A.extra} ${A.extra === 1 ? 'round' : 'rounds'} played after ${who} reached 16.` : `${A.extra} ${A.extra === 1 ? 'round was' : 'rounds were'} played after ${who} reached 16. Some events count them.`}</span><button class="btn sm" type="button" id="bCount30">${M.count30 ? 'Stop at 16' : 'Count them'}</button></div>`;
+        h += `<div class="note16"><span>${M.count30 ? `Counting the ${A.extra} ${A.extra === 1 ? 'round' : 'rounds'} played after ${who} reached 16${M.auto30 ? ': the teams played on to round 30.' : '.'}` : `${A.extra} ${A.extra === 1 ? 'round was' : 'rounds were'} played after ${who} reached 16. Some events count them.`}</span><button class="btn sm" type="button" id="bCount30">${M.count30 ? 'Stop at 16' : 'Count them'}</button></div>`;
       }
       // where the file changes: the part's full file name
       if (prevPart != null && r.part != null && r.part !== prevPart) {
@@ -5047,7 +5102,7 @@ function renderPane() {
       const sc = r.live && r.scoreAfter ? `${r.scoreAfter[0]}:${r.scoreAfter[1]}` : '';
       const after = r.afterMatch && !r.live;
       h += `<div class="row${r === cr ? ' cur' : ''}${after ? ' after16' : ''}" data-t="${r.start}"><span class="n">${r.live ? 'R' + r.ln : '·'}</span>
-        <span class="main"><span class="pill ${side}">${r.winner || '—'}</span>${esc(who)}${after ? '<span class="tag16">after the match</span>' : ''}<div class="sub">${esc(r.replayed ? 'replayed from 0:0' + (r.reason ? ' · ' + r.reason : '') : r.reason || (r.live ? '' : 'not counted'))} · ${r.kills.length} kills${r.sides ? ' · ' + Math.max(0, Object.keys(r.sides).length - new Set(r.kills.map((k) => k.victim)).size) + ' alive at end' : ''}</div></span>
+        <span class="main"><span class="pill ${side}">${r.winner || '—'}</span>${esc(who)}${after ? '<span class="tag16">after the match</span>' : ''}<div class="sub">${esc(r.replayed ? 'replayed from 0:0' + (r.reason ? ' · ' + r.reason : '') : r.notFull ? 'teams not full yet' + (r.reason ? ' · ' + r.reason : '') : r.reason || (r.live ? '' : 'not counted'))} · ${r.kills.length} kills${r.sides ? ' · ' + Math.max(0, Object.keys(r.sides).length - new Set(r.kills.map((k) => k.victim)).size) + ' alive at end' : ''}</div></span>
         <span class="d">${sc}<br>${fmt(clockSpan(r.start, r.start + r.dur))}</span></div>`;
     }
     h += `<div class="joinrow"><span>${D.parts ? 'Another part of this map in a file of its own?' : 'Is this map split over two or more demo files?'}</span><button class="btn sm" type="button" id="bJoinWith">Join with another demo…</button></div>`;
@@ -8418,7 +8473,7 @@ async function loadSummary(sndDone) {
   rows.push(...healthRows);
   if (M.after16) {
     const A = M.after16, n = A.extra, who = M.tnames[A.team], sc = `${Math.max(...A.score)}:${Math.min(...A.score)}`;
-    rows.push({ s: 'info', t: `${n} ${n === 1 ? 'round was' : 'rounds were'} played after ${who} reached 16 (${sc})`, n: M.count30 ? 'Counted, as chosen for this demo (up to round 30).' : `Some events played all 30 rounds and count them. Not counted now: the match ends at ${sc}.`, btn: { id: 'sumCount30', label: M.count30 ? 'Stop at 16' : 'Count them' } });
+    rows.push({ s: 'info', t: `${n} ${n === 1 ? 'round was' : 'rounds were'} played after ${who} reached 16 (${sc})`, n: M.auto30 ? 'Counted: the teams played on to round 30, as events that count all 30 rounds did.' : M.count30 ? 'Counted, as chosen for this demo (up to round 30).' : `Some events played all 30 rounds and count them. Not counted now: the match ends at ${sc}.`, btn: { id: 'sumCount30', label: M.count30 ? 'Stop at 16' : 'Count them' } });
   }
   if (D.maps && D.maps.length > 1) rows.push({ s: 'info', t: `The recording switched maps. Showing ${D.mapName}, where it spent longest.`, n: D.maps.map((m) => `${m.map} ${fmt(m.dur)}`).join(', then ') });
   // POV mode (0.25.0, Sujan 29 Oct 2026): off by default, so the line says so and turns it on
@@ -8516,7 +8571,8 @@ function openSummary(o) { renderSummary(Object.assign({ state: 'busy', title: 'C
 // Count the rounds played after a team reached 16 (up to round 30), or stop at 16: remembered per demo
 function setCount30(on) {
   if (!D) return;
-  ls.set('count30:' + demoKey(), on ? true : null);
+  // false is kept too, so Stop at 16 holds where the viewer would count them by itself (0.26.21)
+  ls.set('count30:' + demoKey(), on ? true : false);
   derive(); buildZoom(); heat = null;
   if (MAP && MAP.name === D.mapName.toLowerCase()) computeWallbangs();
   tlCache.key = ''; renderPane(); drawTimeline(); updateHud(true);
@@ -8602,7 +8658,7 @@ function frameError(e) {
 function debugInfo() {
   let gpu = '';
   try { const gl = document.createElement('canvas').getContext('webgl'); const x = gl && gl.getExtension('WEBGL_debug_renderer_info'); gpu = gl ? (x ? gl.getParameter(x.UNMASKED_RENDERER_WEBGL) : 'WebGL available') : 'no WebGL'; } catch (e) { gpu = 'unknown'; }
-  const L = [`CS 1.6 Demo Viewer 0.26.20`, `Browser: ${navigator.userAgent}`, `Screen: ${screen.width}x${screen.height} at ${devicePixelRatio}x, window ${innerWidth}x${innerHeight}`, `Graphics: ${gpu}`];
+  const L = [`CS 1.6 Demo Viewer 0.26.21`, `Browser: ${navigator.userAgent}`, `Screen: ${screen.width}x${screen.height} at ${devicePixelRatio}x, window ${innerWidth}x${innerHeight}`, `Graphics: ${gpu}`];
   L.push(`Folder: ${Object.keys(files.maps).length} maps, ${Object.keys(files.overviews).length} overviews, ${Object.keys(files.mdl).length} models, ${Object.keys(files.snd).length} sounds, ${files.demos.length} demos`);
   if (D) {
     L.push(`Demo: ${D.fileName}, protocol ${(D.header && D.header.netProtocol) || '?'}, ${D.pov ? 'POV (recorded by a player)' : 'HLTV'}, map ${D.mapName}, length ${fmt(D.end - D.start)}, ${M.liveR.length} live rounds, final ${M.liveR.length ? M.liveR[M.liveR.length - 1].scoreAfter.join(':') : '-'}`);

@@ -65,7 +65,7 @@ async function loadSummary(sndDone) {
   rows.push(...healthRows);
   if (M.after16) {
     const A = M.after16, n = A.extra, who = M.tnames[A.team], sc = `${Math.max(...A.score)}:${Math.min(...A.score)}`;
-    rows.push({ s: 'info', t: `${n} ${n === 1 ? 'round was' : 'rounds were'} played after ${who} reached 16 (${sc})`, n: M.count30 ? 'Counted, as chosen for this demo (up to round 30).' : `Some events played all 30 rounds and count them. Not counted now: the match ends at ${sc}.`, btn: { id: 'sumCount30', label: M.count30 ? 'Stop at 16' : 'Count them' } });
+    rows.push({ s: 'info', t: `${n} ${n === 1 ? 'round was' : 'rounds were'} played after ${who} reached 16 (${sc})`, n: M.auto30 ? 'Counted: the teams played on to round 30, as events that count all 30 rounds did.' : M.count30 ? 'Counted, as chosen for this demo (up to round 30).' : `Some events played all 30 rounds and count them. Not counted now: the match ends at ${sc}.`, btn: { id: 'sumCount30', label: M.count30 ? 'Stop at 16' : 'Count them' } });
   }
   if (D.maps && D.maps.length > 1) rows.push({ s: 'info', t: `The recording switched maps. Showing ${D.mapName}, where it spent longest.`, n: D.maps.map((m) => `${m.map} ${fmt(m.dur)}`).join(', then ') });
   // POV mode (0.25.0, Sujan 29 Oct 2026): off by default, so the line says so and turns it on
@@ -163,7 +163,8 @@ function openSummary(o) { renderSummary(Object.assign({ state: 'busy', title: 'C
 // Count the rounds played after a team reached 16 (up to round 30), or stop at 16: remembered per demo
 function setCount30(on) {
   if (!D) return;
-  ls.set('count30:' + demoKey(), on ? true : null);
+  // false is kept too, so Stop at 16 holds where the viewer would count them by itself (0.26.21)
+  ls.set('count30:' + demoKey(), on ? true : false);
   derive(); buildZoom(); heat = null;
   if (MAP && MAP.name === D.mapName.toLowerCase()) computeWallbangs();
   tlCache.key = ''; renderPane(); drawTimeline(); updateHud(true);

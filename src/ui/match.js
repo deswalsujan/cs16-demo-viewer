@@ -192,6 +192,21 @@ function derive() {
   // smaller T side in both)
   const tSide = (r) => { const t = Math.min(r.start + 5, r.end), s = new Set(); for (const e in D.slots) { const a = D.slots[e]; if (Math.abs(a[idxAt(t) * S + 5]) === 1) s.add(personAt(+e, t)); } return s; };
   const sameSides = (a, b) => { const x = tSide(a), y = tSide(b); let n = 0; for (const p of x) if (y.has(p)) n++; return n > Math.min(x.size, y.size) / 2; };
+  // The match can't start before both teams are full (Sujan, 8 Nov 2026): rounds played before the first round of the
+  // file with 5 players on each side, 5 s into it, don't count, since players were still joining. compLexity vs WeMadeFox,
+  // Nuke, IEM4 began at 1 against 1 (its whole first stretch was a warmup, too short to be a half once those rounds are
+  // out); in SK vs fnatic, Train, IEM4, GeT_RiGhT and f0rest were gone and SK's face played on fnatic's side. Once both
+  // teams have been full, every round counts whatever the numbers: a drop, a late player or a ban inside the match
+  // doesn't take a round out (counting only full rounds broke confirmed scores), nor do players reconnecting after a
+  // crash (the first live round of mousesports vs mTw, Inferno, IEM4, part 2, was played 2 against 5 and is one of the
+  // 30 of the 19-11). A round the recording starts partway into is left as it is (not every player is in a snapshot
+  // yet), and so is a file where no round has both teams full (SK vs eSTRO, WCG 2008, the files with one team).
+  const fullTeams = (r) => { const t = Math.min(r.start + 5, r.end != null ? r.end : r.start + 5), n = [null, new Set(), new Set()]; for (const e in D.slots) { const sd = Math.abs(D.slots[e][idxAt(t) * S + 5]); if (sd === 1 || sd === 2) n[sd].add(personAt(+e, t)); } return n[1].size >= 5 && n[2].size >= 5; };
+  const startWhenFull = () => {
+    if (D.pov) return;
+    const first = rounds.find((r) => !r.missing && fullTeams(r)); if (!first) return;
+    for (const r of rounds) if (r.live && r.start < first.start && !r.partial && !r.partFirst) { r.live = false; r.notFull = true; }
+  };
   // Half ends: 15, 30, then every 3 rounds of overtime
   const atHalfEnd = (x) => x === 15 || x === 30 || (x > 30 && (x - 30) % 3 === 0);
   // What the server's admin plugin announced beats guessing. Tournament servers print "Live !" (or
@@ -201,6 +216,7 @@ function derive() {
   const windows = liveWindows(D.notes || [], (D.parts || []).slice(1).map((p) => p.start));
   if (windows.length) {
     for (const r of rounds) r.live = counts(r) && windows.some(([a, b]) => r.start >= a - 10 && r.start < b - 1);
+    startWhenFull();
     // Inside the announced match, a restart before a half is complete throws away what was played since
     // the last full half: the admins started again (a restart puts the score back to 0:0). In the FX vs SK
     // Inferno demo the second half was started, 7 rounds were played, then restarted with "live now,
@@ -241,6 +257,7 @@ function derive() {
     for (const r of rounds) r.live = counts(r);
   } else {
     for (const r of rounds) r.live = liveSegs.includes(String(r.seg)) && counts(r);
+    startWhenFull();
     // False starts: a live stretch where a half should begin (or an overtime) that stops short
     // of a full half and is followed by another live start. Typical case: a few practice rounds on a
     // fresh 0:0, then the admins restart "live on 3" for the real match.
@@ -428,11 +445,31 @@ function derive() {
   };
   const saved = ls.get('names:' + demoKey()) || [];
   const fromFile = teamsFromFileName(D.fileName, teams.map((g) => g.map((pid) => pl[pid].name)));
-  const tnames = [saved[0] || fromFile[0] || autoName(teams[0], 0), saved[1] || fromFile[1] || autoName(teams[1], 1)];
+  // the admin's text, after the file name and before the clan tags (Sujan, 8 Nov 2026): ESWC's AdminBot names both teams
+  // with their sides, "1st Warmup - Fnatic(CT) vs mousesports(T)", so the team with most players on CT then is the one
+  // it names CT. Its names go through the known teams ("Navi" reads Natus Vincere, "mTw.dk" mTw).
+  const fromAdmin = (() => {
+    for (const n of D.notes || []) {
+      const m = /Warmup - (.+?)\((CT|T)\) vs (.+?)\((CT|T)\)/.exec(n.s || '');
+      if (!m || m[2] === m[4]) continue;
+      const onCT = [0, 0];
+      for (const e in D.slots) { const sd = Math.abs(D.slots[e][idxAt(n.t) * S + 5]), ti = teamOf[personAt(+e, n.t)]; if (sd && ti != null) onCT[ti] += sd === 2 ? 1 : -1; }
+      if (onCT[0] === onCT[1]) continue;
+      const nm = (raw) => { const r = raw.trim().replace(/[^A-Za-z0-9]+$/, ''); return knownTeam(r) || r; };
+      const ct = nm(m[2] === 'CT' ? m[1] : m[3]), t = nm(m[2] === 'CT' ? m[3] : m[1]);
+      return onCT[0] > onCT[1] ? [ct, t] : [t, ct];
+    }
+    return [null, null];
+  })();
+  const named = fromFile[0] && fromFile[1] ? fromFile : fromAdmin[0] && fromAdmin[1] ? fromAdmin : [null, null];
+  const tnames = [saved[0] || named[0] || autoName(teams[0], 0), saved[1] || named[1] || autoName(teams[1], 1)];
 
   // per round: which team was T; winner team; running score
-  let sc = [0, 0], played = 0, after16 = null, wonAt = null;
-  const count30 = ls.get('count30:' + demoKey()) === true;
+  let sc, played, after16, wonAt;
+  const live0 = rounds.map((r) => r.live);
+  const score = (count30) => {
+  sc = [0, 0]; played = 0; after16 = null; wonAt = null;
+  rounds.forEach((r, i) => { r.live = live0[i]; r.afterMatch = false; });
   for (const r of rounds) {
     r.scoreBefore = sc.slice();
     if (!r.live) {
@@ -462,6 +499,20 @@ function derive() {
       if (!wonAt) wonAt = r;
       for (const x of rounds) if (x.start > r.start && x.live) { x.live = false; x.afterMatch = true; }
     }
+  }
+  };
+  // Count them: what the player chose for this demo, or by itself when the teams played on to round 30 (Sujan, 8 Nov
+  // 2026: IEM4's group stage played all 30 rounds and counted them; mousesports vs mTw, Inferno, joined, read 16:8 in
+  // 24 where the result is 19-11). At least 4 rounds after the 16th win, every one with a winner and 3 or more kills,
+  // and the last of them the 30th: a server that plays on after the match plays a round or two (iFNG FX vs fnatic, Dust2:
+  // a 30th round after 16:13, confirmed 16:13), and fewer rounds than that leaves fnatic vs EG, Dust2, EM3 Global
+  // Finals 2009 at its confirmed 11:16 (3 rounds after it). Count them or Stop at 16 overrides it, per demo.
+  const chosen30 = ls.get('count30:' + demoKey());
+  let count30 = chosen30 === true, auto30 = false;
+  score(count30);
+  if (chosen30 == null && after16) {
+    const rest = rounds.filter((x) => x.afterMatch && x.start > after16.at.start);
+    if (rest.length >= 4 && played + rest.length === 30 && rest.every((x) => x.winner && x.kills.length >= 3)) { auto30 = true; count30 = true; score(true); }
   }
   if (after16) after16.extra = rounds.filter((x) => x.start > after16.at.start && (x.afterMatch || x.live) && x.kills.length).length;
   liveR = rounds.filter((r) => r.live);
@@ -494,7 +545,7 @@ function derive() {
   const k = Math.min(960 / (x1 - x0 || 1), 700 / (y1 - y0 || 1));
   const bounds = { x0, y1, k, px: (1024 - (x1 - x0) * k) / 2, py: (768 - (y1 - y0) * k) / 2 };
 
-  M = { idxAt, pl, rounds, liveR, teams, teamOf, tnames, nades, bounds, reg, hasOT: liveR.some((r) => r.ot), personAt, slotOf, specs, wbs: [], after16: after16 && after16.extra ? after16 : null, count30, wonAt: wonAt || (after16 && after16.at) || null };
+  M = { idxAt, pl, rounds, liveR, teams, teamOf, tnames, nades, bounds, reg, hasOT: liveR.some((r) => r.ot), personAt, slotOf, specs, wbs: [], after16: after16 && after16.extra ? after16 : null, count30, auto30, wonAt: wonAt || (after16 && after16.at) || null };
   buildShort();
   findSkips();
 }
