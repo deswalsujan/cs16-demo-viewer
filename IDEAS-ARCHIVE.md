@@ -12,6 +12,24 @@ Items moved out of [IDEAS.md](IDEAS.md) so that it holds only what is open (work
 ## Open follow-ups (checklist, updated 28 Oct 2026, 0.24.0)
 
 **Sujan's feedback of 8 Nov 2026: IEM4 World Championship** (moved here as each item is done; open ones in IDEAS.md under the same name)
+- [x] **The Join card's "This order doesn't add up" box runs into the footer**: built in 0.26.23 (8 Nov 2026) with the dialogs below: `.jwrong` (`src/app.css`) is a rounded, tinted box inside the card's 24 px, with its buttons inside it; `.jpick` a dashed box; the footer's rule the only one.
+  - Its header in IDEAS.md when built:
+    - **The Join card's "This order doesn't add up" box runs into the footer** (Sujan's point 3; mockup round)
+    - Status: the orange left bar and box run into the footer row (Sujan's screenshot, 8 Nov 2026). Mockup: `docs/dialogs-mock.jpg`, section 1 (8 Nov 2026).
+    - Next step: Claude builds it with the other dialogs in PR 4.
+    - Decided so far: the box sits in the card's structure; the mockup approved (Sujan, 8 Nov 2026).
+- [x] **Dialogs and cards reworked**: built in 0.26.23 (8 Nov 2026) from `docs/dialogs-mock.jpg`, approved with two changes: `.sum-top`, `.sum-list`, `.sum-foot` and `.jparts` (`src/app.css`); the shortcuts list's header and `keys-foot` (`src/template.html`, `bKeysX`); **View settings** grouped with `.vhead` at today's row height; the can't-play card's `sumClose` and `sumAnother` (`src/ui/summary.js`); the Join card's footer order (`src/ui/join.js`).
+  - Its header in IDEAS.md when built:
+    - **Dialogs and cards reworked** (Sujan's point 4; mockup round)
+    - Status: the load summary, the Join card, the can't-play card, the shortcuts list and the **View settings** panel. Mockup: `docs/dialogs-mock.jpg` (8 Nov 2026), with the patterns borrowed from Claude's cookie dialog and plan cards and Stripe's docs and design guidelines at its top; two proposals there are new behaviour, his to approve: **Open another demo** and **Close** on the can't-play card, and **View settings** in three groups.
+    - Next step: Claude builds it in PR 4.
+    - Decided so far: the viewer's colours and fonts stay; the mockup approved with two changes: on the can't-play card **Open another demo** is the main (filled) button and **Close** a plain one; **View settings** keeps the three groups and today's row height, so the panel stays about as tall as now, checked at the largest **Interface size** on a 1512x982 window (Sujan, 8 Nov 2026).
+  
+  **Sujan's report of 7 Nov 2026: WeMadeFox vs Ravens** (Nuke, EM4 finals, one map in 2 files, now test demos, `tests/DEMOS.md`; measured on 0.26.18, `tests/logs/join-replay-carry-2026-11-07.md`; Sujan answered the plan the same day: one batch, one mockup round, one build, on the branch feat/join-replay-carry)
+  - Done, in the archive: **WeMadeFox vs Ravens joined reads Ravens 16-9**, **The Join card ticks a wrong order of WeMadeFox vs Ravens** and **Three players counted as one in WeMadeFox vs Ravens, part 1** (0.26.19, 7 Nov 2026: a half replayed from 0:0 in one file doesn't count and a half carried on into a later file does; the Join card's words for it, checks A and B and the recording times; two Steam accounts one person only by a name both used in the live rounds, never a placeholder), and the Join card's order for Na`Vi vs SK, Inferno, ESWC 2011 (`fileTime`, 0.26.19).
+  
+  **Sujan's report of 7 Nov 2026** (EG vs eXecutors, Train, EM4 finals, now a test demo, `tests/DEMOS.md`)
+  - Done, in the archive: **Damage numbers freeze the viewer at a kill with no death spot** (0.26.17, 7 Nov 2026: such a kill shows no number); **One error stops the frame loop for good** (0.26.18, 7 Nov 2026: the loop keeps running, each different error is recorded once, and the first one in a page shows a toast once).
 - [x] **A wallbang on a teammate**: built in 0.26.22 (8 Nov 2026). `teamKill` and `listedWbs` (`src/ui/wallbangs.js`): `M.wbs` leaves out a kill between two players on the same side at the kill; `killRow3` (`src/ui/sidebar.js`) tags every teamkill TK in the Kills list.
   - Its header in IDEAS.md when built:
     - **A wallbang on a teammate** (Sujan's point 6)

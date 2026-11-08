@@ -192,7 +192,7 @@ function renderSummary(r) {
   el.innerHTML = `<div class="sum" role="dialog" aria-live="polite" aria-labelledby="sumTitle">
     <div class="sum-top ${r.state}"><div class="ti"><h2 id="sumTitle">${esc(r.title)}</h2><p>${esc(r.text)}</p></div><button class="sum-x" type="button" id="sumX" title="Close (Esc)" aria-label="Close">×</button></div>
     ${r.rows.length ? `<ul class="sum-list">${r.rows.map((x) => `<li><span class="sum-ic ${x.s}" aria-hidden="true">${icon[x.s]}</span><span>${esc(x.t)}${x.n ? `<small>${esc(x.n)}</small>` : ''}${x.btn ? `<div class="li-btn"><button class="btn sm" type="button" id="${x.btn.id}">${esc(x.btn.label)}</button></div>` : ''}</span></li>`).join('')}</ul>` : ''}
-    ${r.state === 'busy' ? '' : `<div class="sum-foot">${r.folder ? `<button class="btn" type="button" id="sumFolder">Choose Half-Life folder</button>` : ''}<span class="sp"></span><span id="sumCount"></span></div>`}
+    ${r.state === 'busy' ? '' : `<div class="sum-foot">${r.folder ? `<button class="btn" type="button" id="sumFolder">Choose Half-Life folder</button>` : ''}<span class="sp"></span><span id="sumCount"></span>${r.state === 'fail' ? '<button class="btn" type="button" id="sumClose">Close</button><button class="btn primary" type="button" id="sumAnother">Open another demo</button>' : ''}</div>`}
     ${r.state === 'busy' || r.state === 'fail' ? '' : '<div class="sum-bar"><i id="sumBar"></i></div>'}
   </div>`;
   el.hidden = false;
@@ -201,6 +201,10 @@ function renderSummary(r) {
   if ($('sumPov')) $('sumPov').onclick = () => { closeSummary(); $('pov3').checked = true; $('pov3').onchange(); };
   if ($('sumJoin')) $('sumJoin').onclick = () => { if (SUM.joinList) openJoinCard(SUM.joinList); };
   if ($('sumFolder')) $('sumFolder').onclick = () => { closeSummary(); pickFolder(); };
+  // the can't-play card (0.26.23, docs/dialogs-mock.jpg; Sujan, 8 Nov 2026: Open another demo the main button): back to the
+  // demo list, as the header's Open another demo does, or the list itself when it's already showing
+  if ($('sumClose')) $('sumClose').onclick = closeSummary;
+  if ($('sumAnother')) $('sumAnother').onclick = () => { closeSummary(); if ($('load').hidden && $('btnOpen') && !$('btnOpen').hidden) $('btnOpen').click(); const q = $('demoQ'); if (q && !$('load').hidden && q.offsetParent) q.focus(); };
   el.onclick = (e) => { if (e.target === el && r.state !== 'busy') closeSummary(); };
   clearInterval(SUM.timer); SUM.timer = null;
   const card = el.querySelector('.sum');
@@ -208,7 +212,7 @@ function renderSummary(r) {
   SUM.paused = false;
   card.onpointermove = () => { SUM.paused = true; }; card.onpointerleave = () => { SUM.paused = false; };
   if (r.state === 'busy') return;
-  if (r.state === 'fail') { $('sumCount').textContent = 'Stays open until you close it'; return; }
+  if (r.state === 'fail') return;
   // closes on its own: sooner when there's nothing to read
   SUM.total = SUM.left = r.state === 'ok' && !r.rows.some((x) => x.s === 'info') ? 6 : 15; SUM.last = performance.now();
   // The bar is animated by the browser, so it shrinks smoothly on every frame instead of in

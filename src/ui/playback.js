@@ -81,6 +81,7 @@ window.addEventListener('blur', () => showScoreboard(false));
 function toggleKeys(v) { $('keys').hidden = v != null ? !v : !$('keys').hidden; }
 $('bKeys').onclick = () => toggleKeys();
 $('bKeysClose').onclick = () => toggleKeys(false);
+$('bKeysX').onclick = () => toggleKeys(false);
 $('keys').onclick = (e) => { if (e.target === $('keys')) toggleKeys(false); };
 // players in scoreboard order: team 1 then team 2, by slot
 // players (people, not slots) in scoreboard order: team 1 then team 2

@@ -4,6 +4,7 @@ What changed in the viewer, newest first. The version shows in the viewer's shor
 
 ## Versions
 
+- [0.26.23](#02623-2026-11-08) 2026-11-08: Dialogs and cards reworked
 - [0.26.22](#02622-2026-11-08) 2026-11-08: Teamkills, leg hits, open hits
 - [0.26.21](#02621-2026-11-08) 2026-11-08: When a match starts and ends
 - [0.26.20](#02620-2026-11-08) 2026-11-08: Arrow keys pick players
@@ -80,6 +81,23 @@ What changed in the viewer, newest first. The version shows in the viewer's shor
 
 ## Known limits
 Moved to [LIMITS.md](LIMITS.md) on 30 Oct 2026; release entries below still say "Known limits" for that list.
+
+## 0.26.23 (2026-11-08)
+
+Built from the approved mockup, `docs/dialogs-mock.jpg` (Sujan, 8 Nov 2026), with his two changes.
+
+### Changed
+- Every dialog and card has one structure (Sujan, 8 Nov 2026): a header with the title, one line and the close button; the body; a footer with any note on the left and the buttons on the right, the main one last. Spacing in steps of 4, 8, 12, 16 and 24, corners of 10, one rule above the footer and none between the sections. The coloured bar on a header gives way to an icon beside the coloured title (✓, !, ✕), and the line under the title is quieter.
+- The Join card: the parts in one bordered list; "This order doesn't add up" a rounded box inside the card with its two buttons, no longer running into the footer (Sujan's point 3); the folder row its own dashed box; **Add another part…** on the footer's left, **Cancel** and **Join them** on the right.
+- The can't-play card ends in **Close** and **Open another demo**, the main button, which goes back to the demo list (Sujan, 8 Nov 2026), in place of "Stays open until you close it".
+- The shortcuts list closes with its × like the other dialogs; the version, What's new and Report a bug, **Copy debug info** and **Close** are in a footer that stays in view while the list scrolls.
+- **View settings** in three groups, On the view, Picture and Demos recorded by a player, with today's row height (Sujan, 8 Nov 2026) and the lists and buttons in one column: 371 px tall at a 1512x982 window (336 before), 440 at the largest **Interface size**, inside the window.
+
+### How it was tested
+- `demo_search_check.py`, 5 new checks: the can't-play card's buttons and **Open another demo**, the shortcuts list's ×, the Join card's footer and its folder row inside the card, **View settings** at the largest **Interface size** on a 1512x982 window. The seven checks pass. Full log: `tests/logs/0.26.23.md`.
+
+### Discussed, not changed
+- The check shows the can't-play card through `showFailCard`, the function the reader's failure path calls: opening some damaged files made for the test left the page stuck before the card, on main at 0.26.20 too (IDEAS.md, **A damaged demo can leave the page stuck**, for later).
 
 ## 0.26.22 (2026-11-08)
 

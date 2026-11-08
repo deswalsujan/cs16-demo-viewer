@@ -41,14 +41,9 @@
       <div class="vset">
         <button class="btn" id="bVset" type="button" aria-expanded="false" aria-controls="vsetPanel" title="Vanilla, team colours, quality, damage numbers, crosshair size, interface size and POV mode">View settings <svg viewBox="0 0 10 6" aria-hidden="true"><path d="M1 1l4 4 4-4"/></svg></button>
         <div class="vpanel" id="vsetPanel" role="group" aria-label="View settings" hidden>
+          <div class="vhead">On the view</div>
           <label class="vrow"><span>Vanilla<small>every overlay off, as in the game</small></span><input type="checkbox" id="van3" title="Turns off what the game's own demo player doesn't show: damage numbers, kill markers, glow, See through walls, names and HP over the players, kill lines, grenade paths, the death cam's red wash and banner, and the C4 countdown. The buttons and settings still work one by one after"></label>
-          <div class="vsep" role="separator"></div>
           <div class="vrow"><span>Team colours</span><button class="btn" id="tgModels" type="button" title="Draw the players in flat team colours: red for Terrorists, blue for Counter-Terrorists">Off</button></div>
-          <label class="vrow"><span>Quality</span><select id="q3" title="How sharp the 3D view is drawn. Auto starts sharp and steps down if playback can't keep up">
-            <option value="auto">Auto</option>
-            <option value="high">High</option>
-            <option value="low">Low</option>
-          </select></label>
           <label class="vrow"><span>Damage numbers<small>which hits show their damage</small></span><select id="dn3" title="The damage each hit did, floating up beside the player hit. Wallbangs: hits through a wall, in orange. Direct hits: hits in the open, in white. Both: every hit. The killing bullet ends in a red skull">
             <option value="wb">Wallbangs</option>
             <option value="direct">Direct hits</option>
@@ -61,6 +56,12 @@
             <option value="medium">Medium</option>
             <option value="large">Large</option>
           </select></label>
+          <div class="vhead">Picture</div>
+          <label class="vrow"><span>Quality</span><select id="q3" title="How sharp the 3D view is drawn. Auto starts sharp and steps down if playback can't keep up">
+            <option value="auto">Auto</option>
+            <option value="high">High</option>
+            <option value="low">Low</option>
+          </select></label>
           <label class="vrow"><span>Interface size<small>text, buttons and labels</small></span><select id="ui3" title="Makes text, buttons, panels and the labels in the view bigger. Auto keeps them as they are on a laptop and makes them bigger on a large screen. A size too big for the window is lowered to fit">
             <option value="auto">Auto</option>
             <option value="100">100%</option>
@@ -69,6 +70,7 @@
             <option value="175">175%</option>
             <option value="200">200%</option>
           </select></label>
+          <div class="vhead">Demos recorded by a player</div>
           <label class="vrow"><span>POV mode<small>for demos recorded by a player</small></span><input type="checkbox" id="pov3" title="Watch a demo recorded by a player through his own eyes, as his game showed it: his view, crosshair, HUD and gun. Off, it plays like an HLTV demo. Changing it opens the demo again"></label>
         </div>
       </div>
@@ -78,7 +80,7 @@
     <div class="overlay sumwrap" id="sumCard" hidden></div>
     <div class="overlay keys" id="keys" hidden>
       <div class="keys-card">
-        <div class="keys-head"><b>Shortcuts and kill markers</b><div class="kh-r"><span class="ver">Version __VERSION__ · <a href="https://github.com/deswalsujan/cs16-demo-viewer/blob/main/CHANGELOG.md" target="_blank" rel="noopener">What's new</a> · <a href="https://github.com/deswalsujan/cs16-demo-viewer/issues/new/choose" target="_blank" rel="noopener">Report a bug</a></span><button class="btn" id="bDebug" type="button" title="Copies details for a bug report: browser, demo name, what loaded, errors. No file contents.">Copy debug info</button><button class="btn" id="bKeysClose" type="button">Close</button></div></div>
+        <div class="keys-head"><b>Shortcuts and kill markers</b><button class="sum-x" id="bKeysX" type="button" title="Close (Esc)" aria-label="Close">×</button></div>
         <textarea class="dbgbox" id="dbgBox" readonly hidden aria-label="Debug info"></textarea>
         <div class="keys-grid">
           <section><h3>Playback</h3>
@@ -124,6 +126,7 @@
             <dt><kbd>?</kbd></dt><dd>Show this list</dd></dl>
           </section>
         </div>
+        <div class="keys-foot"><span class="ver">Version __VERSION__ · <a href="https://github.com/deswalsujan/cs16-demo-viewer/blob/main/CHANGELOG.md" target="_blank" rel="noopener">What's new</a> · <a href="https://github.com/deswalsujan/cs16-demo-viewer/issues/new/choose" target="_blank" rel="noopener">Report a bug</a></span><span class="sp"></span><button class="btn" id="bDebug" type="button" title="Copies details for a bug report: browser, demo name, what loaded, errors. No file contents.">Copy debug info</button><button class="btn" id="bKeysClose" type="button">Close</button></div>
       </div>
     </div>
     <canvas id="cv" aria-label="Radar view of the match"></canvas>
