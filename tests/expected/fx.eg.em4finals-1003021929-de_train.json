@@ -1,0 +1,13 @@
+{
+ "demo": "fx.eg.em4finals-1003021929-de_train.dem",
+ "sha256": "6fdcfe04e35244583d154a933d30a0491977055ea77e572512d9cc2bf877bdd6",
+ "match": "EG vs eXecutors, Train, IEM4",
+ "event": "IEM4 World Championship (Intel Extreme Masters season IV finals, CeBIT, March 2010; the EM4 finals of tests/DEMOS.md); recorded 2 Mar 2010 at 19:29 by the file name",
+ "map": "de_train",
+ "score": {
+  "value": "18:12",
+  "live": 30,
+  "source": "HLTV.org's match page (https://www.hltv.org/matches/1338900/frag-executors-vs-evil-geniuses-iem4-world-championship), as Sujan read it (8 Nov 2026): Frag eXecutors 12-18 Evil Geniuses (Fragbite lists eXecutors as \"Faze Clan\"); all 30 rounds played, as in IEM4's group stage. Evil Geniuses listed first, as the viewer has the teams. Up to 0.26.20 the viewer stopped at 16 (16:10 in 26)"
+ },
+ "kills": []
+}

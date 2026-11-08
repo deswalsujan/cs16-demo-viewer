@@ -383,7 +383,7 @@ function renderJoinCard() {
     ${order ? `<div class="jorder"><b>Order:</b> ${esc(order)}</div>` : ''}
     ${checks.length ? `<ul class="sum-list">${checks.map((c) => `<li><span class="sum-ic ${c.s}" aria-hidden="true">${ic[c.s]}</span><span>${esc(c.t)}${c.n ? `<small>${esc(c.n)}</small>` : ''}</span></li>`).join('')}</ul>` : ''}
     ${wrong}${picker}
-    <div class="sum-foot"><span class="sp"></span><button class="btn" type="button" id="jAdd" ${busy || JOIN.picking ? 'disabled' : ''} ${JOIN.picking ? `title="${noneHere ? 'Pick a file from elsewhere above' : 'Pick a demo above, or a file from elsewhere'}"` : ''}>Add another part…</button><button class="btn" type="button" id="jCancel">Cancel</button><button class="btn primary" type="button" id="jGo" ${busy || JOIN.list.length < 2 || (problem && !JOIN.keep) ? 'disabled' : ''}>Join them</button></div>
+    <div class="sum-foot"><button class="btn" type="button" id="jAdd" ${busy || JOIN.picking ? 'disabled' : ''} ${JOIN.picking ? `title="${noneHere ? 'Pick a file from elsewhere above' : 'Pick a demo above, or a file from elsewhere'}"` : ''}>Add another part…</button><span class="sp"></span><button class="btn" type="button" id="jCancel">Cancel</button><button class="btn primary" type="button" id="jGo" ${busy || JOIN.list.length < 2 || (problem && !JOIN.keep) ? 'disabled' : ''}>Join them</button></div>
   </div>`;
   el.hidden = false;
   $('jX').onclick = closeJoinCard; $('jCancel').onclick = closeJoinCard;

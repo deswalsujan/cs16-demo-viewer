@@ -21,7 +21,8 @@ was, the shortcuts list and tooltips; the Join card's line when the folder holds
 full on compLexity vs WeMadeFox, Nuke, IEM4; the rounds after 16 counted by themselves on SK vs Na`Vi, Dust2, IEM4, Stop at
 16 kept, Count them; the admin's team names on Burning vs FairFrag, Inferno, ESWC 2010 (0.26.21). The wallbang finder on SK vs Na`Vi,
 Dust2, IEM4: Edward-FoCuS on Gux LOOSE, RobbaN's AWP leg hit on Zeus no damage row, a teamkill out of the Wallbangs list
-with the TK tag (0.26.22). About two minutes.
+with the TK tag (0.26.22). The dialogs: the can't-play card's buttons, the shortcuts list's ×, the Join card's footer,
+View settings at the largest Interface size (0.26.23). About two minutes.
 """
 import os, re, sys, http.server, functools, threading, tempfile, shutil, subprocess, atexit
 from playwright.sync_api import sync_playwright
@@ -572,6 +573,51 @@ with sync_playwright() as p:
     except Exception as e:
         check('the wallbang finder: Edward-FoCuS on Gux, RobbaN\'s AWP on Zeus, a teamkill', False, str(e).split('\n')[0])
     ctx7.close()
+
+    # The dialogs (0.26.23; docs/dialogs-mock.jpg, approved by Sujan 8 Nov 2026 with two changes), at a 1512x982 window:
+    # the can't-play card ends in Close (plain) and Open another demo (the main button), which goes back to the demo list;
+    # the shortcuts list closes with its ×; the Join card's footer has Add another part… on its left and Cancel and Join
+    # them on its right, its "doesn't add up" box inside the card's 24 px; View settings in three groups fits the window
+    # at the largest Interface size. SK vs Na`Vi, Train, DreamHack Winter 2011, then the can't-play card for a broken file.
+    hl8 = demo_dirs.stage([next(q for q in demo_dirs.dems(HL) if os.path.basename(q) == SK)])
+    ctx8 = b.new_context(viewport={'width': 1512, 'height': 982}); pg8 = ctx8.new_page()
+    pg8.route('**/three.min.js', lambda r: r.fulfill(path=os.environ.get('THREE_JS', os.path.join(here, '..', 'src', 'vendor', 'three.min.js')), content_type='application/javascript'))
+    errs8 = []; pg8.on('pageerror', lambda e: errs8.append(str(e).split('\n')[0]))
+    try:
+        pg8.goto(f'http://127.0.0.1:{srv.server_port}/{os.path.basename(hooked)}')
+        pg8.set_input_files('#fFolder', hl8)
+        pg8.wait_for_function('__v("files.demos.length >= 1")', timeout=30000)
+        JS8 = lambda c: pg8.evaluate('(c) => __v(c)', c)
+        pg8.click(f'#demoList button:has-text("{SK}")'); pg8.wait_for_function('__v("!!(D && M && MAP && R3 && view3.map === MAP.name)")', timeout=120000)
+        # the card the reader's failure path shows (showFailCard), called directly: some damaged files leave the page stuck
+        # before it (older than 0.26.23; IDEAS.md, **A damaged demo can leave the page stuck**)
+        JS8("closeSummary(); window.__prevD = D; showFailCard('broken-recording.dem', 'Not a Half-Life demo')")
+        pg8.wait_for_function("() => { const c = document.getElementById('sumCard'); return c && !c.hidden && /can't be played/.test(c.innerText); }", timeout=10000)
+        f = JS8(r"""(() => { const ft = $('sumCard').querySelector('.sum-foot'); return { buttons: [...ft.querySelectorAll('button')].map((b) => b.textContent + (b.classList.contains('primary') ? ' (main)' : '')), note: $('sumCount').textContent }; })()""")
+        check("the can't-play card: Close, then Open another demo as the main button, no \"Stays open until you close it\"", f['buttons'] == ['Close', 'Open another demo (main)'] and f['note'] == '', str(f))
+        pg8.click('#sumAnother'); pg8.wait_for_timeout(300)
+        check("Open another demo closes the card and shows the demo list", pg8.locator('#sumCard').is_hidden() and pg8.locator('#load').is_visible(), '')
+        pg8.click(f'#demoList button:has-text("{SK}")'); pg8.wait_for_function('() => document.getElementById("load").hidden', timeout=120000)
+        JS8("closeSummary()"); pg8.keyboard.press('?'); pg8.wait_for_timeout(300)
+        k = JS8(r"""(() => ({ foot: [...document.querySelectorAll('#keys .keys-foot button')].map((b) => b.textContent), ver: !!document.querySelector('#keys .keys-foot .ver') }))()""")
+        pg8.click('#bKeysX'); pg8.wait_for_timeout(200)
+        check('the shortcuts list: its × closes it; the version, Copy debug info and Close in its footer', pg8.locator('#keys').is_hidden() and k['foot'] == ['Copy debug info', 'Close'] and k['ver'], str(k))
+        JS8("closeSummary(); tab = 'rounds'; renderPane(); $('bJoinWith').click()")
+        pg8.wait_for_function("() => !!document.querySelector('#joinCard .jpick')", timeout=30000)
+        j = JS8(r"""(() => { const card = $('joinCard').querySelector('.sum'), cr = card.getBoundingClientRect(), pk = card.querySelector('.jpick').getBoundingClientRect();
+          return { foot: [...card.querySelectorAll('.sum-foot > *')].map((e) => e.id || e.className), inset: Math.round(pk.left - cr.left) }; })()""")
+        check("the Join card: Add another part… on the footer's left, Cancel and Join them on its right; the folder row inside the card's 24 px",
+              j['foot'] == ['jAdd', 'sp', 'jCancel', 'jGo'] and j['inset'] >= 24, str(j))
+        JS8('closeJoinCard()')
+        v = JS8(r"""(async () => { const w = (ms) => new Promise((r) => setTimeout(r, ms)); setView('3d'); await w(300); const s = $('ui3'); s.value = '200'; s.dispatchEvent(new Event('change')); await w(400); vsetOpen(true); await w(200);
+          const p = $('vsetPanel'), b = p.getBoundingClientRect(), out = { heads: [...p.querySelectorAll('.vhead')].map((h) => h.textContent), first: p.querySelector('.vrow input, .vrow select, .vrow button').id, bottom: Math.round(b.bottom), right: Math.round(b.right), ui: UI };
+          vsetOpen(false); s.value = 'auto'; s.dispatchEvent(new Event('change')); return out; })()""")
+        check('View settings at the largest Interface size: three groups, Vanilla first, the panel inside the 1512x982 window',
+              v['heads'] == ['On the view', 'Picture', 'Demos recorded by a player'] and v['first'] == 'van3' and v['bottom'] <= 982 and v['right'] <= 1512, str(v))
+        check('no page error on the dialogs checks', not errs8, '; '.join(errs8[:3]))
+    except Exception as e:
+        check('the dialogs: the can\'t-play card, the shortcuts list, the Join card, View settings', False, str(e).split('\n')[0])
+    ctx8.close()
     b.close()
 print(f'{len(fails)} failed' if fails else 'all passed')
 sys.exit(1 if fails else 0)

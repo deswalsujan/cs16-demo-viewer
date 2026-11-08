@@ -4,6 +4,7 @@ What changed in the viewer, newest first. The version shows in the viewer's shor
 
 ## Versions
 
+- [0.26.23](#02623-2026-11-08) 2026-11-08: Dialogs and cards reworked
 - [0.26.22](#02622-2026-11-08) 2026-11-08: Teamkills, leg hits, open hits
 - [0.26.21](#02621-2026-11-08) 2026-11-08: When a match starts and ends
 - [0.26.20](#02620-2026-11-08) 2026-11-08: Arrow keys pick players
@@ -81,6 +82,23 @@ What changed in the viewer, newest first. The version shows in the viewer's shor
 ## Known limits
 Moved to [LIMITS.md](LIMITS.md) on 30 Oct 2026; release entries below still say "Known limits" for that list.
 
+## 0.26.23 (2026-11-08)
+
+Built from the approved mockup, `docs/dialogs-mock.jpg` (Sujan, 8 Nov 2026), with his two changes.
+
+### Changed
+- Every dialog and card has one structure (Sujan, 8 Nov 2026): a header with the title, one line and the close button; the body; a footer with any note on the left and the buttons on the right, the main one last. Spacing in steps of 4, 8, 12, 16 and 24, corners of 10, one rule above the footer and none between the sections. The coloured bar on a header gives way to an icon beside the coloured title (✓, !, ✕), and the line under the title is quieter.
+- The Join card: the parts in one bordered list; "This order doesn't add up" a rounded box inside the card with its two buttons, no longer running into the footer (Sujan's point 3); the folder row its own dashed box; **Add another part…** on the footer's left, **Cancel** and **Join them** on the right.
+- The can't-play card ends in **Close** and **Open another demo**, the main button, which goes back to the demo list (Sujan, 8 Nov 2026), in place of "Stays open until you close it".
+- The shortcuts list closes with its × like the other dialogs; the version, What's new and Report a bug, **Copy debug info** and **Close** are in a footer that stays in view while the list scrolls.
+- **View settings** in three groups, On the view, Picture and Demos recorded by a player, with today's row height (Sujan, 8 Nov 2026) and the lists and buttons in one column: 371 px tall at a 1512x982 window (336 before), 440 at the largest **Interface size**, inside the window.
+
+### How it was tested
+- `demo_search_check.py`, 5 new checks: the can't-play card's buttons and **Open another demo**, the shortcuts list's ×, the Join card's footer and its folder row inside the card, **View settings** at the largest **Interface size** on a 1512x982 window. The seven checks pass. Full log: `tests/logs/0.26.23.md`.
+
+### Discussed, not changed
+- The check shows the can't-play card through `showFailCard`, the function the reader's failure path calls: opening some damaged files made for the test left the page stuck before the card, on main at 0.26.20 too (IDEAS.md, **A damaged demo can leave the page stuck**, for later).
+
 ## 0.26.22 (2026-11-08)
 
 From Sujan's answers of 8 Nov 2026 on Claude's reports (`tests/logs/iem4-reports-2026-11-08.md`): the wallbang finder's three fixes.
@@ -104,8 +122,8 @@ From Sujan's answers of 8 Nov 2026 on Claude's reports (`tests/logs/iem4-reports
 From Sujan's answers of 8 Nov 2026 on Claude's reports (`tests/logs/iem4-reports-2026-11-08.md`): when a match starts, when the rounds after 16 count, and where the team names come from.
 
 ### Fixed
-- A match can't start before both teams are full (Sujan, 8 Nov 2026): rounds played before the first round of a file with 5 players on each side, 5 s into it, don't count. compLexity vs WeMadeFox, Nuke, IEM4 read WeMadeFox 16:6 in 22, the warmup before the knife round counted as the first half; it reads 15:15 in 30, Fragbite's 15-15. SK vs fnatic, Train, IEM4 read SK 16:2, counting the rounds GeT_RiGhT and f0rest missed, with SK's face on fnatic's side; it reads fnatic 16:6 in 22 from 21:30 (fnatic won, Fragbite).
-- The rounds after 16 count by themselves when the teams played on to round 30, with at least 4 rounds after the 16th win, each with a winner and 3 or more kills (Sujan, 8 Nov 2026: IEM4's group stage played all 30). mousesports vs mTw, Inferno, IEM4, joined, 16:8 in 24, reads 19:11 in 30 (Fragbite: 19-11); SK vs Na`Vi, Dust2, IEM4 reads SK 18:12 (Fragbite: 18-12); Burning vs FairFrag, Inferno, ESWC 2010, 2:16 in 18, reads 5:25 in 30, the admin's own "Finale score: 5 25"; EG vs eXecutors, Train, IEM4, 16:10 in 26, reads 18:12 in 30 (not confirmed). **Stop at 16** turns it off for a demo, and is kept now (up to 0.26.20 only **Count them** was).
+- A match can't start before both teams are full (Sujan, 8 Nov 2026): rounds played before the first round of a file with 5 players on each side, 5 s into it, don't count. compLexity vs WeMadeFox, Nuke, IEM4 read WeMadeFox 16:6 in 22, the warmup before the knife round counted as the first half; it reads 15:15 in 30 (HLTV.org: WeMade FOX 15-15 compLexity). SK vs fnatic, Train, IEM4 read SK 16:2, counting the rounds GeT_RiGhT and f0rest missed, with SK's face on fnatic's side; it reads fnatic 16:6 in 22 from 21:30 (fnatic won, Fragbite).
+- The rounds after 16 count by themselves when the teams played on to round 30, with at least 4 rounds after the 16th win, each with a winner and 3 or more kills (Sujan, 8 Nov 2026: IEM4's group stage played all 30). mousesports vs mTw, Inferno, IEM4, joined, 16:8 in 24, reads 19:11 in 30 (Fragbite: 19-11); SK vs Na`Vi, Dust2, IEM4 reads SK 18:12 (HLTV.org: 18-12); Burning vs FairFrag, Inferno, ESWC 2010, 2:16 in 18, reads 5:25 in 30, the admin's own "Finale score: 5 25"; EG vs eXecutors, Train, IEM4, 16:10 in 26, reads 18:12 in 30 (HLTV.org: Frag eXecutors 12-18 Evil Geniuses; confirmed after the build, Sujan, 8 Nov 2026). **Stop at 16** turns it off for a demo, and is kept now (up to 0.26.20 only **Count them** was).
 - Three names in the known teams: "MEET" reads MeetYourMakers (Wikipedia's spelling), "SWIIIIIDEEEN" Sweden (Liquipedia's ENC 2010 page), "Esahara" eSahara (EsportsEarnings, GosuGamers).
 
 ### Changed
@@ -113,7 +131,7 @@ From Sujan's answers of 8 Nov 2026 on Claude's reports (`tests/logs/iem4-reports
 - The Rounds tab, with **Show warmup, restarts and idle rounds** on: a round before both teams were full reads "teams not full yet". The note after 16 and the load summary say when the rounds after 16 count because the teams played on to round 30.
 
 ### How it was tested
-- `ground_truth_check.py`: 4 new expected files and a score for Burning vs FairFrag (compLexity vs WeMadeFox 15:15, SK vs Na`Vi 18:12, SK vs compLexity 16:3, mousesports vs mTw joined 19:11, Burning vs FairFrag 5:25); 8 mismatches on 0.26.20, none here.
+- `ground_truth_check.py`: 4 new expected files and a score for Burning vs FairFrag (compLexity vs WeMadeFox 15:15, SK vs Na`Vi 18:12, SK vs compLexity 16:3, mousesports vs mTw joined 19:11, Burning vs FairFrag 5:25); 8 mismatches on 0.26.20, none here. After the build (Sujan, 8 Nov 2026): EG vs eXecutors 18:12 added from HLTV.org, and SK vs compLexity taken out until he checks it on HLTV.org.
 - `demo_search_check.py`, 6 new checks on those demos: the Rounds tab's words, **Stop at 16** kept after reopening, **Count them**, the admin's names.
 - Every test demo and joined map against 0.26.20: 9 of 81 change, every one listed in the log; no confirmed score or K-D changes. The seven checks pass. Full log: `tests/logs/0.26.21.md`.
 

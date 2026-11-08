@@ -25,7 +25,7 @@ When a test demo is added or deleted, change its row here along with its row in 
 | `53.52.1646548-1005272144-de_dust2.dem` | 17,261,648 | `ffc4d90f9a5fc46e12ef6ed2837a9284723ca78a05b6e1f08fdb160fd67f1104` | yes |
 | `auto-1003030847-de_nuke.dem` | 56,707,166 | `88a64f2f00c175cba11569c83fee59019ff1f72a1d51b11bd8a90d2eaa4fb2ed` | yes |
 | `auto-1003031508-de_dust2.dem` | 47,103,099 | `3daa7eb64dfc70fe84890d8afe2fe1b9b7bb047d9e9c193bf067182bb3f606ff` | yes |
-| `auto-1003032023-de_inferno.dem` | 29,849,852 | `b26dbe7390e392f20900f8bdd7b877faf20d1fc95dfd22cfc4851a9d6afca3af` | yes |
+| `auto-1003032023-de_inferno.dem` | 29,849,852 | `b26dbe7390e392f20900f8bdd7b877faf20d1fc95dfd22cfc4851a9d6afca3af` | no |
 | `auto-1003051236-de_inferno.dem` | 32,552,698 | `dacc7f352eee72a2bb71115b53f35b3bdc20d54608d706958b85d74c10efad17` | no |
 | `auto-1003051321-de_train.dem` | 55,585,038 | `3fd1e174fe114b42bbaa03a9e2ce13a72b4747d14073c67304497a625e118251` | no |
 | `auto-server1-1106262105-de_tuscan.dem` | 37,679,527 | `2def4956ff8d8d932611cb6bb2fb0d2962b70195604af480b4549a109e1c28d7` | yes |
@@ -45,7 +45,7 @@ When a test demo is added or deleted, change its row here along with its row in 
 | `fx-vs-mtw-xperia2011-1104240212-de_nuke.dem` | 32,467,997 | `efee36e1bd4762abb70c01350a8adc025f2b7a41f14701a47f9847d3d21ca63b` | yes |
 | `fx-vs-mtw-xperia2011-1104240242-de_nuke.dem` | 79,219,864 | `08363d9e17484c9289848a1f79c6dc8b070e81cb7ef23feba26aafc1a736b3af` | yes |
 | `FX-vs-sk-iem5-inf.dem` | 33,855,804 | `7647cceb130aead0ae7007661b35f5abe39ef744c51c71fe95795985f7309a36` | yes |
-| `fx.eg.em4finals-1003021929-de_train.dem` | 26,709,245 | `6fdcfe04e35244583d154a933d30a0491977055ea77e572512d9cc2bf877bdd6` | no |
+| `fx.eg.em4finals-1003021929-de_train.dem` | 26,709,245 | `6fdcfe04e35244583d154a933d30a0491977055ea77e572512d9cc2bf877bdd6` | yes |
 | `k1ck-vs-eq-dhwinter2011-1111260056-de_nuke.dem` | 15,222,316 | `893580d1af6c7fd4e89b61792684185b7464c12fe5526742b5019c5b0de4d439` | yes |
 | `match-1_de_barcelona-Cts_27-03-2025_15.10.23.dem` | 78,486,607 | `9d27e92ca71e930152661b390bbb14ff9baf001d6aa61686fd0d78e4304106f4` | no |
 | `match-1_de_barcelona-Ts_27-03-2025_15.32.54.dem` | 39,742,118 | `a22f6e3826bc1a02e10cf8118c5687f7d2805378c902ab814e4aac591a88be40` | no |
