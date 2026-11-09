@@ -53,6 +53,10 @@ Everything raised in conversation that isn't finished, in one place. Each item s
   - Status: seen in the counts of 9 Nov 2026 (`tests/logs/gun-flash-report-2026-11-09.md`, B): on 14 hits in SK vs EYESports, Inferno, Arbalet Cup Europe 2009 and 7 in SK vs Na`Vi, Train, DreamHack Winter 2011, the line from the shooter's eye to the server's blood point goes through cover, where the finder has the hit in the open.
   - Next step: Claude, now that Batch A is built: check whether these are wallbang hits the finder misses.
   - Decided so far: nothing in the finder changes in Batch A (Sujan, 8 Nov 2026).
+- [ ] **The Behind player camera against the game's chase camera** (Sujan, 9 Nov 2026, on #58)
+  - Status: at R5 C4 0:21 of SK vs Na`Vi, Train, DreamHack Winter 2011, Sujan saw RobbaN's mid-gun gun flash (silenced M4A1) from behind in the game, where the viewer's **Behind player** camera shows only a sliver of it past his head (0.26.27). The viewer's camera (`src/view3d.part.js`, the chase branch of `update3Now`) hangs 110 units back from a point 13 units above his eyes (8 when ducking), 14 units higher at the far end, its pitch 0.6 of his plus 6 degrees, with a 70 degree view; the arm pulls in at walls.
+  - Next step: Claude: compare the **Behind player** camera's distance and height with the game's chase camera.
+  - Decided so far: nothing yet.
 - [ ] **Batch B: map effects** (later, Sujan, 8 Nov 2026)
   - Status: not started. Counted on two test demos for later (9 Nov 2026, in the report): decals on the world, glow sprites (the planted C4's light) and breakable shards are all in the demo.
   - Next step: after Batch A.
