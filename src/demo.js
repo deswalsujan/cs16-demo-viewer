@@ -268,6 +268,7 @@ export function parseDemo(buffer, onProgress, opts = {}) {
   const centre = [];    // { t, s: '#Terrorists_Win' and the like, a: its arguments } (centre-screen messages)
   const corpses = [];   // { t, start, model, pos, yaw, seq, team, e }
   const booms = [];     // time, x, y, z (grenade and C4 explosions)
+  const hitPoints = []; // time, x, y, z, size: where a bullet hit a player, as the server marked it (0.26.26)
   const puffs = [];     // smoke grenade events (createsmoke): time, kind (1 = it pops, 4 = a puff every second after), cloud centre x, y, z
   let pendingEv = [];
   let scores = { T: 0, CT: 0 };
@@ -724,6 +725,14 @@ export function parseDemo(buffer, onProgress, opts = {}) {
             const x = r.s() / 8, y = r.s() / 8, z = r.s() / 8; r.skip(4); const fl = r.ub();
             if (inPlayback && !(fl & 4)) booms.push(time, x, y, z);
           }
+          // where a bullet hit a player (0.26.26): the server sends a blood sprite at the hit point (TE_BLOODSPRITE, from
+          // UTIL_BloodDrips in ReGameDLL's TraceAttack), its size from the damage, and sparks on a helmet headshot
+          // (TE_STREAK_SPLASH, kept with size -1). None on a body hit through armour: the game makes no blood there
+          else if (t === 115 || t === 25) {
+            const x = r.s() / 8, y = r.s() / 8, z = r.s() / 8;
+            if (t === 115) { r.skip(5); const size = r.ub(); if (inPlayback) hitPoints.push(time, x, y, z, size); }
+            else { r.skip(13); if (inPlayback) hitPoints.push(time, x, y, z, -1); }
+          }
           else if (t === 13) { r.skip(8); if (r.s()) r.skip(2); }
           else if (t === 29) {
             r.skip(5);
@@ -973,7 +982,7 @@ export function parseDemo(buffer, onProgress, opts = {}) {
     occupants, brushEvents: new Float32Array(brushEvents), brushPose: new Float32Array(brushPose), viewers: hltvStatus, notes,
     times: new Float32Array(samples.t), slots,
     finalScore: { ...scores }, models: resources.models, stride: STRIDE,
-    pmodels, sounds: resources.sounds, events: resources.events, snds: new Float32Array(snds), shots: new Float32Array(shots), booms: new Float32Array(booms), puffs: new Float32Array(puffs), radio, centre, corpses,
+    pmodels, sounds: resources.sounds, events: resources.events, snds: new Float32Array(snds), shots: new Float32Array(shots), booms: new Float32Array(booms), hitPoints: new Float32Array(hitPoints), puffs: new Float32Array(puffs), radio, centre, corpses,
     errors, errSamples, health, c4drops: new Float32Array(c4drops), slow, stops,
     ...(povData ? { povData } : {}),
   };

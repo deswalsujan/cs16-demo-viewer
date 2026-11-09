@@ -78,7 +78,7 @@ function joinDemos(parts) {
     for (const k in src) { const nm = src[k]; if (byName[nm] == null) { byName[nm] = next; dst[next++] = nm; } map[k] = byName[nm]; }
     return (i) => (map[i] != null ? map[i] : i);
   };
-  const timesL = [], slotsL = {}, hpL = [], packL = [], brushEvL = [], brushPoseL = [], sndsL = [], shotsL = [], boomsL = [], puffsL = [], c4L = [];
+  const timesL = [], slotsL = {}, hpL = [], packL = [], brushEvL = [], brushPoseL = [], sndsL = [], shotsL = [], boomsL = [], hitPointsL = [], puffsL = [], c4L = [];
   // POV mode (0.25.0): the parts' POV data on the joined timeline, when every part is a POV demo. recs: for each part,
   // its first sample, its number of samples and the recording player's entity there
   const povL = parts.every((P) => P.povData) ? { view: [], ownPos: [], hpInfo: [], shotOrg: [], fovs: [], ownAmmo: [], wanims: [], vmodels: [], obs: [], hud: { hp: [], ap: [], helmet: [], money: [], ammox: [] }, gunAmmo: {}, recs: [] } : null;
@@ -125,6 +125,7 @@ function joinDemos(parts) {
     flat(P.snds, 10, (a, i) => { a[i] = sh(a[i]); a[i + 1] = mS(a[i + 1]); }, sndsL);
     flat(P.shots, 4, (a, i) => { a[i] = sh(a[i]); a[i + 2] = mE(a[i + 2]); }, shotsL);
     flat(P.booms, 4, (a, i) => { a[i] = sh(a[i]); }, boomsL);
+    flat(P.hitPoints || [], 5, (a, i) => { a[i] = sh(a[i]); }, hitPointsL);
     flat(P.puffs, 5, (a, i) => { a[i] = sh(a[i]); }, puffsL);
     flat(P.c4drops || [], 5, (a, i) => { a[i] = sh(a[i]); a[i + 1] = sh(a[i + 1]); }, c4L);
     for (const [a, b, v] of P.slow || []) out.slow.push([sh(a), sh(b), v]);
@@ -165,7 +166,7 @@ function joinDemos(parts) {
     ownAmmo: cat(povL.ownAmmo), wanims: cat(povL.wanims), vmodels: cat(povL.vmodels), obs: cat(povL.obs), recs: povL.recs,
     hud: Object.assign(Object.fromEntries(Object.keys(povL.hud).map((k) => [k, cat(povL.hud[k])])), { gunAmmo: povL.gunAmmo }),
   } : null;
-  out.pack = cat(packL); out.hp = cat(hpL); out.brushEvents = cat(brushEvL); out.brushPose = cat(brushPoseL); out.snds = cat(sndsL); out.shots = cat(shotsL); out.booms = cat(boomsL); out.puffs = cat(puffsL); out.c4drops = cat(c4L);
+  out.pack = cat(packL); out.hp = cat(hpL); out.brushEvents = cat(brushEvL); out.brushPose = cat(brushPoseL); out.snds = cat(sndsL); out.shots = cat(shotsL); out.booms = cat(boomsL); out.hitPoints = cat(hitPointsL); out.puffs = cat(puffsL); out.c4drops = cat(c4L);
   out.bomb.sort((a, b) => a.t - b.t);
   out.start = parts[0].start;
   out.fileName = parts[0].fileName;
