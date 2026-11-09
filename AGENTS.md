@@ -61,7 +61,7 @@ Before starting any branch, run `git fetch` and branch from `origin/main`; if a 
 - Writing style for docs and messages: plain words, no em dashes, no "not X but Y" framing. Feature and button names in **bold**, capitalized as on screen (**See through walls**, **Player's eyes**), in docs, messages and the viewer's own text; no quotes around them (Sujan, 25 Oct 2026, following Microsoft's and Google's style guides). The flash at a gun's muzzle is "gun flash" everywhere (notes, CHANGELOG, the viewer's own text, messages to Sujan), and the grenade is "flashbang", never "flash" alone, so the two are never confused (Sujan, 8 Nov 2026).
 
 ## Where the code is
-`build.py` makes `index.html` from these: `src/template.html` is the page, each `src/ui/` file and `app.css` go in at its own `/*INLINE name*/` line in page order (`src/ui/size.js` in the page's head, the rest in the page's script), the reader runs in a Web Worker, and `stock.js`, `mdl.js`, `players3d.js` and `audio.js` go into the 3D view's script. One line per file, from its header comment; code locations in notes from before the split of 29 Oct 2026 point at the old one-file `src/template.html`.
+`build.py` makes `index.html` from these: `src/template.html` is the page, each `src/ui/` file and `app.css` go in at its own `/*INLINE name*/` line in page order (`src/ui/size.js` in the page's head, the rest in the page's script), the reader runs in a Web Worker, and `stock.js`, `mdl.js`, `players3d.js`, `audio.js` and `shotfx.js` go into the 3D view's script. One line per file, from its header comment; code locations in notes from before the split of 29 Oct 2026 point at the old one-file `src/template.html`.
 
 - `src/template.html`: the page itself: header, view, side panel, bottom bar, cards and panels, with an `/*INLINE name*/` line for each file below.
 - `src/app.css`: the page's styles, every size written `calc(Npx * var(--ui))` for **Interface size** (0.26.13).
@@ -71,6 +71,7 @@ Before starting any branch, run `git fetch` and branch from `origin/main`; if a 
 - `src/mdl.js`: studio model (.mdl v10) reader and posing (`parseMdl`, `mdlPose`).
 - `src/players3d.js`: player models in 3D: loading (`modelEntry`), gait and aim (`posePlayer`), deaths and corpses, the gun in **Player's eyes**.
 - `src/audio.js`: sound: .wav decoding, gunshots, footsteps and radio lines placed around the listener (`soundTick`).
+- `src/shotfx.js`: shot feedback in 3D: the gun flash on every player and in **Player's eyes** (`fxThirdPerson`, `fxViewFlash`), shells in **Player's eyes** and **POV mode** with their landing sound (`fxShells`, `fxShellSounds`), blood puffs where the server marked a hit (`fxBlood`).
 - `src/stock.js`: fingerprints of the stock CS 1.6 models, to spot custom ones.
 - `src/vendor/three.min.js`: three.js r128 (MIT), the file cdnjs serves, built into the page; the tests serve it to older builds.
 - `src/view3d.part.js`: the 3D view (three.js): cameras, each frame (`update3`), hit numbers by **Damage numbers** (`numberGroups`) with the red skull, kill rings, the sniper scope (`SCOPE_STYLE`); the wallbang picture check (`checkSeen`); **POV mode**: his view, crosshair, HUD, spectator bars, the hidden-enemies note.

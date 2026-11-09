@@ -4,6 +4,7 @@ What changed in the viewer, newest first. The version shows in the viewer's shor
 
 ## Versions
 
+- [0.26.27](#02627-2026-11-09) 2026-11-09: Gun flash, shells, blood puffs
 - [0.26.26](#02626-2026-11-09) 2026-11-09: AWP and Scout, one bullet
 - [0.26.25](#02625-2026-11-08) 2026-11-08: Skip into freeze, feed, names
 - [0.26.24](#02624-2026-11-08) 2026-11-08: Leg hits on five heights
@@ -84,6 +85,24 @@ What changed in the viewer, newest first. The version shows in the viewer's shor
 
 ## Known limits
 Moved to [LIMITS.md](LIMITS.md) on 30 Oct 2026; release entries below still say "Known limits" for that list.
+
+## 0.26.27 (2026-11-09)
+
+Batch A, the shot feedback, from Sujan's answers of 8 and 9 Nov 2026 on Claude's plan and the mockup (`tests/logs/gun-flash-report-2026-11-09.md`, `docs/gun-flash-shells-blood-mock.jpg`; no second mockup).
+
+### Added
+- The gun flash, from the game's own sprites in the Half-Life folder, for one frame at each shot, as each gun's shoot animation names it. From behind and on every other player it sits at the gun model's muzzle, or, for the M4A1, the Scout and the M3, whose gun models have no muzzle point, mid-gun at the hand, as Sujan saw the silenced M4A1 do in the game. In **Player's eyes** it's the gun in hand's own: the silenced M4A1 and USP and the TMP keep their small one at the silencer, and a sniper shot from the scope has none. The Scout has one like every gun (Sujan, in the game).
+- Shells in **Player's eyes** and **POV mode**, from the gun's right side thrown to the left, as the game ejects them: falling, bouncing on the map, gone after 2.5 s, each with its landing sound. The AWP's, Scout's and M3's come from the server's own message, a moment after the shot. None from behind (Sujan, 9 Nov 2026).
+- Blood puffs where the server marked a bullet's hit (its blood sprite, at the exact point), drawn as the game draws them: a red puff over a quarter second and drops thrown out. A body hit through armour has none, as in the game.
+- **Vanilla** keeps all three, the game's own look (Sujan, 8 and 9 Nov 2026).
+
+### How it was tested
+- `demo_search_check.py`, 10 new checks on SK vs Na`Vi, Train, DreamHack Winter 2011 (the gun flash from behind for the AK-47, AWP and silenced M4A1, one frame, with **Vanilla**; in **Player's eyes** the silenced M4A1's, none from the scope; shells to the left in **Player's eyes** only; a puff at every blood point of a round; no error), failing on 0.26.26.
+- 77 demos against 0.26.26: the same scores, K-D and wallbangs. `ground_truth_check.py` and the seven checks pass. **POV mode** on Match 1 CT. Full log: `tests/logs/0.26.27.md`; screenshots on `screenshots/0.26.27`.
+
+### Discussed, not changed
+- Left out, parked (IDEAS.md, "Kept for later", **The rest of the shot feedback**): a helmet headshot's sparks and the blood stream on a bare headshot, which the demo has; the gun flash's short light; shells from behind, until Sujan sees one in the game.
+- The client rebuild reads the server shell's offset with `fabs` of the yaw (cs16-client `MsgFunc_Brass`); the viewer takes its sine and cosine, which put the shell 9 units to the player's right and throw it left, as every other shell in first person.
 
 ## 0.26.26 (2026-11-09)
 

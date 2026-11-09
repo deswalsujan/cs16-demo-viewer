@@ -357,6 +357,8 @@ function update3Now() {
   const now = performance.now(); const rawDt = (now - lastFrame3) / 1000; const dt = Math.min(0.1, rawDt); lastFrame3 = now;
   qualityTick(rawDt);
   const { camera, renderer } = R3;
+  // the gun flash, shells and blood puffs (shotfx.js, 0.26.27): last frame's hidden, this frame's windows
+  try { fxBegin(); } catch (e) { frameError(e); }
   const r = roundAt(T);
   // breakables: hide the ones that have been shot out at this moment
   if (R3.brk) for (const m in R3.brk) { const vis = !brokenAt(+m, T); for (const x of R3.brk[m]) x.visible = vis; }
@@ -402,6 +404,7 @@ function update3Now() {
     lab.push({ e: +e, s, p: g3(s.x, s.y, feet + h + 20) });
   }
   endRigs();
+  try { fxWorld(); } catch (e) { frameError(e); }
   // round overlays (death marks, kill lines, the bomb, grenades, smokes): each one is made once and then
   // reused, moved or faded every frame; whatever isn't needed this frame is just hidden
   const OVL = R3.ov || (R3.ov = { m: new Map(), used: new Set(), key: null });

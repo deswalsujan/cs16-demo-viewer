@@ -18,7 +18,7 @@ const VAN = { on: false, saved: null };
 const flashes = [];
 let prevT = null;
 const FLASH_MS = 750;
-const files = { overviews: {}, demos: [], maps: {}, wads: {}, mdl: {}, snd: {}, sentences: null, materials: null, lang: null, hud: { txt: null, spr: {} } }; // from folder pick
+const files = { overviews: {}, demos: [], maps: {}, wads: {}, mdl: {}, snd: {}, sentences: null, materials: null, lang: null, hud: { txt: null, spr: {} }, fx: {} }; // from folder pick
 let M = null;            // derived match data
 // Theatre mode state (see the Theatre mode section)
 const TH = { on: false, before: false, hint: false, timers: {}, idle: null, drag: false, x: -1, y: -1 };

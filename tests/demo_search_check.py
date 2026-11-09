@@ -27,7 +27,10 @@ Train, IEM4 final: no damage row, the hit in the open (0.26.24). SK vs AGAiN, Tr
 the skip into R4's freeze time with its note and face's kill on taz out of the wallbangs, its kill details from before the skip,
 the kill feed wiped at R5's start and back when seeking before it (0.26.25). SK vs EYESports, Inferno, Arbalet Cup Europe 2009:
 ED1KASDDSA's AWP kill on face, with no shot recorded, out of the wallbangs by the one-bullet rule; walle on XEK and RobbaN on
-ED1KASDDSA still STRICT WB; the blood points and helmet sparks read (0.26.26). About two minutes.
+ED1KASDDSA still STRICT WB; the blood points and helmet sparks read (0.26.26). The shot feedback on SK vs Na`Vi: the gun flash from
+behind at the p_ model's muzzle (AK-47, AWP) or, with none there, at the player model's hand (silenced M4A1), for one frame,
+with Vanilla too; in Player's eyes at the v_ model's attachment (the silenced M4A1's small one), none on a scoped AWP shot;
+shells in Player's eyes only, thrown left; a blood puff at every blood point of a round (0.26.27). About two and a half minutes.
 """
 import os, re, sys, http.server, functools, threading, tempfile, shutil, subprocess, atexit
 from playwright.sync_api import sync_playwright
@@ -727,6 +730,80 @@ with sync_playwright() as p:
     except Exception as e:
         check("SK vs EYESports: ED1KASDDSA's AWP on face, the one-bullet rule", False, str(e).split('\n')[0])
     ctx11.close()
+
+    # The shot feedback (0.26.27; Sujan, 8 and 9 Nov 2026), SK vs Na`Vi, Train, DreamHack Winter 2011, with its map and the
+    # sprites from the Half-Life folder (cstrike/sprites/muzzleflash1-3.spr, valve/sprites/blood*.spr): each moment is set
+    # paused 0.004 s after a fire event (the 3D view's own time), and read from what the frame drew. Up to 0.26.26 none of
+    # it exists (no FX).
+    SN = 'sk-vs-navi-dhwinter2011-1111261019-de_train.dem'
+    ctx12 = b.new_context(viewport={'width': 1512, 'height': 982}); pg12 = ctx12.new_page()
+    pg12.route('**/three.min.js', lambda r: r.fulfill(path=os.environ.get('THREE_JS', os.path.join(here, '..', 'src', 'vendor', 'three.min.js')), content_type='application/javascript'))
+    errs12 = []; pg12.on('pageerror', lambda e: errs12.append(str(e).split('\n')[0]))
+    try:
+        if SN not in names: raise Exception(f'{SN} not found in HALF_LIFE_DIR or DEMO_DIRS')
+        pg12.goto(f'http://127.0.0.1:{srv.server_port}/{os.path.basename(hooked)}')
+        pg12.set_input_files('#fFolder', HL)
+        pg12.wait_for_function('__v("files.demos.length > 0")', timeout=30000)
+        JS12 = lambda c: pg12.evaluate('(c) => __v(c)', c)
+        JS12(f"loadDemoFile(files.demos.find((f) => f.name === {SN!r}))")
+        pg12.wait_for_function('__v("!!(D && M && MAP && R3 && view3.map === MAP.name && M.bursts)")', timeout=120000)
+        JS12("closeSummary(); playing = false; opts.lines = false; setView('3d')")
+        pg12.wait_for_function('__v("typeof FX !== \'undefined\' && FX.ready")', timeout=30000)
+        # a moment: who, which camera, the fire event's time; then what fx drew for that player (and the shells)
+        def at(e, mode, t, dt=0.004, extra=''):
+            return JS12(f"""(async () => {{ selected = {e}; setCam({mode!r}, true); {extra} T = {t} + {dt} + LAG3;
+              await new Promise((r) => setTimeout(r, 450)); const s0 = Date.now();
+              while (Math.abs((FX.last.t3 ?? -1) - (T - LAG3)) > 1e-6 && Date.now() - s0 < 3000) await new Promise((r) => setTimeout(r, 15));
+              const out = {{ flash: [], view: [], shells: 0, puffs: [] }};
+              R3.dyn.traverse((o) => {{ const f = o.userData && o.userData.fx; if (!f || !o.visible || (o.parent && !o.parent.visible)) return;
+                if (f.kind === 'flash' && f.e === {e}) out.flash.push({{ sprite: f.sprite, scale: +f.scale.toFixed(2), from: f.from, p: [o.position.x, o.position.y, o.position.z] }});
+                if (f.kind === 'shell') out.shells++; if (f.kind === 'puff') out.puffs.push(f.i); }});
+              if (VM && VM.scene) VM.scene.traverse((o) => {{ const f = o.userData && o.userData.fx; if (f && o.visible && f.kind === 'flash') out.view.push({{ sprite: f.sprite, scale: +f.scale.toFixed(2), p: [o.position.x, o.position.y, o.position.z] }}); }});
+              // where the gun's own attachment is now: the p_ model's first, else the player model's
+              const r = R3.rigs['p' + {e}], w = R3.rigs['w' + {e}];
+              if (r && r.g.visible) {{ const wa = w && w.g.visible ? mdlAtts(w.M.mdl) : []; const q = wa.length ? attWorld(w, wa[0]) : attWorld(r, mdlAtts(r.M.mdl)[0]); out.att = [q.x, q.y, q.z]; out.pAtts = wa.length; }}
+              if (VM && VM.rig && cam3.mode === 'eyes') {{ const q = attWorld(VM.rig, mdlAtts(VM.rig.M.mdl)[0]); out.vatt = [q.x, q.y, q.z]; }}
+              return out; }})()""")
+        near = lambda a, b, d=1.5: a is not None and b is not None and sum((x - y) ** 2 for x, y in zip(a, b)) ** 0.5 <= d
+        z = at(11, 'chase', 933.024)
+        check("the gun flash from behind: Zeus's AK-47, R5 C4 0:17, at the p_ model's muzzle (attachment 0), muzzleflash1 at 0.4 (the player model's \"40\")",
+              len(z['flash']) == 1 and z['flash'][0]['sprite'] == 'muzzleflash1' and z['flash'][0]['scale'] == 0.4 and z['flash'][0]['from'] == 'p_ model' and near(z['flash'][0]['p'], z.get('att')), str(z['flash']) + ' att ' + str(z.get('att')))
+        z2 = at(11, 'chase', 933.024, 0.05)
+        check('one frame only: none 0.05 s after the shot, paused', not z2['flash'], str(z2['flash']))
+        z3 = at(11, 'chase', 933.024, extra="setVanilla(true);")
+        JS12("setVanilla(false)")
+        check('Vanilla keeps the gun flash', len(z3['flash']) == 1, str(z3['flash']))
+        a = at(13, 'chase', 2663.65)
+        check("markeloff's AWP from behind, R23 1:22: at the end of the barrel (p_awp.mdl's attachment 0)",
+              len(a['flash']) == 1 and a['flash'][0]['from'] == 'p_ model' and near(a['flash'][0]['p'], a.get('att')), str(a['flash']))
+        m = at(3, 'chase', 936.443)
+        check("RobbaN's silenced M4A1 from behind, R5 C4 0:21: p_m4a1.mdl has no attachments, so it's the player model's at his right hand, mid-gun (Sujan, in the game)",
+              m.get('pAtts') == 0 and len(m['flash']) == 1 and m['flash'][0]['from'] == 'player model' and near(m['flash'][0]['p'], m.get('att')), str(m['flash']) + ' ' + str(m.get('pAtts')))
+        v = at(3, 'eyes', 936.443)
+        check("RobbaN's silenced M4A1 in Player's eyes: the v_ model's small gun flash at the silencer, muzzleflash2 at 0.1 (its event's \"11\")",
+              len(v['view']) == 1 and v['view'][0]['sprite'] == 'muzzleflash2' and v['view'][0]['scale'] == 0.1 and near(v['view'][0]['p'], v.get('vatt')), str(v['view']))
+        s = at(13, 'eyes', 1457.974, 0.104)
+        check("markeloff's AWP from the scope, R10 1:16, in Player's eyes 0.1 s after (the scope down, the gun back): no gun flash", not s['view'], str(s['view']))
+        sh = at(8, 'eyes', 758.541)
+        side = JS12("""(() => { const E = { e: 8, own: false, now: 758.545 }; return fxShellsOf(E, 758.545 - 2.5, 758.545).map((x) => { const st = playerState(8, x.t), y = st.yaw * Math.PI / 180; return +(x.v[0] * Math.sin(y) - x.v[1] * Math.cos(y)).toFixed(1); }); })()""")
+        shb = at(8, 'chase', 758.541)
+        check("starix's AK-47 spray, R3 1:12: shells in Player's eyes, each thrown to his left; none from behind",
+              sh['shells'] >= 3 and side and all(x < 0 for x in side) and shb['shells'] == 0, f"eyes {sh['shells']}, sideways speed {side[:6]}, behind {shb['shells']}")
+        bl = JS12("""(async () => { const r = M.liveR.find((x) => x.ln === 8), H = D.hitPoints, want = [];
+          for (let i = 0; i < H.length / 5; i++) if (H[i * 5] >= r.start && H[i * 5] <= r.end && H[i * 5 + 4] >= 0) want.push(i);
+          setCam('free', true, true); let shown = 0;
+          // each point: until the frame for that moment is drawn (FX.last.t3, the 3D view's time of the last frame), as a
+          // frame in headless software rendering can take longer than any fixed wait
+          const drawn = async (t) => { const s0 = Date.now(); await new Promise((res) => setTimeout(res, 20)); while (Math.abs((FX.last.t3 ?? -1) - t) > 1e-6 && Date.now() - s0 < 3000) await new Promise((res) => setTimeout(res, 15)); };
+          for (const i of want) { T = H[i * 5] + 0.01 + LAG3; await drawn(T - LAG3); let ok = false; R3.dyn.traverse((o) => { if (o.visible && o.userData.fx && o.userData.fx.kind === 'puff' && o.userData.fx.i === i) ok = true; }); if (ok) shown++; }
+          let all = 0; for (let i = 0; i < H.length / 5; i++) if (H[i * 5 + 4] >= 0) all++;
+          return { want: want.length, shown, all }; })()""")
+        check('a blood puff at every blood point the server sent in R8 (TE_BLOODSPRITE), 552 in the file', bl['want'] > 0 and bl['shown'] == bl['want'] and bl['all'] == 552, str(bl))
+        fe = JS12("ERRLOG.filter((x) => /frame loop/.test(x))")
+        check('no page error on the shot feedback checks, none caught in the frame loop', not errs12 and not fe, '; '.join(errs12[:3]) + ' ' + str(fe[:3]))
+    except Exception as e:
+        check("the shot feedback: the gun flash, shells and blood puffs", False, str(e).split('\n')[0])
+    ctx12.close()
     b.close()
 print(f'{len(fails)} failed' if fails else 'all passed')
 sys.exit(1 if fails else 0)
