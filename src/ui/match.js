@@ -299,8 +299,17 @@ function derive() {
     }
   } else if (D.pov) {
     // A demo recorded by a player, usually on a public server: there's no "live on 3" match structure
-    // to find, so every round that was played to a result counts.
+    // to find, so every round that was played to a result counts,
     for (const r of rounds) r.live = counts(r);
+    // except the rounds before the first stretch between restarts with 4 or more real rounds (played to a result, 3 kills
+    // or more): they were played before the match (Sujan, 10 Nov 2026). The GP Tourney POV of Team Guardians vs Lanka
+    // Dahan, Mirage, 25 Oct 2026, read 16:9 in 25 with two rounds from before the server loaded its match config, where
+    // the match was 16-7; on Match 4's public server two short rounds between the start of map's restarts cut its
+    // 15-round half two rounds early. Since a POV demo's round starts at each restart (0.26.28), these are their own rounds.
+    const real = {};
+    for (const r of rounds) if (r.winner && r.kills.length >= 3) real[r.seg] = (real[r.seg] || 0) + 1;
+    const first = Object.keys(real).map(Number).sort((x, y) => x - y).find((sg) => real[sg] >= 4);
+    if (first != null) for (const r of rounds) if (r.seg < first && r.live) { r.live = false; r.beforeMatch = true; }
   } else {
     for (const r of rounds) r.live = liveSegs.includes(String(r.seg)) && counts(r);
     startWhenFull();

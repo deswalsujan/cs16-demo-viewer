@@ -41,7 +41,7 @@ When a test demo is added or deleted, change its row here along with its row in 
 | `fx-vs-esahara-dhw2010-1011271131-de_nuke.dem` | 26,912,984 | `892b999fbf9a6bb7f9879cbec6086573eede40a58ad822521d6d9e9613ecd702` | yes |
 | `fx-vs-lions-dhw2010-bronze-1011272002-de_inferno.dem` | 20,836,417 | `3919a6c19d4ff0a6e6962511b3476c2fe3f625f37e679868aba19452abb46f03` | yes |
 | `fx-vs-lions-dhw2010-bronze-1011272059-de_nuke.dem` | 17,238,806 | `58a241ae0875b4bf773638735a66353ac6e6602d3aa2b95053e53ce45097c9c8` | yes |
-| `forgotten-de_mirage-2026.dem` | 158,508,114 | `cb70460d0dfc6fdf3e1580d090771edf8b35feeec6b758e541f5b2c6ae6eafca` | no |
+| `forgotten-de_mirage-2026.dem` | 158,508,114 | `cb70460d0dfc6fdf3e1580d090771edf8b35feeec6b758e541f5b2c6ae6eafca` || yes |
 | `fx-vs-mtw-xperia2011-1104240025-de_inferno.dem` | 49,731,263 | `28dc6796c3e19e211714e8b72b6ce5c46f9e83ebb490d5fc8400e99bae9801a6` | yes |
 | `fx-vs-mtw-xperia2011-1104240112-de_inferno.dem` | 50,027,056 | `260f1fc7592a95da5be13e720573928c2e3bf63d47cadec350f48ca831181c53` | yes |
 | `fx-vs-mtw-xperia2011-1104240212-de_nuke.dem` | 32,467,997 | `efee36e1bd4762abb70c01350a8adc025f2b7a41f14701a47f9847d3d21ca63b` | yes |

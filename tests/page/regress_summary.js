@@ -13,9 +13,11 @@
   const last = M.liveR[M.liveR.length - 1], st = statsFor('all');
   const nm = (e) => (M.pl[e] ? M.pl[e].name : '?');
   const at = (t, rn) => { const r = M.rounds.find((x) => x.n === rn); return `R${r ? r.ln : '?'} ${clockText(t)}`; };
+  // each regulation half's own score, as in ground_truth_totals.js (0.26.28, for the GP Tourney POV's expected file)
+  const half = (a, b) => { const y = M.liveR[b - 1] || (a <= M.liveR.length ? M.liveR[M.liveR.length - 1] : null); if (!y || !y.scoreAfter) return null; const x = a > 1 ? M.liveR[a - 2].scoreAfter : [0, 0]; return `${y.scoreAfter[0] - x[0]}:${y.scoreAfter[1] - x[1]}`; };
   return {
     demo: D.fileName, pov: !!D.pov, povMode: !!D.povOn, map: D.mapName, mapLoaded: !!(MAP && MAP.name === D.mapName.toLowerCase()), pictureCheckDone: !open(),
-    score: last && last.scoreAfter ? last.scoreAfter.join(':') : '-', live: M.liveR.length, kills: D.kills.length,
+    score: last && last.scoreAfter ? last.scoreAfter.join(':') : '-', live: M.liveR.length, kills: D.kills.length, teams: M.tnames.slice(), halves: [half(1, 15), half(16, 30)].filter(Boolean),
     kd: Object.keys(st).sort((a, b) => nm(a).localeCompare(nm(b)) || a - b).map((e) => `${nm(e)} ${st[e].k}-${st[e].d}`),
     wallbangs: M.wbs.map((k) => `${at(k.t, k.round)} ${nm(k.kp)} -> ${nm(k.vp)} ${k.weapon} ${k.wb.loose ? 'loose' + (k.wb.loose === 'dmg' ? ' (damage)' : '') : 'strict'}${k.wb.sliver ? ' (sliver)' : ''} ${k.wb.thick}`),
     bursts: (M.bursts || []).map((b) => `${at(b.start, b.round)} on ${nm(b.v)} ${b.total} HP${b.kill ? ' kill' : ''}: ${Object.keys(b.share).map((s) => `${s} ${b.share[s]}`).join(', ')}`),
