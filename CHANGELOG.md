@@ -103,8 +103,10 @@ The POV bug batch, from Sujan's POV mode feedback of 3 Nov 2026 and his go of 10
 - The Tab scoreboard lists everyone under the side he's on at that moment, as the game's does, in every demo; each side headed by the team the round has on it. A team's player the demo gives no side stays under his team's side, dead or alive from the kill feed; Spectators are people never on a team. On HLTV demos that differs from 0.26.27 only for a few seconds at a half's team swap or a reconnect, and on 3 demos: two players never in a team (an older bug), a slot with no player, and a player the demo has on the other side for one round (`tests/logs/0.26.28.md`). A slot's stand-in person no longer doubles the player in it, and a slot with no player isn't listed.
 
 ### How it was tested
-- `pov_reopen_check.py` (new, the eighth release check, 16 s) and `pov_teams_check.py` (new, 22 s) fail on 0.26.27 and pass. The GP Tourney demo in `tests/expected/` (16:7 in 23, halves, team names; `ground_truth_check.py` reads `pov` and `teams` now).
-- 78 demos against 0.26.27: the 70 HLTV demos the same score, rounds, teams and K-D; the POV demos' changes listed, every counted round checked against the server's round-end message and TeamScore; the Tab scoreboard by side, every second of every demo; every non-ASCII name. Full log: `tests/logs/0.26.28.md`.
+- `pov_reopen_check.py` (new, the eighth release check, 16 s) and `pov_teams_check.py` (new) fail on 0.26.27 and pass. The GP Tourney demo in `tests/expected/` (16:7 in 23, halves, team names; `ground_truth_check.py` reads `pov` and `teams` now).
+- The eight checks pass (5.5 minutes); `ground_truth_check.py`: 233 kills and 46 scores and K-D on 56 demos, 0 mismatches, the same 9 known gaps.
+- 78 demos against 0.26.27 (`compare_all.sh`, 3.6 and 4.9 minutes): the 70 HLTV demos the same score, rounds, team names, K-D, wallbangs and damage rows; the POV demos' changes checked against the server's round-end messages and TeamScore; the Tab scoreboard by side, every second of every demo; every non-ASCII name.
+- Full log: `tests/logs/0.26.28.md`; screenshots on `screenshots/0.26.28`.
 
 ### Discussed, not changed
 - The round pill and the POV HUD's timer: no clock was wrong (the frozen view above).
