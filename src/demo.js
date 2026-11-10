@@ -10,6 +10,37 @@ const DT_BYTE = 1, DT_SHORT = 2, DT_FLOAT = 4, DT_INTEGER = 8, DT_ANGLE = 16,
 const CENTRE_MSGS = new Set(['#Terrorists_Win', '#CTs_Win', '#Round_Draw', '#Target_Bombed', '#Target_Saved', '#Bomb_Defused',
   '#Bomb_Planted', '#Hostages_Not_Rescued', '#All_Hostages_Rescued', '#VIP_Escaped', '#VIP_Assassinated', '#VIP_Not_Escaped',
   '#Terrorists_Escaped', '#CTs_PreventEscape', '#Escaping_Terrorists_Neutralized', '#Game_Commencing', '#Game_will_restart_in']);
+// A string's bytes: as UTF-8 when they're valid UTF-8, which is how the game sends players' names, the admin's text and
+// chat, and one character per byte (Latin-1) otherwise, as up to 0.26.27, when every string was read that way, so
+// "Sτriкy~" read "SÏriÐºy~" (Sujan, 10 Nov 2026). Plain ASCII, nearly every string, takes the short way.
+const UTF8 = typeof TextDecoder !== 'undefined' ? new TextDecoder('utf-8', { fatal: true }) : null;
+function bytesStr(u8, a, b, high) {
+  if (high && UTF8) {
+    try { return UTF8.decode(u8.subarray(a, b)); } catch (e) { /* not whole UTF-8: a cut letter, or not UTF-8 at all */ }
+    const cut = utf8Uncut(u8, a, b);
+    if (cut) { try { return UTF8.decode(cut); } catch (e) { /* not UTF-8: one character per byte */ } }
+  }
+  let s = '';
+  for (let k = a; k < b; k++) s += String.fromCharCode(u8[k]);
+  return s;
+}
+// A string the server cut to its length partway through a letter (Match 3's POV demo: "D r A G ᶠ" and a cut letter, then
+// the server's ".."): its bytes without the cut letter, a lead byte with fewer continuation bytes than it needs, when the
+// rest is UTF-8 with at least one whole letter outside ASCII; null otherwise, so a name in another character set keeps
+// one character per byte (Sujan, 10 Nov 2026: drop only the cut-off letter)
+function utf8Uncut(u8, a, b) {
+  const out = []; let whole = 0;
+  for (let k = a; k < b;) {
+    const c = u8[k];
+    if (c < 0x80) { out.push(c); k++; continue; }
+    const n = c >= 0xC2 && c <= 0xDF ? 2 : c >= 0xE0 && c <= 0xEF ? 3 : c >= 0xF0 && c <= 0xF4 ? 4 : 0;
+    if (!n) return null; // a stray continuation byte, or a byte UTF-8 never uses
+    let m = 1; while (m < n && k + m < b && (u8[k + m] & 0xC0) === 0x80) m++;
+    if (m === n) { for (let q = 0; q < n; q++) out.push(u8[k + q]); whole++; }
+    k += m; // a cut letter's bytes are dropped
+  }
+  return whole ? Uint8Array.from(out) : null;
+}
 class Reader {
   constructor(u8) {
     this.u8 = u8;
@@ -26,24 +57,22 @@ class Reader {
   f() { const v = this.dv.getFloat32(this.p, true); this.p += 4; return v; }
   skip(n) { this.p += n; }
   str() {
-    let s = '';
+    const u8 = this.u8, a = this.p;
+    let high = 0;
     for (;;) {
-      if (this.p >= this.u8.length) throw new Error('string overrun');
-      const c = this.u8[this.p++];
+      if (this.p >= u8.length) throw new Error('string overrun');
+      const c = u8[this.p++];
       if (c === 0) break;
-      s += String.fromCharCode(c);
+      high |= c & 0x80;
     }
-    return s;
+    return bytesStr(u8, a, this.p - 1, high);
   }
   nstr(n) {
-    let s = '';
-    for (let k = 0; k < n; k++) {
-      const c = this.u8[this.p + k];
-      if (c === 0) break;
-      s += String.fromCharCode(c);
-    }
+    const u8 = this.u8, a = this.p;
+    let k = 0, high = 0;
+    for (; k < n; k++) { const c = u8[a + k]; if (c === 0 || c === undefined) break; high |= c & 0x80; }
     this.p += n;
-    return s;
+    return bytesStr(u8, a, a + k, high);
   }
   // bit reading, LSB first
   bitsStart() { this.b = this.p * 8; }
@@ -64,9 +93,10 @@ class Reader {
   }
   peekBits(n) { const b = this.b; const v = this.bits(n); this.b = b; return v; }
   bitStr() {
-    let s = '';
-    for (;;) { const c = this.bits(8); if (!c) break; s += String.fromCharCode(c); }
-    return s;
+    const b = [];
+    let high = 0;
+    for (;;) { const c = this.bits(8); if (!c) break; b.push(c); high |= c & 0x80; }
+    return bytesStr(Uint8Array.from(b), 0, b.length, high);
   }
   coord() {
     const intf = this.bits(1), frac = this.bits(1);
@@ -274,6 +304,7 @@ export function parseDemo(buffer, onProgress, opts = {}) {
   let pendingEv = [];
   let scores = { T: 0, CT: 0 };
   let curRound = null;
+  let restartAt = null; // the last "#Game_will_restart_in" (a restart, sv_restart or sv_restartround), for POV demos' rounds
   let time = 0;
   let inPlayback = false;
   const mapsSeen = []; // { t, map } for every map the recording was on
@@ -522,15 +553,20 @@ export function parseDemo(buffer, onProgress, opts = {}) {
             curRound.endT = time;
           }
           if (msg === '#Bomb_Planted' && inPlayback) bomb.push({ t: time, type: 'planted', round: curRound ? curRound.n : 0 });
-          if (msg === '#Game_will_restart_in' && inPlayback) bomb.push({ t: time, type: 'restart' });
+          if (msg === '#Game_will_restart_in' && inPlayback) { bomb.push({ t: time, type: 'restart' }); restartAt = time; }
           if (msg && msg[0] !== '#' && inPlayback) notes.push({ t: time, s: msg });
           break;
         }
         case 'RoundTime': {
           // A demo recorded by a player has no HLTV round marker; there the round timer starts each round.
           // In the GP Pub POV demo (1 Oct 2026) it arrives at the start of freeze time and again when freeze
-          // time ends, so only a timer after the last round ended (or before any round) starts a new one.
-          if (opts.povRounds && inPlayback && (!curRound || curRound.endT != null)) startRound();
+          // time ends, so only a timer after the last round ended (or before any round) starts a new one, or the first
+          // one at least half a second after a restart was announced, ended or not, as the HLTV round marker does: the
+          // GP Tourney server restarted 3 to 5 times after loading its match config, and once mid-round after a player
+          // dropped, and up to 0.26.27 each run of restarts read as one round, its sides taken before the last restart
+          // (Team Guardians vs Lanka Dahan, Mirage, GP Tourney, 25 Oct 2026, the rounds at 1:41 and 26:56)
+          const restarted = restartAt != null && curRound && restartAt >= curRound.start && time - restartAt >= 0.5;
+          if (opts.povRounds && inPlayback && (!curRound || curRound.endT != null || restarted)) startRound();
           if (inPlayback) roundTimes.push({ t: time, secs: m.s() });
           break;
         }

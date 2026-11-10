@@ -100,22 +100,57 @@ function showScoreboard(v) {
     const r = roundAt(T);
     const st = statsFor('all', T);
     const sc = r ? (T >= (r.endT || r.end) && r.scoreAfter ? r.scoreAfter : r.scoreBefore) : [0, 0];
-    let h = '<div class="sbcard">';
+    // Everyone listed by the side he's on at this moment, as the game's scoreboard does, for every demo type (Sujan, 10
+    // Nov 2026): a player who changed team, or went to spectate, shows where he is now; up to 0.26.27 each team's people
+    // were listed under the side the team had in the round. Each side is headed by the team with most of its people on it
+    // now, at every moment, the round's team only on a tie, and the score goes with the name (Sujan, 11 Nov 2026: just after
+    // R15 of SK vs Na`Vi, Train, DreamHack Winter 2011, Na`Vi already on CT read "SK Gaming · CT" until the next round).
+    // The side and alive or dead come from the snapshot (the server's TeamInfo and death messages, which every player
+    // gets), not from playerState, which has nothing for a player a POV demo's recorder didn't receive at that moment:
+    // up to 0.26.27 those read "dead" there; their gun isn't known, so its cell stays empty.
+    const si = M.idxAt(T) * D.stride;
+    // Each slot once, with the person in it now: a slot with no connection info at some point gets a stand-in person
+    // ("s12") whose slot is the same at every moment, who doubled whoever sat there (0.26.27 listed him under the
+    // spectators all match, in mousesports vs AGAiN, Inferno, 24 Oct 2011, among others); he shows only on a side.
+    const now = Object.keys(M.pl).map((pid) => { const e = M.slotOf(pid, T); const v = e != null && D.slots[e] ? D.slots[e][si + 5] || 0 : 0; return { pid, e, p: e != null ? playerState(e, T) : null, alive: v > 0, side: Math.abs(v) }; })
+      .filter((x) => x.e != null);
+    // and a stand-in whose slot never has a position in the whole demo is no player: slot 12 of mousesports vs mTw, Inferno,
+    // IEM4, part 2 has a team (CT) from the server and never a name, a position, a kill or a death ("?", 0.26.28)
+    if (!M.ghost) { M.ghost = new Set(); for (const pid in M.pl) if (pid[0] === 's') { const a = D.slots[+pid.slice(1)], S = D.stride; let any = false; if (a) for (let i = 0; i < a.length; i += S) if (!Number.isNaN(a[i])) { any = true; break; } if (!any) M.ghost.add(pid); } }
+    { const held = new Set(now.filter((x) => x.pid[0] !== 's').map((x) => x.e)); for (let i = now.length - 1; i >= 0; i--) if (now[i].pid[0] === 's' && (held.has(now[i].e) || !now[i].side || M.ghost.has(now[i].pid))) now.splice(i, 1); }
+    // tT: the team on T. Each team's people on T less its people on CT; the team further toward T has T
+    let tT; { const v = [0, 0]; for (const x of now) if (x.side && M.teamOf[x.pid] != null) v[M.teamOf[x.pid]] += x.side === 1 ? 1 : -1; tT = v[0] !== v[1] ? (v[0] > v[1] ? 0 : 1) : r && r.tTeam != null ? r.tTeam : 0; }
+    // A team's player the demo gives no side at this moment (no TeamInfo yet, a reconnect, a moment at spectate) goes
+    // under the side of the team the viewer computed for him, and only people never on a team are Spectators (Sujan, 10
+    // Nov 2026: Virtus.pro vs ALTERNATE aTTaX, Inferno, EM II 2008, has no TeamInfo before 14:01). Dead or alive comes from
+    // the kill feed then: dead from his death in this round to its end.
+    { const from = r ? r.start - 1e-4 : -Infinity;
+      for (const x of now) if (!x.side && M.teamOf[x.pid] != null) { x.side = M.teamOf[x.pid] === tT ? 1 : 2; x.alive = !D.kills.some((k) => k.victim === x.e && k.t >= from && k.t <= T); } }
+    // HP: none of it in a POV demo whose server sent no teammate's health (HealthInfo) at all, so no column of blanks
+    // there (Sujan, 10 Nov 2026; the GP Tourney's server registers the message and never sends it)
+    const showHp = D.povOn ? !!(D.hpInfo && D.hpInfo.length) : true;
+    // and in POV mode only his side's: no opponents' HP (Sujan, 3 Oct 2026), even for one who was his teammate earlier and
+    // still has a reading from then (Match 1 and 2, public server, 27 Mar 2025)
+    const rec = D.povOn && D.serverInfo ? D.serverInfo.playerIndex + 1 : null, recSide = rec != null ? (now.find((x) => x.e === rec) || {}).side : null;
+    const cols = (a, b, c, d, e, f) => `<span>${a}</span><span${b.startsWith('<') ? ' class="nm"' : ''}>${b}</span>${showHp ? `<span>${c}</span>` : ''}<span>${d}</span><span>${e}</span><span>${f}</span>`;
+    let h = `<div class="sbcard${showHp ? '' : ' nohp'}">`;
     for (let ti = 0; ti < 2; ti++) {
-      const side = r && r.tTeam != null ? (r.tTeam === ti ? 1 : 2) : 0;
-      h += `<div class="sbteam"><h3><span class="${side === 1 ? 'kt' : side === 2 ? 'kct' : ''}">${esc(M.tnames[ti])}${side ? (side === 1 ? ' · T' : ' · CT') : ''}</span><span>${sc[ti]}</span></h3>`;
-      h += `<div class="sbrow head"><span>#</span><span>Player</span><span>HP</span><span>K</span><span>D</span><span>Weapon</span></div>`;
-      const rows = M.teams[ti].map((pid) => { const e = M.slotOf(pid, T); return { pid, e, s: st[pid] || { k: 0, d: 0 }, p: e ? playerState(e, T) : null }; }).filter((x) => x.e != null).sort((a, b) => b.s.k - a.s.k || a.s.d - b.s.d);
+      const side = tT === ti ? 1 : 2;
+      h += `<div class="sbteam"><h3><span class="${side === 1 ? 'kt' : 'kct'}">${esc(M.tnames[ti])}${side === 1 ? ' · T' : ' · CT'}</span><span>${sc[ti]}</span></h3>`;
+      h += `<div class="sbrow head">${cols('#', 'Player', 'HP', 'K', 'D', 'Weapon')}</div>`;
+      const rows = now.filter((x) => x.side === side).map((x) => Object.assign(x, { s: st[x.pid] || { k: 0, d: 0 } })).sort((a, b) => b.s.k - a.s.k || a.s.d - b.s.d || (a.pid < b.pid ? -1 : 1));
       for (const x of rows) {
-        const alive = x.p && x.p.state > 0;
-        // what the game shows on the player's back: the C4 on a T, the defusal kit on a CT (0.17.0)
-        const pk = alive && packAt(x.e, T) ? (x.p.state === 1 ? '<span class="sbpack c4" title="Carrying the bomb">C4</span>' : '<span class="sbpack kit" title="Has a defusal kit">Kit</span>') : '';
-        h += `<div class="sbrow${alive ? '' : ' dead'}"><span>${(playerOrder().indexOf(x.pid) + 1) % 10}</span><span class="nm"><span class="nmt">${esc(M.pl[x.pid].name)}</span>${pk}</span><span>${alive ? (hpAt(x.e, T) ?? '') : 0}</span><span>${x.s.k}</span><span>${x.s.d}</span><span>${alive ? esc(weaponShort(x.p.weapon)) : 'dead'}</span></div>`;
+        const alive = x.alive;
+        // what the game shows on the player's back: the C4 on a T, the defusal kit on a CT (0.17.0); only for a player in
+        // the snapshot now, since for one a POV demo's recorder doesn't receive the value is the last one seen (0.26.28)
+        const pk = alive && x.p && packAt(x.e, T) ? (x.side === 1 ? '<span class="sbpack c4" title="Carrying the bomb">C4</span>' : '<span class="sbpack kit" title="Has a defusal kit">Kit</span>') : '';
+        h += `<div class="sbrow${alive ? '' : ' dead'}">${cols((playerOrder().indexOf(x.pid) + 1) % 10, `<span class="nmt">${esc(M.pl[x.pid].name)}</span>${pk}`, alive ? (rec != null && x.side !== recSide ? '' : hpAt(x.e, T) ?? '') : 0, x.s.k, x.s.d, alive ? (x.p ? esc(weaponShort(x.p.weapon)) : '') : 'dead')}</div>`;
       }
       h += '</div>';
     }
     // spectators on the server right now (admins, casters, HLTV relays), plus how many were watching the broadcast
-    const specNow = M.specs.filter((pid) => M.slotOf(pid, T) != null).map((pid) => esc(M.pl[pid].name) + (M.pl[pid].hltv ? ' <span class="sbtag">HLTV</span>' : ''));
+    // and everyone else on the server now: people on neither side who were never on a team
+    const specNow = now.filter((x) => !x.side).sort((a, b) => (M.teamOf[a.pid] != null) - (M.teamOf[b.pid] != null) || (a.pid < b.pid ? -1 : 1)).map((x) => esc(M.pl[x.pid].name) + (M.pl[x.pid].hltv ? ' <span class="sbtag">HLTV</span>' : ''));
     const v = viewersAt(T);
     h += `<div class="sbspecs"><span class="sbl">Spectators</span>${specNow.length ? specNow.join('<span class="sbsep">·</span>') : '<span class="sbl">none on the server</span>'}${v != null ? `<span class="sbv">${v.toLocaleString('en-US')} watching on HLTV</span>` : ''}</div>`;
     el.innerHTML = h + '</div>';

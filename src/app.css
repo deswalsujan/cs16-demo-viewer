@@ -208,6 +208,7 @@ button { cursor: pointer; }
 .sbteam { padding: calc(12px * var(--ui)) calc(14px * var(--ui)); display: block; min-width: 0; }
 .sbteam h3 { margin: 0 0 calc(6px * var(--ui)); font-family: var(--f-display); font-size: calc(16px * var(--ui)); display: flex; justify-content: space-between; gap: calc(8px * var(--ui)); }
 .sbrow { display: grid; width: 100%; grid-template-columns: calc(18px * var(--ui)) minmax(0, 1fr) calc(34px * var(--ui)) calc(30px * var(--ui)) calc(30px * var(--ui)) calc(64px * var(--ui)); gap: calc(6px * var(--ui)); font-family: var(--f-body); font-size: calc(12px * var(--ui)); align-items: center; padding: calc(3px * var(--ui)) 0; border-top: 1px solid var(--line); font-variant-numeric: tabular-nums; }
+.sbcard.nohp .sbrow { grid-template-columns: calc(18px * var(--ui)) minmax(0, 1fr) calc(30px * var(--ui)) calc(30px * var(--ui)) calc(64px * var(--ui)); } /* no HP column (0.26.28) */
 .sbrow.head { color: var(--muted); border-top: 0; font-size: calc(11px * var(--ui)); }
 .sbspecs { grid-column: 1 / -1; padding: calc(10px * var(--ui)) calc(14px * var(--ui)); border-top: 1px solid var(--line); font-size: calc(12px * var(--ui)); display: flex; flex-wrap: wrap; gap: calc(4px * var(--ui)) calc(8px * var(--ui)); align-items: baseline; }
 .sbl { color: var(--muted); text-transform: uppercase; letter-spacing: .08em; font-size: calc(11px * var(--ui)); margin-right: calc(4px * var(--ui)); }

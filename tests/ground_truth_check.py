@@ -4,7 +4,9 @@ tests/expected/ holds one file per demo, named by the demo's file name without .
 expected score and live rounds, the K-D numbers Sujan confirmed, and kills with round, timer, killer, victim, gun and
 expected (strict, loose, loose-damage, none, or wallbang: strict or loose of either kind), each with its source. A
 joined map's numbers sit under "joined" in its first part's file; numbers with Count them on, under "count_them" (a
-joined map's under "joined", "count_them"; 7 Nov 2026). A score can name its halves ("halves": ["9:6", "8:7"]). A
+joined map's under "joined", "count_them"; 7 Nov 2026). A score can name its halves ("halves": ["9:6", "8:7"]; a half
+cut short by the end of the match counts up to its last round) and the file the team names ("teams": ["BAJRANG",
+"Guardians"], as the header reads them); "pov": true opens the demo with POV mode on (0.26.28). A
 kill is found by round, killer and victim, names exactly as the viewer has them (a player dies once a round); timer
 and gun are compared only where the file has them. A kill with "known_gap" is printed when it differs, never failed.
 How the files were filled: tests/README.md, "Wallbang ground truth" (Sujan, 30 Oct 2026).
@@ -44,7 +46,7 @@ def warn_skipped(skipped, total, where):
     print(bar, flush=True)
 
 
-def harness(page, scripts, demo, folder, work, n, gt=None, save=None):
+def harness(page, scripts, demo, folder, work, n, gt=None, save=None, pov=False):
     """one harness.py run: the JSON each script returned, and any page errors"""
     copy = os.path.join(work, f'gt_{n}.html')
     shutil.copy(page, copy)
@@ -54,7 +56,7 @@ def harness(page, scripts, demo, folder, work, n, gt=None, save=None):
         with open(paths[0], 'w') as f:
             f.write(f'window.__gt = {json.dumps(gt)};\n')
     paths += [os.path.join(here, 'page', s) for s in scripts]
-    env = dict(os.environ, DEMO=demo.lower(), MAP_NEEDED='0', HALF_LIFE_DIR=folder, DEMO_DIRS='')
+    env = dict(os.environ, DEMO=demo.lower(), MAP_NEEDED='0', HALF_LIFE_DIR=folder, DEMO_DIRS='', POV_MODE='1' if pov else '')
     try:
         p = subprocess.run([sys.executable, os.path.join(here, 'harness.py'), copy, ','.join(paths)], env=env,
                            capture_output=True, text=True, timeout=int(os.environ.get('TIMEOUT', 600)))
@@ -98,6 +100,10 @@ def check_totals(label, want, got, fails):
             fails.append(f"{label}, live rounds: expected {want['score']['live']}, got {got['live']}")
         if 'halves' in want['score'] and want['score']['halves'] != got.get('halves'):
             fails.append(f"{label}, halves: expected {', '.join(want['score']['halves'])}, got {', '.join(got.get('halves') or ['none'])}")
+    if 'teams' in want:
+        n += 1
+        if want['teams'] != got.get('teams'):
+            fails.append(f"{label}, team names: expected {' and '.join(want['teams'])}, got {' and '.join(got.get('teams') or ['none'])}")
     have = kd_of(got['kd'])
     for e in want.get('kd', []):
         n += 1
@@ -164,7 +170,7 @@ def main():
         os.makedirs(a.save, exist_ok=True)
     try:
         with ThreadPoolExecutor(int(os.environ.get('JOBS', 6))) as ex:
-            results = list(ex.map(lambda ij: harness(page, ij[1][3], ij[1][2], folder, work, ij[0], ij[1][4], a.save), enumerate(jobs)))
+            results = list(ex.map(lambda ij: harness(page, ij[1][3], ij[1][2], folder, work, ij[0], ij[1][4], a.save, ij[1][0].get('pov', False)), enumerate(jobs)))
     finally:
         shutil.rmtree(work, ignore_errors=True)
 

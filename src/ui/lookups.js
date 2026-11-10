@@ -88,6 +88,10 @@ function buildHp() {
   // the labels only: D.hp, which the damage and skip finders read, stays as HLTV sent it (none in a POV demo)
   const hi = D.povOn ? D.hpInfo || [] : [];
   for (let i = 0; i < hi.length; i += 3) if (hpIdx[hi[i + 1]]) hpIdx[hi[i + 1]].push(hi[i], hi[i + 2]);
+  // and his own, as his HUD showed it (the Health message; Sujan, 10 Nov 2026): HealthInfo is about his teammates, so
+  // up to 0.26.27 his own row in the Tab scoreboard was blank on a server that sends none (the GP Tourney's)
+  const rec = D.serverInfo ? D.serverInfo.playerIndex + 1 : null, own = D.povOn && D.hud ? D.hud.hp : null;
+  if (own && own.length && hpIdx[rec]) hpIdx[rec] = Array.from(own);
 }
 // The C4 backpack (T) or defusal kit (CT) a player carries: the body value the game sets on the player (0.17.0)
 let packIdx = null;
