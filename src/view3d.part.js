@@ -196,6 +196,10 @@ function resetForNewDemo() {
   }
   ANIM = {}; stopSounds();
   $('pov').hidden = true;
+  // POV mode's state goes with the old demo: onDemo() sets it for the new one only after the overview loads, and the
+  // frames drawn in between read the new demo, which may have no view of his (an HLTV demo, or POV mode turned off),
+  // so POV.on left set made povView throw (Sujan's two crashes of 3 Nov 2026; on 0.26.16 the frame loop stopped there)
+  POV.on = false; POV.i = 0; POV.shotsBy = null; POV.hidden = null; { const n = $('povNote'); if (n) n.hidden = true; }
   if (view3.failed) { view3.failed = null; status3(''); } // a map that failed to build is tried again (see build3d)
 }
 // remove the reused round overlays (a new round or a new demo starts a fresh set)
@@ -957,7 +961,7 @@ function povShots() {
 }
 function povInit() {
   POV.shotsBy = null; POV.hidden = null; { const n = $('povNote'); if (n) n.hidden = true; } $('feed').style.top = '';
-  POV.on = !!(D && D.povOn);
+  POV.on = !!(D && D.povOn && D.view);
   POV.i = 0; POV.t = T;
   D.ownShots = POV.on ? povShots() : null;
   // the camera buttons that pick another view or player go; View settings stays, without the crosshair size (POV mode

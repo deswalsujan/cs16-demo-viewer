@@ -57,6 +57,52 @@ function leadingRound(kills0, r1, start, n) {
   }
   return { n, start, end: r1.start, endT: kills0[kills0.length - 1].t, winner, reason: winner ? 'elimination' : null, scoreT: 0, scoreCT: 0, partial: true };
 }
+// Teammates: groups of people who were on the same side more often than not. Two groups join only when, over all the
+// pairs between them, rounds on the same side outnumber rounds on opposite sides; the two with the biggest lead join
+// first, a tie going to the larger same-side count and then to the groups whose first people came first in the demo
+// (rank), so the answer doesn't depend on the order the players or the pairs come in (Sujan, 10 Nov 2026; checked by
+// tests/pov_teams_check.py, which shuffles both). Up to 0.26.27 any one pair "together more often than not" joined their
+// groups, so on a public server a player who played 2 rounds on T and 10 on CT, linked to three players seen only in
+// his T rounds, made T and CT one team (Match 2, CT file, de_mirage_32, 27 Mar 2025).
+// players: person ids; together: "a|b" (a < b) -> [rounds on the same side, rounds on opposite sides]; rank: person id
+// -> the order he first appears in. Returns every group (all, in rank order), the groups by size (a tie to the one whose
+// first person came first) and the joins in the order made, with their counts (for the notes and tests).
+function groupTeams(players, together, rank, nameOf) {
+  const grp = players.slice().sort((a, b) => rank[a] - rank[b]).map((pid) => ({ ids: [pid], key: rank[pid] }));
+  const gi = {}; grp.forEach((g, k) => gi[g.ids[0]] = k);
+  const link = new Map(); // "i|j" (i < j, group indexes) -> [same side, opposite sides]
+  const lk = (i, j) => i < j ? i + '|' + j : j + '|' + i;
+  for (const k in together) { const [a, b] = k.split('|'); if (gi[a] == null || gi[b] == null) continue; const w = link.get(lk(gi[a], gi[b])) || [0, 0]; w[0] += together[k][0]; w[1] += together[k][1]; link.set(lk(gi[a], gi[b]), w); }
+  const joins = [];
+  for (;;) {
+    let best = null;
+    for (const [k, v] of link) {
+      const lead = v[0] - v[1]; if (lead <= 0) continue;
+      const [i, j] = k.split('|').map(Number);
+      const tie = [Math.min(grp[i].key, grp[j].key), Math.max(grp[i].key, grp[j].key)];
+      const before = best && (tie[0] < best.tie[0] || (tie[0] === best.tie[0] && tie[1] < best.tie[1]));
+      if (!best || lead > best.lead || (lead === best.lead && (v[0] > best.v[0] || (v[0] === best.v[0] && before)))) best = { i, j, lead, v, tie };
+    }
+    if (!best) break;
+    const gA = grp[best.i], gB = grp[best.j];
+    if (gA.key > gB.key) { const x = best.i; best.i = best.j; best.j = x; }
+    const { i, j } = best, A = grp[i], B = grp[j];
+    joins.push({ a: A.ids.map(nameOf), b: B.ids.map(nameOf), same: best.v[0], apart: best.v[1] });
+    // group j goes into group i: its counts with every other group add to i's
+    for (const [k, v] of [...link]) {
+      const [x, y] = k.split('|').map(Number);
+      if (x !== j && y !== j) continue;
+      link.delete(k);
+      const o = x === j ? y : x; if (o === i) continue;
+      const k2 = lk(i, o), w = link.get(k2) || [0, 0]; w[0] += v[0]; w[1] += v[1]; link.set(k2, w);
+    }
+    A.ids.push(...B.ids); A.key = Math.min(A.key, B.key); B.ids = null;
+  }
+  // each group's people in the order they first appear; the groups by size, a tie to the one whose first person came first
+  const all = grp.filter((g) => g.ids).sort((a, b) => a.key - b.key).map((g) => g.ids.sort((a, b) => rank[a] - rank[b]));
+  const groups = all.slice().sort((a, b) => b.length - a.length || rank[a[0]] - rank[b[0]]);
+  return { all, groups, joins };
+}
 function derive() {
   retimeKills();
   const S = D.stride, times = D.times, n = times.length;
@@ -398,7 +444,11 @@ function derive() {
     const t = Math.min(r.start + 5, r.end);
     r.sides = {};
     for (const e of slotsAll) { const sd = sideAt(e, t); if (sd) r.sides[personAt(e, t)] = sd; }
-    const ids = Object.keys(r.sides);
+    // one count per pair, under the pair's ids in sorted order: up to 0.26.27 the key followed the order the two came
+    // in that round, which is their slots' order, so a pair whose slots swapped (a reconnect) was counted under two keys,
+    // and a pair together in one round only could read "same side 1, apart 0" (Team Guardians vs Lanka Dahan, Mirage, GP
+    // Tourney, 25 Oct 2026: one such pair joined the two teams)
+    const ids = Object.keys(r.sides).sort();
     for (let i = 0; i < ids.length; i++) for (let j = i + 1; j < ids.length; j++) {
       const k = ids[i] + '|' + ids[j];
       const v = together[k] || (together[k] = [0, 0]);
@@ -409,20 +459,19 @@ function derive() {
   // or one a recording starts partway into before any side is recorded (the OT2 file of mTw vs Na`Vi, Tuscan,
   // ESWC 2010, where Na`Vi win the first round on CT; it went to mTw).
   for (const r of liveR) if (r.missing || !Object.keys(r.sides).length) { const nx = liveR.find((x) => x.start > r.start && !x.missing && Object.keys(x.sides || {}).length); r.sides = nx ? Object.assign({}, nx.sides) : {}; }
-  // teammates: people who were on the same side more often than not
-  const par = {}; const find = (x) => par[x] === x ? x : (par[x] = find(par[x]));
+  // teammates (groupTeams, above)
+  const rank = {}; Object.keys(pl).forEach((pid, k) => rank[pid] = k);
   const players = Object.keys(pl).filter((pid) => liveR.some((r) => r.sides[pid]));
-  players.forEach((pid) => par[pid] = pid);
-  for (const k in together) { const [a, b] = k.split('|'); const v = together[k]; if (v[0] > v[1] && par[a] && par[b]) par[find(a)] = find(b); }
-  const groups = {};
-  for (const pid of players) (groups[find(pid)] || (groups[find(pid)] = [])).push(pid);
-  let teams = Object.values(groups).sort((a, b) => b.length - a.length).slice(0, 2);
+  const { all, groups, joins } = groupTeams(players, together, rank, (pid) => pl[pid].name);
+  let teams = groups.slice(0, 2);
   while (teams.length < 2) teams.push([]);
-  // everyone else seen in a team slot for only a round or two goes with whichever team they played for most
+  // everyone else seen in a team slot for only a round or two goes with whichever team they played for most, counted
+  // against the two teams as they were before anyone was added, so the order doesn't matter either
   const teamOf = {}; teams.forEach((g, i) => g.forEach((pid) => teamOf[pid] = i));
-  for (const g of Object.values(groups)) if (!teams.includes(g)) for (const pid of g) {
+  const core = Object.assign({}, teamOf);
+  for (const g of all) if (!teams.includes(g)) for (const pid of g) {
     const votes = [0, 0];
-    for (const r of liveR) if (r.sides[pid]) for (const q in r.sides) if (teamOf[q] != null) votes[teamOf[q]] += r.sides[q] === r.sides[pid] ? 1 : -1;
+    for (const r of liveR) if (r.sides[pid]) for (const q in r.sides) if (core[q] != null) votes[core[q]] += r.sides[q] === r.sides[pid] ? 1 : -1;
     const ti = votes[0] >= votes[1] ? 0 : 1; teams[ti].push(pid); teamOf[pid] = ti;
   }
   // spectators: admins, casters and HLTV relays who never played a live round
@@ -545,7 +594,7 @@ function derive() {
   const k = Math.min(960 / (x1 - x0 || 1), 700 / (y1 - y0 || 1));
   const bounds = { x0, y1, k, px: (1024 - (x1 - x0) * k) / 2, py: (768 - (y1 - y0) * k) / 2 };
 
-  M = { idxAt, pl, rounds, liveR, teams, teamOf, tnames, nades, bounds, reg, hasOT: liveR.some((r) => r.ot), personAt, slotOf, specs, wbs: [], after16: after16 && after16.extra ? after16 : null, count30, auto30, wonAt: wonAt || (after16 && after16.at) || null };
+  M = { idxAt, pl, rounds, liveR, teams, teamOf, tnames, joins, nades, bounds, reg, hasOT: liveR.some((r) => r.ot), personAt, slotOf, specs, wbs: [], after16: after16 && after16.extra ? after16 : null, count30, auto30, wonAt: wonAt || (after16 && after16.at) || null };
   buildShort();
   findSkips();
 }

@@ -221,6 +221,7 @@ button { cursor: pointer; }
 .sbteam { padding: calc(12px * var(--ui)) calc(14px * var(--ui)); display: block; min-width: 0; }
 .sbteam h3 { margin: 0 0 calc(6px * var(--ui)); font-family: var(--f-display); font-size: calc(16px * var(--ui)); display: flex; justify-content: space-between; gap: calc(8px * var(--ui)); }
 .sbrow { display: grid; width: 100%; grid-template-columns: calc(18px * var(--ui)) minmax(0, 1fr) calc(34px * var(--ui)) calc(30px * var(--ui)) calc(30px * var(--ui)) calc(64px * var(--ui)); gap: calc(6px * var(--ui)); font-family: var(--f-body); font-size: calc(12px * var(--ui)); align-items: center; padding: calc(3px * var(--ui)) 0; border-top: 1px solid var(--line); font-variant-numeric: tabular-nums; }
+.sbcard.nohp .sbrow { grid-template-columns: calc(18px * var(--ui)) minmax(0, 1fr) calc(30px * var(--ui)) calc(30px * var(--ui)) calc(64px * var(--ui)); } /* no HP column (0.26.28) */
 .sbrow.head { color: var(--muted); border-top: 0; font-size: calc(11px * var(--ui)); }
 .sbspecs { grid-column: 1 / -1; padding: calc(10px * var(--ui)) calc(14px * var(--ui)); border-top: 1px solid var(--line); font-size: calc(12px * var(--ui)); display: flex; flex-wrap: wrap; gap: calc(4px * var(--ui)) calc(8px * var(--ui)); align-items: baseline; }
 .sbl { color: var(--muted); text-transform: uppercase; letter-spacing: .08em; font-size: calc(11px * var(--ui)); margin-right: calc(4px * var(--ui)); }
@@ -680,7 +681,7 @@ addEventListener('resize', () => { if (applyUiSize()) dispatchEvent(new Event('u
             <dt><kbd>?</kbd></dt><dd>Show this list</dd></dl>
           </section>
         </div>
-        <div class="keys-foot"><span class="ver">Version 0.26.27 · <a href="https://github.com/deswalsujan/cs16-demo-viewer/blob/main/CHANGELOG.md" target="_blank" rel="noopener">What's new</a> · <a href="https://github.com/deswalsujan/cs16-demo-viewer/issues/new/choose" target="_blank" rel="noopener">Report a bug</a></span><span class="sp"></span><button class="btn" id="bDebug" type="button" title="Copies details for a bug report: browser, demo name, what loaded, errors. No file contents.">Copy debug info</button><button class="btn" id="bKeysClose" type="button">Close</button></div>
+        <div class="keys-foot"><span class="ver">Version 0.26.28 · <a href="https://github.com/deswalsujan/cs16-demo-viewer/blob/main/CHANGELOG.md" target="_blank" rel="noopener">What's new</a> · <a href="https://github.com/deswalsujan/cs16-demo-viewer/issues/new/choose" target="_blank" rel="noopener">Report a bug</a></span><span class="sp"></span><button class="btn" id="bDebug" type="button" title="Copies details for a bug report: browser, demo name, what loaded, errors. No file contents.">Copy debug info</button><button class="btn" id="bKeysClose" type="button">Close</button></div>
       </div>
     </div>
     <canvas id="cv" aria-label="Radar view of the match"></canvas>
@@ -739,7 +740,7 @@ addEventListener('resize', () => { if (applyUiSize()) dispatchEvent(new Event('u
         <div class="drophint">Or drop a .dem file, or an overview .bmp and .txt pair, anywhere on this page</div>
         <div class="prog" id="prog" hidden><i id="progBar"></i></div>
         <div class="msg" id="msg"></div>
-        <div class="loadfoot"><span>Version 0.26.27 · <a href="https://github.com/deswalsujan/cs16-demo-viewer" target="_blank" rel="noopener">Source on GitHub</a></span><button class="btn" id="bClear" type="button" title="Deletes the maps, models, sounds and overviews this browser saved from your Half-Life folder, and starts over as on a first visit">Clear saved files</button></div>
+        <div class="loadfoot"><span>Version 0.26.28 · <a href="https://github.com/deswalsujan/cs16-demo-viewer" target="_blank" rel="noopener">Source on GitHub</a></span><button class="btn" id="bClear" type="button" title="Deletes the maps, models, sounds and overviews this browser saved from your Half-Life folder, and starts over as on a first visit">Clear saved files</button></div>
       </div>
     </div>
   </section>
@@ -786,6 +787,16 @@ const DT_BYTE = 1, DT_SHORT = 2, DT_FLOAT = 4, DT_INTEGER = 8, DT_ANGLE = 16,
 const CENTRE_MSGS = new Set(['#Terrorists_Win', '#CTs_Win', '#Round_Draw', '#Target_Bombed', '#Target_Saved', '#Bomb_Defused',
   '#Bomb_Planted', '#Hostages_Not_Rescued', '#All_Hostages_Rescued', '#VIP_Escaped', '#VIP_Assassinated', '#VIP_Not_Escaped',
   '#Terrorists_Escaped', '#CTs_PreventEscape', '#Escaping_Terrorists_Neutralized', '#Game_Commencing', '#Game_will_restart_in']);
+// A string's bytes: as UTF-8 when they're valid UTF-8, which is how the game sends players' names, the admin's text and
+// chat, and one character per byte (Latin-1) otherwise, as up to 0.26.27, when every string was read that way, so
+// "Sτriкy~" read "SÏriÐºy~" (Sujan, 10 Nov 2026). Plain ASCII, nearly every string, takes the short way.
+const UTF8 = typeof TextDecoder !== 'undefined' ? new TextDecoder('utf-8', { fatal: true }) : null;
+function bytesStr(u8, a, b, high) {
+  if (high && UTF8) { try { return UTF8.decode(u8.subarray(a, b)); } catch (e) { /* not UTF-8: one character per byte */ } }
+  let s = '';
+  for (let k = a; k < b; k++) s += String.fromCharCode(u8[k]);
+  return s;
+}
 class Reader {
   constructor(u8) {
     this.u8 = u8;
@@ -802,24 +813,22 @@ class Reader {
   f() { const v = this.dv.getFloat32(this.p, true); this.p += 4; return v; }
   skip(n) { this.p += n; }
   str() {
-    let s = '';
+    const u8 = this.u8, a = this.p;
+    let high = 0;
     for (;;) {
-      if (this.p >= this.u8.length) throw new Error('string overrun');
-      const c = this.u8[this.p++];
+      if (this.p >= u8.length) throw new Error('string overrun');
+      const c = u8[this.p++];
       if (c === 0) break;
-      s += String.fromCharCode(c);
+      high |= c & 0x80;
     }
-    return s;
+    return bytesStr(u8, a, this.p - 1, high);
   }
   nstr(n) {
-    let s = '';
-    for (let k = 0; k < n; k++) {
-      const c = this.u8[this.p + k];
-      if (c === 0) break;
-      s += String.fromCharCode(c);
-    }
+    const u8 = this.u8, a = this.p;
+    let k = 0, high = 0;
+    for (; k < n; k++) { const c = u8[a + k]; if (c === 0 || c === undefined) break; high |= c & 0x80; }
     this.p += n;
-    return s;
+    return bytesStr(u8, a, a + k, high);
   }
   // bit reading, LSB first
   bitsStart() { this.b = this.p * 8; }
@@ -840,9 +849,10 @@ class Reader {
   }
   peekBits(n) { const b = this.b; const v = this.bits(n); this.b = b; return v; }
   bitStr() {
-    let s = '';
-    for (;;) { const c = this.bits(8); if (!c) break; s += String.fromCharCode(c); }
-    return s;
+    const b = [];
+    let high = 0;
+    for (;;) { const c = this.bits(8); if (!c) break; b.push(c); high |= c & 0x80; }
+    return bytesStr(Uint8Array.from(b), 0, b.length, high);
   }
   coord() {
     const intf = this.bits(1), frac = this.bits(1);
@@ -1050,6 +1060,7 @@ export function parseDemo(buffer, onProgress, opts = {}) {
   let pendingEv = [];
   let scores = { T: 0, CT: 0 };
   let curRound = null;
+  let restartAt = null; // the last "#Game_will_restart_in" (a restart, sv_restart or sv_restartround), for POV demos' rounds
   let time = 0;
   let inPlayback = false;
   const mapsSeen = []; // { t, map } for every map the recording was on
@@ -1298,15 +1309,20 @@ export function parseDemo(buffer, onProgress, opts = {}) {
             curRound.endT = time;
           }
           if (msg === '#Bomb_Planted' && inPlayback) bomb.push({ t: time, type: 'planted', round: curRound ? curRound.n : 0 });
-          if (msg === '#Game_will_restart_in' && inPlayback) bomb.push({ t: time, type: 'restart' });
+          if (msg === '#Game_will_restart_in' && inPlayback) { bomb.push({ t: time, type: 'restart' }); restartAt = time; }
           if (msg && msg[0] !== '#' && inPlayback) notes.push({ t: time, s: msg });
           break;
         }
         case 'RoundTime': {
           // A demo recorded by a player has no HLTV round marker; there the round timer starts each round.
           // In the GP Pub POV demo (1 Oct 2026) it arrives at the start of freeze time and again when freeze
-          // time ends, so only a timer after the last round ended (or before any round) starts a new one.
-          if (opts.povRounds && inPlayback && (!curRound || curRound.endT != null)) startRound();
+          // time ends, so only a timer after the last round ended (or before any round) starts a new one, or the first
+          // one at least half a second after a restart was announced, ended or not, as the HLTV round marker does: the
+          // GP Tourney server restarted 3 to 5 times after loading its match config, and once mid-round after a player
+          // dropped, and up to 0.26.27 each run of restarts read as one round, its sides taken before the last restart
+          // (Team Guardians vs Lanka Dahan, Mirage, GP Tourney, 25 Oct 2026, the rounds at 1:41 and 26:56)
+          const restarted = restartAt != null && curRound && restartAt >= curRound.start && time - restartAt >= 0.5;
+          if (opts.povRounds && inPlayback && (!curRound || curRound.endT != null || restarted)) startRound();
           if (inPlayback) roundTimes.push({ t: time, secs: m.s() });
           break;
         }
@@ -3933,6 +3949,52 @@ function leadingRound(kills0, r1, start, n) {
   }
   return { n, start, end: r1.start, endT: kills0[kills0.length - 1].t, winner, reason: winner ? 'elimination' : null, scoreT: 0, scoreCT: 0, partial: true };
 }
+// Teammates: groups of people who were on the same side more often than not. Two groups join only when, over all the
+// pairs between them, rounds on the same side outnumber rounds on opposite sides; the two with the biggest lead join
+// first, a tie going to the larger same-side count and then to the groups whose first people came first in the demo
+// (rank), so the answer doesn't depend on the order the players or the pairs come in (Sujan, 10 Nov 2026; checked by
+// tests/pov_teams_check.py, which shuffles both). Up to 0.26.27 any one pair "together more often than not" joined their
+// groups, so on a public server a player who played 2 rounds on T and 10 on CT, linked to three players seen only in
+// his T rounds, made T and CT one team (Match 2, CT file, de_mirage_32, 27 Mar 2025).
+// players: person ids; together: "a|b" (a < b) -> [rounds on the same side, rounds on opposite sides]; rank: person id
+// -> the order he first appears in. Returns every group (all, in rank order), the groups by size (a tie to the one whose
+// first person came first) and the joins in the order made, with their counts (for the notes and tests).
+function groupTeams(players, together, rank, nameOf) {
+  const grp = players.slice().sort((a, b) => rank[a] - rank[b]).map((pid) => ({ ids: [pid], key: rank[pid] }));
+  const gi = {}; grp.forEach((g, k) => gi[g.ids[0]] = k);
+  const link = new Map(); // "i|j" (i < j, group indexes) -> [same side, opposite sides]
+  const lk = (i, j) => i < j ? i + '|' + j : j + '|' + i;
+  for (const k in together) { const [a, b] = k.split('|'); if (gi[a] == null || gi[b] == null) continue; const w = link.get(lk(gi[a], gi[b])) || [0, 0]; w[0] += together[k][0]; w[1] += together[k][1]; link.set(lk(gi[a], gi[b]), w); }
+  const joins = [];
+  for (;;) {
+    let best = null;
+    for (const [k, v] of link) {
+      const lead = v[0] - v[1]; if (lead <= 0) continue;
+      const [i, j] = k.split('|').map(Number);
+      const tie = [Math.min(grp[i].key, grp[j].key), Math.max(grp[i].key, grp[j].key)];
+      const before = best && (tie[0] < best.tie[0] || (tie[0] === best.tie[0] && tie[1] < best.tie[1]));
+      if (!best || lead > best.lead || (lead === best.lead && (v[0] > best.v[0] || (v[0] === best.v[0] && before)))) best = { i, j, lead, v, tie };
+    }
+    if (!best) break;
+    const gA = grp[best.i], gB = grp[best.j];
+    if (gA.key > gB.key) { const x = best.i; best.i = best.j; best.j = x; }
+    const { i, j } = best, A = grp[i], B = grp[j];
+    joins.push({ a: A.ids.map(nameOf), b: B.ids.map(nameOf), same: best.v[0], apart: best.v[1] });
+    // group j goes into group i: its counts with every other group add to i's
+    for (const [k, v] of [...link]) {
+      const [x, y] = k.split('|').map(Number);
+      if (x !== j && y !== j) continue;
+      link.delete(k);
+      const o = x === j ? y : x; if (o === i) continue;
+      const k2 = lk(i, o), w = link.get(k2) || [0, 0]; w[0] += v[0]; w[1] += v[1]; link.set(k2, w);
+    }
+    A.ids.push(...B.ids); A.key = Math.min(A.key, B.key); B.ids = null;
+  }
+  // each group's people in the order they first appear; the groups by size, a tie to the one whose first person came first
+  const all = grp.filter((g) => g.ids).sort((a, b) => a.key - b.key).map((g) => g.ids.sort((a, b) => rank[a] - rank[b]));
+  const groups = all.slice().sort((a, b) => b.length - a.length || rank[a[0]] - rank[b[0]]);
+  return { all, groups, joins };
+}
 function derive() {
   retimeKills();
   const S = D.stride, times = D.times, n = times.length;
@@ -4274,7 +4336,11 @@ function derive() {
     const t = Math.min(r.start + 5, r.end);
     r.sides = {};
     for (const e of slotsAll) { const sd = sideAt(e, t); if (sd) r.sides[personAt(e, t)] = sd; }
-    const ids = Object.keys(r.sides);
+    // one count per pair, under the pair's ids in sorted order: up to 0.26.27 the key followed the order the two came
+    // in that round, which is their slots' order, so a pair whose slots swapped (a reconnect) was counted under two keys,
+    // and a pair together in one round only could read "same side 1, apart 0" (Team Guardians vs Lanka Dahan, Mirage, GP
+    // Tourney, 25 Oct 2026: one such pair joined the two teams)
+    const ids = Object.keys(r.sides).sort();
     for (let i = 0; i < ids.length; i++) for (let j = i + 1; j < ids.length; j++) {
       const k = ids[i] + '|' + ids[j];
       const v = together[k] || (together[k] = [0, 0]);
@@ -4285,20 +4351,19 @@ function derive() {
   // or one a recording starts partway into before any side is recorded (the OT2 file of mTw vs Na`Vi, Tuscan,
   // ESWC 2010, where Na`Vi win the first round on CT; it went to mTw).
   for (const r of liveR) if (r.missing || !Object.keys(r.sides).length) { const nx = liveR.find((x) => x.start > r.start && !x.missing && Object.keys(x.sides || {}).length); r.sides = nx ? Object.assign({}, nx.sides) : {}; }
-  // teammates: people who were on the same side more often than not
-  const par = {}; const find = (x) => par[x] === x ? x : (par[x] = find(par[x]));
+  // teammates (groupTeams, above)
+  const rank = {}; Object.keys(pl).forEach((pid, k) => rank[pid] = k);
   const players = Object.keys(pl).filter((pid) => liveR.some((r) => r.sides[pid]));
-  players.forEach((pid) => par[pid] = pid);
-  for (const k in together) { const [a, b] = k.split('|'); const v = together[k]; if (v[0] > v[1] && par[a] && par[b]) par[find(a)] = find(b); }
-  const groups = {};
-  for (const pid of players) (groups[find(pid)] || (groups[find(pid)] = [])).push(pid);
-  let teams = Object.values(groups).sort((a, b) => b.length - a.length).slice(0, 2);
+  const { all, groups, joins } = groupTeams(players, together, rank, (pid) => pl[pid].name);
+  let teams = groups.slice(0, 2);
   while (teams.length < 2) teams.push([]);
-  // everyone else seen in a team slot for only a round or two goes with whichever team they played for most
+  // everyone else seen in a team slot for only a round or two goes with whichever team they played for most, counted
+  // against the two teams as they were before anyone was added, so the order doesn't matter either
   const teamOf = {}; teams.forEach((g, i) => g.forEach((pid) => teamOf[pid] = i));
-  for (const g of Object.values(groups)) if (!teams.includes(g)) for (const pid of g) {
+  const core = Object.assign({}, teamOf);
+  for (const g of all) if (!teams.includes(g)) for (const pid of g) {
     const votes = [0, 0];
-    for (const r of liveR) if (r.sides[pid]) for (const q in r.sides) if (teamOf[q] != null) votes[teamOf[q]] += r.sides[q] === r.sides[pid] ? 1 : -1;
+    for (const r of liveR) if (r.sides[pid]) for (const q in r.sides) if (core[q] != null) votes[core[q]] += r.sides[q] === r.sides[pid] ? 1 : -1;
     const ti = votes[0] >= votes[1] ? 0 : 1; teams[ti].push(pid); teamOf[pid] = ti;
   }
   // spectators: admins, casters and HLTV relays who never played a live round
@@ -4421,7 +4486,7 @@ function derive() {
   const k = Math.min(960 / (x1 - x0 || 1), 700 / (y1 - y0 || 1));
   const bounds = { x0, y1, k, px: (1024 - (x1 - x0) * k) / 2, py: (768 - (y1 - y0) * k) / 2 };
 
-  M = { idxAt, pl, rounds, liveR, teams, teamOf, tnames, nades, bounds, reg, hasOT: liveR.some((r) => r.ot), personAt, slotOf, specs, wbs: [], after16: after16 && after16.extra ? after16 : null, count30, auto30, wonAt: wonAt || (after16 && after16.at) || null };
+  M = { idxAt, pl, rounds, liveR, teams, teamOf, tnames, joins, nades, bounds, reg, hasOT: liveR.some((r) => r.ot), personAt, slotOf, specs, wbs: [], after16: after16 && after16.extra ? after16 : null, count30, auto30, wonAt: wonAt || (after16 && after16.at) || null };
   buildShort();
   findSkips();
 }
@@ -4745,6 +4810,10 @@ function buildHp() {
   // the labels only: D.hp, which the damage and skip finders read, stays as HLTV sent it (none in a POV demo)
   const hi = D.povOn ? D.hpInfo || [] : [];
   for (let i = 0; i < hi.length; i += 3) if (hpIdx[hi[i + 1]]) hpIdx[hi[i + 1]].push(hi[i], hi[i + 2]);
+  // and his own, as his HUD showed it (the Health message; Sujan, 10 Nov 2026): HealthInfo is about his teammates, so
+  // up to 0.26.27 his own row in the Tab scoreboard was blank on a server that sends none (the GP Tourney's)
+  const rec = D.serverInfo ? D.serverInfo.playerIndex + 1 : null, own = D.povOn && D.hud ? D.hud.hp : null;
+  if (own && own.length && hpIdx[rec]) hpIdx[rec] = Array.from(own);
 }
 // The C4 backpack (T) or defusal kit (CT) a player carries: the body value the game sets on the player (0.17.0)
 let packIdx = null;
@@ -5496,22 +5565,47 @@ function showScoreboard(v) {
     const r = roundAt(T);
     const st = statsFor('all', T);
     const sc = r ? (T >= (r.endT || r.end) && r.scoreAfter ? r.scoreAfter : r.scoreBefore) : [0, 0];
-    let h = '<div class="sbcard">';
+    // Everyone listed by the side he's on at this moment, as the game's scoreboard does, for every demo type (Sujan, 10
+    // Nov 2026): a player who changed team, or went to spectate, shows where he is now; up to 0.26.27 each team's people
+    // were listed under the side the team had in the round. Each side is headed by the team the round has on it; outside
+    // the counted rounds, by the team with most of its people on it now.
+    // The side and alive or dead come from the snapshot (the server's TeamInfo and death messages, which every player
+    // gets), not from playerState, which has nothing for a player a POV demo's recorder didn't receive at that moment:
+    // up to 0.26.27 those read "dead" there; their gun isn't known, so its cell stays empty.
+    const si = M.idxAt(T) * D.stride;
+    // Each slot once, with the person in it now: a slot with no connection info at some point gets a stand-in person
+    // ("s12") whose slot is the same at every moment, who doubled whoever sat there (0.26.27 listed him under the
+    // spectators all match, in mousesports vs AGAiN, Inferno, 24 Oct 2011, among others); he shows only on a side.
+    const now = Object.keys(M.pl).map((pid) => { const e = M.slotOf(pid, T); const v = e != null && D.slots[e] ? D.slots[e][si + 5] || 0 : 0; return { pid, e, p: e != null ? playerState(e, T) : null, alive: v > 0, side: Math.abs(v) }; })
+      .filter((x) => x.e != null);
+    { const held = new Set(now.filter((x) => x.pid[0] !== 's').map((x) => x.e)); for (let i = now.length - 1; i >= 0; i--) if (now[i].pid[0] === 's' && (held.has(now[i].e) || !now[i].side)) now.splice(i, 1); }
+    let tT = r && r.tTeam != null ? r.tTeam : null;
+    if (tT == null) { const v = [0, 0]; for (const x of now) if (x.side && M.teamOf[x.pid] != null) v[M.teamOf[x.pid]] += x.side === 1 ? 1 : -1; tT = v[1] > v[0] ? 1 : 0; }
+    // HP: none of it in a POV demo whose server sent no teammate's health (HealthInfo) at all, so no column of blanks
+    // there (Sujan, 10 Nov 2026; the GP Tourney's server registers the message and never sends it)
+    const showHp = D.povOn ? !!(D.hpInfo && D.hpInfo.length) : true;
+    // and in POV mode only his side's: no opponents' HP (Sujan, 3 Oct 2026), even for one who was his teammate earlier and
+    // still has a reading from then (Match 1 and 2, public server, 27 Mar 2025)
+    const rec = D.povOn && D.serverInfo ? D.serverInfo.playerIndex + 1 : null, recSide = rec != null ? (now.find((x) => x.e === rec) || {}).side : null;
+    const cols = (a, b, c, d, e, f) => `<span>${a}</span><span${b.startsWith('<') ? ' class="nm"' : ''}>${b}</span>${showHp ? `<span>${c}</span>` : ''}<span>${d}</span><span>${e}</span><span>${f}</span>`;
+    let h = `<div class="sbcard${showHp ? '' : ' nohp'}">`;
     for (let ti = 0; ti < 2; ti++) {
-      const side = r && r.tTeam != null ? (r.tTeam === ti ? 1 : 2) : 0;
-      h += `<div class="sbteam"><h3><span class="${side === 1 ? 'kt' : side === 2 ? 'kct' : ''}">${esc(M.tnames[ti])}${side ? (side === 1 ? ' · T' : ' · CT') : ''}</span><span>${sc[ti]}</span></h3>`;
-      h += `<div class="sbrow head"><span>#</span><span>Player</span><span>HP</span><span>K</span><span>D</span><span>Weapon</span></div>`;
-      const rows = M.teams[ti].map((pid) => { const e = M.slotOf(pid, T); return { pid, e, s: st[pid] || { k: 0, d: 0 }, p: e ? playerState(e, T) : null }; }).filter((x) => x.e != null).sort((a, b) => b.s.k - a.s.k || a.s.d - b.s.d);
+      const side = tT === ti ? 1 : 2;
+      h += `<div class="sbteam"><h3><span class="${side === 1 ? 'kt' : 'kct'}">${esc(M.tnames[ti])}${side === 1 ? ' · T' : ' · CT'}</span><span>${sc[ti]}</span></h3>`;
+      h += `<div class="sbrow head">${cols('#', 'Player', 'HP', 'K', 'D', 'Weapon')}</div>`;
+      const rows = now.filter((x) => x.side === side).map((x) => Object.assign(x, { s: st[x.pid] || { k: 0, d: 0 } })).sort((a, b) => b.s.k - a.s.k || a.s.d - b.s.d || (a.pid < b.pid ? -1 : 1));
       for (const x of rows) {
-        const alive = x.p && x.p.state > 0;
-        // what the game shows on the player's back: the C4 on a T, the defusal kit on a CT (0.17.0)
-        const pk = alive && packAt(x.e, T) ? (x.p.state === 1 ? '<span class="sbpack c4" title="Carrying the bomb">C4</span>' : '<span class="sbpack kit" title="Has a defusal kit">Kit</span>') : '';
-        h += `<div class="sbrow${alive ? '' : ' dead'}"><span>${(playerOrder().indexOf(x.pid) + 1) % 10}</span><span class="nm"><span class="nmt">${esc(M.pl[x.pid].name)}</span>${pk}</span><span>${alive ? (hpAt(x.e, T) ?? '') : 0}</span><span>${x.s.k}</span><span>${x.s.d}</span><span>${alive ? esc(weaponShort(x.p.weapon)) : 'dead'}</span></div>`;
+        const alive = x.alive;
+        // what the game shows on the player's back: the C4 on a T, the defusal kit on a CT (0.17.0); only for a player in
+        // the snapshot now, since for one a POV demo's recorder doesn't receive the value is the last one seen (0.26.28)
+        const pk = alive && x.p && packAt(x.e, T) ? (x.side === 1 ? '<span class="sbpack c4" title="Carrying the bomb">C4</span>' : '<span class="sbpack kit" title="Has a defusal kit">Kit</span>') : '';
+        h += `<div class="sbrow${alive ? '' : ' dead'}">${cols((playerOrder().indexOf(x.pid) + 1) % 10, `<span class="nmt">${esc(M.pl[x.pid].name)}</span>${pk}`, alive ? (rec != null && x.side !== recSide ? '' : hpAt(x.e, T) ?? '') : 0, x.s.k, x.s.d, alive ? (x.p ? esc(weaponShort(x.p.weapon)) : '') : 'dead')}</div>`;
       }
       h += '</div>';
     }
     // spectators on the server right now (admins, casters, HLTV relays), plus how many were watching the broadcast
-    const specNow = M.specs.filter((pid) => M.slotOf(pid, T) != null).map((pid) => esc(M.pl[pid].name) + (M.pl[pid].hltv ? ' <span class="sbtag">HLTV</span>' : ''));
+    // and everyone else on the server now, on neither side (a team's player who went to spectate included)
+    const specNow = now.filter((x) => !x.side).sort((a, b) => (M.teamOf[a.pid] != null) - (M.teamOf[b.pid] != null) || (a.pid < b.pid ? -1 : 1)).map((x) => esc(M.pl[x.pid].name) + (M.pl[x.pid].hltv ? ' <span class="sbtag">HLTV</span>' : ''));
     const v = viewersAt(T);
     h += `<div class="sbspecs"><span class="sbl">Spectators</span>${specNow.length ? specNow.join('<span class="sbsep">·</span>') : '<span class="sbl">none on the server</span>'}${v != null ? `<span class="sbv">${v.toLocaleString('en-US')} watching on HLTV</span>` : ''}</div>`;
     el.innerHTML = h + '</div>';
@@ -6289,6 +6383,10 @@ function resetForNewDemo() {
   }
   ANIM = {}; stopSounds();
   $('pov').hidden = true;
+  // POV mode's state goes with the old demo: onDemo() sets it for the new one only after the overview loads, and the
+  // frames drawn in between read the new demo, which may have no view of his (an HLTV demo, or POV mode turned off),
+  // so POV.on left set made povView throw (Sujan's two crashes of 3 Nov 2026; on 0.26.16 the frame loop stopped there)
+  POV.on = false; POV.i = 0; POV.shotsBy = null; POV.hidden = null; { const n = $('povNote'); if (n) n.hidden = true; }
   if (view3.failed) { view3.failed = null; status3(''); } // a map that failed to build is tried again (see build3d)
 }
 // remove the reused round overlays (a new round or a new demo starts a fresh set)
@@ -8397,7 +8495,7 @@ function povShots() {
 }
 function povInit() {
   POV.shotsBy = null; POV.hidden = null; { const n = $('povNote'); if (n) n.hidden = true; } $('feed').style.top = '';
-  POV.on = !!(D && D.povOn);
+  POV.on = !!(D && D.povOn && D.view);
   POV.i = 0; POV.t = T;
   D.ownShots = POV.on ? povShots() : null;
   // the camera buttons that pick another view or player go; View settings stays, without the crosshair size (POV mode
@@ -9229,7 +9327,7 @@ function frameError(e) {
 function debugInfo() {
   let gpu = '';
   try { const gl = document.createElement('canvas').getContext('webgl'); const x = gl && gl.getExtension('WEBGL_debug_renderer_info'); gpu = gl ? (x ? gl.getParameter(x.UNMASKED_RENDERER_WEBGL) : 'WebGL available') : 'no WebGL'; } catch (e) { gpu = 'unknown'; }
-  const L = [`CS 1.6 Demo Viewer 0.26.27`, `Browser: ${navigator.userAgent}`, `Screen: ${screen.width}x${screen.height} at ${devicePixelRatio}x, window ${innerWidth}x${innerHeight}`, `Graphics: ${gpu}`];
+  const L = [`CS 1.6 Demo Viewer 0.26.28`, `Browser: ${navigator.userAgent}`, `Screen: ${screen.width}x${screen.height} at ${devicePixelRatio}x, window ${innerWidth}x${innerHeight}`, `Graphics: ${gpu}`];
   L.push(`Folder: ${Object.keys(files.maps).length} maps, ${Object.keys(files.overviews).length} overviews, ${Object.keys(files.mdl).length} models, ${Object.keys(files.snd).length} sounds, ${files.demos.length} demos`);
   if (D) {
     L.push(`Demo: ${D.fileName}, protocol ${(D.header && D.header.netProtocol) || '?'}, ${D.pov ? 'POV (recorded by a player)' : 'HLTV'}, map ${D.mapName}, length ${fmt(D.end - D.start)}, ${M.liveR.length} live rounds, final ${M.liveR.length ? M.liveR[M.liveR.length - 1].scoreAfter.join(':') : '-'}`);

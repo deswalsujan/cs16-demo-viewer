@@ -4,6 +4,7 @@ What changed in the viewer, newest first. The version shows in the viewer's shor
 
 ## Versions
 
+- [0.26.28](#02628-2026-11-10) 2026-11-10: POV crashes, teams, names
 - [0.26.27](#02627-2026-11-09) 2026-11-09: Gun flash, shells, blood puffs
 - [0.26.26](#02626-2026-11-09) 2026-11-09: AWP and Scout, one bullet
 - [0.26.25](#02625-2026-11-08) 2026-11-08: Skip into freeze, feed, names
@@ -85,6 +86,29 @@ What changed in the viewer, newest first. The version shows in the viewer's shor
 
 ## Known limits
 Moved to [LIMITS.md](LIMITS.md) on 30 Oct 2026; release entries below still say "Known limits" for that list.
+
+## 0.26.28 (2026-11-10)
+
+The POV bug batch, from Sujan's POV mode feedback of 3 Nov 2026 and his go of 10 Nov 2026 on Claude's report of that day (`STATE.md`, Decisions; no mockup). A new test demo: the GP Tourney POV of Team Guardians vs Lanka Dahan, Mirage, 25 Oct 2026 (`forgotten-de_mirage-2026.dem`, `tests/DEMOS.md`).
+
+### Fixed
+- Turning **POV mode** on or off with a POV demo playing, or opening another demo after a POV demo, no longer throws in the 3D view: POV mode's state went with the new demo for the moment between it replacing the old one and the overview loading. On 0.26.16 that froze the 3D view for good, its HUD's round timer with it, which is the 0:50 against 0:58 Sujan saw: the two clocks agree at every second.
+- The teams of a POV demo: two groups of players join only when, over all their pairs, rounds on the same side outnumber rounds apart, the same answer for any order the players come in; each pair is counted under one key. On 5 of the 8 POV test demos everyone was in one team; on the GP Tourney demo the teams read BAJRANG and Guardians, 14 each, and the clan tags come off the names. HLTV demos read exactly as before.
+- In a POV demo a restart starts a new round, so a run of restarts is no longer one round with its sides from before the last one (the GP Tourney demo gave a team a win on T and on CT in one half).
+- Names, chat and the admin's text are read as UTF-8 when they are ("Sτriкy~", no longer "SÏriÐºy~"); bytes that aren't valid UTF-8 read as before.
+- The Tab scoreboard in **POV mode**: his own HP from his HUD; no HP column on a server that sends no teammate's health; the players his game didn't receive no longer read dead; no opponent's HP.
+
+### Changed
+- The Tab scoreboard lists everyone under the side he's on at that moment, as the game's does, in every demo; each side headed by the team the round has on it. On HLTV demos that differs only for a few seconds at a half's team swap or a reconnect, and on 7 demos with players the server gave no team for a while (`tests/logs/0.26.28.md`). A slot's stand-in person no longer doubles the player in it under Spectators.
+
+### How it was tested
+- `pov_reopen_check.py` (new, the eighth release check, 16 s) and `pov_teams_check.py` (new, 22 s) fail on 0.26.27 and pass.
+- 78 demos against 0.26.27: the 70 HLTV demos the same score, rounds, teams and K-D; the POV demos' changes listed; the Tab scoreboard by side, every second of every demo; every non-ASCII name. Full log: `tests/logs/0.26.28.md`.
+
+### Discussed, not changed
+- The round pill and the POV HUD's timer: no clock was wrong (the frozen view above).
+- The GP Tourney's match start ("Tourney War Config Has Been Loaded") isn't read, so its two rounds before the match count: 16:9 for the confirmed 16-7. Reading it would make 0.26.19's same-sides restart rule drop rounds at its two one-round restarts (IDEAS.md, **POV demos: rounds before the match count**).
+- Voice, report only: Speex in all 8 POV demos, and no voice message from the recorder's slot in any, empty or not; Xiph's libspeex (3-clause BSD) would be the decoder. "Player only" dropped for now (Sujan, 10 Nov 2026).
 
 ## 0.26.27 (2026-11-09)
 
