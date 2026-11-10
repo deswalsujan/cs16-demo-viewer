@@ -35,6 +35,7 @@ Sujan's checks by eye of merged builds, kept for one sitting that he runs when h
 - [ ] **POV mode** (0.26.27): **POV mode** on, Match 1 CT, any of his M4A1 sprays: the gun flash at his gun's muzzle and shells thrown to the left, with landing sounds.
 - [ ] walle on XEK and RobbaN on ED1KASDDSA (9 Nov 2026, in the game's demo player): SK vs EYESports, Inferno, Arbalet Cup Europe 2009, R28 1:04, a free camera behind ED1KASDDSA: the blood from RobbaN's last bullet (an AK-47 headshot from banana) comes out on the far side of the wall from RobbaN. Both kills stay STRICT WB, through one wall the viewer measures at 903 and 606 units on the crosshair line and 212 and 162 on the bullet's (Sujan, 9 Nov 2026: `FireBullets3` jumps the bullet forward by its penetration power after each surface, with no thickness check); one he sees go otherwise becomes an item in the checklist.
 - [ ] SK vs AGAiN (0.26.25): SK vs AGAiN, Train, Arbalet Cup Europe 2009 (`SK_vs_AGAiN_ArbaletEU-0912051316-de_train.dem`, with **Open .dem from elsewhere**): the header reads AGAiN and SK Gaming; at demo 14:10 the timeline has // and "Recording skips here" shows as the recording jumps from R3 into R4's freeze time; face's kill on taz reads R3 0:14 in the Kills list with no WALLBANG tag and isn't in the Wallbangs tab, and clicking it, kill details say "−27 at 0:14, source unknown" and "the recording skips here" on the killing bullet; at R5's start Jimmy's kill on kubenB (R4 1:15) leaves the kill feed, and comes back when seeking to just before R5.
+- [ ] Names in the game's scoreboard (in the game, either machine; seen 3 Nov 2026 in the viewer): the POV demo with AwP3rtuniTY and Neon Panda (which one isn't recorded): whether the game's Tab scoreboard shows their names properly, where the viewer shows "AwP3rtuniTY ï¸»?" and "Neon Pandaï¸è…" (checklist below, **Names in the wrong character set**).
 
 **Windows**
 - [ ] **Interface size** (0.26.13), in Chrome or Edge: as on the Mac above, on the Windows screen.
@@ -43,9 +44,70 @@ Sujan's checks by eye of merged builds, kept for one sitting that he runs when h
 - [ ] **POV mode** in main (0.25.0; check on 0.26.8 or later, which reads his crosshair settings and ammo icons from `cstrike/config.cfg` in Chrome and Edge): tick **POV mode** in **View settings** (or **Turn on POV mode** in a POV demo's load summary) and open Match 1 CT or one of his own recordings: the demo opens again at the same moment; his crosshair in the colour and size of his `config.cfg`, at 70%; at his kills, the marker's ticks just past his crosshair's arms; round announcements in the middle ("Target has been saved!"); the HUD's round timer gone after a plant (back at once on a server with `mp_show_bomb_timer 1`); the spectator bars' clock counting the C4 down; the C4 on a carrier's back and a CT's kit on the 3D models, and the C4 on the radar when his game had it (kits never on the radar); **View settings** without **Crosshair**, **Glow on hits** and **Damage numbers**. Untick it: the demo plays like an HLTV demo, the recording player at the map's zero point.
 - [ ] Kill feed icons in **POV mode** (0.25.0): **POV mode** on, any POV demo, the top right after a kill: the orange gun icon, the headshot icon on headshots, no "m4a1" or "HS" words.
 
-## Open follow-ups (checklist, updated 9 Nov 2026, 0.26.27)
+## Open follow-ups (checklist, updated 10 Nov 2026, 0.26.27)
 
 Everything raised in conversation that isn't finished, in one place. Each item says who does it. Ideas for new features are further down; this list is for loose ends.
+
+**Sujan's POV mode feedback of 3 Nov 2026** (review chat "CS 1.6 POV mode feedback", 3 Nov 2026, never recorded until 10 Nov 2026; his answers of 9 Nov 2026 in `STATE.md`, Decisions. Sujan's order: first the bugs, as one batch with no mockup; Claude reproduces the two crashes and the team split headless and reads the voice codec, then reports the causes, the codec, a plan for the bug batch and how long its test run takes, and stops for his go; after the bugs, one mockup round for the POV-shaped viewer)
+- [ ] **Turning POV mode on or off with a POV demo playing freezes the 3D view** (crash 1)
+  - Status: with a POV demo playing, ticking or unticking **POV mode** in **View settings** freezes the 3D view, and the side tabs fill (Sujan, 3 Nov 2026).
+  - Found 10 Nov 2026 (headless, Match 1 CT, the same cause as crash 2): the new demo replaces the old one before `onDemo()` runs `povInit()`, and while the overview loads in between, frames run with `POV.on` still set from the POV demo; with **POV mode** off the new demo has no `D.view`, so `povView` throws "Cannot read properties of undefined (reading 'length')". On 0.26.16 (Sujan's build of 3 Nov 2026) that error stopped the frame loop for good while the side panel filled: the freeze he saw. Since 0.26.18 the loop carries on, so on 0.26.27 it shows as the error toast and a missed 3D frame.
+  - Next step: Sujan's go on the plan of 10 Nov 2026; part of the bug batch.
+  - Decided so far: fixed even though the setting goes once **POV mode** is signed off (Sujan, 9 Nov 2026).
+- [ ] **Opening an HLTV demo after a POV demo freezes the 3D view** (crash 2)
+  - Status: with a POV demo playing, opening an HLTV demo after it does the same as crash 1 (Sujan, 3 Nov 2026). The guess of 3 Nov 2026, not confirmed: `onDemo()` (`src/ui/after-load.js`) reuses the loaded map when the map name matches, and something from **POV mode** survives.
+  - Found 10 Nov 2026: the same error as crash 1, from `POV.on` left over from the POV demo; reproduced with Match 1 CT, then Na`Vi vs FX, Dust2, SEC 2011 final, so the map isn't reused and the 3 Nov guess isn't the cause.
+  - Next step: Sujan's go on the plan of 10 Nov 2026; part of the bug batch.
+  - Decided so far: fixed (Sujan, 9 Nov 2026).
+- [ ] **POV demos: the teams split wrong**
+  - Status: on the pub tournament POV demo with Guardians^ and BAJRANG, the Tab scoreboard shows both teams under T and none under CT, the Players tab is broken too, clan tags aren't cut off the names, the header reads Team 1 and Team 2, and the Rounds list gives one team a win on T and on CT in the same half; the Mirage POV demo (Match 2, `match-2_de_mirage_32[...]`) shows the last too (Sujan, 3 Nov 2026). Likely one cause, in how `derive()` (`src/ui/match.js`) groups the teams. The Guardians^ and BAJRANG file wasn't found on the Mac on 10 Nov 2026 (`test-demos`, the Half-Life folder, `~/Downloads`, the GP Tourney POVs in `~/code/cs16-test/pov-demos`).
+  - Found 10 Nov 2026 on the Mirage CT file (`match-2_de_mirage_32[Cts]_27-03-2025_14.47.11.dem`): all 41 people in Team 1, none in Team 2; the T file splits right (27 and 18). `derive()` joins people link by link on "same side more often than not" and never weighs "opposite side": one player played 2 rounds on T, then 10 on CT, and three players seen only in his 2 T rounds link him to every T, so T and CT become one team. Each round's T team is then a 16 to 16 tie that goes to Team 1, CT wins go to the empty Team 2, and the two rounds with one T less give Team 1 a CT win. A GP Tourney POV (Brown Munde vs The Butchers 2.0, de_barcelona, 1 Nov 2026, `~/code/cs16-test/pov-demos`) splits right, so the Guardians^ and BAJRANG file is still needed to confirm its case.
+  - Next step: Sujan sends the file; Claude confirms on it; part of the bug batch.
+  - Decided so far: the Tab scoreboard and the Players tab stay in POV demos (Sujan's brief of 10 Nov 2026).
+- [ ] **POV demos: the round pill and the POV HUD's round timer disagree**
+  - Status: on the Guardians^ and BAJRANG demo the round pill read 0:50 where the POV HUD's timer read 0:58; one of them is wrong (Sujan, 3 Nov 2026).
+  - Found 10 Nov 2026: not reproduced. The pill (`clockAt`) and the HUD (`povRoundTimer`) agree within a second at every second of Match 1 CT, Match 2 CT, Match 4 and the GP Tourney POV above (7,533 moments). The pill reads only the RoundTime messages from its round's start, the HUD the last one sent, so they part only where the rounds or the messages are unusual.
+  - Next step: Claude compares them on the Guardians^ and BAJRANG file; part of the bug batch.
+  - Decided so far: nothing yet.
+- [ ] **POV demos: teammates' HP blank in the Tab scoreboard**
+  - Status: seen by Sujan, 3 Nov 2026; possibly the team split above. Found 10 Nov 2026: a separate cause. Teammates' health comes from the HealthInfo messages; the public servers of Match 1 and 2 send about 4,400 to 5,400 of them, the GP Tourney server above registers the message and sends none, so every HP cell there is blank, the recorder's own too, though his HUD's health (151 readings) is in the file and the scoreboard doesn't use it.
+  - Next step: Claude, the recorder's own health from his HUD; part of the bug batch.
+  - Decided so far: teammates' HP stays in **POV mode** (Sujan, 3 Oct 2026).
+- [ ] **Free camera in POV mode, a check**
+  - Status: `STATE.md` has "POV mode: no Free camera" (Sujan, 3 Oct 2026); if **Free** is offered in **POV mode** now, it's a regression.
+  - Found 10 Nov 2026: no regression. `povInit` hides the Free, Eyes and Behind buttons, and `setCam` and the camera keys do nothing while **POV mode** is on, so dragging, the wheel and V can't reach Free. 2D and **3D + radar** are still offered (**POV demos: options by demo type** below).
+  - Next step: none; closes with the bug batch.
+  - Decided so far: no Free camera in **POV mode** (Sujan, 3 Oct 2026).
+- [ ] **Names in the wrong character set** (seen 3 Nov 2026 on a POV demo; would hit HLTV demos too)
+  - Status: "AwP3rtuniTY ï¸»?" and "Neon Pandaï¸è…": "ï¸»" is how the bytes of "︻" (UTF-8) read as Latin-1, so some part of the viewer decodes a name in the wrong character set; the demo they were seen in isn't recorded.
+  - Found 10 Nov 2026: the reader decodes every string one byte at a time (`String.fromCharCode` in `src/demo.js`), which is Latin-1; the names are UTF-8 in the file. The test demos show it too: "Sτriкy~" reads "SÏriÐºy~" (Match 2) and another name "É³oá´H…" (Match 4). None of the 70 HLTV test demos has a name outside plain ASCII, and no file in `tests/expected/` has one.
+  - Next step: Sujan checks in the game whether its scoreboard shows them properly (By-eye round); then Claude.
+  - Decided so far: nothing yet.
+- [ ] **POV demos: options by demo type** (POV mockup round, after the bugs)
+  - Status: Sujan, 3 Nov 2026: one list of what each kind of demo offers, used by the tabs, **View settings** and the view buttons. POV demos get only 3D (no 2D and no **3D + radar**, so no heatmaps either) and only **Player's eyes** (no **Free**, no **Behind player**); options a POV demo doesn't have are hidden, not greyed out; the load summary gets one line naming what a POV demo doesn't have.
+  - Next step: Claude, in the POV mockup round.
+  - Decided so far: as in Status (Sujan, 3 Nov 2026).
+- [ ] **The POV HUD's effects as the game draws them** (POV mockup round)
+  - Status: Sujan, 3 Nov 2026, the look from cs16-client, which he confirms: the money HUD's green "+300" or red "−1000" above the number, fading over 5 s; the health number brightening on a change and dimming over about 5 s, red at 25 HP or less. The review chat added the red arcs around the crosshair that show where a hit came from (not in Sujan's list).
+  - Next step: Claude reads cs16-client for each, in the POV mockup round.
+  - Decided so far: nothing yet.
+- [ ] **Bomb plant and defuse bars in POV demos** (POV mockup round)
+  - Status: the server sends the bar only to the player planting or defusing, so it shows only when the recorder does it (Sujan's feedback, 3 Nov 2026).
+  - Next step: Claude, in the POV mockup round.
+  - Decided so far: nothing yet.
+- [ ] **His Tab scoreboard when he pressed Tab in the game** (POV mockup round, after the team split)
+  - Status: Sujan, 3 Nov 2026: show the scoreboard when the recorder held Tab, from "+showscores" in the demo's console commands (frame type 3, which the reader skips today).
+  - Next step: Claude, in the POV mockup round, once the team split is fixed.
+  - Decided so far: nothing yet.
+- [ ] **Kills and Wallbangs tabs in POV demos**
+  - Status: decided 9 Nov 2026, not built.
+  - Next step: Claude, with the POV work; asks Sujan whether he wants a mockup first.
+  - Decided so far: the Kills tab lists only the recorder's own kills and deaths, other players' kills go; the Wallbangs tab is hidden when the anti-wallhack plugin is found (the hidden-enemies note's test), and otherwise lists only the recorder's own wallbangs (Sujan, 9 Nov 2026).
+- [ ] **Voice in POV demos** (was parked 3 Oct 2026 as "voice from other players")
+  - Status: the reader reads the voice codec's name and skips the voice data. Speex can play in the browser; Miles is much harder. The recorder's own voice is likely in the demo only with `voice_loopback 1`.
+  - Found 10 Nov 2026: all 7 POV test demos announce `voice_speex` (quality 5, some later 4 or 3); 1 to 16 players speak in each (20 to 27,364 packets, up to 6.4 MB in Match 3); the recorder's own voice isn't in any of them, so "player only" would be empty on all 7. The sender byte is the server's 0-based client number (read as the entity number, entity 0, the world, would speak).
+  - Next step: Sujan decides, on Claude's report of 10 Nov 2026.
+  - Decided so far: if built, the options are off, player only, player and everyone, everyone else only (Sujan, 9 Nov 2026).
 
 **Sujan's answers of 8 Nov 2026: gun flash, shells and blood puffs** (from the review chat; Claude's report and plan of 9 Nov 2026: `tests/logs/gun-flash-report-2026-11-09.md`)
 - Done, in the archive: **ED1KASDDSA's AWP on face reads STRICT WB from 100 HP** (0.26.26, 9 Nov 2026: an AWP or Scout kill with no shot recorded counts one bullet; walle on XEK and RobbaN on ED1KASDDSA stay STRICT WB); **Batch A: gun flash, shells and blood puffs** (0.26.27, 9 Nov 2026: the gun flash from behind and in Player's eyes, shells in Player's eyes and POV mode, blood puffs where the server marked a hit).
@@ -53,6 +115,10 @@ Everything raised in conversation that isn't finished, in one place. Each item s
   - Status: seen in the counts of 9 Nov 2026 (`tests/logs/gun-flash-report-2026-11-09.md`, B): on 14 hits in SK vs EYESports, Inferno, Arbalet Cup Europe 2009 and 7 in SK vs Na`Vi, Train, DreamHack Winter 2011, the line from the shooter's eye to the server's blood point goes through cover, where the finder has the hit in the open.
   - Next step: Claude, now that Batch A is built: check whether these are wallbang hits the finder misses.
   - Decided so far: nothing in the finder changes in Batch A (Sujan, 8 Nov 2026).
+- [ ] **The Behind player camera against the game's chase camera** (Sujan, 9 Nov 2026, on #58)
+  - Status: at R5 C4 0:21 of SK vs Na`Vi, Train, DreamHack Winter 2011, Sujan saw RobbaN's mid-gun gun flash (silenced M4A1) from behind in the game, where the viewer's **Behind player** camera shows only a sliver of it past his head (0.26.27). The viewer's camera (`src/view3d.part.js`, the chase branch of `update3Now`) hangs 110 units back from a point 13 units above his eyes (8 when ducking), 14 units higher at the far end, its pitch 0.6 of his plus 6 degrees, with a 70 degree view; the arm pulls in at walls.
+  - Next step: Claude: compare the **Behind player** camera's distance and height with the game's chase camera.
+  - Decided so far: nothing yet.
 - [ ] **Batch B: map effects** (later, Sujan, 8 Nov 2026)
   - Status: not started. Counted on two test demos for later (9 Nov 2026, in the report): decals on the world, glow sprites (the planted C4's light) and breakable shards are all in the demo.
   - Next step: after Batch A.
@@ -136,22 +202,22 @@ Everything raised in conversation that isn't finished, in one place. Each item s
 - Closed 29 Oct 2026, in the archive: **The 0.24.0 changes**, when Sujan kept the 0.1 s delay for the other players in POV mode, as in the HLTV viewer (`STATE.md`).
 
 **POV demos** (3 Oct 2026; findings under "POV demos" below)
-- The POV checklist from `wip/pov-mode` was folded in on 29 Oct 2026; its done items are in the archive. POV mode goes into main behind a **POV mode** setting, off by default, and on by default for POV demos once Sujan signs it off (Sujan, 29 Oct 2026; work item 6.5, built in 0.25.0, pull request #5). The setting is a **POV mode** checkbox in **View settings** ("for demos recorded by a player"), plus a line with a button in a POV demo's load summary, no mockup; with it off every demo plays exactly as in 0.24.0, the recording player drawn at the map's zero point included (Sujan, 29 Oct 2026). This replaces "goes back into main only if it works as intended" (3 Oct 2026).
+- The POV checklist from `wip/pov-mode` was folded in on 29 Oct 2026; its done items are in the archive. POV mode goes into main behind a **POV mode** setting, off by default, until Sujan signs it off (Sujan, 29 Oct 2026; work item 6.5, built in 0.25.0, pull request #5); then the setting is dropped and POV demos always open in **POV mode** (Sujan, 9 Nov 2026, replacing "on by default for POV demos once Sujan signs it off"). The setting is a **POV mode** checkbox in **View settings** ("for demos recorded by a player"), plus a line with a button in a POV demo's load summary, no mockup; with it off every demo plays exactly as in 0.24.0, the recording player drawn at the map's zero point included (Sujan, 29 Oct 2026). This replaces "goes back into main only if it works as intended" (3 Oct 2026).
 - Moved to the **By-eye round** (3 Nov 2026): **POV mode in main, by eye (0.25.0)** and **Kill feed icons in POV mode, on Windows**; their full text is in the archive.
 - [ ] **The hidden-enemies note is easy to miss**
-  - Status: raised by Sujan 5 Oct 2026, apply or park to be decided: when the demo opens, the eye is on the load summary, and the note's box and text are small. Seen 3 Nov 2026 in the 0.26.13 screenshots (the same on 0.26.12), two overlays on the POV HUD: the note, bottom left above **See through walls**, covers the HUD's health and armour, and "Press ? for keyboard shortcuts", bottom right of the 3D view, sits on the HUD's ammo (Match 1 CT, public server, de_barcelona, 27 Mar 2025).
-  - Next step: Sujan decides, both overlays on the POV HUD included. One idea: show the note only after the load summary closes, and larger.
-  - Decided so far: option B, a note above **See through walls** (Sujan, 4 Oct 2026), reworded for players 5 Oct 2026 ("This server seems to use an anti-wallhack plugin"); the note covering the HUD's health and armour, and "Press ? for keyboard shortcuts" over its ammo, are part of this decision, not items of their own (Sujan, 3 Nov 2026: both are overlays on the POV HUD).
+  - Status: raised by Sujan 5 Oct 2026, apply or park to be decided: when the demo opens, the eye is on the load summary, and the note's box and text are small. Seen 3 Nov 2026 in the 0.26.13 screenshots (the same on 0.26.12), two overlays on the POV HUD: the note, bottom left above **See through walls**, covers the HUD's health and armour, and "Press ? for keyboard shortcuts", bottom right of the 3D view, sits on the HUD's ammo (Match 1 CT, public server, de_barcelona, 27 Mar 2025); a third, in Sujan's POV mode feedback of 3 Nov 2026: the "Stop at 16" notice is hidden behind the note.
+  - Next step: Sujan decides, the three overlays on the POV HUD included, in the POV mockup round. One idea: show the note only after the load summary closes, and larger. Proposed in the review chat of 3 Nov 2026: in **POV mode** nothing sits in the HUD's corners; the note moves into the load summary, with a small marker near **See through walls**; notices such as "Stop at 16" and "Press ? for keyboard shortcuts" move to the top middle.
+  - Decided so far: option B, a note above **See through walls** (Sujan, 4 Oct 2026), reworded for players 5 Oct 2026 ("This server seems to use an anti-wallhack plugin"); the note covering the HUD's health and armour, "Press ? for keyboard shortcuts" over its ammo, and the "Stop at 16" notice behind the note are part of this decision, not items of their own (Sujan, 3 Nov 2026 for the first two, 10 Nov 2026 for the third: all are overlays on the POV HUD).
 - [ ] **Kills the wallbang finder can't check**
   - Status: the server held the victim back, so he isn't in the file at the kill and there's nothing to trace to: 4 of 31 gun kills in the GP css_cache pub demo of 3 Oct 2026 (Sujan's wallbang at 4:13), and his M4A1 headshot on r`GrimeS at 2:02 in `PPGpub_de_barcelona[Cts]_21-10-2026_15.54.26.dem` (public server, 21 Oct 2026). Left unmarked.
-  - Next step: Sujan decides on Claude's idea of 22 Oct 2026: on a server that holds enemies back, list a victim never sent to the recorder's game before the kill as "not seen on his screen", without claiming a wallbang. Not counted across his demos yet; it would change the 5 Oct decision.
+  - Next step: Sujan decides on Claude's idea of 22 Oct 2026: on a server that holds enemies back, list a victim never sent to the recorder's game before the kill as "not seen on his screen", without claiming a wallbang. Not counted across his demos yet; it would change the 5 Oct decision. Mostly closed by the answers of 9 Nov 2026: the Kills tab of a POV demo lists only the recorder's own kills and deaths, and the Wallbangs tab is hidden on a server with the anti-wallhack plugin, so what's left is only the recorder's own kills on a victim his game never got (as on r`GrimeS above), on a server without the plugin, if any holds enemies back.
   - Decided so far: no marker or message for kills the finder can't check ("it'll just confuse players", Sujan, 5 Oct 2026).
 - [ ] **See through walls and an aimbot catcher in POV mode** (Sujan asked 3 Oct 2026)
   - Status: **See through walls** works, on what the server sent (checked 4 Oct 2026: anti-wallhack servers send enemies only when they're about to be seen). The aimbot catcher is not started.
   - Next step: Claude builds the aimbot catcher; not started.
   - Decided so far: **See through walls** stays in POV mode, for admins checking a suspect's POV (Sujan, 3 Oct 2026).
 - [ ] Parked (Sujan, 5 Oct 2026): a deeper check of his own gun animations, weapon by weapon (draw, reload, silencer, shots, grenades, knife), beyond the M4A1 silencer seen so far.
-- [ ] Parked (Sujan, 3 Oct 2026): voice from other players.
+- Voice from other players, parked 3 Oct 2026: now **Voice in POV demos**, in Sujan's POV mode feedback above (9 Nov 2026).
 - [ ] Parked (Sujan, 3 Oct 2026): in-game chat messages, while alive and dead.
 
 **Done blocks** (2 to 5 Oct 2026), in the archive whole: Demo search (0.15.2 and 0.15.3), 0.16.0 by eye, Hand checks for Sujan (0.10.0 to 0.16.0), Small decisions not yet taken (0.12.1 to 0.16.0), Count them (0.14.2), and the list "Done since this list was written" (0.12.4 to 0.23.0). The blocks below keep only their open items; their done items are in the archive too.
