@@ -1,14 +1,17 @@
 (() => {
-  // Where the Tab scoreboard of 0.26.28 (everyone under the side he's on at that moment) lists someone elsewhere than
+  // Where the Tab scoreboard of 0.26.28 (everyone under the side he's on at that moment; a team's player with no side under
+  // his team's, Spectators only for people never on a team) lists someone elsewhere than
   // 0.26.27's (each team's people under the side the team had in the round): every second of the demo, live rounds and
   // the rest counted apart, with the first few moments and who moved.
+  const ghost = new Set(); for (const pid in M.pl) if (pid[0] === 's') { const a = D.slots[+pid.slice(1)]; let any = false; if (a) for (let i = 0; i < a.length; i += D.stride) if (!Number.isNaN(a[i])) { any = true; break; } if (!any) ghost.add(pid); }
   const S = D.stride, live = { n: 0, diff: 0 }, other = { n: 0, diff: 0 }, samples = [], who = {};
   for (let t = D.start; t <= D.end; t += 1) {
     const r = roundAt(t), si = M.idxAt(t) * S;
     const now = Object.keys(M.pl).map((pid) => { const e = M.slotOf(pid, t); const v = e != null && D.slots[e] ? D.slots[e][si + 5] || 0 : 0; return { pid, e, side: Math.abs(v) }; }).filter((x) => x.e != null);
-    { const held = new Set(now.filter((x) => x.pid[0] !== 's').map((x) => x.e)); for (let i = now.length - 1; i >= 0; i--) if (now[i].pid[0] === 's' && (held.has(now[i].e) || !now[i].side)) now.splice(i, 1); }
+    { const held = new Set(now.filter((x) => x.pid[0] !== 's').map((x) => x.e)); for (let i = now.length - 1; i >= 0; i--) if (now[i].pid[0] === 's' && (held.has(now[i].e) || !now[i].side || ghost.has(now[i].pid))) now.splice(i, 1); }
     let tT = r && r.tTeam != null ? r.tTeam : null;
     if (tT == null) { const v = [0, 0]; for (const x of now) if (x.side && M.teamOf[x.pid] != null) v[M.teamOf[x.pid]] += x.side === 1 ? 1 : -1; tT = v[1] > v[0] ? 1 : 0; }
+    for (const x of now) if (!x.side && M.teamOf[x.pid] != null) x.side = M.teamOf[x.pid] === tT ? 1 : 2; // 0.26.28: a team's player with no side under his team's
     const moved = [];
     for (const ti of [0, 1]) {
       const side = tT === ti ? 1 : 2;

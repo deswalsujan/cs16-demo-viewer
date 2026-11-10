@@ -15,10 +15,31 @@ const CENTRE_MSGS = new Set(['#Terrorists_Win', '#CTs_Win', '#Round_Draw', '#Tar
 // "Sτriкy~" read "SÏriÐºy~" (Sujan, 10 Nov 2026). Plain ASCII, nearly every string, takes the short way.
 const UTF8 = typeof TextDecoder !== 'undefined' ? new TextDecoder('utf-8', { fatal: true }) : null;
 function bytesStr(u8, a, b, high) {
-  if (high && UTF8) { try { return UTF8.decode(u8.subarray(a, b)); } catch (e) { /* not UTF-8: one character per byte */ } }
+  if (high && UTF8) {
+    try { return UTF8.decode(u8.subarray(a, b)); } catch (e) { /* not whole UTF-8: a cut letter, or not UTF-8 at all */ }
+    const cut = utf8Uncut(u8, a, b);
+    if (cut) { try { return UTF8.decode(cut); } catch (e) { /* not UTF-8: one character per byte */ } }
+  }
   let s = '';
   for (let k = a; k < b; k++) s += String.fromCharCode(u8[k]);
   return s;
+}
+// A string the server cut to its length partway through a letter (Match 3's POV demo: "D r A G ᶠ" and a cut letter, then
+// the server's ".."): its bytes without the cut letter, a lead byte with fewer continuation bytes than it needs, when the
+// rest is UTF-8 with at least one whole letter outside ASCII; null otherwise, so a name in another character set keeps
+// one character per byte (Sujan, 10 Nov 2026: drop only the cut-off letter)
+function utf8Uncut(u8, a, b) {
+  const out = []; let whole = 0;
+  for (let k = a; k < b;) {
+    const c = u8[k];
+    if (c < 0x80) { out.push(c); k++; continue; }
+    const n = c >= 0xC2 && c <= 0xDF ? 2 : c >= 0xE0 && c <= 0xEF ? 3 : c >= 0xF0 && c <= 0xF4 ? 4 : 0;
+    if (!n) return null; // a stray continuation byte, or a byte UTF-8 never uses
+    let m = 1; while (m < n && k + m < b && (u8[k + m] & 0xC0) === 0x80) m++;
+    if (m === n) { for (let q = 0; q < n; q++) out.push(u8[k + q]); whole++; }
+    k += m; // a cut letter's bytes are dropped
+  }
+  return whole ? Uint8Array.from(out) : null;
 }
 class Reader {
   constructor(u8) {

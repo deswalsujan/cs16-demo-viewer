@@ -792,10 +792,31 @@ const CENTRE_MSGS = new Set(['#Terrorists_Win', '#CTs_Win', '#Round_Draw', '#Tar
 // "Sτriкy~" read "SÏriÐºy~" (Sujan, 10 Nov 2026). Plain ASCII, nearly every string, takes the short way.
 const UTF8 = typeof TextDecoder !== 'undefined' ? new TextDecoder('utf-8', { fatal: true }) : null;
 function bytesStr(u8, a, b, high) {
-  if (high && UTF8) { try { return UTF8.decode(u8.subarray(a, b)); } catch (e) { /* not UTF-8: one character per byte */ } }
+  if (high && UTF8) {
+    try { return UTF8.decode(u8.subarray(a, b)); } catch (e) { /* not whole UTF-8: a cut letter, or not UTF-8 at all */ }
+    const cut = utf8Uncut(u8, a, b);
+    if (cut) { try { return UTF8.decode(cut); } catch (e) { /* not UTF-8: one character per byte */ } }
+  }
   let s = '';
   for (let k = a; k < b; k++) s += String.fromCharCode(u8[k]);
   return s;
+}
+// A string the server cut to its length partway through a letter (Match 3's POV demo: "D r A G ᶠ" and a cut letter, then
+// the server's ".."): its bytes without the cut letter, a lead byte with fewer continuation bytes than it needs, when the
+// rest is UTF-8 with at least one whole letter outside ASCII; null otherwise, so a name in another character set keeps
+// one character per byte (Sujan, 10 Nov 2026: drop only the cut-off letter)
+function utf8Uncut(u8, a, b) {
+  const out = []; let whole = 0;
+  for (let k = a; k < b;) {
+    const c = u8[k];
+    if (c < 0x80) { out.push(c); k++; continue; }
+    const n = c >= 0xC2 && c <= 0xDF ? 2 : c >= 0xE0 && c <= 0xEF ? 3 : c >= 0xF0 && c <= 0xF4 ? 4 : 0;
+    if (!n) return null; // a stray continuation byte, or a byte UTF-8 never uses
+    let m = 1; while (m < n && k + m < b && (u8[k + m] & 0xC0) === 0x80) m++;
+    if (m === n) { for (let q = 0; q < n; q++) out.push(u8[k + q]); whole++; }
+    k += m; // a cut letter's bytes are dropped
+  }
+  return whole ? Uint8Array.from(out) : null;
 }
 class Reader {
   constructor(u8) {
@@ -5578,9 +5599,18 @@ function showScoreboard(v) {
     // spectators all match, in mousesports vs AGAiN, Inferno, 24 Oct 2011, among others); he shows only on a side.
     const now = Object.keys(M.pl).map((pid) => { const e = M.slotOf(pid, T); const v = e != null && D.slots[e] ? D.slots[e][si + 5] || 0 : 0; return { pid, e, p: e != null ? playerState(e, T) : null, alive: v > 0, side: Math.abs(v) }; })
       .filter((x) => x.e != null);
-    { const held = new Set(now.filter((x) => x.pid[0] !== 's').map((x) => x.e)); for (let i = now.length - 1; i >= 0; i--) if (now[i].pid[0] === 's' && (held.has(now[i].e) || !now[i].side)) now.splice(i, 1); }
+    // and a stand-in whose slot never has a position in the whole demo is no player: slot 12 of mousesports vs mTw, Inferno,
+    // IEM4, part 2 has a team (CT) from the server and never a name, a position, a kill or a death ("?", 0.26.28)
+    if (!M.ghost) { M.ghost = new Set(); for (const pid in M.pl) if (pid[0] === 's') { const a = D.slots[+pid.slice(1)], S = D.stride; let any = false; if (a) for (let i = 0; i < a.length; i += S) if (!Number.isNaN(a[i])) { any = true; break; } if (!any) M.ghost.add(pid); } }
+    { const held = new Set(now.filter((x) => x.pid[0] !== 's').map((x) => x.e)); for (let i = now.length - 1; i >= 0; i--) if (now[i].pid[0] === 's' && (held.has(now[i].e) || !now[i].side || M.ghost.has(now[i].pid))) now.splice(i, 1); }
     let tT = r && r.tTeam != null ? r.tTeam : null;
     if (tT == null) { const v = [0, 0]; for (const x of now) if (x.side && M.teamOf[x.pid] != null) v[M.teamOf[x.pid]] += x.side === 1 ? 1 : -1; tT = v[1] > v[0] ? 1 : 0; }
+    // A team's player the demo gives no side at this moment (no TeamInfo yet, a reconnect, a moment at spectate) goes
+    // under the side of the team the viewer computed for him, and only people never on a team are Spectators (Sujan, 10
+    // Nov 2026: Virtus.pro vs ALTERNATE aTTaX, Inferno, EM II 2008, has no TeamInfo before 14:01). Dead or alive comes from
+    // the kill feed then: dead from his death in this round to its end.
+    { const from = r ? r.start - 1e-4 : -Infinity;
+      for (const x of now) if (!x.side && M.teamOf[x.pid] != null) { x.side = M.teamOf[x.pid] === tT ? 1 : 2; x.alive = !D.kills.some((k) => k.victim === x.e && k.t >= from && k.t <= T); } }
     // HP: none of it in a POV demo whose server sent no teammate's health (HealthInfo) at all, so no column of blanks
     // there (Sujan, 10 Nov 2026; the GP Tourney's server registers the message and never sends it)
     const showHp = D.povOn ? !!(D.hpInfo && D.hpInfo.length) : true;
@@ -5604,7 +5634,7 @@ function showScoreboard(v) {
       h += '</div>';
     }
     // spectators on the server right now (admins, casters, HLTV relays), plus how many were watching the broadcast
-    // and everyone else on the server now, on neither side (a team's player who went to spectate included)
+    // and everyone else on the server now: people on neither side who were never on a team
     const specNow = now.filter((x) => !x.side).sort((a, b) => (M.teamOf[a.pid] != null) - (M.teamOf[b.pid] != null) || (a.pid < b.pid ? -1 : 1)).map((x) => esc(M.pl[x.pid].name) + (M.pl[x.pid].hltv ? ' <span class="sbtag">HLTV</span>' : ''));
     const v = viewersAt(T);
     h += `<div class="sbspecs"><span class="sbl">Spectators</span>${specNow.length ? specNow.join('<span class="sbsep">·</span>') : '<span class="sbl">none on the server</span>'}${v != null ? `<span class="sbv">${v.toLocaleString('en-US')} watching on HLTV</span>` : ''}</div>`;
