@@ -5597,8 +5597,9 @@ function showScoreboard(v) {
     const sc = r ? (T >= (r.endT || r.end) && r.scoreAfter ? r.scoreAfter : r.scoreBefore) : [0, 0];
     // Everyone listed by the side he's on at this moment, as the game's scoreboard does, for every demo type (Sujan, 10
     // Nov 2026): a player who changed team, or went to spectate, shows where he is now; up to 0.26.27 each team's people
-    // were listed under the side the team had in the round. Each side is headed by the team the round has on it; outside
-    // the counted rounds, by the team with most of its people on it now.
+    // were listed under the side the team had in the round. Each side is headed by the team with most of its people on it
+    // now, at every moment, the round's team only on a tie, and the score goes with the name (Sujan, 11 Nov 2026: just after
+    // R15 of SK vs Na`Vi, Train, DreamHack Winter 2011, Na`Vi already on CT read "SK Gaming · CT" until the next round).
     // The side and alive or dead come from the snapshot (the server's TeamInfo and death messages, which every player
     // gets), not from playerState, which has nothing for a player a POV demo's recorder didn't receive at that moment:
     // up to 0.26.27 those read "dead" there; their gun isn't known, so its cell stays empty.
@@ -5612,8 +5613,8 @@ function showScoreboard(v) {
     // IEM4, part 2 has a team (CT) from the server and never a name, a position, a kill or a death ("?", 0.26.28)
     if (!M.ghost) { M.ghost = new Set(); for (const pid in M.pl) if (pid[0] === 's') { const a = D.slots[+pid.slice(1)], S = D.stride; let any = false; if (a) for (let i = 0; i < a.length; i += S) if (!Number.isNaN(a[i])) { any = true; break; } if (!any) M.ghost.add(pid); } }
     { const held = new Set(now.filter((x) => x.pid[0] !== 's').map((x) => x.e)); for (let i = now.length - 1; i >= 0; i--) if (now[i].pid[0] === 's' && (held.has(now[i].e) || !now[i].side || M.ghost.has(now[i].pid))) now.splice(i, 1); }
-    let tT = r && r.tTeam != null ? r.tTeam : null;
-    if (tT == null) { const v = [0, 0]; for (const x of now) if (x.side && M.teamOf[x.pid] != null) v[M.teamOf[x.pid]] += x.side === 1 ? 1 : -1; tT = v[1] > v[0] ? 1 : 0; }
+    // tT: the team on T. Each team's people on T less its people on CT; the team further toward T has T
+    let tT; { const v = [0, 0]; for (const x of now) if (x.side && M.teamOf[x.pid] != null) v[M.teamOf[x.pid]] += x.side === 1 ? 1 : -1; tT = v[0] !== v[1] ? (v[0] > v[1] ? 0 : 1) : r && r.tTeam != null ? r.tTeam : 0; }
     // A team's player the demo gives no side at this moment (no TeamInfo yet, a reconnect, a moment at spectate) goes
     // under the side of the team the viewer computed for him, and only people never on a team are Spectators (Sujan, 10
     // Nov 2026: Virtus.pro vs ALTERNATE aTTaX, Inferno, EM II 2008, has no TeamInfo before 14:01). Dead or alive comes from
