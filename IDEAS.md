@@ -51,30 +51,36 @@ Everything raised in conversation that isn't finished, in one place. Each item s
 **Sujan's POV mode feedback of 3 Nov 2026** (review chat "CS 1.6 POV mode feedback", 3 Nov 2026, never recorded until 10 Nov 2026; his answers of 9 Nov 2026 in `STATE.md`, Decisions. Sujan's order: first the bugs, as one batch with no mockup; Claude reproduces the two crashes and the team split headless and reads the voice codec, then reports the causes, the codec, a plan for the bug batch and how long its test run takes, and stops for his go; after the bugs, one mockup round for the POV-shaped viewer)
 - [ ] **Turning POV mode on or off with a POV demo playing freezes the 3D view** (crash 1)
   - Status: with a POV demo playing, ticking or unticking **POV mode** in **View settings** freezes the 3D view, and the side tabs fill (Sujan, 3 Nov 2026).
-  - Next step: Claude reproduces it headless and reads the console error before fixing; part of the bug batch.
+  - Found 10 Nov 2026 (headless, Match 1 CT, the same cause as crash 2): the new demo replaces the old one before `onDemo()` runs `povInit()`, and while the overview loads in between, frames run with `POV.on` still set from the POV demo; with **POV mode** off the new demo has no `D.view`, so `povView` throws "Cannot read properties of undefined (reading 'length')". On 0.26.16 (Sujan's build of 3 Nov 2026) that error stopped the frame loop for good while the side panel filled: the freeze he saw. Since 0.26.18 the loop carries on, so on 0.26.27 it shows as the error toast and a missed 3D frame.
+  - Next step: Sujan's go on the plan of 10 Nov 2026; part of the bug batch.
   - Decided so far: fixed even though the setting goes once **POV mode** is signed off (Sujan, 9 Nov 2026).
 - [ ] **Opening an HLTV demo after a POV demo freezes the 3D view** (crash 2)
   - Status: with a POV demo playing, opening an HLTV demo after it does the same as crash 1 (Sujan, 3 Nov 2026). The guess of 3 Nov 2026, not confirmed: `onDemo()` (`src/ui/after-load.js`) reuses the loaded map when the map name matches, and something from **POV mode** survives.
-  - Next step: Claude reproduces it headless and reads the console error before fixing; part of the bug batch.
+  - Found 10 Nov 2026: the same error as crash 1, from `POV.on` left over from the POV demo; reproduced with Match 1 CT, then Na`Vi vs FX, Dust2, SEC 2011 final, so the map isn't reused and the 3 Nov guess isn't the cause.
+  - Next step: Sujan's go on the plan of 10 Nov 2026; part of the bug batch.
   - Decided so far: fixed (Sujan, 9 Nov 2026).
 - [ ] **POV demos: the teams split wrong**
   - Status: on the pub tournament POV demo with Guardians^ and BAJRANG, the Tab scoreboard shows both teams under T and none under CT, the Players tab is broken too, clan tags aren't cut off the names, the header reads Team 1 and Team 2, and the Rounds list gives one team a win on T and on CT in the same half; the Mirage POV demo (Match 2, `match-2_de_mirage_32[...]`) shows the last too (Sujan, 3 Nov 2026). Likely one cause, in how `derive()` (`src/ui/match.js`) groups the teams. The Guardians^ and BAJRANG file wasn't found on the Mac on 10 Nov 2026 (`test-demos`, the Half-Life folder, `~/Downloads`, the GP Tourney POVs in `~/code/cs16-test/pov-demos`).
-  - Next step: Claude confirms the cause on both demos before changing anything (asks Sujan for the file); part of the bug batch.
+  - Found 10 Nov 2026 on the Mirage CT file (`match-2_de_mirage_32[Cts]_27-03-2025_14.47.11.dem`): all 41 people in Team 1, none in Team 2; the T file splits right (27 and 18). `derive()` joins people link by link on "same side more often than not" and never weighs "opposite side": one player played 2 rounds on T, then 10 on CT, and three players seen only in his 2 T rounds link him to every T, so T and CT become one team. Each round's T team is then a 16 to 16 tie that goes to Team 1, CT wins go to the empty Team 2, and the two rounds with one T less give Team 1 a CT win. A GP Tourney POV (Brown Munde vs The Butchers 2.0, de_barcelona, 1 Nov 2026, `~/code/cs16-test/pov-demos`) splits right, so the Guardians^ and BAJRANG file is still needed to confirm its case.
+  - Next step: Sujan sends the file; Claude confirms on it; part of the bug batch.
   - Decided so far: the Tab scoreboard and the Players tab stay in POV demos (Sujan's brief of 10 Nov 2026).
 - [ ] **POV demos: the round pill and the POV HUD's round timer disagree**
   - Status: on the Guardians^ and BAJRANG demo the round pill read 0:50 where the POV HUD's timer read 0:58; one of them is wrong (Sujan, 3 Nov 2026).
-  - Next step: Claude finds which; part of the bug batch.
+  - Found 10 Nov 2026: not reproduced. The pill (`clockAt`) and the HUD (`povRoundTimer`) agree within a second at every second of Match 1 CT, Match 2 CT, Match 4 and the GP Tourney POV above (7,533 moments). The pill reads only the RoundTime messages from its round's start, the HUD the last one sent, so they part only where the rounds or the messages are unusual.
+  - Next step: Claude compares them on the Guardians^ and BAJRANG file; part of the bug batch.
   - Decided so far: nothing yet.
 - [ ] **POV demos: teammates' HP blank in the Tab scoreboard**
-  - Status: seen by Sujan, 3 Nov 2026; possibly the team split above.
-  - Next step: Claude, with the team split; part of the bug batch.
+  - Status: seen by Sujan, 3 Nov 2026; possibly the team split above. Found 10 Nov 2026: a separate cause. Teammates' health comes from the HealthInfo messages; the public servers of Match 1 and 2 send about 4,400 to 5,400 of them, the GP Tourney server above registers the message and sends none, so every HP cell there is blank, the recorder's own too, though his HUD's health (151 readings) is in the file and the scoreboard doesn't use it.
+  - Next step: Claude, the recorder's own health from his HUD; part of the bug batch.
   - Decided so far: teammates' HP stays in **POV mode** (Sujan, 3 Oct 2026).
 - [ ] **Free camera in POV mode, a check**
   - Status: `STATE.md` has "POV mode: no Free camera" (Sujan, 3 Oct 2026); if **Free** is offered in **POV mode** now, it's a regression.
-  - Next step: Claude checks headless; a fix, if needed, goes in the bug batch.
+  - Found 10 Nov 2026: no regression. `povInit` hides the Free, Eyes and Behind buttons, and `setCam` and the camera keys do nothing while **POV mode** is on, so dragging, the wheel and V can't reach Free. 2D and **3D + radar** are still offered (**POV demos: options by demo type** below).
+  - Next step: none; closes with the bug batch.
   - Decided so far: no Free camera in **POV mode** (Sujan, 3 Oct 2026).
 - [ ] **Names in the wrong character set** (seen 3 Nov 2026 on a POV demo; would hit HLTV demos too)
   - Status: "AwP3rtuniTY ï¸»?" and "Neon Pandaï¸è…": "ï¸»" is how the bytes of "︻" (UTF-8) read as Latin-1, so some part of the viewer decodes a name in the wrong character set; the demo they were seen in isn't recorded.
+  - Found 10 Nov 2026: the reader decodes every string one byte at a time (`String.fromCharCode` in `src/demo.js`), which is Latin-1; the names are UTF-8 in the file. The test demos show it too: "Sτriкy~" reads "SÏriÐºy~" (Match 2) and another name "É³oá´H…" (Match 4). None of the 70 HLTV test demos has a name outside plain ASCII, and no file in `tests/expected/` has one.
   - Next step: Sujan checks in the game whether its scoreboard shows them properly (By-eye round); then Claude.
   - Decided so far: nothing yet.
 - [ ] **POV demos: options by demo type** (POV mockup round, after the bugs)
@@ -99,7 +105,8 @@ Everything raised in conversation that isn't finished, in one place. Each item s
   - Decided so far: the Kills tab lists only the recorder's own kills and deaths, other players' kills go; the Wallbangs tab is hidden when the anti-wallhack plugin is found (the hidden-enemies note's test), and otherwise lists only the recorder's own wallbangs (Sujan, 9 Nov 2026).
 - [ ] **Voice in POV demos** (was parked 3 Oct 2026 as "voice from other players")
   - Status: the reader reads the voice codec's name and skips the voice data. Speex can play in the browser; Miles is much harder. The recorder's own voice is likely in the demo only with `voice_loopback 1`.
-  - Next step: Claude reads which codec Sujan's POV demos use and whether his own voice is in them, and reports; Sujan decides after.
+  - Found 10 Nov 2026: all 7 POV test demos announce `voice_speex` (quality 5, some later 4 or 3); 1 to 16 players speak in each (20 to 27,364 packets, up to 6.4 MB in Match 3); the recorder's own voice isn't in any of them, so "player only" would be empty on all 7. The sender byte is the server's 0-based client number (read as the entity number, entity 0, the world, would speak).
+  - Next step: Sujan decides, on Claude's report of 10 Nov 2026.
   - Decided so far: if built, the options are off, player only, player and everyone, everyone else only (Sujan, 9 Nov 2026).
 
 **Sujan's answers of 8 Nov 2026: gun flash, shells and blood puffs** (from the review chat; Claude's report and plan of 9 Nov 2026: `tests/logs/gun-flash-report-2026-11-09.md`)
