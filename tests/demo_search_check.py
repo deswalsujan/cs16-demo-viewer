@@ -289,7 +289,9 @@ with sync_playwright() as p:
 
     # POV mode (0.26.16; Sujan, 3 Nov 2026): kill details have nothing to list, since the recorder's demo has only his
     # teammates' health, and View settings hides Damage numbers, as it hides Glow on hits and Crosshair. Match 1 CT (public
-    # server, de_barcelona, 27 Mar 2025): his M4A1 kill on H@rDRoCk at R1 0:49, and Nnewys' kill on his teammate nsnd at 0:46
+    # server, de_barcelona, 27 Mar 2025): his M4A1 kill on H@rDRoCk at R1 0:49, and his first death in a round that counts
+    # (up to 0.26.28 Nnewys' kill on his teammate nsnd at 0:46: since 0.26.29 a POV demo's Kills tab lists only his own kills
+    # and deaths, Sujan, 9 Nov 2026, so a teammate's death by someone else isn't in it)
     POVD = next((n for n in names if n.lower().startswith('match-1_de_barcelona-cts')), None)
     ctx3 = b.new_context(viewport={'width': 1512, 'height': 982}); pg3 = ctx3.new_page()
     pg3.route('**/three.min.js', lambda r: r.fulfill(path=os.environ.get('THREE_JS', os.path.join(here, '..', 'src', 'vendor', 'three.min.js')), content_type='application/javascript'))
@@ -303,11 +305,11 @@ with sync_playwright() as p:
         pv = pg3.evaluate('(c) => __v(c)', r"""(async () => { const w = (ms) => new Promise((r) => setTimeout(r, ms)); closeSummary(); setView('3d'); await w(500);
           const rec = POV.v.rec, near = (t) => D.kills.find((x) => Math.abs(x.t - D.start - t) < 0.3);
           const box = async (k) => { T = k.t + 0.03; playing = false; pickedKill = k; tab = 'kills'; renderPane(); await w(200); const b = document.querySelector('.kdet'); return b ? b.innerText.trim() : null; };
-          const his = near(71.99), mate = D.kills.find((x) => x.t > his.t && x.t - his.t < 5 && x.killer !== rec && x.victim !== rec && x.weapon === 'ak47');
+          const his = near(71.99), mate = D.kills.find((x) => x.victim === rec && x.kp && x.killer !== x.victim && M.liveR.some((r) => r.n === x.round));
           return { his: his && his.killer === rec ? await box(his) : 'not his kill', mate: mate ? await box(mate) : 'no teammate death', mateName: mate && M.pl[mate.vp].name,
             dnHidden: $('dn3').closest('.vrow').hidden, glowHidden: $('glow3').closest('.vrow').hidden, vanShown: !$('van3').closest('.vrow').hidden }; })()""")
         check("POV mode: kill details on an enemy's death say there's nothing to list, naming him", pv['his'] == "No hit details. A demo recorded by a player has only his teammates' health, not H@rDRoCk's.", repr(pv['his']))
-        check('POV mode: kill details on a teammate\'s death say "No hit details in POV mode."', pv['mate'] == 'No hit details in POV mode.', f"{pv['mateName']}: {pv['mate']!r}")
+        check('POV mode: kill details on his own death say "No hit details in POV mode."', pv['mate'] == 'No hit details in POV mode.', f"{pv['mateName']}: {pv['mate']!r}")
         check('POV mode: View settings hides Damage numbers, as it hides Glow on hits; Vanilla stays', pv['dnHidden'] and pv['glowHidden'] and pv['vanShown'], str(pv))
     except Exception as e:
         check('POV mode: kill details and View settings', False, (POVD or 'Match 1 CT not found') + ': ' + str(e).split('\n')[0])

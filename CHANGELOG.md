@@ -105,8 +105,10 @@ The POV mockup round, all six items in one batch, as in `docs/pov-mockup-round-m
 - In **POV mode** "Press ? for keyboard shortcuts" and notices such as "Stopping at 16" sit at the top middle, stepping down below the kill feed while one of its rows would reach them (Sujan, 11 Nov 2026: the widest rows reach past the middle at 1280x720), and the anti-wallhack note no longer shows over his health and armour when **See through walls** is switched on.
 
 ### How it was tested
-- `pov_mockup_round_check.py` (new, 13 s) fails on 0.26.28 (8 of 10) and passes; it includes the notices against the kill feed at its widest, at 1512x982 (Auto and 115%) and 1280x720. `pov_reopen_check.py` and `prefs_check.py` pass.
-- The reader against 0.26.28 on all 78 demos (`reader_compare.mjs`): the 70 HLTV demos identical; the 8 POV demos differ only by the hits on him, the bars and his Tab presses. Full log: `tests/logs/0.26.29.md`; screenshots on `screenshots/0.26.29`.
+- `pov_mockup_round_check.py` (new, 13 s) fails on 0.26.28 (8 of 10) and passes; it includes the notices against the kill feed at its widest, at 1512x982 (Auto and 115%) and 1280x720.
+- The eight checks pass (5.1 minutes); `demo_search_check.py`'s POV kill details now open his own death, since the Kills tab lists only his. `ground_truth_check.py`: 233 kills and 46 scores and K-D on 56 demos, 0 mismatches, the same 9 known gaps.
+- 78 demos against 0.26.28: `compare_all.sh` all identical (3.9 minutes); the reader (`reader_compare.mjs`) identical on the 70 HLTV demos, the POV demos only adding the hits on him, the bars and his Tab presses.
+- Full log: `tests/logs/0.26.29.md`; screenshots on `screenshots/0.26.29`.
 
 ### Discussed, not changed
 - cs16-client's `MsgFunc_BarTime2` sets the bar to duration × percent / 100 (3 × 59 = 1.77), which its drawing turns off as over 1, or starts empty below 1; the viewer follows the message's meaning (Sujan, 11 Nov 2026), not seen in the game, since the one demo that would show it longest, Match 5, can't be played there.
