@@ -1,3 +1,0 @@
-@AGENTS.md
-@STATE.md
-@LIMITS.md
