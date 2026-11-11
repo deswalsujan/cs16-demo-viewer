@@ -9,7 +9,8 @@ recorded by BAJRANG || forgotteN_), and on SK vs Na`Vi, Train, DreamHack Winter 
   R10 1:34: 8.69 s, held 1.93 s, alpha 255) with the other 347 kept only as the moments a fade ended, and the Radar
   messages (7,150, the first one's values);
 - the flashbang: 255 at R10 1:33, about 136 at 1:28, nothing at demo 3:15 where the server's clear ended a white fade;
-  the dot and the whiteout off by default, shown only when ticked, with that opacity; their rows only in POV mode;
+  the dot and the whiteout off by default, shown only when ticked, with that opacity; their rows only in POV mode; while
+  he watches a teammate at full white, the spectator bars grey over the whiteout (60% black laid over it);
 - his Crosshair row in POV mode (From config.cfg by default, Small, Medium, Large set the size), the viewer's in HLTV;
 - the Tab scoreboard in the game's look in both demos: the server's name, latency, his row lit in the POV demo; the
   # column only in the HLTV demo with 10 players or fewer listed;
@@ -134,6 +135,24 @@ try:
         check(not f0.get('white') and not f0.get('dot') and f1.get('white') and f1.get('dot') and abs(f1.get('wo', 0) - 1) < 0.01 and abs(f2.get('wo', 0) - 0.532) < 0.01
               and abs(f2.get('dO', 0) - 0.532) < 0.01 and not f3.get('white') and not f3.get('dot'),
               'the dot and the whiteout: none while off; on, full at R10 1:33, 0.53 at 1:28, gone after', {'off': f0, '1:33': f1, '1:28': f2, 'later': f3})
+        # the spectator bars over a full whiteout while he watches a teammate in first person (demo 17:36.3, the white fade of
+        # 17:36.05 at alpha 255, held 1.66 s): laid over the white at 60% black, so the top bar reads grey, not white, and the
+        # view under it white (Sujan, 11 Nov 2026, from a POV video; cs16-client's spectator_gui.cpp, FillRGBABlend, 153)
+        pg.evaluate("__v(\"if ($('fbWhite3')) $('fbWhite3').checked = true; 0\")")
+        at(1056.3, 900)
+        sp = ev(js(r'''({ a: Math.round(povFlashAt(POV.t)), mode: POV.mode, bars: povBarsOn(), white: !$('flash3').hidden })'''))
+        g = ev(js(r'''(() => { const r = $('gl').getBoundingClientRect(); return [r.left, r.top, r.width, r.height]; })()'''))
+        def lum(clip):
+            import base64
+            d = pg.evaluate('''(b64) => new Promise((res) => { const im = new Image(); im.onload = () => { const c = document.createElement('canvas'); c.width = im.width; c.height = im.height; const x = c.getContext('2d'); x.drawImage(im, 0, 0);
+              const p = x.getImageData(0, 0, im.width, im.height).data; let s = 0; for (let i = 0; i < p.length; i += 4) s += (p[i] + p[i + 1] + p[i + 2]) / 3; res(Math.round(s / (p.length / 4))); }; im.src = 'data:image/png;base64,' + b64; })''', base64.b64encode(pg.screenshot(clip=clip)).decode())
+            return d
+        if isinstance(g, list):
+            sp['bar'] = lum({'x': g[0] + 200, 'y': g[1] + 6, 'width': 300, 'height': 20})
+            sp['view'] = lum({'x': g[0] + 200, 'y': g[1] + g[3] * 0.45, 'width': 300, 'height': 40})
+        pg.evaluate("__v(\"if ($('fbWhite3')) $('fbWhite3').checked = false; 0\")")
+        check(sp.get('a') == 255 and sp.get('mode') == 4 and sp.get('bars') and sp.get('white') and 85 <= sp.get('bar', 0) <= 125 and sp.get('view', 0) >= 245,
+              'spectating a teammate at full white: the spectator bars grey over the whiteout, the view white', sp)
         # his radar and HUD on the added layer, the round pill under the radar (R11 1:26, alive on T)
         at(1028.2, 900)
         ly = ev(LAYER)
@@ -196,6 +215,6 @@ finally:
     os.remove(test_page)
 for ok, name, got in checks:
     print(('ok   ' if ok else 'FAIL ') + name + '  ' + json.dumps(got)[:900])
-passed = len(checks) == 18 and all(c[0] for c in checks)
+passed = len(checks) == 19 and all(c[0] for c in checks)
 print(f'{"PASS" if passed else "FAIL"} ({time.time() - t0:.0f} s)')
 sys.exit(0 if passed else 1)

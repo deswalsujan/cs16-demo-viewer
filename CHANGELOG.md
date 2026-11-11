@@ -95,7 +95,7 @@ Sujan's POV mode feedback of 11 Nov 2026, items 1 to 10 in one batch, as in `doc
 
 ### Added
 - The game's radar in **POV mode**, top left, from `cstrike/sprites/radar640.spr`: the see-through one (cs16-client's default) for everyone, sized like his HUD, turning with his view; his living teammates from his snapshots and the server's Radar messages, the bomb carrier red, the dropped or planted bomb flashing on a T's radar; no enemies. The round pill and **View settings** sit under it.
-- Flashbangs in POV demos: **Flashbang dot** (a white dot under the crosshair, 18 px, with a thin dark ring) and **Flashbang whiteout** in **View settings**, both off by default, fading as his screen did, from the white ScreenFades the server sent him or a teammate he watched in first person. The whiteout covers the 3D view and the kill feed; his HUD and radar are added over it, so they vanish at full white and show faintly as it fades, as in the game (Sujan's check in POV videos, 11 Nov 2026).
+- Flashbangs in POV demos: **Flashbang dot** (a white dot under the crosshair, 18 px, with a thin dark ring) and **Flashbang whiteout** in **View settings**, both off by default, fading as his screen did, from the white ScreenFades the server sent him or a teammate he watched in first person. The whiteout covers the 3D view and the kill feed; his HUD and radar are added over it, so they vanish at full white and show faintly as it fades, and the spectator bars are laid over it at 60% black, so at full white they show grey, as in the game (Sujan's checks in POV videos, 11 Nov 2026). A fade ends where the server cleared it.
 - Latency in the Tab scoreboard, per player and each team's average, from the server's ping messages; in a POV demo the values from his last Tab hold, none before his first.
 - His **Crosshair** row in **POV mode**: From config.cfg (the default), Small, Medium, Large; the colour always from config.cfg.
 
@@ -110,14 +110,14 @@ Sujan's POV mode feedback of 11 Nov 2026, items 1 to 10 in one batch, as in `doc
 - The reader reads the server's ping messages as 5, 12 and 7 bits per entry, as ReHLDS writes them (8, 8 and 8 up to 0.26.29: the same 25 bits, thrown away).
 
 ### How it was tested
-- `pov_feedback_check.py` (new, 24 s) fails on 0.26.29 (16 of 18) and passes; `pov_reopen_check.py`, now a POV demo, an HLTV demo and the POV demo again, fails on 0.26.29 and passes; `pov_mockup_round_check.py`, `demo_search_check.py` and `prefs_check.py` updated and pass.
+- `pov_feedback_check.py` (new, 25 s) fails on 0.26.29 and passes (the spectator bars' item also fails on the first build, ecd7cf0); `pov_reopen_check.py`, now a POV demo, an HLTV demo and the POV demo again, fails on 0.26.29 and passes; `pov_mockup_round_check.py`, `demo_search_check.py` and `prefs_check.py` updated and pass.
 - The full test run waits for Sujan's go (about 12 minutes).
 - Full log: `tests/logs/0.26.30.md`; screenshots on `screenshots/0.26.30`.
 
 ### Discussed, not changed
 - The ScreenFades that aren't white in the POV test demos are the server's clears (black, alpha 0, 0.001 s; ReGameDLL observer.cpp and player.cpp), not the fade to black at death, as Claude reported before the mockup: they end 42 of the GP Tourney POV's 70 white fades early, so the viewer keeps their times as ends and draws nothing black.
 - The 3D picture's contrast (item 11): for later, separate from this batch (Sujan, 11 Nov 2026).
-- The scoreboard may cover the kill feed, as in the game (Sujan, 11 Nov 2026). The plant and defuse bar and the spectator bars stay laid over the picture, under a flashbang's whiteout.
+- The scoreboard may cover the kill feed, as in the game (Sujan, 11 Nov 2026). The plant and defuse bar stays under a flashbang's whiteout (Sujan, 11 Nov 2026, approving Claude's choice).
 
 ## 0.26.29 (2026-11-11)
 

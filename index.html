@@ -131,9 +131,12 @@ button { cursor: pointer; }
    controls on top (the round pill, View settings, the buttons, the name bar, the notices) */
 #hud3 { position: absolute; inset: 0; width: 100%; height: 100%; display: block; pointer-events: none; mix-blend-mode: plus-lighter; z-index: 2; }
 .flash3 { position: absolute; inset: 0; background: #fff; pointer-events: none; z-index: 2; }
+/* the spectator bars over the whiteout, 60% black laid over it as cs16-client's spectator_gui.cpp draws them (FillRGBABlend,
+   alpha 153), so over full white they show as grey bars (Sujan, 11 Nov 2026, from a POV video) */
+#spec3 { position: absolute; inset: 0; width: 100%; height: 100%; display: block; pointer-events: none; z-index: 2; }
 #xhp3 { min-width: calc(124px * var(--ui)); } /* POV mode's Crosshair row: "From config.cfg" in full */
 .fbdot { position: absolute; left: 50%; top: calc(50% + 40px * var(--ui)); width: calc(18px * var(--ui)); height: calc(18px * var(--ui)); margin-left: calc(-9px * var(--ui)); border-radius: 50%; background: #fff; box-shadow: 0 0 0 calc(1.5px * var(--ui)) rgba(0,0,0,.6); pointer-events: none; z-index: 3; }
-.radar.m2d #hud3, .radar.m2d .flash3, .radar.m2d .fbdot { display: none; }
+.radar.m2d #hud3, .radar.m2d #spec3, .radar.m2d .flash3, .radar.m2d .fbdot { display: none; }
 #rclock, .legend, #pov { z-index: 3; }
 /* the game's radar sits top left in POV mode, the round pill and View settings under it (Sujan, 11 Nov 2026) */
 .radar.povm #rclock { top: calc(var(--pov-radar, 0px) + 12px * var(--ui)); }
@@ -625,9 +628,11 @@ addEventListener('resize', () => { if (applyUiSize()) dispatchEvent(new Event('u
   <section class="radar m2d" id="radar">
     <canvas id="gl" aria-label="3D view of the match" tabindex="0"></canvas>
     <canvas id="lbl"></canvas>
-    <!-- POV mode (0.26.30; Sujan, 11 Nov 2026): a flashbang's white over the 3D view and the kill feed, then his HUD and radar
-         added onto it, as the game draws its screen fade and then the HUD; the viewer's own controls stay on top -->
+    <!-- POV mode (0.26.30; Sujan, 11 Nov 2026): a flashbang's white over the 3D view and the kill feed, then the spectator bars
+         laid over it, then his HUD and radar added onto it, as the game draws its screen fade and then the HUD; the viewer's
+         own controls stay on top -->
     <div class="flash3" id="flash3" hidden></div>
+    <canvas id="spec3"></canvas>
     <canvas id="hud3"></canvas>
     <div class="fbdot" id="fbdot" hidden></div>
     <div class="status3" id="status3" hidden></div>
@@ -683,8 +688,8 @@ addEventListener('resize', () => { if (applyUiSize()) dispatchEvent(new Event('u
             <option value="200">200%</option>
           </select></label>
           <div class="vhead" hidden>Demos recorded by a player</div>
-          <label class="vrow" hidden><span>Flashbang dot<small>how white his screen went</small></span><input type="checkbox" id="fbDot3" title="A white dot under the crosshair that fades as his screen did when a flashbang blinded him, or a teammate he was watching"></label>
-          <label class="vrow" hidden><span>Flashbang whiteout<small>his screen's white, full screen</small></span><input type="checkbox" id="fbWhite3" title="The view goes white as his screen did when a flashbang blinded him, or a teammate he was watching. As in the game, his HUD and radar fade into the white"></label>
+          <label class="vrow" hidden><span>Flashbang dot<small>how blinded he was</small></span><input type="checkbox" id="fbDot3" title="A white dot under the crosshair that fades as his screen did when a flashbang blinded him, or a teammate he was watching"></label>
+          <label class="vrow" hidden><span>Flashbang whiteout<small>the white his screen showed, full screen</small></span><input type="checkbox" id="fbWhite3" title="The view goes white as his screen did when a flashbang blinded him, or a teammate he was watching. As in the game, his HUD and radar fade into the white"></label>
         </div>
       </div>
     </div>
@@ -6557,6 +6562,7 @@ function resize3() {
   R3.camera.aspect = r.width / r.height; R3.camera.updateProjectionMatrix();
   const l = $('lbl'); l.width = Math.round(r.width * dpr); l.height = Math.round(r.height * dpr);
   const hc = $('hud3'); hc.width = l.width; hc.height = l.height;
+  const sc = $('spec3'); sc.width = l.width; sc.height = l.height;
 }
 new ResizeObserver(() => resize3()).observe($('radar'));
 
@@ -8379,6 +8385,9 @@ function update3Now() {
   // POV mode's HUD layer, added onto the picture (#hud3, 0.26.30): his HUD, crosshair, hit arcs and radar
   const hc = $('hud3'), hx = hc.getContext('2d');
   hx.setTransform(dpr, 0, 0, dpr, 0, 0); hx.clearRect(0, 0, W, H); hx.globalAlpha = 1; hx.globalCompositeOperation = 'source-over';
+  // and the spectator bars' layer, laid over a flashbang's whiteout (#spec3, 0.26.30)
+  const sx = $('spec3').getContext('2d');
+  sx.setTransform(dpr, 0, 0, dpr, 0, 0); sx.clearRect(0, 0, W, H); sx.globalAlpha = 1; sx.globalCompositeOperation = 'source-over';
   if (POV.on) povRadarRoom(H);
   const mono = textFont();
   const camW = [camera.position.x, -camera.position.z, camera.position.y];
@@ -8463,7 +8472,7 @@ function update3Now() {
     }
   } else pov.hidden = true;
   // POV mode: the game's spectator bars while he watches someone else; they name the player, so the box goes
-  if (POV.on && drawSpecBars(lx, W, H)) pov.hidden = true;
+  if (POV.on && drawSpecBars(sx, W, H)) pov.hidden = true;
   // ...and while he's playing the game shows no name box, his HUD sits there
   else if (POV.on && POV.mode === 0 && POV.who === POV.v.rec) pov.hidden = true;
   if (POV.on) drawPovBar(lx, W, H);

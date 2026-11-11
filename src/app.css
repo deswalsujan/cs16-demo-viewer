@@ -118,9 +118,12 @@ button { cursor: pointer; }
    controls on top (the round pill, View settings, the buttons, the name bar, the notices) */
 #hud3 { position: absolute; inset: 0; width: 100%; height: 100%; display: block; pointer-events: none; mix-blend-mode: plus-lighter; z-index: 2; }
 .flash3 { position: absolute; inset: 0; background: #fff; pointer-events: none; z-index: 2; }
+/* the spectator bars over the whiteout, 60% black laid over it as cs16-client's spectator_gui.cpp draws them (FillRGBABlend,
+   alpha 153), so over full white they show as grey bars (Sujan, 11 Nov 2026, from a POV video) */
+#spec3 { position: absolute; inset: 0; width: 100%; height: 100%; display: block; pointer-events: none; z-index: 2; }
 #xhp3 { min-width: calc(124px * var(--ui)); } /* POV mode's Crosshair row: "From config.cfg" in full */
 .fbdot { position: absolute; left: 50%; top: calc(50% + 40px * var(--ui)); width: calc(18px * var(--ui)); height: calc(18px * var(--ui)); margin-left: calc(-9px * var(--ui)); border-radius: 50%; background: #fff; box-shadow: 0 0 0 calc(1.5px * var(--ui)) rgba(0,0,0,.6); pointer-events: none; z-index: 3; }
-.radar.m2d #hud3, .radar.m2d .flash3, .radar.m2d .fbdot { display: none; }
+.radar.m2d #hud3, .radar.m2d #spec3, .radar.m2d .flash3, .radar.m2d .fbdot { display: none; }
 #rclock, .legend, #pov { z-index: 3; }
 /* the game's radar sits top left in POV mode, the round pill and View settings under it (Sujan, 11 Nov 2026) */
 .radar.povm #rclock { top: calc(var(--pov-radar, 0px) + 12px * var(--ui)); }

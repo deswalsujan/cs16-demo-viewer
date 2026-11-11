@@ -24,9 +24,11 @@
   <section class="radar m2d" id="radar">
     <canvas id="gl" aria-label="3D view of the match" tabindex="0"></canvas>
     <canvas id="lbl"></canvas>
-    <!-- POV mode (0.26.30; Sujan, 11 Nov 2026): a flashbang's white over the 3D view and the kill feed, then his HUD and radar
-         added onto it, as the game draws its screen fade and then the HUD; the viewer's own controls stay on top -->
+    <!-- POV mode (0.26.30; Sujan, 11 Nov 2026): a flashbang's white over the 3D view and the kill feed, then the spectator bars
+         laid over it, then his HUD and radar added onto it, as the game draws its screen fade and then the HUD; the viewer's
+         own controls stay on top -->
     <div class="flash3" id="flash3" hidden></div>
+    <canvas id="spec3"></canvas>
     <canvas id="hud3"></canvas>
     <div class="fbdot" id="fbdot" hidden></div>
     <div class="status3" id="status3" hidden></div>
@@ -82,8 +84,8 @@
             <option value="200">200%</option>
           </select></label>
           <div class="vhead" hidden>Demos recorded by a player</div>
-          <label class="vrow" hidden><span>Flashbang dot<small>how white his screen went</small></span><input type="checkbox" id="fbDot3" title="A white dot under the crosshair that fades as his screen did when a flashbang blinded him, or a teammate he was watching"></label>
-          <label class="vrow" hidden><span>Flashbang whiteout<small>his screen's white, full screen</small></span><input type="checkbox" id="fbWhite3" title="The view goes white as his screen did when a flashbang blinded him, or a teammate he was watching. As in the game, his HUD and radar fade into the white"></label>
+          <label class="vrow" hidden><span>Flashbang dot<small>how blinded he was</small></span><input type="checkbox" id="fbDot3" title="A white dot under the crosshair that fades as his screen did when a flashbang blinded him, or a teammate he was watching"></label>
+          <label class="vrow" hidden><span>Flashbang whiteout<small>the white his screen showed, full screen</small></span><input type="checkbox" id="fbWhite3" title="The view goes white as his screen did when a flashbang blinded him, or a teammate he was watching. As in the game, his HUD and radar fade into the white"></label>
         </div>
       </div>
     </div>

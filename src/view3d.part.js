@@ -106,6 +106,7 @@ function resize3() {
   R3.camera.aspect = r.width / r.height; R3.camera.updateProjectionMatrix();
   const l = $('lbl'); l.width = Math.round(r.width * dpr); l.height = Math.round(r.height * dpr);
   const hc = $('hud3'); hc.width = l.width; hc.height = l.height;
+  const sc = $('spec3'); sc.width = l.width; sc.height = l.height;
 }
 new ResizeObserver(() => resize3()).observe($('radar'));
 
@@ -581,6 +582,9 @@ function update3Now() {
   // POV mode's HUD layer, added onto the picture (#hud3, 0.26.30): his HUD, crosshair, hit arcs and radar
   const hc = $('hud3'), hx = hc.getContext('2d');
   hx.setTransform(dpr, 0, 0, dpr, 0, 0); hx.clearRect(0, 0, W, H); hx.globalAlpha = 1; hx.globalCompositeOperation = 'source-over';
+  // and the spectator bars' layer, laid over a flashbang's whiteout (#spec3, 0.26.30)
+  const sx = $('spec3').getContext('2d');
+  sx.setTransform(dpr, 0, 0, dpr, 0, 0); sx.clearRect(0, 0, W, H); sx.globalAlpha = 1; sx.globalCompositeOperation = 'source-over';
   if (POV.on) povRadarRoom(H);
   const mono = textFont();
   const camW = [camera.position.x, -camera.position.z, camera.position.y];
@@ -665,7 +669,7 @@ function update3Now() {
     }
   } else pov.hidden = true;
   // POV mode: the game's spectator bars while he watches someone else; they name the player, so the box goes
-  if (POV.on && drawSpecBars(lx, W, H)) pov.hidden = true;
+  if (POV.on && drawSpecBars(sx, W, H)) pov.hidden = true;
   // ...and while he's playing the game shows no name box, his HUD sits there
   else if (POV.on && POV.mode === 0 && POV.who === POV.v.rec) pov.hidden = true;
   if (POV.on) drawPovBar(lx, W, H);
