@@ -80,8 +80,9 @@ tests/              Test and measurement scripts: browser checks, Theatre mode c
 IDEAS.md            Parked ideas and open decisions, with the discussion behind them
 IDEAS-ARCHIVE.md    Done items, and the full text of open ones, moved from IDEAS.md word for word
 AGENTS.md           How agent sessions work on this repo: workflow, checking facts, where the test files are
-STATE.md            What is open and what is decided, one line each
-CLAUDE.md           Loads AGENTS.md, STATE.md and LIMITS.md into every Claude Code session
+STATE.md            What is open, one line each
+DECISIONS.md        What Sujan decided, newest first, and what each replaced decision said
+CLAUDE.md           Loads AGENTS.md, STATE.md and LIMITS.md into every Claude Code session (not DECISIONS.md)
 tests/DEMOS.md      Every test demo, its event and which machine has it
 tests/logs/         Each release's full test log, from 0.26.0 on (CHANGELOG.md keeps a few lines and a pointer)
 docs/review-answers.md  Sujan's answers on the claude.ai review pages

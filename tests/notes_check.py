@@ -1,7 +1,8 @@
 """The notes agree with the repo (agent brief of 30 Oct 2026, "Notes consistency check"). No game files needed.
 
 Checks, each failure printed as "file:line: what's wrong", exit code 1 on any:
-- every path in backticks in STATE.md, AGENTS.md, IDEAS.md and README.md is a tracked file or folder, or ends one
+- every path in backticks in STATE.md, DECISIONS.md, AGENTS.md, IDEAS.md and README.md is a tracked file or folder,
+  or ends one
   (`page/regress_summary.js`, `folder_row_test.py`), so a fresh clone gives the same result as a working copy. Left
   out: branch names, the player's game folder, build output in `dist/` (gitignored), placeholders and the few paths
   in IGNORE;
@@ -10,7 +11,9 @@ Checks, each failure printed as "file:line: what's wrong", exit code 1 on any:
   "In progress" entry is only on a `wip/` branch;
 - every file in `src/` has a line in AGENTS.md, "Where the code is";
 - every demo of `tests/expected/` (joined parts too) has a row in `tests/demos-manifest.md` with the same name and
-  SHA-256, so the backup check knows every demo the ground truth needs (Sujan, 1 Nov 2026).
+  SHA-256, so the backup check knows every demo the ground truth needs (Sujan, 1 Nov 2026);
+- the files CLAUDE.md loads (its @ lines) total no more than LOADED_MAX characters, so every Claude Code session
+  loads them whole (Claude Code warns at 150k; Sujan, 12 Nov 2026), each file's size named when they don't.
 
 Usage: python3 notes_check.py   (from anywhere; it reads the repo it's in)
 """
@@ -20,7 +23,8 @@ sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
 import demo_dirs  # only its readers of tests/expected/ and the manifest: no game files
 
 root = os.path.abspath(os.path.join(os.path.dirname(os.path.abspath(__file__)), '..'))
-NOTES = ['STATE.md', 'AGENTS.md', 'IDEAS.md', 'README.md']
+NOTES = ['STATE.md', 'DECISIONS.md', 'AGENTS.md', 'IDEAS.md', 'README.md']
+LOADED_MAX = 100_000  # characters in the files CLAUDE.md loads (Sujan, 12 Nov 2026)
 # a backtick token is taken as a path when it has no spaces and has a slash or a file extension
 EXT = re.compile(r'\.(md|js|mjs|py|html|json|yml|yaml|txt|sh|css|png|jpg|svg)$')
 # paths that aren't the repo's: branches, the player's Half-Life folder and its files, build.py's output in dist/
@@ -101,7 +105,17 @@ for h, n, match in demo_dirs.expected():
     if listed.get(h) != n:
         fails.append(f"tests/demos-manifest.md:1: {n} ({match}) {'is listed as ' + listed[h] if h in listed else 'has no row with its SHA-256'}")
 
+# 6. what CLAUDE.md loads into every session
+claude = open(os.path.join(root, 'CLAUDE.md'), encoding='utf-8').read().split('\n')
+loaded = [(n, l[1:].strip()) for n, l in enumerate(claude, 1) if l.startswith('@')]
+sizes = [(f, len(open(os.path.join(root, f), encoding='utf-8').read())) for _, f in loaded]
+total = sum(s for _, s in sizes)
+if total > LOADED_MAX:
+    fails.append(f'CLAUDE.md:{loaded[0][0]}: the files it loads total {total:,} characters, over {LOADED_MAX:,} ('
+                 + ', '.join(f'{f} {s:,}' for f, s in sizes) + '); move what is done or decided out of them')
+
 for f in fails:
     print('FAIL', f)
-print(f'FAIL: {len(fails)} found' if fails else 'PASS: paths in the notes, CHANGELOG against VERSION, the code map, the demo manifest')
+print(f'FAIL: {len(fails)} found' if fails else 'PASS: paths in the notes, CHANGELOG against VERSION, the code map, the demo manifest, '
+      f'what CLAUDE.md loads ({total:,} characters: ' + ', '.join(f'{f} {s:,}' for f, s in sizes) + ')')
 sys.exit(1 if fails else 0)
