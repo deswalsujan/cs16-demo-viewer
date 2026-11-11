@@ -672,7 +672,7 @@ function update3Now() {
   if (POV.on && drawSpecBars(sx, W, H)) pov.hidden = true;
   // ...and while he's playing the game shows no name box, his HUD sits there
   else if (POV.on && POV.mode === 0 && POV.who === POV.v.rec) pov.hidden = true;
-  if (POV.on) drawPovBar(lx, W, H);
+  if (POV.on) drawPovBar(sx, hx, W, H);
   povFlash();
 }
 // Hit marker on the crosshair when the player you're watching gets a kill:
@@ -1392,18 +1392,21 @@ function drawPovHud(lx, W, H) {
 // picks it up at the percent the message gives (Sujan, 11 Nov 2026, from AlliedModders' list of Half-Life 1 messages
 // and ReGameDLL's observer.cpp; cs16-client starts it empty or not at all, not seen in the game); 0 seconds takes it away.
 // ReGameDLL sends it to the planter or defuser and to whoever watches him in first person, so it shows over his
-// own HUD and over the spectator view alike.
+// own HUD and over the spectator view alike. Its background is laid over the picture (FillRGBABlend) and its frame and
+// fill added onto it (FillRGBA), as cs16-client draws them (DrawUtils::DrawRectangle, hud/timer.cpp): so the background
+// goes on the layer over a flashbang's whiteout with the spectator bars, and the frame and fill on his added HUD layer
+// (Sujan, 12 Nov 2026).
 function povBarAt(t) {
   const B = D.bars, r = idxAt(B, 3, t); if (r < 0) return null;
   const tb = B[r * 3], dur = B[r * 3 + 1], f0 = B[r * 3 + 2] / 100; if (!(dur > 0)) return null;
   const f = f0 + (t - tb) / dur;
   return f >= 0 && f < 1 ? f : null;
 }
-function drawPovBar(lx, W, H) {
+function drawPovBar(bg, lx, W, H) {
   const f = povBarAt(POV.t); if (f == null) return;
   const s = H / 768 * HUD_SCALE, bx = W / 4, by = H * 2 / 3, bw = W / 2, bh = 10 * s;
+  bg.save(); bg.globalAlpha = 153 / 255; bg.fillStyle = '#000'; bg.fillRect(bx, by, bw, bh); bg.restore();
   lx.save();
-  lx.globalAlpha = 153 / 255; lx.fillStyle = '#000'; lx.fillRect(bx, by, bw, bh);
   lx.globalAlpha = 1; lx.fillStyle = 'rgb(255,140,0)';
   lx.fillRect(bx, by, bw, 1); lx.fillRect(bx, by + bh - 1, bw, 1); lx.fillRect(bx, by, 1, bh); lx.fillRect(bx + bw - 1, by, 1, bh);
   lx.fillRect(bx + 2 * s, by + 2 * s, f * (bw - 4 * s), bh - 4 * s);

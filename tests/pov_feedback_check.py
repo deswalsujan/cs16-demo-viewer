@@ -10,7 +10,8 @@ recorded by BAJRANG || forgotteN_), and on SK vs Na`Vi, Train, DreamHack Winter 
   messages (7,150, the first one's values);
 - the flashbang: 255 at R10 1:33, about 136 at 1:28, nothing at demo 3:15 where the server's clear ended a white fade;
   the dot and the whiteout off by default, shown only when ticked, with that opacity; their rows only in POV mode; while
-  he watches a teammate at full white, the spectator bars grey over the whiteout (60% black laid over it);
+  he watches a teammate at full white, the spectator bars grey over the whiteout (60% black laid over it), and the plant
+  bar's background grey over it with its orange fill added (his screen held at full white at R11 0:28);
 - his Crosshair row in POV mode (From config.cfg by default, Small, Medium, Large set the size), the viewer's in HLTV;
 - the Tab scoreboard in the game's look in both demos: the server's name, latency, his row lit in the POV demo; the
   # column only in the HLTV demo with 10 players or fewer listed;
@@ -153,6 +154,25 @@ try:
         pg.evaluate("__v(\"if ($('fbWhite3')) $('fbWhite3').checked = false; 0\")")
         check(sp.get('a') == 255 and sp.get('mode') == 4 and sp.get('bars') and sp.get('white') and 85 <= sp.get('bar', 0) <= 125 and sp.get('view', 0) >= 245,
               'spectating a teammate at full white: the spectator bars grey over the whiteout, the view white', sp)
+        # the plant bar over a full whiteout (Sujan, 12 Nov 2026): its background laid over the white at 60% black, grey, its
+        # orange frame and fill added onto the picture (cs16-client: FillRGBABlend, then FillRGBA). No flashbang of this demo
+        # falls on a bar, so his screen is held at full white here, at R11 0:28, watching ~br0nzE^ plant, the bar at 73%
+        def rgb(clip):
+            import base64
+            return pg.evaluate('''(b64) => new Promise((res) => { const im = new Image(); im.onload = () => { const c = document.createElement('canvas'); c.width = im.width; c.height = im.height; const x = c.getContext('2d'); x.drawImage(im, 0, 0);
+              const p = x.getImageData(0, 0, im.width, im.height).data, s = [0, 0, 0]; for (let i = 0; i < p.length; i += 4) for (let k = 0; k < 3; k++) s[k] += p[i + k]; res(s.map((v) => Math.round(v / (p.length / 4)))); }; im.src = 'data:image/png;base64,' + b64; })''', base64.b64encode(pg.screenshot(clip=clip)).decode())
+        pg.evaluate("__v(\"if ($('fbWhite3')) $('fbWhite3').checked = true; window.__pfa = povFlashAt; povFlashAt = () => 255; 0\")")
+        at(1086.5, 900)
+        pb = ev(js(r'''({ f: povBarAt(POV.t), white: !$('flash3').hidden })'''))
+        if isinstance(g, list) and pb.get('f'):
+            s_ = g[3] / 768; bx, by, bw, bh = g[0] + g[2] / 4, g[1] + g[3] * 2 / 3, g[2] / 2, 10 * s_
+            pb['empty'] = rgb({'x': bx + bw * 0.85, 'y': by + 3 * s_, 'width': bw * 0.1, 'height': max(2, bh - 6 * s_)})
+            pb['filled'] = rgb({'x': bx + bw * 0.2, 'y': by + 3 * s_, 'width': bw * 0.2, 'height': max(2, bh - 6 * s_)})
+            pb['outside'] = rgb({'x': bx + bw * 0.2, 'y': by - 30, 'width': bw * 0.2, 'height': 20})
+        pg.evaluate("__v(\"povFlashAt = window.__pfa; if ($('fbWhite3')) $('fbWhite3').checked = false; 0\")")
+        e_, f_, o_ = pb.get('empty', [0, 0, 0]), pb.get('filled', [0, 0, 0]), pb.get('outside', [0, 0, 0])
+        check(pb.get('white') and all(85 <= v <= 125 for v in e_) and f_[0] >= 240 and f_[2] <= 130 and all(v >= 245 for v in o_),
+              "the plant bar at full white: its background grey (laid over), its fill orange added onto the grey", pb)
         # his radar and HUD on the added layer, the round pill under the radar (R11 1:26, alive on T)
         at(1028.2, 900)
         ly = ev(LAYER)
@@ -215,6 +235,6 @@ finally:
     os.remove(test_page)
 for ok, name, got in checks:
     print(('ok   ' if ok else 'FAIL ') + name + '  ' + json.dumps(got)[:900])
-passed = len(checks) == 19 and all(c[0] for c in checks)
+passed = len(checks) == 20 and all(c[0] for c in checks)
 print(f'{"PASS" if passed else "FAIL"} ({time.time() - t0:.0f} s)')
 sys.exit(0 if passed else 1)
