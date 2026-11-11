@@ -125,6 +125,21 @@ button { cursor: pointer; }
 /* 3D */
 #gl, #lbl { position: absolute; inset: 0; width: 100%; height: 100%; display: block; }
 #lbl { pointer-events: none; }
+/* POV mode (0.26.30; Sujan, 11 Nov 2026): his HUD, crosshair and radar on their own layer, added onto the picture as the game
+   adds them (SPR_DrawAdditive) where #lbl is laid over it, so bright floors no longer swallow the faint digits; under them a
+   flashbang's whiteout, over the 3D view and the kill feed, so they fade into the white as in the game; the viewer's own
+   controls on top (the round pill, View settings, the buttons, the name bar, the notices) */
+#hud3 { position: absolute; inset: 0; width: 100%; height: 100%; display: block; pointer-events: none; mix-blend-mode: plus-lighter; z-index: 2; }
+.flash3 { position: absolute; inset: 0; background: #fff; pointer-events: none; z-index: 2; }
+#xhp3 { min-width: calc(124px * var(--ui)); } /* POV mode's Crosshair row: "From config.cfg" in full */
+.fbdot { position: absolute; left: 50%; top: calc(50% + 40px * var(--ui)); width: calc(18px * var(--ui)); height: calc(18px * var(--ui)); margin-left: calc(-9px * var(--ui)); border-radius: 50%; background: #fff; box-shadow: 0 0 0 calc(1.5px * var(--ui)) rgba(0,0,0,.6); pointer-events: none; z-index: 3; }
+.radar.m2d #hud3, .radar.m2d .flash3, .radar.m2d .fbdot { display: none; }
+#rclock, .legend, #pov { z-index: 3; }
+/* the game's radar sits top left in POV mode, the round pill and View settings under it (Sujan, 11 Nov 2026) */
+.radar.povm #rclock { top: calc(var(--pov-radar, 0px) + 12px * var(--ui)); }
+.radar.povm .cam3 { top: calc(var(--pov-radar, 0px) + 44px * var(--ui)); }
+.app.theatre.show-t .radar.povm #rclock { top: calc(var(--head-h) + var(--pov-radar, 0px) + 12px * var(--ui)); }
+.app.theatre.show-t .radar.povm .cam3 { top: calc(var(--head-h) + var(--pov-radar, 0px) + 44px * var(--ui)); }
 #gl { cursor: crosshair; touch-action: none; }
 .radar.m2d #gl, .radar.m2d #lbl, .radar.m2d .cam3, .radar.m2d .status3, .radar.m2d .pov { display: none; }
 .radar.m3d #cv { display: none; }
@@ -232,26 +247,32 @@ button { cursor: pointer; }
 
 /* overlays: scoreboard and shortcuts */
 .overlay { position: absolute; inset: 0; z-index: 12; display: grid; place-items: center; padding: calc(16px * var(--ui)); background: rgba(8, 10, 12, .55); }
-.sbcard { width: min(calc(1080px * var(--ui)), 100%); /* wider in 0.18.0 so long names fit (Sujan, 14 Oct 2026) */ background: rgba(18, 21, 24, .96); border: 1px solid var(--line); border-radius: calc(6px * var(--ui)); display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 1px; overflow: hidden; justify-self: center; }
-.sbteam { padding: calc(12px * var(--ui)) calc(14px * var(--ui)); display: block; min-width: 0; }
-.sbteam h3 { margin: 0 0 calc(6px * var(--ui)); font-family: var(--f-display); font-size: calc(16px * var(--ui)); display: flex; justify-content: space-between; gap: calc(8px * var(--ui)); }
-.sbrow { display: grid; width: 100%; grid-template-columns: calc(18px * var(--ui)) minmax(0, 1fr) calc(34px * var(--ui)) calc(30px * var(--ui)) calc(30px * var(--ui)) calc(64px * var(--ui)); gap: calc(6px * var(--ui)); font-family: var(--f-body); font-size: calc(12px * var(--ui)); align-items: center; padding: calc(3px * var(--ui)) 0; border-top: 1px solid var(--line); font-variant-numeric: tabular-nums; }
-.sbcard.nohp .sbrow { grid-template-columns: calc(18px * var(--ui)) minmax(0, 1fr) calc(30px * var(--ui)) calc(30px * var(--ui)) calc(64px * var(--ui)); } /* no HP column (0.26.28) */
-.sbrow.head { color: var(--muted); border-top: 0; font-size: calc(11px * var(--ui)); }
-.sbspecs { grid-column: 1 / -1; padding: calc(10px * var(--ui)) calc(14px * var(--ui)); border-top: 1px solid var(--line); font-size: calc(12px * var(--ui)); display: flex; flex-wrap: wrap; gap: calc(4px * var(--ui)) calc(8px * var(--ui)); align-items: baseline; }
-.sbheld { margin-left: auto; color: var(--sand); font-weight: 700; } /* POV mode: the scoreboard opened because he held Tab (Sujan, 11 Nov 2026) */
-.sbl { color: var(--muted); text-transform: uppercase; letter-spacing: .08em; font-size: calc(11px * var(--ui)); margin-right: calc(4px * var(--ui)); }
-.sbsep { color: var(--faint); }
+/* The Tab scoreboard in the game's look, for every demo type (0.26.30; Sujan, 11 Nov 2026, docs/pov-scoreboard-radar-flashbang-mock.jpg;
+   colours from cs16-client: orange 255 140 0 for the title and Spectators, T 255 64 64, CT 153 204 255) */
+#sb { background: none; display: block; padding: 0; }
+.gsb { position: absolute; left: 12.5%; right: 12.5%; top: 9%; max-height: 88%; overflow: hidden; background: rgba(0,0,0,.6); border: 1px solid rgba(181,160,110,.85); border-radius: calc(6px * var(--ui)); padding: calc(6px * var(--ui)) 0 calc(10px * var(--ui)); font-family: Verdana, var(--f-body); font-size: calc(12px * var(--ui)); line-height: 1.35; font-variant-numeric: tabular-nums; color: #fff; }
+.gsb.dense { top: 5%; font-size: calc(11px * var(--ui)); line-height: 1.25; }
+.gsb .gr { display: grid; grid-template-columns: var(--gsb-cols); gap: calc(8px * var(--ui)); align-items: center; padding: calc(2px * var(--ui)) calc(14px * var(--ui)); }
+.gsb.dense .gr { padding-block: calc(1px * var(--ui)); }
+.gsb .gr > span { white-space: nowrap; overflow: hidden; text-overflow: ellipsis; text-align: right; min-width: 0; }
+.gsb .gr > span.nm { text-align: left; }
+.gsb .gr > span.kn { text-align: left; opacity: .55; }
+.gsb .gr.title { color: rgb(255,140,0); padding-block: calc(4px * var(--ui)); }
+.gsb .oline { height: 1px; background: rgb(255,140,0); margin-bottom: calc(10px * var(--ui)); }
+.gsb .gr.t { color: rgb(255,64,64); } .gsb .gr.ct { color: rgb(153,204,255); }
+.gsb .gr.th { padding-block: calc(3px * var(--ui)); }
+.gsb .gr.me { background: rgba(255,255,255,.13); }
+.gsb .tline { height: 1px; margin: 0 calc(8px * var(--ui)) calc(3px * var(--ui)); }
+.gsb .tline.t { background: rgb(255,64,64); } .gsb .tline.ct { background: rgb(153,204,255); }
+.gsb .gsep { margin-inline: calc(7px * var(--ui)); opacity: .8; }
+.gsb .ggap { height: calc(10px * var(--ui)); }
+.gsb.dense .ggap { height: calc(6px * var(--ui)); }
+.gsb .spech { color: rgb(255,140,0); font-weight: 700; padding: calc(2px * var(--ui)) calc(14px * var(--ui)); }
+.gsb .specs { color: #ccc; padding: 0 calc(14px * var(--ui)); }
+.gsb .gfoot { display: flex; justify-content: space-between; gap: calc(12px * var(--ui)); padding: calc(6px * var(--ui)) calc(14px * var(--ui)) 0; font-size: calc(11px * var(--ui)); color: #ccc; }
+.gsb .sbheld { color: rgb(255,140,0); } /* POV mode: the scoreboard opened because he held Tab (Sujan, 11 Nov 2026) */
 .sbtag { font-family: var(--f-body); font-size: calc(10px * var(--ui)); color: var(--muted); border: 1px solid var(--line); border-radius: calc(3px * var(--ui)); padding: 0 calc(4px * var(--ui)); }
-.sbv { margin-left: auto; color: var(--muted); font-family: var(--f-body); }
 .viewers { font-family: var(--f-body); font-size: calc(12px * var(--ui)); color: var(--muted); white-space: nowrap; }
-.sbrow .nm { display: flex; align-items: center; gap: calc(6px * var(--ui)); min-width: 0; }
-.sbrow .nmt { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; min-width: 0; }
-.sbpack { flex-shrink: 0; font-size: calc(10px * var(--ui)); line-height: calc(14px * var(--ui)); padding: 0 calc(4px * var(--ui)); border-radius: calc(3px * var(--ui)); border: 1px solid; }
-.sbpack.c4 { color: var(--kill, #ff9a3c); border-color: rgba(255,154,60,.55); }
-.sbpack.kit { color: #5ea3e8; border-color: rgba(94,163,232,.55); }
-.sbrow.dead { color: var(--faint); }
-.sbrow span:nth-child(n+3) { text-align: right; }
 .keys-card { width: min(calc(900px * var(--ui)), 100%); max-height: 100%; overflow-y: auto; background: var(--panel); border: 1px solid var(--line); border-radius: calc(10px * var(--ui)); padding: 0; display: grid; gap: 0; }
 .keys-head { display: flex; justify-content: space-between; align-items: center; gap: calc(12px * var(--ui)); padding: calc(24px * var(--ui)) calc(24px * var(--ui)) calc(16px * var(--ui)); font-size: calc(18px * var(--ui)); }
 .keys-head b { font-family: var(--f-display); }
@@ -346,6 +367,14 @@ kbd { font-family: var(--f-body); font-size: calc(11px * var(--ui)); background:
 .kwb { color: var(--wb); font-family: var(--f-body); font-size: calc(11px * var(--ui)); margin-left: calc(4px * var(--ui)); }
 .sechead { padding: calc(10px * var(--ui)) calc(14px * var(--ui)) calc(6px * var(--ui)); font-size: calc(11px * var(--ui)); text-transform: uppercase; letter-spacing: .08em; color: var(--muted); display: flex; justify-content: space-between; gap: calc(8px * var(--ui)); }
 .sechead.cur { color: var(--sand); } /* POV mode's Kills tab: the round playing now */
+/* POV mode's Kills tab: each round a band set apart from the rows, with his side that round (0.26.30; Sujan, 11 Nov 2026,
+   docs/pov-scoreboard-radar-flashbang-mock.jpg, section B, with stronger contrast against the rows) */
+.sechead.rhead { margin-top: calc(10px * var(--ui)); padding: calc(8px * var(--ui)) calc(14px * var(--ui)); background: rgba(255,255,255,.1); border-top: 1px solid rgba(255,255,255,.22); border-bottom: 1px solid rgba(255,255,255,.16); color: var(--fg); font-size: calc(12px * var(--ui)); font-weight: 700; letter-spacing: .06em; align-items: center; }
+.sechead.rhead span:last-child { font-weight: 400; letter-spacing: .02em; text-transform: none; color: var(--muted); }
+.sechead.rhead.cur { background: rgba(214,180,106,.2); color: var(--sand); box-shadow: inset calc(3px * var(--ui)) 0 0 var(--sand); }
+.sechead.rhead.cur span:last-child { color: var(--sand); }
+.sdchip { display: inline-block; margin-left: calc(8px * var(--ui)); padding: 0 calc(5px * var(--ui)); border-radius: calc(3px * var(--ui)); font-size: calc(10px * var(--ui)); letter-spacing: .04em; color: #fff; vertical-align: 1px; }
+.sdchip.t { background: #b33a2e; } .sdchip.ct { background: #2f6fb3; }
 .prow { grid-template-columns: minmax(0, 1fr) auto; }
 .prow.sel { background: color-mix(in srgb, var(--sand) 17%, var(--panel)); box-shadow: inset calc(5px * var(--ui)) 0 0 var(--sand); }
 .opt { padding: calc(8px * var(--ui)) calc(14px * var(--ui)); display: flex; gap: calc(8px * var(--ui)); align-items: center; color: var(--muted); font-size: calc(12px * var(--ui)); border-bottom: 1px solid var(--line); }
@@ -596,6 +625,11 @@ addEventListener('resize', () => { if (applyUiSize()) dispatchEvent(new Event('u
   <section class="radar m2d" id="radar">
     <canvas id="gl" aria-label="3D view of the match" tabindex="0"></canvas>
     <canvas id="lbl"></canvas>
+    <!-- POV mode (0.26.30; Sujan, 11 Nov 2026): a flashbang's white over the 3D view and the kill feed, then his HUD and radar
+         added onto it, as the game draws its screen fade and then the HUD; the viewer's own controls stay on top -->
+    <div class="flash3" id="flash3" hidden></div>
+    <canvas id="hud3"></canvas>
+    <div class="fbdot" id="fbdot" hidden></div>
     <div class="status3" id="status3" hidden></div>
     <div class="pov" id="pov" hidden></div>
     <div class="cmsg" id="cmsg" hidden></div>
@@ -611,7 +645,7 @@ addEventListener('resize', () => { if (applyUiSize()) dispatchEvent(new Event('u
       <button class="btn arr" id="bPrevP" type="button" title="Previous player (↓ or right-click)" aria-label="Previous player">‹</button>
       <button class="btn arr" id="bNextP" type="button" title="Next player (↑ or click)" aria-label="Next player">›</button>
       <div class="vset">
-        <button class="btn" id="bVset" type="button" aria-expanded="false" aria-controls="vsetPanel" title="Vanilla, team colours, quality, damage numbers, crosshair size, interface size and POV mode">View settings <svg viewBox="0 0 10 6" aria-hidden="true"><path d="M1 1l4 4 4-4"/></svg></button>
+        <button class="btn" id="bVset" type="button" aria-expanded="false" aria-controls="vsetPanel" title="Vanilla, team colours, quality, damage numbers, crosshair size, interface size and flashbangs">View settings <svg viewBox="0 0 10 6" aria-hidden="true"><path d="M1 1l4 4 4-4"/></svg></button>
         <div class="vpanel" id="vsetPanel" role="group" aria-label="View settings" hidden>
           <div class="vhead">On the view</div>
           <label class="vrow"><span>Vanilla<small>every overlay off, as in the game</small></span><input type="checkbox" id="van3" title="Turns off what the game's own demo player doesn't show: damage numbers, kill markers, glow, See through walls, names and HP over the players, kill lines, grenade paths, the death cam's red wash and banner, and the C4 countdown. The buttons and settings still work one by one after"></label>
@@ -624,6 +658,12 @@ addEventListener('resize', () => { if (applyUiSize()) dispatchEvent(new Event('u
           </select></label>
           <label class="vrow"><span>Glow on hits<small>damage through walls, no kill</small></span><input type="checkbox" id="glow3" title="A short pink glow on a player each time a bullet hits him through a wall, for damage that doesn't end in a kill"></label>
           <label class="vrow"><span>Crosshair<small>in Player's eyes</small></span><select id="xh3" title="Crosshair size in Player's eyes, like the game's crosshair size setting">
+            <option value="small">Small</option>
+            <option value="medium">Medium</option>
+            <option value="large">Large</option>
+          </select></label>
+          <label class="vrow" hidden><span>Crosshair<small>size only</small></span><select id="xhp3" title="The size of his crosshair. From config.cfg uses the size set in the game's config.cfg in your Half-Life folder, as the game's demo player uses the watcher's own settings. The colour always comes from config.cfg">
+            <option value="cfg">From config.cfg</option>
             <option value="small">Small</option>
             <option value="medium">Medium</option>
             <option value="large">Large</option>
@@ -642,8 +682,9 @@ addEventListener('resize', () => { if (applyUiSize()) dispatchEvent(new Event('u
             <option value="175">175%</option>
             <option value="200">200%</option>
           </select></label>
-          <div class="vhead">Demos recorded by a player</div>
-          <label class="vrow"><span>POV mode<small>for demos recorded by a player</small></span><input type="checkbox" id="pov3" title="Watch a demo recorded by a player through his own eyes, as his game showed it: his view, crosshair, HUD and gun. Off, it plays like an HLTV demo. Changing it opens the demo again"></label>
+          <div class="vhead" hidden>Demos recorded by a player</div>
+          <label class="vrow" hidden><span>Flashbang dot<small>how white his screen went</small></span><input type="checkbox" id="fbDot3" title="A white dot under the crosshair that fades as his screen did when a flashbang blinded him, or a teammate he was watching"></label>
+          <label class="vrow" hidden><span>Flashbang whiteout<small>his screen's white, full screen</small></span><input type="checkbox" id="fbWhite3" title="The view goes white as his screen did when a flashbang blinded him, or a teammate he was watching. As in the game, his HUD and radar fade into the white"></label>
         </div>
       </div>
     </div>
@@ -698,7 +739,7 @@ addEventListener('resize', () => { if (applyUiSize()) dispatchEvent(new Event('u
             <dt><kbd>?</kbd></dt><dd>Show this list</dd></dl>
           </section>
         </div>
-        <div class="keys-foot"><span class="ver">Version 0.26.29 · <a href="https://github.com/deswalsujan/cs16-demo-viewer/blob/main/CHANGELOG.md" target="_blank" rel="noopener">What's new</a> · <a href="https://github.com/deswalsujan/cs16-demo-viewer/issues/new/choose" target="_blank" rel="noopener">Report a bug</a></span><span class="sp"></span><button class="btn" id="bDebug" type="button" title="Copies details for a bug report: browser, demo name, what loaded, errors. No file contents.">Copy debug info</button><button class="btn" id="bKeysClose" type="button">Close</button></div>
+        <div class="keys-foot"><span class="ver">Version 0.26.30 · <a href="https://github.com/deswalsujan/cs16-demo-viewer/blob/main/CHANGELOG.md" target="_blank" rel="noopener">What's new</a> · <a href="https://github.com/deswalsujan/cs16-demo-viewer/issues/new/choose" target="_blank" rel="noopener">Report a bug</a></span><span class="sp"></span><button class="btn" id="bDebug" type="button" title="Copies details for a bug report: browser, demo name, what loaded, errors. No file contents.">Copy debug info</button><button class="btn" id="bKeysClose" type="button">Close</button></div>
       </div>
     </div>
     <canvas id="cv" aria-label="Radar view of the match"></canvas>
@@ -757,7 +798,7 @@ addEventListener('resize', () => { if (applyUiSize()) dispatchEvent(new Event('u
         <div class="drophint">Or drop a .dem file, or an overview .bmp and .txt pair, anywhere on this page</div>
         <div class="prog" id="prog" hidden><i id="progBar"></i></div>
         <div class="msg" id="msg"></div>
-        <div class="loadfoot"><span>Version 0.26.29 · <a href="https://github.com/deswalsujan/cs16-demo-viewer" target="_blank" rel="noopener">Source on GitHub</a></span><button class="btn" id="bClear" type="button" title="Deletes the maps, models, sounds and overviews this browser saved from your Half-Life folder, and starts over as on a first visit">Clear saved files</button></div>
+        <div class="loadfoot"><span>Version 0.26.30 · <a href="https://github.com/deswalsujan/cs16-demo-viewer" target="_blank" rel="noopener">Source on GitHub</a></span><button class="btn" id="bClear" type="button" title="Deletes the maps, models, sounds and overviews this browser saved from your Half-Life folder, and starts over as on a first visit">Clear saved files</button></div>
       </div>
     </div>
   </section>
@@ -1089,6 +1130,21 @@ export function parseDemo(buffer, onProgress, opts = {}) {
   // BarTime2: time, seconds, how much of it was already filled in percent; 0 seconds takes it away), and his Tab
   // (the +showscores and -showscores his game wrote as console commands, demo frame type 3: time, 1 or 0)
   const dmg = [], bars = [], tabs = [];
+  // POV mode, Sujan's feedback of 11 Nov 2026 (docs/pov-scoreboard-radar-flashbang-mock.jpg):
+  // - flashbangs: every white ScreenFade his game got (time, fade seconds, hold seconds, alpha, flags), which the server
+  //   sends to a flashed player and to whoever watches him in first person (ReGameDLL PlayerBlind, combat.cpp), and the
+  //   time of every other ScreenFade (fadeStops): a newer fade replaces the one on screen, and the server clears it with
+  //   a black one of alpha 0 when he stops watching a blinded teammate (observer.cpp) or respawns (player.cpp). In the GP
+  //   Tourney POV all 347 others are those clears, and they end 42 of its 70 white fades early. Nothing black is drawn.
+  // - his radar (the game's, top left): each teammate's position, which the server sends him once a second while that
+  //   teammate moved 64 units or more (Radar: time, entity, x, y, z; ReGameDLL player.cpp); the bomb as his radar shows
+  //   it, dropped or planted (BombDrop) until picked up (BombPickup): time, kind (0 dropped, 1 planted, 2 picked up), x,
+  //   y, z; and who has the bomb, from the scoreboard's flags (ScoreAttrib: time, entity, flags; 2 = the bomb)
+  const fades = [], fadeStops = [], radarPos = [], radarBomb = [], attribs = [];
+  // Latency, for the Tab scoreboard (11 Nov 2026), from svc_pings: time, entity, ping in ms, each time a player's value
+  // changes. The server sends it to an HLTV proxy every 2 s, and to a player only while he holds Tab (ReHLDS
+  // SV_ShouldUpdatePing), every frame then, so a POV demo has it only from his Tab presses.
+  const pings = [], pingNow = {};
   const obs = []; // his spectator mode and target (clientdata iuser1, iuser2): time, mode, entity, each time they change
   // POV mode: teammates' health (HealthInfo; the server sends -1 for opponents): time, entity, health. Kept apart from
   // hp, which only HLTV sends and which the damage and skip finders read
@@ -1392,6 +1448,16 @@ export function parseDemo(buffer, onProgress, opts = {}) {
         case 'BombDrop': {
           const x = m.s() / 8, y = m.s() / 8, z = m.s() / 8, flag = m.ub();
           if (inPlayback && flag === 1) bomb.push({ t: time, type: 'plantpos', pos: [x, y, z], round: curRound ? curRound.n : 0 });
+          if (opts.povRounds && inPlayback) radarBomb.push(time, flag === 1 ? 1 : 0, x, y, z);
+          break;
+        }
+        case 'BombPickup': { if (opts.povRounds && inPlayback) radarBomb.push(time, 2, 0, 0, 0); break; }
+        case 'ScoreAttrib': { const e = m.ub(), f = m.ub(); if (opts.povRounds && inPlayback) attribs.push(time, e, f); break; }
+        case 'Radar': { const e = m.ub(), x = m.s() / 8, y = m.s() / 8, z = m.s() / 8; if (opts.povRounds && inPlayback) radarPos.push(time, e, x, y, z); break; }
+        case 'ScreenFade': {
+          // duration and hold in 1/4096 s (UTIL_ScreenFadeWrite, ReGameDLL util.cpp), then flags, colour and alpha
+          const dur = m.us() / 4096, hold = m.us() / 4096, flags = m.us(), cr = m.ub(), cg = m.ub(), cb = m.ub(), a = m.ub();
+          if (opts.povRounds && inPlayback) { if (cr === 255 && cg === 255 && cb === 255 && a > 0) fades.push(time, dur, hold, a, flags); else fadeStops.push(time); }
           break;
         }
         case 'SayText': {
@@ -1533,7 +1599,9 @@ export function parseDemo(buffer, onProgress, opts = {}) {
         case 16: r.s(); break; // stopsound
         case 17: { // pings
           r.bitsStart();
-          while (r.bits(1)) { r.bits(8); r.bits(8); r.bits(8); }
+          // each entry: the slot in 5 bits, the ping in 12, the packet loss in 7 (ReHLDS SV_EmitPings_internal, sv_main.cpp;
+          // read 8, 8, 8 up to 0.26.29, the same 25 bits, and thrown away)
+          while (r.bits(1)) { const e = r.bits(5) + 1, ms = r.bits(12); r.bits(7); if (inPlayback && pingNow[e] !== ms) { pingNow[e] = ms; pings.push(time, e, ms); } }
           r.bitsEnd();
           break;
         }
@@ -1828,6 +1896,7 @@ export function parseDemo(buffer, onProgress, opts = {}) {
     shotOrg: new Float32Array(shotOrg), fovs: new Float32Array(fovs), ownAmmo: new Float32Array(ownAmmo), wanims: new Float32Array(wanims), vmodels: new Float32Array(vmodels), obs: new Float32Array(obs),
     hud: { hp: new Float32Array(hud.hp), ap: new Float32Array(hud.ap), helmet: new Float32Array(hud.helmet), money: new Float32Array(hud.money), ammox: new Float32Array(hud.ammox), gunAmmo: hud.gunAmmo },
     dmg: new Float32Array(dmg), bars: new Float32Array(bars), tabs: new Float32Array(tabs),
+    fades: new Float32Array(fades), fadeStops: new Float32Array(fadeStops), radarPos: new Float32Array(radarPos), radarBomb: new Float32Array(radarBomb), attribs: new Float32Array(attribs),
   } : null;
   if (!pov) for (const k of kills) { delete k.kOwn; delete k.vOwn; }
   return {
@@ -1839,7 +1908,7 @@ export function parseDemo(buffer, onProgress, opts = {}) {
     times: new Float32Array(samples.t), slots,
     finalScore: { ...scores }, models: resources.models, stride: STRIDE,
     pmodels, sounds: resources.sounds, events: resources.events, snds: new Float32Array(snds), shots: new Float32Array(shots), booms: new Float32Array(booms), hitPoints: new Float32Array(hitPoints), brass: new Float32Array(brass), puffs: new Float32Array(puffs), radio, centre, corpses,
-    errors, errSamples, health, c4drops: new Float32Array(c4drops), slow, stops,
+    errors, errSamples, health, c4drops: new Float32Array(c4drops), slow, stops, pings: new Float32Array(pings),
     ...(povData ? { povData } : {}),
   };
 }
@@ -2328,6 +2397,7 @@ function indexFolder(list) {
       if (/(?:^|\/)cstrike\/sprites\/hud\.txt$/.test(p)) files.hud.txt = f;
       const hm = /(?:^|\/)cstrike\/sprites\/(640hud\d+)\.spr$/.exec(p);
       if (hm) files.hud.spr[hm[1]] = f;
+      if (/(?:^|\/)cstrike\/sprites\/radar640\.spr$/.test(p)) files.hud.radar = f; // POV mode: the game's radar (0.26.30)
       const wt = /(?:^|\/)cstrike\/sprites\/(weapon_\w+)\.txt$/.exec(p); // POV HUD: each gun's ammo icon
       if (wt) (files.hud.wtxt ||= {})[wt[1]] = f;
       // POV HUD: the red arcs round the crosshair that show where a hit came from (cstrike's, else Half-Life's)
@@ -2739,10 +2809,10 @@ function joinDemos(parts) {
     for (const k in src) { const nm = src[k]; if (byName[nm] == null) { byName[nm] = next; dst[next++] = nm; } map[k] = byName[nm]; }
     return (i) => (map[i] != null ? map[i] : i);
   };
-  const timesL = [], slotsL = {}, hpL = [], packL = [], brushEvL = [], brushPoseL = [], sndsL = [], shotsL = [], boomsL = [], hitPointsL = [], brassL = [], puffsL = [], c4L = [];
+  const timesL = [], slotsL = {}, hpL = [], packL = [], brushEvL = [], brushPoseL = [], sndsL = [], shotsL = [], boomsL = [], hitPointsL = [], brassL = [], puffsL = [], c4L = [], pingsL = [];
   // POV mode (0.25.0): the parts' POV data on the joined timeline, when every part is a POV demo. recs: for each part,
   // its first sample, its number of samples and the recording player's entity there
-  const povL = parts.every((P) => P.povData) ? { view: [], ownPos: [], hpInfo: [], shotOrg: [], fovs: [], ownAmmo: [], wanims: [], vmodels: [], obs: [], dmg: [], bars: [], tabs: [], hud: { hp: [], ap: [], helmet: [], money: [], ammox: [] }, gunAmmo: {}, recs: [] } : null;
+  const povL = parts.every((P) => P.povData) ? { view: [], ownPos: [], hpInfo: [], shotOrg: [], fovs: [], ownAmmo: [], wanims: [], vmodels: [], obs: [], dmg: [], bars: [], tabs: [], fades: [], fadeStops: [], radarPos: [], radarBomb: [], attribs: [], hud: { hp: [], ap: [], helmet: [], money: [], ammox: [] }, gunAmmo: {}, recs: [] } : null;
   let shift = 0, nRound = 0, nOcc = 0, nSamples = 0;
   parts.forEach((P, pi) => {
     if (pi) shift = (out.end) + JOIN_GAP - P.start;
@@ -2790,6 +2860,7 @@ function joinDemos(parts) {
     flat(P.brass || [], 12, (a, i) => { a[i] = sh(a[i]); a[i + 8] = mM(a[i + 8]); }, brassL);
     flat(P.puffs, 5, (a, i) => { a[i] = sh(a[i]); }, puffsL);
     flat(P.c4drops || [], 5, (a, i) => { a[i] = sh(a[i]); a[i + 1] = sh(a[i + 1]); }, c4L);
+    flat(P.pings || [], 3, (a, i) => { a[i] = sh(a[i]); }, pingsL);
     for (const [a, b, v] of P.slow || []) out.slow.push([sh(a), sh(b), v]);
     for (const [a, b, g] of P.stops || []) out.stops.push([sh(a), sh(b), g]);
     if (povL) {
@@ -2798,6 +2869,7 @@ function joinDemos(parts) {
       flat(Q.shotOrg, 3, () => {}, povL.shotOrg); flat(Q.fovs, 2, t0, povL.fovs); flat(Q.ownAmmo, 3, t0, povL.ownAmmo);
       flat(Q.wanims, 2, t0, povL.wanims); flat(Q.vmodels, 2, (a, i) => { a[i] = sh(a[i]); a[i + 1] = mM(a[i + 1]); }, povL.vmodels); flat(Q.obs, 3, t0, povL.obs);
       flat(Q.dmg || [], 6, t0, povL.dmg); flat(Q.bars || [], 3, t0, povL.bars); flat(Q.tabs || [], 2, t0, povL.tabs);
+      flat(Q.fades || [], 5, t0, povL.fades); flat(Q.fadeStops || [], 1, t0, povL.fadeStops); flat(Q.radarPos || [], 5, t0, povL.radarPos); flat(Q.radarBomb || [], 5, t0, povL.radarBomb); flat(Q.attribs || [], 3, t0, povL.attribs);
       for (const k in povL.hud) flat(Q.hud[k], k === 'ammox' ? 3 : 2, t0, povL.hud[k]);
       Object.assign(povL.gunAmmo, Q.hud.gunAmmo);
       povL.recs.push([nSamples, P.times.length, P.serverInfo ? P.serverInfo.playerIndex + 1 : 0]);
@@ -2827,9 +2899,10 @@ function joinDemos(parts) {
   out.povData = povL ? {
     view: cat(povL.view), viewStride: parts[0].povData.viewStride, ownPos: cat(povL.ownPos), hpInfo: cat(povL.hpInfo), shotOrg: cat(povL.shotOrg), fovs: cat(povL.fovs),
     ownAmmo: cat(povL.ownAmmo), wanims: cat(povL.wanims), vmodels: cat(povL.vmodels), obs: cat(povL.obs), dmg: cat(povL.dmg), bars: cat(povL.bars), tabs: cat(povL.tabs), recs: povL.recs,
+    fades: cat(povL.fades), fadeStops: cat(povL.fadeStops), radarPos: cat(povL.radarPos), radarBomb: cat(povL.radarBomb), attribs: cat(povL.attribs),
     hud: Object.assign(Object.fromEntries(Object.keys(povL.hud).map((k) => [k, cat(povL.hud[k])])), { gunAmmo: povL.gunAmmo }),
   } : null;
-  out.pack = cat(packL); out.hp = cat(hpL); out.brushEvents = cat(brushEvL); out.brushPose = cat(brushPoseL); out.snds = cat(sndsL); out.shots = cat(shotsL); out.booms = cat(boomsL); out.hitPoints = cat(hitPointsL); out.brass = cat(brassL); out.puffs = cat(puffsL); out.c4drops = cat(c4L);
+  out.pack = cat(packL); out.hp = cat(hpL); out.brushEvents = cat(brushEvL); out.brushPose = cat(brushPoseL); out.snds = cat(sndsL); out.shots = cat(shotsL); out.booms = cat(boomsL); out.hitPoints = cat(hitPointsL); out.brass = cat(brassL); out.puffs = cat(puffsL); out.c4drops = cat(c4L); out.pings = cat(pingsL);
   out.bomb.sort((a, b) => a.t - b.t);
   out.start = parts[0].start;
   out.fileName = parts[0].fileName;
@@ -4895,6 +4968,21 @@ function packAt(e, t) {
   while (lo <= hi) { const mid = (lo + hi) >> 1; if (a[mid * 2] <= t) { res = mid; lo = mid + 1; } else hi = mid - 1; }
   return res < 0 ? 0 : a[res * 2 + 1];
 }
+// Latency for the Tab scoreboard (0.26.30, Sujan, 11 Nov 2026), from svc_pings (D.pings: time, slot, ms, each change):
+// the last value at or before t, so between a POV demo's Tab holds the one from his last hold, and none before his first.
+// Built with buildPack, once a demo opens.
+let pingIdx = null;
+function buildPings() {
+  pingIdx = {};
+  const h = D.pings || [];
+  for (let i = 0; i < h.length; i += 3) (pingIdx[h[i + 1]] || (pingIdx[h[i + 1]] = [])).push(h[i], h[i + 2]);
+}
+function pingAt(e, t) {
+  const a = pingIdx && pingIdx[e]; if (!a || !a.length) return null;
+  let lo = 0, hi = a.length / 2 - 1, res = -1;
+  while (lo <= hi) { const mid = (lo + hi) >> 1; if (a[mid * 2] <= t) { res = mid; lo = mid + 1; } else hi = mid - 1; }
+  return res < 0 ? null : a[res * 2 + 1];
+}
 function hpAt(e, t) {
   const a = hpIdx && hpIdx[e]; if (!a || !a.length) return null;
   let lo = 0, hi = a.length / 2 - 1, res = -1;
@@ -5127,13 +5215,14 @@ function visibleRounds() { return showAll ? M.rounds.filter((r) => r.dur > 0.5 |
 let showAll = false;
 
 // ---------------- after load ----------------
-// POV mode (0.25.0, Sujan 29 Oct 2026): the setting is on, and this is a demo recorded by a player with the view block
-// his game writes. Then, before anything reads the demo (retimeKills, the wallbang finder, the picture check), his own
-// position goes into his track and into the kills by or on him: the snapshots never carry it, so with POV mode off he
-// stands at the map's zero point, as in 0.24.0. The rest of POV mode's data is put on D for the 3D view.
+// POV mode (0.25.0): a demo recorded by a player with the view block his game writes always opens in it, since Sujan
+// signed POV mode off on 11 Nov 2026 and its setting went (0.26.30). Before anything reads the demo (retimeKills, the
+// wallbang finder, the picture check), his own position goes into his track and into the kills by or on him: the
+// snapshots never carry it (up to 0.26.29, with the setting off, he stood at the map's zero point). The rest of POV
+// mode's data is put on D for the 3D view.
 function povApply() {
   const P = D.povData;
-  D.povOn = !!($('pov3').checked && D.pov && P && P.view.length >= P.viewStride * 2);
+  D.povOn = !!(D.pov && P && P.view.length >= P.viewStride * 2);
   if (!D.povOn) return;
   Object.assign(D, P);
   const S = D.stride, recs = P.recs || [[0, D.times.length, D.serverInfo ? D.serverInfo.playerIndex + 1 : 0]];
@@ -5155,16 +5244,16 @@ function povApply() {
 // What a demo doesn't have is hidden, not greyed out. A POV demo in POV mode has only 3D and only his own view (his
 // game only received the players near him), no Reset view (there's no camera of the viewer's to reset), and its Kills
 // tab lists his own kills and deaths; its Wallbangs tab goes on a server that held enemies back, and lists only his
-// own wallbangs otherwise (Sujan, 9 Nov 2026). The POV mode row of View settings shows only with a POV demo open (or
-// none), since it does nothing to an HLTV demo (Sujan, 10 Nov 2026), until the setting is dropped at the sign-off.
+// own wallbangs otherwise (Sujan, 9 Nov 2026). In POV mode View settings has his crosshair's size (From config.cfg,
+// Small, Medium, Large) and the flashbang rows, and not the viewer's crosshair, Glow on hits or Damage numbers
+// (Sujan, 11 Nov 2026; povInit in view3d.part.js hides and shows them).
 function demoOffers() {
   const pov = !!(D && D.povOn);
   return {
     views: pov ? ['3d'] : ['2d', '3d', 'split'],
     cameras: pov ? ['eyes'] : ['free', 'eyes', 'behind'],
     resetView: !pov,
-    povSetting: !D || !!D.pov,
-    crosshairSize: !pov, glowOnHits: !pov, damageNumbers: !pov,
+    crosshairSize: !pov, povCrosshair: pov, flashbangs: pov, glowOnHits: !pov, damageNumbers: !pov,
     killsTab: pov ? 'his' : 'round',
     wallbangsTab: pov ? (typeof povHidesEnemies === 'function' && POV.on && povHidesEnemies().on ? null : 'his') : 'all',
     noticesTop: pov,
@@ -5174,22 +5263,11 @@ function applyOffers() {
   const of = demoOffers();
   $('viewSeg').hidden = of.views.length < 2;
   $('tgFit').hidden = !of.resetView;
-  $('pov3').closest('.vrow').hidden = !of.povSetting;
-  { const h = $('pov3').closest('.vrow').previousElementSibling; if (h && h.classList.contains('vhead')) h.hidden = !of.povSetting; }
   const wb = document.querySelector('.tabs button[data-tab="wb"]');
   wb.hidden = !of.wallbangsTab;
   if (!of.wallbangsTab && tab === 'wb') document.querySelector('.tabs button[data-tab="kills"]').click();
   $('radar').classList.toggle('povm', of.noticesTop);
   if (typeof povMarkInit === 'function') povMarkInit();
-}
-// The POV mode setting is read when a demo opens, so changing it with a POV demo open opens that demo again, at the
-// same moment (REOPEN_T)
-let REOPEN_T = null;
-function reopenForPov() {
-  if (!D || !D.pov) return;
-  REOPEN_T = T;
-  if (D.partFiles) openJoinedUI(D.partFiles);
-  else if (CUR_FILE) loadDemoFile(CUR_FILE, { alone: true });
 }
 async function onDemo() {
   povApply();
@@ -5200,7 +5278,6 @@ async function onDemo() {
   showLoad(false);
   const first = M.liveR[0];
   T = first ? first.start : D.start;
-  if (REOPEN_T != null) { T = Math.max(D.start, Math.min(D.end, REOPEN_T)); REOPEN_T = null; }
   playing = false; selected = null; pickedKill = null; pickedBurst = null;
   $('meta').textContent = D.parts ? `${D.mapName} · ${D.parts[0].fileName} and ${plural(D.parts.length - 1, 'more file')} · ${fmt(D.end - D.start)}` : `${D.mapName} · ${D.fileName} · ${fmt(D.end - D.start)}`;
   const chip = $('partsChip');
@@ -5211,7 +5288,7 @@ async function onDemo() {
   heat = null; $('hmMode').value = 'off';
   afterOverview(ok, true);
   M.wbs = [];
-  buildHp(); buildPack(); buildBrk(); buildPose(); prepAnim(); buildZoom();
+  buildHp(); buildPack(); buildPings(); buildBrk(); buildPose(); prepAnim(); buildZoom();
   const sndDone = preloadSounds();
   renderPane(); fitView(); drawTimeline(); updateHud(true);
   if (MAP && MAP.name === D.mapName.toLowerCase()) computeWallbangs();
@@ -5341,17 +5418,12 @@ function killRow3(k, wbTag) {
 // Kill details (0.26.16; docs/kill-details-damage-vanilla-mock.jpg, approved by Sujan 3 Nov 2026): the picked kill in the
 // Kills and Wallbangs lists opens to one line per bullet that hit (killHits): its damage, where it hit (bodyPart), through a
 // wall or in the open, and how long before the kill; a click on a line jumps playback to that bullet. "Earlier:" says where
-// the rest of his health went when he had less than 100 HP at the first hit (earlierDamage). In POV mode the recorder's demo
-// has only his teammates' health, so there's nothing to list.
+// the rest of his health went when he had less than 100 HP at the first hit (earlierDamage). In POV mode there are none:
+// the recorder's demo has only his teammates' health, and up to 0.26.29 every kill there opened the same "No hit details."
+// box, so a click on a row only jumps to the kill (Sujan, 11 Nov 2026).
 function killDetailsHtml(k) {
-  if (!k.kp || k.killer === k.victim) return '';
+  if (!k.kp || k.killer === k.victim || D.povOn) return '';
   const box = (inner) => `<div class="kdet" data-kd="${D.kills.indexOf(k)}">${inner}</div>`;
-  if (D.povOn) {
-    // one of his teammates (or he himself): their health is in his demo, but the hit finder hasn't been checked on POV demos
-    const st = playerState(POV.v.rec, k.t - 0.05), side = st && st.state ? (Math.abs(st.state) === 1 ? 'TERRORIST' : 'CT') : null;
-    const mate = k.victim === POV.v.rec || (side && k.vteam === side);
-    return box(mate ? '<b>No hit details in POV mode.</b>' : `<b>No hit details.</b> A demo recorded by a player has only his teammates' health, not ${esc(labelAt(k.victim, k.t))}'s.`);
-  }
   if (!MAP || MAP.name !== D.mapName.toLowerCase()) return box(`Hit details need the map file (${esc(D.mapName)}.bsp).`);
   if (!M.liveR.some((r) => r.n === k.round)) return box('No hit details outside the rounds that count.');
   const list = killHits(k);
@@ -5383,7 +5455,7 @@ const killState = (k) => (k === pickedKill ? ' pick' : Math.abs(k.t - T) < 2 ? '
 // press and a release on the same row, so a row replaced in between lost the click: it took two or three
 // tries (Sujan, 14 Oct 2026). Now the tint moves in place (paneMarks), and a rebuild that comes while a mouse
 // button is held down on the panel waits until it's released and the click has gone through.
-const PANE = { held: false, later: false };
+const PANE = { held: false, later: false, keep: false };
 $('pane').addEventListener('pointerdown', () => { PANE.held = true; });
 const paneRelease = () => {
   if (!PANE.held) return;
@@ -5457,7 +5529,11 @@ function renderPane() {
       const a = ks.filter((k) => k.killer === povRecAt(k.t) && k.victim !== k.killer && !teamKill(k)).length, b = ks.filter((k) => k.victim === povRecAt(k.t)).length;
       nk += a; nd += b;
       const cur = r === cr;
-      body += `<div class="sechead${cur ? ' cur' : ''}"><span>${r.live ? 'Round ' + r.ln : 'Before the match'}</span><span>${[a ? plural(a, 'kill') : '', b ? plural(b, 'death') : ''].filter(Boolean).join(' · ')}</span></div>`;
+      // each round a band set apart from the rows, with his side that round (docs/pov-scoreboard-radar-flashbang-mock.jpg,
+      // section B; Sujan, 11 Nov 2026: the band with stronger contrast against the rows, no won or lost mark)
+      const se = povRecAt(r.start + 1), ps = se && playerState(se, r.start + 3), sd = ps && ps.state ? Math.abs(ps.state) : 0;
+      const chip = sd ? `<span class="sdchip ${sd === 1 ? 't' : 'ct'}">${sd === 1 ? 'T' : 'CT'}</span>` : '';
+      body += `<div class="sechead rhead${cur ? ' cur' : ''}"><span>${r.live ? 'Round ' + r.ln : 'Before the match'}${chip}</span><span>${[a ? plural(a, 'kill') : '', b ? plural(b, 'death') : ''].filter(Boolean).join(' · ')}</span></div>`;
       for (const k of ks) {
         const sk = skipNear(k.t) ? SKIP_MARK : '';
         body += `<div class="row krow kill3${killState(k)}${cur ? ' cur' : ''}" data-kill="${k.t}" data-ki="${D.kills.indexOf(k)}"><span class="n" title="Round timer as shown in game">${k === pickedKill ? MARK : ''}${killClock(k.t) ? cellClock(k.t) : '<span class="nw">+' + fmt(k.t - r.start) + '</span>'}${sk}</span><span class="main">${killRow3(k, true)}</span></div>`;
@@ -5565,7 +5641,10 @@ function renderPane() {
     const k = D.kills[+el.dataset.ki];
     if (!k) return;
     pickedKill = k;
-    watchKill(k, 4); renderPane();
+    // POV mode's Kills tab lists the whole match: a click leaves the list where it is, even when the kill is in another
+    // round (Sujan, 11 Nov 2026; up to 0.26.29 the round change it causes threw the list back to its top)
+    PANE.keep = D.povOn && tab === 'kills';
+    try { watchKill(k, 4); renderPane(); } finally { PANE.keep = false; }
   });
   p.querySelectorAll('[data-bt]').forEach((el) => el.onclick = () => {
     const k = D.kills[+el.closest('.kdet').dataset.kd]; if (!k) return;
@@ -5701,6 +5780,9 @@ function povTabTick() {
   if (held && !SB.auto) showScoreboard(true, true);
   else if (!held && SB.auto) showScoreboard(false);
 }
+// the Tab scoreboard's # column (the 1 to 0 keys): not in POV mode, and not with more than 10 players listed, since the
+// keys reach only 10 (Sujan, 11 Nov 2026)
+function sbNumCol(listed) { return !(D && D.povOn) && listed <= 10; }
 function showScoreboard(v, auto = false) {
   const el = $('sb');
   clearInterval(sbTimer);
@@ -5742,27 +5824,47 @@ function showScoreboard(v, auto = false) {
     // and in POV mode only his side's: no opponents' HP (Sujan, 3 Oct 2026), even for one who was his teammate earlier and
     // still has a reading from then (Match 1 and 2, public server, 27 Mar 2025)
     const rec = D.povOn && D.serverInfo ? D.serverInfo.playerIndex + 1 : null, recSide = rec != null ? (now.find((x) => x.e === rec) || {}).side : null;
-    const cols = (a, b, c, d, e, f) => `<span>${a}</span><span${b.startsWith('<') ? ' class="nm"' : ''}>${b}</span>${showHp ? `<span>${c}</span>` : ''}<span>${d}</span><span>${e}</span><span>${f}</span>`;
-    let h = `<div class="sbcard${showHp ? '' : ' nohp'}">`;
-    for (let ti = 0; ti < 2; ti++) {
-      const side = tT === ti ? 1 : 2;
-      h += `<div class="sbteam"><h3><span class="${side === 1 ? 'kt' : 'kct'}">${esc(M.tnames[ti])}${side === 1 ? ' · T' : ' · CT'}</span><span>${sc[ti]}</span></h3>`;
-      h += `<div class="sbrow head">${cols('#', 'Player', 'HP', 'K', 'D', 'Weapon')}</div>`;
+    // The game's look, for every demo type (Sujan, 11 Nov 2026, docs/pov-scoreboard-radar-flashbang-mock.jpg, from POV
+    // videos of the game; colours from cs16-client's scoreboard.cpp and util.cpp): one panel at 60% black with a thin tan
+    // border; the server's name and the column names in orange (255 140 0) over an orange line; the teams stacked, the one
+    // ahead on top, each under a header row (its name, side, players, score, average latency) with a line in its colour
+    // (T 255 64 64, CT 153 204 255); the game's word column (Dead, Bomb, Kit) in place of the C4 and Kit tags; the
+    // viewer's HP (his side only in POV mode) and weapon; Kills, what the viewer counts and the Players tab shows (the
+    // game's Score takes off team kills and suicides); Deaths; Latency from svc_pings (pingAt); his own row lit in POV
+    // mode; Spectators under an orange heading. The # column (the 1 to 0 keys) only in an HLTV demo with 10 players or
+    // fewer listed, since the keys reach only 10 (Sujan, 11 Nov 2026).
+    const listed = now.filter((x) => x.side);
+    const showNum = sbNumCol(listed.length);
+    const u = (n) => `calc(${n}px * var(--ui))`;
+    const grid = [showNum ? u(20) : null, 'minmax(0, 1fr)', u(64), showHp ? u(40) : null, u(84), u(50), u(54), u(58)].filter(Boolean).join(' ');
+    const row = (cells, cls) => `<div class="gr${cls ? ' ' + cls : ''}">${cells.map((c, k) => `<span${k === (showNum ? 1 : 0) ? ' class="nm"' : showNum && k === 0 ? ' class="kn"' : ''}>${c}</span>`).join('')}</div>`;
+    const cells = (num, nm, word, hp, wp, k, d, l) => [showNum ? num : null, nm, word, showHp ? hp : null, wp, k, d, l].filter((c) => c !== null);
+    const lat = (v) => (v == null ? '' : Math.round(v));
+    const host = D.serverInfo && D.serverInfo.hostName ? D.serverInfo.hostName : 'Counter-Strike';
+    let h = `<div class="gsb${listed.length > 24 ? ' dense' : ''}" style="--gsb-cols: ${grid}">`;
+    h += row(cells('', `<b>${esc(host)}</b>`, '', 'HP', 'Weapon', 'Kills', 'Deaths', 'Latency'), 'title') + '<div class="oline"></div>';
+    for (const ti of [0, 1].sort((a, b) => sc[b] - sc[a])) {
+      const side = tT === ti ? 1 : 2, sd = side === 1 ? 't' : 'ct';
       const rows = now.filter((x) => x.side === side).map((x) => Object.assign(x, { s: st[x.pid] || { k: 0, d: 0 } })).sort((a, b) => b.s.k - a.s.k || a.s.d - b.s.d || (a.pid < b.pid ? -1 : 1));
+      const ls = rows.map((x) => pingAt(x.e, T)).filter((v) => v != null), avg = ls.length ? ls.reduce((a, b) => a + b, 0) / ls.length : null;
+      h += row(cells('', `<b>${esc(M.tnames[ti])}</b><span class="gsep">·</span>${side === 1 ? 'Terrorists' : 'Counter-Terrorists'}<span class="gsep">-</span>${plural(rows.length, 'player')}`, '', '', '', `<b>${sc[ti]}</b>`, '', lat(avg)), 'th ' + sd);
+      h += `<div class="tline ${sd}"></div>`;
       for (const x of rows) {
         const alive = x.alive;
-        // what the game shows on the player's back: the C4 on a T, the defusal kit on a CT (0.17.0); only for a player in
-        // the snapshot now, since for one a POV demo's recorder doesn't receive the value is the last one seen (0.26.28)
-        const pk = alive && x.p && packAt(x.e, T) ? (x.side === 1 ? '<span class="sbpack c4" title="Carrying the bomb">C4</span>' : '<span class="sbpack kit" title="Has a defusal kit">Kit</span>') : '';
-        h += `<div class="sbrow${alive ? '' : ' dead'}">${cols((playerOrder().indexOf(x.pid) + 1) % 10, `<span class="nmt">${esc(M.pl[x.pid].name)}</span>${pk}`, alive ? (rec != null && x.side !== recSide ? '' : hpAt(x.e, T) ?? '') : 0, x.s.k, x.s.d, alive ? (x.p ? esc(weaponShort(x.p.weapon)) : '') : 'dead')}</div>`;
+        // the word: dead, or what the game shows on his back (the bomb on a T, the defusal kit on a CT, 0.17.0), only for a
+        // player in the snapshot now, since for one a POV demo's recorder doesn't receive the value is the last one seen
+        const word = !alive ? 'Dead' : x.p && packAt(x.e, T) ? (side === 1 ? 'Bomb' : 'Kit') : '';
+        const hp = alive ? (rec != null && x.side !== recSide ? '' : hpAt(x.e, T) ?? '') : '';
+        h += row(cells((playerOrder().indexOf(x.pid) + 1) % 10, esc(M.pl[x.pid].name), word, hp, alive && x.p ? esc(weaponShort(x.p.weapon)) : '', x.s.k, x.s.d, lat(pingAt(x.e, T))), sd + (x.e === rec ? ' me' : ''));
       }
-      h += '</div>';
+      h += '<div class="ggap"></div>';
     }
     // spectators on the server right now (admins, casters, HLTV relays), plus how many were watching the broadcast
     // and everyone else on the server now: people on neither side who were never on a team
     const specNow = now.filter((x) => !x.side).sort((a, b) => (M.teamOf[a.pid] != null) - (M.teamOf[b.pid] != null) || (a.pid < b.pid ? -1 : 1)).map((x) => esc(M.pl[x.pid].name) + (M.pl[x.pid].hltv ? ' <span class="sbtag">HLTV</span>' : ''));
     const v = viewersAt(T);
-    h += `<div class="sbspecs"><span class="sbl">Spectators</span>${specNow.length ? specNow.join('<span class="sbsep">·</span>') : '<span class="sbl">none on the server</span>'}${v != null ? `<span class="sbv">${v.toLocaleString('en-US')} watching on HLTV</span>` : ''}${SB.auto ? '<span class="sbheld">He held Tab here</span>' : ''}</div>`;
+    h += `<div class="spech">Spectators</div><div class="specs">${specNow.length ? specNow.join('<span class="gsep">·</span>') : 'none on the server'}</div>`;
+    if (v != null || SB.auto) h += `<div class="gfoot"><span>${v != null ? `${v.toLocaleString('en-US')} watching on HLTV` : ''}</span>${SB.auto ? '<span class="sbheld">He held Tab here</span>' : ''}</div>`;
     el.innerHTML = h + '</div>';
   };
   render(); el.hidden = false;
@@ -5818,8 +5920,14 @@ function updateHud(force) {
     if (changed && scope === 'round') drawTimeline();
     if (changed && heat && $('hmScope').value === 'round') heat = null;
     if (changed || force) { const cur = $('pane').querySelector('.row.cur'); if (cur && tab === 'rounds') cur.scrollIntoView({ block: 'nearest' }); }
-    // a new round on the Kills tab: its heading at the top, not wherever the last round's list was scrolled to
-    if (changed && tab === 'kills') $('pane').scrollTop = 0;
+    // a new round on the Kills tab: its heading at the top, not wherever the last round's list was scrolled to. POV mode's
+    // Kills tab lists the whole match by round (0.26.29), so there the new round's heading comes to the top, the list
+    // stays where it is for a round with no kill or death of his yet (it has no heading) and after a click on a row
+    // (Sujan, 11 Nov 2026; up to 0.26.29 it went back to the list's top at every round change)
+    if (changed && tab === 'kills') {
+      if (!D.povOn) $('pane').scrollTop = 0;
+      else if (!PANE.keep) { const P = $('pane'), cur = P.querySelector('.sechead.rhead.cur'); if (cur) P.scrollTop += cur.getBoundingClientRect().top - P.getBoundingClientRect().top; }
+    }
   }
 }
 
@@ -6448,6 +6556,7 @@ function resize3() {
   R3.renderer.setSize(r.width, r.height, false);
   R3.camera.aspect = r.width / r.height; R3.camera.updateProjectionMatrix();
   const l = $('lbl'); l.width = Math.round(r.width * dpr); l.height = Math.round(r.height * dpr);
+  const hc = $('hud3'); hc.width = l.width; hc.height = l.height;
 }
 new ResizeObserver(() => resize3()).observe($('radar'));
 
@@ -8267,6 +8376,10 @@ function update3Now() {
   // what an error partway through last frame's drawing can leave behind, now that the loop runs on after one (0.26.18;
   // Sujan, 7 Nov 2026): drawHitNumbers' fade, and drawPovHud's and drawSpecBars' settings inside save and restore
   lx.globalAlpha = 1; lx.textAlign = 'center'; lx.textBaseline = 'alphabetic'; lx.globalCompositeOperation = 'source-over';
+  // POV mode's HUD layer, added onto the picture (#hud3, 0.26.30): his HUD, crosshair, hit arcs and radar
+  const hc = $('hud3'), hx = hc.getContext('2d');
+  hx.setTransform(dpr, 0, 0, dpr, 0, 0); hx.clearRect(0, 0, W, H); hx.globalAlpha = 1; hx.globalCompositeOperation = 'source-over';
+  if (POV.on) povRadarRoom(H);
   const mono = textFont();
   const camW = [camera.position.x, -camera.position.z, camera.position.y];
   let visBudget = 3; // routine re-checks this frame; the rest wait a frame or two
@@ -8319,7 +8432,7 @@ function update3Now() {
     if (scoped) drawScope(lx, W, H);
     const xh = POV.on ? povXh(W, H) : XHAIR[$('xh3').value] || XHAIR.large;
     if (cam3.mode === 'eyes' && (!POV.on || POV.who != null)) drawHitMarker(lx, W / 2, H / 2, xh);
-    if (POV.on) { if (!scoped) drawPovCrosshair(lx, W, H); if (POV.who === POV.v.rec && POV.mode === 0) drawPovHud(lx, W, H); }
+    if (POV.on) { if (!scoped) { readCrosshairCfg(); drawPovCrosshair(XCFG.additive ? hx : lx, W, H); } if (POV.who === POV.v.rec && POV.mode === 0) { drawPovHud(hx, W, H); drawPovRadar(hx, W, H); } }
     else if (cam3.mode === 'eyes' && !scoped) { lx.strokeStyle = 'rgba(90,255,90,.85)'; lx.lineWidth = xh.w; const cx = W / 2, cy = H / 2, g = xh.gap, e = xh.end; lx.beginPath(); lx.moveTo(cx - e, cy); lx.lineTo(cx - g, cy); lx.moveTo(cx + g, cy); lx.lineTo(cx + e, cy); lx.moveTo(cx, cy - e); lx.lineTo(cx, cy - g); lx.moveTo(cx, cy + g); lx.lineTo(cx, cy + e); lx.stroke(); }
   } else if (cam3.mode !== 'free' && selected) {
     const death = D.kills.filter((k) => k.victim === selected && k.t <= T + 0.05).pop();
@@ -8354,6 +8467,7 @@ function update3Now() {
   // ...and while he's playing the game shows no name box, his HUD sits there
   else if (POV.on && POV.mode === 0 && POV.who === POV.v.rec) pov.hidden = true;
   if (POV.on) drawPovBar(lx, W, H);
+  povFlash();
 }
 // Hit marker on the crosshair when the player you're watching gets a kill:
 // white for a kill, orange for a headshot, magenta for a wallbang, with a short label underneath
@@ -8655,15 +8769,20 @@ function povShots() {
 }
 function povInit() {
   POV.shotsBy = null; POV.hidden = null; { const n = $('povNote'); if (n) n.hidden = true; } $('feed').style.top = '';
+  $('flash3').hidden = true; $('fbdot').hidden = true; POV.radarRoom = null; POV.attrIdx = null; POV.radIdx = null; $('radar').style.removeProperty('--pov-radar');
   POV.on = !!(D && D.povOn && D.view);
   POV.i = 0; POV.t = T;
   D.ownShots = POV.on ? povShots() : null;
-  // the camera buttons that pick another view or player go; View settings stays, without the crosshair size (POV mode
-  // draws his own game crosshair) and Glow on hits (no wallbang damage in POV mode, so nothing to glow; Sujan, 29 Oct 2026)
+  // the camera buttons that pick another view or player go; View settings stays, with his own crosshair's size in place of
+  // the viewer's (From config.cfg, Small, Medium, Large; Sujan, 11 Nov 2026), without Glow on hits (no wallbang damage in
+  // POV mode, so nothing to glow; Sujan, 29 Oct 2026) and Damage numbers (Sujan, 3 Nov 2026), and with the flashbang rows
   $('cam3').querySelector('.camseg').hidden = POV.on;
   $('bPrevP').hidden = POV.on; $('bNextP').hidden = POV.on;
   $('xh3').closest('.vrow').hidden = POV.on; $('glow3').closest('.vrow').hidden = POV.on;
-  $('dn3').closest('.vrow').hidden = POV.on; // and Damage numbers: POV mode shows no damage (Sujan, 3 Nov 2026)
+  $('dn3').closest('.vrow').hidden = POV.on;
+  $('xhp3').closest('.vrow').hidden = !POV.on;
+  for (const id of ['fbDot3', 'fbWhite3']) $(id).closest('.vrow').hidden = !POV.on;
+  { const h = $('fbDot3').closest('.vrow').previousElementSibling; if (h && h.classList.contains('vhead')) h.hidden = !POV.on; }
   if (POV.on) { cam3.mode = 'eyes'; cam3.chase = null; cam3.cYaw = null; povFollow(T); }
 }
 // The view at time t, between the two frames around it. Angles turn the short way round. Across a jump (a
@@ -8786,17 +8905,21 @@ function povCrosshairNow() {
 // against the scene, which keeps the 4:3 picture's height (eyeFov; Sujan, 3 Nov 2026). Up to 0.26.14 they were sized
 // from the view's width, about a third too big against the scene on a 16:9 view once the scene kept the 4:3 height.
 const povXhW = (W, H) => Math.min(W, H * 4 / 3);
+// his crosshair's size: View settings' Crosshair row in POV mode (0.26.30; Sujan, 11 Nov 2026): From config.cfg (the default:
+// cl_crosshair_size there, as the game's demo player uses the watcher's own settings), or Small, Medium or Large; the colour
+// and translucency always come from config.cfg
+function povXhBase() { const v = $('xhp3').value; return v === 'small' ? 1024 : v === 'medium' ? 800 : v === 'large' ? 640 : XCFG.base; }
 function povXh(W, H) {
   readCrosshairCfg();
   const c = povCrosshairNow(); if (!c) return XHAIR.large;
-  const X = povXhW(W, H), k = X / XCFG.base * XCFG.scale, g = c.gap * k;
+  const X = povXhW(W, H), k = X / povXhBase() * XCFG.scale, g = c.gap * k;
   return { gap: g, end: g + Math.max(1, c.len * k), w: Math.max(1, Math.round(X / 1280)) };
 }
 function drawPovCrosshair(lx, W, H) {
   readCrosshairCfg();
   const c = povCrosshairNow();
   if (!c) return;
-  const X = povXhW(W, H), k = X / XCFG.base * XCFG.scale, g = c.gap * k, L = Math.max(1, c.len * k), cx = Math.round(W / 2), cy = Math.round(H / 2);
+  const X = povXhW(W, H), k = X / povXhBase() * XCFG.scale, g = c.gap * k, L = Math.max(1, c.len * k), cx = Math.round(W / 2), cy = Math.round(H / 2);
   lx.save();
   lx.globalCompositeOperation = XCFG.additive ? 'lighter' : 'source-over';
   lx.fillStyle = `rgba(${XCFG.r},${XCFG.g},${XCFG.b},${(c.alpha / 255).toFixed(3)})`;
@@ -8849,7 +8972,7 @@ async function loadHudSprites() {
   if (!txt || (HUDS.from === txt && HUDS.forD === D) || HUDS.loading) return;
   HUDS.loading = true;
   const forD = D;
-  if (HUDS.from !== txt) { HUDS.spr = {}; HUDS.ammo = {}; HUDS.pain = null; }
+  if (HUDS.from !== txt) { HUDS.spr = {}; HUDS.ammo = {}; HUDS.pain = null; HUDS.radar = null; }
   try {
     const sheets = {};
     const sheet = async (nm) => { if (!(nm in sheets)) { const f = files.hud.spr[nm]; sheets[nm] = f ? decodeSpr(await readPicked(f, `sprites/${nm}.spr`) || new Uint8Array(0)) : null; } return sheets[nm]; };
@@ -8860,6 +8983,8 @@ async function loadHudSprites() {
     }
     // the hit arcs (valve/sprites/640_pain.spr, four frames)
     if (!HUDS.pain && files.hud.pain) HUDS.pain = sprCanvases(await readPicked(files.hud.pain, 'sprites/640_pain.spr'));
+    // the game's radar (cstrike/sprites/radar640.spr, 0.26.30)
+    if (!HUDS.radar && files.hud.radar) HUDS.radar = radarSprite(decodeSpr(await readPicked(files.hud.radar, 'sprites/radar640.spr') || new Uint8Array(0)));
     // ammo icons, for the guns he used
     const ids = new Set(), own = (forD && forD.ownAmmo) || []; for (let i = 1; i < own.length; i += 3) ids.add(own[i]);
     for (const id of ids) {
@@ -9079,6 +9204,90 @@ function drawPovBar(lx, W, H) {
   lx.restore();
 }
 
+// ---------------- POV mode: his radar (0.26.30) ----------------
+// The game's radar, top left, as cs16-client's radar.cpp draws its default see-through one (cl_radartype 0) for everyone,
+// whatever config.cfg says (Sujan, 11 Nov 2026, docs/pov-scoreboard-radar-flashbang-mock.jpg, section D): radar640.spr
+// tinted 25 75 25 and added onto the picture, sized like the rest of his HUD; 32 units of map a pixel of the sprite, out
+// to its edge, turning with his view. His living teammates as white dots, the bomb carrier's red (255 16 16); one more
+// than 128 units above him is a T, below him an upside-down T. Where each is: from his snapshots while his game received
+// him, else the last Radar message this round (ReGameDLL player.cpp sends one a second while he moved 64 units or more).
+// On a T's radar the bomb dropped (a dot) or planted (a cross), red, flashing every half second until picked up. No
+// enemies. Only while he's playing, as the game hides it when he's dead.
+function radarSprite(sh) {
+  if (!sh) return null;
+  const cv = document.createElement('canvas'); cv.width = sh.w; cv.height = sh.h;
+  const g = cv.getContext('2d'), img = g.createImageData(sh.w, sh.h);
+  for (let i = 0; i < sh.w * sh.h; i++) { const c = sh.px[i], o = i * 4; img.data[o] = sh.pal[c * 3] * 25 / 255; img.data[o + 1] = sh.pal[c * 3 + 1] * 75 / 255; img.data[o + 2] = sh.pal[c * 3 + 2] * 25 / 255; img.data[o + 3] = 255; }
+  g.putImageData(img, 0, 0);
+  return { cv, w: sh.w, h: sh.h };
+}
+// the round pill and View settings sit under the radar in POV mode (app.css, --pov-radar)
+function povRadarRoom(H) {
+  const px = HUDS.radar ? Math.round(HUDS.radar.h * H / 768 * HUD_SCALE) : 0;
+  if (POV.radarRoom !== px) { POV.radarRoom = px; $('radar').style.setProperty('--pov-radar', px + 'px'); }
+}
+// the last value of a flat (time, entity, ...) array of stride n for one entity at or before t, per entity once
+function povByEnt(key, A, n) {
+  const C = POV[key] || (POV[key] = {});
+  if (!C.built) { C.built = true; for (let i = 0; A && i < A.length; i += n) (C[A[i + 1]] || (C[A[i + 1]] = [])).push(...A.subarray(i, i + n)); }
+  return C;
+}
+function povLastOf(key, A, n, e, t) { const a = povByEnt(key, A, n)[e]; if (!a) return -1; const r = idxAt(a, n, t); return r < 0 ? -1 : r * n; }
+function povHasBomb(e, t) {
+  if (D.attribs && D.attribs.length) { const a = povByEnt('attrIdx', D.attribs, 3)[e], i = povLastOf('attrIdx', D.attribs, 3, e, t); return i >= 0 && (a[i + 2] & 2) !== 0; }
+  return !!packAt(e, t);
+}
+function drawPovRadar(lx, W, H) {
+  const sp = HUDS.radar; if (!sp) return;
+  const t = POV.t, v = POV.v, rec = v.rec, me = playerState(rec, t); if (!me || me.state <= 0) return;
+  const s = H / 768 * HUD_SCALE, R = sp.w / 2, side = Math.abs(me.state), r = roundAt(t), from = r ? r.start : -Infinity;
+  lx.save(); lx.globalCompositeOperation = 'lighter'; lx.globalAlpha = 1;
+  lx.drawImage(sp.cv, 0, 0, sp.w * s, sp.h * s);
+  const put = (px, py, pz, col, kind) => {
+    const dx = px - v.pos[0], dy = py - v.pos[1], off = (v.yaw - Math.atan2(dy, dx) * 180 / Math.PI) * Math.PI / 180;
+    const rad = Math.min(Math.hypot(dx, dy) / 32, R), X = (R + rad * Math.sin(off)) * s, Y = (R - rad * Math.cos(off)) * s, z = v.pos[2] - pz, u = s;
+    lx.fillStyle = `rgb(${col})`;
+    if (kind === 'cross') { for (const [a, b] of [[0, 0], [-2, -2], [-2, 2], [2, -2], [2, 2]]) lx.fillRect(X + a * u, Y + b * u, 2 * u, 2 * u); return; }
+    if (z > -128 && z < 128) lx.fillRect(X - 2 * u, Y - 2 * u, 4 * u, 4 * u);
+    else if (z <= -128) { lx.fillRect(X - 2 * u, Y - 2 * u, 6 * u, 2 * u); lx.fillRect(X, Y, 2 * u, 4 * u); } // above him
+    else { lx.fillRect(X, Y - 2 * u, 2 * u, 4 * u); lx.fillRect(X - 2 * u, Y + 2 * u, 6 * u, 2 * u); } // below him
+  };
+  const si = M.idxAt(t) * D.stride;
+  for (const k in D.slots) {
+    const e = +k; if (e === rec) continue;
+    const a = D.slots[e], val = a[si + 5] || 0; if (!(val > 0 && Math.abs(val) === side)) continue;
+    let p = null;
+    if (!Number.isNaN(a[si])) { const st = playerState(e, t); if (st) p = [st.x, st.y, st.z]; }
+    if (!p) { const i = povLastOf('radIdx', D.radarPos, 5, e, t); const A = i >= 0 ? povByEnt('radIdx', D.radarPos, 5)[e] : null; if (A && A[i] >= from) p = [A[i + 2], A[i + 3], A[i + 4]]; }
+    if (p) put(p[0], p[1], p[2], side === 1 && povHasBomb(e, t) ? '255,16,16' : '255,255,255', 'dot');
+  }
+  const B = D.radarBomb, bi = side === 1 && B ? idxAt(B, 5, t) : -1;
+  if (bi >= 0 && B[bi * 5 + 1] !== 2 && B[bi * 5] >= from && Math.floor((t - B[bi * 5]) / 0.5) % 2 === 0) put(B[bi * 5 + 2], B[bi * 5 + 3], B[bi * 5 + 4], '255,0,0', B[bi * 5 + 1] === 1 ? 'cross' : 'dot');
+  lx.restore();
+}
+
+// ---------------- POV mode: flashbangs (0.26.30) ----------------
+// How white his screen was at t (0 to 255), from the white ScreenFades his game got (D.fades: time, fade, hold, alpha,
+// flags), as the engine fades one: full through the hold, then down in a straight line over the fade; a newer ScreenFade
+// of any kind replaces it (D.fadeStops: the server's clears, alpha 0, when he stops watching a blinded teammate or respawns)
+function povFlashAt(t) {
+  const F = D.fades; if (!F || !F.length) return 0;
+  const r = idxAt(F, 5, t); if (r < 0) return 0;
+  const t0 = F[r * 5], dur = F[r * 5 + 1], hold = F[r * 5 + 2], a = F[r * 5 + 3], end = t0 + hold + dur;
+  const S = D.fadeStops, k = S && S.length ? idxAt(S, 1, t) : -1;
+  if (k >= 0 && S[k] > t0) return 0;
+  if (t >= end) return 0;
+  return dur > 0 ? Math.min(a, a * (end - t) / dur) : a;
+}
+// the white dot under the crosshair and the whiteout, each a View settings row, both off by default (Sujan, 8 Nov 2026);
+// the dot's thin dark ring keeps it seen over a bright floor as it fades (Sujan, 11 Nov 2026)
+function povFlash() {
+  const a = POV.on && D ? povFlashAt(POV.t) : 0, fw = $('flash3'), fd = $('fbdot');
+  const w = a > 0 && $('fbWhite3').checked, d = a > 0 && $('fbDot3').checked;
+  if (fw.hidden === w) fw.hidden = !w; if (w) fw.style.opacity = (a / 255).toFixed(3);
+  if (fd.hidden === d) fd.hidden = !d; if (d) fd.style.opacity = (a / 255).toFixed(3);
+}
+
 // ---------------- POV mode: spectator bars ----------------
 // As the game's spectator view (cstrike/resource/UI/Spectator.res): a translucent black bar at the top and at the
 // bottom (see SPEC_BAR), while he watches someone else after dying (not during the death camera behind
@@ -9142,9 +9351,10 @@ function povHidesEnemies() {
   POV.i = 0;
   return POV.hidden = { on: tm > 200 && en < tm * 0.1, en, tm };
 }
-// the load summary's line and the note: the headline, then the detail, feature names between ** (bold)
+// the load summary's line and the note: the headline, then the detail, feature names between ** (bold); one text in both
+// places (Sujan, 11 Nov 2026; up to 0.26.29 it gave the counts of enemy and teammate sightings)
 function hiddenEnemiesText(h) {
-  return { t: 'This server seems to use an anti-wallhack plugin', n: `It only sent the recording player enemies who were about to come into view, so **See through walls** can show just those few (${h.en.toLocaleString()} enemy sightings against ${h.tm.toLocaleString()} for teammates), and there's no Wallbangs tab. Once he was dead, it sent them all.` };
+  return { t: 'This server seems to use an anti-wallhack plugin', n: 'To stop wallhacks, the server shows the player an enemy only when that enemy is about to come into view. So **See through walls** won\'t work as intended until the player is dead.' };
 }
 // the ! on See through walls, only in POV mode on such a server
 function povMarkInit() {
@@ -9294,9 +9504,14 @@ function setVanilla(on) {
 { const v = ls.get('vanilla'); if (v && v.on === true) { VAN.on = true; VAN.saved = v.saved && typeof v.saved === 'object' ? v.saved : null; } }
 $('van3').checked = VAN.on;
 $('van3').onchange = () => setVanilla($('van3').checked);
-// POV mode (0.25.0, Sujan 29 Oct 2026): off by default until Sujan signs it off; with it off every demo plays as in 0.24.0
-$('pov3').checked = ls.get('povMode') === 'on';
-$('pov3').onchange = () => { ls.set('povMode', $('pov3').checked ? 'on' : 'off'); reopenForPov(); };
+// POV mode's own rows (0.26.30, Sujan, 11 Nov 2026): his crosshair's size, From config.cfg by default (the game's demo
+// player uses the watcher's own settings; the colour always comes from config.cfg), and the flashbang dot and whiteout,
+// both off by default (Sujan, 8 Nov 2026). The POV mode setting itself went at the sign-off (Sujan, 11 Nov 2026).
+{ const v = ls.get('povCrosshair'); if (['cfg', 'small', 'medium', 'large'].includes(v)) $('xhp3').value = v; }
+$('xhp3').onchange = () => ls.set('povCrosshair', $('xhp3').value);
+$('fbDot3').checked = ls.get('fbDot') === 'on'; $('fbWhite3').checked = ls.get('fbWhite') === 'on';
+$('fbDot3').onchange = () => ls.set('fbDot', $('fbDot3').checked ? 'on' : 'off');
+$('fbWhite3').onchange = () => ls.set('fbWhite', $('fbWhite3').checked ? 'on' : 'off');
 if (document.fonts) document.fonts.ready.then(() => { tlCache.key = ''; });
 $('bSnd').onclick = () => setSound(!SND.on);
 // full screen: the whole viewer fills the screen (Esc or F leaves it)
@@ -9487,10 +9702,9 @@ async function loadSummary(sndDone) {
     rows.push({ s: 'info', t: `${n} ${n === 1 ? 'round was' : 'rounds were'} played after ${who} reached 16 (${sc})`, n: M.auto30 ? 'Counted: the teams played on to round 30, as events that count all 30 rounds did.' : M.count30 ? 'Counted, as chosen for this demo (up to round 30).' : `Some events played all 30 rounds and count them. Not counted now: the match ends at ${sc}.`, btn: { id: 'sumCount30', label: M.count30 ? 'Stop at 16' : 'Count them' } });
   }
   if (D.maps && D.maps.length > 1) rows.push({ s: 'info', t: `The recording switched maps. Showing ${D.mapName}, where it spent longest.`, n: D.maps.map((m) => `${m.map} ${fmt(m.dur)}`).join(', then ') });
-  // POV mode (0.25.0, Sujan 29 Oct 2026): off by default, so the line says so and turns it on
-  if (D.pov) rows.push(D.povOn
-    ? { s: 'info', t: 'Recorded by a player, shown in POV mode', n: "Through his own eyes, as his game showed it. A player's game only receives the players near them, so others drop in and out of view, and wallbangs are found less reliably than in HLTV demos. POV mode can be turned off in View settings." }
-    : { s: 'info', t: 'Recorded by a player (a POV demo)', n: "A player's game only receives the players near them, so others drop in and out of view, and wallbangs are found less reliably than in HLTV demos. POV mode is off: turn it on to watch through his eyes, with his crosshair, HUD and gun. It's also in View settings.", btn: D.povData ? { id: 'sumPov', label: 'Turn on POV mode' } : null });
+  // POV mode's own line and its Turn on button went with the setting (Sujan signed POV mode off, 11 Nov 2026; 0.26.30):
+  // a POV demo always opens in it. Only a file without the record of his own view, which POV mode needs, says why.
+  if (D.pov && !D.povOn) rows.push({ s: 'info', t: 'Recorded by a player (a POV demo)', n: "This file has no record of his own view, so it plays like an HLTV demo, with him at the map's zero point." });
   // the POV mockup round (docs/pov-mockup-round-mock.jpg, sections 1 and 6; Sujan, 11 Nov 2026): what a POV demo doesn't
   // have, and the anti-wallhack note, which no longer shows over his HUD (the ! on See through walls brings it back)
   if (D.povOn) {
@@ -9623,7 +9837,6 @@ function renderSummary(r) {
   el.hidden = false;
   $('sumX').onclick = closeSummary;
   if ($('sumCount30')) $('sumCount30').onclick = () => setCount30(!M.count30);
-  if ($('sumPov')) $('sumPov').onclick = () => { closeSummary(); $('pov3').checked = true; $('pov3').onchange(); };
   if ($('sumJoin')) $('sumJoin').onclick = () => { if (SUM.joinList) openJoinCard(SUM.joinList); };
   if ($('sumFolder')) $('sumFolder').onclick = () => { closeSummary(); pickFolder(); };
   // the can't-play card (0.26.23, docs/dialogs-mock.jpg; Sujan, 8 Nov 2026: Open another demo the main button): back to the
@@ -9679,7 +9892,7 @@ function frameError(e) {
 function debugInfo() {
   let gpu = '';
   try { const gl = document.createElement('canvas').getContext('webgl'); const x = gl && gl.getExtension('WEBGL_debug_renderer_info'); gpu = gl ? (x ? gl.getParameter(x.UNMASKED_RENDERER_WEBGL) : 'WebGL available') : 'no WebGL'; } catch (e) { gpu = 'unknown'; }
-  const L = [`CS 1.6 Demo Viewer 0.26.29`, `Browser: ${navigator.userAgent}`, `Screen: ${screen.width}x${screen.height} at ${devicePixelRatio}x, window ${innerWidth}x${innerHeight}`, `Graphics: ${gpu}`];
+  const L = [`CS 1.6 Demo Viewer 0.26.30`, `Browser: ${navigator.userAgent}`, `Screen: ${screen.width}x${screen.height} at ${devicePixelRatio}x, window ${innerWidth}x${innerHeight}`, `Graphics: ${gpu}`];
   L.push(`Folder: ${Object.keys(files.maps).length} maps, ${Object.keys(files.overviews).length} overviews, ${Object.keys(files.mdl).length} models, ${Object.keys(files.snd).length} sounds, ${files.demos.length} demos`);
   if (D) {
     L.push(`Demo: ${D.fileName}, protocol ${(D.header && D.header.netProtocol) || '?'}, ${D.pov ? 'POV (recorded by a player)' : 'HLTV'}, map ${D.mapName}, length ${fmt(D.end - D.start)}, ${M.liveR.length} live rounds, final ${M.liveR.length ? M.liveR[M.liveR.length - 1].scoreAfter.join(':') : '-'}`);

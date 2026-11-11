@@ -106,6 +106,9 @@ function povTabTick() {
   if (held && !SB.auto) showScoreboard(true, true);
   else if (!held && SB.auto) showScoreboard(false);
 }
+// the Tab scoreboard's # column (the 1 to 0 keys): not in POV mode, and not with more than 10 players listed, since the
+// keys reach only 10 (Sujan, 11 Nov 2026)
+function sbNumCol(listed) { return !(D && D.povOn) && listed <= 10; }
 function showScoreboard(v, auto = false) {
   const el = $('sb');
   clearInterval(sbTimer);
@@ -147,27 +150,47 @@ function showScoreboard(v, auto = false) {
     // and in POV mode only his side's: no opponents' HP (Sujan, 3 Oct 2026), even for one who was his teammate earlier and
     // still has a reading from then (Match 1 and 2, public server, 27 Mar 2025)
     const rec = D.povOn && D.serverInfo ? D.serverInfo.playerIndex + 1 : null, recSide = rec != null ? (now.find((x) => x.e === rec) || {}).side : null;
-    const cols = (a, b, c, d, e, f) => `<span>${a}</span><span${b.startsWith('<') ? ' class="nm"' : ''}>${b}</span>${showHp ? `<span>${c}</span>` : ''}<span>${d}</span><span>${e}</span><span>${f}</span>`;
-    let h = `<div class="sbcard${showHp ? '' : ' nohp'}">`;
-    for (let ti = 0; ti < 2; ti++) {
-      const side = tT === ti ? 1 : 2;
-      h += `<div class="sbteam"><h3><span class="${side === 1 ? 'kt' : 'kct'}">${esc(M.tnames[ti])}${side === 1 ? ' · T' : ' · CT'}</span><span>${sc[ti]}</span></h3>`;
-      h += `<div class="sbrow head">${cols('#', 'Player', 'HP', 'K', 'D', 'Weapon')}</div>`;
+    // The game's look, for every demo type (Sujan, 11 Nov 2026, docs/pov-scoreboard-radar-flashbang-mock.jpg, from POV
+    // videos of the game; colours from cs16-client's scoreboard.cpp and util.cpp): one panel at 60% black with a thin tan
+    // border; the server's name and the column names in orange (255 140 0) over an orange line; the teams stacked, the one
+    // ahead on top, each under a header row (its name, side, players, score, average latency) with a line in its colour
+    // (T 255 64 64, CT 153 204 255); the game's word column (Dead, Bomb, Kit) in place of the C4 and Kit tags; the
+    // viewer's HP (his side only in POV mode) and weapon; Kills, what the viewer counts and the Players tab shows (the
+    // game's Score takes off team kills and suicides); Deaths; Latency from svc_pings (pingAt); his own row lit in POV
+    // mode; Spectators under an orange heading. The # column (the 1 to 0 keys) only in an HLTV demo with 10 players or
+    // fewer listed, since the keys reach only 10 (Sujan, 11 Nov 2026).
+    const listed = now.filter((x) => x.side);
+    const showNum = sbNumCol(listed.length);
+    const u = (n) => `calc(${n}px * var(--ui))`;
+    const grid = [showNum ? u(20) : null, 'minmax(0, 1fr)', u(64), showHp ? u(40) : null, u(84), u(50), u(54), u(58)].filter(Boolean).join(' ');
+    const row = (cells, cls) => `<div class="gr${cls ? ' ' + cls : ''}">${cells.map((c, k) => `<span${k === (showNum ? 1 : 0) ? ' class="nm"' : showNum && k === 0 ? ' class="kn"' : ''}>${c}</span>`).join('')}</div>`;
+    const cells = (num, nm, word, hp, wp, k, d, l) => [showNum ? num : null, nm, word, showHp ? hp : null, wp, k, d, l].filter((c) => c !== null);
+    const lat = (v) => (v == null ? '' : Math.round(v));
+    const host = D.serverInfo && D.serverInfo.hostName ? D.serverInfo.hostName : 'Counter-Strike';
+    let h = `<div class="gsb${listed.length > 24 ? ' dense' : ''}" style="--gsb-cols: ${grid}">`;
+    h += row(cells('', `<b>${esc(host)}</b>`, '', 'HP', 'Weapon', 'Kills', 'Deaths', 'Latency'), 'title') + '<div class="oline"></div>';
+    for (const ti of [0, 1].sort((a, b) => sc[b] - sc[a])) {
+      const side = tT === ti ? 1 : 2, sd = side === 1 ? 't' : 'ct';
       const rows = now.filter((x) => x.side === side).map((x) => Object.assign(x, { s: st[x.pid] || { k: 0, d: 0 } })).sort((a, b) => b.s.k - a.s.k || a.s.d - b.s.d || (a.pid < b.pid ? -1 : 1));
+      const ls = rows.map((x) => pingAt(x.e, T)).filter((v) => v != null), avg = ls.length ? ls.reduce((a, b) => a + b, 0) / ls.length : null;
+      h += row(cells('', `<b>${esc(M.tnames[ti])}</b><span class="gsep">·</span>${side === 1 ? 'Terrorists' : 'Counter-Terrorists'}<span class="gsep">-</span>${plural(rows.length, 'player')}`, '', '', '', `<b>${sc[ti]}</b>`, '', lat(avg)), 'th ' + sd);
+      h += `<div class="tline ${sd}"></div>`;
       for (const x of rows) {
         const alive = x.alive;
-        // what the game shows on the player's back: the C4 on a T, the defusal kit on a CT (0.17.0); only for a player in
-        // the snapshot now, since for one a POV demo's recorder doesn't receive the value is the last one seen (0.26.28)
-        const pk = alive && x.p && packAt(x.e, T) ? (x.side === 1 ? '<span class="sbpack c4" title="Carrying the bomb">C4</span>' : '<span class="sbpack kit" title="Has a defusal kit">Kit</span>') : '';
-        h += `<div class="sbrow${alive ? '' : ' dead'}">${cols((playerOrder().indexOf(x.pid) + 1) % 10, `<span class="nmt">${esc(M.pl[x.pid].name)}</span>${pk}`, alive ? (rec != null && x.side !== recSide ? '' : hpAt(x.e, T) ?? '') : 0, x.s.k, x.s.d, alive ? (x.p ? esc(weaponShort(x.p.weapon)) : '') : 'dead')}</div>`;
+        // the word: dead, or what the game shows on his back (the bomb on a T, the defusal kit on a CT, 0.17.0), only for a
+        // player in the snapshot now, since for one a POV demo's recorder doesn't receive the value is the last one seen
+        const word = !alive ? 'Dead' : x.p && packAt(x.e, T) ? (side === 1 ? 'Bomb' : 'Kit') : '';
+        const hp = alive ? (rec != null && x.side !== recSide ? '' : hpAt(x.e, T) ?? '') : '';
+        h += row(cells((playerOrder().indexOf(x.pid) + 1) % 10, esc(M.pl[x.pid].name), word, hp, alive && x.p ? esc(weaponShort(x.p.weapon)) : '', x.s.k, x.s.d, lat(pingAt(x.e, T))), sd + (x.e === rec ? ' me' : ''));
       }
-      h += '</div>';
+      h += '<div class="ggap"></div>';
     }
     // spectators on the server right now (admins, casters, HLTV relays), plus how many were watching the broadcast
     // and everyone else on the server now: people on neither side who were never on a team
     const specNow = now.filter((x) => !x.side).sort((a, b) => (M.teamOf[a.pid] != null) - (M.teamOf[b.pid] != null) || (a.pid < b.pid ? -1 : 1)).map((x) => esc(M.pl[x.pid].name) + (M.pl[x.pid].hltv ? ' <span class="sbtag">HLTV</span>' : ''));
     const v = viewersAt(T);
-    h += `<div class="sbspecs"><span class="sbl">Spectators</span>${specNow.length ? specNow.join('<span class="sbsep">·</span>') : '<span class="sbl">none on the server</span>'}${v != null ? `<span class="sbv">${v.toLocaleString('en-US')} watching on HLTV</span>` : ''}${SB.auto ? '<span class="sbheld">He held Tab here</span>' : ''}</div>`;
+    h += `<div class="spech">Spectators</div><div class="specs">${specNow.length ? specNow.join('<span class="gsep">·</span>') : 'none on the server'}</div>`;
+    if (v != null || SB.auto) h += `<div class="gfoot"><span>${v != null ? `${v.toLocaleString('en-US')} watching on HLTV` : ''}</span>${SB.auto ? '<span class="sbheld">He held Tab here</span>' : ''}</div>`;
     el.innerHTML = h + '</div>';
   };
   render(); el.hidden = false;
@@ -223,7 +246,13 @@ function updateHud(force) {
     if (changed && scope === 'round') drawTimeline();
     if (changed && heat && $('hmScope').value === 'round') heat = null;
     if (changed || force) { const cur = $('pane').querySelector('.row.cur'); if (cur && tab === 'rounds') cur.scrollIntoView({ block: 'nearest' }); }
-    // a new round on the Kills tab: its heading at the top, not wherever the last round's list was scrolled to
-    if (changed && tab === 'kills') $('pane').scrollTop = 0;
+    // a new round on the Kills tab: its heading at the top, not wherever the last round's list was scrolled to. POV mode's
+    // Kills tab lists the whole match by round (0.26.29), so there the new round's heading comes to the top, the list
+    // stays where it is for a round with no kill or death of his yet (it has no heading) and after a click on a row
+    // (Sujan, 11 Nov 2026; up to 0.26.29 it went back to the list's top at every round change)
+    if (changed && tab === 'kills') {
+      if (!D.povOn) $('pane').scrollTop = 0;
+      else if (!PANE.keep) { const P = $('pane'), cur = P.querySelector('.sechead.rhead.cur'); if (cur) P.scrollTop += cur.getBoundingClientRect().top - P.getBoundingClientRect().top; }
+    }
   }
 }

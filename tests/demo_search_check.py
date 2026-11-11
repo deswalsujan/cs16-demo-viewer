@@ -297,7 +297,7 @@ with sync_playwright() as p:
     pg3.route('**/three.min.js', lambda r: r.fulfill(path=os.environ.get('THREE_JS', os.path.join(here, '..', 'src', 'vendor', 'three.min.js')), content_type='application/javascript'))
     try:
         pg3.goto(f'http://127.0.0.1:{srv.server_port}/{os.path.basename(hooked)}')
-        pg3.evaluate("__v(\"$('pov3').checked = true\")")
+        pg3.evaluate("__v(\"if ($('pov3')) $('pov3').checked = true; 0\")")  # builds up to 0.26.29 had the setting
         pg3.set_input_files('#fFolder', HL)
         pg3.wait_for_function('__v("files.demos.length > 0")', timeout=30000)
         pg3.evaluate('(n) => __v(`loadDemoFile(files.demos.find((f) => f.name === ${JSON.stringify(n)}))`)', POVD)
@@ -308,8 +308,10 @@ with sync_playwright() as p:
           const his = near(71.99), mate = D.kills.find((x) => x.victim === rec && x.kp && x.killer !== x.victim && M.liveR.some((r) => r.n === x.round));
           return { his: his && his.killer === rec ? await box(his) : 'not his kill', mate: mate ? await box(mate) : 'no teammate death', mateName: mate && M.pl[mate.vp].name,
             dnHidden: $('dn3').closest('.vrow').hidden, glowHidden: $('glow3').closest('.vrow').hidden, vanShown: !$('van3').closest('.vrow').hidden }; })()""")
-        check("POV mode: kill details on an enemy's death say there's nothing to list, naming him", pv['his'] == "No hit details. A demo recorded by a player has only his teammates' health, not H@rDRoCk's.", repr(pv['his']))
-        check('POV mode: kill details on his own death say "No hit details in POV mode."', pv['mate'] == 'No hit details in POV mode.', f"{pv['mateName']}: {pv['mate']!r}")
+        # since 0.26.30 POV mode has no kill details: every kill opened the same "No hit details." box, so a click on a row
+        # only jumps to the kill (Sujan, 11 Nov 2026)
+        check("POV mode: no kill details on his kill on H@rDRoCk", pv['his'] is None, repr(pv['his']))
+        check('POV mode: no kill details on his own death', pv['mate'] is None, f"{pv['mateName']}: {pv['mate']!r}")
         check('POV mode: View settings hides Damage numbers, as it hides Glow on hits; Vanilla stays', pv['dnHidden'] and pv['glowHidden'] and pv['vanShown'], str(pv))
     except Exception as e:
         check('POV mode: kill details and View settings', False, (POVD or 'Match 1 CT not found') + ': ' + str(e).split('\n')[0])

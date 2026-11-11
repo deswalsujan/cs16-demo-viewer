@@ -61,17 +61,12 @@ function killRow3(k, wbTag) {
 // Kill details (0.26.16; docs/kill-details-damage-vanilla-mock.jpg, approved by Sujan 3 Nov 2026): the picked kill in the
 // Kills and Wallbangs lists opens to one line per bullet that hit (killHits): its damage, where it hit (bodyPart), through a
 // wall or in the open, and how long before the kill; a click on a line jumps playback to that bullet. "Earlier:" says where
-// the rest of his health went when he had less than 100 HP at the first hit (earlierDamage). In POV mode the recorder's demo
-// has only his teammates' health, so there's nothing to list.
+// the rest of his health went when he had less than 100 HP at the first hit (earlierDamage). In POV mode there are none:
+// the recorder's demo has only his teammates' health, and up to 0.26.29 every kill there opened the same "No hit details."
+// box, so a click on a row only jumps to the kill (Sujan, 11 Nov 2026).
 function killDetailsHtml(k) {
-  if (!k.kp || k.killer === k.victim) return '';
+  if (!k.kp || k.killer === k.victim || D.povOn) return '';
   const box = (inner) => `<div class="kdet" data-kd="${D.kills.indexOf(k)}">${inner}</div>`;
-  if (D.povOn) {
-    // one of his teammates (or he himself): their health is in his demo, but the hit finder hasn't been checked on POV demos
-    const st = playerState(POV.v.rec, k.t - 0.05), side = st && st.state ? (Math.abs(st.state) === 1 ? 'TERRORIST' : 'CT') : null;
-    const mate = k.victim === POV.v.rec || (side && k.vteam === side);
-    return box(mate ? '<b>No hit details in POV mode.</b>' : `<b>No hit details.</b> A demo recorded by a player has only his teammates' health, not ${esc(labelAt(k.victim, k.t))}'s.`);
-  }
   if (!MAP || MAP.name !== D.mapName.toLowerCase()) return box(`Hit details need the map file (${esc(D.mapName)}.bsp).`);
   if (!M.liveR.some((r) => r.n === k.round)) return box('No hit details outside the rounds that count.');
   const list = killHits(k);
@@ -103,7 +98,7 @@ const killState = (k) => (k === pickedKill ? ' pick' : Math.abs(k.t - T) < 2 ? '
 // press and a release on the same row, so a row replaced in between lost the click: it took two or three
 // tries (Sujan, 14 Oct 2026). Now the tint moves in place (paneMarks), and a rebuild that comes while a mouse
 // button is held down on the panel waits until it's released and the click has gone through.
-const PANE = { held: false, later: false };
+const PANE = { held: false, later: false, keep: false };
 $('pane').addEventListener('pointerdown', () => { PANE.held = true; });
 const paneRelease = () => {
   if (!PANE.held) return;
@@ -177,7 +172,11 @@ function renderPane() {
       const a = ks.filter((k) => k.killer === povRecAt(k.t) && k.victim !== k.killer && !teamKill(k)).length, b = ks.filter((k) => k.victim === povRecAt(k.t)).length;
       nk += a; nd += b;
       const cur = r === cr;
-      body += `<div class="sechead${cur ? ' cur' : ''}"><span>${r.live ? 'Round ' + r.ln : 'Before the match'}</span><span>${[a ? plural(a, 'kill') : '', b ? plural(b, 'death') : ''].filter(Boolean).join(' · ')}</span></div>`;
+      // each round a band set apart from the rows, with his side that round (docs/pov-scoreboard-radar-flashbang-mock.jpg,
+      // section B; Sujan, 11 Nov 2026: the band with stronger contrast against the rows, no won or lost mark)
+      const se = povRecAt(r.start + 1), ps = se && playerState(se, r.start + 3), sd = ps && ps.state ? Math.abs(ps.state) : 0;
+      const chip = sd ? `<span class="sdchip ${sd === 1 ? 't' : 'ct'}">${sd === 1 ? 'T' : 'CT'}</span>` : '';
+      body += `<div class="sechead rhead${cur ? ' cur' : ''}"><span>${r.live ? 'Round ' + r.ln : 'Before the match'}${chip}</span><span>${[a ? plural(a, 'kill') : '', b ? plural(b, 'death') : ''].filter(Boolean).join(' · ')}</span></div>`;
       for (const k of ks) {
         const sk = skipNear(k.t) ? SKIP_MARK : '';
         body += `<div class="row krow kill3${killState(k)}${cur ? ' cur' : ''}" data-kill="${k.t}" data-ki="${D.kills.indexOf(k)}"><span class="n" title="Round timer as shown in game">${k === pickedKill ? MARK : ''}${killClock(k.t) ? cellClock(k.t) : '<span class="nw">+' + fmt(k.t - r.start) + '</span>'}${sk}</span><span class="main">${killRow3(k, true)}</span></div>`;
@@ -285,7 +284,10 @@ function renderPane() {
     const k = D.kills[+el.dataset.ki];
     if (!k) return;
     pickedKill = k;
-    watchKill(k, 4); renderPane();
+    // POV mode's Kills tab lists the whole match: a click leaves the list where it is, even when the kill is in another
+    // round (Sujan, 11 Nov 2026; up to 0.26.29 the round change it causes threw the list back to its top)
+    PANE.keep = D.povOn && tab === 'kills';
+    try { watchKill(k, 4); renderPane(); } finally { PANE.keep = false; }
   });
   p.querySelectorAll('[data-bt]').forEach((el) => el.onclick = () => {
     const k = D.kills[+el.closest('.kdet').dataset.kd]; if (!k) return;

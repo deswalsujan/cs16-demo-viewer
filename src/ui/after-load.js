@@ -1,11 +1,12 @@
 // ---------------- after load ----------------
-// POV mode (0.25.0, Sujan 29 Oct 2026): the setting is on, and this is a demo recorded by a player with the view block
-// his game writes. Then, before anything reads the demo (retimeKills, the wallbang finder, the picture check), his own
-// position goes into his track and into the kills by or on him: the snapshots never carry it, so with POV mode off he
-// stands at the map's zero point, as in 0.24.0. The rest of POV mode's data is put on D for the 3D view.
+// POV mode (0.25.0): a demo recorded by a player with the view block his game writes always opens in it, since Sujan
+// signed POV mode off on 11 Nov 2026 and its setting went (0.26.30). Before anything reads the demo (retimeKills, the
+// wallbang finder, the picture check), his own position goes into his track and into the kills by or on him: the
+// snapshots never carry it (up to 0.26.29, with the setting off, he stood at the map's zero point). The rest of POV
+// mode's data is put on D for the 3D view.
 function povApply() {
   const P = D.povData;
-  D.povOn = !!($('pov3').checked && D.pov && P && P.view.length >= P.viewStride * 2);
+  D.povOn = !!(D.pov && P && P.view.length >= P.viewStride * 2);
   if (!D.povOn) return;
   Object.assign(D, P);
   const S = D.stride, recs = P.recs || [[0, D.times.length, D.serverInfo ? D.serverInfo.playerIndex + 1 : 0]];
@@ -27,16 +28,16 @@ function povApply() {
 // What a demo doesn't have is hidden, not greyed out. A POV demo in POV mode has only 3D and only his own view (his
 // game only received the players near him), no Reset view (there's no camera of the viewer's to reset), and its Kills
 // tab lists his own kills and deaths; its Wallbangs tab goes on a server that held enemies back, and lists only his
-// own wallbangs otherwise (Sujan, 9 Nov 2026). The POV mode row of View settings shows only with a POV demo open (or
-// none), since it does nothing to an HLTV demo (Sujan, 10 Nov 2026), until the setting is dropped at the sign-off.
+// own wallbangs otherwise (Sujan, 9 Nov 2026). In POV mode View settings has his crosshair's size (From config.cfg,
+// Small, Medium, Large) and the flashbang rows, and not the viewer's crosshair, Glow on hits or Damage numbers
+// (Sujan, 11 Nov 2026; povInit in view3d.part.js hides and shows them).
 function demoOffers() {
   const pov = !!(D && D.povOn);
   return {
     views: pov ? ['3d'] : ['2d', '3d', 'split'],
     cameras: pov ? ['eyes'] : ['free', 'eyes', 'behind'],
     resetView: !pov,
-    povSetting: !D || !!D.pov,
-    crosshairSize: !pov, glowOnHits: !pov, damageNumbers: !pov,
+    crosshairSize: !pov, povCrosshair: pov, flashbangs: pov, glowOnHits: !pov, damageNumbers: !pov,
     killsTab: pov ? 'his' : 'round',
     wallbangsTab: pov ? (typeof povHidesEnemies === 'function' && POV.on && povHidesEnemies().on ? null : 'his') : 'all',
     noticesTop: pov,
@@ -46,22 +47,11 @@ function applyOffers() {
   const of = demoOffers();
   $('viewSeg').hidden = of.views.length < 2;
   $('tgFit').hidden = !of.resetView;
-  $('pov3').closest('.vrow').hidden = !of.povSetting;
-  { const h = $('pov3').closest('.vrow').previousElementSibling; if (h && h.classList.contains('vhead')) h.hidden = !of.povSetting; }
   const wb = document.querySelector('.tabs button[data-tab="wb"]');
   wb.hidden = !of.wallbangsTab;
   if (!of.wallbangsTab && tab === 'wb') document.querySelector('.tabs button[data-tab="kills"]').click();
   $('radar').classList.toggle('povm', of.noticesTop);
   if (typeof povMarkInit === 'function') povMarkInit();
-}
-// The POV mode setting is read when a demo opens, so changing it with a POV demo open opens that demo again, at the
-// same moment (REOPEN_T)
-let REOPEN_T = null;
-function reopenForPov() {
-  if (!D || !D.pov) return;
-  REOPEN_T = T;
-  if (D.partFiles) openJoinedUI(D.partFiles);
-  else if (CUR_FILE) loadDemoFile(CUR_FILE, { alone: true });
 }
 async function onDemo() {
   povApply();
@@ -72,7 +62,6 @@ async function onDemo() {
   showLoad(false);
   const first = M.liveR[0];
   T = first ? first.start : D.start;
-  if (REOPEN_T != null) { T = Math.max(D.start, Math.min(D.end, REOPEN_T)); REOPEN_T = null; }
   playing = false; selected = null; pickedKill = null; pickedBurst = null;
   $('meta').textContent = D.parts ? `${D.mapName} · ${D.parts[0].fileName} and ${plural(D.parts.length - 1, 'more file')} · ${fmt(D.end - D.start)}` : `${D.mapName} · ${D.fileName} · ${fmt(D.end - D.start)}`;
   const chip = $('partsChip');
@@ -83,7 +72,7 @@ async function onDemo() {
   heat = null; $('hmMode').value = 'off';
   afterOverview(ok, true);
   M.wbs = [];
-  buildHp(); buildPack(); buildBrk(); buildPose(); prepAnim(); buildZoom();
+  buildHp(); buildPack(); buildPings(); buildBrk(); buildPose(); prepAnim(); buildZoom();
   const sndDone = preloadSounds();
   renderPane(); fitView(); drawTimeline(); updateHud(true);
   if (MAP && MAP.name === D.mapName.toLowerCase()) computeWallbangs();

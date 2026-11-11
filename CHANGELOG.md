@@ -4,6 +4,7 @@ What changed in the viewer, newest first. The version shows in the viewer's shor
 
 ## Versions
 
+- [0.26.30](#02630-2026-11-11) 2026-11-11: POV signed off, radar, flashbangs
 - [0.26.29](#02629-2026-11-11) 2026-11-11: POV demos shaped like POV
 - [0.26.28](#02628-2026-11-10) 2026-11-10: POV crashes, teams, names
 - [0.26.27](#02627-2026-11-09) 2026-11-09: Gun flash, shells, blood puffs
@@ -87,6 +88,36 @@ What changed in the viewer, newest first. The version shows in the viewer's shor
 
 ## Known limits
 Moved to [LIMITS.md](LIMITS.md) on 30 Oct 2026; release entries below still say "Known limits" for that list.
+
+## 0.26.30 (2026-11-11)
+
+Sujan's POV mode feedback of 11 Nov 2026, items 1 to 10 in one batch, as in `docs/pov-scoreboard-radar-flashbang-mock.jpg`, approved by Sujan the same day with his answers (`STATE.md`, Decisions). Sujan signed **POV mode** off the same day. Drawn and tested on the GP Tourney POV of Team Guardians vs Lanka Dahan, Mirage, Match 8, 25 Oct 2026, recorded by BAJRANG || forgotteN_.
+
+### Added
+- The game's radar in **POV mode**, top left, from `cstrike/sprites/radar640.spr`: the see-through one (cs16-client's default) for everyone, sized like his HUD, turning with his view; his living teammates from his snapshots and the server's Radar messages, the bomb carrier red, the dropped or planted bomb flashing on a T's radar; no enemies. The round pill and **View settings** sit under it.
+- Flashbangs in POV demos: **Flashbang dot** (a white dot under the crosshair, 18 px, with a thin dark ring) and **Flashbang whiteout** in **View settings**, both off by default, fading as his screen did, from the white ScreenFades the server sent him or a teammate he watched in first person. The whiteout covers the 3D view and the kill feed; his HUD and radar are added over it, so they vanish at full white and show faintly as it fades, as in the game (Sujan's check in POV videos, 11 Nov 2026).
+- Latency in the Tab scoreboard, per player and each team's average, from the server's ping messages; in a POV demo the values from his last Tab hold, none before his first.
+- His **Crosshair** row in **POV mode**: From config.cfg (the default), Small, Medium, Large; the colour always from config.cfg.
+
+### Changed
+- **POV mode** signed off: POV demos always open in it; the setting, its load summary line and its **Turn on POV mode** button are gone.
+- The Tab scoreboard in the game's look, for every demo type: one panel at 60% black with a thin tan border, the server's name and orange headings, the leading team on top, team rows with players, score and average latency, Dead, Bomb or Kit in the game's word column, his row lit in **POV mode**, Spectators under an orange heading; the # column only in an HLTV demo with 10 players or fewer listed.
+- His HUD and crosshair are added onto the picture, on their own layer (`mix-blend-mode: plus-lighter`), as the game draws them, so bright floors no longer swallow the faint digits.
+- A POV demo's Kills tab: each round a band set apart from the rows, with his side that round; no kill details, a click only jumps to the kill. The anti-wallhack note's new text, in the load summary's line too.
+
+### Fixed
+- A POV demo's Kills tab no longer goes back to its top at every round change or after a click on a kill in another round: a new round's band comes to the top, and the list stays where it is for a round with no kill or death of his and after a click.
+- The reader reads the server's ping messages as 5, 12 and 7 bits per entry, as ReHLDS writes them (8, 8 and 8 up to 0.26.29: the same 25 bits, thrown away).
+
+### How it was tested
+- `pov_feedback_check.py` (new, 24 s) fails on 0.26.29 (16 of 18) and passes; `pov_reopen_check.py`, now a POV demo, an HLTV demo and the POV demo again, fails on 0.26.29 and passes; `pov_mockup_round_check.py`, `demo_search_check.py` and `prefs_check.py` updated and pass.
+- The full test run waits for Sujan's go (about 12 minutes).
+- Full log: `tests/logs/0.26.30.md`; screenshots on `screenshots/0.26.30`.
+
+### Discussed, not changed
+- The ScreenFades that aren't white in the POV test demos are the server's clears (black, alpha 0, 0.001 s; ReGameDLL observer.cpp and player.cpp), not the fade to black at death, as Claude reported before the mockup: they end 42 of the GP Tourney POV's 70 white fades early, so the viewer keeps their times as ends and draws nothing black.
+- The 3D picture's contrast (item 11): for later, separate from this batch (Sujan, 11 Nov 2026).
+- The scoreboard may cover the kill feed, as in the game (Sujan, 11 Nov 2026). The plant and defuse bar and the spectator bars stay laid over the picture, under a flashbang's whiteout.
 
 ## 0.26.29 (2026-11-11)
 
