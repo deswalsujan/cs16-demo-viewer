@@ -1,5 +1,8 @@
 // ---------------- 3D view ----------------
 let viewMode = '2d';
+// the 2D, 3D or 3D + radar the player picked, saved with the settings: a POV demo opens in 3D whatever it is
+// (demoOffers), without changing it, so the next HLTV demo opens as he left it
+let viewPref = '2d';
 let wbFocus = null;
 const view3 = { ready: false, map: null, failed: null }; // failed: the MAP whose 3D build threw (see build3d)
 const cam3 = { mode: 'free', pos: [0, 0, 1500], yaw: 0, pitch: 60, keys: {} };
@@ -12,8 +15,8 @@ function status3(t, withButton) {
   if (withButton) $('bFolder3').onclick = () => pickFolder();
 }
 document.querySelectorAll('#viewSeg button').forEach((b) => b.onclick = () => setView(b.dataset.v));
-function setView(v) {
-  viewMode = v; savePrefs();
+function setView(v, save = true) {
+  viewMode = v; if (save) { viewPref = v; savePrefs(); }
   document.querySelectorAll('#viewSeg button').forEach((x) => x.classList.toggle('on', x.dataset.v === v));
   const r = $('radar');
   r.classList.toggle('m2d', v === '2d'); r.classList.toggle('m3d', v === '3d'); r.classList.toggle('msplit', v === 'split');
@@ -660,6 +663,7 @@ function update3Now() {
   if (POV.on && drawSpecBars(lx, W, H)) pov.hidden = true;
   // ...and while he's playing the game shows no name box, his HUD sits there
   else if (POV.on && POV.mode === 0 && POV.who === POV.v.rec) pov.hidden = true;
+  if (POV.on) drawPovBar(lx, W, H);
 }
 // Hit marker on the crosshair when the player you're watching gets a kill:
 // white for a kill, orange for a headshot, magenta for a wallbang, with a short label underneath
@@ -970,7 +974,7 @@ function povInit() {
   $('bPrevP').hidden = POV.on; $('bNextP').hidden = POV.on;
   $('xh3').closest('.vrow').hidden = POV.on; $('glow3').closest('.vrow').hidden = POV.on;
   $('dn3').closest('.vrow').hidden = POV.on; // and Damage numbers: POV mode shows no damage (Sujan, 3 Nov 2026)
-  if (POV.on) { cam3.mode = 'eyes'; cam3.chase = null; cam3.cYaw = null; povFollow(T); if (opts.xray) setTimeout(showHiddenEnemiesNote, 1500); }
+  if (POV.on) { cam3.mode = 'eyes'; cam3.chase = null; cam3.cYaw = null; povFollow(T); }
 }
 // The view at time t, between the two frames around it. Angles turn the short way round. Across a jump (a
 // respawn, a teleport, the gap between two joined files) there's nothing to blend, so the earlier frame is kept.
@@ -1155,15 +1159,17 @@ async function loadHudSprites() {
   if (!txt || (HUDS.from === txt && HUDS.forD === D) || HUDS.loading) return;
   HUDS.loading = true;
   const forD = D;
-  if (HUDS.from !== txt) { HUDS.spr = {}; HUDS.ammo = {}; }
+  if (HUDS.from !== txt) { HUDS.spr = {}; HUDS.ammo = {}; HUDS.pain = null; }
   try {
     const sheets = {};
     const sheet = async (nm) => { if (!(nm in sheets)) { const f = files.hud.spr[nm]; sheets[nm] = f ? decodeSpr(await readPicked(f, `sprites/${nm}.spr`) || new Uint8Array(0)) : null; } return sheets[nm]; };
-    const want = new Set(['cross', 'suit_full', 'suit_empty', 'suithelmet_full', 'suithelmet_empty', 'dollar', 'stopwatch', 'divider', ...Array.from({ length: 10 }, (_, i) => 'number_' + i)]);
+    const want = new Set(['cross', 'suit_full', 'suit_empty', 'suithelmet_full', 'suithelmet_empty', 'dollar', 'plus', 'minus', 'stopwatch', 'divider', ...Array.from({ length: 10 }, (_, i) => 'number_' + i)]);
     for (const line of (await txt.text()).split(/\r?\n/)) {
       const f = line.trim().split(/\s+/);
       if (f.length === 7 && want.has(f[0]) && f[1] === '640') { const sp = hudSprite(await sheet(f[2].toLowerCase()), { x: +f[3], y: +f[4], w: +f[5], h: +f[6] }); if (sp) HUDS.spr[f[0]] = sp; }
     }
+    // the hit arcs (valve/sprites/640_pain.spr, four frames)
+    if (!HUDS.pain && files.hud.pain) HUDS.pain = sprCanvases(await readPicked(files.hud.pain, 'sprites/640_pain.spr'));
     // ammo icons, for the guns he used
     const ids = new Set(), own = (forD && forD.ownAmmo) || []; for (let i = 1; i < own.length; i += 3) ids.add(own[i]);
     for (const id of ids) {
@@ -1203,38 +1209,183 @@ function povRoundTimer(t) {
   for (const b of D.bomb) { if (b.t > t) break; if (b.type === 'plantpos' && b.t >= rt.t) return null; }
   return fmt(Math.max(0, Math.floor(rt.secs - clockSpan(rt.t, t) + 0.001)));
 }
+// The HUD's effects as the game draws them (POV mockup round, docs/pov-mockup-round-mock.jpg; Sujan, 11 Nov 2026,
+// confirmed in the game): every number rests dim, at 100 of 255 (MIN_ALPHA), and brightens on a change, read from
+// cs16-client: health and armour to 228 on a change, back to dim over 5 s (health.cpp, battery.cpp), health red at
+// 25 or less and always bright at 15 or less; every Money message brightens the balance for 5 s, and a change shows
+// above it with the game's + or − and the amount, green or red, fading out, while the balance starts green or red
+// and turns back to the HUD colour (money.cpp); the ammo brightens to 200 at every CurWeapon (ammo.cpp); the round
+// timer stays dim and flashes red at 20 s or less (timer.cpp). The red arcs round the crosshair (DrawPain) and the
+// plant and defuse bar (CHudProgressBar) are below.
+const HUD_REDISH = [255, 16, 16], HUD_GREENISH = [0, 160, 0];
+// a HUD sprite in any colour: tinted copies kept per sprite, the colour rounded to whole numbers
+function hudTint(p, col) {
+  const key = col.map(Math.round).join(',');
+  if (key === HUD_COL.join(',')) return p.y;
+  if (key === HUD_RED.join(',')) return p.r;
+  const m = p.tint || (p.tint = new Map());
+  let cv = m.get(key);
+  if (!cv) {
+    cv = document.createElement('canvas'); cv.width = p.w; cv.height = p.h; const g = cv.getContext('2d');
+    g.drawImage(p.y, 0, 0); g.globalCompositeOperation = 'source-in'; g.fillStyle = `rgb(${key})`; g.fillRect(0, 0, p.w, p.h);
+    if (m.size > 200) m.clear();
+    m.set(key, cv);
+  }
+  return cv;
+}
+// the index of the last entry at or before t in a flat array of stride n, or -1
+function idxAt(a, n, t) {
+  let lo = 0, hi = (a ? a.length / n : 0) - 1, r = -1;
+  while (lo <= hi) { const m = (lo + hi) >> 1; if (a[m * n] <= t) { r = m; lo = m + 1; } else hi = m - 1; }
+  return r;
+}
+// when the value in a flat (time, value) array last changed, at or before t (health and armour brighten only on a change)
+function changedAt(a, t) {
+  let r = idxAt(a, 2, t); if (r < 0) return null;
+  const v = a[r * 2 + 1];
+  while (r > 0 && a[r * 2 - 1] === v) r--;
+  return r > 0 ? a[r * 2] : null; // the first value isn't a change
+}
+// timer.cpp: at 20 s or less the round timer flips between red and the HUD colour, each colour held for
+// (seconds left / 40 + 0.1) s, starting red; worked out from the moment it reached 20 s, so it doesn't depend on frames
+function povTimerRed(t) {
+  let rt = null; for (const x of D.roundTimes || []) { if (x.t > t + 0.001) break; rt = x; }
+  if (!rt) return false;
+  const rem = rt.secs - clockSpan(rt.t, t); if (rem >= 21) return false;
+  const end = 21 - rem; let u = Math.max(0, 21 - rt.secs), red = true;
+  for (let k = 0; k < 500; k++) { const half = Math.min(20, Math.max(0, Math.floor(21 - u - 1e-6))) / 40 + 0.1; if (u + half > end) break; u += half; red = !red; }
+  return red;
+}
+// health.cpp CalcDamageDirection and DrawPain: each Damage message (health or armour taken) lights the arcs on the
+// side it came from, front, right, rear and left, each by how squarely (above 0.4), all four within 50 units, none
+// from 0 0 0 (a fall, which clears them); they fade 2 a second and go at 0.4, so one hit shows 0.3 s at most
+function povPainAt(t) {
+  const A = D.dmg, out = [0, 0, 0, 0]; if (!A || !A.length) return out;
+  let i = idxAt(A, 6, t - 0.7) + 1, last = null;
+  for (; i * 6 < A.length && A[i * 6] <= t; i++) {
+    const o = i * 6, th = A[o];
+    if (!(A[o + 1] > 0 || A[o + 2] > 0)) continue;
+    if (last != null) for (let k = 0; k < 4; k++) { out[k] = out[k] - 2 * (th - last); if (out[k] <= 0.4) out[k] = 0; }
+    last = th;
+    const fx = A[o + 3], fy = A[o + 4], fz = A[o + 5];
+    if (!fx && !fy && !fz) { out.fill(0); continue; }
+    const pv = povView(th); if (!pv || !pv.pos) continue;
+    const d = [fx - pv.pos[0], fy - pv.pos[1], fz - pv.pos[2]], L = Math.hypot(d[0], d[1], d[2]);
+    if (L <= 50) { out.fill(1); continue; }
+    const rp = pv.pitch * Math.PI / 180, ry = pv.yaw * Math.PI / 180;
+    const front = (d[0] * Math.cos(rp) * Math.cos(ry) + d[1] * Math.cos(rp) * Math.sin(ry) - d[2] * Math.sin(rp)) / L;
+    const side = (d[0] * Math.sin(ry) - d[1] * Math.cos(ry)) / L;
+    if (front > 0.4) out[0] = Math.max(out[0], front);
+    if (side > 0.4) out[1] = Math.max(out[1], side);
+    if (front < -0.4) out[2] = Math.max(out[2], -front);
+    if (side < -0.4) out[3] = Math.max(out[3], -side);
+  }
+  if (last != null) for (let k = 0; k < 4; k++) { out[k] -= 2 * (t - last); if (out[k] <= 0.4) out[k] = 0; }
+  return out;
+}
+// every frame of a sprite as a canvas for drawing added to the view: each pixel's brightest colour channel as its
+// solidity, its colour at full brightness (the pain sprite is drawn additive, like the game)
+function sprCanvases(u8) {
+  if (!u8 || u8.length < 64 || String.fromCharCode(u8[0], u8[1], u8[2], u8[3]) !== 'IDSP') return null;
+  const dv = new DataView(u8.buffer, u8.byteOffset, u8.byteLength), nf = dv.getInt32(28, true);
+  let p = 40; const n = dv.getInt16(p, true); p += 2; if (n <= 0 || n > 256) return null;
+  const pal = u8.subarray(p, p + n * 3); p += n * 3;
+  const out = [];
+  for (let k = 0; k < nf && k < 16; k++) {
+    if (p + 20 > u8.length) return null;
+    const w = dv.getInt32(p + 12, true), h = dv.getInt32(p + 16, true); p += 20;
+    if (w <= 0 || h <= 0 || w > 1024 || h > 1024 || p + w * h > u8.length) return null;
+    const cv = document.createElement('canvas'); cv.width = w; cv.height = h; const g = cv.getContext('2d'), img = g.createImageData(w, h);
+    for (let i = 0; i < w * h; i++) {
+      const c = u8[p + i], r = pal[c * 3] || 0, gg = pal[c * 3 + 1] || 0, b = pal[c * 3 + 2] || 0, a = Math.max(r, gg, b);
+      img.data[i * 4] = a ? r * 255 / a : 0; img.data[i * 4 + 1] = a ? gg * 255 / a : 0; img.data[i * 4 + 2] = a ? b * 255 / a : 0; img.data[i * 4 + 3] = a;
+    }
+    g.putImageData(img, 0, 0); p += w * h; out.push({ cv, w, h });
+  }
+  return out;
+}
 function drawPovHud(lx, W, H) {
   loadHudSprites();
-  const v = povHudValues(POV.t); if (!v) return;
+  const t = POV.t, v = povHudValues(t); if (!v) return;
   const s = H / 768 * HUD_SCALE, haveSpr = !!HUDS.spr.number_0;
   const dh = haveSpr ? HUDS.spr.number_0.h * s : 25 * s, dw = haveSpr ? HUDS.spr.number_0.w * s : 20 * s;
   const base = H - 46 * UI - dh; // the bottom buttons sit below (they grow with the Interface size; the HUD follows the view as the game's does)
-  lx.save(); lx.globalCompositeOperation = 'lighter'; lx.globalAlpha = 0.8;
-  const spr = (nm, x, y, red) => { const p = HUDS.spr[nm] || HUDS.ammo[nm]; if (!p) return 0; lx.drawImage(red ? p.r : p.y, x, y, p.w * s, p.h * s); return p.w * s; };
-  const num = (n, x, y, red, rightAlign) => {
+  const Hd = D.hud, MIN = 100 / 255;
+  lx.save(); lx.globalCompositeOperation = 'lighter';
+  const alpha = (a) => { lx.globalAlpha = Math.max(0, Math.min(1, a)); };
+  const spr = (nm, x, y, col, a) => { const p = HUDS.spr[nm] || HUDS.ammo[nm]; if (!p) return 0; alpha(a); lx.drawImage(hudTint(p, col), x, y, p.w * s, p.h * s); return p.w * s; };
+  const num = (n, x, y, col, a, rightAlign) => {
     const str = String(Math.max(0, Math.round(n)));
-    if (!haveSpr) { lx.font = `700 ${Math.round(dh)}px ${textFont()}`; lx.fillStyle = `rgb(${(red ? HUD_RED : HUD_COL).join(',')})`; lx.textBaseline = 'top'; lx.textAlign = rightAlign ? 'right' : 'left'; lx.fillText(str, x, y); return lx.measureText(str).width; }
+    if (!haveSpr) { alpha(a); lx.font = `700 ${Math.round(dh)}px ${textFont()}`; lx.fillStyle = `rgb(${col.map(Math.round).join(',')})`; lx.textBaseline = 'top'; lx.textAlign = rightAlign ? 'right' : 'left'; lx.fillText(str, x, y); return lx.measureText(str).width; }
     let w = str.length * dw, x0 = rightAlign ? x - w : x;
-    for (const ch of str) { spr('number_' + ch, x0, y, red); x0 += dw; }
+    for (const ch of str) { spr('number_' + ch, x0, y, col, a); x0 += dw; }
     return w;
   };
-  const icon = (nm, x, y, red) => { const p = HUDS.spr[nm]; if (!p) return 0; return spr(nm, x, y + (dh - p.h * s) / 2, red); };
-  // health and armor
+  const icon = (nm, x, y, col, a) => { const p = HUDS.spr[nm]; if (!p) return 0; return spr(nm, x, y + (dh - p.h * s) / 2, col, a); };
+  const fadeA = (at) => { const age = at == null ? 99 : t - at; return MIN + Math.max(0, 100 - 20 * age) / 100 * 128 / 255; };
+  // health and armour
   let x = W * 0.02;
-  if (v.hp != null) { const red = v.hp <= 25; x += icon('cross', x, base, red) + 6 * s; x += num(v.hp, x, base, red) + 24 * s; }
-  if (v.ap != null) { x += icon(v.helmet ? (v.ap > 0 ? 'suithelmet_full' : 'suithelmet_empty') : v.ap > 0 ? 'suit_full' : 'suit_empty', x, base) + 6 * s; num(v.ap, x, base); }
+  if (v.hp != null) { const col = v.hp <= 25 ? HUD_RED : HUD_COL, a = v.hp <= 15 ? 1 : fadeA(changedAt(Hd.hp, t)); x += icon('cross', x, base, col, a) + 6 * s; x += num(v.hp, x, base, col, a) + 24 * s; }
+  if (v.ap != null) { const a = fadeA(changedAt(Hd.ap, t)); x += icon(v.helmet ? (v.ap > 0 ? 'suithelmet_full' : 'suithelmet_empty') : v.ap > 0 ? 'suit_full' : 'suit_empty', x, base, HUD_COL, a) + 6 * s; num(v.ap, x, base, HUD_COL, a); }
   // round timer
-  if (v.clock) { const tw = dw * v.clock.length; let cx = W / 2 - tw / 2; cx += icon('stopwatch', cx - 30 * s, base); const [m, sec] = v.clock.split(':'); let xx = W / 2 - tw / 2; xx += num(+m, xx, base); if (haveSpr) { lx.fillStyle = `rgba(${HUD_COL.join(',')},1)`; lx.fillRect(xx + dw * 0.3, base + dh * 0.3, 3 * s, 3 * s); lx.fillRect(xx + dw * 0.3, base + dh * 0.65, 3 * s, 3 * s); } xx += dw * 0.8; num(+sec < 10 ? 0 : Math.floor(+sec / 10), xx, base); num(+sec % 10, xx + dw, base); }
+  if (v.clock) {
+    const col = povTimerRed(t) ? HUD_REDISH : HUD_COL;
+    const tw = dw * v.clock.length; let cx = W / 2 - tw / 2; icon('stopwatch', cx - 30 * s, base, col, MIN);
+    const [m, sec] = v.clock.split(':'); let xx = W / 2 - tw / 2; xx += num(+m, xx, base, col, MIN);
+    if (haveSpr) { alpha(MIN); lx.fillStyle = `rgb(${col.join(',')})`; lx.fillRect(xx + dw * 0.3, base + dh * 0.3, 3 * s, 3 * s); lx.fillRect(xx + dw * 0.3, base + dh * 0.65, 3 * s, 3 * s); }
+    xx += dw * 0.8; num(+sec < 10 ? 0 : Math.floor(+sec / 10), xx, base, col, MIN); num(+sec % 10, xx + dw, base, col, MIN);
+  }
   // money, above the ammo
   const R = W * 0.98;
-  if (v.money != null) { const w = num(v.money, R, base - dh * 1.5, false, true); icon('dollar', R - w - (HUDS.spr.dollar ? HUDS.spr.dollar.w * s : 0) - 4 * s, base - dh * 1.5); }
+  if (v.money != null) {
+    const r = idxAt(Hd.money, 2, t), age = r >= 0 ? t - Hd.money[r * 2] : 99, it = Math.min(1, age / 5);
+    const delta = age < 5 && r > 0 ? Hd.money[r * 2 + 1] - Hd.money[r * 2 - 1] : 0;
+    const col = delta > 0 ? [it * 255, 160, 0] : delta < 0 ? [255, 16 + it * 144, 16 - it * 16] : HUD_COL;
+    const a = (255 - it * 155) / 255, my = base - dh * 1.5, dolW = HUDS.spr.dollar ? HUDS.spr.dollar.w * s : 0;
+    const w = num(v.money, R, my, col, a, true); icon('dollar', R - w - dolW - 4 * s, my, col, a);
+    if (delta) {
+      const dcol = delta > 0 ? HUD_GREENISH : HUD_REDISH, dy = my - (HUDS.spr.dollar ? HUDS.spr.dollar.h * s : dh) * 1.5, sg = delta > 0 ? 'plus' : 'minus';
+      const w2 = num(Math.abs(delta), R, dy, dcol, 1 - it, true); icon(sg, R - w2 - (HUDS.spr[sg] ? HUDS.spr[sg].w * s : 0) - 4 * s, dy, dcol, 1 - it);
+    }
+  }
   // ammo: rounds in the gun | spare rounds, then the ammo icon; grenades show their count
   if (v.id && v.id !== 29) {
+    const A = D.ownAmmo, r0 = idxAt(A, 3, t), a = Math.max(100, 200 - 20 * (r0 >= 0 ? t - A[r0 * 3] : 99)) / 255;
     let r = R; const ic = HUDS.ammo[v.id];
-    if (ic) { r -= ic.w * s; spr(v.id, r, base + (dh - ic.h * s) / 2); r -= 8 * s; }
-    if (v.spare != null && v.spare >= 0) r -= num(v.spare, r, base, false, true) + 10 * s;
-    if (v.clip != null && v.clip >= 0) { if (HUDS.spr.divider) { r -= 2 * s; spr('divider', r, base - dh * 0.25); r -= 12 * s; } num(v.clip, r, base, false, true); }
+    if (ic) { r -= ic.w * s; spr(v.id, r, base + (dh - ic.h * s) / 2, HUD_COL, a); r -= 8 * s; }
+    if (v.spare != null && v.spare >= 0) r -= num(v.spare, r, base, HUD_COL, a, true) + 10 * s;
+    if (v.clip != null && v.clip >= 0) { if (HUDS.spr.divider) { r -= 2 * s; spr('divider', r, base - dh * 0.25, HUD_COL, a); r -= 12 * s; } num(v.clip, r, base, HUD_COL, a, true); }
   }
+  // where a hit came from: the pain sprite's four frames at the game's places round the crosshair
+  const P = HUDS.pain;
+  if (P && P.length >= 4) {
+    const att = povPainAt(t), cx = W / 2, cy = H / 2;
+    const pos = [[cx - P[0].w * s / 2, cy - P[0].h * s * 3], [cx + P[1].w * s * 2, cy - P[1].h * s / 2], [cx - P[2].w * s / 2, cy + P[2].h * s * 2], [cx - P[3].w * s * 3, cy - P[3].h * s / 2]];
+    for (let k = 0; k < 4; k++) if (att[k] > 0.4) { alpha(Math.max(att[k], 0.5)); lx.drawImage(P[k].cv, pos[k][0], pos[k][1], P[k].w * s, P[k].h * s); }
+  }
+  lx.restore();
+}
+// The plant and defuse bar (cs16-client timer.cpp, CHudProgressBar): a quarter of the width in, two thirds down, half
+// the width across, 10 px tall: 60% black with an orange (255 140 0) line round it, filling in orange. BarTime starts
+// it empty; BarTime2, which the server sends when he starts watching a planter or defuser in first person partway,
+// picks it up at the percent the message gives (Sujan, 11 Nov 2026, from AlliedModders' list of Half-Life 1 messages
+// and ReGameDLL's observer.cpp; cs16-client starts it empty or not at all, not seen in the game); 0 seconds takes it away.
+// ReGameDLL sends it to the planter or defuser and to whoever watches him in first person, so it shows over his
+// own HUD and over the spectator view alike.
+function povBarAt(t) {
+  const B = D.bars, r = idxAt(B, 3, t); if (r < 0) return null;
+  const tb = B[r * 3], dur = B[r * 3 + 1], f0 = B[r * 3 + 2] / 100; if (!(dur > 0)) return null;
+  const f = f0 + (t - tb) / dur;
+  return f >= 0 && f < 1 ? f : null;
+}
+function drawPovBar(lx, W, H) {
+  const f = povBarAt(POV.t); if (f == null) return;
+  const s = H / 768 * HUD_SCALE, bx = W / 4, by = H * 2 / 3, bw = W / 2, bh = 10 * s;
+  lx.save();
+  lx.globalAlpha = 153 / 255; lx.fillStyle = '#000'; lx.fillRect(bx, by, bw, bh);
+  lx.globalAlpha = 1; lx.fillStyle = 'rgb(255,140,0)';
+  lx.fillRect(bx, by, bw, 1); lx.fillRect(bx, by + bh - 1, bw, 1); lx.fillRect(bx, by, 1, bh); lx.fillRect(bx + bw - 1, by, 1, bh);
+  lx.fillRect(bx + 2 * s, by + 2 * s, f * (bw - 4 * s), bh - 4 * s);
   lx.restore();
 }
 
@@ -1281,9 +1432,11 @@ function drawSpecBars(lx, W, H) {
 // ---------------- POV mode: "this server held back enemies" ----------------
 // Some servers only send an enemy when he's about to come into view (an anti-wallhack plugin), so See through
 // walls has little to show (Match 1 CT: 223 enemy sightings against 21,065 for teammates). Worked out once per
-// demo, once a second while he's playing. Shown as a note above the See through walls button when it's switched
-// on, and once when the demo opens with it already on; it fades after 8 s or on a click. Option B of
-// docs/pov-hidden-enemies-mock.png (Sujan, 4 Oct 2026), kept at the left so it can't cover the name box.
+// demo, once a second while he's playing. Since the POV mockup round (docs/pov-mockup-round-mock.jpg, section 6;
+// Sujan, 11 Nov 2026) it's a line in the load summary, and a ! on See through walls shows the same note again at
+// the top middle, under the other notices, until its × or another click on the !, so nothing covers his HUD. Up to
+// 0.26.28 the note showed above See through walls whenever it was switched on (option B of
+// docs/pov-hidden-enemies-mock.png, Sujan, 4 Oct 2026), over his health and armour.
 function povHidesEnemies() {
   if (POV.hidden != null) return POV.hidden;
   let en = 0, tm = 0;
@@ -1299,22 +1452,57 @@ function povHidesEnemies() {
   POV.i = 0;
   return POV.hidden = { on: tm > 200 && en < tm * 0.1, en, tm };
 }
-function showHiddenEnemiesNote() {
+// the load summary's line and the note: the headline, then the detail, feature names between ** (bold)
+function hiddenEnemiesText(h) {
+  return { t: 'This server seems to use an anti-wallhack plugin', n: `It only sent the recording player enemies who were about to come into view, so **See through walls** can show just those few (${h.en.toLocaleString()} enemy sightings against ${h.tm.toLocaleString()} for teammates), and there's no Wallbangs tab. Once he was dead, it sent them all.` };
+}
+// the ! on See through walls, only in POV mode on such a server
+function povMarkInit() {
+  const m = $('xrayMark'); if (!m) return;
+  m.hidden = !(POV.on && povHidesEnemies().on);
+  const n = $('povNote'); if (n) n.hidden = true;
+}
+function showHiddenEnemiesNote(on) {
+  let d = $('povNote');
+  if (!on) { if (d) d.hidden = true; return; }
   if (!POV.on) return;
   const h = povHidesEnemies(); if (!h.on) return;
-  let d = $('povNote');
-  const b = $('tgXray'), host = $('gl').parentElement; if (!b || !host) return;
+  const host = $('gl').parentElement; if (!host) return;
   if (!d) {
     d = document.createElement('div'); d.id = 'povNote'; d.setAttribute('role', 'status');
-    d.style.cssText = 'position:absolute;z-index:4;max-width:calc(300px * var(--ui));background:rgba(10,12,14,.92);border:1px solid var(--sand, #f2b84b);border-radius:calc(4px * var(--ui));padding:calc(8px * var(--ui)) calc(11px * var(--ui));font-size:calc(12.5px * var(--ui));line-height:1.45;color:#e8e6e1;cursor:pointer;transition:opacity .4s';
-    d.onclick = () => { d.style.opacity = '0'; setTimeout(() => { d.hidden = true; }, 400); };
     host.appendChild(d);
   }
-  const hr = host.getBoundingClientRect(), br = b.parentElement.getBoundingClientRect();
-  d.style.left = (br.left - hr.left) + 'px'; d.style.bottom = (hr.bottom - br.top + 8 * UI) + 'px';
-  // Wording (Sujan, 5 Oct 2026): a headline anyone understands, the detail and the numbers below; feature names in
-  // bold (Sujan, 25 Oct 2026; they were in single quotes). "Seems": the demo shows the effect, not the plugin itself.
-  d.innerHTML = `<b style="color:var(--sand, #f2b84b)">This server seems to use an anti-wallhack plugin</b><br>It only sent the recording player enemies who were about to come into view, so <b>See through walls</b> can show just those few (${h.en.toLocaleString()} enemy sightings against ${h.tm.toLocaleString()} for teammates). Once he was dead, it sent them all.`;
-  d.hidden = false; d.style.opacity = '1';
-  clearTimeout(POV.noteT); POV.noteT = setTimeout(() => { d.style.opacity = '0'; setTimeout(() => { d.hidden = true; }, 400); }, 8000);
+  const x = hiddenEnemiesText(h);
+  d.innerHTML = `<button type="button" class="povnote-x" title="Close" aria-label="Close">×</button><b class="povnote-h">${esc(x.t)}</b><br>${esc(x.n).replace(/\*\*(.+?)\*\*/g, '<b>$1</b>')}`;
+  d.querySelector('.povnote-x').onclick = () => showHiddenEnemiesNote(false);
+  d.hidden = false; placeHiddenNote();
+}
+// POV mode: the notices' column (a notice, the anti-wallhack note; the shortcuts line is hidden there) sits at the top middle, and steps
+// down below the kill feed while one of its rows reaches into the column (a long kill row reaches past the middle of a
+// 1280x720 window: the GP Tourney POV's widest, at R3, from 436 px of 940). Run every frame in POV mode, since rows
+// come and go and the spectator bars move the feed down.
+function placePovNotices() {
+  const rad = $('radar'); if (!rad.classList.contains('povm')) return;
+  const rr = rad.getBoundingClientRect(), u = UI;
+  let colL = Infinity, colR = -Infinity, has = false;
+  for (const id of ['toast', 'povNote']) {
+    const e = $(id); if (!e || e.hidden || !e.offsetParent) continue;
+    const r = e.getBoundingClientRect(); if (!r.width) continue;
+    colL = Math.min(colL, r.left); colR = Math.max(colR, r.right); has = true;
+  }
+  let top = 12 * u;
+  if (has) for (const row of $('feed').children) {
+    const r = row.getBoundingClientRect();
+    if (r.width && r.left < colR + 8 * u && r.right > colL - 8 * u) top = Math.max(top, r.bottom - rr.top + 8 * u);
+  }
+  const v = Math.round(top) + 'px';
+  if (rad.style.getPropertyValue('--pov-ntop') !== v) { rad.style.setProperty('--pov-ntop', v); placeHiddenNote(); }
+}
+// at the top middle, under any notice showing (and the shortcuts line, outside POV mode)
+function placeHiddenNote() {
+  const d = $('povNote'); if (!d || d.hidden) return;
+  const host = $('gl').parentElement, hr = host.getBoundingClientRect();
+  let y = 12 * UI;
+  for (const id of ['hint3', 'toast']) { const e = $(id); if (!e || e.hidden || !e.offsetParent) continue; const r = e.getBoundingClientRect(); if (r.height) y = Math.max(y, r.bottom - hr.top + 8 * UI); }
+  d.style.top = y + 'px';
 }

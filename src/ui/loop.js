@@ -30,6 +30,8 @@ function frame(now) {
   framePart(updateFeed); // before the 3D view draws the ✕, so both come in the same frame
   if (viewMode !== '3d') framePart(draw);
   framePart(drawPlayhead); framePart(updateCentre);
+  framePart(povTabTick); // POV mode: his Tab scoreboard when he held Tab
+  if (POV.on) framePart(placePovNotices); // ...and the notices kept clear of the kill feed
   if (viewMode !== '2d') framePart(() => { if (MAP && view3.map !== MAP.name && view3.failed !== MAP) build3d(); update3(); });
   hudAcc += dt; if (hudAcc > 0.1) { hudAcc = 0; framePart(() => updateHud(false)); }
 }

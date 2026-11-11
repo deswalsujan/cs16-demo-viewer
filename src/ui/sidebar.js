@@ -8,8 +8,17 @@ document.querySelectorAll('.tabs button').forEach((b) => b.onclick = () => {
   if (tab === 'rounds') { const cur = $('pane').querySelector('.row.cur'); if (cur) cur.scrollIntoView({ block: 'center' }); }
   // the other tabs open at the top: the panel kept the Rounds list's scroll, so the Kills list opened scrolled down with
   // its "Round 23" heading out of sight (Sujan, 2 Nov 2026)
+  else if (tab === 'kills' && D && D.povOn) { const cur = $('pane').querySelector('.sechead.cur'); $('pane').scrollTop = cur ? Math.max(0, cur.offsetTop - 120 * UI) : 0; }
   else $('pane').scrollTop = 0;
 });
+// POV mode: the recorder's slot at a moment, from his own view frames (each frame names his slot; joined parts can differ)
+function povRecAt(t) {
+  const V = D.view, n = D.viewStride; if (!V || !V.length) return null;
+  let lo = 0, hi = V.length / n - 1, r = 0;
+  while (lo <= hi) { const m = (lo + hi) >> 1; if (V[m * n] <= t) { r = m; lo = m + 1; } else hi = m - 1; }
+  return V[r * n + 17] + 1;
+}
+const povHis = (k) => { const rec = povRecAt(k.t); return rec != null && (k.killer === rec || k.victim === rec); };
 const teamSpan = (r, e) => {
   const side = teamOfSlot(e, T) != null && r && r.tTeam != null ? (teamOfSlot(e, T) === r.tTeam ? 1 : 2) : 0;
   return side;
@@ -158,6 +167,24 @@ function renderPane() {
     if ($('bSplit')) $('bSplit').onclick = splitJoined;
     $('bJoinWith').onclick = () => { const cur = D.parts ? D.parts.map((x) => fileByName(x.fileName)).filter(Boolean) : [CUR_FILE || fileByName(D.fileName)].filter(Boolean); JOIN.picking = true; openJoinCard(cur).then(() => { JOIN.picking = true; renderJoinCard(); }); };
     if ($('bCount30')) $('bCount30').onclick = () => setCount30(!M.count30);
+  } else if (tab === 'kills' && D.povOn) {
+    // POV mode (POV mockup round, section 5; Sujan, 9 and 11 Nov 2026): his own kills and deaths, the whole match by
+    // round, the round playing now highlighted; a round he had no kill or death in isn't listed. Kills as in the
+    // Players tab (no team kills), deaths with any death of his.
+    let nk = 0, nd = 0, body = '';
+    for (const r of (M.liveR.length ? M.liveR : M.rounds)) {
+      const ks = r.kills.filter(povHis); if (!ks.length) continue;
+      const a = ks.filter((k) => k.killer === povRecAt(k.t) && k.victim !== k.killer && !teamKill(k)).length, b = ks.filter((k) => k.victim === povRecAt(k.t)).length;
+      nk += a; nd += b;
+      const cur = r === cr;
+      body += `<div class="sechead${cur ? ' cur' : ''}"><span>${r.live ? 'Round ' + r.ln : 'Before the match'}</span><span>${[a ? plural(a, 'kill') : '', b ? plural(b, 'death') : ''].filter(Boolean).join(' · ')}</span></div>`;
+      for (const k of ks) {
+        const sk = skipNear(k.t) ? SKIP_MARK : '';
+        body += `<div class="row krow kill3${killState(k)}${cur ? ' cur' : ''}" data-kill="${k.t}" data-ki="${D.kills.indexOf(k)}"><span class="n" title="Round timer as shown in game">${k === pickedKill ? MARK : ''}${killClock(k.t) ? cellClock(k.t) : '<span class="nw">+' + fmt(k.t - r.start) + '</span>'}${sk}</span><span class="main">${killRow3(k, true)}</span></div>`;
+        if (k === pickedKill) body += killDetailsHtml(k);
+      }
+    }
+    p.innerHTML = `<div class="sechead"><span>His kills and deaths</span><span>${plural(nk, 'kill')} · ${plural(nd, 'death')}</span></div>` + (body || '<div class="opt">No kills or deaths of his in the match.</div>');
   } else if (tab === 'kills') {
     const r = cr;
     let h = `<div class="sechead"><span>${r && r.live ? 'Round ' + r.ln : 'This round'}</span><span>${r ? r.kills.length : 0} kills</span></div>`;
@@ -176,7 +203,8 @@ function renderPane() {
       // filters (Sujan, 25 Oct 2026): All, Strict wb, Loose wb, Damage, each with a tooltip; rows tagged STRICT WB,
       // LOOSE WB or DAMAGE; a damage row is a burst of hits through cover that didn't kill (wip/wallbang-hits)
       const busy = !!M.seenPending;
-      const kills = M.wbs.map((k) => ({ t: k.t, k, kind: k.wb.loose ? 'loose' : 'strict' }));
+      // POV mode, a server that sent him every enemy: only his own wallbangs (Sujan, 9 Nov 2026)
+      const kills = M.wbs.filter((k) => !D.povOn || povHis(k)).map((k) => ({ t: k.t, k, kind: k.wb.loose ? 'loose' : 'strict' }));
       const dmg = (M.bursts || []).filter((b) => !b.kill).map((b) => ({ t: b.start, b, kind: 'damage' }));
       const all = kills.concat(dmg).sort((a, b) => a.t - b.t);
       const n = { all: all.length, strict: kills.filter((x) => x.kind === 'strict').length, loose: kills.filter((x) => x.kind === 'loose').length, damage: dmg.length };

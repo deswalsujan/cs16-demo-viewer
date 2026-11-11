@@ -72,6 +72,12 @@ async function loadSummary(sndDone) {
   if (D.pov) rows.push(D.povOn
     ? { s: 'info', t: 'Recorded by a player, shown in POV mode', n: "Through his own eyes, as his game showed it. A player's game only receives the players near them, so others drop in and out of view, and wallbangs are found less reliably than in HLTV demos. POV mode can be turned off in View settings." }
     : { s: 'info', t: 'Recorded by a player (a POV demo)', n: "A player's game only receives the players near them, so others drop in and out of view, and wallbangs are found less reliably than in HLTV demos. POV mode is off: turn it on to watch through his eyes, with his crosshair, HUD and gun. It's also in View settings.", btn: D.povData ? { id: 'sumPov', label: 'Turn on POV mode' } : null });
+  // the POV mockup round (docs/pov-mockup-round-mock.jpg, sections 1 and 6; Sujan, 11 Nov 2026): what a POV demo doesn't
+  // have, and the anti-wallhack note, which no longer shows over his HUD (the ! on See through walls brings it back)
+  if (D.povOn) {
+    rows.push({ s: 'info', t: 'Only his own view, in 3D', n: "A POV demo has no **2D** or **3D + radar** view, so no heatmaps, and no **Free** or **Behind player** camera: his game only received the players near him. The Kills tab lists his own kills and deaths." });
+    if (POV.on && povHidesEnemies().on) rows.push({ s: 'info', ...hiddenEnemiesText(povHidesEnemies()) });
+  }
   // A map recorded in two or more files. A part on its own says so only when another part is in the folder
   // (same map, at least 8 of the same Steam IDs) and this one starts late or ends before anyone won. Those two
   // alone were wrong on all four demos on Sujan's Mac that showed them with no other part (2 Oct 2026): a draw
@@ -191,7 +197,7 @@ function renderSummary(r) {
   const icon = { ok: '✓', warn: '!', fail: '✕', info: 'i', busy: '…' };
   el.innerHTML = `<div class="sum" role="dialog" aria-live="polite" aria-labelledby="sumTitle">
     <div class="sum-top ${r.state}"><div class="ti"><h2 id="sumTitle">${esc(r.title)}</h2><p>${esc(r.text)}</p></div><button class="sum-x" type="button" id="sumX" title="Close (Esc)" aria-label="Close">×</button></div>
-    ${r.rows.length ? `<ul class="sum-list">${r.rows.map((x) => `<li><span class="sum-ic ${x.s}" aria-hidden="true">${icon[x.s]}</span><span>${esc(x.t)}${x.n ? `<small>${esc(x.n)}</small>` : ''}${x.btn ? `<div class="li-btn"><button class="btn sm" type="button" id="${x.btn.id}">${esc(x.btn.label)}</button></div>` : ''}</span></li>`).join('')}</ul>` : ''}
+    ${r.rows.length ? `<ul class="sum-list">${r.rows.map((x) => `<li><span class="sum-ic ${x.s}" aria-hidden="true">${icon[x.s]}</span><span>${esc(x.t)}${x.n ? `<small>${esc(x.n).replace(/\*\*(.+?)\*\*/g, '<b>$1</b>')}</small>` : ''}${x.btn ? `<div class="li-btn"><button class="btn sm" type="button" id="${x.btn.id}">${esc(x.btn.label)}</button></div>` : ''}</span></li>`).join('')}</ul>` : ''}
     ${r.state === 'busy' ? '' : `<div class="sum-foot">${r.folder ? `<button class="btn" type="button" id="sumFolder">Choose Half-Life folder</button>` : ''}<span class="sp"></span><span id="sumCount"></span>${r.state === 'fail' ? '<button class="btn" type="button" id="sumClose">Close</button><button class="btn primary" type="button" id="sumAnother">Open another demo</button>' : ''}</div>`}
     ${r.state === 'busy' || r.state === 'fail' ? '' : '<div class="sum-bar"><i id="sumBar"></i></div>'}
   </div>`;

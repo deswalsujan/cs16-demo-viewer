@@ -4,6 +4,7 @@ What changed in the viewer, newest first. The version shows in the viewer's shor
 
 ## Versions
 
+- [0.26.29](#02629-2026-11-11) 2026-11-11: POV demos shaped like POV
 - [0.26.28](#02628-2026-11-10) 2026-11-10: POV crashes, teams, names
 - [0.26.27](#02627-2026-11-09) 2026-11-09: Gun flash, shells, blood puffs
 - [0.26.26](#02626-2026-11-09) 2026-11-09: AWP and Scout, one bullet
@@ -86,6 +87,33 @@ What changed in the viewer, newest first. The version shows in the viewer's shor
 
 ## Known limits
 Moved to [LIMITS.md](LIMITS.md) on 30 Oct 2026; release entries below still say "Known limits" for that list.
+
+## 0.26.29 (2026-11-11)
+
+The POV mockup round, all six items in one batch, as in `docs/pov-mockup-round-mock.jpg`, approved by Sujan on 11 Nov 2026 with his answers and his checks in the game (`STATE.md`, Decisions). Drawn and tested on the GP Tourney POV of Team Guardians vs Lanka Dahan, Mirage, Match 8, 25 Oct 2026, recorded by BAJRANG || forgotteN_.
+
+### Added
+- **POV mode**'s HUD as the game draws it, from cs16-client: every number rests faint (100 of 255) and lights up on a change; health and armour dim back over 5 s, health red at 25 or less and always bright at 15 or less; a change of money shows the game's own + or − with the amount over the balance, green or red, fading over 5 s; the ammo lights up on each shot; the round timer flashes red at 20 s or less.
+- The red arcs round the crosshair that show where a hit came from (`valve/sprites/640_pain.spr`), from the server's Damage messages, which the reader keeps now: front, right, rear or left, all four within 50 units, gone within 0.3 s.
+- The plant and defuse bar, from BarTime and BarTime2, over his HUD and over the spectator view while he watches the planter or defuser in first person: the server sends it to both. A spectator who starts watching partway gets it at the percent the message gives (Sujan, 11 Nov 2026).
+- His Tab scoreboard: the scoreboard opens by itself while he held Tab in his game (his "+showscores" and "-showscores"), short taps included, with "He held Tab here" (confirmed in the game by Sujan: a POV demo shows it, an HLTV demo doesn't).
+- A ! on **See through walls** on a server that held enemies back: a click shows the anti-wallhack note at the top middle, under the other notices, until its × or another click; the load summary says it once.
+
+### Changed
+- What each kind of demo offers, as one list (`demoOffers`): a POV demo in **POV mode** opens in 3D, with no 2D, 3D and 3D + radar switch and no **Reset view**, and the 2D or 3D picked for HLTV demos stays as it was; the load summary says "Only his own view, in 3D". **View settings** has no **POV mode** row with an HLTV demo open.
+- The Kills tab of a POV demo lists his own kills and deaths for the whole match, by round, the round playing now highlighted; its Wallbangs tab is gone on a server that held enemies back, and lists only his own wallbangs otherwise (Sujan, 9 Nov 2026).
+- In **POV mode** notices such as "Stopping at 16" sit at the top middle, stepping down below the kill feed while one of its rows would reach them (Sujan, 11 Nov 2026: the widest rows reach past the middle at 1280x720), and "Press ? for keyboard shortcuts" is hidden, as in 2D and Theatre mode, so it doesn't jump with the feed (Sujan, 11 Nov 2026; **Shortcuts ?** stays in the bottom bar). The anti-wallhack note no longer shows over his health and armour when **See through walls** is switched on.
+
+### How it was tested
+- `pov_mockup_round_check.py` (new, 20 s) fails on 0.26.28 (8 of 11) and passes; it includes the notices against the kill feed at its widest, at 1512x982 (Auto and 115%) and 1280x720, and the shortcuts line staying put while kills come in.
+- The eight checks pass (5.1 minutes); `demo_search_check.py`'s POV kill details now open his own death, since the Kills tab lists only his. `ground_truth_check.py`: 233 kills and 46 scores and K-D on 56 demos, 0 mismatches, the same 9 known gaps.
+- 78 demos against 0.26.28: `compare_all.sh` all identical (3.9 minutes); the reader (`reader_compare.mjs`) identical on the 70 HLTV demos, the POV demos only adding the hits on him, the bars and his Tab presses.
+- Full log: `tests/logs/0.26.29.md`; screenshots on `screenshots/0.26.29`.
+
+### Discussed, not changed
+- cs16-client's `MsgFunc_BarTime2` sets the bar to duration × percent / 100 (3 × 59 = 1.77), which its drawing turns off as over 1, or starts empty below 1; the viewer follows the message's meaning (Sujan, 11 Nov 2026), not seen in the game, since the one demo that would show it longest, Match 5, can't be played there.
+- The 20 HP and 58 armour at R8 1:29 of the GP Tourney POV are real: four hits from R8 1:38 to 1:31 after the reset to 100 at the round's start, not a value left over from R7.
+- The GP Tourney POV holds 687 Tab presses, 684 of them on de_mirage_32; the other 3 are in its last 18 s on de_train32, which the viewer doesn't play.
 
 ## 0.26.28 (2026-11-10)
 

@@ -66,7 +66,7 @@ Before starting any branch, run `git fetch` and branch from `origin/main`; if a 
 - `src/template.html`: the page itself: header, view, side panel, bottom bar, cards and panels, with an `/*INLINE name*/` line for each file below.
 - `src/app.css`: the page's styles, every size written `calc(Npx * var(--ui))` for **Interface size** (0.26.13).
 - `src/ui/size.js`: **Interface size**: the scale (`UI`, `--ui`) from the window and the setting (`applyUiSize`), run in the page's head; Auto follows a resize or a move to another screen.
-- `src/demo.js`: the .dem reader (`parseDemo`): players, sampled positions, kills, rounds, bomb events, shots, sounds, health; message layouts from hlviewer.js.
+- `src/demo.js`: the .dem reader (`parseDemo`): players, sampled positions, kills, rounds, bomb events, shots, sounds, health; in POV demos also his view, HUD, the hits on him, the plant and defuse bar and his Tab presses; message layouts from hlviewer.js.
 - `src/bsp.js`: the .bsp and .wad reader: what's solid to sight and to bullets (`solidModels`, `solidAlong`), the texture a bullet enters at each surface (`hitTextures`), doors and other movers (`brushPose`), the mesh the 3D view draws (`buildMesh`).
 - `src/mdl.js`: studio model (.mdl v10) reader and posing (`parseMdl`, `mdlPose`).
 - `src/players3d.js`: player models in 3D: loading (`modelEntry`), gait and aim (`posePlayer`), deaths and corpses, the gun in **Player's eyes**.
@@ -74,7 +74,7 @@ Before starting any branch, run `git fetch` and branch from `origin/main`; if a 
 - `src/shotfx.js`: shot feedback in 3D: the gun flash on every player and in **Player's eyes** (`fxThirdPerson`, `fxViewFlash`), shells in **Player's eyes** and **POV mode** with their landing sound (`fxShells`, `fxShellSounds`), blood puffs where the server marked a hit (`fxBlood`).
 - `src/stock.js`: fingerprints of the stock CS 1.6 models, to spot custom ones.
 - `src/vendor/three.min.js`: three.js r128 (MIT), the file cdnjs serves, built into the page; the tests serve it to older builds.
-- `src/view3d.part.js`: the 3D view (three.js): cameras, each frame (`update3`), hit numbers by **Damage numbers** (`numberGroups`) with the red skull, kill rings, the sniper scope (`SCOPE_STYLE`); the wallbang picture check (`checkSeen`); **POV mode**: his view, crosshair, HUD, spectator bars, the hidden-enemies note.
+- `src/view3d.part.js`: the 3D view (three.js): cameras, each frame (`update3`), hit numbers by **Damage numbers** (`numberGroups`) with the red skull, kill rings, the sniper scope (`SCOPE_STYLE`); the wallbang picture check (`checkSeen`); **POV mode**: his view, crosshair, HUD as the game draws it (`drawPovHud`), the hit arcs (`povPainAt`), the plant and defuse bar (`drawPovBar`), spectator bars, the hidden-enemies note and its ! on **See through walls**.
 - `src/ui/common.js`: shared state (`D` the demo, `M` the match, `T` the time), colours, saved settings, small helpers (`weaponShort`).
 - `src/ui/folder.js`: the Half-Life folder, chosen with the browser's ordinary folder pick on every visit (`pickFolder`, `hlPicked`, `hlRender`; 0.26.11), the demo list and its check for demos deleted since the pick (`checkDemoList`), centre-screen messages, kill feed icons.
 - `src/ui/open.js`: opening a demo in the Web Worker (`loadDemoFile`), and joining a map recorded in parts (`joinDemos`, `openJoined`).
@@ -86,9 +86,9 @@ Before starting any branch, run `git fetch` and branch from `origin/main`; if a 
 - `src/ui/names.js`: short names without the clan tag or sponsor (`shortNames`), and the skull (`SKULL`, `SKULL_D`).
 - `src/ui/grenades.js`: smokes, HE and flash bursts the demo has no object for (`addNadesFromEvents`).
 - `src/ui/lookups.js`: what's true at a moment: sniper zoom (`zoomLevel`), health (`hpAt`), kit and bomb (`packAt`), HLTV slow motion (`slowAt`), the round and C4 timers (`clockAt`, `c4Countdown`), team names, player stats (`statsFor`), broken breakables and doors (`brokenAt`, `posesAt`), the round at a time (`roundAt`).
-- `src/ui/after-load.js`: what runs once a demo is open (`onDemo`), **POV mode**'s data (`povApply`), closing a demo.
+- `src/ui/after-load.js`: what runs once a demo is open (`onDemo`), **POV mode**'s data (`povApply`), what each kind of demo offers (`demoOffers`, `applyOffers`), closing a demo.
 - `src/ui/sidebar.js`: the side panel's Rounds, Kills, Players and Wallbangs tabs (`renderPane`, `killHtml`), kill details under the picked kill (`killDetailsHtml`).
-- `src/ui/playback.js`: play, seek, speed and rounds, the Tab scoreboard, the HUD (`updateHud`).
+- `src/ui/playback.js`: play, seek, speed and rounds, the Tab scoreboard (and his own Tab in **POV mode**, `povTabTick`), the HUD (`updateHud`).
 - `src/ui/radar.js`: the 2D radar (`draw`), fitting the map above its controls (`fitView`), where a player is between snapshots (`playerState`), picking players, the heatmap.
 - `src/ui/timeline.js`: the timeline under the view (`drawTimeline`).
 - `src/ui/loop.js`: the frame loop (`frame`), each part of a frame in its own try/catch (`framePart`), full screen, and **View settings**: its saved settings and **Vanilla** (`setVanilla`).

@@ -91,6 +91,21 @@ button { cursor: pointer; }
 .rclock b { color: var(--fg); font-weight: 500; }
 .legend { position: absolute; left: calc(12px * var(--ui)); bottom: calc(12px * var(--ui)); display: flex; gap: calc(6px * var(--ui)); flex-wrap: wrap; }
 .legend .btn { background: rgba(10,12,14,.82); font-size: calc(12px * var(--ui)); padding: calc(4px * var(--ui)) calc(8px * var(--ui)); }
+/* POV mode on a server that held enemies back (POV mockup round, Sujan, 11 Nov 2026): a ! on See through walls, its own
+   button, that shows the anti-wallhack note again at the top middle (#povNote) */
+.xwrap { position: relative; display: inline-flex; }
+.xmark { position: absolute; top: calc(-7px * var(--ui)); right: calc(-7px * var(--ui)); width: calc(15px * var(--ui)); height: calc(15px * var(--ui)); padding: 0; border: 0; border-radius: 50%; background: var(--sand); color: #111; font: 700 calc(10px * var(--ui))/calc(15px * var(--ui)) var(--f-body); text-align: center; cursor: pointer; box-shadow: 0 0 0 calc(2px * var(--ui)) rgba(242,184,75,.45); }
+.xmark:hover, .xmark:focus-visible { box-shadow: 0 0 0 calc(3px * var(--ui)) rgba(242,184,75,.7); outline: none; }
+#povNote { position: absolute; z-index: 4; left: 50%; transform: translateX(-50%); width: calc(330px * var(--ui)); max-width: calc(100% - 24px * var(--ui)); background: rgba(10,12,14,.92); border: 1px solid var(--sand); border-radius: calc(4px * var(--ui)); padding: calc(8px * var(--ui)) calc(26px * var(--ui)) calc(8px * var(--ui)) calc(11px * var(--ui)); font-size: calc(12.5px * var(--ui)); line-height: 1.45; color: #e8e6e1; }
+#povNote .povnote-h { color: var(--sand); }
+#povNote .povnote-x { position: absolute; top: calc(3px * var(--ui)); right: calc(6px * var(--ui)); background: none; border: 0; color: #9a968e; font-size: calc(15px * var(--ui)); line-height: 1; cursor: pointer; padding: calc(2px * var(--ui)); }
+#povNote .povnote-x:hover { color: #e8e6e1; }
+/* POV mode: notices at the top middle, so nothing sits on the HUD's corners (Sujan, 11 Nov 2026: POV mode only for now);
+   --pov-ntop moves them down past the kill feed while one of its rows would reach them (placePovNotices). The shortcuts
+   line is hidden there, as in 2D, Theatre mode and under 1100 px: always on screen, it would jump down and back up with
+   the kill feed's rows several times a round (Sujan, 11 Nov 2026, on #60); Shortcuts ? stays in the bottom bar */
+.radar.povm .hint3 { display: none; }
+.radar.povm #toast { top: var(--pov-ntop, calc(12px * var(--ui))) !important; bottom: auto !important; left: 50% !important; right: auto !important; transform: translateX(-50%); text-align: center; width: max-content; max-width: min(calc(420px * var(--ui)), calc(100% - 24px * var(--ui))) !important; }
 .heatbar { position: absolute; right: calc(12px * var(--ui)); bottom: calc(12px * var(--ui)); display: flex; gap: calc(6px * var(--ui)); flex-wrap: wrap; justify-content: flex-end; }
 .heatbar select { background: rgba(10,12,14,.9); border: 1px solid var(--line); border-radius: calc(4px * var(--ui)); padding: calc(4px * var(--ui)) calc(6px * var(--ui)); font-size: calc(12px * var(--ui)); }
 
@@ -211,6 +226,7 @@ button { cursor: pointer; }
 .sbcard.nohp .sbrow { grid-template-columns: calc(18px * var(--ui)) minmax(0, 1fr) calc(30px * var(--ui)) calc(30px * var(--ui)) calc(64px * var(--ui)); } /* no HP column (0.26.28) */
 .sbrow.head { color: var(--muted); border-top: 0; font-size: calc(11px * var(--ui)); }
 .sbspecs { grid-column: 1 / -1; padding: calc(10px * var(--ui)) calc(14px * var(--ui)); border-top: 1px solid var(--line); font-size: calc(12px * var(--ui)); display: flex; flex-wrap: wrap; gap: calc(4px * var(--ui)) calc(8px * var(--ui)); align-items: baseline; }
+.sbheld { margin-left: auto; color: var(--sand); font-weight: 700; } /* POV mode: the scoreboard opened because he held Tab (Sujan, 11 Nov 2026) */
 .sbl { color: var(--muted); text-transform: uppercase; letter-spacing: .08em; font-size: calc(11px * var(--ui)); margin-right: calc(4px * var(--ui)); }
 .sbsep { color: var(--faint); }
 .sbtag { font-family: var(--f-body); font-size: calc(10px * var(--ui)); color: var(--muted); border: 1px solid var(--line); border-radius: calc(3px * var(--ui)); padding: 0 calc(4px * var(--ui)); }
@@ -316,6 +332,7 @@ kbd { font-family: var(--f-body); font-size: calc(11px * var(--ui)); background:
 .kwb.loose { color: var(--loose); }
 .kwb { color: var(--wb); font-family: var(--f-body); font-size: calc(11px * var(--ui)); margin-left: calc(4px * var(--ui)); }
 .sechead { padding: calc(10px * var(--ui)) calc(14px * var(--ui)) calc(6px * var(--ui)); font-size: calc(11px * var(--ui)); text-transform: uppercase; letter-spacing: .08em; color: var(--muted); display: flex; justify-content: space-between; gap: calc(8px * var(--ui)); }
+.sechead.cur { color: var(--sand); } /* POV mode's Kills tab: the round playing now */
 .prow { grid-template-columns: minmax(0, 1fr) auto; }
 .prow.sel { background: color-mix(in srgb, var(--sand) 17%, var(--panel)); box-shadow: inset calc(5px * var(--ui)) 0 0 var(--sand); }
 .opt { padding: calc(8px * var(--ui)) calc(14px * var(--ui)); display: flex; gap: calc(8px * var(--ui)); align-items: center; color: var(--muted); font-size: calc(12px * var(--ui)); border-bottom: 1px solid var(--line); }

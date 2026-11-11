@@ -93,10 +93,10 @@ setSound(SND.on);
 // Viewing preferences carry over to the next demo and the next visit: the view (2D, 3D or split), Names,
 // Grenades, Kill lines, See through walls and the timeline's match or round. (Team colours, Quality and
 // sound are saved on their own above.) Playback speed is not a preference: every demo opens at 1x, paused.
-function savePrefs() { ls.set('prefs', { view: viewMode, names: opts.names, nades: opts.nades, lines: opts.lines, xray: opts.xray, scope }); }
+function savePrefs() { ls.set('prefs', { view: viewPref, names: opts.names, nades: opts.nades, lines: opts.lines, xray: opts.xray, scope }); }
 (() => {
   const p = ls.get('prefs'); if (!p || typeof p !== 'object') return;
   for (const [k, id] of [['names', 'tgNames'], ['nades', 'tgNades'], ['lines', 'tgLines'], ['xray', 'tgXray']]) if (typeof p[k] === 'boolean') { opts[k] = p[k]; $(id).classList.toggle('on', p[k]); }
   if (p.scope === 'match' || p.scope === 'round') { scope = p.scope; $('bScope').textContent = 'Timeline: ' + scope; }
-  if (['2d', '3d', 'split'].includes(p.view)) viewMode = p.view; // applied when a demo opens (onDemo calls setView)
+  if (['2d', '3d', 'split'].includes(p.view)) viewMode = viewPref = p.view; // applied when a demo opens (onDemo calls setView)
 })();
