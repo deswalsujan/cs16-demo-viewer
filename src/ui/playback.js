@@ -92,9 +92,24 @@ function playerOrder() { return M ? [...M.teams[0], ...M.teams[1]] : []; }
 function isDeadNow(e) { const a = D.slots[e]; if (!a) return false; return a[M.idxAt(T) * D.stride + 5] < 0; }
 
 let sbTimer = null;
-function showScoreboard(v) {
+// POV mode (POV mockup round, section 4; Sujan, 11 Nov 2026, checked in the game: a POV demo shows the scoreboard while
+// the recorder held Tab, an HLTV demo doesn't): the scoreboard opens by itself from each "+showscores" his game wrote
+// to its "-showscores" (D.tabs), short taps included, with "He held Tab here"; the viewer's own Tab works as anywhere
+const SB = { auto: false, user: false };
+function povTabHeld(t) {
+  const A = D && D.povOn ? D.tabs : null; if (!A || !A.length) return false;
+  const r = idxAt(A, 2, t); return r >= 0 && A[r * 2 + 1] === 1;
+}
+function povTabTick() {
+  if (!D || !D.povOn || SB.user) return;
+  const held = povTabHeld(T);
+  if (held && !SB.auto) showScoreboard(true, true);
+  else if (!held && SB.auto) showScoreboard(false);
+}
+function showScoreboard(v, auto = false) {
   const el = $('sb');
   clearInterval(sbTimer);
+  SB.auto = !!v && auto; SB.user = !!v && !auto;
   if (!v || !D) { el.hidden = true; return; }
   const render = () => {
     const r = roundAt(T);
@@ -152,7 +167,7 @@ function showScoreboard(v) {
     // and everyone else on the server now: people on neither side who were never on a team
     const specNow = now.filter((x) => !x.side).sort((a, b) => (M.teamOf[a.pid] != null) - (M.teamOf[b.pid] != null) || (a.pid < b.pid ? -1 : 1)).map((x) => esc(M.pl[x.pid].name) + (M.pl[x.pid].hltv ? ' <span class="sbtag">HLTV</span>' : ''));
     const v = viewersAt(T);
-    h += `<div class="sbspecs"><span class="sbl">Spectators</span>${specNow.length ? specNow.join('<span class="sbsep">·</span>') : '<span class="sbl">none on the server</span>'}${v != null ? `<span class="sbv">${v.toLocaleString('en-US')} watching on HLTV</span>` : ''}</div>`;
+    h += `<div class="sbspecs"><span class="sbl">Spectators</span>${specNow.length ? specNow.join('<span class="sbsep">·</span>') : '<span class="sbl">none on the server</span>'}${v != null ? `<span class="sbv">${v.toLocaleString('en-US')} watching on HLTV</span>` : ''}${SB.auto ? '<span class="sbheld">He held Tab here</span>' : ''}</div>`;
     el.innerHTML = h + '</div>';
   };
   render(); el.hidden = false;

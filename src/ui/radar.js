@@ -58,7 +58,6 @@ function pickPlayer(e) {
 
 function toggleOpt(k, id) {
   opts[k] = !opts[k]; $(id).classList.toggle('on', opts[k]);
-  if (k === 'xray' && opts.xray) showHiddenEnemiesNote(); // POV mode
   savePrefs();
 }
 // Jump to a moment before a kill and watch it through the shooter's eyes (in 3D)
@@ -84,6 +83,8 @@ $('tgNames').onclick = () => toggleOpt('names', 'tgNames');
 $('tgNades').onclick = () => toggleOpt('nades', 'tgNades');
 $('tgLines').onclick = () => toggleOpt('lines', 'tgLines');
 $('tgXray').onclick = () => toggleOpt('xray', 'tgXray');
+// POV mode, a server that held enemies back: the ! on See through walls shows the note again, or closes it (Sujan, 11 Nov 2026)
+$('xrayMark').onclick = (e) => { e.stopPropagation(); const n = $('povNote'); showHiddenEnemiesNote(!n || n.hidden); };
 // Reset view: back to where the view starts. In 2D the whole radar (zoom and pan undone); in 3D the overview
 // camera the demo opens with, as a free camera, so it stops riding along with a followed player. That player
 // stays highlighted. In split view both reset.

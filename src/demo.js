@@ -290,6 +290,11 @@ export function parseDemo(buffer, onProgress, opts = {}) {
   // POV mode, his HUD (what the server told his game about himself): health, armor, helmet (time, value each),
   // money, spare ammo (time, ammo type, count), and which ammo type each gun takes (weapon id -> ammo type)
   const hud = { hp: [], ap: [], helmet: [], money: [], ammox: [], gunAmmo: {} };
+  // POV mode, the POV mockup round: where each hit on him came from (Damage: time, armor taken, health taken, and the
+  // middle of whatever hit him, 0 0 0 for a fall; ReGameDLL UpdateClientData), the plant and defuse bar (BarTime and
+  // BarTime2: time, seconds, how much of it was already filled in percent; 0 seconds takes it away), and his Tab
+  // (the +showscores and -showscores his game wrote as console commands, demo frame type 3: time, 1 or 0)
+  const dmg = [], bars = [], tabs = [];
   const obs = []; // his spectator mode and target (clientdata iuser1, iuser2): time, mode, entity, each time they change
   // POV mode: teammates' health (HealthInfo; the server sends -1 for opponents): time, entity, health. Kept apart from
   // hp, which only HLTV sends and which the damage and skip finders read
@@ -499,6 +504,13 @@ export function parseDemo(buffer, onProgress, opts = {}) {
         case 'Battery': { if (opts.povRounds && inPlayback) hud.ap.push(time, m.s()); break; }
         case 'ArmorType': { if (opts.povRounds && inPlayback) hud.helmet.push(time, m.ub()); break; }
         case 'Money': { if (opts.povRounds && inPlayback) hud.money.push(time, m.i()); break; }
+        case 'Damage': {
+          const ar = m.ub(), dm = m.ub(); m.i(); const x = m.s() / 8, y = m.s() / 8, z = m.s() / 8;
+          if (opts.povRounds && inPlayback) dmg.push(time, ar, dm, x, y, z);
+          break;
+        }
+        case 'BarTime': { const n = m.s(); if (opts.povRounds && inPlayback) bars.push(time, n, 0); break; }
+        case 'BarTime2': { const n = m.s(), pct = m.s(); if (opts.povRounds && inPlayback) bars.push(time, n, pct); break; }
         case 'AmmoX': { const ty = m.ub(), n = m.ub(); if (opts.povRounds && inPlayback) hud.ammox.push(time, ty, n); break; }
         case 'WeaponList': { // name, primary ammo type, max, secondary ammo type, max, slot, position, weapon id, flags
           m.str(); const ty = m.b8(); m.ub(); m.b8(); m.ub(); m.ub(); m.ub(); const id = m.ub();
@@ -961,7 +973,10 @@ export function parseDemo(buffer, onProgress, opts = {}) {
           break;
         }
         case 2: break;
-        case 3: r.skip(64); break;
+        case 3: { // a console command his own game ran (POV demos): only the Tab scoreboard's is kept
+          if (opts.povRounds && inPlayback) { const c = r.nstr(64).trim(); if (c === '+showscores' || c === '-showscores') tabs.push(time, c[0] === '+' ? 1 : 0); } else r.skip(64);
+          break;
+        }
         case 4: r.skip(32); break;
         case 5: done = true; break;
         case 6: r.skip(84); break;
@@ -1018,6 +1033,7 @@ export function parseDemo(buffer, onProgress, opts = {}) {
     view: new Float32Array(view), viewStride: VIEW_STRIDE, ownPos: new Float32Array(ownPos), hpInfo: new Float32Array(hpInfo),
     shotOrg: new Float32Array(shotOrg), fovs: new Float32Array(fovs), ownAmmo: new Float32Array(ownAmmo), wanims: new Float32Array(wanims), vmodels: new Float32Array(vmodels), obs: new Float32Array(obs),
     hud: { hp: new Float32Array(hud.hp), ap: new Float32Array(hud.ap), helmet: new Float32Array(hud.helmet), money: new Float32Array(hud.money), ammox: new Float32Array(hud.ammox), gunAmmo: hud.gunAmmo },
+    dmg: new Float32Array(dmg), bars: new Float32Array(bars), tabs: new Float32Array(tabs),
   } : null;
   if (!pov) for (const k of kills) { delete k.kOwn; delete k.vOwn; }
   return {

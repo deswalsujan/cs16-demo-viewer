@@ -81,7 +81,7 @@ function joinDemos(parts) {
   const timesL = [], slotsL = {}, hpL = [], packL = [], brushEvL = [], brushPoseL = [], sndsL = [], shotsL = [], boomsL = [], hitPointsL = [], brassL = [], puffsL = [], c4L = [];
   // POV mode (0.25.0): the parts' POV data on the joined timeline, when every part is a POV demo. recs: for each part,
   // its first sample, its number of samples and the recording player's entity there
-  const povL = parts.every((P) => P.povData) ? { view: [], ownPos: [], hpInfo: [], shotOrg: [], fovs: [], ownAmmo: [], wanims: [], vmodels: [], obs: [], hud: { hp: [], ap: [], helmet: [], money: [], ammox: [] }, gunAmmo: {}, recs: [] } : null;
+  const povL = parts.every((P) => P.povData) ? { view: [], ownPos: [], hpInfo: [], shotOrg: [], fovs: [], ownAmmo: [], wanims: [], vmodels: [], obs: [], dmg: [], bars: [], tabs: [], hud: { hp: [], ap: [], helmet: [], money: [], ammox: [] }, gunAmmo: {}, recs: [] } : null;
   let shift = 0, nRound = 0, nOcc = 0, nSamples = 0;
   parts.forEach((P, pi) => {
     if (pi) shift = (out.end) + JOIN_GAP - P.start;
@@ -136,6 +136,7 @@ function joinDemos(parts) {
       flat(Q.view, Q.viewStride, t0, povL.view); flat(Q.ownPos, 4, () => {}, povL.ownPos); flat(Q.hpInfo, 3, t0, povL.hpInfo);
       flat(Q.shotOrg, 3, () => {}, povL.shotOrg); flat(Q.fovs, 2, t0, povL.fovs); flat(Q.ownAmmo, 3, t0, povL.ownAmmo);
       flat(Q.wanims, 2, t0, povL.wanims); flat(Q.vmodels, 2, (a, i) => { a[i] = sh(a[i]); a[i + 1] = mM(a[i + 1]); }, povL.vmodels); flat(Q.obs, 3, t0, povL.obs);
+      flat(Q.dmg || [], 6, t0, povL.dmg); flat(Q.bars || [], 3, t0, povL.bars); flat(Q.tabs || [], 2, t0, povL.tabs);
       for (const k in povL.hud) flat(Q.hud[k], k === 'ammox' ? 3 : 2, t0, povL.hud[k]);
       Object.assign(povL.gunAmmo, Q.hud.gunAmmo);
       povL.recs.push([nSamples, P.times.length, P.serverInfo ? P.serverInfo.playerIndex + 1 : 0]);
@@ -164,7 +165,7 @@ function joinDemos(parts) {
   out.slots = {}; for (const e in slotsL) out.slots[e] = cat(slotsL[e]);
   out.povData = povL ? {
     view: cat(povL.view), viewStride: parts[0].povData.viewStride, ownPos: cat(povL.ownPos), hpInfo: cat(povL.hpInfo), shotOrg: cat(povL.shotOrg), fovs: cat(povL.fovs),
-    ownAmmo: cat(povL.ownAmmo), wanims: cat(povL.wanims), vmodels: cat(povL.vmodels), obs: cat(povL.obs), recs: povL.recs,
+    ownAmmo: cat(povL.ownAmmo), wanims: cat(povL.wanims), vmodels: cat(povL.vmodels), obs: cat(povL.obs), dmg: cat(povL.dmg), bars: cat(povL.bars), tabs: cat(povL.tabs), recs: povL.recs,
     hud: Object.assign(Object.fromEntries(Object.keys(povL.hud).map((k) => [k, cat(povL.hud[k])])), { gunAmmo: povL.gunAmmo }),
   } : null;
   out.pack = cat(packL); out.hp = cat(hpL); out.brushEvents = cat(brushEvL); out.brushPose = cat(brushPoseL); out.snds = cat(sndsL); out.shots = cat(shotsL); out.booms = cat(boomsL); out.hitPoints = cat(hitPointsL); out.brass = cat(brassL); out.puffs = cat(puffsL); out.c4drops = cat(c4L);

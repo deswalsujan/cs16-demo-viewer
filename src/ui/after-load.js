@@ -22,6 +22,38 @@ function povApply() {
     if (k.vOwn) { k.vpos = k.vOwn.slice(0, 3); k.vduck = k.vOwn[3]; }
   }
 }
+// What each kind of demo offers (POV mockup round, docs/pov-mockup-round-mock.jpg, section 1; Sujan, 3 Nov 2026,
+// approved 11 Nov 2026): one list, read by the header, the 3D bar, View settings, the side panel and the load summary.
+// What a demo doesn't have is hidden, not greyed out. A POV demo in POV mode has only 3D and only his own view (his
+// game only received the players near him), no Reset view (there's no camera of the viewer's to reset), and its Kills
+// tab lists his own kills and deaths; its Wallbangs tab goes on a server that held enemies back, and lists only his
+// own wallbangs otherwise (Sujan, 9 Nov 2026). The POV mode row of View settings shows only with a POV demo open (or
+// none), since it does nothing to an HLTV demo (Sujan, 10 Nov 2026), until the setting is dropped at the sign-off.
+function demoOffers() {
+  const pov = !!(D && D.povOn);
+  return {
+    views: pov ? ['3d'] : ['2d', '3d', 'split'],
+    cameras: pov ? ['eyes'] : ['free', 'eyes', 'behind'],
+    resetView: !pov,
+    povSetting: !D || !!D.pov,
+    crosshairSize: !pov, glowOnHits: !pov, damageNumbers: !pov,
+    killsTab: pov ? 'his' : 'round',
+    wallbangsTab: pov ? (typeof povHidesEnemies === 'function' && POV.on && povHidesEnemies().on ? null : 'his') : 'all',
+    noticesTop: pov,
+  };
+}
+function applyOffers() {
+  const of = demoOffers();
+  $('viewSeg').hidden = of.views.length < 2;
+  $('tgFit').hidden = !of.resetView;
+  $('pov3').closest('.vrow').hidden = !of.povSetting;
+  { const h = $('pov3').closest('.vrow').previousElementSibling; if (h && h.classList.contains('vhead')) h.hidden = !of.povSetting; }
+  const wb = document.querySelector('.tabs button[data-tab="wb"]');
+  wb.hidden = !of.wallbangsTab;
+  if (!of.wallbangsTab && tab === 'wb') document.querySelector('.tabs button[data-tab="kills"]').click();
+  $('radar').classList.toggle('povm', of.noticesTop);
+  if (typeof povMarkInit === 'function') povMarkInit();
+}
 // The POV mode setting is read when a demo opens, so changing it with a POV demo open opens that demo again, at the
 // same moment (REOPEN_T)
 let REOPEN_T = null;
@@ -58,7 +90,8 @@ async function onDemo() {
   else { MAP = null; clear3d(); loadMap(D.mapName); }
   resetCam3();
   povInit();
-  setView(viewMode);
+  applyOffers();
+  { const of = demoOffers(); setView(of.views.includes(viewPref) ? viewPref : of.views[0], false); }
   loadSummary(sndDone);
 }
 function afterOverview(ok, quiet) {
@@ -74,6 +107,7 @@ function toast(t, ms = 9000) {
   if (!el) { el = document.createElement('div'); el.id = 'toast'; el.className = 'rclock'; el.style.cssText = 'top:auto;bottom:calc(56px * var(--ui));left:calc(12px * var(--ui));right:calc(12px * var(--ui));max-width:calc(520px * var(--ui));color:var(--fg)'; $('radar').appendChild(el); }
   el.textContent = t; el.hidden = false;
   clearTimeout(toastTimer); toastTimer = setTimeout(() => el.hidden = true, ms);
+  if (typeof placeHiddenNote === 'function') placeHiddenNote(); // POV mode: the anti-wallhack note sits under it
 }
 // Back to how the page looks before any demo is opened. Used by Clear saved files: it forgets the folder,
 // so the open demo has nothing left to draw from, and the header, side panel and timeline shouldn't keep
@@ -93,6 +127,7 @@ function closeDemo() {
   tlCache.key = ''; tctx.setTransform(1, 0, 0, 1, 0, 0); tctx.clearRect(0, 0, tlc.width, tlc.height);
   ctx.setTransform(1, 0, 0, 1, 0, 0); ctx.clearRect(0, 0, cv.width, cv.height);
   setControls(false);
+  applyOffers();
 }
 function showLoad(v) {
   $('load').hidden = !v;
