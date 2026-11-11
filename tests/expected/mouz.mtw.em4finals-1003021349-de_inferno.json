@@ -1,0 +1,23 @@
+{
+ "demo": "mouz.mtw.em4finals-1003021349-de_inferno.dem",
+ "sha256": "7ae267d1a9115cdf932ff7ab989c07699cabec86de61014f5a264f3e7323bbf4",
+ "match": "mousesports vs mTw, Inferno, IEM4, part 1",
+ "event": "IEM4 World Championship (Intel Extreme Masters season IV finals, CeBIT, March 2010); recorded 2 Mar 2010 at 13:49 and 15:12 by the file names",
+ "map": "de_inferno",
+ "joined": {
+  "parts": [
+   "mouz.mtw.em4finals-1003021349-de_inferno.dem",
+   "mouz.mtw.em4finals-1003021512-de_inferno.dem"
+  ],
+  "sha256": [
+   "7ae267d1a9115cdf932ff7ab989c07699cabec86de61014f5a264f3e7323bbf4",
+   "39900008946f6d1a5c0a2b3fd1b47842c1049ea0c53a3af5da1a12c07fc51788"
+  ],
+  "score": {
+   "value": "19:11",
+   "live": 30,
+   "source": "Fragbite's IEM IV World Championship page, as Sujan gave it (8 Nov 2026): mousesports 19-11, all 30 rounds played, as in IEM4's group stage; not found on HLTV.org by Claude (its pages refuse scripts; a web search found only Fragbite). mousesports listed first, as the viewer has the teams. Up to 0.26.20 the viewer stopped at 16 (16:8 in 24)"
+  }
+ },
+ "kills": []
+}

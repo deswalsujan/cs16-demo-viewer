@@ -1,0 +1,28 @@
+{
+ "demo": "2011-10-24_16h08_NaVi_SK-1110241609-de_inferno.dem",
+ "sha256": "77ab7d2ba4b5ecec576e383cffd99fe0c807fa9b011e59209d430c6fd92cb2ad",
+ "match": "Na`Vi vs SK, Inferno, ESWC 2011",
+ "event": "ESWC 2011 (Paris, 21 to 24 Oct 2011); recorded 24 Oct 2011 from 16:08 by the file names",
+ "map": "de_inferno",
+ "kills": [
+  {
+   "round": 2,
+   "timer": "0:58",
+   "killer": "Na`Vi EdwardwOw~",
+   "victim": "SK.Delpan <3 Johan Wedel",
+   "gun": "galil",
+   "expected": "loose",
+   "source": "Sujan, by eye in the viewer (1 Nov 2026, 0.26.4, demo 20:08): LOOSE, he sees Delpan's head; recorded as LOOSE with a known gap, like THREAT on LoordB (Sujan, 2 Nov 2026)",
+   "known_gap": "reads strict: the finder judges at the killing shot, where Delpan is hidden (0 pixels at the shot and 0.1 and 0.2 s before); his head shows over a window sill until about 0.3 s before the kill (194 pixels), then drops under it before the last two bullets (9 HP through the wall, then the killing bullet). Kept loose with this known gap: the finder keeps judging at the moment of the shot (STATE.md Decisions, Sujan, 1 Nov 2026; IDEAS-ARCHIVE.md, \"Sujan's feedback of 1 Nov 2026\")"
+  },
+  {
+   "round": 14,
+   "timer": "0:26",
+   "killer": "Na`Vi starix /A/",
+   "victim": "SK.RobbaN",
+   "gun": "ak47",
+   "expected": "loose-damage",
+   "source": "Sujan, by eye in the viewer (31 Oct 2026, 0.26.2): a wallbang, LOOSE is right (loose from damage since 0.26.1: his 12 HP hit through cover 0.500488 s before the kill; tests/logs/0.26.1.md)"
+  }
+ ]
+}

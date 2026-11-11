@@ -1,0 +1,90 @@
+{
+ "demo": "fx-vs-mtw-xperia2011-1104240212-de_nuke.dem",
+ "sha256": "efee36e1bd4762abb70c01350a8adc025f2b7a41f14701a47f9847d3d21ca63b",
+ "match": "FX vs mTw, Nuke, Xperia Play 2011, part 1",
+ "event": "Xperia Play 2011 (24 Apr 2011)",
+ "map": "de_nuke",
+ "joined": {
+  "parts": [
+   "fx-vs-mtw-xperia2011-1104240212-de_nuke.dem",
+   "fx-vs-mtw-xperia2011-1104240242-de_nuke.dem"
+  ],
+  "sha256": [
+   "efee36e1bd4762abb70c01350a8adc025f2b7a41f14701a47f9847d3d21ca63b",
+   "08363d9e17484c9289848a1f79c6dc8b070e81cb7ef23feba26aafc1a736b3af"
+  ],
+  "kd": [
+   {
+    "player": "Frag eXecutors  NEO[t]",
+    "kd": "42-25",
+    "source": "CHANGELOG.md 0.14.2, How it was tested and CHANGELOG.md 0.15.0, How it was tested: NEO 42-25 joined, Sujan's number (2 Oct 2026)"
+   }
+  ]
+ },
+ "kills": [
+  {
+   "round": 2,
+   "timer": "0:29",
+   "killer": "minet@mymTw.com",
+   "victim": "Frag eXecutors  KUBEN[t]",
+   "gun": null,
+   "expected": "loose-damage",
+   "source": "docs/review-answers.md, \"Loose wallbang check\" (27 and 28 Oct 2026), k09000: loose"
+  },
+  {
+   "round": 5,
+   "timer": null,
+   "killer": "minet@mymTw.com",
+   "victim": "Frag eXecutors  NEO[t]",
+   "gun": "m4a1",
+   "expected": "wallbang",
+   "source": "docs/review-answers.md, \"Wallbang hits check\" (25 and 26 Oct 2026), b09: yes (the burst ends in this wallbang kill); strict or LOOSE not said"
+  },
+  {
+   "round": 6,
+   "timer": "1:08",
+   "killer": "Frag eXecutors  NEO[t]",
+   "victim": "trace@mymTw.com",
+   "gun": null,
+   "expected": "loose-damage",
+   "source": "docs/review-answers.md, \"Loose wallbang check\" (27 and 28 Oct 2026), k09002: loose"
+  },
+  {
+   "round": 6,
+   "timer": "0:50",
+   "killer": "Frag eXecutors  NEO[t]",
+   "victim": "ave@mymTw.com",
+   "gun": null,
+   "expected": "loose-damage",
+   "source": "docs/review-answers.md, \"Loose wallbang check\" (27 and 28 Oct 2026), k09003: loose"
+  },
+  {
+   "round": 10,
+   "timer": null,
+   "killer": "Frag eXecutors  KUBEN[t]",
+   "victim": "zonic@mymTw.com",
+   "gun": "ak47",
+   "expected": "wallbang",
+   "source": "docs/review-answers.md, \"Wallbang hits check\" (25 and 26 Oct 2026), b08: unsure on the burst; his note: \"Kuben killed him in wallbang. And it was a headshot wallbang\" (the burst ends in this wallbang kill); strict or LOOSE not said"
+  },
+  {
+   "round": 11,
+   "timer": "0:41",
+   "killer": "Frag eXecutors  NEO[t]",
+   "victim": "ArcadioN@mymTw.com",
+   "gun": null,
+   "expected": "strict",
+   "known_gap": "CHANGELOG.md, Known limits: \"NEO on ArcadioN (74) and gob b on Xizt (223) read LOOSE, where Sujan finds the victim hidden\" (strict and LOOSE split at 50 pixels, Sujan 25 Oct 2026)",
+   "source": "docs/review-answers.md, \"Wallbang fix check, 0.22.1\" (24 Oct 2026), \"Kept: the closest calls\": Yes, fully hidden (Sujan, 24 Oct 2026)"
+  },
+  {
+   "round": 12,
+   "timer": "1:10",
+   "killer": "Frag eXecutors  PASHA[t]",
+   "victim": "ave@mymTw.com",
+   "gun": null,
+   "expected": "none",
+   "source": "docs/review-answers.md, \"Loose wallbang check\" (27 and 28 Oct 2026), k09007: loose; not listed since 0.24.0, by the same-spray rule: the killer's last bullet that only a surface explains came 0.80 s before the kill, and a loose wallbang from damage needs one 0.5 s or less before it (STATE.md Decisions, Sujan, 28 Oct 2026). Changed to none as Sujan asked (30 Oct 2026), from the finder's own numbers"
+  }
+ ]
+}

@@ -1,0 +1,50 @@
+{
+ "demo": "fx-vs-mtw-xperia2011-1104240112-de_inferno.dem",
+ "sha256": "260f1fc7592a95da5be13e720573928c2e3bf63d47cadec350f48ca831181c53",
+ "match": "FX vs mTw, Inferno, Xperia Play 2011, part 2",
+ "event": "Xperia Play 2011 (24 Apr 2011)",
+ "map": "de_inferno",
+ "score": {
+  "value": "13:8",
+  "live": 21,
+  "source": "CHANGELOG.md 0.14.2, How it was tested, the 0.14.1 against 0.14.2 table: file 2 13:8, checked against Sujan (2 Oct 2026); live rounds: the two numbers added"
+ },
+ "kills": [
+  {
+   "round": 5,
+   "timer": "1:13",
+   "killer": "Frag eXecutors  NEO[t]",
+   "victim": "minet@mymTw.com",
+   "gun": null,
+   "expected": "loose-damage",
+   "source": "docs/review-answers.md, \"Loose wallbang check\" (27 and 28 Oct 2026), k08000: loose"
+  },
+  {
+   "round": 17,
+   "timer": "0:27",
+   "killer": "trace@mymTw.com",
+   "victim": "Frag eXecutors  TaZ",
+   "gun": null,
+   "expected": "loose-damage",
+   "source": "docs/review-answers.md, \"Loose wallbang check\" (27 and 28 Oct 2026), k08007: loose"
+  },
+  {
+   "round": 20,
+   "timer": "0:24",
+   "killer": "ArcadioN@mymTw.com",
+   "victim": "Frag eXecutors  PASHA[t]",
+   "gun": null,
+   "expected": "loose-damage",
+   "source": "docs/review-answers.md, \"Loose wallbang check\" (27 and 28 Oct 2026), k08008: loose"
+  },
+  {
+   "round": 21,
+   "timer": "0:57",
+   "killer": "trace@mymTw.com",
+   "victim": "Frag eXecutors  NEO[t]",
+   "gun": null,
+   "expected": "loose-damage",
+   "source": "docs/review-answers.md, \"Loose wallbang check\" (27 and 28 Oct 2026), k08009: loose"
+  }
+ ]
+}

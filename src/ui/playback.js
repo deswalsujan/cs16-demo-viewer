@@ -1,0 +1,258 @@
+// ---------------- playback ----------------
+// the round pill's clock; with Vanilla (0.26.16) the C4 countdown goes and the pill says "C4" after the plant
+function pillClock(r) {
+  const c = clockAt(T, true);
+  if (VAN.on && c && c.phase === 'bomb') return 'C4';
+  return (c && c.text) || fmt(T - r.start);
+}
+function seek(t) { T = Math.max(D.start, Math.min(D.end, t)); updateHud(true); }
+function setPlayIcon() { $('playIcon').innerHTML = playing ? '<path d="M3 2h4v12H3zM9 2h4v12H9z"/>' : '<path d="M4 2l10 6-10 6z"/>'; }
+function togglePlay() { if (!D) return; closeSummary(); if (T >= D.end - 0.05) T = D.start; playing = !playing; setPlayIcon(); }
+$('bPlay').onclick = togglePlay;
+$('bBack').onclick = () => D && seek(T - 5);
+$('bFwd').onclick = () => D && seek(T + 5);
+// Z and X (↑ and ↓ up to 0.26.19; Sujan, 8 Nov 2026): the previous or next round in the list, from anywhere in a round
+// (Sujan, 2 Nov 2026). The previous round used to go to the start of the round playing when more than 3 s into it, so
+// while playing at 2x or faster a second press landed past 3 s again and went back to the same start.
+// k: the last listed round started by now. Inside it, Z goes one before it; between listed rounds (a warmup, the
+// restarts between halves, after the match), Z goes to it and X to the one after it.
+function jumpRound(dir) {
+  if (!D) return;
+  const rs = visibleRounds();
+  let k = -1; for (let j = 0; j < rs.length && rs[j].start <= T + 0.001; j++) k = j;
+  const inside = k >= 0 && (rs[k].end == null || T <= rs[k].end + 0.001);
+  const i = dir > 0 ? k + 1 : inside ? k - 1 : k;
+  if (i >= 0 && i < rs.length) seek(rs[i].start);
+}
+$('bPrevR').onclick = () => jumpRound(-1);
+$('bNextR').onclick = () => jumpRound(1);
+$('bScope').onclick = () => { scope = scope === 'match' ? 'round' : 'match'; $('bScope').textContent = 'Timeline: ' + scope; savePrefs(); drawTimeline(); };
+const spEl = $('speeds');
+for (const s of SPEEDS) {
+  const b = document.createElement('button'); b.type = 'button'; b.className = 'btn' + (s === 1 ? ' on' : ''); b.textContent = s + '×';
+  b.onclick = () => setSpeed(s); spEl.appendChild(b);
+}
+function setSpeed(s) { speed = s; [...spEl.children].forEach((b, i) => b.classList.toggle('on', SPEEDS[i] === s)); }
+
+// the shortcuts list works everywhere, including the start screen
+document.addEventListener('keydown', (e) => {
+  if (typingIn(e.target)) return;
+  if (e.key === '?' && (!D || !$('load').hidden)) toggleKeys();
+  if (e.key === 'Escape' && !$('keys').hidden) toggleKeys(false);
+});
+document.addEventListener('keydown', (e) => {
+  if (!D || !$('load').hidden || typingIn(e.target)) return;
+  const k = e.key;
+  let used = true;
+  if (k === ' ') { e.preventDefault(); togglePlay(); }
+  else if (k === 'ArrowLeft') { e.preventDefault(); seek(T - (e.shiftKey ? 1 : 5)); }
+  else if (k === 'ArrowRight') { e.preventDefault(); seek(T + (e.shiftKey ? 1 : 5)); }
+  // ↑ and ↓: the next or previous player, as a click and a right-click on the view; the default is stopped, so a focused
+  // side panel, slider or list doesn't also scroll or change (Sujan, 8 Nov 2026: the keys players had are Z and X)
+  else if (k === 'ArrowUp') { e.preventDefault(); nextPlayer(1); if (viewMode !== '2d' && cam3.mode === 'free') setCam('eyes'); }
+  else if (k === 'ArrowDown') { e.preventDefault(); nextPlayer(-1); if (viewMode !== '2d' && cam3.mode === 'free') setCam('eyes'); }
+  // Z and X: the previous or next round. A held key repeats: one round per press, so holding it a moment too long
+  // doesn't skip a round (Sujan, 2 Nov 2026)
+  else if (k === 'z' || k === 'Z') { if (!e.repeat) jumpRound(-1); }
+  else if (k === 'x' || k === 'X') { if (!e.repeat) jumpRound(1); }
+  else if (k === ',') { playing = false; setPlayIcon(); seek(T - 1 / 30); }
+  else if (k === '.') { playing = false; setPlayIcon(); seek(T + 1 / 30); }
+  else if (k === '[') { const i = SPEEDS.indexOf(speed); if (i > 0) setSpeed(SPEEDS[i - 1]); }
+  else if (k === ']') { const i = SPEEDS.indexOf(speed); if (i < SPEEDS.length - 1) setSpeed(SPEEDS[i + 1]); }
+  else if (k === 'n' || k === 'N') toggleOpt('names', 'tgNames');
+  else if (k === 'h' || k === 'H') toggleOpt('xray', 'tgXray');
+  else if (k === 'm' || k === 'M') setSound(!SND.on);
+  else if (k === 'f' || k === 'F') toggleFull();
+  else if (k === 't' || k === 'T') setTheatre(!TH.on);
+  else if (/^[0-9]$/.test(k) && !POV.on) {
+    const pid = playerOrder()[(+k + 9) % 10]; const e = pid && M.slotOf(pid, T);
+    if (e && isDeadNow(e)) toast(`${M.pl[pid].name} is dead until the next round.`, 2500);
+    else if (e) { selected = e; renderPane(); if (viewMode !== '2d' && cam3.mode === 'free') setCam('eyes'); }
+  }
+  else if (k === 'Tab') { e.preventDefault(); if (!e.repeat) showScoreboard(true); }
+  else if (k === '?') toggleKeys();
+  else if (k === 'Escape') { $('keys').hidden = true; showScoreboard(false); closeSummary(); if ($('joinCard') && !$('joinCard').hidden) closeJoinCard(); }
+  else used = false;
+  // a focused list or checkbox doesn't also take the key (a letter would pick an entry in the Quality list)
+  if (used && formControl(e.target)) e.preventDefault();
+});
+document.addEventListener('keyup', (e) => { if (e.key === 'Tab') showScoreboard(false); });
+window.addEventListener('blur', () => showScoreboard(false));
+function toggleKeys(v) { $('keys').hidden = v != null ? !v : !$('keys').hidden; }
+$('bKeys').onclick = () => toggleKeys();
+$('bKeysClose').onclick = () => toggleKeys(false);
+$('bKeysX').onclick = () => toggleKeys(false);
+$('keys').onclick = (e) => { if (e.target === $('keys')) toggleKeys(false); };
+// players in scoreboard order: team 1 then team 2, by slot
+// players (people, not slots) in scoreboard order: team 1 then team 2
+function playerOrder() { return M ? [...M.teams[0], ...M.teams[1]] : []; }
+// dead right now (killed this round): can't be followed until they respawn. Read from the recorded
+// state, not from playerState: a few seconds after dying the demo stops sending the body, and then
+// playerState has no position to give, which must not count as alive.
+function isDeadNow(e) { const a = D.slots[e]; if (!a) return false; return a[M.idxAt(T) * D.stride + 5] < 0; }
+
+let sbTimer = null;
+// POV mode (POV mockup round, section 4; Sujan, 11 Nov 2026, checked in the game: a POV demo shows the scoreboard while
+// the recorder held Tab, an HLTV demo doesn't): the scoreboard opens by itself from each "+showscores" his game wrote
+// to its "-showscores" (D.tabs), short taps included, with "He held Tab here"; the viewer's own Tab works as anywhere
+const SB = { auto: false, user: false };
+function povTabHeld(t) {
+  const A = D && D.povOn ? D.tabs : null; if (!A || !A.length) return false;
+  const r = idxAt(A, 2, t); return r >= 0 && A[r * 2 + 1] === 1;
+}
+function povTabTick() {
+  if (!D || !D.povOn || SB.user) return;
+  const held = povTabHeld(T);
+  if (held && !SB.auto) showScoreboard(true, true);
+  else if (!held && SB.auto) showScoreboard(false);
+}
+// the Tab scoreboard's # column (the 1 to 0 keys): not in POV mode, and not with more than 10 players listed, since the
+// keys reach only 10 (Sujan, 11 Nov 2026)
+function sbNumCol(listed) { return !(D && D.povOn) && listed <= 10; }
+function showScoreboard(v, auto = false) {
+  const el = $('sb');
+  clearInterval(sbTimer);
+  SB.auto = !!v && auto; SB.user = !!v && !auto;
+  if (!v || !D) { el.hidden = true; return; }
+  const render = () => {
+    const r = roundAt(T);
+    const st = statsFor('all', T);
+    const sc = r ? (T >= (r.endT || r.end) && r.scoreAfter ? r.scoreAfter : r.scoreBefore) : [0, 0];
+    // Everyone listed by the side he's on at this moment, as the game's scoreboard does, for every demo type (Sujan, 10
+    // Nov 2026): a player who changed team, or went to spectate, shows where he is now; up to 0.26.27 each team's people
+    // were listed under the side the team had in the round. Each side is headed by the team with most of its people on it
+    // now, at every moment, the round's team only on a tie, and the score goes with the name (Sujan, 11 Nov 2026: just after
+    // R15 of SK vs Na`Vi, Train, DreamHack Winter 2011, Na`Vi already on CT read "SK Gaming · CT" until the next round).
+    // The side and alive or dead come from the snapshot (the server's TeamInfo and death messages, which every player
+    // gets), not from playerState, which has nothing for a player a POV demo's recorder didn't receive at that moment:
+    // up to 0.26.27 those read "dead" there; their gun isn't known, so its cell stays empty.
+    const si = M.idxAt(T) * D.stride;
+    // Each slot once, with the person in it now: a slot with no connection info at some point gets a stand-in person
+    // ("s12") whose slot is the same at every moment, who doubled whoever sat there (0.26.27 listed him under the
+    // spectators all match, in mousesports vs AGAiN, Inferno, 24 Oct 2011, among others); he shows only on a side.
+    const now = Object.keys(M.pl).map((pid) => { const e = M.slotOf(pid, T); const v = e != null && D.slots[e] ? D.slots[e][si + 5] || 0 : 0; return { pid, e, p: e != null ? playerState(e, T) : null, alive: v > 0, side: Math.abs(v) }; })
+      .filter((x) => x.e != null);
+    // and a stand-in whose slot never has a position in the whole demo is no player: slot 12 of mousesports vs mTw, Inferno,
+    // IEM4, part 2 has a team (CT) from the server and never a name, a position, a kill or a death ("?", 0.26.28)
+    if (!M.ghost) { M.ghost = new Set(); for (const pid in M.pl) if (pid[0] === 's') { const a = D.slots[+pid.slice(1)], S = D.stride; let any = false; if (a) for (let i = 0; i < a.length; i += S) if (!Number.isNaN(a[i])) { any = true; break; } if (!any) M.ghost.add(pid); } }
+    { const held = new Set(now.filter((x) => x.pid[0] !== 's').map((x) => x.e)); for (let i = now.length - 1; i >= 0; i--) if (now[i].pid[0] === 's' && (held.has(now[i].e) || !now[i].side || M.ghost.has(now[i].pid))) now.splice(i, 1); }
+    // tT: the team on T. Each team's people on T less its people on CT; the team further toward T has T
+    let tT; { const v = [0, 0]; for (const x of now) if (x.side && M.teamOf[x.pid] != null) v[M.teamOf[x.pid]] += x.side === 1 ? 1 : -1; tT = v[0] !== v[1] ? (v[0] > v[1] ? 0 : 1) : r && r.tTeam != null ? r.tTeam : 0; }
+    // A team's player the demo gives no side at this moment (no TeamInfo yet, a reconnect, a moment at spectate) goes
+    // under the side of the team the viewer computed for him, and only people never on a team are Spectators (Sujan, 10
+    // Nov 2026: Virtus.pro vs ALTERNATE aTTaX, Inferno, EM II 2008, has no TeamInfo before 14:01). Dead or alive comes from
+    // the kill feed then: dead from his death in this round to its end.
+    { const from = r ? r.start - 1e-4 : -Infinity;
+      for (const x of now) if (!x.side && M.teamOf[x.pid] != null) { x.side = M.teamOf[x.pid] === tT ? 1 : 2; x.alive = !D.kills.some((k) => k.victim === x.e && k.t >= from && k.t <= T); } }
+    // HP: none of it in a POV demo whose server sent no teammate's health (HealthInfo) at all, so no column of blanks
+    // there (Sujan, 10 Nov 2026; the GP Tourney's server registers the message and never sends it)
+    const showHp = D.povOn ? !!(D.hpInfo && D.hpInfo.length) : true;
+    // and in POV mode only his side's: no opponents' HP (Sujan, 3 Oct 2026), even for one who was his teammate earlier and
+    // still has a reading from then (Match 1 and 2, public server, 27 Mar 2025)
+    const rec = D.povOn && D.serverInfo ? D.serverInfo.playerIndex + 1 : null, recSide = rec != null ? (now.find((x) => x.e === rec) || {}).side : null;
+    // The game's look, for every demo type (Sujan, 11 Nov 2026, docs/pov-scoreboard-radar-flashbang-mock.jpg, from POV
+    // videos of the game; colours from cs16-client's scoreboard.cpp and util.cpp): one panel at 60% black with a thin tan
+    // border; the server's name and the column names in orange (255 140 0) over an orange line; the teams stacked, the one
+    // ahead on top, each under a header row (its name, side, players, score, average latency) with a line in its colour
+    // (T 255 64 64, CT 153 204 255); the game's word column (Dead, Bomb, Kit) in place of the C4 and Kit tags; the
+    // viewer's HP (his side only in POV mode) and weapon; Kills, what the viewer counts and the Players tab shows (the
+    // game's Score takes off team kills and suicides); Deaths; Latency from svc_pings (pingAt); his own row lit in POV
+    // mode; Spectators under an orange heading. The # column (the 1 to 0 keys) only in an HLTV demo with 10 players or
+    // fewer listed, since the keys reach only 10 (Sujan, 11 Nov 2026).
+    const listed = now.filter((x) => x.side);
+    const showNum = sbNumCol(listed.length);
+    const u = (n) => `calc(${n}px * var(--ui))`;
+    const grid = [showNum ? u(20) : null, 'minmax(0, 1fr)', u(64), showHp ? u(40) : null, u(84), u(50), u(54), u(58)].filter(Boolean).join(' ');
+    const row = (cells, cls) => `<div class="gr${cls ? ' ' + cls : ''}">${cells.map((c, k) => `<span${k === (showNum ? 1 : 0) ? ' class="nm"' : showNum && k === 0 ? ' class="kn"' : ''}>${c}</span>`).join('')}</div>`;
+    const cells = (num, nm, word, hp, wp, k, d, l) => [showNum ? num : null, nm, word, showHp ? hp : null, wp, k, d, l].filter((c) => c !== null);
+    const lat = (v) => (v == null ? '' : Math.round(v));
+    const host = D.serverInfo && D.serverInfo.hostName ? D.serverInfo.hostName : 'Counter-Strike';
+    let h = `<div class="gsb${listed.length > 24 ? ' dense' : ''}" style="--gsb-cols: ${grid}">`;
+    h += row(cells('', `<b>${esc(host)}</b>`, '', 'HP', 'Weapon', 'Kills', 'Deaths', 'Latency'), 'title') + '<div class="oline"></div>';
+    for (const ti of [0, 1].sort((a, b) => sc[b] - sc[a])) {
+      const side = tT === ti ? 1 : 2, sd = side === 1 ? 't' : 'ct';
+      const rows = now.filter((x) => x.side === side).map((x) => Object.assign(x, { s: st[x.pid] || { k: 0, d: 0 } })).sort((a, b) => b.s.k - a.s.k || a.s.d - b.s.d || (a.pid < b.pid ? -1 : 1));
+      const ls = rows.map((x) => pingAt(x.e, T)).filter((v) => v != null), avg = ls.length ? ls.reduce((a, b) => a + b, 0) / ls.length : null;
+      h += row(cells('', `<b>${esc(M.tnames[ti])}</b><span class="gsep">·</span>${side === 1 ? 'Terrorists' : 'Counter-Terrorists'}<span class="gsep">-</span>${plural(rows.length, 'player')}`, '', '', '', `<b>${sc[ti]}</b>`, '', lat(avg)), 'th ' + sd);
+      h += `<div class="tline ${sd}"></div>`;
+      for (const x of rows) {
+        const alive = x.alive;
+        // the word: dead, or what the game shows on his back (the bomb on a T, the defusal kit on a CT, 0.17.0), only for a
+        // player in the snapshot now, since for one a POV demo's recorder doesn't receive the value is the last one seen
+        const word = !alive ? 'Dead' : x.p && packAt(x.e, T) ? (side === 1 ? 'Bomb' : 'Kit') : '';
+        const hp = alive ? (rec != null && x.side !== recSide ? '' : hpAt(x.e, T) ?? '') : '';
+        h += row(cells((playerOrder().indexOf(x.pid) + 1) % 10, esc(M.pl[x.pid].name), word, hp, alive && x.p ? esc(weaponShort(x.p.weapon)) : '', x.s.k, x.s.d, lat(pingAt(x.e, T))), sd + (x.e === rec ? ' me' : ''));
+      }
+      h += '<div class="ggap"></div>';
+    }
+    // spectators on the server right now (admins, casters, HLTV relays), plus how many were watching the broadcast
+    // and everyone else on the server now: people on neither side who were never on a team
+    const specNow = now.filter((x) => !x.side).sort((a, b) => (M.teamOf[a.pid] != null) - (M.teamOf[b.pid] != null) || (a.pid < b.pid ? -1 : 1)).map((x) => esc(M.pl[x.pid].name) + (M.pl[x.pid].hltv ? ' <span class="sbtag">HLTV</span>' : ''));
+    const v = viewersAt(T);
+    h += `<div class="spech">Spectators</div><div class="specs">${specNow.length ? specNow.join('<span class="gsep">·</span>') : 'none on the server'}</div>`;
+    if (v != null || SB.auto) h += `<div class="gfoot"><span>${v != null ? `${v.toLocaleString('en-US')} watching on HLTV` : ''}</span>${SB.auto ? '<span class="sbheld">He held Tab here</span>' : ''}</div>`;
+    el.innerHTML = h + '</div>';
+  };
+  render(); el.hidden = false;
+  sbTimer = setInterval(render, 250);
+}
+
+// ---------------- HUD ----------------
+// the kill feed: every frame (frame, loop.js), not with the rest of the HUD every 0.1 s, so a kill shows in it in the
+// same frame as the killing bullet's ✕ on the damage numbers (Sujan, 1 Nov 2026); it's rebuilt only when it changes.
+// Only the round playing now: a new round wipes the feed, as in the game (Sujan, 8 Nov 2026, checked in the game; Jimmy's
+// kill on kubenB at R4 1:15 stayed into R5's freeze time, SK vs AGAiN, Train, Arbalet Cup Europe 2009). An HLTV demo's
+// round starts at the server's round restart, which is also where freeze time starts.
+function updateFeed() {
+  const r = roundAt(T), from = r ? r.start - 1e-4 : -Infinity;
+  const feed = D.kills.filter((k) => k.t <= T && k.t > T - 6 && k.t >= from).slice(-5);
+  const key = feed.map((k) => k.t).join();
+  if (key !== lastFeedKey) {
+    lastFeedKey = key;
+    $('feed').innerHTML = feed.map((k) => {
+      const ks = k.kteam === 'TERRORIST' ? 1 : 2, vs = k.vteam === 'TERRORIST' ? 1 : 2;
+      // the weapon's kill feed icon and the headshot icon from the game's own sprites, as in the game's kill
+      // feed (Sujan, 14 Oct 2026); the words when those files aren't in the folder
+      const gun = KICONS[k.weapon] ? `<span class="w">${kicon(k.weapon)}</span>` : `<span class="w">${esc(k.weapon)}</span>`;
+      const hs = k.hs ? (KICONS.headshot ? `<span class="hs">${kicon('headshot')}</span>` : '<span class="hs">HS</span>') : '';
+      if (k.killer === k.victim || !k.kp) return `<div>${nameHtml(k.vp, vs, true)}${gun}</div>`;
+      return `<div>${nameHtml(k.kp, ks, true)}${gun}${hs}${nameHtml(k.vp, vs, true)}</div>`;
+    }).join('');
+  }
+}
+let lastRound = null, lastFeedKey = '', lastPaneT = 0, lastAliveKey = '';
+function updateHud(force) {
+  const r = roundAt(T);
+  $('time').innerHTML = `<b>${fmt(T - D.start)}</b> / ${fmt(D.end - D.start)}`;
+  // score shown is the score at the start of the current round
+  const sc = r ? (T >= (r.endT || r.end) && r.scoreAfter ? r.scoreAfter : r.scoreBefore) : [0, 0];
+  $('scA').textContent = sc[0]; $('scB').textContent = sc[1];
+  const vw = viewersAt(T); $('viewers').textContent = vw != null ? `${vw.toLocaleString('en-US')} watching` : '';
+  const side = (i) => r && r.tTeam != null ? (r.tTeam === i ? 'side-t' : 'side-ct') : '';
+  $('tnA').className = 'tn ' + side(0); $('tnB').className = 'tn ' + side(1);
+  const paused = (() => { let on = false; for (const p of D.pauses || []) { if (p.t > T) break; on = p.on; } return on; })();
+  // Theatre mode hides the header, so the round pill also carries the score (hidden otherwise)
+  const scSide = (i) => side(i) === 'side-t' ? 'kt' : side(i) === 'side-ct' ? 'kct' : '';
+  const thsc = `<span class="thsc"><span class="${scSide(0)}">${esc(M.tnames[0])}</span> <b>${sc[0]} : ${sc[1]}</b> <span class="${scSide(1)}">${esc(M.tnames[1])}</span> · </span>`;
+  $('rclock').innerHTML = thsc + (r ? `${r.live ? 'Round <b>' + r.ln + (r.ot ? ' (OT)' : '') + '</b>' : '<b>Not counted</b>'} · <b>${pillClock(r)}</b>`: '') + (paused ? ' · <b>match paused</b>' : '');
+  updateFeed();
+  // the players list greys out whoever is dead right now, so redraw it when someone dies or respawns
+  let aliveKey = '';
+  if (tab === 'players') aliveKey = Object.keys(D.slots).filter((e) => isDeadNow(+e)).join();
+  if ((tab === 'kills' || tab === 'wb') && Math.abs(T - lastPaneT) > 0.25) { lastPaneT = T; paneMarks(); }
+  if (r !== lastRound || force || (tab === 'players' && aliveKey !== lastAliveKey)) {
+    const changed = r !== lastRound;
+    lastRound = r; lastPaneT = T; lastAliveKey = aliveKey; renderPane();
+    if (changed && scope === 'round') drawTimeline();
+    if (changed && heat && $('hmScope').value === 'round') heat = null;
+    if (changed || force) { const cur = $('pane').querySelector('.row.cur'); if (cur && tab === 'rounds') cur.scrollIntoView({ block: 'nearest' }); }
+    // a new round on the Kills tab: its heading at the top, not wherever the last round's list was scrolled to. POV mode's
+    // Kills tab lists the whole match by round (0.26.29), so there the new round's heading comes to the top, the list
+    // stays where it is for a round with no kill or death of his yet (it has no heading) and after a click on a row
+    // (Sujan, 11 Nov 2026; up to 0.26.29 it went back to the list's top at every round change)
+    if (changed && tab === 'kills') {
+      if (!D.povOn) $('pane').scrollTop = 0;
+      else if (!PANE.keep) { const P = $('pane'), cur = P.querySelector('.sechead.rhead.cur'); if (cur) P.scrollTop += cur.getBoundingClientRect().top - P.getBoundingClientRect().top; }
+    }
+  }
+}

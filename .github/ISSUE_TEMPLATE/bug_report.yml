@@ -1,0 +1,35 @@
+name: Bug report
+description: Something in the viewer doesn't work or looks wrong
+labels: [bug]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Thanks for reporting. Please don't attach game files or demos you don't have the right to share; a link to where the demo can be downloaded is enough.
+  - type: textarea
+    id: what
+    attributes:
+      label: What happened
+      description: What you did, what you expected, and what you saw instead.
+      placeholder: "Opened the demo, went to round 12 in 3D, followed markeloff in Player's eyes. His gun disappeared after the reload."
+    validations:
+      required: true
+  - type: input
+    id: demo
+    attributes:
+      label: Demo and moment
+      description: Demo name, round number and the in-game round timer, if it happens at a specific moment.
+      placeholder: "navi-vs-fx-sec2011-final dust2, round 12, 1:23"
+  - type: textarea
+    id: debug
+    attributes:
+      label: Debug info
+      description: In the viewer, press ? and click "Copy debug info", then paste it here. It lists your browser, the demo name, which files loaded and any errors. It contains no file contents.
+      render: text
+    validations:
+      required: true
+  - type: textarea
+    id: screens
+    attributes:
+      label: Screenshots
+      description: Optional. A screenshot of the viewer, and of the same moment in-game if the viewer shows something different.

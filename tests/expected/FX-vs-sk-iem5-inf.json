@@ -1,0 +1,99 @@
+{
+ "demo": "FX-vs-sk-iem5-inf.dem",
+ "sha256": "7647cceb130aead0ae7007661b35f5abe39ef744c51c71fe95795985f7309a36",
+ "match": "FX vs SK, Inferno, IEM5",
+ "event": "IEM5 (January 2011)",
+ "map": "de_inferno",
+ "kills": [
+  {
+   "round": 5,
+   "timer": "0:02",
+   "killer": "SK.GeT_RiGhT",
+   "victim": "Frag eXecutors  KUBEN[t]",
+   "gun": null,
+   "expected": "loose-damage",
+   "source": "docs/review-answers.md, \"Loose wallbang check\" (27 and 28 Oct 2026), k03004: loose"
+  },
+  {
+   "round": 8,
+   "timer": "1:04",
+   "killer": "Frag eXecutors  Loord",
+   "victim": "SK.f0rest",
+   "gun": null,
+   "expected": "loose-damage",
+   "source": "docs/review-answers.md, \"Loose wallbang check\" (27 and 28 Oct 2026), k03007: loose"
+  },
+  {
+   "round": 9,
+   "timer": "0:10",
+   "killer": "Frag eXecutors  NEO[t]",
+   "victim": "SK.f0rest",
+   "gun": null,
+   "expected": "loose-damage",
+   "source": "docs/review-answers.md, \"Loose wallbang check\" (27 and 28 Oct 2026), k03009: loose"
+  },
+  {
+   "round": 10,
+   "timer": "0:55",
+   "killer": "SK.GeT_RiGhT",
+   "victim": "Frag eXecutors  Loord",
+   "gun": null,
+   "expected": "loose-damage",
+   "source": "docs/review-answers.md, \"Loose wallbang check\" (27 and 28 Oct 2026), k03011: loose"
+  },
+  {
+   "round": 12,
+   "timer": "C4 0:21",
+   "killer": "SK.face",
+   "victim": "Frag eXecutors  KUBEN[t]",
+   "gun": null,
+   "expected": "none",
+   "source": "docs/review-answers.md, \"Loose wallbang check\" (27 and 28 Oct 2026), k03014: unsure; docs/review-answers.md, \"Loose wallbang check\", \"Settled later in chat\" (Sujan by eye, 30 Oct 2026): [none]"
+  },
+  {
+   "round": 13,
+   "timer": "0:38",
+   "killer": "Frag eXecutors  KUBEN[t]",
+   "victim": "SK.GeT_RiGhT",
+   "gun": null,
+   "expected": "loose-damage",
+   "source": "docs/review-answers.md, \"Loose wallbang check\" (27 and 28 Oct 2026), k03016: loose"
+  },
+  {
+   "round": 17,
+   "timer": "0:58",
+   "killer": "Frag eXecutors  PASHA[t]",
+   "victim": "SK.face",
+   "gun": null,
+   "expected": "loose-damage",
+   "source": "docs/review-answers.md, \"Loose wallbang check\" (27 and 28 Oct 2026), k03020: loose"
+  },
+  {
+   "round": 22,
+   "timer": "C4 0:17",
+   "killer": "Frag eXecutors  NEO[t]",
+   "victim": "SK.GeT_RiGhT",
+   "gun": null,
+   "expected": "loose-damage",
+   "source": "docs/review-answers.md, \"Loose wallbang check\" (27 and 28 Oct 2026), k03025: loose"
+  },
+  {
+   "round": 25,
+   "timer": "0:35",
+   "killer": "SK.allen",
+   "victim": "Frag eXecutors  NEO[t]",
+   "gun": null,
+   "expected": "loose-damage",
+   "source": "docs/review-answers.md, \"Loose wallbang check\" (27 and 28 Oct 2026), k03027: loose"
+  },
+  {
+   "round": 28,
+   "timer": "0:41",
+   "killer": "SK.allen",
+   "victim": "Frag eXecutors  Loord",
+   "gun": null,
+   "expected": "loose-damage",
+   "source": "docs/review-answers.md, \"Loose wallbang check\" (27 and 28 Oct 2026), k03029: loose"
+  }
+ ]
+}

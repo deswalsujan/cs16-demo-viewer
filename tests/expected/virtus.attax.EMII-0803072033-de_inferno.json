@@ -1,0 +1,90 @@
+{
+ "demo": "virtus.attax.EMII-0803072033-de_inferno.dem",
+ "sha256": "b8d592a536f4ac8a4e2de35a104942bbacc64913f722cf9e7dec38ee82744aaa",
+ "match": "Virtus.pro vs aTTaX, Inferno, Extreme Masters II (-0803072033-)",
+ "event": "Extreme Masters II (7 Mar 2008)",
+ "map": "de_inferno",
+ "kills": [
+  {
+   "round": 8,
+   "timer": "1:10",
+   "killer": "Virtus.pro > DaniiL T. <Zeus>",
+   "victim": "ALTERNATE aTTaX | CHEF-KOCH",
+   "gun": null,
+   "expected": "loose-damage",
+   "source": "docs/review-answers.md, \"Loose wallbang check\" (27 and 28 Oct 2026), k30000: loose"
+  },
+  {
+   "round": 8,
+   "timer": "0:48",
+   "killer": "ALTERNATE aTTaX | mooN <M>",
+   "victim": "Virtus.pro > DaniiL T. <Zeus>",
+   "gun": null,
+   "expected": "loose-damage",
+   "source": "docs/review-answers.md, \"Loose wallbang check\" (27 and 28 Oct 2026), k30001: loose; the later answer, over CHANGELOG.md 0.22.0, Fixed, \"The boxes around Inferno's lamp posts counted as walls\": mooN on Zeus, listed with Zeus in full view (Sujan's guess was right, 23 Oct 2026); loose-damage, Sujan, 30 Oct 2026 (STATE.md Decisions, \"The 10 kills the first run disagreed on\"): the invisible box around a lamp post stops bullets (STATE.md Decisions, Inferno's lamp posts, Sujan, 24 Oct 2026), and mooN's bullet lost damage through it 0.10 s before the kill (loose from damage, STATE.md Decisions, Sujan, 28 Oct 2026)"
+  },
+  {
+   "round": 10,
+   "timer": "1:02",
+   "killer": "ALTERNATE aTTaX | paN",
+   "victim": "Virtus.pro > Ioann S. <Edward>",
+   "gun": null,
+   "expected": "loose",
+   "source": "docs/review-answers.md, \"Wallbang fix check, 0.22.1\" (24 Oct 2026), \"Dropped: part of the victim in view\": Yes, part of him was in view (Sujan, 24 Oct 2026); LOOSE from 50 pixels in view, still listed (STATE.md Decisions, Sujan, 25 Oct 2026)"
+  },
+  {
+   "round": 17,
+   "timer": "C4 0:03",
+   "killer": "Virtus.pro > Ioann S. <Edward>",
+   "victim": "ALTERNATE aTTaX | ROMAN R.",
+   "gun": null,
+   "expected": "loose-damage",
+   "source": "docs/review-answers.md, \"Loose wallbang check\" (27 and 28 Oct 2026), k30007: loose"
+  },
+  {
+   "round": 20,
+   "timer": "0:59",
+   "killer": "ALTERNATE aTTaX | CHEF-KOCH",
+   "victim": "Virtus.pro > Roman M. <ROMJkE^>",
+   "gun": null,
+   "expected": "loose-damage",
+   "source": "docs/review-answers.md, \"Loose wallbang check\" (27 and 28 Oct 2026), k30010: loose"
+  },
+  {
+   "round": 20,
+   "timer": "0:31",
+   "killer": "ALTERNATE aTTaX | ROMAN R.",
+   "victim": "Virtus.pro > Aleksey K. <LeX>",
+   "gun": null,
+   "expected": "loose-damage",
+   "source": "docs/review-answers.md, \"Loose wallbang check\" (27 and 28 Oct 2026), k30011: loose"
+  },
+  {
+   "round": 21,
+   "timer": "C4 0:03",
+   "killer": "ALTERNATE aTTaX | paN",
+   "victim": "Virtus.pro > Viktor F. <Sally^>",
+   "gun": null,
+   "expected": "loose-damage",
+   "source": "docs/review-answers.md, \"Loose wallbang check\" (27 and 28 Oct 2026), k30012: loose"
+  },
+  {
+   "round": 23,
+   "timer": "1:34",
+   "killer": "Virtus.pro > Ioann S. <Edward>",
+   "victim": "ALTERNATE aTTaX | paN",
+   "gun": null,
+   "expected": "none",
+   "source": "docs/review-answers.md, \"Loose wallbang check\" (27 and 28 Oct 2026), k30014: loose; not listed since 0.24.0, by the same-spray rule: the killer's last bullet that only a surface explains came 1.08 s before the kill, and a loose wallbang from damage needs one 0.5 s or less before it (STATE.md Decisions, Sujan, 28 Oct 2026). Changed to none as Sujan asked (30 Oct 2026), from the finder's own numbers"
+  },
+  {
+   "round": 25,
+   "timer": "1:40",
+   "killer": "Virtus.pro > Aleksey K. <LeX>",
+   "victim": "ALTERNATE aTTaX | approx",
+   "gun": null,
+   "expected": "loose-damage",
+   "source": "docs/review-answers.md, \"Loose wallbang check\" (27 and 28 Oct 2026), k30015: loose"
+  }
+ ]
+}

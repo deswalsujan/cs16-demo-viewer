@@ -1,0 +1,121 @@
+// ---------------- loop ----------------
+let lastNow = performance.now(), hudAcc = 0;
+// One error can't stop the loop (0.26.18; Sujan, 7 Nov 2026, docs/frame-error-toast-mock.png): the next frame is asked
+// for first, and each part of a frame runs on its own, so an error in one (the 3D view, the radar, the kill feed, the
+// HUD) leaves playback and the other parts drawing; frameError (debug.js) records each different error once. Up to
+// 0.26.17 any error stopped the loop for good and the viewer froze (0.26.16's Damage numbers bug, EG vs eXecutors,
+// Train, EM4 finals, R21 1:30).
+const framePart = (f) => { try { f(); } catch (e) { frameError(e); } };
+function frame(now) {
+  requestAnimationFrame(frame);
+  const dt = Math.min(0.1, (now - lastNow) / 1000); lastNow = now;
+  if (!D) return;
+  framePart(() => {
+    if (!playing || tlDrag) return;
+    T += dt * speed / slowAt(T); // slow-motion stretches play at real speed (see slowAt)
+    if (T >= D.end) { T = D.end; playing = false; setPlayIcon(); }
+  });
+  framePart(() => {
+    // a kill "lands" when playback moves forward past it (not when you jump around)
+    if (prevT != null && T > prevT && T - prevT < 1) for (const k of D.kills) if (k.t > prevT && k.t <= T && k.killer !== k.victim && k.kp) flashes.push({ k, at: now });
+    if (prevT != null && playing && !tlDrag) soundTick(prevT, T);
+  });
+  prevT = T;
+  while (flashes.length && now - flashes[0].at > FLASH_MS) flashes.shift();
+  framePart(() => {
+    if (!(selected && view.s > 1.3 && playing)) return;
+    const s = playerState(selected, T);
+    if (s && s.state > 0) { const [px, py] = w2i(s.x, s.y); const S = base.s * view.s; view.x += ((cw / 2 - (base.x * view.s + px * S)) - view.x) * 0.08; view.y += ((ch / 2 - (base.y * view.s + py * S)) - view.y) * 0.08; }
+  });
+  framePart(updateFeed); // before the 3D view draws the ✕, so both come in the same frame
+  if (viewMode !== '3d') framePart(draw);
+  framePart(drawPlayhead); framePart(updateCentre);
+  framePart(povTabTick); // POV mode: his Tab scoreboard when he held Tab
+  if (POV.on) framePart(placePovNotices); // ...and the notices kept clear of the kill feed
+  if (viewMode !== '2d') framePart(() => { if (MAP && view3.map !== MAP.name && view3.failed !== MAP) build3d(); update3(); });
+  hudAcc += dt; if (hudAcc > 0.1) { hudAcc = 0; framePart(() => updateHud(false)); }
+}
+requestAnimationFrame(frame);
+
+// restore overview cache note
+setMsg('');
+setControls(false);
+// Team colours: real models in flat red and blue. The simple figures are only used when a model file is missing or broken.
+const tcShow = () => { $('tgModels').classList.toggle('on', opts.teamColours); $('tgModels').textContent = opts.teamColours ? 'On' : 'Off'; };
+$('tgModels').onclick = () => { opts.teamColours = !opts.teamColours; tcShow(); ls.set('teamColours', opts.teamColours); };
+if (ls.get('teamColours') === true) { opts.teamColours = true; tcShow(); }
+// View settings (0.18.1): opens under its button; a click outside it or Esc closes it
+const vsetOpen = (on) => { $('vsetPanel').hidden = !on; $('bVset').setAttribute('aria-expanded', on ? 'true' : 'false'); };
+$('bVset').onclick = (e) => { e.stopPropagation(); vsetOpen($('vsetPanel').hidden); };
+document.addEventListener('pointerdown', (e) => { if (!$('vsetPanel').hidden && !e.target.closest('.vset')) vsetOpen(false); }, true);
+document.addEventListener('keydown', (e) => { if (e.key === 'Escape' && !$('vsetPanel').hidden) { e.stopPropagation(); vsetOpen(false); $('bVset').focus(); } }, true);
+ls.set('models', null); // the old "Player models" switch is gone (0.11.0): forget its setting
+ls.set('smoothAim', null); // Smooth aim was removed in 0.10.0: forget the old setting
+$('q3').value = ['auto', 'high', 'low'].includes(ls.get('quality')) ? ls.get('quality') : 'auto';
+$('q3').onchange = () => { ls.set('quality', $('q3').value); applyQuality(true); };
+// crosshair size in Player's eyes (0.18.0, Sujan 14 Oct 2026): small is the size before 0.18.0; medium is the default
+// crosshair sizes moved down one step on 26 Oct 2026 (large = the old medium): a size saved before keeps its look
+{ const old = ls.get('crosshair'), now = ls.get('crosshair2');
+  $('xh3').value = ['small', 'medium', 'large'].includes(now) ? now : old === 'small' ? 'medium' : 'large'; }
+$('xh3').onchange = () => { ls.set('crosshair2', $('xh3').value); };
+// Interface size (0.26.13, src/ui/size.js): Auto or a size from 100% to 200%, kept in this browser like Quality. A new
+// scale, or a screen with another pixel density, sizes the canvases again; the radar, the timeline and the 3D labels
+// are drawn with UI on the next frame.
+$('ui3').value = uiSizeSetting();
+$('ui3').onchange = () => { ls.set('uiSize', $('ui3').value); if (applyUiSize()) dispatchEvent(new Event('uisize')); };
+addEventListener('uisize', () => { resize(); applyQuality(false); if (theatreActive()) measureTheatre(); });
+$('glow3').checked = ls.get('hitGlow') !== 'off';
+$('glow3').onchange = () => { ls.set('hitGlow', $('glow3').checked ? 'on' : 'off'); };
+// Damage numbers (0.26.16; Sujan, 3 Nov 2026): Wallbangs, the default and the numbers as before, Direct hits, Both or Off,
+// kept in this browser like Quality (numberGroups, src/view3d.part.js)
+$('dn3').value = ['wb', 'direct', 'both', 'off'].includes(ls.get('dmgNumbers')) ? ls.get('dmgNumbers') : 'wb';
+$('dn3').onchange = () => { ls.set('dmgNumbers', $('dn3').value); };
+// Vanilla (0.26.16; Sujan, 1 to 3 Nov 2026, docs/kill-details-damage-vanilla-mock.jpg): one switch for every overlay the
+// game's own demo player doesn't have. On, it turns off Names, Grenades, Kill lines, See through walls, Glow on hits and the
+// damage numbers, which still work one by one after, and hides what has no switch of its own: kill markers and the ring,
+// the death cam's red wash and banner, and the C4 countdown (VAN.on). Off, it brings back the settings it turned off.
+// The kill feed, round timer, score, crosshair, Tab scoreboard, "Recording skips here" and the name bar stay.
+function setVanilla(on) {
+  if (on === VAN.on) return;
+  const ids = { names: 'tgNames', nades: 'tgNades', lines: 'tgLines', xray: 'tgXray' };
+  if (on) {
+    VAN.saved = { names: opts.names, nades: opts.nades, lines: opts.lines, xray: opts.xray, glow: $('glow3').checked, dn: $('dn3').value };
+    for (const k in ids) { opts[k] = false; $(ids[k]).classList.remove('on'); }
+    $('glow3').checked = false; $('dn3').value = 'off';
+  } else if (VAN.saved) {
+    const o = VAN.saved;
+    for (const k in ids) { opts[k] = !!o[k]; $(ids[k]).classList.toggle('on', opts[k]); }
+    $('glow3').checked = o.glow !== false; $('dn3').value = ['wb', 'direct', 'both', 'off'].includes(o.dn) ? o.dn : 'wb';
+  }
+  VAN.on = on; if (!on) VAN.saved = null; $('van3').checked = on;
+  ls.set('vanilla', on ? { on: true, saved: VAN.saved } : null);
+  ls.set('hitGlow', $('glow3').checked ? 'on' : 'off'); ls.set('dmgNumbers', $('dn3').value); savePrefs();
+  if (D) updateHud(true);
+}
+{ const v = ls.get('vanilla'); if (v && v.on === true) { VAN.on = true; VAN.saved = v.saved && typeof v.saved === 'object' ? v.saved : null; } }
+$('van3').checked = VAN.on;
+$('van3').onchange = () => setVanilla($('van3').checked);
+// POV mode's own rows (0.26.30, Sujan, 11 Nov 2026): his crosshair's size, From config.cfg by default (the game's demo
+// player uses the watcher's own settings; the colour always comes from config.cfg), and the flashbang dot and whiteout,
+// both off by default (Sujan, 8 Nov 2026). The POV mode setting itself went at the sign-off (Sujan, 11 Nov 2026).
+{ const v = ls.get('povCrosshair'); if (['cfg', 'small', 'medium', 'large'].includes(v)) $('xhp3').value = v; }
+$('xhp3').onchange = () => ls.set('povCrosshair', $('xhp3').value);
+$('fbDot3').checked = ls.get('fbDot') === 'on'; $('fbWhite3').checked = ls.get('fbWhite') === 'on';
+$('fbDot3').onchange = () => ls.set('fbDot', $('fbDot3').checked ? 'on' : 'off');
+$('fbWhite3').onchange = () => ls.set('fbWhite', $('fbWhite3').checked ? 'on' : 'off');
+if (document.fonts) document.fonts.ready.then(() => { tlCache.key = ''; });
+$('bSnd').onclick = () => setSound(!SND.on);
+// full screen: the whole viewer fills the screen (Esc or F leaves it)
+function toggleFull() {
+  const el = document.documentElement;
+  if (document.fullscreenElement) { document.exitFullscreen().catch(() => {}); return; }
+  const req = el.requestFullscreen ? el.requestFullscreen() : Promise.reject(new Error('no fullscreen'));
+  req.catch(() => { setMsg('Full screen is blocked here. Press F11 in your browser instead.'); if (D) toast('Full screen is blocked here. Press F11 in your browser instead.'); });
+}
+$('bFull').onclick = toggleFull;
+document.addEventListener('fullscreenchange', () => {
+  const fs = !!document.fullscreenElement;
+  $('bFull').textContent = fs ? 'Exit full screen' : 'Full screen';
+  // full screen always uses Theatre mode; leaving it puts back whatever was on before
+  if (fs) { TH.before = TH.on; setTheatre(true); } else setTheatre(TH.before);
+});

@@ -1,0 +1,18 @@
+{
+ "demo": "1110240934--auto_de_train.dem_Again-vs-Navi.dem",
+ "sha256": "73a7d0251644908b8d8801f8730125ea87ed142604bc7fcf95a90dc4ecd014b8",
+ "match": "AGAiN vs Na`Vi, Train, recorded 24 Oct 2011",
+ "event": "not known; recorded 24 Oct 2011 at 09:34 by the file name",
+ "map": "de_train",
+ "kills": [
+  {
+   "round": 7,
+   "timer": "0:17",
+   "killer": "AGAiN  KUBEN[t]",
+   "victim": "Na`Vi EdwardwOw~",
+   "gun": "m4a1",
+   "expected": "loose",
+   "source": "Sujan's feedback of 1 Nov 2026, one of three strict kills he found should be loose; added as LOOSE on his word of 2 Nov 2026. Demo 66:32; the timer is 0:17 since 0.26.5 (0:00 before, counting the server's 40 s pause in that round). Through an invisible wall beside the train's wheels ({blue, render mode 4, nothing drawn): 2,064 of EdwardwOw~'s 2,390 pixels show with the holes open; read strict up to 0.26.5. Sujan, 2 Nov 2026, answering the 1 Nov 2026 investigation: a victim seen through a fence, grate or invisible wall reads LOOSE (STATE.md Decisions; IDEAS-ARCHIVE.md, \"See-through cover hides the victim\")"
+  }
+ ]
+}

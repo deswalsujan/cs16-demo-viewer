@@ -1,0 +1,14 @@
+{
+ "demo": "auto-1003030847-de_nuke.dem",
+ "sha256": "88a64f2f00c175cba11569c83fee59019ff1f72a1d51b11bd8a90d2eaa4fb2ed",
+ "match": "compLexity vs WeMadeFox, Nuke, IEM4",
+ "event": "IEM4 World Championship (Intel Extreme Masters season IV finals, CeBIT, March 2010); recorded 3 Mar 2010 at 08:47 by the file name",
+ "map": "de_nuke",
+ "score": {
+  "value": "15:15",
+  "live": 30,
+  "source": "HLTV.org's IEM4 World Championship results (https://www.hltv.org/results?event=501&gameType=CS16), as Sujan read them (8 Nov 2026): WeMade FOX 15-15 compLexity (Fragbite's IEM IV page agrees); halves 7:8 and 8:7 by the game's scoreboard in the demo. Up to 0.26.20 the viewer counted the warmup before the knife round and read WeMadeFox 16:6 in 22",
+  "any_order": true
+ },
+ "kills": []
+}

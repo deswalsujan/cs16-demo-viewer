@@ -1,0 +1,57 @@
+{
+ "demo": "sk-vs-dateam-iolfinal4-1106181158-de_dust2.dem",
+ "sha256": "94cdb3747ed31678dded5538679f1ac1d371f0e94799e68825b91b2185dc9114",
+ "match": "SK vs Dateam, Dust2, IOL Final4 2011",
+ "event": "IOL Final4 (18 Jun 2011)",
+ "map": "de_dust2",
+ "score": {
+  "value": "16:4",
+  "live": 20,
+  "source": "CHANGELOG.md 0.14.2, How it was tested, the 0.14.1 against 0.14.2 table: 16:4, checked against Sujan (2 Oct 2026); live rounds: the two numbers added"
+ },
+ "kd": [
+  {
+   "player": "SK.f0rest",
+   "kd": "25-11",
+   "source": "CHANGELOG.md 0.14.2, How it was tested: f0rest 25-11, \"f0rest correct\" (Sujan, 2 Oct 2026)"
+  }
+ ],
+ "kills": [
+  {
+   "round": 6,
+   "timer": "1:12",
+   "killer": "SK.f0rest",
+   "victim": "dt.REASPEL.se STRIKER",
+   "gun": null,
+   "expected": "none",
+   "source": "docs/review-answers.md, \"Loose wallbang check\" (27 and 28 Oct 2026), k21002: loose; not listed since 0.24.0, by the same-spray rule: the killer's last bullet that only a surface explains came 1.10 s before the kill, and a loose wallbang from damage needs one 0.5 s or less before it (STATE.md Decisions, Sujan, 28 Oct 2026). Changed to none as Sujan asked (30 Oct 2026), from the finder's own numbers"
+  },
+  {
+   "round": 6,
+   "timer": "1:06",
+   "killer": "SK.RobbaN",
+   "victim": "dt.REASPEL.se rape",
+   "gun": null,
+   "expected": "loose-damage",
+   "source": "docs/review-answers.md, \"Loose wallbang check\" (27 and 28 Oct 2026), k21003: loose"
+  },
+  {
+   "round": 9,
+   "timer": "1:03",
+   "killer": "dt.REASPEL.se STRIKER",
+   "victim": "SK.f0rest",
+   "gun": null,
+   "expected": "none",
+   "source": "docs/review-answers.md, \"Loose wallbang check\" (27 and 28 Oct 2026), k21007: loose; not listed since 0.24.0, by the same-spray rule: the killer's last bullet that only a surface explains came 0.51 s before the kill, and a loose wallbang from damage needs one 0.5 s or less before it (STATE.md Decisions, Sujan, 28 Oct 2026). Changed to none as Sujan asked (30 Oct 2026), from the finder's own numbers"
+  },
+  {
+   "round": 11,
+   "timer": "1:25",
+   "killer": "dt.REASPEL.se rape",
+   "victim": "SK.Delpan4M =DDD",
+   "gun": null,
+   "expected": "loose-damage",
+   "source": "docs/review-answers.md, \"Loose wallbang check\" (27 and 28 Oct 2026), k21009: loose"
+  }
+ ]
+}

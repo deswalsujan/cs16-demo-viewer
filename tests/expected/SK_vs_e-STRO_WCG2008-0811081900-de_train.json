@@ -1,0 +1,45 @@
+{
+ "demo": "SK_vs_e-STRO_WCG2008-0811081900-de_train.dem",
+ "sha256": "04f231e20bb2d1692322d4ab9b6ae6d53ef6bb32387f3b739533c56993ceb343",
+ "match": "SK vs eSTRO, Train, WCG 2008",
+ "event": "WCG 2008, semi-final (8 Nov 2008)",
+ "map": "de_train",
+ "kills": [
+  {
+   "round": 8,
+   "timer": "1:15",
+   "killer": "SKWEDEN walle",
+   "victim": "KOREA.eSTRO : bail",
+   "gun": null,
+   "expected": "loose-damage",
+   "source": "docs/review-answers.md, \"Loose wallbang check\" (27 and 28 Oct 2026), k26002: loose"
+  },
+  {
+   "round": 12,
+   "timer": "1:04",
+   "killer": "SKWEDEN zet",
+   "victim": "KOREA.eSTRO : ari",
+   "gun": null,
+   "expected": "loose-damage",
+   "source": "docs/review-answers.md, \"Loose wallbang check\" (27 and 28 Oct 2026), k26005: loose"
+  },
+  {
+   "round": 18,
+   "timer": "1:20",
+   "killer": "KOREA.eSTRO : solo",
+   "victim": "SKWEDEN zet",
+   "gun": null,
+   "expected": "none",
+   "source": "docs/review-answers.md, \"Loose wallbang check\" (27 and 28 Oct 2026), k26010: loose; not listed since 0.24.0, by the same-spray rule: the killer's last bullet that only a surface explains came 0.55 s before the kill, and a loose wallbang from damage needs one 0.5 s or less before it (STATE.md Decisions, Sujan, 28 Oct 2026). Changed to none as Sujan asked (30 Oct 2026), from the finder's own numbers"
+  },
+  {
+   "round": 24,
+   "timer": "1:30",
+   "killer": "KOREA.eSTRO : termi",
+   "victim": "SKWEDEN zet",
+   "gun": null,
+   "expected": "loose-damage",
+   "source": "docs/review-answers.md, \"Loose wallbang check\" (27 and 28 Oct 2026), k26014: loose"
+  }
+ ]
+}

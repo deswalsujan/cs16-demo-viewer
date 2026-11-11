@@ -1,0 +1,14 @@
+dist/
+_test_*.html
+_tt_*.html
+tests/_*.html
+tests/*.png
+tests/*.log
+tests/__pycache__/
+tests/three.min.js
+tests/demo-probes/demo_probe.mjs
+tests/demo-probes/demo.mjs
+tests/demo-probes/bsp.mjs
+tests/demo-probes/demo_probe_count.mjs
+tests/demo-probes/nades_fn.mjs
+tests/demo-probes/pov_probe_demo.mjs

@@ -1,0 +1,36 @@
+{
+ "demo": "mouz.SK.EM2.real-0803091025-de_nuke.dem",
+ "sha256": "de052e0c8f2c91395290d17724244ad93aa7ea60456ff5d491a26215a645c2d9",
+ "match": "mousesports vs SK, Nuke, Extreme Masters II",
+ "event": "Extreme Masters II (9 Mar 2008)",
+ "map": "de_nuke",
+ "kills": [
+  {
+   "round": 5,
+   "timer": "1:35",
+   "killer": "mousesports | Kapi O",
+   "victim": "SK|Tentpole[TTFU]",
+   "gun": null,
+   "expected": "loose",
+   "source": "docs/review-answers.md, \"Wallbang fix check, 0.22.1\" (24 Oct 2026), \"Dropped: part of the victim in view\": Yes, part of him was in view (Sujan, 24 Oct 2026); LOOSE from 50 pixels in view, still listed (STATE.md Decisions, Sujan, 25 Oct 2026)"
+  },
+  {
+   "round": 9,
+   "timer": null,
+   "killer": "SK|RobbaN[TTFU]",
+   "victim": "mousesports | Tixo",
+   "gun": "ak47",
+   "expected": "wallbang",
+   "source": "docs/review-answers.md, \"Wallbang hits check\" (25 and 26 Oct 2026), b17: yes; his note: \"Tixo was killed completely by a wallbang\" (the burst ends in this wallbang kill); strict or LOOSE not said"
+  },
+  {
+   "round": 19,
+   "timer": null,
+   "killer": "SK|GeT_RiGhT[TTFU]",
+   "victim": "mousesports | Tixo",
+   "gun": "m4a1",
+   "expected": "wallbang",
+   "source": "docs/review-answers.md, \"Wallbang hits check\" (25 and 26 Oct 2026), b15: yes (the burst ends in this wallbang kill); strict or LOOSE not said"
+  }
+ ]
+}

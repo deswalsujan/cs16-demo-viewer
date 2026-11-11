@@ -1,0 +1,114 @@
+# CS 1.6 Demo Viewer
+
+Play Counter-Strike 1.6 HLTV demos in your browser. 2D radar, textured 3D replay with the real player models and game sounds, first-person and chase cameras, a kill timeline, round and player stats, heatmaps, and an automatic wallbang finder.
+
+> [!IMPORTANT]
+> **You need your own legitimate copy of Counter-Strike 1.6, installed through [Steam](https://store.steampowered.com/app/10/CounterStrike/).**
+> The viewer uses the maps, textures, player models and sounds from your installation. It does not include, download or share any of the game's files, and it is not meant to be used with copies of the game obtained any other way.
+
+Everything runs locally in the browser. The page reads the files it needs from your own Half-Life folder (maps, textures, overviews, player models, sounds, kill feed icons, demos). Nothing is uploaded. The only thing this project stores from the game is a short fingerprint of each stock model file, used to tell stock models from custom ones.
+
+This is an unofficial fan project. It is not affiliated with or endorsed by Valve. Counter-Strike, Half-Life and Steam are trademarks of Valve Corporation.
+
+## How to use it
+
+1. Open the viewer at **https://deswalsujan.github.io/cs16-demo-viewer/** in Chrome or Edge. It always has the latest version, so there's nothing to download.
+2. Click **Choose folder** and pick your `Half-Life` folder (the one that contains `cstrike` and `valve`); the start screen shows where Steam puts it on your computer. Your browser may ask whether to "upload" the files (Chrome and Edge do): that's its word for letting the page read a folder, and nothing leaves your computer. You choose the folder this way on each visit.
+3. Pick a demo from the list (type in the search box above it to narrow it down, for example "sk train"), or open any `.dem` file.
+4. Press `?` for keyboard shortcuts.
+
+Three ways to watch: **Normal** shows everything. **Theatre** (`T`) fills the browser window with the view and hides the viewer's own controls until you move the mouse to the top, right or bottom edge. **Full screen** (`F`) is Theatre mode with the browser's tabs and address bar gone too.
+
+The start screen shows which folder is selected and whether it's the right one. Choosing a folder without a `cstrike` folder inside, or the `cstrike` folder itself, says so and explains what to pick. The viewer sees the folder as it was when you chose it: to pick up demos, maps, models or sounds added or changed since, click **Choose again**. A demo deleted since is taken off the list when you click it or come back to the page. **Open .dem** works once the folder is chosen, for demos kept anywhere.
+
+To start over as on a first visit, click **Clear saved files** on the start screen: it deletes the maps, models, sounds and overviews this browser saved from your folder. Nothing else about the folder is kept between visits.
+
+Custom maps work too, as long as the map's `.bsp` (and its `.wad` files if it uses any) are in `cstrike/maps` or `cstrike_downloads/maps`.
+
+## Features
+
+- 2D radar on the in-game overview, 3D view with the map's real textures and lighting, or both side by side
+- Cameras: free fly, player's eyes, behind the player. Movement and aim are filled in smoothly between the demo's snapshots (HLTV stores about ten a second)
+- Quality setting for the 3D view (auto, high, low) for slower machines, in View settings with Team colours and the crosshair size
+- Theatre mode (T): the view fills the window, and the controls slide back in when the mouse moves to the top, right or bottom edge. Full screen (F) uses it too
+- Real player and weapon models from your game files: legs run with the movement, the upper body aims where the player looks, shots and reloads animate, and bodies stay on the floor until the round ends. Team colours (red and blue) on request; simple figures stand in when a model file is missing
+- See through walls (H): players behind walls drawn through them in their team colour, with their names, for checking suspected wallhackers
+- First-person weapons in Player's eyes view, animated from the demo: drawing, shooting, reloading, grenade throws and bomb plants
+- Sniper scope in Player's eyes (AWP, Scout, G3SG1, SG550), as it looks in the game, rebuilt from the zoom clicks the demo records
+- Sound from your game files: gunshots, footsteps, reloads, hits, grenades, bomb beeps and radio lines, quieter with distance and panned left or right (M to mute)
+- Timeline with kill ticks, wallbangs, bomb plants and pauses; speeds from 0.25x to 8x
+- Round list, kill list, and player stats split by T side, CT side and overtime. Warmups, knife rounds and cancelled starts are left out, using the server's own "Live" and end-of-half announcements when the demo has them
+- Wallbang finder: kills where the bullet went through cover with the crosshair on the wall, with a copyable list of timestamps. Strict when the victim was fully hidden from the shooter (pink), loose when part of him was in view (light purple): checked by drawing the shooter's view, and from the demo's damage, when one of the killer's bullets just before the kill did less than his gun does in the open, so it can only have come through a surface. Checked at the moment of the killing shot, and never for guns whose bullets stop at the first surface (pistols except the Deagle, SMGs, shotguns)
+- Wallbang damage: hits through cover that didn't kill, from 35 HP in one burst, listed with the wallbang kills (filters **All**, **Strict wb**, **Loose wb**, **Damage**) and as hollow diamonds on the timeline. Each row gives the health taken and the hits it took ("88 HP (1 HS, 4 hits)"). In 3D each hit's damage floats up beside the player hit, the killing bullet marked with a red skull (it shows the health he had left), and **Glow on hits** in **View settings** lights him up at each hit. **Damage numbers** in **View settings** shows hits through walls (the default, orange), direct hits (white), both, or none. HLTV demos don't say who hit whom, so it's worked out from the health readings, the hit sounds and who fired
+- Kill details: click a kill in the Kills or Wallbangs list to open one line per bullet that hit, with its damage, where it hit (head from the hit sound; chest, arm, stomach or leg estimated from the damage), through a wall or in the open, and how long before the kill; click a line to jump to that bullet. "Earlier:" says where the rest of his health went that round, a crossfire's hits included
+- **Vanilla** in **View settings**: every overlay the game's own demo player doesn't have off with one click (damage numbers, kill markers, glow, **See through walls**, names, kill lines, grenade paths, the death cam's red wash and banner, the C4 countdown); each still works on its own after
+- Kill lists that read like the game's kill feed: killer, the weapon's kill feed icon from your game files, victim. The kill feed over the view uses the game's own weapon and headshot icons too
+- Player names without the clan tag, sponsor or web address over the players and in the lists ("LIONS Xizt * MAXFPS" reads "Xizt"); the kill feed, the name bar and the Tab scoreboard keep the full names, as in the game
+- Kill markers around the crosshair (kill, headshot, wallbang) and a death cam. Crosshair in three sizes (small, medium, large). The 3D view runs a tenth of a second behind the kill feed, as the game's demo player seems to
+- The game's round announcements, in 2D and 3D: "Terrorists Win!", "The bomb has been planted!" and the rest, worded as in your game's own files and drawn in the game's own font, colour and place
+- Health, weapons, grenades, smokes, heatmaps, a hold-Tab scoreboard with spectators and the HLTV audience count
+- The C4 on the carrier's back and the defusal kits on the Counter-Terrorists, on the 3D models and in the Tab scoreboard. On the radar: the carrier, the dropped bomb and the planted bomb
+- HLTV's slow motion (some broadcasts slowed to half speed for a few seconds around a kill) plays at real speed, and the round and C4 timers count game time, as the game's do
+- The C4 timer above the view counts down from 0:35 to 0:00 as in the game, stays at 0:00 from the explosion until the next round, and stops where it was at a defuse. The Kills and Wallbangs lists give the time since the plant ("C4 0:15"), which places a kill in the bomb's 35 seconds
+- Demos recorded by a player (POV) too, with limits: a player's game only receives the players near them, so others drop in and out of view
+- A map recorded in two or more demo files counted as one map: the viewer spots the other part in your folder (same map, same players), puts the parts in order and joins them, with one score, one round list and player stats over all of it. Split them undoes it
+- Skips in the recording (HLTV sometimes left a second or more of the game out of the file): marked on the timeline and on screen, players don't slide through walls across them, every kill that lands on one gets // in the Kills list, and a wallbang there is also tagged UNSURE
+- Cut-off and unfinished demos (an interrupted download, a recording that was never closed) play up to where the file stops, and the viewer says exactly what's wrong with the file, read from its own structure
+- Old demos too. CS 1.6 recorded demos as protocol 47 until the update of 23 October 2008 ([announced](https://www.hltv.org/news/1779/cs-16-update-coming-soon) and [released](https://www.hltv.org/news/1787/cs-16-update-live) on HLTV.org). The Steam version only plays protocol 48, so it refuses those older demos unless they're converted. The viewer plays both as they are
+- Search your demos: type part of a file name ("tu", "sk train", "dhwinter") and the list keeps only the demos whose names contain every word
+- Breakable vents and windows disappear in 3D when they are shot out, and doors open and close as they did in the match (the wallbang finder uses where each door really was)
+
+## Project layout
+
+```
+src/demo.js         GoldSrc demo (.dem) parser. Runs in a Web Worker.
+src/bsp.js          Map (.bsp) and texture (.wad) reader, line-of-sight checks
+src/view3d.part.js  3D view (three.js)
+src/mdl.js          Studio model (.mdl) reader and skeletal animation
+src/players3d.js    Player models in the 3D view: gait, aiming, deaths, corpses, first-person weapons
+src/audio.js        Sound: .wav decoding, positional playback, radio lines
+src/template.html   The page's layout, with a /*INLINE name*/ line where each file below goes in
+src/app.css         The page's styles
+src/vendor/three.min.js  three.js r128 (MIT), built into the page, so the page loads nothing from another site
+src/ui/             The page's code, one file per part: 2D radar, timeline, sidebar, Join card, wallbangs, Theatre mode, load summary and the rest; one line per file in AGENTS.md, "Where the code is"
+build.py            Combines everything into one self-contained page
+CHANGELOG.md        What changed, newest first
+LIMITS.md           What the viewer can't do yet, or does only roughly
+LICENSE             MIT license
+docs/               Design images: scope styles, the approved side panel designs (0.13.0), Count them, split maps, demo search, the Zalando Sans screens, crosshair kill markers (0.17.0), the start screen once the folder is chosen (0.18.0), skips in the recording (0.19.0) and the skip tags in the Kills list (0.21.0); one line per file in docs/README.md
+tests/              Test and measurement scripts: browser checks, Theatre mode checks, demo data probes (see tests/README.md)
+IDEAS.md            Parked ideas and open decisions, with the discussion behind them
+IDEAS-ARCHIVE.md    Done items, and the full text of open ones, moved from IDEAS.md word for word
+AGENTS.md           How agent sessions work on this repo: workflow, checking facts, where the test files are
+STATE.md            What is open and what is decided, one line each
+CLAUDE.md           Loads AGENTS.md, STATE.md and LIMITS.md into every Claude Code session
+tests/DEMOS.md      Every test demo, its event and which machine has it
+tests/logs/         Each release's full test log, from 0.26.0 on (CHANGELOG.md keeps a few lines and a pointer)
+docs/review-answers.md  Sujan's answers on the claude.ai review pages
+docs/agent-brief-2026-10-29.md  The agent brief that numbered work items 6.1 to 6.7
+VERSION             Current version, shown in the viewer
+src/stock.js        Fingerprints of the stock CS 1.6 models, to spot custom ones
+index.html          The built page (what GitHub Pages serves at https://deswalsujan.github.io/cs16-demo-viewer/, updated on every push to main)
+```
+
+## Reporting a bug
+
+In the viewer, press `?` and click **Copy debug info**, then open an issue on GitHub and paste it in. It lists your browser, the demo name, what loaded and any errors. It never includes file contents.
+
+## Building
+
+To rebuild after editing anything in `src/`:
+
+```
+python3 build.py
+```
+
+Commit the rebuilt `index.html` with your change. Every pull request is checked on GitHub (`.github/workflows/check.yml`): it fails if `index.html` doesn't match `src/` or if one of the three browser checks that need no Half-Life folder fails.
+
+## Credits
+
+- Demo message layouts were adapted from [hlviewer.js](https://github.com/skyrim/hlviewer.js) by Stefan Stojković (MIT license).
+- Fonts: none are downloaded. The page uses Tahoma and Verdana from your own computer (since 0.26.9; Liberation Sans, Arial or DejaVu Sans where they're missing, as on most Linux machines). Until 0.26.8 it loaded Zalando Sans and IBM Plex Mono from Google Fonts.
+- 3D rendering uses [three.js](https://threejs.org/) r128 (MIT license), built into the page from `src/vendor/three.min.js` (the file cdnjs serves).
+- This project's code is under the [MIT license](LICENSE).
+- Counter-Strike and Half-Life are trademarks of Valve. This project is unofficial and not affiliated with Valve.
