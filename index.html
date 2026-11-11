@@ -114,9 +114,11 @@ button { cursor: pointer; }
 #povNote .povnote-x { position: absolute; top: calc(3px * var(--ui)); right: calc(6px * var(--ui)); background: none; border: 0; color: #9a968e; font-size: calc(15px * var(--ui)); line-height: 1; cursor: pointer; padding: calc(2px * var(--ui)); }
 #povNote .povnote-x:hover { color: #e8e6e1; }
 /* POV mode: notices at the top middle, so nothing sits on the HUD's corners (Sujan, 11 Nov 2026: POV mode only for now);
-   --pov-ntop moves them down past the kill feed while one of its rows would reach them (placePovNotices) */
-.radar.povm .hint3 { top: var(--pov-ntop, calc(12px * var(--ui))); bottom: auto; left: 50%; right: auto; transform: translateX(-50%); }
-.radar.povm #toast { top: calc(var(--pov-ntop, calc(12px * var(--ui))) + 34px * var(--ui)) !important; bottom: auto !important; left: 50% !important; right: auto !important; transform: translateX(-50%); text-align: center; width: max-content; max-width: min(calc(420px * var(--ui)), calc(100% - 24px * var(--ui))) !important; }
+   --pov-ntop moves them down past the kill feed while one of its rows would reach them (placePovNotices). The shortcuts
+   line is hidden there, as in 2D, Theatre mode and under 1100 px: always on screen, it would jump down and back up with
+   the kill feed's rows several times a round (Sujan, 11 Nov 2026, on #60); Shortcuts ? stays in the bottom bar */
+.radar.povm .hint3 { display: none; }
+.radar.povm #toast { top: var(--pov-ntop, calc(12px * var(--ui))) !important; bottom: auto !important; left: 50% !important; right: auto !important; transform: translateX(-50%); text-align: center; width: max-content; max-width: min(calc(420px * var(--ui)), calc(100% - 24px * var(--ui))) !important; }
 .heatbar { position: absolute; right: calc(12px * var(--ui)); bottom: calc(12px * var(--ui)); display: flex; gap: calc(6px * var(--ui)); flex-wrap: wrap; justify-content: flex-end; }
 .heatbar select { background: rgba(10,12,14,.9); border: 1px solid var(--line); border-radius: calc(4px * var(--ui)); padding: calc(4px * var(--ui)) calc(6px * var(--ui)); font-size: calc(12px * var(--ui)); }
 
@@ -9165,7 +9167,7 @@ function showHiddenEnemiesNote(on) {
   d.querySelector('.povnote-x').onclick = () => showHiddenEnemiesNote(false);
   d.hidden = false; placeHiddenNote();
 }
-// POV mode: the notices' column (the shortcuts line, a notice, the anti-wallhack note) sits at the top middle, and steps
+// POV mode: the notices' column (a notice, the anti-wallhack note; the shortcuts line is hidden there) sits at the top middle, and steps
 // down below the kill feed while one of its rows reaches into the column (a long kill row reaches past the middle of a
 // 1280x720 window: the GP Tourney POV's widest, at R3, from 436 px of 940). Run every frame in POV mode, since rows
 // come and go and the spectator bars move the feed down.
@@ -9173,7 +9175,7 @@ function placePovNotices() {
   const rad = $('radar'); if (!rad.classList.contains('povm')) return;
   const rr = rad.getBoundingClientRect(), u = UI;
   let colL = Infinity, colR = -Infinity, has = false;
-  for (const id of ['hint3', 'toast', 'povNote']) {
+  for (const id of ['toast', 'povNote']) {
     const e = $(id); if (!e || e.hidden || !e.offsetParent) continue;
     const r = e.getBoundingClientRect(); if (!r.width) continue;
     colL = Math.min(colL, r.left); colR = Math.max(colR, r.right); has = true;
@@ -9186,7 +9188,7 @@ function placePovNotices() {
   const v = Math.round(top) + 'px';
   if (rad.style.getPropertyValue('--pov-ntop') !== v) { rad.style.setProperty('--pov-ntop', v); placeHiddenNote(); }
 }
-// at the top middle, under the shortcuts line and any notice showing
+// at the top middle, under any notice showing (and the shortcuts line, outside POV mode)
 function placeHiddenNote() {
   const d = $('povNote'); if (!d || d.hidden) return;
   const host = $('gl').parentElement, hr = host.getBoundingClientRect();

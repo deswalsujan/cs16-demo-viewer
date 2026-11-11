@@ -101,9 +101,11 @@ button { cursor: pointer; }
 #povNote .povnote-x { position: absolute; top: calc(3px * var(--ui)); right: calc(6px * var(--ui)); background: none; border: 0; color: #9a968e; font-size: calc(15px * var(--ui)); line-height: 1; cursor: pointer; padding: calc(2px * var(--ui)); }
 #povNote .povnote-x:hover { color: #e8e6e1; }
 /* POV mode: notices at the top middle, so nothing sits on the HUD's corners (Sujan, 11 Nov 2026: POV mode only for now);
-   --pov-ntop moves them down past the kill feed while one of its rows would reach them (placePovNotices) */
-.radar.povm .hint3 { top: var(--pov-ntop, calc(12px * var(--ui))); bottom: auto; left: 50%; right: auto; transform: translateX(-50%); }
-.radar.povm #toast { top: calc(var(--pov-ntop, calc(12px * var(--ui))) + 34px * var(--ui)) !important; bottom: auto !important; left: 50% !important; right: auto !important; transform: translateX(-50%); text-align: center; width: max-content; max-width: min(calc(420px * var(--ui)), calc(100% - 24px * var(--ui))) !important; }
+   --pov-ntop moves them down past the kill feed while one of its rows would reach them (placePovNotices). The shortcuts
+   line is hidden there, as in 2D, Theatre mode and under 1100 px: always on screen, it would jump down and back up with
+   the kill feed's rows several times a round (Sujan, 11 Nov 2026, on #60); Shortcuts ? stays in the bottom bar */
+.radar.povm .hint3 { display: none; }
+.radar.povm #toast { top: var(--pov-ntop, calc(12px * var(--ui))) !important; bottom: auto !important; left: 50% !important; right: auto !important; transform: translateX(-50%); text-align: center; width: max-content; max-width: min(calc(420px * var(--ui)), calc(100% - 24px * var(--ui))) !important; }
 .heatbar { position: absolute; right: calc(12px * var(--ui)); bottom: calc(12px * var(--ui)); display: flex; gap: calc(6px * var(--ui)); flex-wrap: wrap; justify-content: flex-end; }
 .heatbar select { background: rgba(10,12,14,.9); border: 1px solid var(--line); border-radius: calc(4px * var(--ui)); padding: calc(4px * var(--ui)) calc(6px * var(--ui)); font-size: calc(12px * var(--ui)); }
 

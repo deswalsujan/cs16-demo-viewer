@@ -102,10 +102,10 @@ The POV mockup round, all six items in one batch, as in `docs/pov-mockup-round-m
 ### Changed
 - What each kind of demo offers, as one list (`demoOffers`): a POV demo in **POV mode** opens in 3D, with no 2D, 3D and 3D + radar switch and no **Reset view**, and the 2D or 3D picked for HLTV demos stays as it was; the load summary says "Only his own view, in 3D". **View settings** has no **POV mode** row with an HLTV demo open.
 - The Kills tab of a POV demo lists his own kills and deaths for the whole match, by round, the round playing now highlighted; its Wallbangs tab is gone on a server that held enemies back, and lists only his own wallbangs otherwise (Sujan, 9 Nov 2026).
-- In **POV mode** "Press ? for keyboard shortcuts" and notices such as "Stopping at 16" sit at the top middle, stepping down below the kill feed while one of its rows would reach them (Sujan, 11 Nov 2026: the widest rows reach past the middle at 1280x720), and the anti-wallhack note no longer shows over his health and armour when **See through walls** is switched on.
+- In **POV mode** notices such as "Stopping at 16" sit at the top middle, stepping down below the kill feed while one of its rows would reach them (Sujan, 11 Nov 2026: the widest rows reach past the middle at 1280x720), and "Press ? for keyboard shortcuts" is hidden, as in 2D and Theatre mode, so it doesn't jump with the feed (Sujan, 11 Nov 2026; **Shortcuts ?** stays in the bottom bar). The anti-wallhack note no longer shows over his health and armour when **See through walls** is switched on.
 
 ### How it was tested
-- `pov_mockup_round_check.py` (new, 13 s) fails on 0.26.28 (8 of 10) and passes; it includes the notices against the kill feed at its widest, at 1512x982 (Auto and 115%) and 1280x720.
+- `pov_mockup_round_check.py` (new, 20 s) fails on 0.26.28 (8 of 11) and passes; it includes the notices against the kill feed at its widest, at 1512x982 (Auto and 115%) and 1280x720, and the shortcuts line staying put while kills come in.
 - The eight checks pass (5.1 minutes); `demo_search_check.py`'s POV kill details now open his own death, since the Kills tab lists only his. `ground_truth_check.py`: 233 kills and 46 scores and K-D on 56 demos, 0 mismatches, the same 9 known gaps.
 - 78 demos against 0.26.28: `compare_all.sh` all identical (3.9 minutes); the reader (`reader_compare.mjs`) identical on the 70 HLTV demos, the POV demos only adding the hits on him, the bars and his Tab presses.
 - Full log: `tests/logs/0.26.29.md`; screenshots on `screenshots/0.26.29`.

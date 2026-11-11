@@ -1477,7 +1477,7 @@ function showHiddenEnemiesNote(on) {
   d.querySelector('.povnote-x').onclick = () => showHiddenEnemiesNote(false);
   d.hidden = false; placeHiddenNote();
 }
-// POV mode: the notices' column (the shortcuts line, a notice, the anti-wallhack note) sits at the top middle, and steps
+// POV mode: the notices' column (a notice, the anti-wallhack note; the shortcuts line is hidden there) sits at the top middle, and steps
 // down below the kill feed while one of its rows reaches into the column (a long kill row reaches past the middle of a
 // 1280x720 window: the GP Tourney POV's widest, at R3, from 436 px of 940). Run every frame in POV mode, since rows
 // come and go and the spectator bars move the feed down.
@@ -1485,7 +1485,7 @@ function placePovNotices() {
   const rad = $('radar'); if (!rad.classList.contains('povm')) return;
   const rr = rad.getBoundingClientRect(), u = UI;
   let colL = Infinity, colR = -Infinity, has = false;
-  for (const id of ['hint3', 'toast', 'povNote']) {
+  for (const id of ['toast', 'povNote']) {
     const e = $(id); if (!e || e.hidden || !e.offsetParent) continue;
     const r = e.getBoundingClientRect(); if (!r.width) continue;
     colL = Math.min(colL, r.left); colR = Math.max(colR, r.right); has = true;
@@ -1498,7 +1498,7 @@ function placePovNotices() {
   const v = Math.round(top) + 'px';
   if (rad.style.getPropertyValue('--pov-ntop') !== v) { rad.style.setProperty('--pov-ntop', v); placeHiddenNote(); }
 }
-// at the top middle, under the shortcuts line and any notice showing
+// at the top middle, under any notice showing (and the shortcuts line, outside POV mode)
 function placeHiddenNote() {
   const d = $('povNote'); if (!d || d.hidden) return;
   const host = $('gl').parentElement, hr = host.getBoundingClientRect();

@@ -11,14 +11,16 @@ recorded by BAJRANG || forgotteN_), in POV mode, and on mTw vs mousesports, Infe
   opening by itself with "He held Tab here" while he held Tab, and closing after;
 - the options by demo type: in the POV demo no 2D, 3D and 3D + radar switch, opened in 3D though 2D was the saved
   choice, no Reset view, no Wallbangs tab (the server held enemies back), the ! on See through walls, the load
-  summary's two lines, the notices at the top middle; the ! shows the anti-wallhack note at the top middle and
+  summary's two lines, a notice at the top middle, no shortcuts line; the ! shows the anti-wallhack note at the top middle and
   closes it, and switching See through walls on doesn't show it; in the HLTV demo the switch, 2D (the saved choice),
   Reset view and the Wallbangs tab are back, the POV mode row and its heading in View settings are gone, no !;
 - the Kills tab of the POV demo lists his kills and deaths for the whole match, by round, every row his, the round
   playing now highlighted; the HLTV demo's lists the round playing now;
 - at the widest kill feed rows of the POV demo (R3, 4 rows), with "Stopping at 16" and the anti-wallhack note open,
-  the shortcuts line, the notice and the note overlap neither the feed, the round pill, View settings nor each other,
-  at 1512x982 (Interface size Auto and 115%, the largest it allows there) and 1280x720.
+  the notice and the note overlap neither the feed, the round pill, View settings nor each other, at 1512x982
+  (Interface size Auto and 115%, the largest it allows there) and 1280x720;
+- the shortcuts line doesn't move while the POV demo plays through R3's kills at 1280x720: in POV mode it's hidden
+  (Sujan, 11 Nov 2026, on #60), and in the 3D view of a POV demo nothing shows it.
 
 Usage:  HALF_LIFE_DIR=~/code/cs16-data/Half-Life DEMO_DIRS=~/code/cs16-data/test-demos python3 pov_mockup_round_check.py [page.html]
 Needs both demos in the Half-Life folder or DEMO_DIRS (demo_dirs.py), and de_mirage_32 and de_inferno in the folder.
@@ -65,7 +67,7 @@ def offers_js():
   toast('Stopping at 16. Rounds tab: Count them to count the rounds played after.', 20000);
   return { view: viewMode, seg: !$('viewSeg').hidden, fit: !$('tgFit').hidden, wbTab: !document.querySelector('.tabs button[data-tab=wb]').hidden,
     povRow: !row.hidden, povHead: !head.hidden, mark: vis($('xrayMark')),
-    hintTop: top($('hint3')), toastTop: top($('toast')), viewH: rr.height };
+    hintTop: vis($('hint3')) ? top($('hint3')) : null, toastTop: top($('toast')), viewH: rr.height };
 })()''')
 NOTE = js(r'''(() => {
   const n0 = $('povNote'), was = !!n0 && !n0.hidden;
@@ -86,6 +88,7 @@ OVERLAP = js(r'''(() => {
   for (const [a, b] of [['hint', 'toast'], ['toast', 'note'], ['hint', 'note']]) if (hit(notes[a], notes[b])) over.push(a + '/' + b);
   return { UI, rows: $('feed').children.length, shown: Object.keys(notes).filter((k) => notes[k]), over };
 })()''')
+HINT = js(r'''({ pos: (() => { const e = $('hint3'); if (!e || !e.offsetParent) return null; const r = e.getBoundingClientRect(); return [Math.round(r.left), Math.round(r.top)]; })(), rows: $('feed').children.length, T: +T.toFixed(2) })''')
 KILLS = js(r'''(() => {
   document.querySelector('.tabs button[data-tab=kills]').click();
   const rows = [...$('pane').querySelectorAll('.krow')], heads = [...$('pane').querySelectorAll('.sechead')];
@@ -145,7 +148,7 @@ try:
         o['sumOnly'] = any('Only his own view, in 3D' in x for x in sum1)
         o['sumPlugin'] = any('This server seems to use an anti-wallhack plugin' in x for x in sum1)
         check(o.get('view') == '3d' and not o.get('seg') and not o.get('fit') and not o.get('wbTab') and o.get('povRow') and o.get('povHead') and o.get('mark')
-              and o.get('sumOnly') and o.get('sumPlugin') and o.get('hintTop') is not None and o['hintTop'] < 40 and o.get('toastTop') is not None and o['toastTop'] < 100,
+              and o.get('sumOnly') and o.get('sumPlugin') and o.get('hintTop') is None and o.get('toastTop') is not None and o['toastTop'] < 100,
               'options by demo type: the POV demo', o)
         n = ev(NOTE)
         check(n.get('open') and n.get('text') and n.get('top') is not None and n['top'] < n['viewH'] / 3 and n.get('closed') and not n.get('byXray'),
@@ -165,9 +168,21 @@ try:
             pg.wait_for_timeout(300)
             ov.append(dict(ev(OVERLAP), size=f'{w}x{hh} {size}'))
             pg.evaluate('__v("showHiddenEnemiesNote(false); $(\'toast\').hidden = true; 0")')
+        # the shortcuts line while the demo plays with kills coming in (R3, demo 8:14 to 8:21, at 1x, 1280x720): it must not
+        # move. In POV mode it's hidden (Sujan, 11 Nov 2026, on #60): placed at the top middle, it stepped down past the kill
+        # feed and back up as the rows came and went, several times a round at 1280x720
+        pg.evaluate('__v("seek(494.5); playing = true; setPlayIcon(); 0")')
+        hs = []
+        for _ in range(70):
+            hs.append(ev(HINT)); pg.wait_for_timeout(100)
+        pg.evaluate('__v("playing = false; setPlayIcon(); 0")')
+        poss = sorted({json.dumps(x.get('pos')) for x in hs}); rows = sorted({x.get('rows') for x in hs})
+        played = round(hs[-1].get('T', 0) - hs[0].get('T', 0), 2)
+        check(len(poss) == 1 and len(rows) >= 2 and played > 4, 'the shortcuts line stays put while kills come in (hidden in POV mode)',
+              {'positions': poss[:6], 'feed rows seen': rows, 'played s': played})
         pg.set_viewport_size({'width': 1512, 'height': 982})
         pg.evaluate('''__v("localStorage.removeItem('uiSize'); applyUiSize(); dispatchEvent(new Event('uisize')); 0")''')
-        check(all(not o.get('err') and o.get('rows', 0) >= 4 and len(o.get('shown', [])) == 3 and not o.get('over') for o in ov),
+        check(all(not o.get('err') and o.get('rows', 0) >= 4 and o.get('shown') == ['toast', 'note'] and not o.get('over') for o in ov),
               'notices and the note clear of the kill feed, the round pill and View settings at the widest feed', ov)
         sum2 = open_demo(HLTV)
         o2 = ev(offers_js())
@@ -186,6 +201,6 @@ finally:
     os.remove(test_page)
 for ok, name, got in checks:
     print(('ok   ' if ok else 'FAIL ') + name + '  ' + json.dumps(got))
-passed = len(checks) == 10 and all(c[0] for c in checks)
+passed = len(checks) == 11 and all(c[0] for c in checks)
 print(f'{"PASS" if passed else "FAIL"} ({time.time() - t0:.0f} s)')
 sys.exit(0 if passed else 1)
