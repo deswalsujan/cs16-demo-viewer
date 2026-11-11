@@ -111,7 +111,7 @@ Sujan's POV mode feedback of 11 Nov 2026, items 1 to 10 in one batch, as in `doc
 
 ### How it was tested
 - `pov_feedback_check.py` (new, 25 s) fails on 0.26.29 and passes (the spectator bars' item also fails on the first build, ecd7cf0); `pov_reopen_check.py`, now a POV demo, an HLTV demo and the POV demo again, fails on 0.26.29 and passes; `pov_mockup_round_check.py`, `demo_search_check.py` and `prefs_check.py` updated and pass.
-- The full test run waits for Sujan's go (about 12 minutes).
+- The full test run passed (10 minutes): the eight checks, `pov_feedback_check.py`, `pov_mockup_round_check.py`; `ground_truth_check.py` 233 kills and 46 scores and K-D, 0 mismatches; `compare_all.sh` 78 of 78 identical against 0.26.29, and the reader identical on the 70 HLTV demos but for the new latency.
 - Full log: `tests/logs/0.26.30.md`; screenshots on `screenshots/0.26.30`.
 
 ### Discussed, not changed
