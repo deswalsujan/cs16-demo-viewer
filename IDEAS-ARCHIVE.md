@@ -9,6 +9,13 @@ Items moved out of [IDEAS.md](IDEAS.md) so that it holds only what is open (work
 - Paths in the items moved here on 29 Oct 2026 are as they were before that evening's `src/ui/` split (the current map is in AGENTS.md, "Where the code is"); items archived since use the paths of their day.
 - Where an item says Sujan's answers are kept in a claude.ai page's store, they were copied out on 29 Oct 2026 into `docs/review-answers.md`, word for word, one section per page; the page links stay for the pictures.
 
+## By-eye round
+
+Lines and parts of lines from IDEAS.md's **By-eye round** that Sujan passed, word for word, with the date (since 11 Nov 2026).
+
+**Mac, any screen**
+- [x] From **POV mode**'s HUD as the game draws it (0.26.29), the GP Tourney POV of Team Guardians vs Lanka Dahan, Mirage, 25 Oct 2026, word for word: Also: in freeze time the timer counts the freeze down and flashes red too, as cs16-client's `timer.cpp` does for any 20 s or less; whether the game does that in freeze time. Passed (Sujan, 11 Nov 2026, checked in CS 1.6): the countdown does flash red in freeze time, so the viewer is right. The rest of that line stays in IDEAS.md.
+
 ## Open follow-ups (checklist, updated 28 Oct 2026, 0.24.0)
 
 **Sujan's POV mode feedback of 3 Nov 2026** (moved here as each item is done; open ones in IDEAS.md under the same name)
@@ -643,6 +650,14 @@ Items moved out of [IDEAS.md](IDEAS.md) so that it holds only what is open (work
 - [x] Since 0.12.1 a demo can only be opened after the folder is chosen; in Firefox and Safari that means choosing the folder on every visit. Accepted by Sujan, 2 Oct 2026; it's in CHANGELOG.md "Known limits" (those browsers lack the feature that keeps folder access).
 
 **User experience** (Sujan, 25 Oct 2026: "We should constantly be thinking about user experience")
+- [ ] **A first-visit tour** (Sujan, 11 Nov 2026; for later, no mockup or build yet)
+  - Parked (Sujan, 11 Nov 2026): for later, don't work on it. (c) answered: whether the "UI can be simpler" review comes before or after the tour gets decided by that review itself, run first as an independent, unbiased review when Sujan asks for it. (a) and (b) stay open for when he picks it up. Moved here word for word from IDEAS.md on 11 Nov 2026:
+  - Status: Sujan's ask: a short tour of 3 to 6 steps that lands the aha moment; each step is a card next to the feature it points at, and moves on when the player does what it says, while the viewer plays beside it; every card can be skipped or closed; a **Tour** button that's always there to start it again; shown only once, not on every visit.
+  - Proposed in the review chat, for Sujan to decide later: (1) shown once by a "tour done" mark in the browser's own storage, like the saved settings; nothing leaves the computer, so it fits the no-user-data rule; it shows again in a private window, another browser or computer, or after clearing the site's data; **Clear saved files** doesn't bring it back. (2) It starts after the first demo opens and its load summary closes. Steps on an HLTV demo: the Wallbangs tab, "Every wallbang in this match, found for you"; a click on a STRICT WB row, which already jumps 3 s back and plays it through the killer's eyes; **See through walls** on, and the tour replays those 3 s so the victim shows behind the wall; ↑ for the next player's view; Z and X or the Rounds tab for rounds; the bottom bar, **Shortcuts** and **Tour**, then Done. With no wallbangs, the first two steps use the Kills tab. (3) Cards beside their target with an arrow, never over the middle of the 3D view, no dark cover over the page; "2 of 6", **Skip tour**, Esc; skipping counts as done. **Tour** beside **Shortcuts ?** in the bottom bar. A hidden target (Theatre mode, a closed panel) is opened first.
+  - Checked by Claude, 11 Nov 2026, on 0.26.28: a click on a Wallbangs row jumps 3 s back, plays and goes to the killer's eyes (`watchKill` in `src/ui/radar.js`), but only in 3D: in 2D it stays 2D, so the tour's step would switch to 3D first; **Clear saved files** clears the saved overviews and the folder, not the saved settings in the browser's storage (`src/ui/clear.js`), so a "tour done" mark kept with them stays, as proposed; **Shortcuts ?** is in the bottom bar today (`bKeys`).
+  - Open for Sujan: (a) POV demos get their own short tour after the POV build, and until then a POV demo doesn't start it; (b) the tour cards and the open tooltips item (**Tooltips, and feature names in bold in the viewer's text**, above) share one look, as one mockup round; (c) whether the "UI can be simpler" review (**A review of how simple the UI is**, above) goes before the tour.
+  - Next step: Sujan decides (a) to (c), later; no mockup or build until then.
+  - Decided so far: nothing yet.
 - [ ] Later (Sujan, 25 Oct 2026): a review by one or more separate agents of how the viewer's UI could be simpler, or confirmation that it already is simple enough. Give them the built page and screenshots, not Claude's own conclusions.
 - [ ] Tooltips on every flagship feature and on any option that could confuse a first-time user (the Wallbangs filters among them), in one consistent design that reads as a tooltip at a glance, before anyone reads it: distinct from the rest of the viewer yet subtle, in its style. Mockup first.
 
