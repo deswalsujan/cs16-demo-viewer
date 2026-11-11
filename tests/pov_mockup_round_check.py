@@ -15,7 +15,10 @@ recorded by BAJRANG || forgotteN_), in POV mode, and on mTw vs mousesports, Infe
   closes it, and switching See through walls on doesn't show it; in the HLTV demo the switch, 2D (the saved choice),
   Reset view and the Wallbangs tab are back, the POV mode row and its heading in View settings are gone, no !;
 - the Kills tab of the POV demo lists his kills and deaths for the whole match, by round, every row his, the round
-  playing now highlighted; the HLTV demo's lists the round playing now.
+  playing now highlighted; the HLTV demo's lists the round playing now;
+- at the widest kill feed rows of the POV demo (R3, 4 rows), with "Stopping at 16" and the anti-wallhack note open,
+  the shortcuts line, the notice and the note overlap neither the feed, the round pill, View settings nor each other,
+  at 1512x982 (Interface size Auto and 115%, the largest it allows there) and 1280x720.
 
 Usage:  HALF_LIFE_DIR=~/code/cs16-data/Half-Life DEMO_DIRS=~/code/cs16-data/test-demos python3 pov_mockup_round_check.py [page.html]
 Needs both demos in the Half-Life folder or DEMO_DIRS (demo_dirs.py), and de_mirage_32 and de_inferno in the folder.
@@ -71,6 +74,17 @@ NOTE = js(r'''(() => {
   $('xrayMark').click(); const closed = !n || n.hidden;
   const x0 = opts.xray; $('tgXray').click(); if (!opts.xray) $('tgXray').click(); const after = $('povNote'), byXray = !!after && !after.hidden; if (opts.xray !== x0) $('tgXray').click();
   return { was, open, top, viewH: rr.height, text: text.includes('anti-wallhack plugin') && text.includes('11,503'), closed, byXray };
+})()''')
+# the notices' column against the kill feed, the round pill and the camera row (View settings), and each other
+OVERLAP = js(r'''(() => {
+  const rr = $('radar').getBoundingClientRect();
+  const R = (e) => { if (!e || e.hidden || !e.offsetParent) return null; const r = e.getBoundingClientRect(); return r.width ? { l: r.left - rr.left, t: r.top - rr.top, r: r.right - rr.left, b: r.bottom - rr.top } : null; };
+  const hit = (a, b) => a && b && a.l < b.r && b.l < a.r && a.t < b.b && b.t < a.b;
+  const notes = { hint: R($('hint3')), toast: R($('toast')), note: R($('povNote')) }, others = { pill: R($('rclock')), cam: R($('cam3')) };
+  [...$('feed').children].forEach((e, i) => { others['feed' + i] = R(e); });
+  const over = []; for (const n in notes) for (const o in others) if (hit(notes[n], others[o])) over.push(n + '/' + o);
+  for (const [a, b] of [['hint', 'toast'], ['toast', 'note'], ['hint', 'note']]) if (hit(notes[a], notes[b])) over.push(a + '/' + b);
+  return { UI, rows: $('feed').children.length, shown: Object.keys(notes).filter((k) => notes[k]), over };
 })()''')
 KILLS = js(r'''(() => {
   document.querySelector('.tabs button[data-tab=kills]').click();
@@ -140,6 +154,21 @@ try:
         k = ev(KILLS)
         check(k.get('rows') == k.get('want') and k.get('rows', 0) > 20 and k.get('allHis') and k.get('rounds', 0) >= 10 and k.get('curHead', '') .startswith(k.get('curRound') or '?'),
               'Kills tab: his kills and deaths, the whole match by round, R7 highlighted', k)
+        # the widest kill feed rows in this demo (R3, 4 rows from 498.33), with "Stopping at 16" and the note open,
+        # at 1512x982 (Auto and the largest Interface size it allows, 115%) and 1280x720 (100%)
+        ov = []
+        for (w, hh, size) in [(1512, 982, 'auto'), (1512, 982, '200'), (1280, 720, 'auto')]:
+            pg.set_viewport_size({'width': w, 'height': hh})
+            pg.evaluate(f'''__v("localStorage.setItem('uiSize', JSON.stringify('{size}')); applyUiSize(); dispatchEvent(new Event('uisize')); 0")''')
+            at(498.38)
+            pg.evaluate('''__v("toast('Stopping at 16. Rounds tab: Count them to count the rounds played after.', 20000); showHiddenEnemiesNote(true); 0")''')
+            pg.wait_for_timeout(300)
+            ov.append(dict(ev(OVERLAP), size=f'{w}x{hh} {size}'))
+            pg.evaluate('__v("showHiddenEnemiesNote(false); $(\'toast\').hidden = true; 0")')
+        pg.set_viewport_size({'width': 1512, 'height': 982})
+        pg.evaluate('''__v("localStorage.removeItem('uiSize'); applyUiSize(); dispatchEvent(new Event('uisize')); 0")''')
+        check(all(not o.get('err') and o.get('rows', 0) >= 4 and len(o.get('shown', [])) == 3 and not o.get('over') for o in ov),
+              'notices and the note clear of the kill feed, the round pill and View settings at the widest feed', ov)
         sum2 = open_demo(HLTV)
         o2 = ev(offers_js())
         o2['sumOnly'] = any('Only his own view' in x for x in sum2)
@@ -157,6 +186,6 @@ finally:
     os.remove(test_page)
 for ok, name, got in checks:
     print(('ok   ' if ok else 'FAIL ') + name + '  ' + json.dumps(got))
-passed = len(checks) == 9 and all(c[0] for c in checks)
+passed = len(checks) == 10 and all(c[0] for c in checks)
 print(f'{"PASS" if passed else "FAIL"} ({time.time() - t0:.0f} s)')
 sys.exit(0 if passed else 1)
