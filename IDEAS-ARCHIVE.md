@@ -20,6 +20,11 @@ Lines and parts of lines from IDEAS.md's **By-eye round** that Sujan passed, wor
 
 ## Open follow-ups (checklist, updated 28 Oct 2026, 0.24.0)
 
+**Seen while moving the decisions out of STATE.md** (12 Nov 2026; moved here as each item is done)
+- [x] **AGENTS.md still says POV mode is behind a setting**: fixed 12 Nov 2026 on notes/ui-review (Sujan asked for it that day): "Facts" now says every POV demo opens in **POV mode** since 0.26.30, with no setting.
+  - Its text in IDEAS.md when done:
+    - [ ] **AGENTS.md still says POV mode is behind a setting** (Claude, a later notes change): its "Facts" says POV mode is built in `src/` "behind the **POV mode** setting, since 0.25.0", and the setting went in 0.26.30 (Sujan signed **POV mode** off, 11 Nov 2026).
+
 **Sujan's POV mode feedback of 11 Nov 2026** (moved here as each item is done; open ones in IDEAS.md under the same name)
 - [x] **POV mode: a Crosshair row**: built in 0.26.30 (11 Nov 2026), from Sujan's POV mode feedback of 11 Nov 2026 (`docs/pov-scoreboard-radar-flashbang-mock.jpg`, approved by Sujan 11 Nov 2026, his answers in `STATE.md`, Decisions).
   - Its text in IDEAS.md when built:
