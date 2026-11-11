@@ -24,6 +24,13 @@
   <section class="radar m2d" id="radar">
     <canvas id="gl" aria-label="3D view of the match" tabindex="0"></canvas>
     <canvas id="lbl"></canvas>
+    <!-- POV mode (0.26.30; Sujan, 11 Nov 2026): a flashbang's white over the 3D view and the kill feed, then the spectator bars
+         laid over it, then his HUD and radar added onto it, as the game draws its screen fade and then the HUD; the viewer's
+         own controls stay on top -->
+    <div class="flash3" id="flash3" hidden></div>
+    <canvas id="spec3"></canvas>
+    <canvas id="hud3"></canvas>
+    <div class="fbdot" id="fbdot" hidden></div>
     <div class="status3" id="status3" hidden></div>
     <div class="pov" id="pov" hidden></div>
     <div class="cmsg" id="cmsg" hidden></div>
@@ -39,7 +46,7 @@
       <button class="btn arr" id="bPrevP" type="button" title="Previous player (↓ or right-click)" aria-label="Previous player">‹</button>
       <button class="btn arr" id="bNextP" type="button" title="Next player (↑ or click)" aria-label="Next player">›</button>
       <div class="vset">
-        <button class="btn" id="bVset" type="button" aria-expanded="false" aria-controls="vsetPanel" title="Vanilla, team colours, quality, damage numbers, crosshair size, interface size and POV mode">View settings <svg viewBox="0 0 10 6" aria-hidden="true"><path d="M1 1l4 4 4-4"/></svg></button>
+        <button class="btn" id="bVset" type="button" aria-expanded="false" aria-controls="vsetPanel" title="Vanilla, team colours, quality, damage numbers, crosshair size, interface size and flashbangs">View settings <svg viewBox="0 0 10 6" aria-hidden="true"><path d="M1 1l4 4 4-4"/></svg></button>
         <div class="vpanel" id="vsetPanel" role="group" aria-label="View settings" hidden>
           <div class="vhead">On the view</div>
           <label class="vrow"><span>Vanilla<small>every overlay off, as in the game</small></span><input type="checkbox" id="van3" title="Turns off what the game's own demo player doesn't show: damage numbers, kill markers, glow, See through walls, names and HP over the players, kill lines, grenade paths, the death cam's red wash and banner, and the C4 countdown. The buttons and settings still work one by one after"></label>
@@ -52,6 +59,12 @@
           </select></label>
           <label class="vrow"><span>Glow on hits<small>damage through walls, no kill</small></span><input type="checkbox" id="glow3" title="A short pink glow on a player each time a bullet hits him through a wall, for damage that doesn't end in a kill"></label>
           <label class="vrow"><span>Crosshair<small>in Player's eyes</small></span><select id="xh3" title="Crosshair size in Player's eyes, like the game's crosshair size setting">
+            <option value="small">Small</option>
+            <option value="medium">Medium</option>
+            <option value="large">Large</option>
+          </select></label>
+          <label class="vrow" hidden><span>Crosshair<small>size only</small></span><select id="xhp3" title="The size of his crosshair. From config.cfg uses the size set in the game's config.cfg in your Half-Life folder, as the game's demo player uses the watcher's own settings. The colour always comes from config.cfg">
+            <option value="cfg">From config.cfg</option>
             <option value="small">Small</option>
             <option value="medium">Medium</option>
             <option value="large">Large</option>
@@ -70,8 +83,9 @@
             <option value="175">175%</option>
             <option value="200">200%</option>
           </select></label>
-          <div class="vhead">Demos recorded by a player</div>
-          <label class="vrow"><span>POV mode<small>for demos recorded by a player</small></span><input type="checkbox" id="pov3" title="Watch a demo recorded by a player through his own eyes, as his game showed it: his view, crosshair, HUD and gun. Off, it plays like an HLTV demo. Changing it opens the demo again"></label>
+          <div class="vhead" hidden>Demos recorded by a player</div>
+          <label class="vrow" hidden><span>Flashbang dot<small>how blinded he was</small></span><input type="checkbox" id="fbDot3" title="A white dot under the crosshair that fades as his screen did when a flashbang blinded him, or a teammate he was watching"></label>
+          <label class="vrow" hidden><span>Flashbang whiteout<small>the white his screen showed, full screen</small></span><input type="checkbox" id="fbWhite3" title="The view goes white as his screen did when a flashbang blinded him, or a teammate he was watching. As in the game, his HUD and radar fade into the white"></label>
         </div>
       </div>
     </div>

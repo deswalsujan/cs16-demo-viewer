@@ -95,9 +95,14 @@ function setVanilla(on) {
 { const v = ls.get('vanilla'); if (v && v.on === true) { VAN.on = true; VAN.saved = v.saved && typeof v.saved === 'object' ? v.saved : null; } }
 $('van3').checked = VAN.on;
 $('van3').onchange = () => setVanilla($('van3').checked);
-// POV mode (0.25.0, Sujan 29 Oct 2026): off by default until Sujan signs it off; with it off every demo plays as in 0.24.0
-$('pov3').checked = ls.get('povMode') === 'on';
-$('pov3').onchange = () => { ls.set('povMode', $('pov3').checked ? 'on' : 'off'); reopenForPov(); };
+// POV mode's own rows (0.26.30, Sujan, 11 Nov 2026): his crosshair's size, From config.cfg by default (the game's demo
+// player uses the watcher's own settings; the colour always comes from config.cfg), and the flashbang dot and whiteout,
+// both off by default (Sujan, 8 Nov 2026). The POV mode setting itself went at the sign-off (Sujan, 11 Nov 2026).
+{ const v = ls.get('povCrosshair'); if (['cfg', 'small', 'medium', 'large'].includes(v)) $('xhp3').value = v; }
+$('xhp3').onchange = () => ls.set('povCrosshair', $('xhp3').value);
+$('fbDot3').checked = ls.get('fbDot') === 'on'; $('fbWhite3').checked = ls.get('fbWhite') === 'on';
+$('fbDot3').onchange = () => ls.set('fbDot', $('fbDot3').checked ? 'on' : 'off');
+$('fbWhite3').onchange = () => ls.set('fbWhite', $('fbWhite3').checked ? 'on' : 'off');
 if (document.fonts) document.fonts.ready.then(() => { tlCache.key = ''; });
 $('bSnd').onclick = () => setSound(!SND.on);
 // full screen: the whole viewer fills the screen (Esc or F leaves it)

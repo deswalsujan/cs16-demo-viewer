@@ -1,17 +1,20 @@
-"""Fails if switching demos or POV mode with a POV demo playing logs an error or stops the 3D view (0.26.28).
+"""Fails if switching between a POV demo and an HLTV demo while one plays logs an error or stops the 3D view (0.26.28;
+POV demo, HLTV demo, POV demo since 0.26.30).
 
-Guards the fix of Sujan's two crashes of 3 Nov 2026: with a POV demo playing in POV mode, turning POV mode off or on
-(the demo opens again) or opening an HLTV demo left POV mode's state from the old demo while the new one loaded, so
-povView threw on a demo with no view of his; on 0.26.16 that stopped the frame loop for good (the 3D view froze while
-the side panel filled), and from 0.26.18 it logged the error and showed the error toast. The overview's load is held
-0.3 s, so frames run in that gap every time. Steps: Match 1 T (public
-server, de_barcelona, 27 Mar 2025) in POV mode, playing in 3D; POV mode off; POV mode on; then mTw vs mousesports,
-Inferno, IEM4 World Championship, part 1 (an HLTV demo). After each, the page must have logged no error, and the 3D
-view must keep drawing (its frame count goes up) with playback moving.
+Guards the fix of Sujan's two crashes of 3 Nov 2026: with a POV demo playing in POV mode, opening another demo (or, up
+to 0.26.29, turning the POV mode setting off or on, which opened the demo again) left POV mode's state from the old demo
+while the new one loaded, so povView threw on a demo with no view of his; on 0.26.16 that stopped the frame loop for
+good (the 3D view froze while the side panel filled), and from 0.26.18 it logged the error and showed the error toast.
+The setting went at the sign-off (Sujan, 11 Nov 2026), so the steps are now (Sujan, 11 Nov 2026): Match 1 T (public
+server, de_barcelona, 27 Mar 2025), which opens in POV mode, playing in 3D; then mTw vs mousesports, Inferno, IEM4
+World Championship, part 1 (an HLTV demo); then Match 1 T again, in POV mode with no setting. The overview's load is
+held 0.3 s, so frames run in that gap every time. After each, the page must have logged no error, and the 3D view must
+keep drawing (its frame count goes up) with playback moving.
 
 Usage:  HALF_LIFE_DIR=~/code/cs16-data/Half-Life DEMO_DIRS=~/code/cs16-data/test-demos python3 pov_reopen_check.py [page.html]
 Needs both demos in the Half-Life folder or DEMO_DIRS (demo_dirs.py) and de_barcelona and de_inferno in the folder.
-Exit code 0 = pass. Fails on 0.26.27.
+Exit code 0 = pass. Fails on 0.26.27, and on 0.26.29 (the last step: with the setting off by default, Match 1 T opens
+as an HLTV demo would).
 """
 import functools, http.server, json, os, sys, threading, time
 from playwright.sync_api import sync_playwright
@@ -45,7 +48,6 @@ try:
         errs = []
         pg.on('pageerror', lambda e: errs.append(str(e)))
         pg.goto(url)
-        pg.evaluate("__v(\"$('pov3').checked = true\")")
         # the overview load is held 0.3 s, so frames always run between the new demo taking over and onDemo() setting
         # POV mode up for it, where the crashes were (without it, a cached overview can leave no frame in between)
         pg.evaluate('__v("{ const f = tryLoadOverview; tryLoadOverview = async (n) => { await new Promise((r) => setTimeout(r, 300)); return f(n); }; } 0")')
@@ -69,26 +71,29 @@ try:
             checks.append((ok, name, {'file': z['file'], 'POV mode': z['POVon'], 'frames drawn': z['renders'] - a['renders'],
                                       'playback moved': round(z['T'] - a['T'], 2), 'errors': (z['errors'] + errs)[:3]}))
 
-        start()
-        pg.evaluate('(n) => __v(`loadDemoFile(files.demos.find((f) => f.name.toLowerCase() === ${JSON.stringify(n)}))`)', POVD)
-        wait_ready()
+        def open_demo(n):
+            start()
+            pg.evaluate('(n) => __v(`loadDemoFile(files.demos.find((f) => f.name.toLowerCase() === ${JSON.stringify(n)}))`)', n)
+            wait_ready()
+
+        # an older build with the setting needs it ticked for the first step; the last step opens the POV demo with the
+        # setting as a first visit leaves it, so a build that still has it, off by default, fails there
+        pg.evaluate("__v(\"if ($('pov3')) $('pov3').checked = true; 0\")")
+        open_demo(POVD)
         pg.evaluate("__v(\"T = D.start + 120; setView('3d')\")")
         check('POV demo in POV mode, playing in 3D', True)
-        for on in (False, True):
-            start()
-            pg.evaluate(f"__v(\"$('pov3').checked = {str(on).lower()}; $('pov3').onchange()\")")
-            wait_ready()
-            check(f'after turning POV mode {"on" if on else "off"} with it playing', on)
-        start()
-        pg.evaluate('(n) => __v(`loadDemoFile(files.demos.find((f) => f.name.toLowerCase() === ${JSON.stringify(n)}))`)', HLTV)
-        wait_ready()
+        pg.evaluate("__v(\"if ($('pov3')) $('pov3').checked = false; 0\")")
+        open_demo(HLTV)
         check('after opening an HLTV demo', False)
+        open_demo(POVD)
+        pg.evaluate("__v(\"T = D.start + 120; setView('3d')\")")
+        check('the POV demo again, in POV mode with no setting', True)
         b.close()
 finally:
     srv.shutdown()
     os.remove(test_page)
 for ok, name, got in checks:
     print(('ok   ' if ok else 'FAIL ') + name + '  ' + json.dumps(got))
-passed = len(checks) == 4 and all(c[0] for c in checks)
+passed = len(checks) == 3 and all(c[0] for c in checks)
 print(f'{"PASS" if passed else "FAIL"} ({time.time() - t0:.0f} s)')
 sys.exit(0 if passed else 1)

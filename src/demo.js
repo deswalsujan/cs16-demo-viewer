@@ -295,6 +295,21 @@ export function parseDemo(buffer, onProgress, opts = {}) {
   // BarTime2: time, seconds, how much of it was already filled in percent; 0 seconds takes it away), and his Tab
   // (the +showscores and -showscores his game wrote as console commands, demo frame type 3: time, 1 or 0)
   const dmg = [], bars = [], tabs = [];
+  // POV mode, Sujan's feedback of 11 Nov 2026 (docs/pov-scoreboard-radar-flashbang-mock.jpg):
+  // - flashbangs: every white ScreenFade his game got (time, fade seconds, hold seconds, alpha, flags), which the server
+  //   sends to a flashed player and to whoever watches him in first person (ReGameDLL PlayerBlind, combat.cpp), and the
+  //   time of every other ScreenFade (fadeStops): a newer fade replaces the one on screen, and the server clears it with
+  //   a black one of alpha 0 when he stops watching a blinded teammate (observer.cpp) or respawns (player.cpp). In the GP
+  //   Tourney POV all 347 others are those clears, and they end 42 of its 70 white fades early. Nothing black is drawn.
+  // - his radar (the game's, top left): each teammate's position, which the server sends him once a second while that
+  //   teammate moved 64 units or more (Radar: time, entity, x, y, z; ReGameDLL player.cpp); the bomb as his radar shows
+  //   it, dropped or planted (BombDrop) until picked up (BombPickup): time, kind (0 dropped, 1 planted, 2 picked up), x,
+  //   y, z; and who has the bomb, from the scoreboard's flags (ScoreAttrib: time, entity, flags; 2 = the bomb)
+  const fades = [], fadeStops = [], radarPos = [], radarBomb = [], attribs = [];
+  // Latency, for the Tab scoreboard (11 Nov 2026), from svc_pings: time, entity, ping in ms, each time a player's value
+  // changes. The server sends it to an HLTV proxy every 2 s, and to a player only while he holds Tab (ReHLDS
+  // SV_ShouldUpdatePing), every frame then, so a POV demo has it only from his Tab presses.
+  const pings = [], pingNow = {};
   const obs = []; // his spectator mode and target (clientdata iuser1, iuser2): time, mode, entity, each time they change
   // POV mode: teammates' health (HealthInfo; the server sends -1 for opponents): time, entity, health. Kept apart from
   // hp, which only HLTV sends and which the damage and skip finders read
@@ -598,6 +613,16 @@ export function parseDemo(buffer, onProgress, opts = {}) {
         case 'BombDrop': {
           const x = m.s() / 8, y = m.s() / 8, z = m.s() / 8, flag = m.ub();
           if (inPlayback && flag === 1) bomb.push({ t: time, type: 'plantpos', pos: [x, y, z], round: curRound ? curRound.n : 0 });
+          if (opts.povRounds && inPlayback) radarBomb.push(time, flag === 1 ? 1 : 0, x, y, z);
+          break;
+        }
+        case 'BombPickup': { if (opts.povRounds && inPlayback) radarBomb.push(time, 2, 0, 0, 0); break; }
+        case 'ScoreAttrib': { const e = m.ub(), f = m.ub(); if (opts.povRounds && inPlayback) attribs.push(time, e, f); break; }
+        case 'Radar': { const e = m.ub(), x = m.s() / 8, y = m.s() / 8, z = m.s() / 8; if (opts.povRounds && inPlayback) radarPos.push(time, e, x, y, z); break; }
+        case 'ScreenFade': {
+          // duration and hold in 1/4096 s (UTIL_ScreenFadeWrite, ReGameDLL util.cpp), then flags, colour and alpha
+          const dur = m.us() / 4096, hold = m.us() / 4096, flags = m.us(), cr = m.ub(), cg = m.ub(), cb = m.ub(), a = m.ub();
+          if (opts.povRounds && inPlayback) { if (cr === 255 && cg === 255 && cb === 255 && a > 0) fades.push(time, dur, hold, a, flags); else fadeStops.push(time); }
           break;
         }
         case 'SayText': {
@@ -739,7 +764,9 @@ export function parseDemo(buffer, onProgress, opts = {}) {
         case 16: r.s(); break; // stopsound
         case 17: { // pings
           r.bitsStart();
-          while (r.bits(1)) { r.bits(8); r.bits(8); r.bits(8); }
+          // each entry: the slot in 5 bits, the ping in 12, the packet loss in 7 (ReHLDS SV_EmitPings_internal, sv_main.cpp;
+          // read 8, 8, 8 up to 0.26.29, the same 25 bits, and thrown away)
+          while (r.bits(1)) { const e = r.bits(5) + 1, ms = r.bits(12); r.bits(7); if (inPlayback && pingNow[e] !== ms) { pingNow[e] = ms; pings.push(time, e, ms); } }
           r.bitsEnd();
           break;
         }
@@ -1034,6 +1061,7 @@ export function parseDemo(buffer, onProgress, opts = {}) {
     shotOrg: new Float32Array(shotOrg), fovs: new Float32Array(fovs), ownAmmo: new Float32Array(ownAmmo), wanims: new Float32Array(wanims), vmodels: new Float32Array(vmodels), obs: new Float32Array(obs),
     hud: { hp: new Float32Array(hud.hp), ap: new Float32Array(hud.ap), helmet: new Float32Array(hud.helmet), money: new Float32Array(hud.money), ammox: new Float32Array(hud.ammox), gunAmmo: hud.gunAmmo },
     dmg: new Float32Array(dmg), bars: new Float32Array(bars), tabs: new Float32Array(tabs),
+    fades: new Float32Array(fades), fadeStops: new Float32Array(fadeStops), radarPos: new Float32Array(radarPos), radarBomb: new Float32Array(radarBomb), attribs: new Float32Array(attribs),
   } : null;
   if (!pov) for (const k of kills) { delete k.kOwn; delete k.vOwn; }
   return {
@@ -1045,7 +1073,7 @@ export function parseDemo(buffer, onProgress, opts = {}) {
     times: new Float32Array(samples.t), slots,
     finalScore: { ...scores }, models: resources.models, stride: STRIDE,
     pmodels, sounds: resources.sounds, events: resources.events, snds: new Float32Array(snds), shots: new Float32Array(shots), booms: new Float32Array(booms), hitPoints: new Float32Array(hitPoints), brass: new Float32Array(brass), puffs: new Float32Array(puffs), radio, centre, corpses,
-    errors, errSamples, health, c4drops: new Float32Array(c4drops), slow, stops,
+    errors, errSamples, health, c4drops: new Float32Array(c4drops), slow, stops, pings: new Float32Array(pings),
     ...(povData ? { povData } : {}),
   };
 }

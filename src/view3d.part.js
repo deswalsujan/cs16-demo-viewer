@@ -105,6 +105,8 @@ function resize3() {
   R3.renderer.setSize(r.width, r.height, false);
   R3.camera.aspect = r.width / r.height; R3.camera.updateProjectionMatrix();
   const l = $('lbl'); l.width = Math.round(r.width * dpr); l.height = Math.round(r.height * dpr);
+  const hc = $('hud3'); hc.width = l.width; hc.height = l.height;
+  const sc = $('spec3'); sc.width = l.width; sc.height = l.height;
 }
 new ResizeObserver(() => resize3()).observe($('radar'));
 
@@ -577,6 +579,13 @@ function update3Now() {
   // what an error partway through last frame's drawing can leave behind, now that the loop runs on after one (0.26.18;
   // Sujan, 7 Nov 2026): drawHitNumbers' fade, and drawPovHud's and drawSpecBars' settings inside save and restore
   lx.globalAlpha = 1; lx.textAlign = 'center'; lx.textBaseline = 'alphabetic'; lx.globalCompositeOperation = 'source-over';
+  // POV mode's HUD layer, added onto the picture (#hud3, 0.26.30): his HUD, crosshair, hit arcs and radar
+  const hc = $('hud3'), hx = hc.getContext('2d');
+  hx.setTransform(dpr, 0, 0, dpr, 0, 0); hx.clearRect(0, 0, W, H); hx.globalAlpha = 1; hx.globalCompositeOperation = 'source-over';
+  // and the spectator bars' layer, laid over a flashbang's whiteout (#spec3, 0.26.30)
+  const sx = $('spec3').getContext('2d');
+  sx.setTransform(dpr, 0, 0, dpr, 0, 0); sx.clearRect(0, 0, W, H); sx.globalAlpha = 1; sx.globalCompositeOperation = 'source-over';
+  if (POV.on) povRadarRoom(H);
   const mono = textFont();
   const camW = [camera.position.x, -camera.position.z, camera.position.y];
   let visBudget = 3; // routine re-checks this frame; the rest wait a frame or two
@@ -629,7 +638,7 @@ function update3Now() {
     if (scoped) drawScope(lx, W, H);
     const xh = POV.on ? povXh(W, H) : XHAIR[$('xh3').value] || XHAIR.large;
     if (cam3.mode === 'eyes' && (!POV.on || POV.who != null)) drawHitMarker(lx, W / 2, H / 2, xh);
-    if (POV.on) { if (!scoped) drawPovCrosshair(lx, W, H); if (POV.who === POV.v.rec && POV.mode === 0) drawPovHud(lx, W, H); }
+    if (POV.on) { if (!scoped) { readCrosshairCfg(); drawPovCrosshair(XCFG.additive ? hx : lx, W, H); } if (POV.who === POV.v.rec && POV.mode === 0) { drawPovHud(hx, W, H); drawPovRadar(hx, W, H); } }
     else if (cam3.mode === 'eyes' && !scoped) { lx.strokeStyle = 'rgba(90,255,90,.85)'; lx.lineWidth = xh.w; const cx = W / 2, cy = H / 2, g = xh.gap, e = xh.end; lx.beginPath(); lx.moveTo(cx - e, cy); lx.lineTo(cx - g, cy); lx.moveTo(cx + g, cy); lx.lineTo(cx + e, cy); lx.moveTo(cx, cy - e); lx.lineTo(cx, cy - g); lx.moveTo(cx, cy + g); lx.lineTo(cx, cy + e); lx.stroke(); }
   } else if (cam3.mode !== 'free' && selected) {
     const death = D.kills.filter((k) => k.victim === selected && k.t <= T + 0.05).pop();
@@ -660,10 +669,11 @@ function update3Now() {
     }
   } else pov.hidden = true;
   // POV mode: the game's spectator bars while he watches someone else; they name the player, so the box goes
-  if (POV.on && drawSpecBars(lx, W, H)) pov.hidden = true;
+  if (POV.on && drawSpecBars(sx, W, H)) pov.hidden = true;
   // ...and while he's playing the game shows no name box, his HUD sits there
   else if (POV.on && POV.mode === 0 && POV.who === POV.v.rec) pov.hidden = true;
-  if (POV.on) drawPovBar(lx, W, H);
+  if (POV.on) drawPovBar(sx, hx, W, H);
+  povFlash();
 }
 // Hit marker on the crosshair when the player you're watching gets a kill:
 // white for a kill, orange for a headshot, magenta for a wallbang, with a short label underneath
@@ -965,15 +975,20 @@ function povShots() {
 }
 function povInit() {
   POV.shotsBy = null; POV.hidden = null; { const n = $('povNote'); if (n) n.hidden = true; } $('feed').style.top = '';
+  $('flash3').hidden = true; $('fbdot').hidden = true; POV.radarRoom = null; POV.attrIdx = null; POV.radIdx = null; $('radar').style.removeProperty('--pov-radar');
   POV.on = !!(D && D.povOn && D.view);
   POV.i = 0; POV.t = T;
   D.ownShots = POV.on ? povShots() : null;
-  // the camera buttons that pick another view or player go; View settings stays, without the crosshair size (POV mode
-  // draws his own game crosshair) and Glow on hits (no wallbang damage in POV mode, so nothing to glow; Sujan, 29 Oct 2026)
+  // the camera buttons that pick another view or player go; View settings stays, with his own crosshair's size in place of
+  // the viewer's (From config.cfg, Small, Medium, Large; Sujan, 11 Nov 2026), without Glow on hits (no wallbang damage in
+  // POV mode, so nothing to glow; Sujan, 29 Oct 2026) and Damage numbers (Sujan, 3 Nov 2026), and with the flashbang rows
   $('cam3').querySelector('.camseg').hidden = POV.on;
   $('bPrevP').hidden = POV.on; $('bNextP').hidden = POV.on;
   $('xh3').closest('.vrow').hidden = POV.on; $('glow3').closest('.vrow').hidden = POV.on;
-  $('dn3').closest('.vrow').hidden = POV.on; // and Damage numbers: POV mode shows no damage (Sujan, 3 Nov 2026)
+  $('dn3').closest('.vrow').hidden = POV.on;
+  $('xhp3').closest('.vrow').hidden = !POV.on;
+  for (const id of ['fbDot3', 'fbWhite3']) $(id).closest('.vrow').hidden = !POV.on;
+  { const h = $('fbDot3').closest('.vrow').previousElementSibling; if (h && h.classList.contains('vhead')) h.hidden = !POV.on; }
   if (POV.on) { cam3.mode = 'eyes'; cam3.chase = null; cam3.cYaw = null; povFollow(T); }
 }
 // The view at time t, between the two frames around it. Angles turn the short way round. Across a jump (a
@@ -1096,17 +1111,21 @@ function povCrosshairNow() {
 // against the scene, which keeps the 4:3 picture's height (eyeFov; Sujan, 3 Nov 2026). Up to 0.26.14 they were sized
 // from the view's width, about a third too big against the scene on a 16:9 view once the scene kept the 4:3 height.
 const povXhW = (W, H) => Math.min(W, H * 4 / 3);
+// his crosshair's size: View settings' Crosshair row in POV mode (0.26.30; Sujan, 11 Nov 2026): From config.cfg (the default:
+// cl_crosshair_size there, as the game's demo player uses the watcher's own settings), or Small, Medium or Large; the colour
+// and translucency always come from config.cfg
+function povXhBase() { const v = $('xhp3').value; return v === 'small' ? 1024 : v === 'medium' ? 800 : v === 'large' ? 640 : XCFG.base; }
 function povXh(W, H) {
   readCrosshairCfg();
   const c = povCrosshairNow(); if (!c) return XHAIR.large;
-  const X = povXhW(W, H), k = X / XCFG.base * XCFG.scale, g = c.gap * k;
+  const X = povXhW(W, H), k = X / povXhBase() * XCFG.scale, g = c.gap * k;
   return { gap: g, end: g + Math.max(1, c.len * k), w: Math.max(1, Math.round(X / 1280)) };
 }
 function drawPovCrosshair(lx, W, H) {
   readCrosshairCfg();
   const c = povCrosshairNow();
   if (!c) return;
-  const X = povXhW(W, H), k = X / XCFG.base * XCFG.scale, g = c.gap * k, L = Math.max(1, c.len * k), cx = Math.round(W / 2), cy = Math.round(H / 2);
+  const X = povXhW(W, H), k = X / povXhBase() * XCFG.scale, g = c.gap * k, L = Math.max(1, c.len * k), cx = Math.round(W / 2), cy = Math.round(H / 2);
   lx.save();
   lx.globalCompositeOperation = XCFG.additive ? 'lighter' : 'source-over';
   lx.fillStyle = `rgba(${XCFG.r},${XCFG.g},${XCFG.b},${(c.alpha / 255).toFixed(3)})`;
@@ -1159,7 +1178,7 @@ async function loadHudSprites() {
   if (!txt || (HUDS.from === txt && HUDS.forD === D) || HUDS.loading) return;
   HUDS.loading = true;
   const forD = D;
-  if (HUDS.from !== txt) { HUDS.spr = {}; HUDS.ammo = {}; HUDS.pain = null; }
+  if (HUDS.from !== txt) { HUDS.spr = {}; HUDS.ammo = {}; HUDS.pain = null; HUDS.radar = null; }
   try {
     const sheets = {};
     const sheet = async (nm) => { if (!(nm in sheets)) { const f = files.hud.spr[nm]; sheets[nm] = f ? decodeSpr(await readPicked(f, `sprites/${nm}.spr`) || new Uint8Array(0)) : null; } return sheets[nm]; };
@@ -1170,6 +1189,8 @@ async function loadHudSprites() {
     }
     // the hit arcs (valve/sprites/640_pain.spr, four frames)
     if (!HUDS.pain && files.hud.pain) HUDS.pain = sprCanvases(await readPicked(files.hud.pain, 'sprites/640_pain.spr'));
+    // the game's radar (cstrike/sprites/radar640.spr, 0.26.30)
+    if (!HUDS.radar && files.hud.radar) HUDS.radar = radarSprite(decodeSpr(await readPicked(files.hud.radar, 'sprites/radar640.spr') || new Uint8Array(0)));
     // ammo icons, for the guns he used
     const ids = new Set(), own = (forD && forD.ownAmmo) || []; for (let i = 1; i < own.length; i += 3) ids.add(own[i]);
     for (const id of ids) {
@@ -1371,22 +1392,109 @@ function drawPovHud(lx, W, H) {
 // picks it up at the percent the message gives (Sujan, 11 Nov 2026, from AlliedModders' list of Half-Life 1 messages
 // and ReGameDLL's observer.cpp; cs16-client starts it empty or not at all, not seen in the game); 0 seconds takes it away.
 // ReGameDLL sends it to the planter or defuser and to whoever watches him in first person, so it shows over his
-// own HUD and over the spectator view alike.
+// own HUD and over the spectator view alike. Its background is laid over the picture (FillRGBABlend) and its frame and
+// fill added onto it (FillRGBA), as cs16-client draws them (DrawUtils::DrawRectangle, hud/timer.cpp): so the background
+// goes on the layer over a flashbang's whiteout with the spectator bars, and the frame and fill on his added HUD layer
+// (Sujan, 12 Nov 2026).
 function povBarAt(t) {
   const B = D.bars, r = idxAt(B, 3, t); if (r < 0) return null;
   const tb = B[r * 3], dur = B[r * 3 + 1], f0 = B[r * 3 + 2] / 100; if (!(dur > 0)) return null;
   const f = f0 + (t - tb) / dur;
   return f >= 0 && f < 1 ? f : null;
 }
-function drawPovBar(lx, W, H) {
+function drawPovBar(bg, lx, W, H) {
   const f = povBarAt(POV.t); if (f == null) return;
   const s = H / 768 * HUD_SCALE, bx = W / 4, by = H * 2 / 3, bw = W / 2, bh = 10 * s;
+  bg.save(); bg.globalAlpha = 153 / 255; bg.fillStyle = '#000'; bg.fillRect(bx, by, bw, bh); bg.restore();
   lx.save();
-  lx.globalAlpha = 153 / 255; lx.fillStyle = '#000'; lx.fillRect(bx, by, bw, bh);
   lx.globalAlpha = 1; lx.fillStyle = 'rgb(255,140,0)';
   lx.fillRect(bx, by, bw, 1); lx.fillRect(bx, by + bh - 1, bw, 1); lx.fillRect(bx, by, 1, bh); lx.fillRect(bx + bw - 1, by, 1, bh);
   lx.fillRect(bx + 2 * s, by + 2 * s, f * (bw - 4 * s), bh - 4 * s);
   lx.restore();
+}
+
+// ---------------- POV mode: his radar (0.26.30) ----------------
+// The game's radar, top left, as cs16-client's radar.cpp draws its default see-through one (cl_radartype 0) for everyone,
+// whatever config.cfg says (Sujan, 11 Nov 2026, docs/pov-scoreboard-radar-flashbang-mock.jpg, section D): radar640.spr
+// tinted 25 75 25 and added onto the picture, sized like the rest of his HUD; 32 units of map a pixel of the sprite, out
+// to its edge, turning with his view. His living teammates as white dots, the bomb carrier's red (255 16 16); one more
+// than 128 units above him is a T, below him an upside-down T. Where each is: from his snapshots while his game received
+// him, else the last Radar message this round (ReGameDLL player.cpp sends one a second while he moved 64 units or more).
+// On a T's radar the bomb dropped (a dot) or planted (a cross), red, flashing every half second until picked up. No
+// enemies. Only while he's playing, as the game hides it when he's dead.
+function radarSprite(sh) {
+  if (!sh) return null;
+  const cv = document.createElement('canvas'); cv.width = sh.w; cv.height = sh.h;
+  const g = cv.getContext('2d'), img = g.createImageData(sh.w, sh.h);
+  for (let i = 0; i < sh.w * sh.h; i++) { const c = sh.px[i], o = i * 4; img.data[o] = sh.pal[c * 3] * 25 / 255; img.data[o + 1] = sh.pal[c * 3 + 1] * 75 / 255; img.data[o + 2] = sh.pal[c * 3 + 2] * 25 / 255; img.data[o + 3] = 255; }
+  g.putImageData(img, 0, 0);
+  return { cv, w: sh.w, h: sh.h };
+}
+// the round pill and View settings sit under the radar in POV mode (app.css, --pov-radar)
+function povRadarRoom(H) {
+  const px = HUDS.radar ? Math.round(HUDS.radar.h * H / 768 * HUD_SCALE) : 0;
+  if (POV.radarRoom !== px) { POV.radarRoom = px; $('radar').style.setProperty('--pov-radar', px + 'px'); }
+}
+// the last value of a flat (time, entity, ...) array of stride n for one entity at or before t, per entity once
+function povByEnt(key, A, n) {
+  const C = POV[key] || (POV[key] = {});
+  if (!C.built) { C.built = true; for (let i = 0; A && i < A.length; i += n) (C[A[i + 1]] || (C[A[i + 1]] = [])).push(...A.subarray(i, i + n)); }
+  return C;
+}
+function povLastOf(key, A, n, e, t) { const a = povByEnt(key, A, n)[e]; if (!a) return -1; const r = idxAt(a, n, t); return r < 0 ? -1 : r * n; }
+function povHasBomb(e, t) {
+  if (D.attribs && D.attribs.length) { const a = povByEnt('attrIdx', D.attribs, 3)[e], i = povLastOf('attrIdx', D.attribs, 3, e, t); return i >= 0 && (a[i + 2] & 2) !== 0; }
+  return !!packAt(e, t);
+}
+function drawPovRadar(lx, W, H) {
+  const sp = HUDS.radar; if (!sp) return;
+  const t = POV.t, v = POV.v, rec = v.rec, me = playerState(rec, t); if (!me || me.state <= 0) return;
+  const s = H / 768 * HUD_SCALE, R = sp.w / 2, side = Math.abs(me.state), r = roundAt(t), from = r ? r.start : -Infinity;
+  lx.save(); lx.globalCompositeOperation = 'lighter'; lx.globalAlpha = 1;
+  lx.drawImage(sp.cv, 0, 0, sp.w * s, sp.h * s);
+  const put = (px, py, pz, col, kind) => {
+    const dx = px - v.pos[0], dy = py - v.pos[1], off = (v.yaw - Math.atan2(dy, dx) * 180 / Math.PI) * Math.PI / 180;
+    const rad = Math.min(Math.hypot(dx, dy) / 32, R), X = (R + rad * Math.sin(off)) * s, Y = (R - rad * Math.cos(off)) * s, z = v.pos[2] - pz, u = s;
+    lx.fillStyle = `rgb(${col})`;
+    if (kind === 'cross') { for (const [a, b] of [[0, 0], [-2, -2], [-2, 2], [2, -2], [2, 2]]) lx.fillRect(X + a * u, Y + b * u, 2 * u, 2 * u); return; }
+    if (z > -128 && z < 128) lx.fillRect(X - 2 * u, Y - 2 * u, 4 * u, 4 * u);
+    else if (z <= -128) { lx.fillRect(X - 2 * u, Y - 2 * u, 6 * u, 2 * u); lx.fillRect(X, Y, 2 * u, 4 * u); } // above him
+    else { lx.fillRect(X, Y - 2 * u, 2 * u, 4 * u); lx.fillRect(X - 2 * u, Y + 2 * u, 6 * u, 2 * u); } // below him
+  };
+  const si = M.idxAt(t) * D.stride;
+  for (const k in D.slots) {
+    const e = +k; if (e === rec) continue;
+    const a = D.slots[e], val = a[si + 5] || 0; if (!(val > 0 && Math.abs(val) === side)) continue;
+    let p = null;
+    if (!Number.isNaN(a[si])) { const st = playerState(e, t); if (st) p = [st.x, st.y, st.z]; }
+    if (!p) { const i = povLastOf('radIdx', D.radarPos, 5, e, t); const A = i >= 0 ? povByEnt('radIdx', D.radarPos, 5)[e] : null; if (A && A[i] >= from) p = [A[i + 2], A[i + 3], A[i + 4]]; }
+    if (p) put(p[0], p[1], p[2], side === 1 && povHasBomb(e, t) ? '255,16,16' : '255,255,255', 'dot');
+  }
+  const B = D.radarBomb, bi = side === 1 && B ? idxAt(B, 5, t) : -1;
+  if (bi >= 0 && B[bi * 5 + 1] !== 2 && B[bi * 5] >= from && Math.floor((t - B[bi * 5]) / 0.5) % 2 === 0) put(B[bi * 5 + 2], B[bi * 5 + 3], B[bi * 5 + 4], '255,0,0', B[bi * 5 + 1] === 1 ? 'cross' : 'dot');
+  lx.restore();
+}
+
+// ---------------- POV mode: flashbangs (0.26.30) ----------------
+// How white his screen was at t (0 to 255), from the white ScreenFades his game got (D.fades: time, fade, hold, alpha,
+// flags), as the engine fades one: full through the hold, then down in a straight line over the fade; a newer ScreenFade
+// of any kind replaces it (D.fadeStops: the server's clears, alpha 0, when he stops watching a blinded teammate or respawns)
+function povFlashAt(t) {
+  const F = D.fades; if (!F || !F.length) return 0;
+  const r = idxAt(F, 5, t); if (r < 0) return 0;
+  const t0 = F[r * 5], dur = F[r * 5 + 1], hold = F[r * 5 + 2], a = F[r * 5 + 3], end = t0 + hold + dur;
+  const S = D.fadeStops, k = S && S.length ? idxAt(S, 1, t) : -1;
+  if (k >= 0 && S[k] > t0) return 0;
+  if (t >= end) return 0;
+  return dur > 0 ? Math.min(a, a * (end - t) / dur) : a;
+}
+// the white dot under the crosshair and the whiteout, each a View settings row, both off by default (Sujan, 8 Nov 2026);
+// the dot's thin dark ring keeps it seen over a bright floor as it fades (Sujan, 11 Nov 2026)
+function povFlash() {
+  const a = POV.on && D ? povFlashAt(POV.t) : 0, fw = $('flash3'), fd = $('fbdot');
+  const w = a > 0 && $('fbWhite3').checked, d = a > 0 && $('fbDot3').checked;
+  if (fw.hidden === w) fw.hidden = !w; if (w) fw.style.opacity = (a / 255).toFixed(3);
+  if (fd.hidden === d) fd.hidden = !d; if (d) fd.style.opacity = (a / 255).toFixed(3);
 }
 
 // ---------------- POV mode: spectator bars ----------------
@@ -1452,9 +1560,10 @@ function povHidesEnemies() {
   POV.i = 0;
   return POV.hidden = { on: tm > 200 && en < tm * 0.1, en, tm };
 }
-// the load summary's line and the note: the headline, then the detail, feature names between ** (bold)
+// the load summary's line and the note: the headline, then the detail, feature names between ** (bold); one text in both
+// places (Sujan, 11 Nov 2026; up to 0.26.29 it gave the counts of enemy and teammate sightings)
 function hiddenEnemiesText(h) {
-  return { t: 'This server seems to use an anti-wallhack plugin', n: `It only sent the recording player enemies who were about to come into view, so **See through walls** can show just those few (${h.en.toLocaleString()} enemy sightings against ${h.tm.toLocaleString()} for teammates), and there's no Wallbangs tab. Once he was dead, it sent them all.` };
+  return { t: 'This server seems to use an anti-wallhack plugin', n: 'To stop wallhacks, the server shows the player an enemy only when that enemy is about to come into view. So **See through walls** won\'t work as intended until the player is dead.' };
 }
 // the ! on See through walls, only in POV mode on such a server
 function povMarkInit() {

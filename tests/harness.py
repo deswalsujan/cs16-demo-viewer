@@ -1,7 +1,7 @@
 """Headless test harness for the CS 1.6 Demo Viewer.
 
 Usage: python3 harness.py <page.html> <script.js>[,<script.js>...] [screenshot prefix]
-Environment: HALF_LIFE_DIR (required), DEMO_DIRS (more folders with demos, see demo_dirs.py), THREE_JS (default src/vendor/three.min.js, for builds before 0.26.2, which load it from cdnjs), DEMO (the demo's file name or a part of it that only one demo has, default navi-vs-fx-sec2011-final-1110091531), MAP_NEEDED (default 1), POV_MODE (1: the POV mode setting on, 0.25.0)
+Environment: HALF_LIFE_DIR (required), DEMO_DIRS (more folders with demos, see demo_dirs.py), THREE_JS (default src/vendor/three.min.js, for builds before 0.26.2, which load it from cdnjs), DEMO (the demo's file name or a part of it that only one demo has, default navi-vs-fx-sec2011-final-1110091531), MAP_NEEDED (default 1), POV_MODE (1: the POV mode setting on, 0.25.0 to 0.26.29; since 0.26.30 POV demos always open in POV mode)
 Loads the page from a local server, feeds it the Half-Life folder (with the DEMO_DIRS demos
 added, demo_dirs.py), opens the demo (Na`Vi vs FX, Dust2, SEC 2011 final by default), waits
 for the 3D map, then runs <script.js> in the page and prints the JSON it returns. A DEMO that
@@ -46,8 +46,9 @@ with sync_playwright() as p:
     pg.route('**/three.min.js', lambda r: r.fulfill(path=THREE, content_type='application/javascript'))
     pg.route('https://fonts.googleapis.com/**', lambda r: r.fulfill(body='', content_type='text/css'))
     pg.goto(url)
-    # POV_MODE=1: the POV mode setting on before the demo opens (0.25.0; it's off by default)
-    if os.environ.get('POV_MODE') == '1': pg.evaluate("__v(\"$('pov3').checked = true\")")
+    # POV_MODE=1: the POV mode setting on before the demo opens, on builds 0.25.0 to 0.26.29, where it's off by default;
+    # since 0.26.30 there's no setting (Sujan signed POV mode off, 11 Nov 2026) and a POV demo always opens in it
+    if os.environ.get('POV_MODE') == '1': pg.evaluate("__v(\"if ($('pov3')) $('pov3').checked = true; 0\")")
     pg.set_input_files('#fFolder', HL)
     pg.wait_for_function('__v("files.demos.length > 0")', timeout=30000)
     pg.evaluate('(n) => __v(`loadDemoFile(files.demos.find((f) => f.name.toLowerCase() === ${JSON.stringify(n)}))`)', DEMO)

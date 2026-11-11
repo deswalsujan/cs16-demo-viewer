@@ -24,6 +24,8 @@ recorded by BAJRANG || forgotteN_), in POV mode, and on mTw vs mousesports, Infe
 
 Usage:  HALF_LIFE_DIR=~/code/cs16-data/Half-Life DEMO_DIRS=~/code/cs16-data/test-demos python3 pov_mockup_round_check.py [page.html]
 Needs both demos in the Half-Life folder or DEMO_DIRS (demo_dirs.py), and de_mirage_32 and de_inferno in the folder.
+Since 0.26.30 (Sujan, 11 Nov 2026): no POV mode row in View settings with either demo, since the setting went at the
+sign-off, and the anti-wallhack note's new text ("To stop wallhacks, ..."), so this check fails on 0.26.29 too.
 Exit code 0 = pass. Fails on 0.26.28.
 """
 import functools, http.server, json, os, sys, threading, time
@@ -62,11 +64,11 @@ SB = js(r'''({ open: !$('sb').hidden, held: !!$('sb').querySelector('.sbheld') }
 def offers_js():
     return js(r'''(() => {
   const vis = (el) => !!el && !el.hidden && !!el.offsetParent;
-  const row = $('pov3').closest('.vrow'), head = row.previousElementSibling;
+  const row = $('pov3') ? $('pov3').closest('.vrow') : null, head = row ? row.previousElementSibling : null;
   const rr = $('radar').getBoundingClientRect(), top = (el) => el && el.getBoundingClientRect().top - rr.top;
   toast('Stopping at 16. Rounds tab: Count them to count the rounds played after.', 20000);
   return { view: viewMode, seg: !$('viewSeg').hidden, fit: !$('tgFit').hidden, wbTab: !document.querySelector('.tabs button[data-tab=wb]').hidden,
-    povRow: !row.hidden, povHead: !head.hidden, mark: vis($('xrayMark')),
+    povRow: !!row && !row.hidden, povHead: !!head && !head.hidden, mark: vis($('xrayMark')),
     hintTop: vis($('hint3')) ? top($('hint3')) : null, toastTop: top($('toast')), viewH: rr.height };
 })()''')
 NOTE = js(r'''(() => {
@@ -75,7 +77,7 @@ NOTE = js(r'''(() => {
   const open = !!n && !n.hidden, top = open ? n.getBoundingClientRect().top - rr.top : null, text = open ? n.textContent : '';
   $('xrayMark').click(); const closed = !n || n.hidden;
   const x0 = opts.xray; $('tgXray').click(); if (!opts.xray) $('tgXray').click(); const after = $('povNote'), byXray = !!after && !after.hidden; if (opts.xray !== x0) $('tgXray').click();
-  return { was, open, top, viewH: rr.height, text: text.includes('anti-wallhack plugin') && text.includes('11,503'), closed, byXray };
+  return { was, open, top, viewH: rr.height, text: text.includes('anti-wallhack plugin') && text.includes('To stop wallhacks, the server shows the player an enemy only when that enemy is about to come into view.'), closed, byXray };
 })()''')
 # the notices' column against the kill feed, the round pill and the camera row (View settings), and each other
 OVERLAP = js(r'''(() => {
@@ -111,7 +113,7 @@ try:
         pg.on('pageerror', lambda e: errs.append(str(e)))
         pg.goto(url)
         # POV mode on, and 2D as the saved choice of view
-        pg.evaluate("__v(\"$('pov3').checked = true; setView('2d')\")")
+        pg.evaluate("__v(\"if ($('pov3')) $('pov3').checked = true; setView('2d')\")")
         pg.evaluate('__v("{ const g = onDemo; window.__opened = 0; onDemo = async () => { await g(); window.__opened++; }; } 0")')
         pg.set_input_files('#fFolder', HL)
         pg.wait_for_function('__v("files.demos.length > 0")', timeout=30000)
@@ -147,7 +149,7 @@ try:
         o = ev(offers_js())
         o['sumOnly'] = any('Only his own view, in 3D' in x for x in sum1)
         o['sumPlugin'] = any('This server seems to use an anti-wallhack plugin' in x for x in sum1)
-        check(o.get('view') == '3d' and not o.get('seg') and not o.get('fit') and not o.get('wbTab') and o.get('povRow') and o.get('povHead') and o.get('mark')
+        check(o.get('view') == '3d' and not o.get('seg') and not o.get('fit') and not o.get('wbTab') and not o.get('povRow') and o.get('mark')
               and o.get('sumOnly') and o.get('sumPlugin') and o.get('hintTop') is None and o.get('toastTop') is not None and o['toastTop'] < 100,
               'options by demo type: the POV demo', o)
         n = ev(NOTE)

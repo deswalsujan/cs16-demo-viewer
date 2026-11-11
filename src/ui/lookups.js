@@ -106,6 +106,21 @@ function packAt(e, t) {
   while (lo <= hi) { const mid = (lo + hi) >> 1; if (a[mid * 2] <= t) { res = mid; lo = mid + 1; } else hi = mid - 1; }
   return res < 0 ? 0 : a[res * 2 + 1];
 }
+// Latency for the Tab scoreboard (0.26.30, Sujan, 11 Nov 2026), from svc_pings (D.pings: time, slot, ms, each change):
+// the last value at or before t, so between a POV demo's Tab holds the one from his last hold, and none before his first.
+// Built with buildPack, once a demo opens.
+let pingIdx = null;
+function buildPings() {
+  pingIdx = {};
+  const h = D.pings || [];
+  for (let i = 0; i < h.length; i += 3) (pingIdx[h[i + 1]] || (pingIdx[h[i + 1]] = [])).push(h[i], h[i + 2]);
+}
+function pingAt(e, t) {
+  const a = pingIdx && pingIdx[e]; if (!a || !a.length) return null;
+  let lo = 0, hi = a.length / 2 - 1, res = -1;
+  while (lo <= hi) { const mid = (lo + hi) >> 1; if (a[mid * 2] <= t) { res = mid; lo = mid + 1; } else hi = mid - 1; }
+  return res < 0 ? null : a[res * 2 + 1];
+}
 function hpAt(e, t) {
   const a = hpIdx && hpIdx[e]; if (!a || !a.length) return null;
   let lo = 0, hi = a.length / 2 - 1, res = -1;

@@ -68,10 +68,9 @@ async function loadSummary(sndDone) {
     rows.push({ s: 'info', t: `${n} ${n === 1 ? 'round was' : 'rounds were'} played after ${who} reached 16 (${sc})`, n: M.auto30 ? 'Counted: the teams played on to round 30, as events that count all 30 rounds did.' : M.count30 ? 'Counted, as chosen for this demo (up to round 30).' : `Some events played all 30 rounds and count them. Not counted now: the match ends at ${sc}.`, btn: { id: 'sumCount30', label: M.count30 ? 'Stop at 16' : 'Count them' } });
   }
   if (D.maps && D.maps.length > 1) rows.push({ s: 'info', t: `The recording switched maps. Showing ${D.mapName}, where it spent longest.`, n: D.maps.map((m) => `${m.map} ${fmt(m.dur)}`).join(', then ') });
-  // POV mode (0.25.0, Sujan 29 Oct 2026): off by default, so the line says so and turns it on
-  if (D.pov) rows.push(D.povOn
-    ? { s: 'info', t: 'Recorded by a player, shown in POV mode', n: "Through his own eyes, as his game showed it. A player's game only receives the players near them, so others drop in and out of view, and wallbangs are found less reliably than in HLTV demos. POV mode can be turned off in View settings." }
-    : { s: 'info', t: 'Recorded by a player (a POV demo)', n: "A player's game only receives the players near them, so others drop in and out of view, and wallbangs are found less reliably than in HLTV demos. POV mode is off: turn it on to watch through his eyes, with his crosshair, HUD and gun. It's also in View settings.", btn: D.povData ? { id: 'sumPov', label: 'Turn on POV mode' } : null });
+  // POV mode's own line and its Turn on button went with the setting (Sujan signed POV mode off, 11 Nov 2026; 0.26.30):
+  // a POV demo always opens in it. Only a file without the record of his own view, which POV mode needs, says why.
+  if (D.pov && !D.povOn) rows.push({ s: 'info', t: 'Recorded by a player (a POV demo)', n: "This file has no record of his own view, so it plays like an HLTV demo, with him at the map's zero point." });
   // the POV mockup round (docs/pov-mockup-round-mock.jpg, sections 1 and 6; Sujan, 11 Nov 2026): what a POV demo doesn't
   // have, and the anti-wallhack note, which no longer shows over his HUD (the ! on See through walls brings it back)
   if (D.povOn) {
@@ -204,7 +203,6 @@ function renderSummary(r) {
   el.hidden = false;
   $('sumX').onclick = closeSummary;
   if ($('sumCount30')) $('sumCount30').onclick = () => setCount30(!M.count30);
-  if ($('sumPov')) $('sumPov').onclick = () => { closeSummary(); $('pov3').checked = true; $('pov3').onchange(); };
   if ($('sumJoin')) $('sumJoin').onclick = () => { if (SUM.joinList) openJoinCard(SUM.joinList); };
   if ($('sumFolder')) $('sumFolder').onclick = () => { closeSummary(); pickFolder(); };
   // the can't-play card (0.26.23, docs/dialogs-mock.jpg; Sujan, 8 Nov 2026: Open another demo the main button): back to the

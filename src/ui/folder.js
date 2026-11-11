@@ -41,6 +41,7 @@ function indexFolder(list) {
       if (/(?:^|\/)cstrike\/sprites\/hud\.txt$/.test(p)) files.hud.txt = f;
       const hm = /(?:^|\/)cstrike\/sprites\/(640hud\d+)\.spr$/.exec(p);
       if (hm) files.hud.spr[hm[1]] = f;
+      if (/(?:^|\/)cstrike\/sprites\/radar640\.spr$/.test(p)) files.hud.radar = f; // POV mode: the game's radar (0.26.30)
       const wt = /(?:^|\/)cstrike\/sprites\/(weapon_\w+)\.txt$/.exec(p); // POV HUD: each gun's ammo icon
       if (wt) (files.hud.wtxt ||= {})[wt[1]] = f;
       // POV HUD: the red arcs round the crosshair that show where a hit came from (cstrike's, else Half-Life's)
