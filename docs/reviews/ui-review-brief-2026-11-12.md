@@ -1,6 +1,6 @@
 # The brief for the UI review of 12 Nov 2026
 
-Sujan's brief for both reviewers of the "UI can be simpler" review (12 Nov 2026), word for word. The subagent got this text and nothing else.
+Sujan's brief for both reviewers of the "UI can be simpler" review (12 Nov 2026), word for word. The subagent got this text and, after it, the two sentences Sujan added the same day: "Judge only from the screenshots on screenshots/ui-review-2026-11-12 and the live page. Don't open any other file in the repo."
 
 ---
 
