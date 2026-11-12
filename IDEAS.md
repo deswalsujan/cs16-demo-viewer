@@ -66,6 +66,12 @@ Sujan's checks by eye of merged builds, kept for one sitting that he runs when h
 
 Everything raised in conversation that isn't finished, in one place. Each item says who does it. Ideas for new features are further down; this list is for loose ends.
 
+**Sujan's answers of 12 Nov 2026 on 0.26.31: the game's light** (his three confirmations in `DECISIONS.md`)
+- [ ] **Other light styles in 3D** (for later; Sujan, 12 Nov 2026)
+  - Status: since 0.26.31 the map and the light on models read each face's first light style only, at its normal value (`buildMesh` in `src/bsp.js` packs one lightmap a face, `lightAlong` reads the same one; `LIMITS.md`). The game adds every style a face has (up to 4), each at its light style's brightness (R_BuildLightMap and R_RecursiveLightPoint in Xash3D FWGS), so a spot that a switchable light (a style of 32 or more, its light entity named with a targetname) also lights is darker in the viewer than in the game.
+  - Next step: Claude adds each face's other styles at their default brightness (style 0 and a switchable light's "m", 264 of 256, unless its light entity starts off; the flickering styles 1 to 11 at their pattern's brightness), to the lightmap atlas and to `lightAlong` alike; first counts how many faces of the test maps have more than one style.
+  - Decided so far: the first light style only, for now (Sujan, 12 Nov 2026); the other styles at their default brightness later (Sujan, 12 Nov 2026).
+
 **Seen while moving the decisions out of STATE.md** (12 Nov 2026)
 - Done, in the archive (12 Nov 2026, on notes/ui-review): **AGENTS.md still says POV mode is behind a setting**.
 
