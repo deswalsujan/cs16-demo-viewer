@@ -110,15 +110,18 @@ function resize3() {
 }
 new ResizeObserver(() => resize3()).observe($('radar'));
 
+// The map as the game draws it with Valve's defaults (light.js, 0.26.31): the texture, through texgamma when it was
+// loaded (getTex), times the lightmap, through the light table when it was packed (lightmapCurve), drawn at 4/3
+// (gl_overbright 1), at most white. Water has no lightmap in the game: its texture alone (lit 0). The see-through
+// texels (alpha under 0.5) are left out as before, which is all the wallbang picture check reads of the map.
 const SHADER = {
   vertexShader: `varying vec2 vUv; varying vec2 vUv2; attribute vec2 uv2;
     void main(){ vUv = uv; vUv2 = uv2; gl_Position = projectionMatrix * modelViewMatrix * vec4(position,1.0); }`,
-  fragmentShader: `uniform sampler2D map; uniform sampler2D lm; uniform float opacity; uniform float bright;
+  fragmentShader: `uniform sampler2D map; uniform sampler2D lm; uniform float opacity; uniform float lit;
     varying vec2 vUv; varying vec2 vUv2;
     void main(){ vec4 t = texture2D(map, vUv); if (t.a < 0.5) discard;
-      vec3 l = texture2D(lm, vUv2).rgb;
-      vec3 c = t.rgb * min(l * bright, vec3(1.8));
-      gl_FragColor = vec4(pow(c, vec3(0.85)), opacity); }`,
+      vec3 c = lit > 0.5 ? min(t.rgb * texture2D(lm, vUv2).rgb * (4.0 / 3.0), vec3(1.0)) : t.rgb;
+      gl_FragColor = vec4(c, opacity); }`,
 };
 // A build that throws partway (0.26.18; Sujan, 7 Nov 2026): view3.map is set only at its end, so the frame loop, which
 // now runs on after an error, would rebuild the whole map every frame. The map is marked failed instead, with nothing
@@ -139,15 +142,16 @@ function build3dNow() {
   while (world.children.length) { const c = world.children.pop(); c.geometry && c.geometry.dispose(); }
   const mesh = buildMesh(MAP.bsp, new Set([...MAP.breakables, ...MAP.movers.keys()]));
   R3.brk = {}; R3.mov = {};
-  const lmTex = new THREE.DataTexture(mesh.atlas.data, mesh.atlas.w, mesh.atlas.h, THREE.RGBAFormat);
+  const lmTex = new THREE.DataTexture(lightmapCurve(mesh.atlas.data), mesh.atlas.w, mesh.atlas.h, THREE.RGBAFormat);
   lmTex.magFilter = THREE.LinearFilter; lmTex.minFilter = THREE.LinearFilter; lmTex.needsUpdate = true;
-  const texCache = {};
+  const texCache = R3.texCache = {}; // by texture name (tests/light_check.py reads it)
   const checker = (() => { const d = new Uint8Array(16 * 16 * 4); for (let i = 0; i < 256; i++) { const c = (((i & 15) >> 3) ^ ((i >> 7) & 1)) ? 150 : 110; d[i * 4] = d[i * 4 + 1] = d[i * 4 + 2] = c; d[i * 4 + 3] = 255; } return { w: 16, h: 16, data: d }; })();
   const getTex = (name) => {
     if (texCache[name]) return texCache[name];
     const bt = MAP.bsp.textures.find((t) => t.name === name);
     const src = (bt && bt.data) ? bt : (MAP.tex[name] || checker);
-    const t = new THREE.DataTexture(src.data, src.w, src.h, THREE.RGBAFormat);
+    // texgamma, as the game loads it, on every texture but the masked ones ({, fences and grates) and the stand-in
+    const t = new THREE.DataTexture(src === checker || name[0] === '{' ? src.data : texGamma(src.data), src.w, src.h, THREE.RGBAFormat);
     t.wrapS = t.wrapT = THREE.RepeatWrapping;
     t.magFilter = THREE.LinearFilter; t.minFilter = THREE.LinearMipmapLinearFilter; t.generateMipmaps = true;
     t.anisotropy = 4; t.needsUpdate = true;
@@ -166,13 +170,13 @@ function build3dNow() {
     const water = g.name[0] === '!';
     const see = water || g.amt < 1;
     const mat = new THREE.ShaderMaterial({
-      uniforms: { map: { value: getTex(g.name) }, lm: { value: lmTex }, opacity: { value: water ? 0.7 : g.amt }, bright: { value: water ? 1.0 : 2.0 } },
+      uniforms: { map: { value: getTex(g.name) }, lm: { value: lmTex }, opacity: { value: water ? 0.7 : g.amt }, lit: { value: water ? 0 : 1 } },
       vertexShader: SHADER.vertexShader, fragmentShader: SHADER.fragmentShader,
       // one-sided like the game: a face is only drawn from the side it faces (map faces wind clockwise seen from the front,
       // which is three.js's back side). Water is drawn from both sides.
       transparent: see, depthWrite: !see, side: water ? THREE.DoubleSide : THREE.BackSide,
     });
-    const m3 = new THREE.Mesh(geo, mat);
+    const m3 = new THREE.Mesh(geo, mat); m3.userData.tex = g.name;
     // drawn but not solid, so bullets pass it at full damage and the sight lines don't count it: a func_illusionary in
     // a see-through render mode (de_train's and Inferno's railings, Inferno's vines, Nuke's wires). Not cover: the
     // picture check leaves it out (Sujan, 30 Oct 2026, GeT_RiGhT on markeloff through the highway slope's railing,

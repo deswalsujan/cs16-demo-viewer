@@ -29,7 +29,8 @@ export function parseBsp(buffer) {
   // nodes
   const nn = L[5].len / 24;
   const nodePlane = new Int32Array(nn), nodeC0 = new Int32Array(nn), nodeC1 = new Int32Array(nn);
-  for (let i = 0; i < nn; i++) { const o = L[5].off + i * 24; nodePlane[i] = u32(o); nodeC0[i] = i16(o + 4); nodeC1[i] = i16(o + 6); }
+  const nodeFirstFace = new Uint16Array(nn), nodeNumFaces = new Uint16Array(nn);
+  for (let i = 0; i < nn; i++) { const o = L[5].off + i * 24; nodePlane[i] = u32(o); nodeC0[i] = i16(o + 4); nodeC1[i] = i16(o + 6); nodeFirstFace[i] = u16(o + 20); nodeNumFaces[i] = u16(o + 22); }
 
   // leaves
   const nl = L[10].len / 28;
@@ -79,7 +80,7 @@ export function parseBsp(buffer) {
   }
   const lighting = u8.subarray(lightBase, lightBase + lightLen);
 
-  const bsp = { entities, planes, nodePlane, nodeC0, nodeC1, leafContents, models, verts, edges: edgesArr, surfedges, texinfo, textures, faces, lighting };
+  const bsp = { entities, planes, nodePlane, nodeC0, nodeC1, nodeFirstFace, nodeNumFaces, leafContents, models, verts, edges: edgesArr, surfedges, texinfo, textures, faces, lighting };
   bsp.wads = ((entities[0] && entities[0].wad) || '').split(';').map((s) => s.replace(/\\/g, '/').split('/').pop().toLowerCase()).filter(Boolean);
   bsp.solids = solidModels(bsp);
   return bsp;
@@ -218,6 +219,82 @@ export function hitTextures(bsp, a, b, res, step = 2, poses = null) {
     }
     return best ? best.tex : null;
   });
+}
+
+// ---- the light on models (0.26.31) ----
+// Each face's texture axes and extents as the engine works them out (CalcSurfaceExtents): the lowest and highest s
+// and t of its corners, floored and ceiled to the 16-unit lightmap grid. lit: the face has a lightmap to read (not
+// sky or water, which the engine draws tiled with no lightmap, SURF_DRAWTILED); sky: a sky face (SURF_DRAWSKY).
+function surfaceInfo(bsp) {
+  return bsp.faces.map((f) => {
+    const ti = bsp.texinfo[f.tex]; if (!ti) return null;
+    const tex = bsp.textures[ti.mip], name = tex ? tex.name : '';
+    const sky = name.startsWith('sky'), turb = name[0] === '!' || name[0] === '*';
+    const mins = [1e9, 1e9], maxs = [-1e9, -1e9];
+    for (let k = 0; k < f.numEdges; k++) {
+      const se = bsp.surfedges[f.firstEdge + k], v = se >= 0 ? bsp.edges[se * 2] : bsp.edges[-se * 2 + 1];
+      const x = bsp.verts[v * 3], y = bsp.verts[v * 3 + 1], z = bsp.verts[v * 3 + 2];
+      for (let j = 0; j < 2; j++) {
+        const a = j ? ti.t : ti.s, val = x * a[0] + y * a[1] + z * a[2] + a[3];
+        if (val < mins[j]) mins[j] = val; if (val > maxs[j]) maxs[j] = val;
+      }
+    }
+    const bmin = mins.map((m) => Math.floor(m / 16)), bmax = maxs.map((m) => Math.ceil(m / 16));
+    const lit = !sky && !turb && !(ti.flags & 1);
+    return {
+      s: ti.s, t: ti.t, sky, lit, light: f.light >= 0 && f.styles[0] !== 255 ? f.light : -1,
+      // water faces reach any point on their plane, as the engine gives them extents of 16384 (Mod_LoadFaces)
+      mins: turb ? [-8192, -8192] : [bmin[0] * 16, bmin[1] * 16], ext: turb ? [16384, 16384] : [(bmax[0] - bmin[0]) * 16, (bmax[1] - bmin[1]) * 16],
+    };
+  });
+}
+// The first face the line a->b meets in the world, walking the map's node tree from a, and where it meets it: as
+// R_RecursiveLightPoint (Xash3D FWGS ref/common/ref_light.c) does with lit set, which passes faces with no lightmap,
+// and as PM_RecursiveSurfCheck does without it, which the engine's sky test reads. null when the line meets none.
+function surfaceAlong(bsp, a, b, lit) {
+  const S = bsp.surfInfo || (bsp.surfInfo = surfaceInfo(bsp)), P = bsp.planes;
+  const walk = (node, s, e) => {
+    for (;;) {
+      if (node < 0) return null;
+      const pi = bsp.nodePlane[node] * 4;
+      const front = P[pi] * s[0] + P[pi + 1] * s[1] + P[pi + 2] * s[2] - P[pi + 3];
+      const back = P[pi] * e[0] + P[pi + 1] * e[1] + P[pi + 2] * e[2] - P[pi + 3];
+      const side = front < 0 ? 1 : 0;
+      if ((back < 0 ? 1 : 0) === side) { node = side ? bsp.nodeC1[node] : bsp.nodeC0[node]; continue; }
+      const frac = front / (front - back);
+      const mid = [s[0] + (e[0] - s[0]) * frac, s[1] + (e[1] - s[1]) * frac, s[2] + (e[2] - s[2]) * frac];
+      const hit = walk(side ? bsp.nodeC1[node] : bsp.nodeC0[node], s, mid);
+      if (hit) return hit;
+      for (let i = 0, f0 = bsp.nodeFirstFace[node]; i < bsp.nodeNumFaces[node]; i++) {
+        const f = S[f0 + i];
+        if (!f || (lit && !f.lit)) continue;
+        const ds = mid[0] * f.s[0] + mid[1] * f.s[1] + mid[2] * f.s[2] + f.s[3] - f.mins[0];
+        const dt = mid[0] * f.t[0] + mid[1] * f.t[1] + mid[2] * f.t[2] + f.t[3] - f.mins[1];
+        if (ds < 0 || dt < 0 || ds > f.ext[0] || dt > f.ext[1]) continue;
+        return { f, ds, dt, at: mid };
+      }
+      node = side ? bsp.nodeC0[node] : bsp.nodeC1[node]; s = mid;
+    }
+  };
+  return walk(bsp.models[0].head, a, b);
+}
+// The light under a model, as the engine reads it (R_LightVec): the lightmap texel nearest to where the line a->b
+// first meets a lit face of the world, at light style "m" (264 of 256), at most 255 a channel; [0, 0, 0] for a face
+// with no light, null when the line meets no lit face. The world only, as in the game: Xash3D also reads doors and
+// other brush entities and the ceiling (r_lighting_extended), which the game doesn't. The face's first light style,
+// as the 3D view draws the world (buildMesh).
+export function lightAlong(bsp, a, b) {
+  const h = surfaceAlong(bsp, a, b, true); if (!h) return null;
+  if (h.f.light < 0) return [0, 0, 0];
+  const smax = (h.f.ext[0] >> 4) + 1, k = h.f.light + (Math.floor(h.dt / 16 + 0.5) * smax + Math.floor(h.ds / 16 + 0.5)) * 3;
+  if (k + 2 >= bsp.lighting.length) return [0, 0, 0];
+  return [0, 1, 2].map((c) => Math.min((bsp.lighting[k + c] * 264) >> 8, 255));
+}
+// Whether the line a->b reaches the sky: the first face it meets in the world is a sky face (the engine's
+// CL_TraceLine and EV_TraceSurface in R_EntityDynamicLight)
+export function skyAlong(bsp, a, b) {
+  const h = surfaceAlong(bsp, a, b, false);
+  return !!(h && h.f.sky);
 }
 
 // ---- textures ----

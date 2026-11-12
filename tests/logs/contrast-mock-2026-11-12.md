@@ -1,6 +1,6 @@
 # The 3D picture's contrast: the mockup of 12 Nov 2026
 
-Item 11 of Sujan's POV mode feedback of 11 Nov 2026 (IDEAS.md, **The 3D picture's contrast**). Mockup only, drawn into the running viewer (main, 0.26.30) at 1512x982 in headless Chromium with SwiftShader, nothing built: `docs/proposed/contrast-curve-mock.jpg` (the 3D view at half size, six moments, three looks; Korfez's row added later the same day) and `docs/proposed/contrast-models-closeup-mock.jpg` (the player models and his gun at full size). The code that draws it is `docs/proposed/contrast-curve-mock.js` (evaluated in the page through the test hook) and `docs/proposed/contrast-curve-mock.py` (opens the demos, picks the moments, takes the pictures).
+Item 11 of Sujan's POV mode feedback of 11 Nov 2026 (IDEAS.md, **The 3D picture's contrast**). Mockup only, drawn into the running viewer (main, 0.26.30) at 1512x982 in headless Chromium with SwiftShader, nothing built: `docs/contrast-curve-mock.jpg` (the 3D view at half size, six moments, three looks; Korfez's row added later the same day) and `docs/contrast-models-closeup-mock.jpg` (the player models and his gun at full size). The code that draws it is `docs/contrast-curve-mock.js` (evaluated in the page through the test hook) and `docs/contrast-curve-mock.py` (opens the demos, picks the moments, takes the pictures).
 
 ## The three looks
 

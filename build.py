@@ -12,8 +12,8 @@ src = lambda name: open(os.path.join(here, 'src', name), encoding='utf-8').read(
 parser = src('demo.js')
 bsp = src('bsp.js').replace('export function', 'function')
 view3d = src('view3d.part.js')
-# player models, sound and the shot feedback (shotfx.js, 0.26.27) live in their own files, placed just before the simple player figures
-models = src('stock.js') + '\n' + src('mdl.js') + '\n' + src('players3d.js') + '\n' + src('audio.js') + '\n' + src('shotfx.js') + '\n'
+# player models, the game's light (light.js, 0.26.31), sound and the shot feedback (shotfx.js, 0.26.27) live in their own files, placed just before the simple player figures
+models = src('stock.js') + '\n' + src('mdl.js') + '\n' + src('light.js') + '\n' + src('players3d.js') + '\n' + src('audio.js') + '\n' + src('shotfx.js') + '\n'
 view3d = view3d.replace('/*MODELS*/\n', models)
 # three.js r128, the file cdnjs served before 30 Oct 2026 (same SHA-256 as npm's three@0.128.0); the tests use it too
 three = src('vendor/three.min.js')

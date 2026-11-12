@@ -32,8 +32,9 @@ function modelEntry(name) {
       const fp = await fingerprint(u8);
       m.custom = fp != null && STOCK_MDL[name] !== fp;
       const mdl = parseMdl(u8, t8);
+      // texgamma on every skin but the masked ones, as the game loads them (light.js)
       m.tex = mdl.textures.map((t) => {
-        const x = new THREE.DataTexture(t.rgba, t.w, t.h, THREE.RGBAFormat);
+        const x = new THREE.DataTexture(t.flags & 64 ? t.rgba : texGamma(t.rgba), t.w, t.h, THREE.RGBAFormat);
         x.magFilter = THREE.LinearFilter; x.minFilter = THREE.LinearMipmapLinearFilter; x.generateMipmaps = true;
         x.wrapS = x.wrapT = THREE.RepeatWrapping; x.anisotropy = 4; x.needsUpdate = true;
         return x;
@@ -71,9 +72,10 @@ function makeRig(M, parent) {
       pos.setUsage(THREE.DynamicDrawUsage); nrm.setUsage(THREE.DynamicDrawUsage);
       geo.setAttribute('position', pos); geo.setAttribute('normal', nrm); geo.setAttribute('uv', new THREE.BufferAttribute(me.uv, 2));
       const t = mdl.textures[me.tex];
-      const mat = new THREE.MeshLambertMaterial({ map: M.tex[me.tex] || null, side: THREE.DoubleSide, alphaTest: t && (t.flags & 64) ? 0.5 : 0 });
+      // lit as the game lights it (light.js, studioMat; lightRig sets the light where the rig is placed)
+      const mat = studioMat(M.tex[me.tex] || null, t ? t.flags : 0);
       const mesh = new THREE.Mesh(geo, mat); mesh.frustumCulled = false; mesh.visible = si === 0;
-      g.add(mesh); parts.push({ me, pos, nrm, mat, mesh, map0: mat.map, bp: bpi, sub: si });
+      g.add(mesh); parts.push({ me, pos, nrm, mat, mesh, bp: bpi, sub: si });
     }
   }));
   (parent || R3.dyn).add(g);
@@ -117,9 +119,11 @@ function skinRig(r) {
     pt.pos.needsUpdate = true; pt.nrm.needsUpdate = true;
   }
 }
+// placed at the model's origin (game coordinates), lit by the light there (light.js)
 function placeRig(r, x, y, z, yaw, tint) {
   r.g.position.set(x, z, -y); r.g.rotation.set(0, yaw * Math.PI / 180, 0);
-  if (r.tint !== tint) { r.tint = tint; for (const pt of r.parts) pt.mat.emissive.setHex(tint || 0); }
+  if (r.tint !== tint) { r.tint = tint; for (const pt of r.parts) pt.mat.uniforms.emissive.value.setHex(tint || 0); }
+  lightRig(r, x, y, z);
   r.g.visible = true; r.used = true;
 }
 
@@ -221,13 +225,17 @@ function endRigs() { for (const k in R3.rigs) if (!R3.rigs[k].used) R3.rigs[k].g
 function clearRigs() { if (!R3 || !R3.rigs) return; for (const k in R3.rigs) disposeRig(R3.rigs[k]); R3.rigs = {}; }
 
 const SEL_TINT = 0x5a4a22;
-// "Team colours": real models drawn in flat red (Terrorists) or blue (Counter-Terrorists), shading kept
+// "Team colours": real models drawn in flat red (Terrorists) or blue (Counter-Terrorists), shading kept, under the
+// even light every model had up to 0.26.30, not the game's (light.js), so they stay clear in the dark
 const TEAM_SKIN = { 1: 0xc42a1e, 2: 0x3462dc }; // clearly red and blue in sun and shade (the selected player also gets the sand highlight)
 function colourRig(r, team) {
   const key = opts.teamColours && TEAM_SKIN[team] ? team : 0;
   if (r.colourKey === key) return;
   r.colourKey = key;
-  for (const pt of r.parts) { pt.mat.map = key ? null : pt.map0; pt.mat.color.setHex(key ? TEAM_SKIN[key] : 0xffffff); pt.mat.needsUpdate = true; }
+  for (const pt of r.parts) {
+    const u = pt.mat.uniforms;
+    u.hasMap.value = !key && u.map.value ? 1 : 0; u.even.value = key ? 1 : 0; u.color.value.setHex(key ? TEAM_SKIN[key] : 0xffffff);
+  }
 }
 // "See through walls": a see-through copy of a player's body, drawn on top of walls in their team colour.
 // It shares the body's shape, so it moves and animates with it.
@@ -299,13 +307,13 @@ function drawCorpses(r) {
 // when it changes, a shot on every fire event, reloads, grenade throws and bomb plants from the
 // player's own body animation, and idle in between.
 let VM = null;
+// No lights of its own: the gun is lit as the game lights it, by the light at his eyes (lightRig in drawViewModel)
 function vmScene() {
   if (VM) return VM;
   const scene = new THREE.Scene();
-  scene.add(new THREE.AmbientLight(0xffffff, 0.8));
-  const d = new THREE.DirectionalLight(0xffffff, 0.45); d.position.set(-0.3, 1, 0.6); scene.add(d);
   return VM = { scene, camera: new THREE.PerspectiveCamera(70, 1, 0.5, 400), rig: null };
 }
+const VM_EYE = new THREE.Vector3(), VM_DIR = new THREE.Vector3();
 const vName = (p) => (p ? p.replace(/(^|\/)p_([^/]+\.mdl)$/i, '$1v_$2') : null);
 function vmSeq(mdl, name) { for (let k = 0; k < mdl.seqs.length; k++) if (mdl.seqs[k].name.toLowerCase() === name) return k; return -1; }
 // which animation the view model plays at time t, and how far into it
@@ -426,6 +434,12 @@ function drawViewModel(renderer, camera, e, s) {
   mdlBoneMats(M2.mdl, V.rig.p, V.rig.q, V.rig.mats);
   skinRig(V.rig);
   V.camera.fov = camera.fov; V.camera.aspect = camera.aspect; V.camera.updateProjectionMatrix();
+  // the light at his eyes, where the game puts the gun's origin (R_EntityDynamicLight on the view model), its
+  // direction turned into the camera's space, which the gun is drawn in
+  VM_EYE.copy(camera.position);
+  const L = entityLight(VM_EYE.x, -VM_EYE.z, VM_EYE.y);
+  VM_DIR.set(L.dir[0], L.dir[2], -L.dir[1]).transformDirection(camera.matrixWorldInverse);
+  lightRig(V.rig, VM_EYE.x, -VM_EYE.z, VM_EYE.y, VM_DIR);
   // the gun flash at the gun's own attachment, drawn with it (shotfx.js, 0.26.27)
   try { fxViewFlash(V, M2.mdl, name, e, own); } catch (err) { frameError(err); }
   // drawn last, over a cleared depth buffer, so the gun never pokes into walls

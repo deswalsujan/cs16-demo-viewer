@@ -1,9 +1,10 @@
 """Contrast mockup (item 11): the same moments under today's look, Valve's defaults and one brighter step, drawn
 into the running viewer at 1512x982 with contrast.js. Also reruns the wallbang picture check under Valve's defaults
 and compares every kill's pixel count with today's.
-Usage (from docs/proposed, with HALF_LIFE_DIR and DEMO_DIRS set): python3 contrast-curve-mock.py <out dir> [groups: sk,pov,korfez]
-The pictures: grid of <name>-<look>.png per moment; docs/proposed/contrast-curve-mock.jpg and -models-closeup-mock.jpg were put
-together from them with Pillow. Mockup only (12 Nov 2026), never part of the tests.
+Usage (from docs, with HALF_LIFE_DIR and DEMO_DIRS set): python3 contrast-curve-mock.py <out dir> [groups: sk,pov,korfez]
+The pictures: grid of <name>-<look>.png per moment; docs/contrast-curve-mock.jpg and -models-closeup-mock.jpg were put
+together from them with Pillow. Mockup only (12 Nov 2026), never part of the tests. Drawn into 0.26.30: from 0.26.31 on
+the viewer draws Valve's defaults itself (src/light.js) and contrast-curve-mock.js no longer fits its map shader.
 """
 import functools, http.server, json, os, sys, threading, time
 REPO = '/Users/deswalsujan-mac/code/cs16-demo-viewer'
