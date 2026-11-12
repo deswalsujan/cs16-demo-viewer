@@ -4,6 +4,7 @@ What changed in the viewer, newest first. The version shows in the viewer's shor
 
 ## Versions
 
+- [0.26.31](#02631-2026-11-12) 2026-11-12: The game's light and contrast
 - [0.26.30](#02630-2026-11-11) 2026-11-11: POV signed off, radar, flashbangs
 - [0.26.29](#02629-2026-11-11) 2026-11-11: POV demos shaped like POV
 - [0.26.28](#02628-2026-11-10) 2026-11-10: POV crashes, teams, names
@@ -88,6 +89,29 @@ What changed in the viewer, newest first. The version shows in the viewer's shor
 
 ## Known limits
 Moved to [LIMITS.md](LIMITS.md) on 30 Oct 2026; release entries below still say "Known limits" for that list.
+
+## 0.26.31 (2026-11-12)
+
+The 3D picture's contrast, item 11 of Sujan's POV mode feedback of 11 Nov 2026, as in `docs/contrast-curve-mock.jpg`'s middle column (Valve's defaults), with the two things the mockup left out, from Xash3D's R_EntityDynamicLight: the sky light and the light's direction (Sujan's decisions and his go, 12 Nov 2026, `DECISIONS.md`). Built as Xash3D FWGS builds it (commit 707596f): the tables (`engine/client/gamma.c`), the lightmaps (`ref/gl/gl_rsurf.c`), the light on models (`ref/common/ref_light.c`, `ref/gl/gl_studio.c`); the sky from ReGameDLL's light_environment (`regamedll/dlls/lights.cpp`). On feat/contrast, from origin/main (0.26.30) with notes/ui-review folded in.
+
+### Changed
+- The 3D picture uses Valve's defaults for everyone, with no setting: gamma 2.5, brightness 1, texgamma 2, lightgamma 2.5 and `gl_overbright` 1. Each texture goes through texgamma as the game loads it (not the masked ones, fences and grates), each lightmap through the game's light table, drawn at 4/3; water is its texture alone, as in the game. Up to 0.26.30 the map was each texture times twice its lightmap, at most 1.8, then to the power 0.85, which made darks darker and brights brighter than the game (SAS skins, Korfez's walls).
+- Players, their guns, bodies, shells and his gun in **Player's eyes** and **POV mode** are lit as the game lights them: by the lightmap under them, from the direction its brightness slopes away, or by the sky's colour from the sun's direction when the line from them toward the sun reaches the sky; 90% from that direction, the rest all round, through the same light table, per vertex. So a model in a dark corner is dark, as in the game (Sujan, 12 Nov 2026). Up to 0.26.30 every model had the same light everywhere. Model skins go through texgamma too.
+- **Team colours** keeps that even light, so its red and blue stay clear in the dark: it isn't in the game.
+
+### Added
+- The reader keeps the sky's colour and direction from the server's movevars (`sky`); without them the map's light_environment gives them, as ReGameDLL sets them.
+
+### How it was tested
+- The light tables against Xash3D's own test tables for BuildGammaTable (two sets of settings): every entry the same; the shader's curve the same as the table at every entry. The sky from movevars on 8 test demos against their maps' light_environment: within 2 a channel, the directions the same.
+- The six moments of the mockup drawn by the build: the map within 0.1 to 0.4 of 255 on average of the mockup's middle column (the SAS model in light 16.8, the camera a few units off); no page errors. 2 µs a model for the light, on de_train, de_dust2 and de_korfez32.
+- `light_check.py` (new, 12 s): fails on 0.26.30, passes.
+- The full test run passed (7 minutes): the eight checks, `light_check.py`, `pov_feedback_check.py`, `pov_mockup_round_check.py`; `ground_truth_check.py` 233 kills and 46 scores and K-D, 0 mismatches; the wallbang picture count the same as 0.26.30 for every kill drawn (41 on SK vs Na`Vi, Train, 19 on the GP Tourney POV); the reader the same on all 79 demos but for the new `sky`.
+- Full log: `tests/logs/0.26.31.md`; screenshots on `screenshots/0.26.31`.
+
+### Discussed, not changed
+- Xash3D also takes a model's light from doors and other brush entities, and from the ceiling when the floor gives none (`r_lighting_extended`, its own setting, on by default); the viewer reads the world under the model only, as the game does.
+- The gun flash's light on models and walls (dynamic lights) stays out, as before (`LIMITS.md`).
 
 ## 0.26.30 (2026-11-11)
 

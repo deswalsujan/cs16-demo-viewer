@@ -323,6 +323,7 @@ function fxShells() {
     const { P } = fxShellPath(sh), f = age / SH_STEP, i = Math.min(P.length / 6 - 2, Math.floor(f)), u = Math.min(1, f - i);
     const L = (k) => P[i * 6 + k] + (P[(i + 1) * 6 + k] - P[i * 6 + k]) * u;
     rig.g.position.copy(g3(L(0), L(1), L(2)));
+    lightRig(rig, L(0), L(1), L(2)); // lit where it is, as the game lights a shell (light.js)
     // GoldSrc pitch, yaw, roll -> three: yaw about y, pitch about -z, roll about x
     const d = Math.PI / 180; rig.g.rotation.set(L(5) * d, L(4) * d, -L(3) * d, 'YZX');
     rig.g.userData.fx = { kind: 'shell', t: sh.t, model: sh.model, o: sh.o };

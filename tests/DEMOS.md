@@ -80,7 +80,7 @@ Used for the skip checks of 14 Oct 2026 (CHANGELOG 0.20.0): every demo in Sujan'
 
 ### POV demos (recorded by a player)
 
-Sujan's own recordings on 32-player public servers (16 vs 16), added to the Mac and Windows on 3 Oct 2026 for the POV trial (IDEAS.md, "POV demos"). The GP Tourney POV of Team Guardians vs Lanka Dahan, recorded by one of Lanka Dahan's players, joined them on 10 Nov 2026 (Sujan) for the POV bug batch. Not regression demos: whether they stay depends on that trial. No event: the event column gives the server and date. Recorder names are as the demo shows them.
+Sujan's own recordings on 32-player public servers (16 vs 16), added to the Mac and Windows on 3 Oct 2026 for the POV trial (IDEAS.md, "POV demos"). The GP Tourney POV of Team Guardians vs Lanka Dahan, recorded by one of Lanka Dahan's players, joined them on 10 Nov 2026 (Sujan) for the POV bug batch. Sujan's own POV on de_korfez32 joined them on 12 Nov 2026 (Sujan), for Korfez's bright walls in the contrast mockup. Not regression demos: whether they stay depends on that trial. No event: the event column gives the server and date. Recorder names are as the demo shows them.
 
 | Demo file | Event | How we know | On | Status |
 |---|---|---|---|---|
@@ -89,6 +89,7 @@ Sujan's own recordings on 32-player public servers (16 vs 16), added to the Mac 
 | `match-3_css_cache_00-23-35_28-07-2022.dem` (Match 3) | none: public server, 28 Jul 2022, css_cache; recorder "tp optical mouse"; custom weapon skins | Sujan; file name | Mac, Windows | POV trial, 3 Oct 2026 |
 | `match-4-[PuB]_M-[de_nuke32]_D-[08_24_2021]_T-[00_44].dem`, `match-5-[PuB]_M-[de_nuke32]_D-[08_25_2021]_T-[22_09].dem` (Match 4 and 5) | none: public server, 24 and 25 Aug 2021, de_nuke32 | Sujan; file name | Mac, Windows | POV trial, 3 Oct 2026 |
 | `forgotten-de_mirage-2026.dem` (the Guardians^ and BAJRANG demo) | GP Tourney (cstourney.online), Match 8, Group B round 2, Team Guardians 2-0 Lanka Dahan, 25 Oct 2026; this map de_mirage (de_mirage_32 in the demo), 16-7 to Team Guardians; one player's POV, recorder "BAJRANG \|\| forgotteN_"; Guardians^ is Team Guardians' tag, BAJRANG Lanka Dahan's | Sujan (10 Nov 2026); the fixtures page (https://cstourney.online/fixtures); demo text for the recorder and the tags | Mac | POV bug batch, 10 Nov 2026 (the team split, Sujan's feedback of 3 Nov 2026) |
+| `s-deswal-korfez-knd.dem` (the Korfez POV) | none: public server "<K_[N]_D> \| [Killers.Next.Door] Official Pub Server", its random team war (Team-A vs Team-B, players put in teams at random), de_korfez32, 32 slots; recorder "S Deswal"; the file's date 7 Mar 2020 | demo text (the server's name and its messages); the file's date (not in the demo's text) | Mac | contrast mockup, 12 Nov 2026 (Korfez's bright walls, item 11 of Sujan's POV mode feedback of 11 Nov 2026) |
 
 ### Bot wallbang tests
 

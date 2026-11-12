@@ -328,6 +328,10 @@ export function parseDemo(buffer, onProgress, opts = {}) {
   let time = 0;
   let inPlayback = false;
   const mapsSeen = []; // { t, map } for every map the recording was on
+  // The sky light's colour and direction (sv_skycolor and sv_skyvec, which ReGameDLL's light_environment sets) as the
+  // server sent them in its movevars: svc_newmovevars, else the movevars every frame's view block carries. Each map
+  // starts over (serverinfo). For the light on models in 3D (R_EntityDynamicLight, Xash3D ref/common/ref_light.c).
+  let skyMv = null, skyFrame = null;
   let stopNow = false; // opts.stopAtMap: the next map has started, read no further
   let dead = new Set();
   let errors = 0, errSamples = [];
@@ -699,6 +703,7 @@ export function parseDemo(buffer, onProgress, opts = {}) {
           r.skip(1);
           if (opts.stopAtMap && mapsSeen.length) { stopNow = true; break; }
           mapsSeen.push({ t: time, map: (si.mapFile || '').replace(/^maps\//, '').replace(/\.bsp$/, '') });
+          skyMv = null; skyFrame = null;
           serverInfo = si;
           maxClients = si.maxPlayers || 32;
           break;
@@ -906,8 +911,11 @@ export function parseDemo(buffer, onProgress, opts = {}) {
           r.bitsEnd();
           break;
         }
-        case 44: { // newmovevars
-          r.skip(4 * 16 + 1 + 4 * 2 + 4 * 6); r.str(); break;
+        case 44: { // newmovevars: 16 floats from gravity to waveHeight, footsteps, rollangle and rollspeed, then the sky
+          r.skip(4 * 16 + 1 + 4 * 2);
+          const color = [r.f(), r.f(), r.f()], vec = [r.f(), r.f(), r.f()];
+          skyMv = { color, vec, name: r.str(), from: 'movevars' };
+          break;
         }
         case 45: r.skip(8); break; // resourcerequest
         case 46: { // customization
@@ -970,6 +978,13 @@ export function parseDemo(buffer, onProgress, opts = {}) {
             view.push(ftime, f(4), f(8), f(12), f(16), f(20), f(24), f(164), f(168), f(172),
               f(104), f(108), f(112), f(132), f(136), dv.getInt32(b + 144, true), dv.getInt32(b + 180, true),
               dv.getInt32(b + 184, true), dv.getUint16(b + 266, true), dv.getInt32(b + 84, true), f(240), f(244));
+          }
+          // the movevars in the view block (after the 232-byte ref_params_t and the 52-byte usercmd_t): gravity at 288,
+          // the sky's name at 356, its colour at 396 and direction at 408; filled in only in a demo recorded by a player,
+          // whose first frames on a new map can still hold the last map's, so the last frame's is kept
+          if (!skyMv) {
+            const dv = r.dv, b = r.p, f = (o) => dv.getFloat32(b + o, true);
+            if (f(288) > 0) { let name = ''; for (let k = 0; k < 32 && r.u8[b + 356 + k]; k++) name += String.fromCharCode(r.u8[b + 356 + k]); skyFrame = { color: [f(396), f(400), f(404)], vec: [f(408), f(412), f(416)], name, from: 'frame' }; }
           }
           r.skip(464);
           const len = r.ui();
@@ -1065,7 +1080,7 @@ export function parseDemo(buffer, onProgress, opts = {}) {
   } : null;
   if (!pov) for (const k of kills) { delete k.kOwn; delete k.vOwn; }
   return {
-    header, serverInfo, maxClients, maps, pov,
+    header, serverInfo, maxClients, maps, pov, sky: skyMv || skyFrame,
     mapName: (serverInfo && serverInfo.mapFile) ? serverInfo.mapFile.replace(/^maps\//, '').replace(/\.bsp$/, '') : header.mapName,
     start: playbackStart || 0, end: time,
     players, kills, rounds, bomb, chat, nades, roundTimes, pauses, hp: new Float32Array(hp), pack: new Float32Array(pack),
