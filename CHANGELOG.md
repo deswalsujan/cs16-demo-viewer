@@ -105,7 +105,8 @@ The 3D picture's contrast, item 11 of Sujan's POV mode feedback of 11 Nov 2026, 
 ### How it was tested
 - The light tables against Xash3D's own test tables for BuildGammaTable (two sets of settings): every entry the same; the shader's curve the same as the table at every entry. The sky from movevars on 8 test demos against their maps' light_environment: within 2 a channel, the directions the same.
 - The six moments of the mockup drawn by the build: the map within 0.1 to 0.4 of 255 on average of the mockup's middle column (the SAS model in light 16.8, the camera a few units off); no page errors. 2 µs a model for the light, on de_train, de_dust2 and de_korfez32.
-- `light_check.py` (new, 12 s): fails on 0.26.30, passes. The full test run waits for Sujan's go.
+- `light_check.py` (new, 12 s): fails on 0.26.30, passes.
+- The full test run passed (7 minutes): the eight checks, `light_check.py`, `pov_feedback_check.py`, `pov_mockup_round_check.py`; `ground_truth_check.py` 233 kills and 46 scores and K-D, 0 mismatches; the wallbang picture count the same as 0.26.30 for every kill drawn (41 on SK vs Na`Vi, Train, 19 on the GP Tourney POV); the reader the same on all 79 demos but for the new `sky`.
 - Full log: `tests/logs/0.26.31.md`; screenshots on `screenshots/0.26.31`.
 
 ### Discussed, not changed
