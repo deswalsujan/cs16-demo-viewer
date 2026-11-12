@@ -1,6 +1,6 @@
 # The 3D picture's contrast: the mockup of 12 Nov 2026
 
-Item 11 of Sujan's POV mode feedback of 11 Nov 2026 (IDEAS.md, **The 3D picture's contrast**). Mockup only, drawn into the running viewer (main, 0.26.30) at 1512x982 in headless Chromium with SwiftShader, nothing built: `docs/proposed/contrast-curve-mock.jpg` (the 3D view at half size, five moments, three looks) and `docs/proposed/contrast-models-closeup-mock.jpg` (the player models and his gun at full size). The code that draws it is `docs/proposed/contrast-curve-mock.js` (evaluated in the page through the test hook) and `docs/proposed/contrast-curve-mock.py` (opens the demos, picks the moments, takes the pictures).
+Item 11 of Sujan's POV mode feedback of 11 Nov 2026 (IDEAS.md, **The 3D picture's contrast**). Mockup only, drawn into the running viewer (main, 0.26.30) at 1512x982 in headless Chromium with SwiftShader, nothing built: `docs/proposed/contrast-curve-mock.jpg` (the 3D view at half size, six moments, three looks; Korfez's row added later the same day) and `docs/proposed/contrast-models-closeup-mock.jpg` (the player models and his gun at full size). The code that draws it is `docs/proposed/contrast-curve-mock.js` (evaluated in the page through the test hook) and `docs/proposed/contrast-curve-mock.py` (opens the demos, picks the moments, takes the pictures).
 
 ## The three looks
 
@@ -33,8 +33,9 @@ Light on a model, before its texture, by the floor under it (Valve's defaults, t
 | Train, a dark corner | the same | R4 1:30 (801.96 s) | Behind player on starix (Arctic) | 12 |
 | Mirage, a dark corner | GP Tourney POV, Team Guardians vs Lanka Dahan, Mirage, 25 Oct 2026 | R19 1:16 (1919.89 s) | his view (POV) | 27 under his eyes |
 | Mirage, a dark corner, watching a teammate | the same | R11 0:58 (1057.18 s) | the teammate he watched | 34 |
+| Korfez, bright walls | Sujan's POV on de_korfez32, a public server, 7 Mar 2020 (`s-deswal-korfez-knd.dem`) | R9 1:09 (759.49 s) | his view (POV) | 255 under his eyes |
 
-The shade and light moments are edzie's, found by sampling his floor light once a second through the match (1,133 samples on the SAS model): the one nearest 55 and the latest at 255. The dark corners are the darkest floors found by sampling every player every few seconds (Train) and his view every 2 s (Mirage). Korfez's bright wall isn't in the mockup yet: no demo or map named Korfez is on the Mac (Sujan to say which demo).
+The shade and light moments are edzie's, found by sampling his floor light once a second through the match (1,133 samples on the SAS model): the one nearest 55 and the latest at 255. The dark corners are the darkest floors found by sampling every player every few seconds (Train) and his view every 2 s (Mirage). Korfez's moment (added 12 Nov 2026, from the demo Sujan added that day; the `korfez` group of the script) was found by drawing his view in today's look every 20 s of every round after freeze time (99 moments) and counting the pixels with every channel above 225. The top one, R19 1:09 (15.6%), was mostly sunlit floor, so the row uses the fourth, R9 1:09 (8.5%), picked by eye for the sunlit walls filling the view (`KORFEZ_T=759.48828125`). In that picture, the pixels with every channel above 225: today 9.0%, Valve's defaults 0.0%, one brighter step 4.6%; the mean of the three channels over the picture: 170, 153 and 167. Under Valve's defaults the sunlit walls and floor are paler and less orange, and still bright. The radar top left in today's look fades into the sunlit wall behind it, since the HUD is added onto the picture (0.26.30).
 
 ## The wallbang picture check under the new curve
 

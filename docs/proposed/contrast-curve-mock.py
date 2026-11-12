@@ -1,7 +1,7 @@
 """Contrast mockup (item 11): the same moments under today's look, Valve's defaults and one brighter step, drawn
 into the running viewer at 1512x982 with contrast.js. Also reruns the wallbang picture check under Valve's defaults
 and compares every kill's pixel count with today's.
-Usage (from docs/proposed, with HALF_LIFE_DIR and DEMO_DIRS set): python3 contrast-curve-mock.py <out dir> [groups: sk,pov]
+Usage (from docs/proposed, with HALF_LIFE_DIR and DEMO_DIRS set): python3 contrast-curve-mock.py <out dir> [groups: sk,pov,korfez]
 The pictures: grid of <name>-<look>.png per moment; docs/proposed/contrast-curve-mock.jpg and -models-closeup-mock.jpg were put
 together from them with Pillow. Mockup only (12 Nov 2026), never part of the tests.
 """
@@ -17,6 +17,7 @@ GROUPS = sys.argv[2].split(',') if len(sys.argv) > 2 else ['sk', 'pov']
 hl, inside, outside = demo_dirs.collect()
 SK = demo_dirs.find('sk-vs-navi-dhwinter2011-1111261019', inside, outside).lower()
 POVD = demo_dirs.find('forgotten-de_mirage-2026', inside, outside).lower()
+KORF = demo_dirs.find('s-deswal-korfez-knd', inside, outside).lower() if 'korfez' in GROUPS else None
 HL = demo_dirs.stage(outside)
 html = open(os.path.join(REPO, 'index.html'), encoding='utf-8').read()
 i = html.rindex('})();')
@@ -117,6 +118,37 @@ with sync_playwright() as p:
                lambda: js("playing = false; setPlayIcon(); seek(1057.18); 0"))
         pg.wait_for_function('__v("!M.seenPending")', timeout=180000)
         seen_check('gp-tourney-mirage')
+
+    if 'korfez' in GROUPS:
+        # Korfez's bright walls (added 12 Nov 2026): his view every 20 s of every round, after freeze time, drawn in
+        # today's look; the moment with the most near-white pixels (every channel above 225) is the row
+        import base64
+        WHITE = """async (b64) => { const bm = await createImageBitmap(await (await fetch('data:image/png;base64,' + b64)).blob());
+          const c = new OffscreenCanvas(293, 208), x = c.getContext('2d'); x.drawImage(bm, 0, 0, 293, 208);
+          const d = x.getImageData(0, 0, 293, 208).data; let n = 0;
+          for (let i = 0; i < d.length; i += 4) if (Math.min(d[i], d[i + 1], d[i + 2]) > 225) n++;
+          return n / (293 * 208); }"""
+        open_demo(KORF)
+        box = pg.query_selector('#radar').bounding_box()
+        cands = jsj("""const out = []; for (const r of M.rounds) { const e = r.end || D.end;
+          for (let t = r.start + 20; t < e - 2; t += 20) out.push({ t, ln: r.ln }); } return out;""")
+        scores = []
+        for c in ([] if os.environ.get('KORFEZ_T') else cands):
+            js(f"playing = false; setPlayIcon(); seek({c['t']}); 0"); pg.wait_for_timeout(450)
+            white = pg.evaluate(WHITE, base64.b64encode(pg.screenshot(clip=box)).decode())
+            scores.append((white, c))
+        scores.sort(key=lambda x: -x[0])
+        if scores: report['korfez_search'] = [{'white': round(w, 4), **c, 'clock': js(f"clockText({c['t']})")} for w, c in scores[:8]]
+        print('korfez candidates', len(cands), report.get('korfez_search', [])[:5], flush=True)
+        for n, (w, c) in enumerate(scores[:5]):
+            js(f"playing = false; setPlayIcon(); seek({c['t']}); 0"); pg.wait_for_timeout(1200)
+            pg.screenshot(path=os.path.join(OUT, f'korfez-cand{n}.png'), clip=box)
+        pickt = float(os.environ.get('KORFEZ_T') or scores[0][1]['t'])  # KORFEZ_T: a moment picked by eye, no search
+        r = jsj(f"const r = roundAt({pickt}); return {{ ln: r ? r.ln : '?', clock: clockText({pickt}) }};")
+        report['korfez_pick'] = {'t': pickt, **r}
+        js(f"playing = false; setPlayIcon(); seek({pickt}); 0"); pg.wait_for_timeout(3000)  # the radar and models drawn before the first look
+        frames('korfez-bright', f"Korfez, bright walls (Sujan's POV on de_korfez32, a public server, R{r['ln']} {r['clock']})",
+               lambda: js(f"playing = false; setPlayIcon(); seek({pickt}); 0"))
 
     b.close()
 try: os.remove(test_page)
