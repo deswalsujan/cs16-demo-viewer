@@ -171,9 +171,14 @@ function renderPane() {
     // now alone). POV mode (POV mockup round, section 5; Sujan, 9 and 11 Nov 2026): his own kills and deaths, his side that
     // round on the band, and a round he had no kill or death in isn't listed. Kills as in the Players tab (no team kills),
     // deaths with any death of his.
+    // HLTV demos: the rounds the Rounds tab shows (visibleRounds: with Show warmup, restarts and idle rounds, the ones that
+    // don't count too, on a "Not counted" band), and the round playing now even when it doesn't count, so it's always
+    // highlighted (Sujan, 17 Nov 2026)
     const pov = D.povOn;
     let nk = 0, nd = 0, body = '';
-    for (const r of (M.liveR.length ? M.liveR : M.rounds)) {
+    let list = pov ? (M.liveR.length ? M.liveR : M.rounds) : visibleRounds().slice();
+    if (!pov && cr && !list.includes(cr)) { list.push(cr); list.sort((a, b) => a.start - b.start); }
+    for (const r of list) {
       const ks = pov ? r.kills.filter(povHis) : r.kills; if (pov && !ks.length) continue;
       const cur = r === cr;
       let right, chip = '';

@@ -622,6 +622,15 @@ with sync_playwright() as p:
               c['quiet']['line'] and c['quiet']['text'] == 'Ready: 27 rounds · custom models' and c['quiet']['details']
               and not c['button']['line'] and c['button']['rows'] == 1 and c['button']['details'] and not c['maps']['line'] and c['maps']['rows'] == 1, str(c))
         pg8.click(f'#demoList button:has-text("{SK}")'); pg8.wait_for_function('() => document.getElementById("load").hidden', timeout=120000)
+        # the Kills tab at demo 4:00, in a round that doesn't count (UI review, item 6; Sujan, 17 Nov 2026): its band, "Not
+        # counted", highlighted above Round 1 with Show warmup, restarts and idle rounds off; with it on, the rounds that
+        # don't count on bands of their own, as in the Rounds tab (visibleRounds)
+        kt = JS8(r"""(() => { closeSummary(); seek(D.start + 240); updateHud(true); const tabOf = () => document.querySelector('.tabs button[data-tab=kills]').click();
+          const read = () => { tabOf(); const hs = [...$('pane').querySelectorAll('.sechead.rhead')]; return { bands: hs.length, nc: hs.filter((h) => /^Not counted/.test(h.textContent)).length, cur: (hs.find((h) => h.classList.contains('cur')) || {}).textContent || null, second: hs[1] ? hs[1].textContent : null }; };
+          const off = read(); showAll = true; const on = read(); showAll = false; tab = 'rounds'; renderPane(); return { off, on, live: M.liveR.length, shown: M.rounds.filter((r) => r.dur > 0.5 || r.missing).length }; })()""")
+        check('the Kills tab at demo 4:00 (a round that doesn\'t count): its "Not counted" band highlighted above Round 1; with Show warmup, restarts and idle rounds, every round the Rounds tab shows',
+              kt['off']['bands'] == kt['live'] + 1 and kt['off']['nc'] == 1 and (kt['off']['cur'] or '').startswith('Not counted') and (kt['off']['second'] or '').startswith('Round 1')
+              and kt['on']['bands'] == kt['shown'] and kt['on']['nc'] == kt['shown'] - kt['live'] and (kt['on']['cur'] or '').startswith('Not counted'), str(kt))
         JS8("closeSummary()"); pg8.keyboard.press('?'); pg8.wait_for_timeout(300)
         k = JS8(r"""(() => ({ foot: [...document.querySelectorAll('#keys .keys-foot button')].map((b) => b.textContent), ver: !!document.querySelector('#keys .keys-foot .ver') }))()""")
         pg8.click('#bKeysX'); pg8.wait_for_timeout(200)
