@@ -611,6 +611,16 @@ with sync_playwright() as p:
         check("the can't-play card: Open another demo, its one button; plain words", f['buttons'] == ['Open another demo (main)'] and 'Not a Half-Life demo' not in f['text'] and "isn't a Half-Life demo file" in f['text'], str(f))
         pg8.click('#sumAnother'); pg8.wait_for_timeout(300)
         check("Open another demo closes the card and shows the demo list", pg8.locator('#sumCard').is_hidden() and pg8.locator('#load').is_visible(), '')
+        # the load card's shapes (UI review, item 2; Sujan, 17 Nov 2026): a note that needs nothing done (custom models)
+        # stays on the one-line card as a tail, its row under Details; a row with a button, a warning or the map switch
+        # keeps the full card, with only those rows until Details
+        c = JS8(r"""(() => { const ok = { s: 'ok', t: 'Map and textures', n: '' }, shape = (rows) => { SUM.closedFor = null; renderSummary({ state: 'ok', title: 'Ready: 27 rounds', text: '', rows }); const el = $('sumCard');
+            const o = { line: el.classList.contains('line'), text: (el.querySelector('.sline .slt') || {}).textContent || null, rows: el.querySelectorAll('.sum-list li').length, details: !!$('sumDetails') }; closeSummary(); return o; };
+          return { quiet: shape([ok, { s: 'info', tail: 'custom models', t: 'Custom models: leet.mdl', n: '' }]), button: shape([ok, { s: 'info', t: '3 rounds were played after SK reached 16', n: '', btn: { id: 'sumCount30', label: 'Count them' } }]),
+            maps: shape([ok, { s: 'info', keep: true, t: 'The recording switched maps.', n: '' }]) }; })()""")
+        check('the load card: a quiet note on the one line ("Ready: 27 rounds · custom models"), a button or the map switch keeps the full card with that row alone until Details',
+              c['quiet']['line'] and c['quiet']['text'] == 'Ready: 27 rounds · custom models' and c['quiet']['details']
+              and not c['button']['line'] and c['button']['rows'] == 1 and c['button']['details'] and not c['maps']['line'] and c['maps']['rows'] == 1, str(c))
         pg8.click(f'#demoList button:has-text("{SK}")'); pg8.wait_for_function('() => document.getElementById("load").hidden', timeout=120000)
         JS8("closeSummary()"); pg8.keyboard.press('?'); pg8.wait_for_timeout(300)
         k = JS8(r"""(() => ({ foot: [...document.querySelectorAll('#keys .keys-foot button')].map((b) => b.textContent), ver: !!document.querySelector('#keys .keys-foot .ver') }))()""")

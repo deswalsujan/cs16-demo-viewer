@@ -69,10 +69,10 @@ async function loadSummary(sndDone) {
     const A = M.after16, n = A.extra, who = M.tnames[A.team], sc = `${Math.max(...A.score)}:${Math.min(...A.score)}`;
     rows.push({ s: 'info', t: `${n} ${n === 1 ? 'round was' : 'rounds were'} played after ${who} reached 16 (${sc})`, n: M.auto30 ? 'Counted: the teams played on to round 30, as events that count all 30 rounds did.' : M.count30 ? 'Counted, as chosen for this demo (up to round 30).' : `Some events played all 30 rounds and count them. Not counted now: the match ends at ${sc}.`, btn: { id: 'sumCount30', label: M.count30 ? 'Stop at 16' : 'Count them' } });
   }
-  if (D.maps && D.maps.length > 1) rows.push({ s: 'info', t: `The recording switched maps. Showing ${D.mapName}, where it spent longest.`, n: D.maps.map((m) => `${m.map} ${fmt(m.dur)}`).join(', then ') });
+  if (D.maps && D.maps.length > 1) rows.push({ s: 'info', keep: true, t: `The recording switched maps. Showing ${D.mapName}, where it spent longest.`, n: D.maps.map((m) => `${m.map} ${fmt(m.dur)}`).join(', then ') });
   // POV mode's own line and its Turn on button went with the setting (Sujan signed POV mode off, 11 Nov 2026; 0.26.30):
   // a POV demo always opens in it. Only a file without the record of his own view, which POV mode needs, says why.
-  if (D.pov && !D.povOn) rows.push({ s: 'info', t: 'Recorded by a player (a POV demo)', n: "This file has no record of his own view, so it plays like an HLTV demo, with him at the map's zero point." });
+  if (D.pov && !D.povOn) rows.push({ s: 'info', tail: 'a POV demo without his view', t: 'Recorded by a player (a POV demo)', n: "This file has no record of his own view, so it plays like an HLTV demo, with him at the map's zero point." });
   // the POV mockup round (docs/pov-mockup-round-mock.jpg, sections 1 and 6; Sujan, 11 Nov 2026): what a POV demo doesn't
   // have, and the anti-wallhack note, which no longer shows over his HUD (the ! on See through walls brings it back)
   // UI review, item 2 (17 Nov 2026): the two as one short line, in the one-line card when nothing else needs saying; the
@@ -84,7 +84,8 @@ async function loadSummary(sndDone) {
   // the server announced, two recordings cut off in their last round, and an overtime-only file.
   if (D.parts) {
     const js = joinedSetOf(D.parts[0].fileName);
-    rows.push({ s: 'info', t: `One map, joined from ${D.parts.length} files`, n: D.parts.map((x, i) => `Part ${i + 1}: ${x.fileName}`).join('. ') + '.' + (js && js.keep && js.why ? ` Joined in your order, which the rounds don't support: ${js.why}` : '') + ' Split them in the Rounds tab.' });
+    // a joined map is a quiet note, unless it was joined in an order the rounds don't support, which keeps the card open
+    rows.push({ s: 'info', tail: `joined from ${D.parts.length} files`, keep: !!(js && js.keep && js.why), t: `One map, joined from ${D.parts.length} files`, n: D.parts.map((x, i) => `Part ${i + 1}: ${x.fileName}`).join('. ') + '.' + (js && js.keep && js.why ? ` Joined in your order, which the rounds don't support: ${js.why}` : '') + ' Split them in the Rounds tab.' });
   } else {
     const st = liveStart(M), before = st.sbT + st.sbCT, partway = st.partway;
     const last = M.liveR[M.liveR.length - 1], open = !!last && !M.wonAt, late = before > 0 || partway;
@@ -119,7 +120,7 @@ async function loadSummary(sndDone) {
     modelRow('Weapons in hand', weapons, 'Those players are drawn without a gun.'),
     modelRow("First-person weapons", views, "Player's eyes shows no gun for those weapons.")]) if (r) rows.push(r);
   const custom = [...players.custom, ...weapons.custom, ...views.custom];
-  if (custom.length) rows.push({ s: 'info', t: `Custom models: ${few(custom)}`, n: 'Different from the stock game files. Used as they are; they may look or move slightly differently.' });
+  if (custom.length) rows.push({ s: 'info', tail: 'custom models', t: `Custom models: ${few(custom)}`, n: 'Different from the stock game files. Used as they are; they may look or move slightly differently.' });
   if (!sounds.total) { /* nothing to play */ }
   else if (sounds.found === sounds.total) rows.push({ s: 'ok', t: `Sounds: ${sounds.found} of ${sounds.total}`, n: '' });
   else {
@@ -157,7 +158,7 @@ function fileHealthRow(h, dur, lead = '') {
   const tail = h.cutInFrame ? ` The file also stops ${plural(h.cutInFrame, 'byte')} into its last frame.` : '';
   const bad = h.badFrame != null ? ` Past ${mb(h.stopAt)} of ${mb(h.fileLen)} the frames can't be read (a damaged stretch), so the rest is left out.` : '';
   if (h.index === 'ok' || (h.index === 'extra' && h.badFrame != null)) return { s: 'warn', t: `${lead}Part of this file is damaged`, n: `Past ${mb(h.stopAt)} of ${mb(h.fileLen)} the frames can't be read, so the rest is left out. ${plays.replace('the file stops', 'the damage starts')}` };
-  if (h.index === 'extra') return { s: 'info', t: `${lead}This file has ${plural(h.extra, 'extra byte')} after its end`, n: 'They come after the index the recorder writes when it stops, so they were added later (by a download or copy, say). The demo is complete and plays in full; the extra bytes are left out.' };
+  if (h.index === 'extra') return { s: 'info', tail: 'extra bytes after the end', t: `${lead}This file has ${plural(h.extra, 'extra byte')} after its end`, n: 'They come after the index the recorder writes when it stops, so they were added later (by a download or copy, say). The demo is complete and plays in full; the extra bytes are left out.' };
   if (h.index === 'never') return { s: 'warn', t: `${lead}This recording was never finished`, n: `When a recording stops properly, the recorder writes an index at the end of the file, and this file has none: HLTV or the game stopped without closing the file, or it was copied or downloaded while still being written.${tail}${bad} ${plays}` };
   if (h.index === 'past' || h.index === 'short') return { s: 'warn', t: `${lead}This file was cut short`, n: `The recording was finished, but ${h.index === 'past' ? "the index it ends with isn't in the file" : "the index it ends with is only partly in the file"}: the end of the file is missing, usually from an interrupted download or copy.${tail}${bad} ${plays}` };
   return { s: 'warn', t: `${lead}This file's index is damaged`, n: `The index at the end of the file doesn't fit the file, so the frames were read one by one from the start instead.${tail}${bad} ${plays}` };
@@ -206,12 +207,18 @@ function renderSummary(r) {
   SUM.r = r; SUM.back = r.state === 'fail' ? (r.closeDemo ? 'close' : 'keep') : null;
   const icon = { ok: '✓', warn: '!', fail: '✕', info: 'i', busy: '…' };
   const md = (t) => esc(t).replace(/\*\*(.+?)\*\*/g, '<b>$1</b>');
-  const notes = r.rows.filter((x) => x.s !== 'ok' && !x.pov), pov = r.rows.find((x) => x.pov);
+  // Only a row with a button, a warning or the map switch (keep) keeps the full card open (the UI review's final list,
+  // item 2; Sujan, 17 Nov 2026): a note that needs nothing done (custom models, extra bytes after the end, a joined map,
+  // the POV line) goes under Details, with a short tail on the one-line card ("Ready: 27 rounds · custom models")
+  const keeps = (x) => x.s === 'warn' || x.s === 'fail' || !!x.btn || !!x.keep;
+  const notes = r.rows.filter(keeps), quiet = r.rows.filter((x) => x.s === 'info' && !keeps(x));
   const line = r.state === 'busy' || (r.state === 'ok' && !notes.length && !r.details);
-  const shown = r.details ? r.rows : r.rows.filter((x) => x.s !== 'ok'), hiddenOk = r.rows.length - shown.length;
+  const tails = quiet.map((x) => x.pov ? x.t : x.tail || x.t);
+  // a full card shows its notes and the POV line (item 2's one short line); the rest is under Details
+  const shown = r.details ? r.rows : r.rows.filter((x) => keeps(x) || x.pov), hiddenOk = r.rows.length - shown.length;
   el.classList.toggle('line', line);
   if (line) el.innerHTML = `<div class="sum sline ${r.state}" role="status" aria-live="polite">
-    <div class="sl"><span class="sum-ic ${r.state === 'busy' ? 'busy' : 'ok'}" aria-hidden="true">${icon[r.state]}</span><span class="slt"><b id="sumTitle">${esc(r.title)}</b>${pov ? `<span class="slx"> · ${md(pov.t)}</span>` : ''}</span>${r.state === 'busy' ? '' : '<button class="lnk" type="button" id="sumDetails">Details</button>'}<button class="sum-x" type="button" id="sumX" title="Close (Esc)" aria-label="Close">×</button></div>
+    <div class="sl"><span class="sum-ic ${r.state === 'busy' ? 'busy' : 'ok'}" aria-hidden="true">${icon[r.state]}</span><span class="slt"><b id="sumTitle">${esc(r.title)}</b>${tails.length ? `<span class="slx"> · ${tails.map(md).join(' · ')}</span>` : ''}</span>${r.state === 'busy' ? '' : '<button class="lnk" type="button" id="sumDetails">Details</button>'}<button class="sum-x" type="button" id="sumX" title="Close (Esc)" aria-label="Close">×</button></div>
     ${r.state === 'busy' ? '' : '<div class="sum-bar"><i id="sumBar"></i></div>'}
   </div>`;
   else el.innerHTML = `<div class="sum" role="dialog" aria-live="polite" aria-labelledby="sumTitle">
