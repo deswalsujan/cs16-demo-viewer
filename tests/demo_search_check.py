@@ -570,8 +570,8 @@ with sync_playwright() as p:
           const dmg = (M.bursts || []).filter((b) => !b.kill).map((b) => `R${lnOf(b.start)} ${killClock(b.start)} ${nameAt(b.main, b.start)} > ${nameAt(b.v, b.start)} ${b.total}`);
           const zeus = (M.hits || []).find((h) => lnOf(h.t) === 30 && nameAt(h.s, h.t) === 'RobbaN' && nameAt(h.v, h.t) === 'Zeus' && h.dmg === 83);
           return { loose: k && k.wb && k.wb.loose, tag: tag ? tag.textContent : null, tip: tag ? tag.title : null, zeusRow: dmg.some((s) => s.startsWith('R30 1:30 RobbaN > Zeus')), zeusWall: zeus ? zeus.wall : 'no hit' }; })()""")
-        check('Edward-FoCuS on Gux, SK vs Na`Vi, IEM4, R11 0:52: LOOSE WB in the Wallbangs list, the tooltip saying why (STRICT WB up to 0.26.21)',
-              w['loose'] == 'open' and w['tag'] == 'LOOSE WB' and (w['tip'] or '').startswith("Loose wallbang: the killer's bullet on him 0.04 s before the kill did 21 HP, what his gun does in the open"), str(w))
+        check('Edward-FoCuS on Gux, SK vs Na`Vi, IEM4, R11 0:52: PARTIAL WALLBANG in the Wallbangs list (LOOSE WB up to the UI review, item 3), the tooltip saying why (STRICT WB up to 0.26.21)',
+              w['loose'] == 'open' and w['tag'] == 'PARTIAL WALLBANG' and (w['tip'] or '').startswith("Partial wallbang: the killer's bullet on him 0.04 s before the kill did 21 HP, what his gun does in the open"), str(w))
         check('RobbaN\'s AWP on Zeus, R30 1:30, 83 (a leg in the open): no damage row, the hit judged in the open (a DAMAGE row up to 0.26.21)', not w['zeusRow'] and w['zeusWall'] is False, str(w))
         t = JS7(r"""(() => { const k = M.wbs.find((x) => !x.wb.loose), was = k.vteam, n0 = M.wbs.length;
           k.vteam = k.kteam; M.wbs = listedWbs(); tab = 'wb'; renderPane();

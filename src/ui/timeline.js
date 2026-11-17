@@ -88,7 +88,8 @@ tl.addEventListener('pointermove', (e) => {
   for (const k of D.kills) { if (!liveSet.has(k.round)) continue; const x = (k.t - a) / (b - a) * r.width; const d = Math.abs(x - (e.clientX - r.left)); if (d < bd) { bd = d; best = k; } }
   const tip = $('tip');
   const rr = roundAt(t);
-  tip.innerHTML = best ? `${rr && rr.live ? 'R' + rr.ln + ' ' : ''}${killClock(best.t)} · ${killHtml(best)}` : `${fmt(t - D.start)}${rr && rr.live ? ' · round ' + rr.ln + ' · ' + clockText(t) : ''}`;
+  // "R23 1:18", as in the lists, then the demo time (UI review, item 3; up to then "34:12 · round 23 · 1:18")
+  tip.innerHTML = best ? `${roundTime(best.t)} · ${killHtml(best)}` : `${rr ? esc(roundTime(t)) + ' · ' : ''}demo ${fmt(t - D.start)}`;
   // a skip in the recording within 6 px: say what the // means, above the rest
   const sk = (M.skipT || []).find((st) => Math.abs((st - a) / (b - a) * r.width - (e.clientX - r.left)) < 6 * UI);
   if (sk != null) tip.innerHTML = `<b>Recording skips here</b>: HLTV left part of the game out, so players jump<br>` + tip.innerHTML;

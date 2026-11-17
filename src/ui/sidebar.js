@@ -34,7 +34,7 @@ function killHtml(k) {
   const ks = k.kteam === 'TERRORIST' ? 1 : k.kteam === 'CT' ? 2 : 0;
   const vs = k.vteam === 'TERRORIST' ? 1 : k.vteam === 'CT' ? 2 : 0;
   if (k.killer === k.victim || !k.kp) return `${nameHtml(k.vp, vs)}<span class="kw">${esc(k.weapon || 'suicide')}</span>`;
-  return `${nameHtml(k.kp, ks)}<span class="kw">${esc(k.weapon)}</span>${nameHtml(k.vp, vs)}${k.hs ? '<span class="khs">HS</span>' : ''}${k.wb ? `<span class="kwb${k.wb.loose ? ' loose' : ''}" title="Through ${k.wb.thick} units of ${k.wb.what === 'object' ? 'a breakable or door' : 'wall or crate'}">WB</span>` : ''}`;
+  return `${nameHtml(k.kp, ks)}<span class="kw">${esc(k.weapon)}</span>${nameHtml(k.vp, vs)}${k.hs ? '<span class="khs">HS</span>' : ''}${k.wb ? `<span class="kwb${k.wb.loose ? ' loose' : ''}" title="Through ${k.wb.thick} units of ${k.wb.what === 'object' ? 'a breakable or door' : 'wall or crate'}">${k.wb.loose ? 'PARTIAL WALLBANG' : 'WALLBANG'}</span>` : ''}`;
 }
 // A kill on three lines, for the Kills and Wallbangs lists: killer, then the gun (its kill feed icon from the
 // player's own files, its name, and the headshot icon), then the victim.
@@ -47,10 +47,10 @@ function killRow3(k, wbTag) {
   const hs = k.hs ? (KICONS.headshot ? kicon('headshot', 'hs') : '<span class="khs">HS</span>') : '';
   // WALLBANG and UNSURE on a line of their own under the gun, so they always fit the panel (Sujan, 15 Oct 2026,
   // docs/skip-tags-mock.png; side by side after the gun, UNSURE was cut off at the right edge)
-  // LOOSE (0.23.0) follows WALLBANG in the Kills list and stands alone in the Wallbangs list, like UNSURE
-  // Kills list: WALLBANG for a strict one, LOOSE WB for a loose one; Wallbangs list: STRICT WB or LOOSE WB (Sujan, 25 Oct 2026)
+  // WALLBANG or PARTIAL WALLBANG in both lists (UI review, item 3, 17 Nov 2026; up to then WALLBANG or LOOSE WB in the
+  // Kills list, STRICT WB or LOOSE WB in the Wallbangs list, Sujan, 25 Oct 2026)
   const strict = k.wb && !k.wb.loose;
-  const tags = (strict ? (wbTag ? '<span class="wbtag">WALLBANG</span>' : `<span class="wbtag" title="${STRICT_TIP}">STRICT WB</span>`) : '') + looseTag(k) + unsureTag(k) + (wbTag && teamKill(k) ? `<span class="wbtag tk" title="${TK_TIP}">TK</span>` : '');
+  const tags = (strict ? `<span class="wbtag" title="${STRICT_TIP}">WALLBANG</span>` : '') + looseTag(k) + unsureTag(k) + (wbTag && teamKill(k) ? `<span class="wbtag tk" title="${TK_TIP}">TK</span>` : '');
   // the damage line under the gun (Sujan's option 2, 25 Oct 2026): what this shooter took through walls in the burst, and teammates' share before it
   const b = !wbTag && k.burst;
   const dline = b ? `<span class="dline"><b>${b.share[k.killer]} HP</b> (${hitCounts({ hits: b.hits.filter((h) => h.s === k.killer) }, k.t)})${dmore(Object.keys(b.share).filter((e) => +e !== k.killer).map((e) => `${esc(labelAt(+e, k.t))} ${b.share[e]} before`))}</span>` : '';
@@ -179,7 +179,7 @@ function renderPane() {
       body += `<div class="sechead rhead${cur ? ' cur' : ''}"><span>${r.live ? 'Round ' + r.ln : 'Before the match'}${chip}</span><span>${[a ? plural(a, 'kill') : '', b ? plural(b, 'death') : ''].filter(Boolean).join(' · ')}</span></div>`;
       for (const k of ks) {
         const sk = skipNear(k.t) ? SKIP_MARK : '';
-        body += `<div class="row krow kill3${killState(k)}${cur ? ' cur' : ''}" data-kill="${k.t}" data-ki="${D.kills.indexOf(k)}"><span class="n" title="Round timer as shown in game">${k === pickedKill ? MARK : ''}${killClock(k.t) ? cellClock(k.t) : '<span class="nw">+' + fmt(k.t - r.start) + '</span>'}${sk}</span><span class="main">${killRow3(k, true)}</span></div>`;
+        body += `<div class="row krow kill3${killState(k)}${cur ? ' cur' : ''}" data-kill="${k.t}" data-ki="${D.kills.indexOf(k)}"><span class="n" title="${demoTip(k.t)}">${k === pickedKill ? MARK : ''}${killClock(k.t) ? cellClock(k.t) : '<span class="nw">+' + fmt(k.t - r.start) + '</span>'}${sk}</span><span class="main">${killRow3(k, true)}</span></div>`;
         if (k === pickedKill) body += killDetailsHtml(k);
       }
     }
@@ -190,7 +190,7 @@ function renderPane() {
     if (r) for (const k of r.kills) {
       // a kill inside a skip in the recording: // by its time (0.20.0), wallbangs included since 0.21.0, which keep UNSURE too
       const sk = skipNear(k.t) ? SKIP_MARK : '';
-      h += `<div class="row krow kill3${killState(k)}" data-kill="${k.t}" data-ki="${D.kills.indexOf(k)}"><span class="n" title="Round timer as shown in game">${k === pickedKill ? MARK : ''}${killClock(k.t) ? cellClock(k.t) : '<span class="nw">+' + fmt(k.t - r.start) + '</span>'}${sk}</span><span class="main">${killRow3(k, true)}</span></div>`;
+      h += `<div class="row krow kill3${killState(k)}" data-kill="${k.t}" data-ki="${D.kills.indexOf(k)}"><span class="n" title="${demoTip(k.t)}">${k === pickedKill ? MARK : ''}${killClock(k.t) ? cellClock(k.t) : '<span class="nw">+' + fmt(k.t - r.start) + '</span>'}${sk}</span><span class="main">${killRow3(k, true)}</span></div>`;
       if (k === pickedKill) h += killDetailsHtml(k);
     }
     if (!r || !r.kills.length) h += `<div class="opt">No kills in this round.</div>`;
@@ -199,8 +199,9 @@ function renderPane() {
     let h;
     if (!MAP || MAP.name !== D.mapName.toLowerCase()) h = `<div class="opt">Wallbang detection needs the map file (${esc(D.mapName)}.bsp). Choose your Half-Life folder or drop the .bsp here.</div>`;
     else {
-      // filters (Sujan, 25 Oct 2026): All, Strict wb, Loose wb, Damage, each with a tooltip; rows tagged STRICT WB,
-      // LOOSE WB or DAMAGE; a damage row is a burst of hits through cover that didn't kill (wip/wallbang-hits)
+      // filters (Sujan, 25 Oct 2026; the words since the UI review, item 3): All, Wallbang, Partial, Wall damage, each with
+      // a tooltip; rows tagged WALLBANG, PARTIAL WALLBANG or WALL DAMAGE; a wall damage row is a burst of hits through cover
+      // that didn't kill (wip/wallbang-hits)
       const busy = !!M.seenPending;
       // POV mode, a server that sent him every enemy: only his own wallbangs (Sujan, 9 Nov 2026)
       const kills = M.wbs.filter((k) => !D.povOn || povHis(k)).map((k) => ({ t: k.t, k, kind: k.wb.loose ? 'loose' : 'strict' }));
@@ -208,17 +209,18 @@ function renderPane() {
       const all = kills.concat(dmg).sort((a, b) => a.t - b.t);
       const n = { all: all.length, strict: kills.filter((x) => x.kind === 'strict').length, loose: kills.filter((x) => x.kind === 'loose').length, damage: dmg.length };
       if (!n[wbFilter]) wbFilter = 'all';
-      const TIPS = { all: 'Every kill and every burst of damage through walls', strict: 'Kills through cover with none of the victim in view from the shooter\'s eye', loose: 'Kills through cover with part of the victim in view from the shooter\'s eye', damage: D.povOn ? 'Not found in POV mode: the server sends a player only his teammates\' health, so hits through cover can\'t be checked' : `Hits through cover that didn't kill: ${HITS_MIN} HP or more from one or more shooters, each hit within 2 s of the last` };
-      const LBL = { all: 'All', strict: 'Strict wb', loose: 'Loose wb', damage: 'Damage' };
+      const TIPS = { all: 'Every kill and every burst of damage through walls', strict: 'Wallbangs: kills through cover with none of the victim in view from the shooter\'s eye', loose: 'Partial wallbangs: kills through cover with part of the victim in view from the shooter\'s eye', damage: D.povOn ? 'Not found in POV mode: the server sends a player only his teammates\' health, so hits through cover can\'t be checked' : `Wall damage: hits through cover that didn't kill, ${HITS_MIN} HP or more from one or more shooters, each hit within 2 s of the last` };
+      const LBL = { all: 'All', strict: 'Wallbang', loose: 'Partial', damage: 'Wall damage' };
       h = `<div class="wbchips" role="group" aria-label="Show">${['all', 'strict', 'loose', 'damage'].map((f) => `<button type="button" data-wf="${f}" class="${wbFilter === f ? 'on' : ''}" title="${TIPS[f]}">${LBL[f]} ${n[f]}</button>`).join('')}</div>`;
-      h += `<div class="copyrow"><span>Times: round and in-game round timer, then demo time.${busy ? ` <b>Checking ${M.seenPending} from the shooter's eye…</b>` : ''}</span><button class="btn" id="bCopyWb" type="button">Copy list</button></div>`;
+      // the "Times: round and in-game round timer, then demo time." line went with the one time shape (UI review, item 3)
+      h += `<div class="copyrow"><span>${busy ? `<b>Checking ${M.seenPending} from the shooter's eye…</b>` : ''}</span><button class="btn" id="bCopyWb" type="button" title="Copies the list as text, with each kill's demo time">Copy list</button></div>`;
       for (const x of all) {
         if (wbFilter !== 'all' && x.kind !== wbFilter) continue;
         if (x.k) {
           const k = x.k, r = M.rounds.find((y) => y.n === k.round);
-          // the round, the round timer and the demo time on three lines; "C4 0:16" never splits (0.21.1, Sujan 15 Oct 2026);
-          // // under them for a wallbang inside a skip in the recording, as in the Kills list (Sujan, 2 Nov 2026)
-          h += `<div class="row krow wbrow kill3${killState(k)}" data-wb="${k.t}" data-ki="${D.kills.indexOf(k)}" title="Through ${k.wb.thick} units of ${k.wb.what === 'object' ? 'a breakable or door' : 'wall or crate'}"><span class="n">${k === pickedKill ? MARK : ''}R${r ? r.ln : '?'} ·<br>${cellClock(k.t)}<br>${fmt(k.t - D.start)}${skipNear(k.t) ? SKIP_MARK : ''}</span><span class="main">${killRow3(k, false)}</span></div>`;
+          // "R23 1:18", the demo time on hover (UI review, item 3; three lines up to then, 0.21.1); "C4 0:16" never splits;
+          // // under it for a wallbang inside a skip in the recording, as in the Kills list (Sujan, 2 Nov 2026)
+          h += `<div class="row krow wbrow kill3${killState(k)}" data-wb="${k.t}" data-ki="${D.kills.indexOf(k)}" title="Through ${k.wb.thick} units of ${k.wb.what === 'object' ? 'a breakable or door' : 'wall or crate'}"><span class="n" title="${demoTip(k.t)}">${k === pickedKill ? MARK : ''}${cellClock(k.t)}${skipNear(k.t) ? SKIP_MARK : ''}</span><span class="main">${killRow3(k, false)}</span></div>`;
           if (k === pickedKill) h += killDetailsHtml(k);
         } else {
           const b = x.b, r = M.rounds.find((y) => y.n === b.round), bi = M.bursts.indexOf(b);
@@ -226,17 +228,17 @@ function renderPane() {
           const gun = b.hits.find((hh) => hh.s === b.main).gun;
           const others = dmore(Object.keys(b.share).filter((e) => +e !== b.main).map((e) => `${esc(labelAt(+e, b.start))} ${b.share[e]}`));
           const mine = b.hits.filter((hh) => hh.s === b.main);
-          h += `<div class="row krow wbrow kill3${b === pickedBurst ? ' pick' : ''}" data-hb="${bi}" title="${DMG_TIP}"><span class="n">${b === pickedBurst ? MARK : ''}R${r ? r.ln : '?'} ·<br>${cellClock(b.start)}<br>${fmt(b.start - D.start)}</span><span class="main"><span class="kname"><span class="${sideOf(b.main) === 1 ? 'kt' : 'kct'}">${esc(labelAt(b.main, b.start))}</span></span><span class="gun">${kicon(gun)}${esc(gun)}</span><span class="ktags"><span class="wbtag dmg" title="${DMG_TIP}">DAMAGE</span></span><span class="dline"><b>${b.share[b.main]} HP</b> (${hitCounts({ hits: mine }, b.end)})${others}</span><span class="kname"><span class="${sideOf(b.v) === 1 ? 'kt' : 'kct'}">${esc(labelAt(b.v, b.start))}</span></span></span></div>`;
+          h += `<div class="row krow wbrow kill3${b === pickedBurst ? ' pick' : ''}" data-hb="${bi}" title="${DMG_TIP}"><span class="n" title="${demoTip(b.start)}">${b === pickedBurst ? MARK : ''}${cellClock(b.start)}</span><span class="main"><span class="kname"><span class="${sideOf(b.main) === 1 ? 'kt' : 'kct'}">${esc(labelAt(b.main, b.start))}</span></span><span class="gun">${kicon(gun)}${esc(gun)}</span><span class="ktags"><span class="wbtag dmg" title="${DMG_TIP}">WALL DAMAGE</span></span><span class="dline"><b>${b.share[b.main]} HP</b> (${hitCounts({ hits: mine }, b.end)})${others}</span><span class="kname"><span class="${sideOf(b.v) === 1 ? 'kt' : 'kct'}">${esc(labelAt(b.v, b.start))}</span></span></span></div>`;
         }
       }
-      if (!all.length) h += `<div class="opt">No wallbang kills or wallbang damage found in the live rounds.</div>`;
+      if (!all.length) h += `<div class="opt">No wallbangs, partial wallbangs or wall damage found in the live rounds.</div>`;
     }
     p.innerHTML = h;
     if ($('bCopyWb')) $('bCopyWb').onclick = () => {
-      const txt = M.wbs.map((k) => { const r = M.rounds.find((x) => x.n === k.round); return `R${r ? r.ln : '?'}  timer ${clockText(k.t)}  demo ${fmt(k.t - D.start)}  ${M.pl[k.kp] ? M.pl[k.kp].name : '?'} -> ${M.pl[k.vp] ? M.pl[k.vp].name : '?'}  ${k.weapon}${k.hs ? ' HS' : ''}  (${k.wb.thick} units)${k.wb.loose ? '  LOOSE: part of him in view' : ''}${skipNear(k.t) ? '  UNSURE: the recording skips here' : ''}`; }).join('\n');
+      const txt = M.wbs.map((k) => { const r = M.rounds.find((x) => x.n === k.round); return `${roundTime(k.t)}  demo ${fmt(k.t - D.start)}  ${M.pl[k.kp] ? M.pl[k.kp].name : '?'} -> ${M.pl[k.vp] ? M.pl[k.vp].name : '?'}  ${k.weapon}${k.hs ? ' HS' : ''}  (${k.wb.thick} units)  ${k.wb.loose ? 'PARTIAL WALLBANG: part of him in view' : 'WALLBANG'}${skipNear(k.t) ? '  UNSURE: the recording skips here' : ''}`; }).join('\n');
       const b = $('bCopyWb');
       const ok = () => { b.textContent = 'Copied'; setTimeout(() => b.textContent = 'Copy list', 1500); };
-      const dtx = (M.bursts || []).filter((b) => !b.kill).map((b) => { const r = M.rounds.find((y) => y.n === b.round); return `R${r ? r.ln : '?'}  timer ${clockText(b.start)}  demo ${fmt(b.start - D.start)}  DAMAGE ${b.total} HP to ${labelAt(b.v, b.start)}: ${Object.keys(b.share).map((e) => `${labelAt(+e, b.start)} ${b.share[e]}`).join(', ')}`; }).join('\n');
+      const dtx = (M.bursts || []).filter((b) => !b.kill).map((b) => { return `${roundTime(b.start)}  demo ${fmt(b.start - D.start)}  WALL DAMAGE ${b.total} HP to ${labelAt(b.v, b.start)}: ${Object.keys(b.share).map((e) => `${labelAt(+e, b.start)} ${b.share[e]}`).join(', ')}`; }).join('\n');
       try { navigator.clipboard.writeText(`${D.fileName}\n${txt}${dtx ? '\n' + dtx : ''}`).then(ok, () => { b.textContent = 'Copy failed'; }); } catch { b.textContent = 'Copy failed'; }
     };
     p.querySelectorAll('[data-wf]').forEach((el) => el.onclick = () => { wbFilter = el.dataset.wf; renderPane(); });
