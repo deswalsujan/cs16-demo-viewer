@@ -9,10 +9,11 @@
   while ((M.seenPending || D.kills.some((k) => k.wb && k.seenPx == null)) && Date.now() - t0 < 600000) await wait(500);
   const out = { bursts: M.bursts.length, withKill: M.bursts.filter((b) => b.kill).length, damageRows: M.bursts.filter((b) => !b.kill).length };
   document.querySelector('.tabs button[data-tab="wb"]').click(); await wait(300);
-  out.chips = [...document.querySelectorAll('#pane .wbchips button')].map((b) => b.textContent + (b.title ? ' [tip]' : ''));
+  // four chips up to wip/ui-simpler's item 3 fixup, one dropdown (#wbSel) since
+  out.chips = [...document.querySelectorAll('#pane .wbchips button, #pane #wbSel option')].map((b) => b.textContent + (b.title ? ' [tip]' : ''));
   out.rows = document.querySelectorAll('#pane .wbrow').length;
   out.tags = { strict: document.querySelectorAll('#pane .wbtag:not(.loose):not(.dmg):not(.unsure)').length, loose: document.querySelectorAll('#pane .wbtag.loose').length, dmg: document.querySelectorAll('#pane .wbtag.dmg').length, dlines: document.querySelectorAll('#pane .dline').length };
-  for (const f of ['strict', 'loose', 'damage', 'all']) { const b = document.querySelector(`#pane [data-wf="${f}"]`); if (b) { b.click(); await wait(200); out['rows_' + f] = document.querySelectorAll('#pane .wbrow').length; } }
+  for (const f of ['strict', 'loose', 'damage', 'all']) { const b = document.querySelector(`#pane [data-wf="${f}"]`), sel = document.querySelector('#pane #wbSel'); if (b) b.click(); else if (sel) { sel.value = f; sel.dispatchEvent(new Event('change')); } else continue; await wait(200); out['rows_' + f] = document.querySelectorAll('#pane .wbrow').length; }
   out.soloKills = M.bursts.filter((b) => b.solo).length;
   out.killRowsWithNumbers = [...document.querySelectorAll('#pane [data-ki] .dline')].length;
   const xk = D.kills.find((k) => k.burst && Math.abs(k.t - 2174.984) < 0.05);

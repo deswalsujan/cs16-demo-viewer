@@ -13,7 +13,7 @@
   const list = M.wbs.map((k) => { const r = M.rounds.find((x) => x.n === k.round); return `R${r.ln} ${clockText(k.t)} ${nm(k.kp)} ${k.weapon}${k.hs ? ' HS' : ''} -> ${nm(k.vp)}: ${k.seenPx} px, ${k.wb.loose ? 'loose' : 'strict'}`; });
   const loose = M.wbs.filter((k) => k.wb.loose);
   document.querySelector('.tabs button[data-tab="wb"]').click(); await wait(300);
-  const head = (document.querySelector('#pane .copyrow span') || {}).textContent || '';
+  const head = (document.querySelector('#pane .wbbusy') || document.querySelector('#pane .copyrow span') || {}).textContent || ''; // .wbbusy since item 3's fixup of wip/ui-simpler
   const wbRows = [...document.querySelectorAll('#pane .wbrow')];
   const wbLooseTags = wbRows.filter((r) => r.querySelector('.wbtag.loose')).length;
   document.querySelector('.tabs button[data-tab="kills"]').click(); await wait(300);

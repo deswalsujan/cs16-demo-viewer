@@ -30,7 +30,9 @@ ED1KASDDSA's AWP kill on face, with no shot recorded, out of the wallbangs by th
 ED1KASDDSA still STRICT WB; the blood points and helmet sparks read (0.26.26). The shot feedback on SK vs Na`Vi: the gun flash from
 behind at the p_ model's muzzle (AK-47, AWP) or, with none there, at the player model's hand (silenced M4A1), for one frame,
 with Vanilla too; in Player's eyes at the v_ model's attachment (the silenced M4A1's small one), none on a scoped AWP shot;
-shells in Player's eyes only, thrown left; a blood puff at every blood point of a round (0.26.27). About two and a half minutes.
+shells in Player's eyes only, thrown left; a blood puff at every blood point of a round (0.26.27). On wip/ui-simpler (the UI review): the
+speed button's "Speed 1×" (item 8); the Wallbangs tab's one dropdown with the counts, Copy list on its row copying the rows
+shown, and the picture check's line under it (item 3). About two and a half minutes (7 under heavy load, 17 Nov 2026).
 """
 import os, re, sys, http.server, functools, threading, tempfile, shutil, subprocess, atexit
 from playwright.sync_api import sync_playwright
@@ -607,12 +609,34 @@ with sync_playwright() as p:
         check('RobbaN\'s AWP on Zeus, R30 1:30, 83 (a leg in the open): no damage row, the hit judged in the open (a DAMAGE row up to 0.26.21)', not w['zeusRow'] and w['zeusWall'] is False, str(w))
         t = JS7(r"""(() => { const k = M.wbs.find((x) => !x.wb.loose), was = k.vteam, n0 = M.wbs.length;
           k.vteam = k.kteam; M.wbs = listedWbs(); tab = 'wb'; renderPane();
-          const inWb = !!$('pane').querySelector(`.wbrow[data-ki="${D.kills.indexOf(k)}"]`), chip = $('pane').querySelector('[data-wf="all"]').textContent;
+          const inWb = !!$('pane').querySelector(`.wbrow[data-ki="${D.kills.indexOf(k)}"]`), chip = $('pane').querySelector('#wbSel option[value="all"]').textContent;
           tab = 'kills'; seek(k.t - 1); renderPane(); const row = $('pane').querySelector(`[data-ki="${D.kills.indexOf(k)}"]`);
           const out = { n0, n1: M.wbs.length, inWb, chip, tk: row && row.querySelector('.wbtag.tk') ? row.querySelector('.wbtag.tk').textContent : null, wbTag: row && row.querySelector('.wbtag:not(.tk)') ? row.querySelector('.wbtag:not(.tk)').textContent : null };
           k.vteam = was; M.wbs = listedWbs(); renderPane(); return out; })()""")
         check('a teamkill through a wall: out of the Wallbangs list and its count, WALLBANG and TK in the Kills list',
               t['n1'] == t['n0'] - 1 and not t['inWb'] and t['tk'] == 'TK' and t['wbTag'] == 'WALLBANG', str(t))
+        # The Wallbangs tab's filter (item 3's fixup of wip/ui-simpler, Sujan, 17 Nov 2026): one dropdown with each count
+        # in it, Copy list on the same row; Copy list copies the file name, then the rows the filter shows; "Checking N
+        # from the shooter's eye…" on a line under that row while the picture check runs (set by hand here, as it's over)
+        f = JS7(r"""(() => { tab = 'wb'; const out = {}, P = $('pane');
+          const read = () => { const sel = $('wbSel'), cp = $('bCopyWb'), s = sel.getBoundingClientRect(), c = cp.getBoundingClientRect();
+            return { opts: [...sel.options].map((o) => o.textContent + (o.disabled ? ' [off]' : '')), sameRow: Math.abs((s.top + s.bottom) / 2 - (c.top + c.bottom) / 2) < 4 && c.left > s.right,
+              rows: P.querySelectorAll('.wbrow').length, copy: wbCopyText().split('\n') }; };
+          for (const v of ['all', 'strict', 'loose', 'damage']) { wbFilter = v; renderPane(); out[v] = read(); }
+          wbFilter = 'all'; M.seenPending = 3; renderPane();
+          const bar = P.querySelector('.wbbar').getBoundingClientRect(), busy = P.querySelector('.wbbusy');
+          out.busy = busy ? { text: busy.textContent, under: busy.getBoundingClientRect().top >= bar.bottom - 1 } : null;
+          M.seenPending = 0; renderPane(); out.busyAfter = !!P.querySelector('.wbbusy');
+          out.n = { strict: M.wbs.filter((k) => !k.wb.loose).length, loose: M.wbs.filter((k) => k.wb.loose).length, damage: (M.bursts || []).filter((b) => !b.kill).length };
+          out.chips = P.querySelectorAll('.wbchips, [data-wf]').length; out.file = D.fileName; return out; })()""")
+        n = f['n']; want = [f"All ({n['strict'] + n['loose'] + n['damage']})", f"Wallbang ({n['strict']})", f"Partial ({n['loose']})" + ('' if n['loose'] else ' [off]'), f"Wall damage ({n['damage']})" + ('' if n['damage'] else ' [off]')]
+        copies = all(f[v]['copy'][0] == f['file'] and len(f[v]['copy']) == f[v]['rows'] + 1 for v in ['all', 'strict', 'loose', 'damage'])
+        kinds = all('WALL DAMAGE' not in s and 'PARTIAL' not in s for s in f['strict']['copy'][1:]) and all('PARTIAL WALLBANG' in s for s in f['loose']['copy'][1:]) and all('WALL DAMAGE' in s for s in f['damage']['copy'][1:])
+        check('Wallbangs tab: one dropdown with the counts ("Wallbang (N)"), Copy list on its row, Copy list copying the file name then the rows shown, "Checking N from the shooter\'s eye…" on a line under the row while it runs',
+              f['all']['opts'] == want and f['all']['sameRow'] and f['chips'] == 0 and n['strict'] and n['loose'] and n['damage'] and copies and kinds
+              and f['strict']['rows'] == n['strict'] and f['loose']['rows'] == n['loose'] and f['damage']['rows'] == n['damage']
+              and f['busy'] and f['busy']['text'] == "Checking 3 from the shooter's eye…" and f['busy']['under'] and not f['busyAfter'],
+              str({k: (v if k not in ('all', 'strict', 'loose', 'damage') else {**v, 'copy': v['copy'][:2] + ['…%d lines' % len(v['copy'])]}) for k, v in f.items()}) + f'; want {want}')
         check('no page error on the wallbang finder checks', not errs7, '; '.join(errs7[:3]))
     except Exception as e:
         check('the wallbang finder: Edward-FoCuS on Gux, RobbaN\'s AWP on Zeus, a teamkill', False, str(e).split('\n')[0])

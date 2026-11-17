@@ -224,9 +224,10 @@ button { cursor: pointer; }
 .kdet .kb .sk svg { display: inline-block; width: calc(12px * var(--ui)); height: calc(12px * var(--ui)); vertical-align: calc(-2px * var(--ui)); }
 .kdet .kb .wh { color: var(--muted); } .kdet .kb .tm { color: var(--faint); text-align: right; }
 .kdet .knote { color: var(--faint); font-size: calc(11px * var(--ui)); margin-top: calc(4px * var(--ui)); }
-.wbchips { display: flex; flex-wrap: wrap; gap: calc(6px * var(--ui)); padding: calc(8px * var(--ui)) calc(14px * var(--ui)); border-bottom: 1px solid var(--line); }
-.wbchips button { font: calc(12px * var(--ui)) var(--f-body); color: var(--muted); background: none; border: 1px solid var(--line); border-radius: calc(12px * var(--ui)); padding: 1px calc(9px * var(--ui)); }
-.wbchips button.on { color: #1b1a16; background: var(--sand); border-color: var(--sand); }
+/* the Wallbangs tab's filter, one dropdown with the counts, and Copy list on the same row; the picture check's line under it
+   while it runs (item 3's fixup, 17 Nov 2026; four chips up to then) */
+.wbbar select { min-width: 0; background: var(--panel-2); color: var(--fg); border: 1px solid var(--line); border-radius: calc(4px * var(--ui)); padding: calc(5px * var(--ui)) calc(6px * var(--ui)); font-size: calc(12px * var(--ui)); }
+.wbbusy { padding: calc(6px * var(--ui)) calc(14px * var(--ui)); border-bottom: 1px solid var(--line); color: var(--fg); font-weight: 700; font-size: calc(12px * var(--ui)); line-height: 1.4; }
 .skipk { display: block; color: var(--fg); font-weight: 600; letter-spacing: -.05em; margin-top: calc(2px * var(--ui)); cursor: help; }
 .pov { position: absolute; left: 50%; bottom: calc(56px * var(--ui)); transform: translateX(-50%); font-family: var(--f-body); font-size: calc(12px * var(--ui)); background: rgba(10,12,14,.82); border: 1px solid var(--line); padding: calc(4px * var(--ui)) calc(10px * var(--ui)); border-radius: calc(3px * var(--ui)); }
 .pov.dead { border-color: #8a2b2b; background: rgba(40,6,6,.9); padding: calc(6px * var(--ui)) calc(12px * var(--ui)); font-size: calc(13px * var(--ui)); }
@@ -5680,6 +5681,16 @@ function killDetailsHtml(k) {
 // clicked or another demo is opened. A kill that playback is passing gets a lighter one.
 let pickedKill = null;
 let KD_EARLY = null; // the kill whose "HP lost before this fight" list is open (item 11)
+// The Wallbangs list's rows as last shown, for Copy list (item 3's fixup), and the text it copies: the demo's file name,
+// then one line per row in the list's order
+let WB_SHOWN = [];
+function wbCopyText() {
+  const line = (x) => {
+    if (x.k) { const k = x.k; return `${roundTime(k.t)}  demo ${fmt(k.t - D.start)}  ${M.pl[k.kp] ? M.pl[k.kp].name : '?'} -> ${M.pl[k.vp] ? M.pl[k.vp].name : '?'}  ${k.weapon}${k.hs ? ' HS' : ''}  (${k.wb.thick} units)  ${k.wb.loose ? 'PARTIAL WALLBANG: part of him in view' : 'WALLBANG'}${skipNear(k.t) ? '  UNSURE: the recording skips here' : ''}`; }
+    const b = x.b; return `${roundTime(b.start)}  demo ${fmt(b.start - D.start)}  WALL DAMAGE ${b.total} HP to ${labelAt(b.v, b.start)}: ${Object.keys(b.share).map((e) => `${labelAt(+e, b.start)} ${b.share[e]}`).join(', ')}`;
+  };
+  return [D.fileName].concat(WB_SHOWN.map(line)).join('\n');
+}
 const MARK = '<svg class="mark" viewBox="0 0 10 13" aria-hidden="true"><path d="M1 0h8v13L5 9.5 1 13z" fill="currentColor"/></svg>';
 const killState = (k) => (k === pickedKill ? ' pick' : Math.abs(k.t - T) < 2 ? ' pass' : '');
 // The side panel used to be rebuilt every half second of playback on the Kills and Wallbangs tabs (to move
@@ -5811,11 +5822,16 @@ function renderPane() {
       if (!n[wbFilter]) wbFilter = 'all';
       const TIPS = { all: 'Every kill and every burst of damage through walls', strict: 'Wallbangs: kills through cover with none of the victim in view from the shooter\'s eye', loose: 'Partial wallbangs: kills through cover with part of the victim in view from the shooter\'s eye', damage: D.povOn ? 'Not found in POV mode: the server sends a player only his teammates\' health, so hits through cover can\'t be checked' : `Wall damage: hits through cover that didn't kill, ${HITS_MIN} HP or more from one or more shooters, each hit within 2 s of the last` };
       const LBL = { all: 'All', strict: 'Wallbang', loose: 'Partial', damage: 'Wall damage' };
-      h = `<div class="wbchips" role="group" aria-label="Show">${['all', 'strict', 'loose', 'damage'].map((f) => `<button type="button" data-wf="${f}" class="${wbFilter === f ? 'on' : ''}" title="${TIPS[f]}">${LBL[f]} ${n[f]}</button>`).join('')}</div>`;
+      // the four filters as one dropdown with each count in it ("Wallbang (17)"), Copy list on the same row, and the picture
+      // check's "Checking N from the shooter's eye…" on a line under that row while it runs (item 3's fixup, Sujan, 17 Nov
+      // 2026; four chips and the message beside Copy list up to then). A filter with nothing in it can't be picked. The
+      // tooltip of the filter picked is on the dropdown itself, since a Mac's open list doesn't show an option's.
+      h = `<div class="copyrow wbbar"><select id="wbSel" aria-label="Show" title="${TIPS[wbFilter]}">${['all', 'strict', 'loose', 'damage'].map((f) => `<option value="${f}"${wbFilter === f ? ' selected' : ''}${n[f] || f === 'all' ? '' : ' disabled'} title="${TIPS[f]}">${LBL[f]} (${n[f]})</option>`).join('')}</select><button class="btn" id="bCopyWb" type="button" title="Copies the rows shown as text, with the demo's file name and each row's demo time">Copy list</button></div>`;
       // the "Times: round and in-game round timer, then demo time." line went with the one time shape (UI review, item 3)
-      h += `<div class="copyrow"><span>${busy ? `<b>Checking ${M.seenPending} from the shooter's eye…</b>` : ''}</span><button class="btn" id="bCopyWb" type="button" title="Copies the list as text, with each kill's demo time">Copy list</button></div>`;
-      for (const x of all) {
-        if (wbFilter !== 'all' && x.kind !== wbFilter) continue;
+      if (busy) h += `<div class="wbbusy">Checking ${M.seenPending} from the shooter's eye…</div>`;
+      const shown = all.filter((x) => wbFilter === 'all' || x.kind === wbFilter);
+      WB_SHOWN = shown;
+      for (const x of shown) {
         if (x.k) {
           const k = x.k, r = M.rounds.find((y) => y.n === k.round);
           // "R23 1:18", the demo time on hover (UI review, item 3; three lines up to then, 0.21.1); "C4 0:16" never splits;
@@ -5834,14 +5850,14 @@ function renderPane() {
       if (!all.length) h += `<div class="opt">No wallbangs, partial wallbangs or wall damage found in the live rounds.</div>`;
     }
     p.innerHTML = h;
+    // Copy list copies what the filter shows, in the list's order: the file name line, then one line per row shown (item 3's
+    // fixup, Sujan, 17 Nov 2026; every wallbang, then every wall damage row, whatever the filter, up to then)
     if ($('bCopyWb')) $('bCopyWb').onclick = () => {
-      const txt = M.wbs.map((k) => { const r = M.rounds.find((x) => x.n === k.round); return `${roundTime(k.t)}  demo ${fmt(k.t - D.start)}  ${M.pl[k.kp] ? M.pl[k.kp].name : '?'} -> ${M.pl[k.vp] ? M.pl[k.vp].name : '?'}  ${k.weapon}${k.hs ? ' HS' : ''}  (${k.wb.thick} units)  ${k.wb.loose ? 'PARTIAL WALLBANG: part of him in view' : 'WALLBANG'}${skipNear(k.t) ? '  UNSURE: the recording skips here' : ''}`; }).join('\n');
       const b = $('bCopyWb');
       const ok = () => { b.textContent = 'Copied'; setTimeout(() => b.textContent = 'Copy list', 1500); };
-      const dtx = (M.bursts || []).filter((b) => !b.kill).map((b) => { return `${roundTime(b.start)}  demo ${fmt(b.start - D.start)}  WALL DAMAGE ${b.total} HP to ${labelAt(b.v, b.start)}: ${Object.keys(b.share).map((e) => `${labelAt(+e, b.start)} ${b.share[e]}`).join(', ')}`; }).join('\n');
-      try { navigator.clipboard.writeText(`${D.fileName}\n${txt}${dtx ? '\n' + dtx : ''}`).then(ok, () => { b.textContent = 'Copy failed'; }); } catch { b.textContent = 'Copy failed'; }
+      try { navigator.clipboard.writeText(wbCopyText()).then(ok, () => { b.textContent = 'Copy failed'; }); } catch { b.textContent = 'Copy failed'; }
     };
-    p.querySelectorAll('[data-wf]').forEach((el) => el.onclick = () => { wbFilter = el.dataset.wf; renderPane(); });
+    if ($('wbSel')) $('wbSel').onchange = (e) => { wbFilter = e.target.value; renderPane(); };
     p.querySelectorAll('[data-hb]').forEach((el) => el.onclick = () => {
       const b = M.bursts[+el.dataset.hb]; if (!b) return;
       pickedBurst = b; pickedKill = null; selected = b.main;

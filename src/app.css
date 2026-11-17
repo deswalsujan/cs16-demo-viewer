@@ -211,9 +211,10 @@ button { cursor: pointer; }
 .kdet .kb .sk svg { display: inline-block; width: calc(12px * var(--ui)); height: calc(12px * var(--ui)); vertical-align: calc(-2px * var(--ui)); }
 .kdet .kb .wh { color: var(--muted); } .kdet .kb .tm { color: var(--faint); text-align: right; }
 .kdet .knote { color: var(--faint); font-size: calc(11px * var(--ui)); margin-top: calc(4px * var(--ui)); }
-.wbchips { display: flex; flex-wrap: wrap; gap: calc(6px * var(--ui)); padding: calc(8px * var(--ui)) calc(14px * var(--ui)); border-bottom: 1px solid var(--line); }
-.wbchips button { font: calc(12px * var(--ui)) var(--f-body); color: var(--muted); background: none; border: 1px solid var(--line); border-radius: calc(12px * var(--ui)); padding: 1px calc(9px * var(--ui)); }
-.wbchips button.on { color: #1b1a16; background: var(--sand); border-color: var(--sand); }
+/* the Wallbangs tab's filter, one dropdown with the counts, and Copy list on the same row; the picture check's line under it
+   while it runs (item 3's fixup, 17 Nov 2026; four chips up to then) */
+.wbbar select { min-width: 0; background: var(--panel-2); color: var(--fg); border: 1px solid var(--line); border-radius: calc(4px * var(--ui)); padding: calc(5px * var(--ui)) calc(6px * var(--ui)); font-size: calc(12px * var(--ui)); }
+.wbbusy { padding: calc(6px * var(--ui)) calc(14px * var(--ui)); border-bottom: 1px solid var(--line); color: var(--fg); font-weight: 700; font-size: calc(12px * var(--ui)); line-height: 1.4; }
 .skipk { display: block; color: var(--fg); font-weight: 600; letter-spacing: -.05em; margin-top: calc(2px * var(--ui)); cursor: help; }
 .pov { position: absolute; left: 50%; bottom: calc(56px * var(--ui)); transform: translateX(-50%); font-family: var(--f-body); font-size: calc(12px * var(--ui)); background: rgba(10,12,14,.82); border: 1px solid var(--line); padding: calc(4px * var(--ui)) calc(10px * var(--ui)); border-radius: calc(3px * var(--ui)); }
 .pov.dead { border-color: #8a2b2b; background: rgba(40,6,6,.9); padding: calc(6px * var(--ui)) calc(12px * var(--ui)); font-size: calc(13px * var(--ui)); }
