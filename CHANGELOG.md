@@ -103,6 +103,7 @@ Built:
 - Item 9, **Shortcuts** is **Help** (**Help ?** in the bottom bar, the ? key, and a **Help** link in the start screen's footer): three parts, Keys; Colours and marks (the kill markers and the timeline's rounds, kill bars, diamonds, triangles, gaps, pauses and playhead); About (the version, What's new, Source on GitHub, Report a bug, **Copy debug info**). F and T, and the **Full screen** tooltip, each said on their own.
 - Item 10, a quieter Join: the Rounds tab asks "Is this map split over two or more demo files?" only when the demo looks unfinished (no winner at the end, or the load card offered to join), otherwise a small **Join with another demo…** link ends the list; in the Join card the checks that pass fold into one line ("2 checks pass") that opens on a click, warnings and notes in full; one name for the action, **Join parts**, on the load card's button, the Rounds tab's and the card's own.
 - Item 11, kill details lead with the summary line, then one row per hit (damage, body part, through a wall or in the open); "Earlier:" is one line, "75 HP lost before this fight", that opens the list on a click; the time column says "0.51 s before"; the * note is hover text on the starred word.
+- Item 12, the start screen's words and demo list: the tagline says HLTV and POV demos; step 2 in one sentence, the pre-2008 (protocol 47) note behind **More**; the drop line is about .dem files, the overview pair in Help; the long "Found 38 maps, …" line is gone (the folder row says how many demos); once a folder is picked the heading is one line and the list takes the room; each demo row has its name and the file's date, the size on hover; a **Copy** button beside each path; **Clear saved files** is **Delete saved files and forget folder**, its second click stating the size.
 
 To try the branch in Chrome on the Mac without switching the working copy (it fetches the branch and opens its built page from a copy in /tmp; run it again after later commits):
 
@@ -110,7 +111,7 @@ To try the branch in Chrome on the Mac without switching the working copy (it fe
 git -C ~/code/cs16-demo-viewer fetch -q origin wip/ui-simpler && git -C ~/code/cs16-demo-viewer show origin/wip/ui-simpler:index.html > /tmp/ui-simpler.html && open -a "Google Chrome" /tmp/ui-simpler.html
 ```
 
-Left: items 12 to 14 (stopped after item 7 for Sujan to look, 17 Nov 2026; his two fixes to items 2 and 6 the same day); the eight checks at the end (about 7 minutes, on Sujan's go); then the version, the release entry, `LIMITS.md` and `tests/logs/<version>.md`.
+Left: items 13 and 14 (stopped after item 7 for Sujan to look, 17 Nov 2026; his two fixes to items 2 and 6 the same day); the eight checks at the end (about 7 minutes, on Sujan's go); then the version, the release entry, `LIMITS.md` and `tests/logs/<version>.md`.
 
 ## Known limits
 Moved to [LIMITS.md](LIMITS.md) on 30 Oct 2026; release entries below still say "Known limits" for that list.

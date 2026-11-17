@@ -11,7 +11,7 @@ a frame from another site, like the claude.ai artifact.
 
     python3 folder_row_test.py [page]      (default ../index.html; screenshots go to tests/folder_*.png)
 """
-import os, sys, shutil, tempfile, threading, functools, http.server
+import os, re, sys, shutil, tempfile, threading, functools, http.server
 from playwright.sync_api import sync_playwright
 
 HERE = os.path.dirname(os.path.abspath(__file__))
@@ -104,6 +104,9 @@ with sync_playwright() as p:
     check('B1 picked: "Folder selected: Half-Life", "2 demos found." with no dot, Choose again with its tooltip, no paths, Open .dem on',
           r['title'] == 'Folder selected: Half-Life' and r['status'] == '2 demos found.' and not r['dot'] and r['pick'] == 'Choose again'
           and r['tip'] == TOOLTIP and r['paths'] is None and r['demos'] == 2 and r['done'] and not r['demo_off'], r); shot(pg, 'b1_picked')
+    # each demo row: its name and the file's date, the size on hover (UI review, item 12, 17 Nov 2026; the size in the row before)
+    dr = pg.evaluate("[...document.querySelectorAll('#demoList button')].map((b) => [b.querySelector('span').textContent, b.title])")
+    check("B1 the demo rows: the file's date beside each name, the size on hover", len(dr) == 2 and all(re.match(r'^\d{1,2} \w{3,4} \d{4}$', d) and t.endswith(' MB') for d, t in dr), dr)
     fs2 = dict(BASE); fs2.pop('cstrike/old-2006.dem')
     for n in ('a', 'b', 'c'): fs2[f'cstrike/new-{n}.dem'] = [1000, 2000]
     write_tree(fs2); pg.set_input_files('#fFolder', hl); wait_status(pg, '4 demos found.')

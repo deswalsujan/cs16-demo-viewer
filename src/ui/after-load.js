@@ -111,7 +111,7 @@ function closeDemo() {
   sndPreload++; // stops a sound preload that's still running for this demo
   resetForNewDemo(); clear3d(); closeSummary(); if ($('joinCard')) closeJoinCard();
   D = null; M = null; MAP = null; OV = null; T = 0; prevT = null; pickedKill = null; pickedBurst = null; heat = null;
-  $('meta').textContent = 'CS 1.6 HLTV demos, played in your browser';
+  $('meta').textContent = 'CS 1.6 HLTV and POV demos, played in your browser';
   for (const id of ['score', 'legend', 'heatbar', 'rclock', 'cam3', 'status3', 'pov', 'sb']) $(id).hidden = true;
   $('feed').innerHTML = '';
   $('pane').innerHTML = '<div class="opt">Rounds, kills and player stats appear here once a demo is open.</div>';

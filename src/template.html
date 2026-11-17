@@ -9,7 +9,7 @@
 <div class="app start" id="app">
   <header class="head">
     <div class="brand">CS 1.6 <span>Demo Viewer</span></div>
-    <div class="meta" id="meta">CS 1.6 HLTV demos, played in your browser</div>
+    <div class="meta" id="meta">CS 1.6 HLTV and POV demos, played in your browser</div>
     <div class="score" id="score" hidden>
       <span class="tn" id="tnA" title="Click to rename"></span>
       <span class="num" id="scA">0</span><span class="sep">:</span><span class="num" id="scB">0</span>
@@ -119,6 +119,7 @@
         <h2 class="hpart">About</h2>
         <div class="habout">
           <p>CS 1.6 Demo Viewer, version __VERSION__. It plays HLTV and POV demos in the browser, from your own Half-Life folder; nothing leaves your computer.</p>
+          <p>A map with no radar picture: drop its overview, the .bmp and .txt pair from cstrike\overviews, anywhere on the page.</p>
           <p class="hlinks"><a href="https://github.com/deswalsujan/cs16-demo-viewer/blob/main/CHANGELOG.md" target="_blank" rel="noopener">What's new</a> · <a href="https://github.com/deswalsujan/cs16-demo-viewer" target="_blank" rel="noopener">Source on GitHub</a> · <a href="https://github.com/deswalsujan/cs16-demo-viewer/issues/new/choose" target="_blank" rel="noopener">Report a bug</a></p>
           <p class="hdbg"><button class="btn" id="bDebug" type="button" title="Copies details for a bug report: browser, demo name, what loaded, errors. No file contents.">Copy debug info</button><span>Paste it into your bug report: it says which browser, demo and files, and any errors, with no file contents.</span></p>
         </div>
@@ -210,11 +211,11 @@
             <div class="k">1</div>
             <div class="tx"><b id="hlTitle">Choose your Half-Life folder</b><small id="hlStatus">The Half-Life folder from your Steam install, the one with cstrike and valve inside.</small></div>
             <div class="hlbtns"><button class="btn" id="btnFolder" type="button">Choose folder</button></div>
-            <div class="hlx hlpaths" id="hlPaths" hidden><div id="hlWin">Windows: <span class="p" id="hlPathWin"></span></div><div id="hlMac">Mac: <span class="p" id="hlPathMac"></span></div><div class="hltip" id="hlTip">In the Mac's dialog, press Cmd+Shift+G and paste it.</div><div class="hlup">Your browser may call it an upload, but nothing leaves your computer.</div></div>
+            <div class="hlx hlpaths" id="hlPaths" hidden><div id="hlWin">Windows: <span class="p" id="hlPathWin"></span> <button class="lnk cpy" type="button" data-copy="hlPathWin" title="Copy the path">Copy</button></div><div id="hlMac">Mac: <span class="p" id="hlPathMac"></span> <button class="lnk cpy" type="button" data-copy="hlPathMac" title="Copy the path">Copy</button></div><div class="hltip" id="hlTip">In the Mac's dialog, press Cmd+Shift+G and paste it.</div><div class="hlup">Your browser may call it an upload, but nothing leaves your computer.</div></div>
           </div>
           <div class="step" id="stepDemo">
             <div class="k">2</div>
-            <div class="tx"><b>Open a demo</b><small>A .dem file, recorded by HLTV or by a player. Pick one below or open a file from anywhere. Also plays pre-2008 (protocol 47) demos the Steam game won't open.</small></div>
+            <div class="tx"><b>Open a demo</b><small>Pick a demo below, or open a .dem file from anywhere. <button class="lnk" type="button" id="bStepMore" aria-expanded="false">More</button><span id="stepMore" hidden> Demos recorded by HLTV or by a player both play, and so do pre-2008 (protocol 47) demos the Steam game won't open.</span></small></div>
             <button class="btn" id="btnDemo" type="button" disabled title="Choose your Half-Life folder first">Open .dem</button>
             <div class="stepin">
               <div class="dfind" id="demoFind" hidden>
@@ -225,10 +226,10 @@
             </div>
           </div>
         </div>
-        <div class="drophint">Or drop a .dem file, or an overview .bmp and .txt pair, anywhere on this page</div>
+        <div class="drophint">Or drop a .dem file anywhere on this page</div>
         <div class="prog" id="prog" hidden><i id="progBar"></i></div>
         <div class="msg" id="msg"></div>
-        <div class="loadfoot"><span>Version __VERSION__ · <a href="https://github.com/deswalsujan/cs16-demo-viewer" target="_blank" rel="noopener">Source on GitHub</a> · <button class="lnk" id="bHelpStart" type="button" title="The keys, the colours and marks, and about the viewer (?)">Help</button></span><button class="btn" id="bClear" type="button" title="Deletes the maps, models, sounds and overviews this browser saved from your Half-Life folder, and starts over as on a first visit">Clear saved files</button></div>
+        <div class="loadfoot"><span>Version __VERSION__ · <a href="https://github.com/deswalsujan/cs16-demo-viewer" target="_blank" rel="noopener">Source on GitHub</a> · <button class="lnk" id="bHelpStart" type="button" title="The keys, the colours and marks, and about the viewer (?)">Help</button></span><button class="btn" id="bClear" type="button" title="Deletes the copies of maps, models, sounds and radar overviews this browser saved from your Half-Life folder, forgets the folder, and starts over as on a first visit">Delete saved files and forget folder</button></div>
       </div>
     </div>
   </section>
