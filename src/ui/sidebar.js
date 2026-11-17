@@ -158,7 +158,10 @@ function renderPane() {
         <span class="main"><span class="pill ${side}">${r.winner || '—'}</span>${esc(who)}${after ? '<span class="tag16">after the match</span>' : ''}<div class="sub">${esc(r.replayed ? 'replayed from 0:0' + (r.reason ? ' · ' + r.reason : '') : r.notFull ? 'teams not full yet' + (r.reason ? ' · ' + r.reason : '') : r.beforeMatch ? 'before the match' + (r.reason ? ' · ' + r.reason : '') : r.reason || (r.live ? '' : 'not counted'))} · ${r.kills.length} kills${r.sides ? ' · ' + Math.max(0, Object.keys(r.sides).length - new Set(r.kills.map((k) => k.victim)).size) + ' alive at end' : ''}</div></span>
         <span class="d">${sc}<br>${fmt(clockSpan(r.start, r.start + r.dur))}</span></div>`;
     }
-    h += `<div class="joinrow"><span>${D.parts ? 'Another part of this map in a file of its own?' : 'Is this map split over two or more demo files?'}</span><button class="btn sm" type="button" id="bJoinWith">Join with another demo…</button></div>`;
+    // Quieter Join (UI review, item 10, 17 Nov 2026): the question only when the demo looks unfinished (no winner at the end,
+    // or the load summary offered to join), otherwise a small link at the end of the list; one name for it, Join parts
+    if (!M.wonAt || (typeof SUM === 'object' && SUM.joinList)) h += `<div class="joinrow"><span>${D.parts ? 'Another part of this map in a file of its own?' : 'Is this map split over two or more demo files?'}</span><button class="btn sm" type="button" id="bJoinWith">Join parts…</button></div>`;
+    else h += `<div class="joinlnk"><button class="lnk" type="button" id="bJoinWith" title="A map recorded in two or more files: join them into one">Join with another demo…</button></div>`;
     p.innerHTML = h;
     $('optAll').onchange = (e) => { showAll = e.target.checked; renderPane(); drawTimeline(); };
     if ($('bSplit')) $('bSplit').onclick = splitJoined;

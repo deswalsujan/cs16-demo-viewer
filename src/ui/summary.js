@@ -4,6 +4,7 @@
 let ASSETS = null;
 async function loadSummary(sndDone) {
   const d = D;
+  SUM.joinList = null; // a previous demo's offer to join (the Rounds tab reads it, item 10)
   openSummary({ state: 'busy' });
   // A file that reads but has no player movement, or no rounds, can't be played. Say what was found and
   // list the likely reasons, the likeliest first.
@@ -102,7 +103,8 @@ async function loadSummary(sndDone) {
       if (others.length) {
         n += others.length === 1 ? ` ${others[0].name} has the same players on ${D.mapName}.` : ` ${others.length} other demos have the same players on ${D.mapName}: ${others.map((f) => f.name).join(', ')}.`;
         SUM.joinList = [CUR_FILE || fileByName(D.fileName), ...others].filter(Boolean);
-        rows.push({ s: 'info', t, n, btn: { id: 'sumJoin', label: 'Join the parts' } });
+        rows.push({ s: 'info', t, n, btn: { id: 'sumJoin', label: 'Join parts' } }); // one name for it (UI review, item 10)
+        if (tab === 'rounds') renderPane(); // the Rounds tab asks about joining now
       }
     }
   }

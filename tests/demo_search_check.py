@@ -458,14 +458,22 @@ with sync_playwright() as p:
         JS5 = lambda c: pg5.evaluate('(c) => __v(c)', c)
         pg5.evaluate('(n) => __v(`loadDemoFile(files.demos.find((f) => f.name === ${JSON.stringify(n)}))`)', W1)
         pg5.wait_for_function('__v("!!(D && M)")', timeout=120000)
-        card = lambda: JS5(r"""(() => { const el = $('joinCard'); const t = (s) => [...el.querySelectorAll(s)].map((x) => x.innerText.replace(/\s+/g, ' ').trim());
+        # the checks that pass fold into one line since the UI review (item 10): opened before reading them all
+        card = lambda: JS5(r"""(() => { if ($('jFold')) { JOIN.okOpen = true; renderJoinCard(); } const el = $('joinCard'); const t = (s) => [...el.querySelectorAll(s)].map((x) => x.innerText.replace(/\s+/g, ' ').trim());
           return { parts: t('.jparts li .jf small'), names: t('.jparts li .jname'), order: t('.jorder')[0] || '', checks: [...el.querySelectorAll('.sum-list li')].map((li) => ({ s: li.querySelector('.sum-ic').className.replace('sum-ic ', ''), t: li.innerText.replace(/\s+/g, ' ').trim().replace(/^[✓!i✕] /, '') })),
             wrong: t('.jwrong p')[0] || null, go: !$('jGo').disabled }; })()""")
+        # part 1 alone ends before anyone won: the Rounds tab asks, with Join parts… (UI review, item 10)
+        jq = JS5("(() => { closeSummary(); tab = 'rounds'; renderPane(); const b = $('bJoinWith'), q = $('pane').querySelector('.joinrow span'); return { text: b.textContent, question: q ? q.textContent : null }; })()")
+        check('the Rounds tab of a part that ends before anyone won: the question, with Join parts…', jq == {'text': 'Join parts…', 'question': 'Is this map split over two or more demo files?'}, str(jq))
         JS5(f"closeSummary(); openJoinCard([{W1!r}, {W2!r}].map((n) => files.demos.find((f) => f.name === n)))")
         pg5.wait_for_function('__v("!JOIN.reading && JOIN.F.size === 2 && !!$(\'jGo\')")', timeout=120000)
+        f0 = JS5(r"""(() => { const el = $('joinCard'); return { fold: el.querySelector('#jFold') ? el.querySelector('#jFold').textContent : null, oks: [...el.querySelectorAll('.sum-list li:not(.jfold) .sum-ic.ok')].length,
+          rest: [...el.querySelectorAll('.sum-list li:not(.jfold)')].length, go: $('jGo').textContent }; })()""")
+        check('Join card: the 2 checks that pass on one line, "2 checks pass", the note on the half in full; the button reads Join parts (UI review, item 10)',
+              f0 == {'fold': '2 checks pass', 'oks': 0, 'rest': 1, 'go': 'Join parts'}, str(f0))
         c = card()
-        check('Join card, WeMadeFox vs Ravens in the suggested order: part 1 first, Join them on, no "doesn\'t add up"',
-              c['names'] == [W1, W2] and c['go'] and c['wrong'] is None, f"{c['names']}, Join them {'on' if c['go'] else 'off'}, {c['wrong']!r}")
+        check('Join card, WeMadeFox vs Ravens in the suggested order: part 1 first, Join parts on, no "doesn\'t add up"',
+              c['names'] == [W1, W2] and c['go'] and c['wrong'] is None, f"{c['names']}, Join parts {'on' if c['go'] else 'off'}, {c['wrong']!r}")
         check("Join card: part 1's line, its 4 rounds and the 13 replayed before them (the approved words)",
               c['parts'][:1] == ['4 rounds count, ending at WeMadeFox 4 : 0 Ravens, no winner. 13 earlier rounds were replayed: restarted from 0:0 on the same sides.'], repr(c['parts'][:1]))
         check("Join card: part 2's line says where the map stands, not its own 0:0",
@@ -481,8 +489,8 @@ with sync_playwright() as p:
         JS5("JOIN.picking = false; renderJoinCard()")
         JS5('joinMove(1, -1)')
         c = card()
-        check("Join card, part 2 put first: check A says the order doesn't add up, and Join them is off",
-              c['names'] == [W2, W1] and c['wrong'] == "Part 1's teams change sides after 11 rounds, so its first half began in an earlier recording." and not c['go'], f"{c['wrong']!r}, Join them {'on' if c['go'] else 'off'}")
+        check("Join card, part 2 put first: check A says the order doesn't add up, and Join parts is off",
+              c['names'] == [W2, W1] and c['wrong'] == "Part 1's teams change sides after 11 rounds, so its first half began in an earlier recording." and not c['go'], f"{c['wrong']!r}, Join parts {'on' if c['go'] else 'off'}")
         check('Join card, part 2 put first: the recording times named, and no green tick for the teams swapping sides',
               c['order'] == 'Order: Your order. The recording times in the file names, 3 Mar 2010 at 09:51 and at 10:26, put them the other way round.'
               and {'s': 'warn', 't': 'Teams swapped sides between the parts'} in c['checks'], f"{c['order']!r}; " + '; '.join(f"[{x['s']}] {x['t']}" for x in c['checks']))
@@ -663,11 +671,14 @@ with sync_playwright() as p:
               pg8.locator('#keys').is_hidden() and k['title'] == 'Help' and k['parts'] == ['Keys', 'Colours and marks', 'About'] and k['foot'] == ['Close'] and k['ver']
               and k['about'] == ["What's new", 'Source on GitHub', 'Report a bug', 'Copy debug info'] and k['timeline'] == 7 and k['btn'] == 'Help ?'
               and 'Theatre' not in k['f'] and 'full screen' not in k['t'].lower(), str(k))
+        # quieter Join (UI review, item 10): SK vs Na`Vi has a winner and no offer to join, so a small link ends the Rounds tab
+        jl = JS8("(() => { closeSummary(); tab = 'rounds'; renderPane(); const b = $('bJoinWith'); return { link: b.classList.contains('lnk'), text: b.textContent, question: !!$('pane').querySelector('.joinrow') }; })()")
+        check('the Rounds tab of a finished map: a small "Join with another demo…" link at the end, no question', jl == {'link': True, 'text': 'Join with another demo…', 'question': False}, str(jl))
         JS8("closeSummary(); tab = 'rounds'; renderPane(); $('bJoinWith').click()")
         pg8.wait_for_function("() => !!document.querySelector('#joinCard .jpick')", timeout=30000)
         j = JS8(r"""(() => { const card = $('joinCard').querySelector('.sum'), cr = card.getBoundingClientRect(), pk = card.querySelector('.jpick').getBoundingClientRect();
           return { foot: [...card.querySelectorAll('.sum-foot > *')].map((e) => e.id || e.className), inset: Math.round(pk.left - cr.left) }; })()""")
-        check("the Join card: Add another part… on the footer's left, Cancel and Join them on its right; the folder row inside the card's 24 px",
+        check("the Join card: Add another part… on the footer's left, Cancel and Join parts on its right; the folder row inside the card's 24 px",
               j['foot'] == ['jAdd', 'sp', 'jCancel', 'jGo'] and j['inset'] >= 24, str(j))
         JS8('closeJoinCard()')
         v = JS8(r"""(async () => { const w = (ms) => new Promise((r) => setTimeout(r, ms)); setView('3d'); await w(300); const s = $('ui3'); s.value = '200'; s.dispatchEvent(new Event('change')); await w(400); vsetOpen(true); await w(200);

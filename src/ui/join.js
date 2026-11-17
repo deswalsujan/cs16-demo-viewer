@@ -210,7 +210,7 @@ function joinEl() {
 function closeJoinCard() { joinEl().hidden = true; JOIN.picking = false; JOIN.err = null; }
 async function openJoinCard(list) {
   closeSummary();
-  Object.assign(JOIN, { list: list.slice(), keep: false, moved: false, sugg: null, err: null, picking: false });
+  Object.assign(JOIN, { list: list.slice(), keep: false, moved: false, sugg: null, err: null, picking: false, okOpen: false });
   await readJoinParts();
 }
 // Add a demo to the parts: refused when it's another map or has different players
@@ -377,16 +377,22 @@ function renderJoinCard() {
       <button class="btn sm" type="button" id="jFile">A file from elsewhere…</button><input type="file" id="jFileIn" accept=".dem" hidden></div>`;
   }
   const busy = !!JOIN.reading || F.length < JOIN.list.length;
+  // the checks that pass fold into one line that opens on a click; warnings and notes stay in full (UI review, item 10,
+  // 17 Nov 2026; each part's own line stays as approved, 7 Nov 2026)
+  const li = (c) => `<li><span class="sum-ic ${c.s}" aria-hidden="true">${ic[c.s]}</span><span>${esc(c.t)}${c.n ? `<small>${esc(c.n)}</small>` : ''}</span></li>`;
+  const passed = checks.filter((c) => c.s === 'ok');
+  const checkRows = (JOIN.okOpen || passed.length < 2 ? checks.map(li) : [`<li class="jfold"><span class="sum-ic ok" aria-hidden="true">✓</span><span><button class="lnk" type="button" id="jFold" title="${esc(passed.map((c) => c.t).join('. '))}">${passed.length} checks pass</button></span></li>`].concat(checks.filter((c) => c.s !== 'ok').map(li))).join('');
   el.innerHTML = `<div class="sum join" role="dialog" aria-labelledby="jTitle">
     <div class="sum-top"><div class="ti"><h2 id="jTitle">Count these demos as one map?</h2><p>Score, rounds and player stats will cover all parts. Playback runs straight on from one part to the next.</p></div>${x}</div>
     <ol class="jparts">${rows}</ol>
     ${order ? `<div class="jorder"><b>Order:</b> ${esc(order)}</div>` : ''}
-    ${checks.length ? `<ul class="sum-list">${checks.map((c) => `<li><span class="sum-ic ${c.s}" aria-hidden="true">${ic[c.s]}</span><span>${esc(c.t)}${c.n ? `<small>${esc(c.n)}</small>` : ''}</span></li>`).join('')}</ul>` : ''}
+    ${checks.length ? `<ul class="sum-list">${checkRows}</ul>` : ''}
     ${wrong}${picker}
-    <div class="sum-foot"><button class="btn" type="button" id="jAdd" ${busy || JOIN.picking ? 'disabled' : ''} ${JOIN.picking ? `title="${noneHere ? 'Pick a file from elsewhere above' : 'Pick a demo above, or a file from elsewhere'}"` : ''}>Add another part…</button><span class="sp"></span><button class="btn" type="button" id="jCancel">Cancel</button><button class="btn primary" type="button" id="jGo" ${busy || JOIN.list.length < 2 || (problem && !JOIN.keep) ? 'disabled' : ''}>Join them</button></div>
+    <div class="sum-foot"><button class="btn" type="button" id="jAdd" ${busy || JOIN.picking ? 'disabled' : ''} ${JOIN.picking ? `title="${noneHere ? 'Pick a file from elsewhere above' : 'Pick a demo above, or a file from elsewhere'}"` : ''}>Add another part…</button><span class="sp"></span><button class="btn" type="button" id="jCancel">Cancel</button><button class="btn primary" type="button" id="jGo" ${busy || JOIN.list.length < 2 || (problem && !JOIN.keep) ? 'disabled' : ''}>Join parts</button></div>
   </div>`;
   el.hidden = false;
   $('jX').onclick = closeJoinCard; $('jCancel').onclick = closeJoinCard;
+  if ($('jFold')) $('jFold').onclick = () => { JOIN.okOpen = true; renderJoinCard(); };
   el.onclick = (e) => { if (e.target === el) closeJoinCard(); };
   el.querySelectorAll('[data-mv]').forEach((b) => b.onclick = () => { const [i, d] = b.dataset.mv.split(',').map(Number); joinMove(i, d); });
   // greyed out while the picker row is open and empty: clicking it there only closed the row (Sujan, 23 Oct 2026)

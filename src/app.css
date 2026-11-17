@@ -344,6 +344,7 @@ kbd { font-family: var(--f-body); font-size: calc(11px * var(--ui)); background:
 .row.gap { background: repeating-linear-gradient(135deg, transparent 0 calc(7px * var(--ui)), color-mix(in srgb, var(--fg) 5%, transparent) calc(7px * var(--ui)) calc(9px * var(--ui))); cursor: default; }
 .joinrow { display: flex; gap: calc(8px * var(--ui)); align-items: center; justify-content: flex-end; padding: calc(10px * var(--ui)) calc(14px * var(--ui)); border-bottom: 1px solid var(--line); font-size: calc(12px * var(--ui)); color: var(--muted); }
 .joinrow span { flex: 1; }
+.joinlnk { padding: calc(10px * var(--ui)) calc(14px * var(--ui)); text-align: right; } /* quieter Join (UI review, item 10) */
 .sum.join { width: min(calc(640px * var(--ui)), 100%); max-height: calc(100% - calc(8px * var(--ui))); overflow: auto; }
 .jparts { list-style: none; margin: calc(4px * var(--ui)) calc(24px * var(--ui)) calc(16px * var(--ui)); padding: 0; border: 1px solid var(--line); border-radius: calc(6px * var(--ui)); display: grid; }
 .jparts li { display: grid; grid-template-columns: calc(52px * var(--ui)) minmax(0, 1fr) auto; gap: calc(10px * var(--ui)); align-items: start; padding: calc(12px * var(--ui)); }

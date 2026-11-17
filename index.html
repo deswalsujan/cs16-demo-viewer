@@ -357,6 +357,7 @@ kbd { font-family: var(--f-body); font-size: calc(11px * var(--ui)); background:
 .row.gap { background: repeating-linear-gradient(135deg, transparent 0 calc(7px * var(--ui)), color-mix(in srgb, var(--fg) 5%, transparent) calc(7px * var(--ui)) calc(9px * var(--ui))); cursor: default; }
 .joinrow { display: flex; gap: calc(8px * var(--ui)); align-items: center; justify-content: flex-end; padding: calc(10px * var(--ui)) calc(14px * var(--ui)); border-bottom: 1px solid var(--line); font-size: calc(12px * var(--ui)); color: var(--muted); }
 .joinrow span { flex: 1; }
+.joinlnk { padding: calc(10px * var(--ui)) calc(14px * var(--ui)); text-align: right; } /* quieter Join (UI review, item 10) */
 .sum.join { width: min(calc(640px * var(--ui)), 100%); max-height: calc(100% - calc(8px * var(--ui))); overflow: auto; }
 .jparts { list-style: none; margin: calc(4px * var(--ui)) calc(24px * var(--ui)) calc(16px * var(--ui)); padding: 0; border: 1px solid var(--line); border-radius: calc(6px * var(--ui)); display: grid; }
 .jparts li { display: grid; grid-template-columns: calc(52px * var(--ui)) minmax(0, 1fr) auto; gap: calc(10px * var(--ui)); align-items: start; padding: calc(12px * var(--ui)); }
@@ -3326,7 +3327,7 @@ function joinEl() {
 function closeJoinCard() { joinEl().hidden = true; JOIN.picking = false; JOIN.err = null; }
 async function openJoinCard(list) {
   closeSummary();
-  Object.assign(JOIN, { list: list.slice(), keep: false, moved: false, sugg: null, err: null, picking: false });
+  Object.assign(JOIN, { list: list.slice(), keep: false, moved: false, sugg: null, err: null, picking: false, okOpen: false });
   await readJoinParts();
 }
 // Add a demo to the parts: refused when it's another map or has different players
@@ -3493,16 +3494,22 @@ function renderJoinCard() {
       <button class="btn sm" type="button" id="jFile">A file from elsewhere…</button><input type="file" id="jFileIn" accept=".dem" hidden></div>`;
   }
   const busy = !!JOIN.reading || F.length < JOIN.list.length;
+  // the checks that pass fold into one line that opens on a click; warnings and notes stay in full (UI review, item 10,
+  // 17 Nov 2026; each part's own line stays as approved, 7 Nov 2026)
+  const li = (c) => `<li><span class="sum-ic ${c.s}" aria-hidden="true">${ic[c.s]}</span><span>${esc(c.t)}${c.n ? `<small>${esc(c.n)}</small>` : ''}</span></li>`;
+  const passed = checks.filter((c) => c.s === 'ok');
+  const checkRows = (JOIN.okOpen || passed.length < 2 ? checks.map(li) : [`<li class="jfold"><span class="sum-ic ok" aria-hidden="true">✓</span><span><button class="lnk" type="button" id="jFold" title="${esc(passed.map((c) => c.t).join('. '))}">${passed.length} checks pass</button></span></li>`].concat(checks.filter((c) => c.s !== 'ok').map(li))).join('');
   el.innerHTML = `<div class="sum join" role="dialog" aria-labelledby="jTitle">
     <div class="sum-top"><div class="ti"><h2 id="jTitle">Count these demos as one map?</h2><p>Score, rounds and player stats will cover all parts. Playback runs straight on from one part to the next.</p></div>${x}</div>
     <ol class="jparts">${rows}</ol>
     ${order ? `<div class="jorder"><b>Order:</b> ${esc(order)}</div>` : ''}
-    ${checks.length ? `<ul class="sum-list">${checks.map((c) => `<li><span class="sum-ic ${c.s}" aria-hidden="true">${ic[c.s]}</span><span>${esc(c.t)}${c.n ? `<small>${esc(c.n)}</small>` : ''}</span></li>`).join('')}</ul>` : ''}
+    ${checks.length ? `<ul class="sum-list">${checkRows}</ul>` : ''}
     ${wrong}${picker}
-    <div class="sum-foot"><button class="btn" type="button" id="jAdd" ${busy || JOIN.picking ? 'disabled' : ''} ${JOIN.picking ? `title="${noneHere ? 'Pick a file from elsewhere above' : 'Pick a demo above, or a file from elsewhere'}"` : ''}>Add another part…</button><span class="sp"></span><button class="btn" type="button" id="jCancel">Cancel</button><button class="btn primary" type="button" id="jGo" ${busy || JOIN.list.length < 2 || (problem && !JOIN.keep) ? 'disabled' : ''}>Join them</button></div>
+    <div class="sum-foot"><button class="btn" type="button" id="jAdd" ${busy || JOIN.picking ? 'disabled' : ''} ${JOIN.picking ? `title="${noneHere ? 'Pick a file from elsewhere above' : 'Pick a demo above, or a file from elsewhere'}"` : ''}>Add another part…</button><span class="sp"></span><button class="btn" type="button" id="jCancel">Cancel</button><button class="btn primary" type="button" id="jGo" ${busy || JOIN.list.length < 2 || (problem && !JOIN.keep) ? 'disabled' : ''}>Join parts</button></div>
   </div>`;
   el.hidden = false;
   $('jX').onclick = closeJoinCard; $('jCancel').onclick = closeJoinCard;
+  if ($('jFold')) $('jFold').onclick = () => { JOIN.okOpen = true; renderJoinCard(); };
   el.onclick = (e) => { if (e.target === el) closeJoinCard(); };
   el.querySelectorAll('[data-mv]').forEach((b) => b.onclick = () => { const [i, d] = b.dataset.mv.split(',').map(Number); joinMove(i, d); });
   // greyed out while the picker row is open and empty: clicking it there only closed the row (Sujan, 23 Oct 2026)
@@ -5697,7 +5704,10 @@ function renderPane() {
         <span class="main"><span class="pill ${side}">${r.winner || '—'}</span>${esc(who)}${after ? '<span class="tag16">after the match</span>' : ''}<div class="sub">${esc(r.replayed ? 'replayed from 0:0' + (r.reason ? ' · ' + r.reason : '') : r.notFull ? 'teams not full yet' + (r.reason ? ' · ' + r.reason : '') : r.beforeMatch ? 'before the match' + (r.reason ? ' · ' + r.reason : '') : r.reason || (r.live ? '' : 'not counted'))} · ${r.kills.length} kills${r.sides ? ' · ' + Math.max(0, Object.keys(r.sides).length - new Set(r.kills.map((k) => k.victim)).size) + ' alive at end' : ''}</div></span>
         <span class="d">${sc}<br>${fmt(clockSpan(r.start, r.start + r.dur))}</span></div>`;
     }
-    h += `<div class="joinrow"><span>${D.parts ? 'Another part of this map in a file of its own?' : 'Is this map split over two or more demo files?'}</span><button class="btn sm" type="button" id="bJoinWith">Join with another demo…</button></div>`;
+    // Quieter Join (UI review, item 10, 17 Nov 2026): the question only when the demo looks unfinished (no winner at the end,
+    // or the load summary offered to join), otherwise a small link at the end of the list; one name for it, Join parts
+    if (!M.wonAt || (typeof SUM === 'object' && SUM.joinList)) h += `<div class="joinrow"><span>${D.parts ? 'Another part of this map in a file of its own?' : 'Is this map split over two or more demo files?'}</span><button class="btn sm" type="button" id="bJoinWith">Join parts…</button></div>`;
+    else h += `<div class="joinlnk"><button class="lnk" type="button" id="bJoinWith" title="A map recorded in two or more files: join them into one">Join with another demo…</button></div>`;
     p.innerHTML = h;
     $('optAll').onchange = (e) => { showAll = e.target.checked; renderPane(); drawTimeline(); };
     if ($('bSplit')) $('bSplit').onclick = splitJoined;
@@ -10066,6 +10076,7 @@ function savePrefs() { ls.set('prefs', { view: viewPref, radar: radar3, names: o
 let ASSETS = null;
 async function loadSummary(sndDone) {
   const d = D;
+  SUM.joinList = null; // a previous demo's offer to join (the Rounds tab reads it, item 10)
   openSummary({ state: 'busy' });
   // A file that reads but has no player movement, or no rounds, can't be played. Say what was found and
   // list the likely reasons, the likeliest first.
@@ -10164,7 +10175,8 @@ async function loadSummary(sndDone) {
       if (others.length) {
         n += others.length === 1 ? ` ${others[0].name} has the same players on ${D.mapName}.` : ` ${others.length} other demos have the same players on ${D.mapName}: ${others.map((f) => f.name).join(', ')}.`;
         SUM.joinList = [CUR_FILE || fileByName(D.fileName), ...others].filter(Boolean);
-        rows.push({ s: 'info', t, n, btn: { id: 'sumJoin', label: 'Join the parts' } });
+        rows.push({ s: 'info', t, n, btn: { id: 'sumJoin', label: 'Join parts' } }); // one name for it (UI review, item 10)
+        if (tab === 'rounds') renderPane(); // the Rounds tab asks about joining now
       }
     }
   }
