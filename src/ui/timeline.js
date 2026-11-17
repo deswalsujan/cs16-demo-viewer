@@ -11,7 +11,7 @@ const tlCache = { cv: document.createElement('canvas'), key: '' };
 // Drawn at the Interface size (0.26.13): the whole strip is drawn UI times larger, in a space UI times smaller, so its
 // marks and round numbers grow with the bar it sits in and look exactly as before at 100%.
 function drawTimeline() {
-  if (!D) return;
+  if (!D || !tlc.width || !tlc.height) return; // a bar not laid out yet (drawImage throws on a 0-size canvas)
   const W = tlc.width / dpr / UI, H = tlc.height / dpr / UI;
   const [a, b] = tlRange();
   const key = [D.fileName, D.end, tlc.width, tlc.height, dpr, UI, a, b, showAll, visibleRounds().length, M.wbs ? M.wbs.length : -1, M.skipT ? M.skipT.length : 0].join('|');

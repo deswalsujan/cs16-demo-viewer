@@ -91,9 +91,10 @@ What changed in the viewer, newest first. The version shows in the viewer's shor
 
 The UI review's final list, `docs/reviews/ui-review-final-2026-11-12.md`: 14 items merged from three reviews of 0.26.30 and checked in the review chat, built on one branch for Sujan to judge live in the browser instead of mockup rounds (Sujan, 12 Nov 2026; his go, 17 Nov 2026). One commit per item, `ui: item N, <what>`, so any item can be reverted on its own; items he doesn't like are dropped before the merge, and the rest becomes one release.
 
-Built: none yet.
+Built:
+- Item 1, the start screen shows only the start steps: no view switch, Theatre, Full screen, side panel or bottom bar while it's up, before a demo is open and when it comes back over one.
 
-Left: items 1 to 14; a stop after item 7 for Sujan to look; the eight checks at the end (about 7 minutes, on Sujan's go); then the version, the release entry, `LIMITS.md` and `tests/logs/<version>.md`.
+Left: items 2 to 14; a stop after item 7 for Sujan to look; the eight checks at the end (about 7 minutes, on Sujan's go); then the version, the release entry, `LIMITS.md` and `tests/logs/<version>.md`.
 
 ## Known limits
 Moved to [LIMITS.md](LIMITS.md) on 30 Oct 2026; release entries below still say "Known limits" for that list.

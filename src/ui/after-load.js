@@ -120,6 +120,10 @@ function closeDemo() {
 }
 function showLoad(v) {
   $('load').hidden = !v;
+  // only the start steps while it's up (UI review, item 1); the side panel and the bottom bar come back with a demo, so
+  // the canvases take their new sizes at once, before onDemo draws the timeline into them
+  $('app').classList.toggle('start', !!v);
+  if (!v) resize();
   applyTheatre(); // the start screen needs the header, so Theatre mode pauses while it's open
   // the load summary goes at once rather than counting down behind the start screen (Sujan, 14 Oct 2026).
   // The message line starts empty each time the start screen comes back, whether or not an overview loaded: up to

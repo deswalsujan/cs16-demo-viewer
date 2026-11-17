@@ -62,6 +62,12 @@ button { cursor: pointer; }
   grid-template-areas: "head head" "radar side" "transport transport";
 }
 
+/* The start screen shows only the start steps (UI review, item 1, 17 Nov 2026): no view switch, Theatre, Full screen, side
+   panel or bottom bar while it's up, before a demo is open and when it comes back over one; the start screen takes the
+   whole width under the header */
+.app.start { grid-template-columns: minmax(0, 1fr); grid-template-rows: auto minmax(0, 1fr); grid-template-areas: "head" "radar"; }
+.app.start .side, .app.start .transport, .app.start #viewSeg, .app.start #bTheatre, .app.start #bFull { display: none; }
+
 /* header */
 .head {
   grid-area: head; display: flex; align-items: center; gap: calc(16px * var(--ui)); flex-wrap: wrap;
@@ -610,7 +616,7 @@ addEventListener('resize', () => { if (applyUiSize()) dispatchEvent(new Event('u
 })();
 </script>
 
-<div class="app" id="app">
+<div class="app start" id="app">
   <header class="head">
     <div class="brand">CS 1.6 <span>Demo Viewer</span></div>
     <div class="meta" id="meta">CS 1.6 HLTV demos, played in your browser</div>
@@ -5433,6 +5439,10 @@ function closeDemo() {
 }
 function showLoad(v) {
   $('load').hidden = !v;
+  // only the start steps while it's up (UI review, item 1); the side panel and the bottom bar come back with a demo, so
+  // the canvases take their new sizes at once, before onDemo draws the timeline into them
+  $('app').classList.toggle('start', !!v);
+  if (!v) resize();
   applyTheatre(); // the start screen needs the header, so Theatre mode pauses while it's open
   // the load summary goes at once rather than counting down behind the start screen (Sujan, 14 Oct 2026).
   // The message line starts empty each time the start screen comes back, whether or not an overview loaded: up to
@@ -6456,7 +6466,7 @@ const tlCache = { cv: document.createElement('canvas'), key: '' };
 // Drawn at the Interface size (0.26.13): the whole strip is drawn UI times larger, in a space UI times smaller, so its
 // marks and round numbers grow with the bar it sits in and look exactly as before at 100%.
 function drawTimeline() {
-  if (!D) return;
+  if (!D || !tlc.width || !tlc.height) return; // a bar not laid out yet (drawImage throws on a 0-size canvas)
   const W = tlc.width / dpr / UI, H = tlc.height / dpr / UI;
   const [a, b] = tlRange();
   const key = [D.fileName, D.end, tlc.width, tlc.height, dpr, UI, a, b, showAll, visibleRounds().length, M.wbs ? M.wbs.length : -1, M.skipT ? M.skipT.length : 0].join('|');

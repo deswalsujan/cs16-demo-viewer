@@ -49,6 +49,12 @@ button { cursor: pointer; }
   grid-template-areas: "head head" "radar side" "transport transport";
 }
 
+/* The start screen shows only the start steps (UI review, item 1, 17 Nov 2026): no view switch, Theatre, Full screen, side
+   panel or bottom bar while it's up, before a demo is open and when it comes back over one; the start screen takes the
+   whole width under the header */
+.app.start { grid-template-columns: minmax(0, 1fr); grid-template-rows: auto minmax(0, 1fr); grid-template-areas: "head" "radar"; }
+.app.start .side, .app.start .transport, .app.start #viewSeg, .app.start #bTheatre, .app.start #bFull { display: none; }
+
 /* header */
 .head {
   grid-area: head; display: flex; align-items: center; gap: calc(16px * var(--ui)); flex-wrap: wrap;
