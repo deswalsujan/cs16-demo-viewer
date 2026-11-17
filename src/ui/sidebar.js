@@ -76,23 +76,30 @@ function killDetailsHtml(k) {
   const n = list.length, walls = list.filter((h) => h.wall).length, total = list.reduce((a, h) => a + h.dmg, 0);
   const gun = !!MAX_DMG[k.weapon] || ONE_SURFACE.has(k.weapon);
   let h = `<div class="ksum"><b>${n} hit${n > 1 ? 's' : ''}</b>${walls && gun ? ` · ${walls} through a wall` : ''} · ${total} HP${n > 1 ? ` in ${(k.t - list[0].t).toFixed(2)} s` : ''}</div>`;
+  // UI review, item 11 (17 Nov 2026): the summary line leads, then one row per hit; "Earlier:" is one line, "75 HP lost
+  // before this fight", that opens the list on a click (open up to then, 0.26.16; kept open through the pane's rebuilds)
   const earlier = earlierDamage(k, list);
-  if (earlier) h += `<div class="kpre">Earlier: ${earlier.map((x) => `<b>−${x.dmg}</b>${x.from ? ` from ${esc(x.from)}` : ''}${x.when ? ` at ${esc(x.when)}` : ''}${x.from ? '' : ', source unknown'}`).join(', ')}.</div>`;
-  let est = false;
+  if (earlier) {
+    const lost = earlier.reduce((a, x) => a + x.dmg, 0), ki = D.kills.indexOf(k);
+    h += `<details class="kpre"${KD_EARLY === ki ? ' open' : ''}><summary>${lost} HP lost before this fight</summary><div class="kpl">Earlier: ${earlier.map((x) => `<b>−${x.dmg}</b>${x.from ? ` from ${esc(x.from)}` : ''}${x.when ? ` at ${esc(x.when)}` : ''}${x.from ? '' : ', source unknown'}`).join(', ')}.</div></details>`;
+  }
   list.forEach((x, i) => {
-    let where = bodyPart(x); if (where.endsWith('*')) est = true;
+    let where = bodyPart(x);
+    // the * note as hover text on the starred word (UI review, item 11; a note under the rows up to then)
+    if (where.endsWith('*')) where = `<span class="est" title="Estimated from the damage: the demo says only head or body">${where}</span>`;
     if (x.kill && !gun) where = /grenade/.test(k.weapon) ? 'grenade' : esc(k.weapon || '');
     // the killing bullet on a skip across a restart: where it came from isn't in the file (Sujan, 8 Nov 2026)
     const how = gun ? ` · ${x.kill && onRestartSkip(k.t) ? 'the recording skips here' : x.wall ? 'through a wall' : 'in the open'}` : '';
-    h += `<button type="button" class="kb" data-bt="${x.t}" title="Jump to this ${x.kill ? 'kill' : 'bullet'}"><span class="i">${i + 1}</span><span><span class="d ${x.wall ? 'w' : 'o'}">−${x.dmg}</span>${x.head ? '<span class="hs">HS</span>' : ''}${x.kill ? `<span class="sk" aria-label="the kill">${SKULL}</span>` : ''}</span><span class="wh">${where}${how}</span><span class="tm">${x.kill ? 'kill' : '−' + (k.t - x.t).toFixed(2) + ' s'}</span></button>`;
+    h += `<button type="button" class="kb" data-bt="${x.t}" title="Jump to this ${x.kill ? 'kill' : 'bullet'}"><span class="i">${i + 1}</span><span><span class="d ${x.wall ? 'w' : 'o'}">−${x.dmg}</span>${x.head ? '<span class="hs">HS</span>' : ''}${x.kill ? `<span class="sk" aria-label="the kill">${SKULL}</span>` : ''}</span><span class="wh">${where}${how}</span><span class="tm">${x.kill ? 'kill' : (k.t - x.t).toFixed(2) + ' s before'}</span></button>`;
   });
   const last = list[n - 1];
-  h += `<div class="knote">−${last.dmg}${last.head ? ' HS' : ''}: the health he had left.${est ? ' *Estimated from the damage; the demo says only head or body.' : ''}</div>`;
+  h += `<div class="knote">−${last.dmg}${last.head ? ' HS' : ''}: the health he had left.</div>`;
   return box(h);
 }
 // The kill last clicked in the Kills or Wallbangs list: it keeps its highlight until another kill is
 // clicked or another demo is opened. A kill that playback is passing gets a lighter one.
 let pickedKill = null;
+let KD_EARLY = null; // the kill whose "HP lost before this fight" list is open (item 11)
 const MARK = '<svg class="mark" viewBox="0 0 10 13" aria-hidden="true"><path d="M1 0h8v13L5 9.5 1 13z" fill="currentColor"/></svg>';
 const killState = (k) => (k === pickedKill ? ' pick' : Math.abs(k.t - T) < 2 ? ' pass' : '');
 // The side panel used to be rebuilt every half second of playback on the Kills and Wallbangs tabs (to move
@@ -299,6 +306,7 @@ function renderPane() {
     PANE.keep = tab === 'kills';
     try { watchKill(k, 4); renderPane(); } finally { PANE.keep = false; }
   });
+  p.querySelectorAll('details.kpre').forEach((d) => d.ontoggle = () => { KD_EARLY = d.open ? +d.closest('.kdet').dataset.kd : null; });
   p.querySelectorAll('[data-bt]').forEach((el) => el.onclick = () => {
     const k = D.kills[+el.closest('.kdet').dataset.kd]; if (!k) return;
     selected = k.killer; playing = false; setPlayIcon();

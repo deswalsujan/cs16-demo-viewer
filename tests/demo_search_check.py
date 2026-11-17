@@ -166,13 +166,17 @@ with sync_playwright() as p:
         kd = JS(r"""(async () => { const w = (ms) => new Promise((r) => setTimeout(r, ms));
           const k = window.__kd = D.kills.find((x) => Math.abs(x.t - D.start - 2790.34) < 0.05);
           selected = k.killer; setCam('eyes', true); playing = false; T = k.t + 0.03; pickedKill = k; tab = 'kills'; renderPane(); await w(300);
-          const read = () => { const b = document.querySelector('.kdet'); return b ? [b.querySelector('.ksum'), b.querySelector('.kpre')].map((e) => e ? e.innerText.trim() : '').concat([...b.querySelectorAll('.kb')].map((x) => x.innerText.replace(/\s+/g, ' ').trim())) : null; };
+          // since the UI review (item 11): "Earlier:" folded into "N HP lost before this fight", its list read with the line shut
+          const read = () => { const b = document.querySelector('.kdet'); if (!b) return null; const p = b.querySelector('.kpre');
+            return [b.querySelector('.ksum').innerText.trim(), p ? `${p.querySelector('summary').innerText.trim()} [${p.open ? 'open' : 'shut'}] ${p.querySelector('.kpl').textContent.trim()}` : ''].concat([...b.querySelectorAll('.kb')].map((x) => x.innerText.replace(/\s+/g, ' ').trim()))
+              .concat([[...b.querySelectorAll('.est')].map((e) => e.title).join(), b.querySelector('.knote').innerText.trim()]); };
           const kills = read(); tab = 'wb'; renderPane(); await w(300); const wb = read(); tab = 'kills'; renderPane(); await w(200);
           document.querySelectorAll('.kdet .kb')[1].click(); await w(300);
           const jump = { t: +(T - D.start).toFixed(2), paused: !playing, eyes: cam3.mode === 'eyes' && selected === k.killer };
           return { kills, wb, jump }; })()""")
-        want = ['5 hits · 4 through a wall · 93 HP in 0.30 s', 'Earlier: −7 from a grenade at 0:45.', '1 −30 chest or arm* · in the open −0.30 s',
-                '2 −17 body · through a wall −0.30 s', '3 −17 body · through a wall −0.21 s', '4 −17 body · through a wall −0.11 s', '5 −12HS head · through a wall kill']
+        want = ['5 hits · 4 through a wall · 93 HP in 0.30 s', '7 HP lost before this fight [shut] Earlier: −7 from a grenade at 0:45.', '1 −30 chest or arm* · in the open 0.30 s before',
+                '2 −17 body · through a wall 0.30 s before', '3 −17 body · through a wall 0.21 s before', '4 −17 body · through a wall 0.11 s before', '5 −12HS head · through a wall kill',
+                'Estimated from the damage: the demo says only head or body', '−12 HS: the health he had left.']
         check('kill details: the picked kill in the Kills list opens to one line per bullet, the "Earlier:" line and the order of the demo', kd['kills'] == want, ' | '.join(kd['kills'] or ['no box']))
         check('kill details: the same in the Wallbangs list', kd['wb'] == want, ' | '.join(kd['wb'] or ['no box']))
         check("kill details: a bullet's line jumps playback to it, paused, through the killer's eyes", kd['jump'] == {'t': 2790.07, 'paused': True, 'eyes': True}, str(kd['jump']))
@@ -182,7 +186,7 @@ with sync_playwright() as p:
         # listed bullets; as first built it counted only those before edzie's first and read "−42, source unknown".
         cf = JS(r"""(async () => { const w = (ms) => new Promise((r) => setTimeout(r, ms));
           const k = D.kills.find((x) => Math.abs(x.t - D.start - 2667.38) < 0.05); T = k.t + 0.03; pickedKill = k; renderPane(); await w(300);
-          const p = document.querySelector('.kdet .kpre'), out = p ? p.innerText.trim() : null;
+          const p = document.querySelector('.kdet .kpre'), out = p ? p.querySelector('.kpl').textContent.trim() : null;
           pickedKill = __kd; T = __kd.t + 0.03; renderPane(); await w(200); return out; })()""")
         check('kill details: "Earlier:" names a crossfire hit between the killer\'s bullets (starix on face, R23 1:18), "source unknown" only with its time',
               cf == 'Earlier: −12 from a grenade at 1:25, −8 from a grenade at 1:23, −13 from a grenade at 1:23, −21 from starix at 1:19, −21 at 1:19, source unknown.', repr(cf))
