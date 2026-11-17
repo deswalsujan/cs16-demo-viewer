@@ -58,7 +58,8 @@ try:
             pg.evaluate('__v("playing = false")')
             for _ in range(5):
                 pg.wait_for_timeout(400)
-                row = pg.locator('#pane [data-kill]').nth(1)
+                # the round playing now: the Kills tab lists the whole match since the UI review (item 6), that round at the top
+                row = pg.locator('#pane [data-kill].cur').nth(1)
                 want = row.get_attribute('data-kill'); box = row.bounding_box()
                 if box is None: continue  # the row was rebuilt between the two calls
                 x, y = box['x'] + 40, box['y'] + box['height'] / 2

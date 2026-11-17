@@ -246,13 +246,9 @@ function updateHud(force) {
     if (changed && scope === 'round') drawTimeline();
     if (changed && heat && $('hmScope').value === 'round') heat = null;
     if (changed || force) { const cur = $('pane').querySelector('.row.cur'); if (cur && tab === 'rounds') cur.scrollIntoView({ block: 'nearest' }); }
-    // a new round on the Kills tab: its heading at the top, not wherever the last round's list was scrolled to. POV mode's
-    // Kills tab lists the whole match by round (0.26.29), so there the new round's heading comes to the top, the list
-    // stays where it is for a round with no kill or death of his yet (it has no heading) and after a click on a row
-    // (Sujan, 11 Nov 2026; up to 0.26.29 it went back to the list's top at every round change)
-    if (changed && tab === 'kills') {
-      if (!D.povOn) $('pane').scrollTop = 0;
-      else if (!PANE.keep) { const P = $('pane'), cur = P.querySelector('.sechead.rhead.cur'); if (cur) P.scrollTop += cur.getBoundingClientRect().top - P.getBoundingClientRect().top; }
-    }
+    // a new round on the Kills tab, which lists the whole match by round (POV mode since 0.26.29, HLTV demos since the UI
+    // review, item 6): the new round's heading comes to the top; the list stays where it is for a round with no heading
+    // (in POV mode, no kill or death of his yet) and after a click on a row (Sujan, 11 Nov 2026)
+    if (changed && tab === 'kills' && !PANE.keep) { const P = $('pane'), cur = P.querySelector('.sechead.rhead.cur'); if (cur) P.scrollTop += cur.getBoundingClientRect().top - P.getBoundingClientRect().top; }
   }
 }

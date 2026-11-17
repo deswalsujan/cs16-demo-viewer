@@ -196,7 +196,9 @@ try:
               'options by demo type: the HLTV demo', o2)
         pg.evaluate("__v(\"setView('3d', false)\")")
         k2 = ev(KILLS)
-        check((k2.get('top') or '').startswith('Round ') and k2.get('rounds') == 1, 'Kills tab of the HLTV demo: the round playing now', k2)
+        # the whole match by round in HLTV demos too since the UI review (item 6, 17 Nov 2026; the round playing now alone before)
+        check((k2.get('top') or '').startswith('Round ') and k2.get('rounds', 0) > 1 and k2.get('curHead', '').startswith(k2.get('curRound') or '?'),
+              'Kills tab of the HLTV demo: the whole match by round, the round playing now highlighted', k2)
         check(not errs, 'no page errors', errs[:3])
         b.close()
 finally:

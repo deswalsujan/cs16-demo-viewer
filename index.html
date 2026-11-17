@@ -5504,7 +5504,9 @@ document.querySelectorAll('.tabs button').forEach((b) => b.onclick = () => {
   if (tab === 'rounds') { const cur = $('pane').querySelector('.row.cur'); if (cur) cur.scrollIntoView({ block: 'center' }); }
   // the other tabs open at the top: the panel kept the Rounds list's scroll, so the Kills list opened scrolled down with
   // its "Round 23" heading out of sight (Sujan, 2 Nov 2026)
-  else if (tab === 'kills' && D && D.povOn) { const cur = $('pane').querySelector('.sechead.cur'); $('pane').scrollTop = cur ? Math.max(0, cur.offsetTop - 120 * UI) : 0; }
+  // the Kills tab, the whole match by round (POV mode since 0.26.29, HLTV demos since the UI review, item 6): the round
+  // playing now near the top
+  else if (tab === 'kills' && D) { const cur = $('pane').querySelector('.sechead.cur'); $('pane').scrollTop = cur ? Math.max(0, cur.offsetTop - 120 * UI) : 0; }
   else $('pane').scrollTop = 0;
 });
 // POV mode: the recorder's slot at a moment, from his own view frames (each frame names his slot; joined parts can differ)
@@ -5658,39 +5660,36 @@ function renderPane() {
     if ($('bSplit')) $('bSplit').onclick = splitJoined;
     $('bJoinWith').onclick = () => { const cur = D.parts ? D.parts.map((x) => fileByName(x.fileName)).filter(Boolean) : [CUR_FILE || fileByName(D.fileName)].filter(Boolean); JOIN.picking = true; openJoinCard(cur).then(() => { JOIN.picking = true; renderJoinCard(); }); };
     if ($('bCount30')) $('bCount30').onclick = () => setCount30(!M.count30);
-  } else if (tab === 'kills' && D.povOn) {
-    // POV mode (POV mockup round, section 5; Sujan, 9 and 11 Nov 2026): his own kills and deaths, the whole match by
-    // round, the round playing now highlighted; a round he had no kill or death in isn't listed. Kills as in the
-    // Players tab (no team kills), deaths with any death of his.
+  } else if (tab === 'kills') {
+    // The whole match by round, each round a band set apart from the rows (docs/pov-scoreboard-radar-flashbang-mock.jpg,
+    // section B; Sujan, 11 Nov 2026: the band with stronger contrast against the rows, no won or lost mark), the round
+    // playing now highlighted. In HLTV demos too since the UI review (item 6, 17 Nov 2026; up to then the round playing
+    // now alone). POV mode (POV mockup round, section 5; Sujan, 9 and 11 Nov 2026): his own kills and deaths, his side that
+    // round on the band, and a round he had no kill or death in isn't listed. Kills as in the Players tab (no team kills),
+    // deaths with any death of his.
+    const pov = D.povOn;
     let nk = 0, nd = 0, body = '';
     for (const r of (M.liveR.length ? M.liveR : M.rounds)) {
-      const ks = r.kills.filter(povHis); if (!ks.length) continue;
-      const a = ks.filter((k) => k.killer === povRecAt(k.t) && k.victim !== k.killer && !teamKill(k)).length, b = ks.filter((k) => k.victim === povRecAt(k.t)).length;
-      nk += a; nd += b;
+      const ks = pov ? r.kills.filter(povHis) : r.kills; if (pov && !ks.length) continue;
       const cur = r === cr;
-      // each round a band set apart from the rows, with his side that round (docs/pov-scoreboard-radar-flashbang-mock.jpg,
-      // section B; Sujan, 11 Nov 2026: the band with stronger contrast against the rows, no won or lost mark)
-      const se = povRecAt(r.start + 1), ps = se && playerState(se, r.start + 3), sd = ps && ps.state ? Math.abs(ps.state) : 0;
-      const chip = sd ? `<span class="sdchip ${sd === 1 ? 't' : 'ct'}">${sd === 1 ? 'T' : 'CT'}</span>` : '';
-      body += `<div class="sechead rhead${cur ? ' cur' : ''}"><span>${r.live ? 'Round ' + r.ln : 'Before the match'}${chip}</span><span>${[a ? plural(a, 'kill') : '', b ? plural(b, 'death') : ''].filter(Boolean).join(' · ')}</span></div>`;
+      let right, chip = '';
+      if (pov) {
+        const a = ks.filter((k) => k.killer === povRecAt(k.t) && k.victim !== k.killer && !teamKill(k)).length, b = ks.filter((k) => k.victim === povRecAt(k.t)).length;
+        nk += a; nd += b;
+        right = [a ? plural(a, 'kill') : '', b ? plural(b, 'death') : ''].filter(Boolean).join(' · ');
+        const se = povRecAt(r.start + 1), ps = se && playerState(se, r.start + 3), sd = ps && ps.state ? Math.abs(ps.state) : 0;
+        chip = sd ? `<span class="sdchip ${sd === 1 ? 't' : 'ct'}">${sd === 1 ? 'T' : 'CT'}</span>` : '';
+      } else right = ks.length ? plural(ks.length, 'kill') : 'no kills';
+      body += `<div class="sechead rhead${cur ? ' cur' : ''}"><span>${r.live ? 'Round ' + r.ln : pov ? 'Before the match' : 'Not counted'}${chip}</span><span>${right}</span></div>`;
       for (const k of ks) {
+        // a kill inside a skip in the recording: // by its time (0.20.0), wallbangs included since 0.21.0, which keep UNSURE too
         const sk = skipNear(k.t) ? SKIP_MARK : '';
         body += `<div class="row krow kill3${killState(k)}${cur ? ' cur' : ''}" data-kill="${k.t}" data-ki="${D.kills.indexOf(k)}"><span class="n" title="${demoTip(k.t)}">${k === pickedKill ? MARK : ''}${killClock(k.t) ? cellClock(k.t) : '<span class="nw">+' + fmt(k.t - r.start) + '</span>'}${sk}</span><span class="main">${killRow3(k, true)}</span></div>`;
         if (k === pickedKill) body += killDetailsHtml(k);
       }
     }
-    p.innerHTML = `<div class="sechead"><span>His kills and deaths</span><span>${plural(nk, 'kill')} · ${plural(nd, 'death')}</span></div>` + (body || '<div class="opt">No kills or deaths of his in the match.</div>');
-  } else if (tab === 'kills') {
-    const r = cr;
-    let h = `<div class="sechead"><span>${r && r.live ? 'Round ' + r.ln : 'This round'}</span><span>${r ? r.kills.length : 0} kills</span></div>`;
-    if (r) for (const k of r.kills) {
-      // a kill inside a skip in the recording: // by its time (0.20.0), wallbangs included since 0.21.0, which keep UNSURE too
-      const sk = skipNear(k.t) ? SKIP_MARK : '';
-      h += `<div class="row krow kill3${killState(k)}" data-kill="${k.t}" data-ki="${D.kills.indexOf(k)}"><span class="n" title="${demoTip(k.t)}">${k === pickedKill ? MARK : ''}${killClock(k.t) ? cellClock(k.t) : '<span class="nw">+' + fmt(k.t - r.start) + '</span>'}${sk}</span><span class="main">${killRow3(k, true)}</span></div>`;
-      if (k === pickedKill) h += killDetailsHtml(k);
-    }
-    if (!r || !r.kills.length) h += `<div class="opt">No kills in this round.</div>`;
-    p.innerHTML = h;
+    p.innerHTML = pov ? `<div class="sechead"><span>His kills and deaths</span><span>${plural(nk, 'kill')} · ${plural(nd, 'death')}</span></div>` + (body || '<div class="opt">No kills or deaths of his in the match.</div>')
+      : (body || '<div class="opt">No kills in the match.</div>');
   } else if (tab === 'wb') {
     let h;
     if (!MAP || MAP.name !== D.mapName.toLowerCase()) h = `<div class="opt">Wallbang detection needs the map file (${esc(D.mapName)}.bsp). Choose your Half-Life folder or drop the .bsp here.</div>`;
@@ -5782,9 +5781,10 @@ function renderPane() {
     const k = D.kills[+el.dataset.ki];
     if (!k) return;
     pickedKill = k;
-    // POV mode's Kills tab lists the whole match: a click leaves the list where it is, even when the kill is in another
-    // round (Sujan, 11 Nov 2026; up to 0.26.29 the round change it causes threw the list back to its top)
-    PANE.keep = D.povOn && tab === 'kills';
+    // the Kills tab lists the whole match (POV mode, and HLTV demos since the UI review, item 6): a click leaves the list
+    // where it is, even when the kill is in another round (Sujan, 11 Nov 2026; up to 0.26.29 the round change it caused
+    // threw POV mode's list back to its top)
+    PANE.keep = tab === 'kills';
     try { watchKill(k, 4); renderPane(); } finally { PANE.keep = false; }
   });
   p.querySelectorAll('[data-bt]').forEach((el) => el.onclick = () => {
@@ -6061,14 +6061,10 @@ function updateHud(force) {
     if (changed && scope === 'round') drawTimeline();
     if (changed && heat && $('hmScope').value === 'round') heat = null;
     if (changed || force) { const cur = $('pane').querySelector('.row.cur'); if (cur && tab === 'rounds') cur.scrollIntoView({ block: 'nearest' }); }
-    // a new round on the Kills tab: its heading at the top, not wherever the last round's list was scrolled to. POV mode's
-    // Kills tab lists the whole match by round (0.26.29), so there the new round's heading comes to the top, the list
-    // stays where it is for a round with no kill or death of his yet (it has no heading) and after a click on a row
-    // (Sujan, 11 Nov 2026; up to 0.26.29 it went back to the list's top at every round change)
-    if (changed && tab === 'kills') {
-      if (!D.povOn) $('pane').scrollTop = 0;
-      else if (!PANE.keep) { const P = $('pane'), cur = P.querySelector('.sechead.rhead.cur'); if (cur) P.scrollTop += cur.getBoundingClientRect().top - P.getBoundingClientRect().top; }
-    }
+    // a new round on the Kills tab, which lists the whole match by round (POV mode since 0.26.29, HLTV demos since the UI
+    // review, item 6): the new round's heading comes to the top; the list stays where it is for a round with no heading
+    // (in POV mode, no kill or death of his yet) and after a click on a row (Sujan, 11 Nov 2026)
+    if (changed && tab === 'kills' && !PANE.keep) { const P = $('pane'), cur = P.querySelector('.sechead.rhead.cur'); if (cur) P.scrollTop += cur.getBoundingClientRect().top - P.getBoundingClientRect().top; }
   }
 }
 
