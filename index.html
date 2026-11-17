@@ -66,7 +66,7 @@ button { cursor: pointer; }
    panel or bottom bar while it's up, before a demo is open and when it comes back over one; the start screen takes the
    whole width under the header */
 .app.start { grid-template-columns: minmax(0, 1fr); grid-template-rows: auto minmax(0, 1fr); grid-template-areas: "head" "radar"; }
-.app.start .side, .app.start .transport, .app.start #viewSeg, .app.start #bTheatre, .app.start #bFull { display: none; }
+.app.start .side, .app.start .transport, .app.start #viewSeg, .app.start #bFull { display: none; }
 
 /* header */
 .head {
@@ -647,7 +647,8 @@ addEventListener('resize', () => { if (applyUiSize()) dispatchEvent(new Event('u
       <button class="chip" type="button" id="partsChip" hidden></button>
     </div>
     <div class="seg" id="viewSeg" role="group" aria-label="View"><button type="button" data-v="2d" class="on">2D</button><button type="button" data-v="3d">3D</button></div>
-    <div class="hbtns"><button class="btn" id="bTheatre" type="button" title="Theatre mode: the view fills the window, controls appear at the edges (T)">Theatre</button><button class="btn" id="bFull" type="button" title="Full screen, in Theatre mode (F)">Full screen</button><button class="btn" id="btnOpen" type="button">Open another demo</button></div>
+    <!-- one Full screen button (UI review, item 7, 17 Nov 2026): Theatre mode's own button went; T still fills the window -->
+    <div class="hbtns"><button class="btn" id="bFull" type="button" aria-pressed="false" title="Full screen, in Theatre mode: the view fills the screen and the controls come in at the edges (F). T fills the window without full screen">Full screen</button><button class="btn" id="btnOpen" type="button">Open another demo</button></div>
   </header>
 
   <section class="radar m2d" id="radar">
@@ -5485,7 +5486,7 @@ function showLoad(v) {
 }
 // Everything that needs a demo stays disabled until one is loaded (Shortcuts always works)
 function setControls(on) {
-  const ids = ['bPrevR', 'bBack', 'bPlay', 'bFwd', 'bNextR', 'bScope', 'bTheatre', 'bFull'];
+  const ids = ['bPrevR', 'bBack', 'bPlay', 'bFwd', 'bNextR', 'bScope', 'bFull'];
   for (const id of ids) $(id).disabled = !on;
   document.querySelectorAll('#speeds button, #viewSeg button, .tabs button').forEach((b) => b.disabled = !on);
   $('tl').classList.toggle('off', !on);
@@ -9891,7 +9892,8 @@ function toggleFull() {
 $('bFull').onclick = toggleFull;
 document.addEventListener('fullscreenchange', () => {
   const fs = !!document.fullscreenElement;
-  $('bFull').textContent = fs ? 'Exit full screen' : 'Full screen';
+  // the button shows its on state instead of renaming itself (UI review, item 7; "Exit full screen" up to then)
+  $('bFull').classList.toggle('on', fs); $('bFull').setAttribute('aria-pressed', fs ? 'true' : 'false');
   // full screen always uses Theatre mode; leaving it puts back whatever was on before
   if (fs) { TH.before = TH.on; setTheatre(true); } else setTheatre(TH.before);
 });
@@ -9918,8 +9920,6 @@ function applyTheatre() {
   const app = $('app'), act = theatreActive();
   const was = app.classList.contains('theatre');
   app.classList.toggle('theatre', act);
-  $('bTheatre').classList.toggle('on', act);
-  $('bTheatre').textContent = act ? 'Exit theatre' : 'Theatre';
   if (!act) { app.classList.remove('show-t', 'show-r', 'show-b', 'idle'); for (const k in TH.timers) clearTimeout(TH.timers[k]); clearTimeout(TH.idle); }
   else measureTheatre();
   if (was !== act) requestAnimationFrame(() => { resize(); resize3(); measureTheatre(); });
@@ -9981,7 +9981,7 @@ document.addEventListener('pointercancel', () => { TH.drag = false; }, true);
 document.documentElement.addEventListener('mouseleave', () => { if (!theatreActive()) return; TH.x = -1; TH.lastTarget = null; thUpdate(null); });
 window.addEventListener('blur', () => { if (theatreActive()) { TH.x = -1; TH.lastTarget = null; thUpdate(null); } });
 window.addEventListener('resize', () => { if (theatreActive()) measureTheatre(); });
-$('bTheatre').onclick = () => setTheatre(!TH.on);
+// Theatre mode has no button of its own since the UI review (item 7, 17 Nov 2026): T, and Full screen, which uses it
 $('sndVol').oninput = (e) => setVolume(+e.target.value);
 // browsers only let a page make sound after you've clicked or pressed a key on it
 const wake = () => { if (SND.on) audio(); };

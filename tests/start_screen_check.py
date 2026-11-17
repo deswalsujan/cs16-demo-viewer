@@ -16,11 +16,12 @@ with sync_playwright() as p:
     pg.goto(f'http://127.0.0.1:{srv.server_port}/index.html'); pg.wait_for_timeout(800)
     three = pg.evaluate("typeof THREE === 'object' ? THREE.REVISION : null")
     print('three.js in the page:', three, '| outside requests:', outside or 'none'); tj = three == '128' and not outside
-    # only the start steps (UI review, item 1, 17 Nov 2026): no view switch, Theatre, Full screen, side panel or bottom bar
-    # until a demo is open
-    gone = pg.evaluate("['viewSeg', 'bTheatre', 'bFull', 'side'].map((id) => document.getElementById(id)).concat([document.querySelector('.transport')]).map((e) => !e.offsetParent && !e.getClientRects().length)")
+    # only the start steps (UI review, item 1, 17 Nov 2026): no view switch, Full screen, side panel or bottom bar until a
+    # demo is open; no Theatre button anywhere since item 7 (T still works)
+    gone = pg.evaluate("['viewSeg', 'bFull', 'side'].map((id) => document.getElementById(id)).concat([document.querySelector('.transport')]).map((e) => !e.offsetParent && !e.getClientRects().length)")
     d = gone
-    print('Hidden on the start screen (view switch, Theatre, Full screen, side panel, bottom bar):', gone)
+    gone.append(pg.evaluate("!document.getElementById('bTheatre')"))
+    print('Hidden on the start screen (view switch, Full screen, side panel, bottom bar; no Theatre button):', gone)
     pg.keyboard.press('t'); pg.keyboard.press('f'); pg.wait_for_timeout(500)
     t = pg.evaluate("!document.querySelector('.app').classList.contains('theatre') && !document.fullscreenElement")
     print('T and F do nothing on the start screen:', t)

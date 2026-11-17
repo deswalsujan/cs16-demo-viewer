@@ -20,8 +20,6 @@ function applyTheatre() {
   const app = $('app'), act = theatreActive();
   const was = app.classList.contains('theatre');
   app.classList.toggle('theatre', act);
-  $('bTheatre').classList.toggle('on', act);
-  $('bTheatre').textContent = act ? 'Exit theatre' : 'Theatre';
   if (!act) { app.classList.remove('show-t', 'show-r', 'show-b', 'idle'); for (const k in TH.timers) clearTimeout(TH.timers[k]); clearTimeout(TH.idle); }
   else measureTheatre();
   if (was !== act) requestAnimationFrame(() => { resize(); resize3(); measureTheatre(); });
@@ -83,7 +81,7 @@ document.addEventListener('pointercancel', () => { TH.drag = false; }, true);
 document.documentElement.addEventListener('mouseleave', () => { if (!theatreActive()) return; TH.x = -1; TH.lastTarget = null; thUpdate(null); });
 window.addEventListener('blur', () => { if (theatreActive()) { TH.x = -1; TH.lastTarget = null; thUpdate(null); } });
 window.addEventListener('resize', () => { if (theatreActive()) measureTheatre(); });
-$('bTheatre').onclick = () => setTheatre(!TH.on);
+// Theatre mode has no button of its own since the UI review (item 7, 17 Nov 2026): T, and Full screen, which uses it
 $('sndVol').oninput = (e) => setVolume(+e.target.value);
 // browsers only let a page make sound after you've clicked or pressed a key on it
 const wake = () => { if (SND.on) audio(); };

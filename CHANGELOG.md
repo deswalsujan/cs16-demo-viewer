@@ -98,8 +98,9 @@ Built:
 - Item 4, the view's options in one place: one strip at the bottom left in 2D, 3D and POV (**Names**, **Grenades**, **Kill lines**, **See through walls** but not in 2D, **Reset view** but not in POV, then **View settings**, opening upward, with only the rows the view uses, so **Interface size** is in 2D too); **Vanilla** is **Hide all overlays**, with the same behaviour; the camera bar at the top left keeps the cameras and the player arrows, and isn't there in POV.
 - Item 5, a **Radar** row replaces **3D + radar**: the header's switch is 2D | 3D; **Radar**, in **View settings** in 3D for HLTV demos, puts the 2D map in the corner, saved with the view's settings; a saved 3D + radar opens as 3D with **Radar** on. A radar label that would run off the right edge goes to the left of the dot.
 - Item 6, the Kills tab lists the whole match in HLTV demos too, by round, with the round bands of POV demos, the round playing now highlighted; at a new round its band comes to the top, and a click on a row leaves the list where it is.
+- Item 7, one **Full screen** button: it uses Theatre mode as before (F), shows its on state instead of renaming itself to "Exit full screen"; Theatre mode's own button is gone, T still fills the window without full screen.
 
-Left: items 7 to 14; a stop after item 7 for Sujan to look; the eight checks at the end (about 7 minutes, on Sujan's go); then the version, the release entry, `LIMITS.md` and `tests/logs/<version>.md`.
+Left: items 8 to 14; a stop after item 7 for Sujan to look; the eight checks at the end (about 7 minutes, on Sujan's go); then the version, the release entry, `LIMITS.md` and `tests/logs/<version>.md`.
 
 ## Known limits
 Moved to [LIMITS.md](LIMITS.md) on 30 Oct 2026; release entries below still say "Known limits" for that list.
