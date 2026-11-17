@@ -87,6 +87,14 @@ What changed in the viewer, newest first. The version shows in the viewer's shor
 - [0.2.0](#020-2026-09-30) 2026-09-30: Real models and sound
 - [0.1.0](#010-before-2026-09-30) before 2026-09-30: First version: radar, 3D, kills
 
+## In progress: the UI made simpler, for trial (branch `wip/ui-simpler`, from 17 Nov 2026)
+
+The UI review's final list, `docs/reviews/ui-review-final-2026-11-12.md`: 14 items merged from three reviews of 0.26.30 and checked in the review chat, built on one branch for Sujan to judge live in the browser instead of mockup rounds (Sujan, 12 Nov 2026; his go, 17 Nov 2026). One commit per item, `ui: item N, <what>`, so any item can be reverted on its own; items he doesn't like are dropped before the merge, and the rest becomes one release.
+
+Built: none yet.
+
+Left: items 1 to 14; a stop after item 7 for Sujan to look; the eight checks at the end (about 7 minutes, on Sujan's go); then the version, the release entry, `LIMITS.md` and `tests/logs/<version>.md`.
+
 ## Known limits
 Moved to [LIMITS.md](LIMITS.md) on 30 Oct 2026; release entries below still say "Known limits" for that list.
 
