@@ -100,7 +100,13 @@ Built:
 - Item 6, the Kills tab lists the whole match in HLTV demos too, by round, with the round bands of POV demos, the round playing now highlighted; at a new round its band comes to the top, and a click on a row leaves the list where it is.
 - Item 7, one **Full screen** button: it uses Theatre mode as before (F), shows its on state instead of renaming itself to "Exit full screen"; Theatre mode's own button is gone, T still fills the window without full screen.
 
-Left: items 8 to 14; a stop after item 7 for Sujan to look; the eight checks at the end (about 7 minutes, on Sujan's go); then the version, the release entry, `LIMITS.md` and `tests/logs/<version>.md`.
+To try the branch in Chrome on the Mac without switching the working copy (it fetches the branch and opens its built page from a copy in /tmp; run it again after later commits):
+
+```
+git -C ~/code/cs16-demo-viewer fetch -q origin wip/ui-simpler && git -C ~/code/cs16-demo-viewer show origin/wip/ui-simpler:index.html > /tmp/ui-simpler.html && open -a "Google Chrome" /tmp/ui-simpler.html
+```
+
+Left: items 8 to 14 (stopped after item 7 for Sujan to look, 17 Nov 2026); the eight checks at the end (about 7 minutes, on Sujan's go); then the version, the release entry, `LIMITS.md` and `tests/logs/<version>.md`.
 
 ## Known limits
 Moved to [LIMITS.md](LIMITS.md) on 30 Oct 2026; release entries below still say "Known limits" for that list.
