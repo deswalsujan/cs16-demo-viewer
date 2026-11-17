@@ -26,13 +26,20 @@ function jumpRound(dir) {
 }
 $('bPrevR').onclick = () => jumpRound(-1);
 $('bNextR').onclick = () => jumpRound(1);
-$('bScope').onclick = () => { scope = scope === 'match' ? 'round' : 'match'; $('bScope').textContent = 'Timeline: ' + scope; savePrefs(); drawTimeline(); };
+// the timeline's range, Match | Round (UI review, item 8; a "Timeline: match" button up to then)
+function setScope(s) { scope = s; document.querySelectorAll('#scopeSeg button').forEach((b) => b.classList.toggle('on', b.dataset.s === s)); }
+document.querySelectorAll('#scopeSeg button').forEach((b) => b.onclick = () => { setScope(b.dataset.s); savePrefs(); drawTimeline(); });
+// one speed button showing the speed, opening the six above it (UI review, item 8; six buttons up to then); [ and ] stay
 const spEl = $('speeds');
+const speedOpen = (on) => { spEl.hidden = !on; $('bSpeed').setAttribute('aria-expanded', on ? 'true' : 'false'); };
 for (const s of SPEEDS) {
   const b = document.createElement('button'); b.type = 'button'; b.className = 'btn' + (s === 1 ? ' on' : ''); b.textContent = s + '×';
-  b.onclick = () => setSpeed(s); spEl.appendChild(b);
+  b.onclick = () => { setSpeed(s); speedOpen(false); }; spEl.appendChild(b);
 }
-function setSpeed(s) { speed = s; [...spEl.children].forEach((b, i) => b.classList.toggle('on', SPEEDS[i] === s)); }
+$('bSpeed').onclick = (e) => { e.stopPropagation(); speedOpen(spEl.hidden); };
+document.addEventListener('pointerdown', (e) => { if (!spEl.hidden && !e.target.closest('.spwrap')) speedOpen(false); }, true);
+document.addEventListener('keydown', (e) => { if (e.key === 'Escape' && !spEl.hidden) { e.stopPropagation(); speedOpen(false); $('bSpeed').focus(); } }, true);
+function setSpeed(s) { speed = s; [...spEl.children].forEach((b, i) => b.classList.toggle('on', SPEEDS[i] === s)); $('bSpeed').textContent = s + '×'; $('bSpeed').classList.toggle('on', s !== 1); }
 
 // the shortcuts list works everywhere, including the start screen
 document.addEventListener('keydown', (e) => {

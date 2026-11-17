@@ -15,7 +15,7 @@ with sync_playwright() as p:
     url = f'http://127.0.0.1:{srv.server_port}/index.html'
     pg.goto(url)
     # the strip's own buttons: View settings, in it since the UI review (item 4), holds buttons of its own
-    r = pg.evaluate("[...document.querySelectorAll('#legend > .btn, #legend > .xwrap > .btn')].map(b => b.id + ':' + b.classList.contains('on')).join(' ') + ' | ' + document.getElementById('bScope').textContent")
+    r = pg.evaluate("[...document.querySelectorAll('#legend > .btn, #legend > .xwrap > .btn')].map(b => b.id + ':' + b.classList.contains('on')).join(' ') + ' | ' + 'Timeline: ' + document.querySelector('#scopeSeg button.on').dataset.s")
     print('defaults on a first visit:', r); ok &= r == 'tgNames:true tgNades:true tgLines:true tgXray:false tgFit:false | Timeline: match'
     # no POV mode setting since the sign-off (0.26.30; up to 0.26.29 it was off on a first visit), and POV mode's own rows:
     # his crosshair From config.cfg, the flashbang dot and whiteout off (Sujan, 8 and 11 Nov 2026)
@@ -23,7 +23,7 @@ with sync_playwright() as p:
     print('no POV mode setting; his crosshair, flashbang dot, whiteout on a first visit:', r); ok &= r == [True, 'cfg', False, False]
     pg.evaluate("""localStorage.setItem('prefs', JSON.stringify({ view: '3d', names: false, nades: true, lines: false, xray: true, scope: 'round' }))""")
     pg.reload(); pg.wait_for_timeout(500)
-    r = pg.evaluate("[...document.querySelectorAll('#legend > .btn, #legend > .xwrap > .btn')].map(b => b.id + ':' + b.classList.contains('on')).join(' ') + ' | ' + document.getElementById('bScope').textContent")
+    r = pg.evaluate("[...document.querySelectorAll('#legend > .btn, #legend > .xwrap > .btn')].map(b => b.id + ':' + b.classList.contains('on')).join(' ') + ' | ' + 'Timeline: ' + document.querySelector('#scopeSeg button.on').dataset.s")
     print('after a reload with saved settings:', r); ok &= r == 'tgNames:false tgNades:true tgLines:false tgXray:true tgFit:false | Timeline: round'
     # 2D and 3D in the header, Radar a row in View settings (UI review, item 5, 17 Nov 2026): a saved 3D + radar opens as 3D
     # with Radar on, and stays so after the next save
@@ -54,7 +54,7 @@ with sync_playwright() as p:
     except Exception as e:
         print('Vanilla and Damage numbers: FAIL,', str(e).split('\n')[0]); ok = False
     pg.evaluate("localStorage.setItem('prefs', '{broken')"); pg.reload(); pg.wait_for_timeout(500)
-    r = pg.evaluate("document.getElementById('bScope').textContent"); errs = []
+    r = pg.evaluate("'Timeline: ' + document.querySelector('#scopeSeg button.on').dataset.s"); errs = []
     print('with damaged saved settings the page still opens with defaults:', r); ok &= r == 'Timeline: match'
     b.close()
 print('PASS' if ok else 'FAIL')

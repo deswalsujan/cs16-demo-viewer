@@ -113,6 +113,26 @@ with sync_playwright() as p:
     pg.click('#tgFit'); pg.wait_for_timeout(500); reset = pg.evaluate(under)
     check('2D map zoomed in goes under the controls, Reset view brings it back above them (1366x768)', zoomed['below'] > 0 and reset['below'] == 0 and reset['above'] > 0,
           f"zoomed: {zoomed['below']} pixels under; after Reset view: {reset['below']}")
+    # the bottom of the 2D view at 1512x982 with Heatmap on (UI review, items 4 and 8, 17 Nov 2026): the strip at the bottom
+    # left (with View settings since item 4) and the Heatmap control (its side and range show only while it's on since item
+    # 8) side by side, apart, and the map still ending above them (0.26.14)
+    pg.set_viewport_size({'width': 1512, 'height': 982}); pg.wait_for_timeout(500)
+    off = pg.evaluate("() => [document.getElementById('hmSide').hidden, document.getElementById('hmScope').hidden]")
+    pg.select_option('#hmMode', 'deaths'); pg.wait_for_timeout(600)
+    hm = pg.evaluate("""() => { const L = document.getElementById('legend').getBoundingClientRect(), H = document.getElementById('heatbar').getBoundingClientRect();
+      return { gap: Math.round(H.left - L.right), rows: [Math.round(L.height), Math.round(H.height)], shown: [!document.getElementById('hmSide').hidden, !document.getElementById('hmScope').hidden] }; }""")
+    u = pg.evaluate(under)
+    check('2D at 1512x982 with Heatmap on: side and range shown only while it is on, the strip and the Heatmap control apart on one row each, the map above them',
+          off == [True, True] and hm['shown'] == [True, True] and hm['gap'] >= 8 and max(hm['rows']) < 40 and u['below'] == 0 and u['above'] > 0, f"{hm}; hidden while off: {off}; {u['below']} pixels under the controls")
+    pg.select_option('#hmMode', 'off'); pg.wait_for_timeout(300)
+    # one speed button (UI review, item 8): it shows the speed and opens the six; [ and ] still step it
+    sp = pg.evaluate("""async () => { const w = (ms) => new Promise((r) => setTimeout(r, ms)), b = document.getElementById('bSpeed'), pop = document.getElementById('speeds');
+      const was = b.textContent; b.click(); await w(100); const open = !pop.hidden, n = pop.querySelectorAll('button').length; pop.querySelectorAll('button')[4].click(); await w(100);
+      const picked = [b.textContent, pop.hidden]; document.dispatchEvent(new KeyboardEvent('keydown', { key: ']' })); await w(50); const up = b.textContent;
+      document.dispatchEvent(new KeyboardEvent('keydown', { key: '[' })); document.dispatchEvent(new KeyboardEvent('keydown', { key: '[' })); document.dispatchEvent(new KeyboardEvent('keydown', { key: '[' })); await w(50);
+      return { was, open, n, picked, up, back: b.textContent }; }""")
+    check('one speed button: 1× opens the six, 4× picked closes them and shows 4×, ] makes it 8×, [ three times 1×',
+          sp == {'was': '1×', 'open': True, 'n': 6, 'picked': ['4×', True], 'up': '8×', 'back': '1×'}, str(sp))
     pg.set_viewport_size({'width': 880, 'height': 1300})
 
     # Player's eyes keeps the game's 4:3 view top to bottom (0.26.15, Sujan, 3 Nov 2026): the game's 90 degrees, or a

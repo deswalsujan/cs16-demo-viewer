@@ -403,8 +403,12 @@ kbd { font-family: var(--f-body); font-size: calc(11px * var(--ui)); background:
 .ctrls { display: flex; align-items: center; gap: calc(8px * var(--ui)); flex-wrap: wrap; }
 .ctrls .time { font-family: var(--f-body); font-size: calc(13px * var(--ui)); font-variant-numeric: tabular-nums; color: var(--muted); }
 .ctrls .time b { color: var(--fg); font-weight: 500; }
-.ctrls .sp { margin-left: auto; display: flex; gap: calc(4px * var(--ui)); flex-wrap: wrap; }
-.ctrls .sp button { min-width: calc(44px * var(--ui)); justify-content: center; }
+/* the speed button and the six above it (UI review, item 8) */
+.spwrap { margin-left: auto; position: relative; }
+#bSpeed { min-width: calc(52px * var(--ui)); justify-content: center; }
+.sppop { position: absolute; right: 0; bottom: calc(100% + calc(6px * var(--ui))); z-index: 8; display: grid; gap: calc(2px * var(--ui)); padding: calc(4px * var(--ui)); background: var(--panel); border: 1px solid var(--line); border-radius: calc(6px * var(--ui)); box-shadow: 0 calc(8px * var(--ui)) calc(24px * var(--ui)) rgba(0,0,0,.5); }
+.sppop button { min-width: calc(60px * var(--ui)); justify-content: center; }
+.tlseg button { padding: calc(6px * var(--ui)) calc(10px * var(--ui)); }
 .ib { width: calc(34px * var(--ui)); height: calc(32px * var(--ui)); padding: 0; justify-content: center; }
 .ib svg { width: calc(16px * var(--ui)); height: calc(16px * var(--ui)); fill: currentColor; }
 .kbd { color: var(--faint); font-size: calc(11px * var(--ui)); font-family: var(--f-body); }
@@ -795,12 +799,12 @@ addEventListener('resize', () => { if (applyUiSize()) dispatchEvent(new Event('u
         <option value="kills">Heatmap: where kills were made from</option>
         <option value="presence">Heatmap: where players stand</option>
       </select>
-      <select id="hmSide" aria-label="Heatmap filter">
+      <select id="hmSide" aria-label="Heatmap filter" hidden>
         <option value="all">Both sides</option>
         <option value="1">T side</option>
         <option value="2">CT side</option>
       </select>
-      <select id="hmScope" aria-label="Heatmap rounds">
+      <select id="hmScope" aria-label="Heatmap rounds" hidden>
         <option value="match">Whole match</option>
         <option value="round">This round</option>
       </select>
@@ -858,10 +862,12 @@ addEventListener('resize', () => { if (applyUiSize()) dispatchEvent(new Event('u
       <button class="btn ib" id="bFwd" type="button" title="Forward 5 seconds (→)"><svg viewBox="0 0 16 16"><path d="M1 3v10l7-5zM8 3v10l7-5z"/></svg></button>
       <button class="btn ib" id="bNextR" type="button" title="Next round (X)"><svg viewBox="0 0 16 16"><path d="M11 2h2v12h-2zM2 2v12l8-6z"/></svg></button>
       <span class="time" id="time"><b>0:00</b> / 0:00</span>
-      <button class="btn" id="bScope" type="button" title="Timeline shows the whole match or only this round">Timeline: match</button>
+      <!-- the bottom bar (UI review, item 8, 17 Nov 2026): the timeline's range as a two-part switch, Match | Round, in place
+           of "Timeline: match"; one speed button showing the speed, opening the six -->
+      <div class="seg tlseg" id="scopeSeg" role="group" aria-label="Timeline" title="The timeline shows the whole match or only this round"><button type="button" data-s="match" class="on">Match</button><button type="button" data-s="round">Round</button></div>
       <span class="sndgrp"><button class="btn ib" id="bSnd" type="button" title="Sound on or off (M)" aria-pressed="true"><svg viewBox="0 0 16 16" id="sndIcon"></svg></button><input type="range" id="sndVol" min="0" max="1" step="0.01" aria-label="Volume" title="Volume"></span>
       <button class="btn" id="bKeys" type="button" title="Keyboard shortcuts (?)">Shortcuts <span class="kbd">?</span></button>
-      <div class="sp" id="speeds"></div>
+      <div class="spwrap"><button class="btn" id="bSpeed" type="button" aria-expanded="false" aria-controls="speeds" title="Playback speed ([ slower, ] faster)">1×</button><div class="sppop" id="speeds" role="group" aria-label="Playback speed" hidden></div></div>
     </div>
   </footer>
 </div>
@@ -5421,7 +5427,10 @@ async function onDemo() {
   chip.hidden = !D.parts; if (D.parts) { chip.textContent = `${D.parts.length} files`; chip.title = 'One map joined from ' + D.parts.map((p) => p.fileName).join(', then ') + '. Rounds tab: Split them to undo.'; }
   $('score').hidden = false; $('legend').hidden = false; $('heatbar').hidden = false; $('rclock').hidden = false;
   $('tnA').textContent = M.tnames[0]; $('tnB').textContent = M.tnames[1];
-  heat = null; $('hmMode').value = 'off';
+  heat = null; $('hmMode').value = 'off'; heatControls();
+  // "Press ? for keyboard shortcuts" in the view for the first few demos only, then only in Help (UI review, item 8); the
+  // rule of 11 Nov 2026 hiding it in POV mode, 2D, Theatre mode and under 1100 px stays
+  { const n = (+ls.get('demosOpened') || 0) + 1; ls.set('demosOpened', n); $('hint3').hidden = n > 3; }
   afterOverview(ok, true);
   M.wbs = [];
   buildHp(); buildPack(); buildPings(); buildBrk(); buildPose(); prepAnim(); buildZoom();
@@ -5486,9 +5495,9 @@ function showLoad(v) {
 }
 // Everything that needs a demo stays disabled until one is loaded (Shortcuts always works)
 function setControls(on) {
-  const ids = ['bPrevR', 'bBack', 'bPlay', 'bFwd', 'bNextR', 'bScope', 'bFull'];
+  const ids = ['bPrevR', 'bBack', 'bPlay', 'bFwd', 'bNextR', 'bSpeed', 'bFull'];
   for (const id of ids) $(id).disabled = !on;
-  document.querySelectorAll('#speeds button, #viewSeg button, .tabs button').forEach((b) => b.disabled = !on);
+  document.querySelectorAll('#speeds button, #scopeSeg button, #viewSeg button, .tabs button').forEach((b) => b.disabled = !on);
   $('tl').classList.toggle('off', !on);
   $('btnOpen').hidden = !D; // nothing to go "back" to until a demo has been opened once
   if (D && !on) $('btnOpen').textContent = 'Back to the demo';
@@ -5847,13 +5856,20 @@ function jumpRound(dir) {
 }
 $('bPrevR').onclick = () => jumpRound(-1);
 $('bNextR').onclick = () => jumpRound(1);
-$('bScope').onclick = () => { scope = scope === 'match' ? 'round' : 'match'; $('bScope').textContent = 'Timeline: ' + scope; savePrefs(); drawTimeline(); };
+// the timeline's range, Match | Round (UI review, item 8; a "Timeline: match" button up to then)
+function setScope(s) { scope = s; document.querySelectorAll('#scopeSeg button').forEach((b) => b.classList.toggle('on', b.dataset.s === s)); }
+document.querySelectorAll('#scopeSeg button').forEach((b) => b.onclick = () => { setScope(b.dataset.s); savePrefs(); drawTimeline(); });
+// one speed button showing the speed, opening the six above it (UI review, item 8; six buttons up to then); [ and ] stay
 const spEl = $('speeds');
+const speedOpen = (on) => { spEl.hidden = !on; $('bSpeed').setAttribute('aria-expanded', on ? 'true' : 'false'); };
 for (const s of SPEEDS) {
   const b = document.createElement('button'); b.type = 'button'; b.className = 'btn' + (s === 1 ? ' on' : ''); b.textContent = s + '×';
-  b.onclick = () => setSpeed(s); spEl.appendChild(b);
+  b.onclick = () => { setSpeed(s); speedOpen(false); }; spEl.appendChild(b);
 }
-function setSpeed(s) { speed = s; [...spEl.children].forEach((b, i) => b.classList.toggle('on', SPEEDS[i] === s)); }
+$('bSpeed').onclick = (e) => { e.stopPropagation(); speedOpen(spEl.hidden); };
+document.addEventListener('pointerdown', (e) => { if (!spEl.hidden && !e.target.closest('.spwrap')) speedOpen(false); }, true);
+document.addEventListener('keydown', (e) => { if (e.key === 'Escape' && !spEl.hidden) { e.stopPropagation(); speedOpen(false); $('bSpeed').focus(); } }, true);
+function setSpeed(s) { speed = s; [...spEl.children].forEach((b, i) => b.classList.toggle('on', SPEEDS[i] === s)); $('bSpeed').textContent = s + '×'; $('bSpeed').classList.toggle('on', s !== 1); }
 
 // the shortcuts list works everywhere, including the start screen
 document.addEventListener('keydown', (e) => {
@@ -6431,7 +6447,10 @@ function c4Tag(x, y, small) {
 // ---------------- heatmap ----------------
 let heat = null;
 const heatOn = () => $('hmMode').value !== 'off';
-['hmMode', 'hmSide', 'hmScope'].forEach((id) => $(id).onchange = () => { heat = null; });
+['hmMode', 'hmSide', 'hmScope'].forEach((id) => $(id).onchange = () => { heat = null; if (id === 'hmMode') heatControls(); });
+// one Heatmap control: its side and range show only while it's on (UI review, item 8); the 2D map is fitted again in case
+// the controls' row changed height, so it still ends above them (0.26.14)
+function heatControls() { const on = heatOn(); $('hmSide').hidden = !on; $('hmScope').hidden = !on; if (D) requestAnimationFrame(() => fitView(true)); }
 // when a round is live: from the end of freeze time to the moment it's won
 function playSpan(r) {
   const rts = (D.roundTimes || []).filter((x) => x.t >= r.start - 1 && x.t < r.end);
@@ -10000,7 +10019,7 @@ function savePrefs() { ls.set('prefs', { view: viewPref, radar: radar3, names: o
 (() => {
   const p = ls.get('prefs'); if (!p || typeof p !== 'object') return;
   for (const [k, id] of [['names', 'tgNames'], ['nades', 'tgNades'], ['lines', 'tgLines'], ['xray', 'tgXray']]) if (typeof p[k] === 'boolean') { opts[k] = p[k]; $(id).classList.toggle('on', p[k]); }
-  if (p.scope === 'match' || p.scope === 'round') { scope = p.scope; $('bScope').textContent = 'Timeline: ' + scope; }
+  if (p.scope === 'match' || p.scope === 'round') setScope(p.scope);
   if (['2d', '3d'].includes(p.view)) viewMode = viewPref = p.view; // applied when a demo opens (onDemo calls setView)
   if (typeof p.radar === 'boolean') radar3 = p.radar;
   if (p.view === 'split') { viewMode = viewPref = '3d'; radar3 = true; } // a saved 3D + radar: 3D with Radar on

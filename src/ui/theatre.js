@@ -95,7 +95,7 @@ function savePrefs() { ls.set('prefs', { view: viewPref, radar: radar3, names: o
 (() => {
   const p = ls.get('prefs'); if (!p || typeof p !== 'object') return;
   for (const [k, id] of [['names', 'tgNames'], ['nades', 'tgNades'], ['lines', 'tgLines'], ['xray', 'tgXray']]) if (typeof p[k] === 'boolean') { opts[k] = p[k]; $(id).classList.toggle('on', p[k]); }
-  if (p.scope === 'match' || p.scope === 'round') { scope = p.scope; $('bScope').textContent = 'Timeline: ' + scope; }
+  if (p.scope === 'match' || p.scope === 'round') setScope(p.scope);
   if (['2d', '3d'].includes(p.view)) viewMode = viewPref = p.view; // applied when a demo opens (onDemo calls setView)
   if (typeof p.radar === 'boolean') radar3 = p.radar;
   if (p.view === 'split') { viewMode = viewPref = '3d'; radar3 = true; } // a saved 3D + radar: 3D with Radar on

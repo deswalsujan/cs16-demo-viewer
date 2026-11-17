@@ -390,8 +390,12 @@ kbd { font-family: var(--f-body); font-size: calc(11px * var(--ui)); background:
 .ctrls { display: flex; align-items: center; gap: calc(8px * var(--ui)); flex-wrap: wrap; }
 .ctrls .time { font-family: var(--f-body); font-size: calc(13px * var(--ui)); font-variant-numeric: tabular-nums; color: var(--muted); }
 .ctrls .time b { color: var(--fg); font-weight: 500; }
-.ctrls .sp { margin-left: auto; display: flex; gap: calc(4px * var(--ui)); flex-wrap: wrap; }
-.ctrls .sp button { min-width: calc(44px * var(--ui)); justify-content: center; }
+/* the speed button and the six above it (UI review, item 8) */
+.spwrap { margin-left: auto; position: relative; }
+#bSpeed { min-width: calc(52px * var(--ui)); justify-content: center; }
+.sppop { position: absolute; right: 0; bottom: calc(100% + calc(6px * var(--ui))); z-index: 8; display: grid; gap: calc(2px * var(--ui)); padding: calc(4px * var(--ui)); background: var(--panel); border: 1px solid var(--line); border-radius: calc(6px * var(--ui)); box-shadow: 0 calc(8px * var(--ui)) calc(24px * var(--ui)) rgba(0,0,0,.5); }
+.sppop button { min-width: calc(60px * var(--ui)); justify-content: center; }
+.tlseg button { padding: calc(6px * var(--ui)) calc(10px * var(--ui)); }
 .ib { width: calc(34px * var(--ui)); height: calc(32px * var(--ui)); padding: 0; justify-content: center; }
 .ib svg { width: calc(16px * var(--ui)); height: calc(16px * var(--ui)); fill: currentColor; }
 .kbd { color: var(--faint); font-size: calc(11px * var(--ui)); font-family: var(--f-body); }

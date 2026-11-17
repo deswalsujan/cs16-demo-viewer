@@ -69,7 +69,10 @@ async function onDemo() {
   chip.hidden = !D.parts; if (D.parts) { chip.textContent = `${D.parts.length} files`; chip.title = 'One map joined from ' + D.parts.map((p) => p.fileName).join(', then ') + '. Rounds tab: Split them to undo.'; }
   $('score').hidden = false; $('legend').hidden = false; $('heatbar').hidden = false; $('rclock').hidden = false;
   $('tnA').textContent = M.tnames[0]; $('tnB').textContent = M.tnames[1];
-  heat = null; $('hmMode').value = 'off';
+  heat = null; $('hmMode').value = 'off'; heatControls();
+  // "Press ? for keyboard shortcuts" in the view for the first few demos only, then only in Help (UI review, item 8); the
+  // rule of 11 Nov 2026 hiding it in POV mode, 2D, Theatre mode and under 1100 px stays
+  { const n = (+ls.get('demosOpened') || 0) + 1; ls.set('demosOpened', n); $('hint3').hidden = n > 3; }
   afterOverview(ok, true);
   M.wbs = [];
   buildHp(); buildPack(); buildPings(); buildBrk(); buildPose(); prepAnim(); buildZoom();
@@ -134,9 +137,9 @@ function showLoad(v) {
 }
 // Everything that needs a demo stays disabled until one is loaded (Shortcuts always works)
 function setControls(on) {
-  const ids = ['bPrevR', 'bBack', 'bPlay', 'bFwd', 'bNextR', 'bScope', 'bFull'];
+  const ids = ['bPrevR', 'bBack', 'bPlay', 'bFwd', 'bNextR', 'bSpeed', 'bFull'];
   for (const id of ids) $(id).disabled = !on;
-  document.querySelectorAll('#speeds button, #viewSeg button, .tabs button').forEach((b) => b.disabled = !on);
+  document.querySelectorAll('#speeds button, #scopeSeg button, #viewSeg button, .tabs button').forEach((b) => b.disabled = !on);
   $('tl').classList.toggle('off', !on);
   $('btnOpen').hidden = !D; // nothing to go "back" to until a demo has been opened once
   if (D && !on) $('btnOpen').textContent = 'Back to the demo';

@@ -355,7 +355,10 @@ function c4Tag(x, y, small) {
 // ---------------- heatmap ----------------
 let heat = null;
 const heatOn = () => $('hmMode').value !== 'off';
-['hmMode', 'hmSide', 'hmScope'].forEach((id) => $(id).onchange = () => { heat = null; });
+['hmMode', 'hmSide', 'hmScope'].forEach((id) => $(id).onchange = () => { heat = null; if (id === 'hmMode') heatControls(); });
+// one Heatmap control: its side and range show only while it's on (UI review, item 8); the 2D map is fitted again in case
+// the controls' row changed height, so it still ends above them (0.26.14)
+function heatControls() { const on = heatOn(); $('hmSide').hidden = !on; $('hmScope').hidden = !on; if (D) requestAnimationFrame(() => fitView(true)); }
 // when a round is live: from the end of freeze time to the moment it's won
 function playSpan(r) {
   const rts = (D.roundTimes || []).filter((x) => x.t >= r.start - 1 && x.t < r.end);
