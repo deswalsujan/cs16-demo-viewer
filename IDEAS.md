@@ -75,6 +75,9 @@ Everything raised in conversation that isn't finished, in one place. Each item s
 **Seen while moving the decisions out of STATE.md** (12 Nov 2026)
 - Done, in the archive (12 Nov 2026, on notes/ui-review): **AGENTS.md still says POV mode is behind a setting**.
 
+**Seen while building wip/ui-simpler** (17 Nov 2026; for later)
+- [ ] **theatre_test.py exits 0 when a step fails**: it prints "38 of 39 passed" and still exits 0, so a run that goes by exit codes misses it; its step "Top edge shows the header and camera buttons" reads the camera bar's opacity 400 ms after the mouse reaches the top, which failed at 1512x982 and 1440x900 under heavy load in the full run of 17 Nov 2026 and passed alone (`tests/logs/wip-ui-simpler.md`). Older than the branch. Next step: Claude makes it exit 1 on a failed step.
+
 **Seen in the UI review** (12 Nov 2026, the final list's "Found along the way"; for later)
 - [ ] **The kill feed covers the Tab scoreboard's column headers in POV demos**: seen in the UI review's screenshot 50 (`screenshots/ui-review-2026-11-12`, the GP Tourney POV of Team Guardians vs Lanka Dahan, Mirage, 25 Oct 2026). Not started.
 

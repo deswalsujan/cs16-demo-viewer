@@ -113,7 +113,9 @@ To try the branch in Chrome on the Mac without switching the working copy (it fe
 git -C ~/code/cs16-demo-viewer fetch -q origin wip/ui-simpler && git -C ~/code/cs16-demo-viewer show origin/wip/ui-simpler:index.html > /tmp/ui-simpler.html && open -a "Google Chrome" /tmp/ui-simpler.html
 ```
 
-Left (all 14 built, 17 Nov 2026; after the stop at item 7, Sujan's fixes to items 2, 5, 6, 10 and 12 the same day): the full test run (Sujan's go, 17 Nov 2026); then the version, the release entry, `LIMITS.md`, `README.md` (Clear saved files, Vanilla, the Theatre button, "Three ways to watch", Shortcuts) and `start_screen_check.py`'s line in `tests/README.md` (Sujan, 17 Nov 2026), and `tests/logs/<version>.md`.
+The full test run (Sujan's go, 17 Nov 2026), on a3f987c: the eight checks, `pov_feedback_check.py`, `pov_mockup_round_check.py`, `light_check.py` and `theatre_test.py` at five window sizes pass; three checks and two Theatre sizes failed on timing in the first run, under heavy load, and passed run again alone on the same commit; `ground_truth_check.py` 233 kills and 46 scores and K-D, 0 mismatches. Full log: `tests/logs/wip-ui-simpler.md`.
+
+Left (all 14 built, 17 Nov 2026; after the stop at item 7, Sujan's fixes to items 2, 5, 6, 10 and 12 the same day): Sujan's look at the branch, the items he drops; then the version, the release entry, `LIMITS.md`, `README.md` (Clear saved files, Vanilla, the Theatre button, "Three ways to watch", Shortcuts) and `start_screen_check.py`'s line in `tests/README.md` (Sujan, 17 Nov 2026), and `tests/logs/<version>.md`.
 
 ## Known limits
 Moved to [LIMITS.md](LIMITS.md) on 30 Oct 2026; release entries below still say "Known limits" for that list.
