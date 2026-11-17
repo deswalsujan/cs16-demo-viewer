@@ -246,8 +246,15 @@ button { cursor: pointer; }
 .prow.gone .main { opacity: .5; }
 .prow.dead { cursor: not-allowed; }
 .prow.dead .main .nm, .prow.dead .main .sub, .prow.dead .sc { opacity: .45; }
-.pnum.skull { color: var(--t); vertical-align: -1px; }
-.pnum.skull svg { display: block; width: calc(12px * var(--ui)); height: calc(12px * var(--ui)); }
+/* the skull of a dead player beside his name, out of the Key column (UI review, item 13) */
+.prow .skull { color: var(--t); display: inline-block; margin-left: calc(6px * var(--ui)); vertical-align: -1px; }
+.prow .skull svg { display: block; width: calc(12px * var(--ui)); height: calc(12px * var(--ui)); }
+.pnum.pkey { width: auto; font-size: calc(10px * var(--ui)); text-transform: uppercase; letter-spacing: .06em; color: var(--muted); }
+/* the Rounds tab's heading row and the switch at the end of the list (UI review, item 13) */
+.row.rhd { cursor: default; padding-top: calc(6px * var(--ui)); padding-bottom: calc(6px * var(--ui)); font-size: calc(10px * var(--ui)); text-transform: uppercase; letter-spacing: .06em; color: var(--muted); }
+.row.rhd:hover { background: none; }
+.row.rhd .n, .row.rhd .d { font-size: calc(10px * var(--ui)); }
+.opt.optend { border-top: 0; }
 .stathead { cursor: default; padding-top: calc(2px * var(--ui)); padding-bottom: calc(4px * var(--ui)); }
 .stathead:hover { background: none; }
 .stathead .sc { color: var(--muted); font-size: calc(11px * var(--ui)); }

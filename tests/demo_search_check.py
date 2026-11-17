@@ -678,6 +678,15 @@ with sync_playwright() as p:
         # quieter Join (UI review, item 10): SK vs Na`Vi has a winner and no offer to join, so a small link ends the Rounds tab
         jl = JS8("(() => { closeSummary(); tab = 'rounds'; renderPane(); const b = $('bJoinWith'); return { link: b.classList.contains('lnk'), text: b.textContent, question: !!$('pane').querySelector('.joinrow') }; })()")
         check('the Rounds tab of a finished map: a small "Join with another demo…" link at the end, no question', jl == {'link': True, 'text': 'Join with another demo…', 'question': False}, str(jl))
+        # the Players and Rounds tabs (UI review, item 13): the Rounds tab's heading row and its switch after the last round; the
+        # Players tab's Key column, a dead player's skull beside his name, the note on one line
+        pr = JS8(r"""(() => { const P = $('pane'), rows = [...P.querySelectorAll('.row[data-t]')], sw = $('optAll').closest('label');
+          const out = { head: P.querySelector('.row.rhd') ? P.querySelector('.row.rhd').innerText.replace(/\s+/g, ' ').trim() : null, switchLast: !!(rows.length && (rows[rows.length - 1].compareDocumentPosition(sw) & Node.DOCUMENT_POSITION_FOLLOWING)) };
+          const k = M.liveR[22].kills[2]; T = k.t + 1; tab = 'players'; renderPane();
+          Object.assign(out, { key: [...P.querySelectorAll('.stathead .pkey')].map((e) => e.textContent), skullInKey: !!P.querySelector('.pnum.skull, .pnum svg'), skulls: P.querySelectorAll('.prow .nm + .skull').length, note: P.querySelector('.opt').textContent });
+          tab = 'rounds'; renderPane(); return out; })()""")
+        check('the Rounds tab: a heading row (Round, Won by, Score Length) and Show warmup, restarts and idle rounds after the last round; the Players tab: Key over the digits, a dead player\'s skull beside his name, the one-line note',
+              (pr['head'] or '').upper() == 'ROUND WON BY SCORE LENGTH' and pr['switchLast'] and pr['key'] == ['Key', 'Key'] and not pr['skullInKey'] and pr['skulls'] >= 1 and pr['note'] == 'Kills and deaths from the kill feed, live rounds only.', str(pr))
         JS8("closeSummary(); tab = 'rounds'; renderPane(); $('bJoinWith').click()")
         pg8.wait_for_function("() => !!document.querySelector('#joinCard .jpick')", timeout=30000)
         j = JS8(r"""(() => { const card = $('joinCard').querySelector('.sum'), cr = card.getBoundingClientRect(), pk = card.querySelector('.jpick').getBoundingClientRect();

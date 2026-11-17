@@ -131,7 +131,9 @@ function renderPane() {
   const p = $('pane');
   const cr = roundAt(T);
   if (tab === 'rounds') {
-    let h = `<label class="opt"><input type="checkbox" id="optAll" ${showAll ? 'checked' : ''}> Show warmup, restarts and idle rounds</label>`;
+    // UI review, item 13 (17 Nov 2026): a heading over the columns, the right-hand one the score and the round's length, and
+    // Show warmup, restarts and idle rounds at the end of the list (at its top up to then)
+    let h = `<div class="row rhd"><span class="n">Round</span><span class="main">Won by</span><span class="d">Score<br>Length</span></div>`;
     if (D.parts) h += `<div class="joinrow"><span>One map, joined from ${D.parts.length} files.</span><button class="btn sm" type="button" id="bSplit">Split them</button></div>`;
     let prevPart = D.parts ? 0 : null;
     // rounds played after a team reached 16: listed after a note, faded unless this demo counts them
@@ -165,6 +167,7 @@ function renderPane() {
         <span class="main"><span class="pill ${side}">${r.winner || '—'}</span>${esc(who)}${after ? '<span class="tag16">after the match</span>' : ''}<div class="sub">${esc(r.replayed ? 'replayed from 0:0' + (r.reason ? ' · ' + r.reason : '') : r.notFull ? 'teams not full yet' + (r.reason ? ' · ' + r.reason : '') : r.beforeMatch ? 'before the match' + (r.reason ? ' · ' + r.reason : '') : r.reason || (r.live ? '' : 'not counted'))} · ${r.kills.length} kills${r.sides ? ' · ' + Math.max(0, Object.keys(r.sides).length - new Set(r.kills.map((k) => k.victim)).size) + ' alive at end' : ''}</div></span>
         <span class="d">${sc}<br>${fmt(clockSpan(r.start, r.start + r.dur))}</span></div>`;
     }
+    h += `<label class="opt optend"><input type="checkbox" id="optAll" ${showAll ? 'checked' : ''}> Show warmup, restarts and idle rounds</label>`;
     // Quieter Join (UI review, item 10, 17 Nov 2026): the question only when the demo looks unfinished (no winner at the end,
     // or the load summary offered to join), otherwise a small link at the end of the list; one name for it, Join parts
     if (!M.wonAt || (typeof SUM === 'object' && SUM.joinList)) h += `<div class="joinrow"><span>${D.parts ? 'Another part of this map in a file of its own?' : 'Is this map split over two or more demo files?'}</span><button class="btn sm" type="button" id="bJoinWith">Join parts…</button></div>`;
@@ -280,15 +283,16 @@ function renderPane() {
       const tk = rows.reduce((a, x) => a + x.s.k, 0);
       const short = M.short || {};
       h += `<div class="sechead"><span>${esc(M.tnames[ti])}${firstSide ? ` · started ${firstSide}` : ''}</span></div>
-        <div class="row prow stathead"><span class="main"></span><span class="sc">K</span><span class="sc">D</span><span class="sc" title="Kills minus deaths">K−D</span><span class="sc" title="Headshot kills as a share of all kills">HS</span></div>`;
+        <div class="row prow stathead"><span class="main">${D.povOn ? '' : '<span class="pnum pkey" title="The 1 to 0 key that jumps to the player">Key</span>'}</span><span class="sc">K</span><span class="sc">D</span><span class="sc" title="Kills minus deaths">K−D</span><span class="sc" title="Headshot kills as a share of all kills">HS</span></div>`;
       for (const { e, s: x } of rows) {
         const pm = x.k - x.d;
         const slot = M.slotOf(e, T), dead = slot != null && isDeadNow(slot);
         const full = M.pl[e].name, nm = short[e] || full;
-        h += `<div class="row prow${selected != null && slot === selected ? ' sel' : ''}${slot == null ? ' gone' : ''}${dead ? ' dead' : ''}" data-p="${e}" title="${esc(full)}${dead ? ' · dead until the next round' : ''}"><span class="main">${dead ? `<span class="pnum skull" aria-label="dead">${SKULL}</span>` : (D.povOn ? '' : `<span class="pnum">${(playerOrder().indexOf(e) + 1) % 10}</span>`)}<span class="nm">${esc(nm)}</span>${x.tk ? `<span class="sub"> · ${x.tk} TK</span>` : ''}</span><span class="sc">${x.k}</span><span class="sc">${x.d}</span><span class="sc ${pm > 0 ? 'pos' : pm < 0 ? 'neg' : ''}">${pm > 0 ? '+' : ''}${pm}</span><span class="sc">${x.k ? Math.round(x.hs / x.k * 100) : 0}%</span></div>`;
+        h += `<div class="row prow${selected != null && slot === selected ? ' sel' : ''}${slot == null ? ' gone' : ''}${dead ? ' dead' : ''}" data-p="${e}" title="${esc(full)}${dead ? ' · dead until the next round' : ''}"><span class="main">${D.povOn ? '' : `<span class="pnum">${(playerOrder().indexOf(e) + 1) % 10}</span>`}<span class="nm">${esc(nm)}</span>${dead ? `<span class="skull" aria-label="dead">${SKULL}</span>` : ''}${x.tk ? `<span class="sub"> · ${x.tk} TK</span>` : ''}</span><span class="sc">${x.k}</span><span class="sc">${x.d}</span><span class="sc ${pm > 0 ? 'pos' : pm < 0 ? 'neg' : ''}">${pm > 0 ? '+' : ''}${pm}</span><span class="sc">${x.k ? Math.round(x.hs / x.k * 100) : 0}%</span></div>`;
       }
     }
-    h += `<div class="opt">Kills and deaths from the kill feed only: no bonus points for bomb plants or defuses, and team kills (TK) are not counted as kills. Only live rounds count${M.hasOT ? `; overtime is every round after round ${M.reg}` : ''}. ${D.povOn ? 'The highlighted player is the one whose eyes the 3D view shows.' : 'Click a player to highlight them. The number is their 1 to 0 key.'}</div>`;
+    // one line; the rest is in Help, Colours and marks (UI review, item 13)
+    h += `<div class="opt">Kills and deaths from the kill feed, live rounds only.</div>`;
     p.innerHTML = h;
     p.querySelectorAll('[data-b]').forEach((b) => b.onclick = () => { statBucket = b.dataset.b; renderPane(); });
   }
