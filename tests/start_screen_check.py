@@ -37,7 +37,7 @@ with sync_playwright() as p:
         copies: document.querySelectorAll('#hlPaths .cpy').length, clear: $('bClear').textContent }; }""")
     words = (w['meta'] == 'CS 1.6 HLTV and POV demos, played in your browser' and w['before'] == 'Pick a demo below, or open a .dem file from anywhere. More'
              and 'protocol 47' in w['after'] and 'More' not in w['after'] and w['drop'] == 'Or drop a .dem file anywhere on this page' and w['copies'] == 2
-             and w['clear'] == 'Delete saved files and forget folder')
+             and w['clear'] == 'Delete saved files')
     print('The start screen\'s words:', 'as item 12 says' if words else w); t = t and words
     pg.screenshot(path='start_disabled.png', clip={'x': 1000, 'y': 0, 'width': 440, 'height': 60})
     # the footer's Source on GitHub link (0.25.1): the repo, in a new tab. Phone width is no longer checked (Sujan, 3 Nov
