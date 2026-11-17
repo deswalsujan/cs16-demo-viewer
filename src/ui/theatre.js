@@ -90,13 +90,16 @@ const wake = () => { if (SND.on) audio(); };
 document.addEventListener('pointerdown', wake, true); document.addEventListener('keydown', wake, true);
 function isDeathSeq(e) { const a = D.slots[e], i = M.idxAt(T), sq = a ? a[i * D.stride + 9] : 0; return sq >= 101 && sq <= 110; }
 setSound(SND.on);
-// Viewing preferences carry over to the next demo and the next visit: the view (2D, 3D or split), Names,
+// Viewing preferences carry over to the next demo and the next visit: the view (2D or 3D) and Radar (UI review, item 5), Names,
 // Grenades, Kill lines, See through walls and the timeline's match or round. (Team colours, Quality and
 // sound are saved on their own above.) Playback speed is not a preference: every demo opens at 1x, paused.
-function savePrefs() { ls.set('prefs', { view: viewPref, names: opts.names, nades: opts.nades, lines: opts.lines, xray: opts.xray, scope }); }
+function savePrefs() { ls.set('prefs', { view: viewPref, radar: radar3, names: opts.names, nades: opts.nades, lines: opts.lines, xray: opts.xray, scope }); }
 (() => {
   const p = ls.get('prefs'); if (!p || typeof p !== 'object') return;
   for (const [k, id] of [['names', 'tgNames'], ['nades', 'tgNades'], ['lines', 'tgLines'], ['xray', 'tgXray']]) if (typeof p[k] === 'boolean') { opts[k] = p[k]; $(id).classList.toggle('on', p[k]); }
   if (p.scope === 'match' || p.scope === 'round') { scope = p.scope; $('bScope').textContent = 'Timeline: ' + scope; }
-  if (['2d', '3d', 'split'].includes(p.view)) viewMode = viewPref = p.view; // applied when a demo opens (onDemo calls setView)
+  if (['2d', '3d'].includes(p.view)) viewMode = viewPref = p.view; // applied when a demo opens (onDemo calls setView)
+  if (typeof p.radar === 'boolean') radar3 = p.radar;
+  if (p.view === 'split') { viewMode = viewPref = '3d'; radar3 = true; } // a saved 3D + radar: 3D with Radar on
+  $('radar3').checked = radar3;
 })();

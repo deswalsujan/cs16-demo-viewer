@@ -326,13 +326,19 @@ function draw() {
     if (opts.names) {
       const nm = labelAt(+e, T);
       const w = weaponShort(s.weapon);
-      ctx.font = `500 ${11 * u}px ${mono}`; ctx.textAlign = 'left';
       const label = nm.length > 16 ? nm.slice(0, 15) + '…' : nm;
-      ctx.lineWidth = 3 * u; ctx.strokeStyle = 'rgba(8,10,12,.85)';
-      ctx.strokeText(label, sx + rad + 4 * u, sy - u); ctx.fillStyle = '#eee8dc'; ctx.fillText(label, sx + rad + 4 * u, sy - u);
       const hpv = hpAt(+e, T);
       const sub = [hpv != null ? hpv + ' hp' : '', w].filter(Boolean).join(' · ');
-      if (sub) { ctx.font = `400 ${10 * u}px ${mono}`; ctx.strokeText(sub, sx + rad + 4 * u, sy + 10 * u); ctx.fillStyle = col; ctx.fillText(sub, sx + rad + 4 * u, sy + 10 * u); }
+      // a label that would run off the right edge goes to the left of the dot (the 3D view's radar cut them off: UI review,
+      // item 5, and IDEAS.md, Seen while building 0.26.13)
+      ctx.font = `400 ${10 * u}px ${mono}`; const sw = sub ? ctx.measureText(sub).width : 0;
+      ctx.font = `500 ${11 * u}px ${mono}`; const lw = Math.max(ctx.measureText(label).width, sw);
+      const flip = sx + rad + 4 * u + lw > cw - 2 * u && sx - rad - 4 * u - lw >= 0;
+      const lx = flip ? sx - rad - 4 * u : sx + rad + 4 * u; ctx.textAlign = flip ? 'right' : 'left';
+      ctx.lineWidth = 3 * u; ctx.strokeStyle = 'rgba(8,10,12,.85)';
+      ctx.strokeText(label, lx, sy - u); ctx.fillStyle = '#eee8dc'; ctx.fillText(label, lx, sy - u);
+      if (sub) { ctx.font = `400 ${10 * u}px ${mono}`; ctx.strokeText(sub, lx, sy + 10 * u); ctx.fillStyle = col; ctx.fillText(sub, lx, sy + 10 * u); }
+      ctx.textAlign = 'left';
     }
   }
 }

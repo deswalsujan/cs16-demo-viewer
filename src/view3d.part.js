@@ -15,9 +15,18 @@ function status3(t, withButton) {
   if (withButton) $('bFolder3').onclick = () => pickFolder();
 }
 document.querySelectorAll('#viewSeg button').forEach((b) => b.onclick = () => setView(b.dataset.v));
+$('radar3').onchange = () => { radar3 = $('radar3').checked; savePrefs(); if (D && viewMode !== '2d') setView('3d', false); };
+// The Radar row in View settings (UI review, item 5, 17 Nov 2026): the 2D map in a corner of the 3D view, in HLTV demos,
+// saved with the view's settings; it took the place of the header's third view, 3D + radar. viewMode stays 'split' for
+// 3D with the radar, as before; the switch shows 2D and 3D, and a saved 3D + radar opens as 3D with Radar on.
+let radar3 = false;
 function setView(v, save = true) {
-  viewMode = v; if (save) { viewPref = v; savePrefs(); }
-  document.querySelectorAll('#viewSeg button').forEach((x) => x.classList.toggle('on', x.dataset.v === v));
+  if (v === 'split') { radar3 = true; v = '3d'; }
+  if (save) { viewPref = v; savePrefs(); }
+  if (v === '3d' && radar3 && !POV.on) v = 'split';
+  viewMode = v;
+  $('radar3').checked = radar3;
+  document.querySelectorAll('#viewSeg button').forEach((x) => x.classList.toggle('on', x.dataset.v === (v === 'split' ? '3d' : v)));
   const r = $('radar');
   r.classList.toggle('m2d', v === '2d'); r.classList.toggle('m3d', v === '3d'); r.classList.toggle('msplit', v === 'split');
   // the camera bar is 3D's, and has nothing left in POV mode, where View settings is in the strip (UI review, item 4)
@@ -992,6 +1001,7 @@ function povInit() {
   $('bPrevP').hidden = POV.on; $('bNextP').hidden = POV.on;
   $('xh3').closest('.vrow').hidden = POV.on; $('glow3').closest('.vrow').hidden = POV.on;
   $('dn3').closest('.vrow').hidden = POV.on;
+  $('radar3').closest('.vrow').hidden = POV.on; // his own radar is drawn in POV mode (UI review, item 5: HLTV demos only)
   $('xhp3').closest('.vrow').hidden = !POV.on;
   for (const id of ['fbDot3', 'fbWhite3']) $(id).closest('.vrow').hidden = !POV.on;
   { const h = $('fbDot3').closest('.vrow').previousElementSibling; if (h && h.classList.contains('vhead')) h.hidden = !POV.on; }

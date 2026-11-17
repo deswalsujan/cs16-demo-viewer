@@ -17,7 +17,7 @@
       <span class="viewers" id="viewers" title="People watching the HLTV broadcast at this moment"></span>
       <button class="chip" type="button" id="partsChip" hidden></button>
     </div>
-    <div class="seg" id="viewSeg" role="group" aria-label="View"><button type="button" data-v="2d" class="on">2D</button><button type="button" data-v="3d">3D</button><button type="button" data-v="split">3D + radar</button></div>
+    <div class="seg" id="viewSeg" role="group" aria-label="View"><button type="button" data-v="2d" class="on">2D</button><button type="button" data-v="3d">3D</button></div>
     <div class="hbtns"><button class="btn" id="bTheatre" type="button" title="Theatre mode: the view fills the window, controls appear at the edges (T)">Theatre</button><button class="btn" id="bFull" type="button" title="Full screen, in Theatre mode (F)">Full screen</button><button class="btn" id="btnOpen" type="button">Open another demo</button></div>
   </header>
 
@@ -118,6 +118,7 @@
         <div class="vpanel" id="vsetPanel" role="group" aria-label="View settings" hidden>
           <div class="vhead">On the view</div>
           <label class="vrow"><span>Hide all overlays<small>as in the game's own demo player</small></span><input type="checkbox" id="van3" title="Turns off what the game's own demo player doesn't show: damage numbers, kill markers, glow, See through walls, names and HP over the players, kill lines, grenade paths, the death cam's red wash and banner, and the C4 countdown. The buttons and settings still work one by one after"></label>
+          <label class="vrow v3"><span>Radar<small>the 2D map in a corner of the 3D view</small></span><input type="checkbox" id="radar3" title="Shows the 2D radar in the bottom right corner of the 3D view. In place of the 3D + radar view (UI review, item 5)"></label>
           <div class="vrow v3"><span>Team colours</span><button class="btn" id="tgModels" type="button" title="Draw the players in flat team colours: red for Terrorists, blue for Counter-Terrorists">Off</button></div>
           <label class="vrow v3"><span>Damage numbers<small>which hits show their damage</small></span><select id="dn3" title="The damage each hit did, floating up beside the player hit. Wallbangs: hits through a wall, in orange. Direct hits: hits in the open, in white. Both: every hit. The killing bullet ends in a red skull">
             <option value="wb">Wallbangs</option>

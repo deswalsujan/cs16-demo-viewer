@@ -34,7 +34,7 @@ function povApply() {
 function demoOffers() {
   const pov = !!(D && D.povOn);
   return {
-    views: pov ? ['3d'] : ['2d', '3d', 'split'],
+    views: pov ? ['3d'] : ['2d', '3d'], // 3D + radar is 3D with the Radar row on since the UI review, item 5
     cameras: pov ? ['eyes'] : ['free', 'eyes', 'behind'],
     resetView: !pov,
     crosshairSize: !pov, povCrosshair: pov, flashbangs: pov, glowOnHits: !pov, damageNumbers: !pov,

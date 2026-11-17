@@ -25,6 +25,13 @@ with sync_playwright() as p:
     pg.reload(); pg.wait_for_timeout(500)
     r = pg.evaluate("[...document.querySelectorAll('#legend > .btn, #legend > .xwrap > .btn')].map(b => b.id + ':' + b.classList.contains('on')).join(' ') + ' | ' + document.getElementById('bScope').textContent")
     print('after a reload with saved settings:', r); ok &= r == 'tgNames:false tgNades:true tgLines:false tgXray:true tgFit:false | Timeline: round'
+    # 2D and 3D in the header, Radar a row in View settings (UI review, item 5, 17 Nov 2026): a saved 3D + radar opens as 3D
+    # with Radar on, and stays so after the next save
+    pg.evaluate("""localStorage.setItem('prefs', JSON.stringify({ view: 'split', names: true, nades: true, lines: true, xray: false, scope: 'match' }))""")
+    pg.reload(); pg.wait_for_timeout(500)
+    r = pg.evaluate("""() => { document.getElementById('tgNames').click(); const p = JSON.parse(localStorage.getItem('prefs'));
+      return [[...document.querySelectorAll('#viewSeg button')].map((b) => b.dataset.v).join(' '), document.getElementById('radar3').checked, p.view, p.radar]; }""")
+    print('a saved 3D + radar: the switch, Radar, and what is saved after:', r); ok &= r == ['2d 3d', True, '3d', True]
     # Vanilla and Damage numbers (0.26.16, Sujan, 3 Nov 2026): Vanilla first in View settings, off on a first visit;
     # Damage numbers Wallbangs by default. Vanilla on turns off Names to See through walls, Glow on hits and the damage
     # numbers, and is kept after a reload; a single switch still works after; Vanilla off brings back what it turned off.
