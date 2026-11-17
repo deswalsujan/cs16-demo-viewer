@@ -286,7 +286,6 @@ button { cursor: pointer; }
 .gsb .gfoot { display: flex; justify-content: space-between; gap: calc(12px * var(--ui)); padding: calc(6px * var(--ui)) calc(14px * var(--ui)) 0; font-size: calc(11px * var(--ui)); color: #ccc; }
 .gsb .sbheld { color: rgb(255,140,0); } /* POV mode: the scoreboard opened because he held Tab (Sujan, 11 Nov 2026) */
 .sbtag { font-family: var(--f-body); font-size: calc(10px * var(--ui)); color: var(--muted); border: 1px solid var(--line); border-radius: calc(3px * var(--ui)); padding: 0 calc(4px * var(--ui)); }
-.viewers { font-family: var(--f-body); font-size: calc(12px * var(--ui)); color: var(--muted); white-space: nowrap; }
 .keys-card { width: min(calc(900px * var(--ui)), 100%); max-height: 100%; overflow-y: auto; background: var(--panel); border: 1px solid var(--line); border-radius: calc(10px * var(--ui)); padding: 0; display: grid; gap: 0; }
 .keys-head { display: flex; justify-content: space-between; align-items: center; gap: calc(12px * var(--ui)); padding: calc(24px * var(--ui)) calc(24px * var(--ui)) calc(16px * var(--ui)); font-size: calc(18px * var(--ui)); }
 .keys-head b { font-family: var(--f-display); }

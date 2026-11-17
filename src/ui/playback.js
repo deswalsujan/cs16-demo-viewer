@@ -235,7 +235,7 @@ function updateHud(force) {
   // score shown is the score at the start of the current round
   const sc = r ? (T >= (r.endT || r.end) && r.scoreAfter ? r.scoreAfter : r.scoreBefore) : [0, 0];
   $('scA').textContent = sc[0]; $('scB').textContent = sc[1];
-  const vw = viewersAt(T); $('viewers').textContent = vw != null ? `${vw.toLocaleString('en-US')} watching` : '';
+  // the spectator count left the header: it's in the Tab scoreboard's footer (UI review, item 14, 17 Nov 2026)
   const side = (i) => r && r.tTeam != null ? (r.tTeam === i ? 'side-t' : 'side-ct') : '';
   $('tnA').className = 'tn ' + side(0); $('tnB').className = 'tn ' + side(1);
   const paused = (() => { let on = false; for (const p of D.pauses || []) { if (p.t > T) break; on = p.on; } return on; })();

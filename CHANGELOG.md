@@ -105,6 +105,7 @@ Built:
 - Item 11, kill details lead with the summary line, then one row per hit (damage, body part, through a wall or in the open); "Earlier:" is one line, "75 HP lost before this fight", that opens the list on a click; the time column says "0.51 s before"; the * note is hover text on the starred word.
 - Item 12, the start screen's words and demo list: the tagline says HLTV and POV demos; step 2 in one sentence, the pre-2008 (protocol 47) note behind **More**; the drop line is about .dem files, the overview pair in Help; the long "Found 38 maps, …" line is gone (the folder row says how many demos); once a folder is picked the heading is one line and the list takes the room; each demo row has its name and the file's date, the size on hover; a **Copy** button beside each path; **Clear saved files** is **Delete saved files and forget folder**, its second click stating the size.
 - Item 13, the Players and Rounds tabs: the Players tab's digits under a **Key** heading, a dead player's skull beside his name, the note one line ("Kills and deaths from the kill feed, live rounds only."), the rest in Help; the Rounds tab with a heading row (Round, Won by, Score and Length) and **Show warmup, restarts and idle rounds** at the end of the list.
+- Item 14, a thinner header: the map and the demo's length first, then the file name, not cut at 1512 px and in full on hover; the spectator count is only in the Tab scoreboard's footer.
 
 To try the branch in Chrome on the Mac without switching the working copy (it fetches the branch and opens its built page from a copy in /tmp; run it again after later commits):
 
@@ -112,7 +113,7 @@ To try the branch in Chrome on the Mac without switching the working copy (it fe
 git -C ~/code/cs16-demo-viewer fetch -q origin wip/ui-simpler && git -C ~/code/cs16-demo-viewer show origin/wip/ui-simpler:index.html > /tmp/ui-simpler.html && open -a "Google Chrome" /tmp/ui-simpler.html
 ```
 
-Left: item 14 (stopped after item 7 for Sujan to look, 17 Nov 2026; his two fixes to items 2 and 6 the same day); the eight checks at the end (about 7 minutes, on Sujan's go); then the version, the release entry, `LIMITS.md` and `tests/logs/<version>.md`.
+Left (all 14 built, 17 Nov 2026; after the stop at item 7, Sujan's two fixes to items 2 and 6 the same day): the eight checks (on Sujan's go); then the version, the release entry, `LIMITS.md` and `tests/logs/<version>.md`.
 
 ## Known limits
 Moved to [LIMITS.md](LIMITS.md) on 30 Oct 2026; release entries below still say "Known limits" for that list.

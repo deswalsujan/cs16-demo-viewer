@@ -299,7 +299,6 @@ button { cursor: pointer; }
 .gsb .gfoot { display: flex; justify-content: space-between; gap: calc(12px * var(--ui)); padding: calc(6px * var(--ui)) calc(14px * var(--ui)) 0; font-size: calc(11px * var(--ui)); color: #ccc; }
 .gsb .sbheld { color: rgb(255,140,0); } /* POV mode: the scoreboard opened because he held Tab (Sujan, 11 Nov 2026) */
 .sbtag { font-family: var(--f-body); font-size: calc(10px * var(--ui)); color: var(--muted); border: 1px solid var(--line); border-radius: calc(3px * var(--ui)); padding: 0 calc(4px * var(--ui)); }
-.viewers { font-family: var(--f-body); font-size: calc(12px * var(--ui)); color: var(--muted); white-space: nowrap; }
 .keys-card { width: min(calc(900px * var(--ui)), 100%); max-height: 100%; overflow-y: auto; background: var(--panel); border: 1px solid var(--line); border-radius: calc(10px * var(--ui)); padding: 0; display: grid; gap: 0; }
 .keys-head { display: flex; justify-content: space-between; align-items: center; gap: calc(12px * var(--ui)); padding: calc(24px * var(--ui)) calc(24px * var(--ui)) calc(16px * var(--ui)); font-size: calc(18px * var(--ui)); }
 .keys-head b { font-family: var(--f-display); }
@@ -673,7 +672,6 @@ addEventListener('resize', () => { if (applyUiSize()) dispatchEvent(new Event('u
       <span class="tn" id="tnA" title="Click to rename"></span>
       <span class="num" id="scA">0</span><span class="sep">:</span><span class="num" id="scB">0</span>
       <span class="tn" id="tnB" title="Click to rename"></span>
-      <span class="viewers" id="viewers" title="People watching the HLTV broadcast at this moment"></span>
       <button class="chip" type="button" id="partsChip" hidden></button>
     </div>
     <div class="seg" id="viewSeg" role="group" aria-label="View"><button type="button" data-v="2d" class="on">2D</button><button type="button" data-v="3d">3D</button></div>
@@ -5494,7 +5492,10 @@ async function onDemo() {
   const first = M.liveR[0];
   T = first ? first.start : D.start;
   playing = false; selected = null; pickedKill = null; pickedBurst = null;
-  $('meta').textContent = D.parts ? `${D.mapName} · ${D.parts[0].fileName} and ${plural(D.parts.length - 1, 'more file')} · ${fmt(D.end - D.start)}` : `${D.mapName} · ${D.fileName} · ${fmt(D.end - D.start)}`;
+  // a thinner header (UI review, item 14, 17 Nov 2026): the map and the length first, the file name last, where the line may
+  // cut it, and in full on hover (up to then the file name came second, and at 1512 px the length was cut off after it)
+  $('meta').textContent = D.parts ? `${D.mapName} · ${fmt(D.end - D.start)} · ${D.parts[0].fileName} and ${plural(D.parts.length - 1, 'more file')}` : `${D.mapName} · ${fmt(D.end - D.start)} · ${D.fileName}`;
+  $('meta').title = D.parts ? D.parts.map((p) => p.fileName).join(', then ') : D.fileName;
   const chip = $('partsChip');
   chip.onclick = () => { const b = document.querySelector('.tabs button[data-tab="rounds"]'); if (b) b.click(); $('pane').scrollTop = 0; };
   chip.hidden = !D.parts; if (D.parts) { chip.textContent = `${D.parts.length} files`; chip.title = 'One map joined from ' + D.parts.map((p) => p.fileName).join(', then ') + '. Rounds tab: Split them to undo.'; }
@@ -5542,7 +5543,7 @@ function closeDemo() {
   sndPreload++; // stops a sound preload that's still running for this demo
   resetForNewDemo(); clear3d(); closeSummary(); if ($('joinCard')) closeJoinCard();
   D = null; M = null; MAP = null; OV = null; T = 0; prevT = null; pickedKill = null; pickedBurst = null; heat = null;
-  $('meta').textContent = 'CS 1.6 HLTV and POV demos, played in your browser';
+  $('meta').textContent = 'CS 1.6 HLTV and POV demos, played in your browser'; $('meta').title = '';
   for (const id of ['score', 'legend', 'heatbar', 'rclock', 'cam3', 'status3', 'pov', 'sb']) $(id).hidden = true;
   $('feed').innerHTML = '';
   $('pane').innerHTML = '<div class="opt">Rounds, kills and player stats appear here once a demo is open.</div>';
@@ -6153,7 +6154,7 @@ function updateHud(force) {
   // score shown is the score at the start of the current round
   const sc = r ? (T >= (r.endT || r.end) && r.scoreAfter ? r.scoreAfter : r.scoreBefore) : [0, 0];
   $('scA').textContent = sc[0]; $('scB').textContent = sc[1];
-  const vw = viewersAt(T); $('viewers').textContent = vw != null ? `${vw.toLocaleString('en-US')} watching` : '';
+  // the spectator count left the header: it's in the Tab scoreboard's footer (UI review, item 14, 17 Nov 2026)
   const side = (i) => r && r.tTeam != null ? (r.tTeam === i ? 'side-t' : 'side-ct') : '';
   $('tnA').className = 'tn ' + side(0); $('tnB').className = 'tn ' + side(1);
   const paused = (() => { let on = false; for (const p of D.pauses || []) { if (p.t > T) break; on = p.on; } return on; })();

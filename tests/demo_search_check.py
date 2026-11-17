@@ -663,6 +663,11 @@ with sync_playwright() as p:
         check('the Kills tab at demo 4:00 (a round that doesn\'t count): its "Not counted" band highlighted above Round 1; with Show warmup, restarts and idle rounds, every round the Rounds tab shows',
               kt['off']['bands'] == kt['live'] + 1 and kt['off']['nc'] == 1 and (kt['off']['cur'] or '').startswith('Not counted') and (kt['off']['second'] or '').startswith('Round 1')
               and kt['on']['bands'] == kt['shown'] and kt['on']['nc'] == kt['shown'] - kt['live'] and (kt['on']['cur'] or '').startswith('Not counted'), str(kt))
+        # a thinner header (UI review, item 14): the map and the length first, the file name last and in full on hover, not cut
+        # at 1512 px; no spectator count (the Tab scoreboard's footer has it)
+        hd = JS8("(() => { const m = $('meta'); return { text: m.textContent, title: m.title, cut: m.scrollWidth > m.clientWidth, viewers: !!$('viewers') }; })()")
+        check('the header at 1512x982: "de_train · 103:25 · " then the file name, not cut, in full on hover; no spectator count',
+              hd == {'text': f'de_train · 103:25 · {SK}', 'title': SK, 'cut': False, 'viewers': False}, str(hd))
         JS8("closeSummary()"); pg8.keyboard.press('?'); pg8.wait_for_timeout(300)
         # Help (UI review, item 9, 17 Nov 2026; the shortcuts list up to then): Keys, Colours and marks, About; the version,
         # its links and Copy debug info under About; Close alone in the footer; F and T each said on their own

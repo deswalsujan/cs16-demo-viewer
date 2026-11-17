@@ -63,7 +63,10 @@ async function onDemo() {
   const first = M.liveR[0];
   T = first ? first.start : D.start;
   playing = false; selected = null; pickedKill = null; pickedBurst = null;
-  $('meta').textContent = D.parts ? `${D.mapName} · ${D.parts[0].fileName} and ${plural(D.parts.length - 1, 'more file')} · ${fmt(D.end - D.start)}` : `${D.mapName} · ${D.fileName} · ${fmt(D.end - D.start)}`;
+  // a thinner header (UI review, item 14, 17 Nov 2026): the map and the length first, the file name last, where the line may
+  // cut it, and in full on hover (up to then the file name came second, and at 1512 px the length was cut off after it)
+  $('meta').textContent = D.parts ? `${D.mapName} · ${fmt(D.end - D.start)} · ${D.parts[0].fileName} and ${plural(D.parts.length - 1, 'more file')}` : `${D.mapName} · ${fmt(D.end - D.start)} · ${D.fileName}`;
+  $('meta').title = D.parts ? D.parts.map((p) => p.fileName).join(', then ') : D.fileName;
   const chip = $('partsChip');
   chip.onclick = () => { const b = document.querySelector('.tabs button[data-tab="rounds"]'); if (b) b.click(); $('pane').scrollTop = 0; };
   chip.hidden = !D.parts; if (D.parts) { chip.textContent = `${D.parts.length} files`; chip.title = 'One map joined from ' + D.parts.map((p) => p.fileName).join(', then ') + '. Rounds tab: Split them to undo.'; }
@@ -111,7 +114,7 @@ function closeDemo() {
   sndPreload++; // stops a sound preload that's still running for this demo
   resetForNewDemo(); clear3d(); closeSummary(); if ($('joinCard')) closeJoinCard();
   D = null; M = null; MAP = null; OV = null; T = 0; prevT = null; pickedKill = null; pickedBurst = null; heat = null;
-  $('meta').textContent = 'CS 1.6 HLTV and POV demos, played in your browser';
+  $('meta').textContent = 'CS 1.6 HLTV and POV demos, played in your browser'; $('meta').title = '';
   for (const id of ['score', 'legend', 'heatbar', 'rclock', 'cam3', 'status3', 'pov', 'sb']) $(id).hidden = true;
   $('feed').innerHTML = '';
   $('pane').innerHTML = '<div class="opt">Rounds, kills and player stats appear here once a demo is open.</div>';
