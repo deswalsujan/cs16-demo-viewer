@@ -14,8 +14,8 @@ recorded by BAJRANG || forgotteN_), in POV mode, and on mTw vs mousesports, Infe
   summary's two lines, a notice at the top middle, no shortcuts line; the ! shows the anti-wallhack note at the top middle and
   closes it, and switching See through walls on doesn't show it; in the HLTV demo the switch, 2D (the saved choice),
   Reset view and the Wallbangs tab are back, the POV mode row and its heading in View settings are gone, no !;
-- the Kills tab of the POV demo lists his kills and deaths for the whole match, by round, every row his, the round
-  playing now highlighted; the HLTV demo's lists the round playing now;
+- the Kills tab of the POV demo lists his kills and deaths for the whole match, by round, every row his, the band of
+  the round playing now highlighted and none of its rows tinted for it; the HLTV demo's too, every kill by round;
 - at the widest kill feed rows of the POV demo (R3, 4 rows), with "Stopping at 16" and the anti-wallhack note open,
   the notice and the note overlap neither the feed, the round pill, View settings nor each other, at 1512x982
   (Interface size Auto and 115%, the largest it allows there) and 1280x720;
@@ -99,7 +99,8 @@ KILLS = js(r'''(() => {
   const his = (k) => k && (k.killer === rec || k.victim === rec);
   let want = 0; for (const r of M.liveR) for (const k of r.kills) if (his(k)) want++;
   const cur = roundAt(T);
-  return { rows: rows.length, allHis: rows.every((el) => his(D.kills[+el.dataset.ki])), want, rounds: heads.filter((h) => /^Round /.test(h.textContent)).length,
+  // the round playing now is shown by its band alone (item 6's fixup, Sujan, 17 Nov 2026): no row carries its tint
+  return { rows: rows.length, curRows: rows.filter((el) => el.classList.contains('cur')).length, allHis: rows.every((el) => his(D.kills[+el.dataset.ki])), want, rounds: heads.filter((h) => /^Round /.test(h.textContent)).length,
     curHead: (heads.find((h) => h.classList.contains('cur')) || {}).textContent || null, curRound: cur && cur.live ? 'Round ' + cur.ln : null, top: heads[0] ? heads[0].textContent : null };
 })()''')
 
@@ -158,8 +159,9 @@ try:
               'the ! shows the anti-wallhack note at the top middle and closes it; See through walls alone does not', n)
         at(742.91)
         k = ev(KILLS)
-        check(k.get('rows') == k.get('want') and k.get('rows', 0) > 20 and k.get('allHis') and k.get('rounds', 0) >= 10 and k.get('curHead', '') .startswith(k.get('curRound') or '?'),
-              'Kills tab: his kills and deaths, the whole match by round, R7 highlighted', k)
+        check(k.get('rows') == k.get('want') and k.get('rows', 0) > 20 and k.get('allHis') and k.get('rounds', 0) >= 10 and k.get('curHead', '') .startswith(k.get('curRound') or '?')
+              and k.get('curRows') == 0,
+              'Kills tab: his kills and deaths, the whole match by round, R7\'s band highlighted, no row tinted for it', k)
         # the widest kill feed rows in this demo (R3, 4 rows from 498.33), with "Stopping at 16" and the note open,
         # at 1512x982 (Auto and the largest Interface size it allows, 115%) and 1280x720 (100%)
         ov = []
@@ -197,8 +199,9 @@ try:
         pg.evaluate("__v(\"setView('3d', false)\")")
         k2 = ev(KILLS)
         # the whole match by round in HLTV demos too since the UI review (item 6, 17 Nov 2026; the round playing now alone before)
-        check((k2.get('top') or '').startswith('Round ') and k2.get('rounds', 0) > 1 and k2.get('curHead', '').startswith(k2.get('curRound') or '?'),
-              'Kills tab of the HLTV demo: the whole match by round, the round playing now highlighted', k2)
+        check((k2.get('top') or '').startswith('Round ') and k2.get('rounds', 0) > 1 and k2.get('curHead', '').startswith(k2.get('curRound') or '?')
+              and k2.get('curRows') == 0,
+              'Kills tab of the HLTV demo: the whole match by round, the round playing now\'s band highlighted, no row tinted for it', k2)
         check(not errs, 'no page errors', errs[:3])
         b.close()
 finally:

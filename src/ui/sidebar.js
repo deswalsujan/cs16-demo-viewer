@@ -203,10 +203,13 @@ function renderPane() {
         chip = sd ? `<span class="sdchip ${sd === 1 ? 't' : 'ct'}">${sd === 1 ? 'T' : 'CT'}</span>` : '';
       } else right = ks.length ? plural(ks.length, 'kill') : 'no kills';
       body += `<div class="sechead rhead${cur ? ' cur' : ''}"><span>${r.live ? 'Round ' + r.ln : pov ? 'Before the match' : 'Not counted'}${chip}</span><span>${right}</span></div>`;
+      // the round playing now is shown by its band alone, with no tint on its rows, so the clicked kill (strong tint and
+      // bar) and a kill playback is passing (light tint) are the only states a row has (Sujan, 17 Nov 2026: a row both in
+      // the round playing and passing took the lighter style, and read less highlighted than its neighbours)
       for (const k of ks) {
         // a kill inside a skip in the recording: // by its time (0.20.0), wallbangs included since 0.21.0, which keep UNSURE too
         const sk = skipNear(k.t) ? SKIP_MARK : '';
-        body += `<div class="row krow kill3${killState(k)}${cur ? ' cur' : ''}" data-kill="${k.t}" data-ki="${D.kills.indexOf(k)}"><span class="n" title="${demoTip(k.t)}">${k === pickedKill ? MARK : ''}${killClock(k.t) ? cellClock(k.t) : '<span class="nw">+' + fmt(k.t - r.start) + '</span>'}${sk}</span><span class="main">${killRow3(k, true)}</span></div>`;
+        body += `<div class="row krow kill3${killState(k)}" data-kill="${k.t}" data-ki="${D.kills.indexOf(k)}"><span class="n" title="${demoTip(k.t)}">${k === pickedKill ? MARK : ''}${killClock(k.t) ? cellClock(k.t) : '<span class="nw">+' + fmt(k.t - r.start) + '</span>'}${sk}</span><span class="main">${killRow3(k, true)}</span></div>`;
         if (k === pickedKill) body += killDetailsHtml(k);
       }
     }
