@@ -131,8 +131,8 @@ with sync_playwright() as p:
       const picked = [b.textContent, pop.hidden]; document.dispatchEvent(new KeyboardEvent('keydown', { key: ']' })); await w(50); const up = b.textContent;
       document.dispatchEvent(new KeyboardEvent('keydown', { key: '[' })); document.dispatchEvent(new KeyboardEvent('keydown', { key: '[' })); document.dispatchEvent(new KeyboardEvent('keydown', { key: '[' })); await w(50);
       return { was, open, n, picked, up, back: b.textContent }; }""")
-    check('one speed button: 1× opens the six, 4× picked closes them and shows 4×, ] makes it 8×, [ three times 1×',
-          sp == {'was': '1×', 'open': True, 'n': 6, 'picked': ['4×', True], 'up': '8×', 'back': '1×'}, str(sp))
+    check('one speed button: Speed 1× opens the six, 4× picked closes them and shows Speed 4×, ] makes it Speed 8×, [ three times Speed 1×',
+          sp == {'was': 'Speed 1×', 'open': True, 'n': 6, 'picked': ['Speed 4×', True], 'up': 'Speed 8×', 'back': 'Speed 1×'}, str(sp))
     pg.set_viewport_size({'width': 880, 'height': 1300})
 
     # Player's eyes keeps the game's 4:3 view top to bottom (0.26.15, Sujan, 3 Nov 2026): the game's 90 degrees, or a

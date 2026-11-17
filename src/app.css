@@ -413,7 +413,7 @@ kbd { font-family: var(--f-body); font-size: calc(11px * var(--ui)); background:
 .ctrls .time b { color: var(--fg); font-weight: 500; }
 /* the speed button and the six above it (UI review, item 8) */
 .spwrap { margin-left: auto; position: relative; }
-#bSpeed { min-width: calc(52px * var(--ui)); justify-content: center; }
+#bSpeed { min-width: calc(98px * var(--ui)); justify-content: center; } /* "Speed 0.25×" fits, so the button keeps one width at every speed (item 8's fixup) */
 .sppop { position: absolute; right: 0; bottom: calc(100% + calc(6px * var(--ui))); z-index: 8; display: grid; gap: calc(2px * var(--ui)); padding: calc(4px * var(--ui)); background: var(--panel); border: 1px solid var(--line); border-radius: calc(6px * var(--ui)); box-shadow: 0 calc(8px * var(--ui)) calc(24px * var(--ui)) rgba(0,0,0,.5); }
 .sppop button { min-width: calc(60px * var(--ui)); justify-content: center; }
 .tlseg button { padding: calc(6px * var(--ui)) calc(10px * var(--ui)); }

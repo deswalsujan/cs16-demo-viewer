@@ -426,7 +426,7 @@ kbd { font-family: var(--f-body); font-size: calc(11px * var(--ui)); background:
 .ctrls .time b { color: var(--fg); font-weight: 500; }
 /* the speed button and the six above it (UI review, item 8) */
 .spwrap { margin-left: auto; position: relative; }
-#bSpeed { min-width: calc(52px * var(--ui)); justify-content: center; }
+#bSpeed { min-width: calc(98px * var(--ui)); justify-content: center; } /* "Speed 0.25×" fits, so the button keeps one width at every speed (item 8's fixup) */
 .sppop { position: absolute; right: 0; bottom: calc(100% + calc(6px * var(--ui))); z-index: 8; display: grid; gap: calc(2px * var(--ui)); padding: calc(4px * var(--ui)); background: var(--panel); border: 1px solid var(--line); border-radius: calc(6px * var(--ui)); box-shadow: 0 calc(8px * var(--ui)) calc(24px * var(--ui)) rgba(0,0,0,.5); }
 .sppop button { min-width: calc(60px * var(--ui)); justify-content: center; }
 .tlseg button { padding: calc(6px * var(--ui)) calc(10px * var(--ui)); }
@@ -915,11 +915,11 @@ addEventListener('resize', () => { if (applyUiSize()) dispatchEvent(new Event('u
       <button class="btn ib" id="bNextR" type="button" title="Next round (X)"><svg viewBox="0 0 16 16"><path d="M11 2h2v12h-2zM2 2v12l8-6z"/></svg></button>
       <span class="time" id="time"><b>0:00</b> / 0:00</span>
       <!-- the bottom bar (UI review, item 8, 17 Nov 2026): the timeline's range as a two-part switch, Match | Round, in place
-           of "Timeline: match"; one speed button showing the speed, opening the six -->
+           of "Timeline: match"; one speed button showing the speed ("Speed 1×", Sujan, 17 Nov 2026), opening the six -->
       <div class="seg tlseg" id="scopeSeg" role="group" aria-label="Timeline" title="The timeline shows the whole match or only this round"><button type="button" data-s="match" class="on">Match</button><button type="button" data-s="round">Round</button></div>
       <span class="sndgrp"><button class="btn ib" id="bSnd" type="button" title="Sound on or off (M)" aria-pressed="true"><svg viewBox="0 0 16 16" id="sndIcon"></svg></button><input type="range" id="sndVol" min="0" max="1" step="0.01" aria-label="Volume" title="Volume"></span>
       <button class="btn" id="bKeys" type="button" title="Help: the keys, the colours and marks, and about the viewer (?)">Help <span class="kbd">?</span></button>
-      <div class="spwrap"><button class="btn" id="bSpeed" type="button" aria-expanded="false" aria-controls="speeds" title="Playback speed ([ slower, ] faster)">1×</button><div class="sppop" id="speeds" role="group" aria-label="Playback speed" hidden></div></div>
+      <div class="spwrap"><button class="btn" id="bSpeed" type="button" aria-expanded="false" aria-controls="speeds" title="Playback speed ([ slower, ] faster)">Speed 1×</button><div class="sppop" id="speeds" role="group" aria-label="Playback speed" hidden></div></div>
     </div>
   </footer>
 </div>
@@ -5961,7 +5961,7 @@ for (const s of SPEEDS) {
 $('bSpeed').onclick = (e) => { e.stopPropagation(); speedOpen(spEl.hidden); };
 document.addEventListener('pointerdown', (e) => { if (!spEl.hidden && !e.target.closest('.spwrap')) speedOpen(false); }, true);
 document.addEventListener('keydown', (e) => { if (e.key === 'Escape' && !spEl.hidden) { e.stopPropagation(); speedOpen(false); $('bSpeed').focus(); } }, true);
-function setSpeed(s) { speed = s; [...spEl.children].forEach((b, i) => b.classList.toggle('on', SPEEDS[i] === s)); $('bSpeed').textContent = s + '×'; $('bSpeed').classList.toggle('on', s !== 1); }
+function setSpeed(s) { speed = s; [...spEl.children].forEach((b, i) => b.classList.toggle('on', SPEEDS[i] === s)); $('bSpeed').textContent = 'Speed ' + s + '×'; $('bSpeed').classList.toggle('on', s !== 1); }
 
 // the shortcuts list works everywhere, including the start screen
 document.addEventListener('keydown', (e) => {

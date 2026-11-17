@@ -39,7 +39,7 @@ for (const s of SPEEDS) {
 $('bSpeed').onclick = (e) => { e.stopPropagation(); speedOpen(spEl.hidden); };
 document.addEventListener('pointerdown', (e) => { if (!spEl.hidden && !e.target.closest('.spwrap')) speedOpen(false); }, true);
 document.addEventListener('keydown', (e) => { if (e.key === 'Escape' && !spEl.hidden) { e.stopPropagation(); speedOpen(false); $('bSpeed').focus(); } }, true);
-function setSpeed(s) { speed = s; [...spEl.children].forEach((b, i) => b.classList.toggle('on', SPEEDS[i] === s)); $('bSpeed').textContent = s + '×'; $('bSpeed').classList.toggle('on', s !== 1); }
+function setSpeed(s) { speed = s; [...spEl.children].forEach((b, i) => b.classList.toggle('on', SPEEDS[i] === s)); $('bSpeed').textContent = 'Speed ' + s + '×'; $('bSpeed').classList.toggle('on', s !== 1); }
 
 // the shortcuts list works everywhere, including the start screen
 document.addEventListener('keydown', (e) => {
