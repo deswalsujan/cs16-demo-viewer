@@ -125,8 +125,8 @@ try:
             pg.wait_for_function(f'__v("{READY}")', timeout=240000)
             pg.evaluate('__v("playing = false; setPlayIcon(); SUM.closedFor = null; loadSummary(true)")')
             # the load summary, built afresh and read as soon as its lines are there (it closes by itself later)
-            pg.wait_for_function('__v("!$(\'sumCard\').hidden && $(\'sumCard\').querySelectorAll(\'.sum-list li\').length > 0")', timeout=30000)
-            return [l for l in json.loads(pg.evaluate('__v("JSON.stringify([...document.querySelectorAll(\'#sumCard .sum-list li\')].map((l) => l.textContent))")'))]
+            pg.wait_for_function('__v("!$(\'sumCard\').hidden && !$(\'sumCard\').querySelector(\'.busy\')")', timeout=30000)  # one line or a card (UI review, item 2)
+            return [l for l in json.loads(pg.evaluate('__v("JSON.stringify([...document.querySelectorAll(\'#sumCard .sum-list li, #sumCard .sline .slt\')].map((l) => l.textContent))")'))]
 
         def at(t):
             pg.evaluate(f'__v("playing = false; setPlayIcon(); seek({t})")')
@@ -147,8 +147,8 @@ try:
         check(s1.get('open') and s1.get('held') and not s2.get('open'), 'Tab scoreboard while he held Tab, closed after', {'held': s1, 'after': s2})
         at(809.0)
         o = ev(offers_js())
-        o['sumOnly'] = any('Only his own view, in 3D' in x for x in sum1)
-        o['sumPlugin'] = any('This server seems to use an anti-wallhack plugin' in x for x in sum1)
+        o['sumOnly'] = any('His view only, in 3D' in x for x in sum1)  # one short line since the UI review, item 2
+        o['sumPlugin'] = any('the server seems to hide enemies behind walls' in x for x in sum1)
         check(o.get('view') == '3d' and not o.get('seg') and not o.get('fit') and not o.get('wbTab') and not o.get('povRow') and o.get('mark')
               and o.get('sumOnly') and o.get('sumPlugin') and o.get('hintTop') is None and o.get('toastTop') is not None and o['toastTop'] < 100,
               'options by demo type: the POV demo', o)
@@ -188,8 +188,8 @@ try:
               'notices and the note clear of the kill feed, the round pill and View settings at the widest feed', ov)
         sum2 = open_demo(HLTV)
         o2 = ev(offers_js())
-        o2['sumOnly'] = any('Only his own view' in x for x in sum2)
-        o2['sumPlugin'] = any('This server seems to use an anti-wallhack plugin' in x for x in sum2)
+        o2['sumOnly'] = any('His view only' in x for x in sum2)
+        o2['sumPlugin'] = any('hide enemies behind walls' in x for x in sum2)
         check(o2.get('view') == '2d' and o2.get('seg') and o2.get('fit') and o2.get('wbTab') and not o2.get('povRow') and not o2.get('povHead') and not o2.get('mark')
               and not o2.get('sumOnly') and not o2.get('sumPlugin') and o2.get('toastTop') is not None and o2['toastTop'] > o2['viewH'] / 2,
               'options by demo type: the HLTV demo', o2)

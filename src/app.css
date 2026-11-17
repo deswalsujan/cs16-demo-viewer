@@ -396,6 +396,18 @@ kbd { font-family: var(--f-body); font-size: calc(11px * var(--ui)); background:
 #toast { white-space: pre-line; line-height: 1.5; }
 /* load summary card */
 .sumwrap { z-index: 15; background: rgba(8, 10, 12, .45); }
+/* the one-line load card (UI review, item 2): at the top middle of the view, with no dimming, so the match shows round it */
+.sumwrap.line { background: none; pointer-events: none; place-items: start center; padding-top: calc(12px * var(--ui)); }
+.sumwrap.line .sum { pointer-events: auto; width: auto; max-width: min(calc(640px * var(--ui)), 100%); box-shadow: 0 calc(6px * var(--ui)) calc(20px * var(--ui)) rgba(0,0,0,.45); }
+.sline .sl { display: flex; align-items: center; gap: calc(10px * var(--ui)); padding: calc(8px * var(--ui)) calc(10px * var(--ui)) calc(8px * var(--ui)) calc(12px * var(--ui)); font-size: calc(13px * var(--ui)); line-height: 1.4; }
+.sline .slt { min-width: 0; }
+.sline .slt b { color: var(--good); font-weight: 600; }
+.sline.busy .slt b { color: var(--sand); }
+.sline .slx { color: var(--muted); }
+.sline .slx b { color: var(--fg); font-weight: 500; }
+.sline .sum-x { margin: 0 calc(-2px * var(--ui)) 0 0; width: calc(26px * var(--ui)); height: calc(26px * var(--ui)); font-size: calc(16px * var(--ui)); }
+.lnk { background: none; border: 0; padding: 0; color: var(--sand); text-decoration: underline; text-underline-offset: calc(2px * var(--ui)); font-size: calc(12px * var(--ui)); white-space: nowrap; }
+.lnk:hover { color: var(--fg); }
 .sum { width: min(calc(520px * var(--ui)), 100%); background: var(--panel); border: 1px solid var(--line); border-radius: calc(10px * var(--ui)); overflow: hidden; box-shadow: 0 calc(12px * var(--ui)) calc(40px * var(--ui)) rgba(0,0,0,.45); }
 /* Dialogs and cards (0.26.23, docs/dialogs-mock.jpg, Sujan, 8 Nov 2026): a header with the title, one line and the close
    button; the body; a footer with any note on the left and the buttons on the right, the main one last. Spacing in steps

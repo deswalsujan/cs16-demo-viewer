@@ -14,14 +14,16 @@ async function loadSummary(sndDone) {
     const why = other ? [`It's from another game: the file says "${game}", and the viewer only plays Counter-Strike 1.6.`] : [];
     const hr = fileHealthRow(D.health, D.end - D.start);
     if (hr && hr.s === 'warn') {
-      // the file's own structure says what's wrong: that's the reason, not a guess
-      renderSummary({ state: 'fail', title: "This demo can't be played", text: !moved ? 'The file stops before any player moved, so there is nothing to show.' : 'The file stops before the first round started, so there is nothing to show.', rows: [Object.assign({}, hr, { s: 'fail', n: hr.n.replace(/ It plays up to where the file stops: .*$/, '') + ` What's readable is ${fmt(D.end - D.start)} of recording.` })] });
+      // the file's own structure says what's wrong: that's the reason, not a guess. The card says it in plain words; the
+      // file's detail (its index, where it stops, in bytes) goes to Copy debug info (UI review, item 2)
+      ERRLOG.push(`Can't play ${D.fileName}: ${hr.t}. ${hr.n.replace(/ It plays up to where the file stops: .*$/, '')} What's readable is ${fmt(D.end - D.start)} of recording.`);
+      renderSummary({ state: 'fail', closeDemo: true, title: "This demo can't be played", text: (!moved ? 'The file stops before any player moved, so there is nothing to show.' : 'The file stops before the first round started, so there is nothing to show.') + ' It was probably cut off by an interrupted recording, download or copy. Try another copy of the demo.', rows: [] });
       return;
     }
     if (!moved) why.push('It was stopped right after it started, before anyone moved.', 'It was cut off: the download or the recording was interrupted.');
     else why.push("It's from a game mode without rounds, like deathmatch or a training map.", 'It was stopped before the first round started.');
     if (!other) why.push("It's from another game: the viewer only plays Counter-Strike 1.6.");
-    renderSummary({ state: 'fail', title: "This demo can't be played", text: !moved ? "The file opened, but there's no player movement in it. The likely reasons:" : "The file opened and players move in it, but there are no rounds the viewer can find. The likely reasons:", rows: why.map((t) => ({ s: 'info', t })) });
+    renderSummary({ state: 'fail', closeDemo: true, title: "This demo can't be played", text: !moved ? "The file opened, but there's no player movement in it. The likely reasons:" : "The file opened and players move in it, but there are no rounds the viewer can find. The likely reasons:", rows: why.map((t) => ({ s: 'info', t })) });
     return;
   }
   const pm = [...new Set((D.pmodels || []).filter((n) => /\.mdl$/i.test(n)).map((n) => n.toLowerCase()))];
@@ -73,10 +75,9 @@ async function loadSummary(sndDone) {
   if (D.pov && !D.povOn) rows.push({ s: 'info', t: 'Recorded by a player (a POV demo)', n: "This file has no record of his own view, so it plays like an HLTV demo, with him at the map's zero point." });
   // the POV mockup round (docs/pov-mockup-round-mock.jpg, sections 1 and 6; Sujan, 11 Nov 2026): what a POV demo doesn't
   // have, and the anti-wallhack note, which no longer shows over his HUD (the ! on See through walls brings it back)
-  if (D.povOn) {
-    rows.push({ s: 'info', t: 'Only his own view, in 3D', n: "A POV demo has no **2D** or **3D + radar** view, so no heatmaps, and no **Free** or **Behind player** camera: his game only received the players near him. The Kills tab lists his own kills and deaths." });
-    if (POV.on && povHidesEnemies().on) rows.push({ s: 'info', ...hiddenEnemiesText(povHidesEnemies()) });
-  }
+  // UI review, item 2 (17 Nov 2026): the two as one short line, in the one-line card when nothing else needs saying; the
+  // anti-wallhack note's full text stays on the ! of See through walls
+  if (D.povOn) rows.push({ s: 'info', pov: true, t: 'His view only, in 3D' + (POV.on && povHidesEnemies().on ? '; the server seems to hide enemies behind walls (the ! on **See through walls**)' : '') });
   // A map recorded in two or more files. A part on its own says so only when another part is in the folder
   // (same map, at least 8 of the same Steam IDs) and this one starts late or ends before anyone won. Those two
   // alone were wrong on all four demos on Sujan's Mac that showed them with no other part (2 Oct 2026): a draw
@@ -140,7 +141,7 @@ async function loadSummary(sndDone) {
   }
   // the only problem is the file stopping early: say that plainly in the title
   else if (healthRows.some((r) => r.s === 'warn') && !rows.some((r) => (r.s === 'warn' || r.s === 'fail') && !healthRows.includes(r))) res = { state: 'warn', title: 'The demo will play up to where the file stops', text: 'Everything it needs loaded. The file itself is incomplete; what follows says exactly how.' };
-  else if (!anyBad) res = { state: 'ok', title: 'Ready to watch', text: rows.some((r) => r.s === 'info') ? 'Everything loaded. The demo will play in full; a note on it below.' : 'Everything loaded. The demo will play in full.' };
+  else if (!anyBad) res = { state: 'ok', title: `Ready: ${plural(live, 'round')}`, text: '' };
   else res = { state: 'warn', title: 'The demo will play, with a few gaps', text: 'Some files are missing or damaged. Playback works; the parts marked below will look or sound different.', folder: !map || STALE.size > 0 };
   renderSummary(Object.assign(res, { rows }));
 }
@@ -162,8 +163,11 @@ function fileHealthRow(h, dur, lead = '') {
   return { s: 'warn', t: `${lead}This file's index is damaged`, n: `The index at the end of the file doesn't fit the file, so the frames were read one by one from the start instead.${tail}${bad} ${plays}` };
 }
 
-// the card itself: opens in the middle of the view, closes on its own (not when it reports a failure)
-const SUM = { timer: null, left: 0, total: 0, paused: false, last: 0 };
+// the card itself (UI review, item 2, 17 Nov 2026): one line at the top of the view while it checks and when everything
+// loaded with nothing to say ("Ready: 48 rounds", Details for the list), closing itself after a few seconds; a card in the
+// middle of the view with only the notes when there's a note or a button, staying until it's closed, the passed checks
+// under Details; the can't-play card, whose closing goes back to the start screen
+const SUM = { timer: null, left: 0, total: 0, paused: false, last: 0, back: null, r: null };
 function openSummary(o) { renderSummary(Object.assign({ state: 'busy', title: 'Checking your files…', text: 'Looking for the map, models and sounds this demo needs.', rows: [] }, o)); }
 // Count the rounds played after a team reached 16 (up to round 30), or stop at 16: remembered per demo
 function setCount30(on) {
@@ -177,15 +181,21 @@ function setCount30(on) {
   const A = M.after16;
   if (A) toast(on ? `Counting the ${A.extra} ${A.extra === 1 ? 'round' : 'rounds'} played after ${M.tnames[A.team]} reached 16. Rounds tab: Stop at 16 to undo.` : `Stopping at 16. Rounds tab: Count them to count the rounds played after.`, 5000);
 }
-function closeSummary() { const el = $('sumCard'); if (el) el.hidden = true; clearInterval(SUM.timer); SUM.timer = null; SUM.closedFor = D; }
+function closeSummary() {
+  const el = $('sumCard'); if (el) el.hidden = true; clearInterval(SUM.timer); SUM.timer = null; SUM.closedFor = D;
+  // the can't-play card goes back to the start screen, closing a demo that can't be played (UI review, item 2)
+  const back = SUM.back; SUM.back = null;
+  if (back) { if (back === 'close' && D) closeDemo(); if ($('load').hidden) showLoad(true); }
+}
 function showFailCard(name, err) {
   ERRLOG.push('Demo read failed: ' + err);
   // A file that isn't cut off or unfinished (those open and play up to where they stop, see fileHealthRow)
   // but still can't be read: say what the reader met, and only suggest checking the game when the file
   // isn't a Half-Life demo at all.
+  // plain words on the card; where the reader stopped (the bytes, its message) is in Copy debug info (UI review, item 2)
   const why = /not a half-life demo/i.test(err) ? "It isn't a Half-Life demo file: it doesn't start the way every demo does. Check that it's a .dem recorded in Counter-Strike 1.6."
-    : /bad frame type/i.test(err) ? `It's damaged near its start, ${(+((err.match(/at (\d+)/) || [])[1] || 0) / 1024).toFixed(0)} KB in, before the match begins, so nothing after that can be read. Try another copy of the demo.`
-    : `Part of it is damaged in a way the reader can't get past (it stopped with "${err}"). Try another copy of the demo.`;
+    : /bad frame type/i.test(err) ? "It's damaged near its start, before the match begins, so nothing after that can be read. Try another copy of the demo."
+    : "Part of it is damaged in a way the viewer can't get past. Try another copy of the demo.";
   renderSummary({ state: 'fail', title: "This demo can't be played", text: `${name} couldn't be opened. ${why}`, rows: [] });
 }
 function renderSummary(r) {
@@ -193,32 +203,40 @@ function renderSummary(r) {
   // when the check finishes. A demo that can't be played still says so.
   if (SUM.closedFor && SUM.closedFor === D && r.state !== 'fail') return;
   const el = $('sumCard');
+  SUM.r = r; SUM.back = r.state === 'fail' ? (r.closeDemo ? 'close' : 'keep') : null;
   const icon = { ok: '✓', warn: '!', fail: '✕', info: 'i', busy: '…' };
-  el.innerHTML = `<div class="sum" role="dialog" aria-live="polite" aria-labelledby="sumTitle">
-    <div class="sum-top ${r.state}"><div class="ti"><h2 id="sumTitle">${esc(r.title)}</h2><p>${esc(r.text)}</p></div><button class="sum-x" type="button" id="sumX" title="Close (Esc)" aria-label="Close">×</button></div>
-    ${r.rows.length ? `<ul class="sum-list">${r.rows.map((x) => `<li><span class="sum-ic ${x.s}" aria-hidden="true">${icon[x.s]}</span><span>${esc(x.t)}${x.n ? `<small>${esc(x.n).replace(/\*\*(.+?)\*\*/g, '<b>$1</b>')}</small>` : ''}${x.btn ? `<div class="li-btn"><button class="btn sm" type="button" id="${x.btn.id}">${esc(x.btn.label)}</button></div>` : ''}</span></li>`).join('')}</ul>` : ''}
-    ${r.state === 'busy' ? '' : `<div class="sum-foot">${r.folder ? `<button class="btn" type="button" id="sumFolder">Choose Half-Life folder</button>` : ''}<span class="sp"></span><span id="sumCount"></span>${r.state === 'fail' ? '<button class="btn" type="button" id="sumClose">Close</button><button class="btn primary" type="button" id="sumAnother">Open another demo</button>' : ''}</div>`}
-    ${r.state === 'busy' || r.state === 'fail' ? '' : '<div class="sum-bar"><i id="sumBar"></i></div>'}
+  const md = (t) => esc(t).replace(/\*\*(.+?)\*\*/g, '<b>$1</b>');
+  const notes = r.rows.filter((x) => x.s !== 'ok' && !x.pov), pov = r.rows.find((x) => x.pov);
+  const line = r.state === 'busy' || (r.state === 'ok' && !notes.length && !r.details);
+  const shown = r.details ? r.rows : r.rows.filter((x) => x.s !== 'ok'), hiddenOk = r.rows.length - shown.length;
+  el.classList.toggle('line', line);
+  if (line) el.innerHTML = `<div class="sum sline ${r.state}" role="status" aria-live="polite">
+    <div class="sl"><span class="sum-ic ${r.state === 'busy' ? 'busy' : 'ok'}" aria-hidden="true">${icon[r.state]}</span><span class="slt"><b id="sumTitle">${esc(r.title)}</b>${pov ? `<span class="slx"> · ${md(pov.t)}</span>` : ''}</span>${r.state === 'busy' ? '' : '<button class="lnk" type="button" id="sumDetails">Details</button>'}<button class="sum-x" type="button" id="sumX" title="Close (Esc)" aria-label="Close">×</button></div>
+    ${r.state === 'busy' ? '' : '<div class="sum-bar"><i id="sumBar"></i></div>'}
+  </div>`;
+  else el.innerHTML = `<div class="sum" role="dialog" aria-live="polite" aria-labelledby="sumTitle">
+    <div class="sum-top ${r.state}"><div class="ti"><h2 id="sumTitle">${esc(r.title)}</h2>${r.text ? `<p>${esc(r.text)}</p>` : ''}</div><button class="sum-x" type="button" id="sumX" title="Close (Esc)" aria-label="Close">×</button></div>
+    ${shown.length ? `<ul class="sum-list">${shown.map((x) => `<li><span class="sum-ic ${x.s}" aria-hidden="true">${icon[x.s]}</span><span>${md(x.t)}${x.n ? `<small>${md(x.n)}</small>` : ''}${x.btn ? `<div class="li-btn"><button class="btn sm" type="button" id="${x.btn.id}">${esc(x.btn.label)}</button></div>` : ''}</span></li>`).join('')}</ul>` : ''}
+    <div class="sum-foot">${hiddenOk ? `<button class="lnk" type="button" id="sumDetails" title="What loaded: the demo, the map, the overview, models and sounds">Details</button>` : ''}${r.folder ? `<button class="btn" type="button" id="sumFolder">Choose Half-Life folder</button>` : ''}<span class="sp"></span>${r.state === 'fail' ? '<button class="btn primary" type="button" id="sumAnother">Open another demo</button>' : '<button class="btn" type="button" id="sumClose">Close</button>'}</div>
   </div>`;
   el.hidden = false;
   $('sumX').onclick = closeSummary;
+  if ($('sumDetails')) $('sumDetails').onclick = () => renderSummary(Object.assign({}, r, { details: true }));
   if ($('sumCount30')) $('sumCount30').onclick = () => setCount30(!M.count30);
   if ($('sumJoin')) $('sumJoin').onclick = () => { if (SUM.joinList) openJoinCard(SUM.joinList); };
   if ($('sumFolder')) $('sumFolder').onclick = () => { closeSummary(); pickFolder(); };
-  // the can't-play card (0.26.23, docs/dialogs-mock.jpg; Sujan, 8 Nov 2026: Open another demo the main button): back to the
-  // demo list, as the header's Open another demo does, or the list itself when it's already showing
   if ($('sumClose')) $('sumClose').onclick = closeSummary;
-  if ($('sumAnother')) $('sumAnother').onclick = () => { closeSummary(); if ($('load').hidden && $('btnOpen') && !$('btnOpen').hidden) $('btnOpen').click(); const q = $('demoQ'); if (q && !$('load').hidden && q.offsetParent) q.focus(); };
-  el.onclick = (e) => { if (e.target === el && r.state !== 'busy') closeSummary(); };
+  // the can't-play card: back to the demo list (closeSummary goes back to the start screen), its search box ready
+  if ($('sumAnother')) $('sumAnother').onclick = () => { closeSummary(); const q = $('demoQ'); if (q && !$('load').hidden && q.offsetParent) q.focus(); };
+  el.onclick = (e) => { if (e.target === el && r.state !== 'busy' && !line) closeSummary(); };
   clearInterval(SUM.timer); SUM.timer = null;
   const card = el.querySelector('.sum');
   // pause only when the mouse actually moves over the card (it often opens right under a resting cursor)
   SUM.paused = false;
   card.onpointermove = () => { SUM.paused = true; }; card.onpointerleave = () => { SUM.paused = false; };
-  if (r.state === 'busy') return;
-  if (r.state === 'fail') return;
-  // closes on its own: sooner when there's nothing to read
-  SUM.total = SUM.left = r.state === 'ok' && !r.rows.some((x) => x.s === 'info') ? 6 : 15; SUM.last = performance.now();
+  if (!line || r.state === 'busy') return;
+  // the one-line card closes on its own after a few seconds, paused while the mouse is on it
+  SUM.total = SUM.left = 6; SUM.last = performance.now();
   // The bar is animated by the browser, so it shrinks smoothly on every frame instead of in
   // 10-a-second steps. It pauses and resumes with the countdown.
   const bar = $('sumBar');
@@ -227,7 +245,6 @@ function renderSummary(r) {
     const now = performance.now(), dt = (now - SUM.last) / 1000; SUM.last = now;
     if (!SUM.paused) SUM.left -= dt;
     if (SUM.left <= 0) { closeSummary(); return; }
-    $('sumCount').textContent = SUM.paused ? 'Paused while you read' : `Closes in ${Math.ceil(SUM.left)} s`;
     if (SUM.anim) {
       if (SUM.paused && SUM.anim.playState === 'running') SUM.anim.pause();
       else if (!SUM.paused && SUM.anim.playState === 'paused') { SUM.anim.currentTime = (SUM.total - SUM.left) * 1000; SUM.anim.play(); }

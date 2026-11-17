@@ -41,7 +41,7 @@ async function loadDemoFile(f, opts = {}) {
   worker.onmessage = async (e) => {
     const m = e.data;
     if (m.progress != null) { $('progBar').style.width = (m.progress * 100).toFixed(0) + '%'; return; }
-    if (m.error) { setMsg('This file could not be read as a CS 1.6 demo: ' + m.error, true); $('prog').hidden = true; showFailCard(f.name, m.error); return; }
+    if (m.error) { setMsg("This file couldn't be read as a CS 1.6 demo.", true); $('prog').hidden = true; showFailCard(f.name, m.error); return; }
     if (m.done) {
       worker.terminate(); worker = null;
       $('progBar').style.width = '100%';

@@ -93,8 +93,9 @@ The UI review's final list, `docs/reviews/ui-review-final-2026-11-12.md`: 14 ite
 
 Built:
 - Item 1, the start screen shows only the start steps: no view switch, Theatre, Full screen, side panel or bottom bar while it's up, before a demo is open and when it comes back over one.
+- Item 2, the load card: one line at the top of the view ("Ready: 48 rounds", **Details** for the list), closing itself after 6 s, when everything loaded with nothing to say; with a note or a button, only the notes, staying until closed, the passed checks under **Details**; in a POV demo "His view only, in 3D" and the anti-wallhack note as one short line; the can't-play card in plain words, the file's detail in **Copy debug info**, its one button and its closing going back to the start screen.
 
-Left: items 2 to 14; a stop after item 7 for Sujan to look; the eight checks at the end (about 7 minutes, on Sujan's go); then the version, the release entry, `LIMITS.md` and `tests/logs/<version>.md`.
+Left: items 3 to 14; a stop after item 7 for Sujan to look; the eight checks at the end (about 7 minutes, on Sujan's go); then the version, the release entry, `LIMITS.md` and `tests/logs/<version>.md`.
 
 ## Known limits
 Moved to [LIMITS.md](LIMITS.md) on 30 Oct 2026; release entries below still say "Known limits" for that list.

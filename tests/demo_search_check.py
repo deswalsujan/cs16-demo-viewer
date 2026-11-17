@@ -605,8 +605,10 @@ with sync_playwright() as p:
         # before it (older than 0.26.23; IDEAS.md, **A damaged demo can leave the page stuck**)
         JS8("closeSummary(); window.__prevD = D; showFailCard('broken-recording.dem', 'Not a Half-Life demo')")
         pg8.wait_for_function("() => { const c = document.getElementById('sumCard'); return c && !c.hidden && /can't be played/.test(c.innerText); }", timeout=10000)
-        f = JS8(r"""(() => { const ft = $('sumCard').querySelector('.sum-foot'); return { buttons: [...ft.querySelectorAll('button')].map((b) => b.textContent + (b.classList.contains('primary') ? ' (main)' : '')), note: $('sumCount').textContent }; })()""")
-        check("the can't-play card: Close, then Open another demo as the main button, no \"Stays open until you close it\"", f['buttons'] == ['Close', 'Open another demo (main)'] and f['note'] == '', str(f))
+        f = JS8(r"""(() => { const c = $('sumCard'), ft = c.querySelector('.sum-foot'); return { buttons: [...ft.querySelectorAll('button')].map((b) => b.textContent + (b.classList.contains('primary') ? ' (main)' : '')), text: c.querySelector('.sum-top p').textContent }; })()""")
+        # one button since the UI review (item 2, 17 Nov 2026): closing the card goes back to the start screen anyway; plain
+        # words, the reader's own message only in Copy debug info
+        check("the can't-play card: Open another demo, its one button; plain words", f['buttons'] == ['Open another demo (main)'] and 'Not a Half-Life demo' not in f['text'] and "isn't a Half-Life demo file" in f['text'], str(f))
         pg8.click('#sumAnother'); pg8.wait_for_timeout(300)
         check("Open another demo closes the card and shows the demo list", pg8.locator('#sumCard').is_hidden() and pg8.locator('#load').is_visible(), '')
         pg8.click(f'#demoList button:has-text("{SK}")'); pg8.wait_for_function('() => document.getElementById("load").hidden', timeout=120000)
