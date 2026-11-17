@@ -288,6 +288,16 @@ button { cursor: pointer; }
 .keys-grid dt { white-space: nowrap; color: var(--muted); }
 .keys-grid dd { margin: 0; }
 .hmsec { grid-column: 1 / -1; }
+/* Help's three parts (UI review, item 9) */
+.keys-card h2.hpart { margin: 0; padding: calc(4px * var(--ui)) calc(24px * var(--ui)) calc(12px * var(--ui)); font-family: var(--f-display); font-size: calc(14px * var(--ui)); color: var(--fg); border-top: 1px solid var(--line); padding-top: calc(16px * var(--ui)); }
+.keys-head + .dbgbox + h2.hpart, .keys-head + h2.hpart { border-top: 0; padding-top: 0; }
+.tlm { width: calc(40px * var(--ui)); height: calc(24px * var(--ui)); display: block; }
+.tllist dd b { font-family: var(--f-body); font-size: calc(12px * var(--ui)); color: var(--fg); }
+.habout { padding: 0 calc(24px * var(--ui)) calc(20px * var(--ui)); display: grid; gap: calc(10px * var(--ui)); font-size: calc(13px * var(--ui)); color: var(--muted); line-height: 1.5; }
+.habout p { margin: 0; }
+.habout a { color: var(--sand); }
+.hdbg { display: flex; align-items: center; gap: calc(12px * var(--ui)); }
+.hdbg span { font-size: calc(12px * var(--ui)); }
 .hmnote { margin: 0 0 calc(8px * var(--ui)); color: var(--muted); font-size: calc(13px * var(--ui)); line-height: 1.5; max-width: 70ch; }
 .hmlist { grid-template-columns: calc(44px * var(--ui)) minmax(0, 1fr) !important; align-items: center; }
 .hmlist dd { display: grid; gap: calc(2px * var(--ui)); font-size: calc(13px * var(--ui)); line-height: 1.45; }

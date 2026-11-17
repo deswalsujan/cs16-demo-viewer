@@ -301,6 +301,16 @@ button { cursor: pointer; }
 .keys-grid dt { white-space: nowrap; color: var(--muted); }
 .keys-grid dd { margin: 0; }
 .hmsec { grid-column: 1 / -1; }
+/* Help's three parts (UI review, item 9) */
+.keys-card h2.hpart { margin: 0; padding: calc(4px * var(--ui)) calc(24px * var(--ui)) calc(12px * var(--ui)); font-family: var(--f-display); font-size: calc(14px * var(--ui)); color: var(--fg); border-top: 1px solid var(--line); padding-top: calc(16px * var(--ui)); }
+.keys-head + .dbgbox + h2.hpart, .keys-head + h2.hpart { border-top: 0; padding-top: 0; }
+.tlm { width: calc(40px * var(--ui)); height: calc(24px * var(--ui)); display: block; }
+.tllist dd b { font-family: var(--f-body); font-size: calc(12px * var(--ui)); color: var(--fg); }
+.habout { padding: 0 calc(24px * var(--ui)) calc(20px * var(--ui)); display: grid; gap: calc(10px * var(--ui)); font-size: calc(13px * var(--ui)); color: var(--muted); line-height: 1.5; }
+.habout p { margin: 0; }
+.habout a { color: var(--sand); }
+.hdbg { display: flex; align-items: center; gap: calc(12px * var(--ui)); }
+.hdbg span { font-size: calc(12px * var(--ui)); }
 .hmnote { margin: 0 0 calc(8px * var(--ui)); color: var(--muted); font-size: calc(13px * var(--ui)); line-height: 1.5; max-width: 70ch; }
 .hmlist { grid-template-columns: calc(44px * var(--ui)) minmax(0, 1fr) !important; align-items: center; }
 .hmlist dd { display: grid; gap: calc(2px * var(--ui)); font-size: calc(13px * var(--ui)); line-height: 1.45; }
@@ -652,7 +662,7 @@ addEventListener('resize', () => { if (applyUiSize()) dispatchEvent(new Event('u
     </div>
     <div class="seg" id="viewSeg" role="group" aria-label="View"><button type="button" data-v="2d" class="on">2D</button><button type="button" data-v="3d">3D</button></div>
     <!-- one Full screen button (UI review, item 7, 17 Nov 2026): Theatre mode's own button went; T still fills the window -->
-    <div class="hbtns"><button class="btn" id="bFull" type="button" aria-pressed="false" title="Full screen, in Theatre mode: the view fills the screen and the controls come in at the edges (F). T fills the window without full screen">Full screen</button><button class="btn" id="btnOpen" type="button">Open another demo</button></div>
+    <div class="hbtns"><button class="btn" id="bFull" type="button" aria-pressed="false" title="Full screen: the view fills the screen, and the controls come in when the mouse moves to an edge (F)">Full screen</button><button class="btn" id="btnOpen" type="button">Open another demo</button></div>
   </header>
 
   <section class="radar m2d" id="radar">
@@ -681,13 +691,16 @@ addEventListener('resize', () => { if (applyUiSize()) dispatchEvent(new Event('u
       <button class="btn arr" id="bPrevP" type="button" title="Previous player (↓ or right-click)" aria-label="Previous player">‹</button>
       <button class="btn arr" id="bNextP" type="button" title="Next player (↑ or click)" aria-label="Next player">›</button>
     </div>
-    <div class="hint3" id="hint3">Press ? for keyboard shortcuts</div>
+    <div class="hint3" id="hint3">Press ? for help and the keys</div>
     <div class="overlay" id="sb" hidden></div>
     <div class="overlay sumwrap" id="sumCard" hidden></div>
+    <!-- Help (UI review, item 9, 17 Nov 2026; Shortcuts and kill markers up to then): three parts, Keys, Colours and marks
+         (the kill markers and the timeline's colours, diamonds and gaps, which nothing explained before), About -->
     <div class="overlay keys" id="keys" hidden>
-      <div class="keys-card">
-        <div class="keys-head"><b>Shortcuts and kill markers</b><button class="sum-x" id="bKeysX" type="button" title="Close (Esc)" aria-label="Close">×</button></div>
+      <div class="keys-card" role="dialog" aria-labelledby="helpTitle">
+        <div class="keys-head"><b id="helpTitle">Help</b><button class="sum-x" id="bKeysX" type="button" title="Close (Esc)" aria-label="Close">×</button></div>
         <textarea class="dbgbox" id="dbgBox" readonly hidden aria-label="Debug info"></textarea>
+        <h2 class="hpart">Keys</h2>
         <div class="keys-grid">
           <section><h3>Playback</h3>
             <dl><dt><kbd>Space</kbd></dt><dd>Play or pause</dd>
@@ -705,8 +718,8 @@ addEventListener('resize', () => { if (applyUiSize()) dispatchEvent(new Event('u
             <dt><kbd>N</kbd></dt><dd>Show or hide names</dd>
             <dt><kbd>H</kbd></dt><dd>See through walls on or off: players behind walls, and their names, drawn on top of the walls (3D)</dd>
             <dt><kbd>M</kbd></dt><dd>Sound on or off</dd>
-            <dt><kbd>F</kbd></dt><dd>Full screen on or off (full screen uses Theatre mode)</dd>
-            <dt><kbd>T</kbd></dt><dd>Theatre mode on or off: the view fills the window, and all the controls slide in when the mouse moves to the top, right or bottom edge</dd></dl>
+            <dt><kbd>F</kbd></dt><dd>Full screen on or off. The controls come in when the mouse moves to the top, right or bottom edge</dd>
+            <dt><kbd>T</kbd></dt><dd>Theatre mode on or off: the view fills the browser window. The controls come in when the mouse moves to the top, right or bottom edge</dd></dl>
           </section>
           <section><h3>3D camera</h3>
             <dl><dt><kbd>V</kbd></dt><dd>Switch camera: free, player's eyes, behind player</dd>
@@ -716,6 +729,15 @@ addEventListener('resize', () => { if (applyUiSize()) dispatchEvent(new Event('u
             <dt><kbd>Shift</kbd></dt><dd>Move faster</dd>
             <dt>Mouse wheel</dt><dd>Fly forward or back</dd></dl>
           </section>
+          <section><h3>Radar (2D)</h3>
+            <dl><dt>Drag</dt><dd>Move the map</dd>
+            <dt>Mouse wheel</dt><dd>Zoom</dd>
+            <dt>Click a dot</dt><dd>Highlight that player</dd>
+            <dt><kbd>?</kbd></dt><dd>Show this help</dd></dl>
+          </section>
+        </div>
+        <h2 class="hpart">Colours and marks</h2>
+        <div class="keys-grid">
           <section class="hmsec"><h3>Kill markers</h3>
             <p class="hmnote">In Player's eyes, small ticks flash around the crosshair when the player you're watching gets a kill. In the other views, a ring in the same colour bursts out from the victim.</p>
             <dl class="hmlist">
@@ -725,14 +747,25 @@ addEventListener('resize', () => { if (applyUiSize()) dispatchEvent(new Event('u
               <dt><svg class="hm" viewBox="0 0 40 40" aria-hidden="true"><g stroke="#000" stroke-opacity=".45" stroke-width="3" stroke-linecap="round"><path d="M28 28l4 4M28 12l4-4M12 28l-4 4M12 12l-4-4"/></g><g stroke="#c9a3e8" stroke-width="1.5" stroke-linecap="round"><path d="M28 28l4 4M28 12l4-4M12 28l-4 4M12 12l-4-4"/></g><g stroke="#5aff5a" stroke-width="1.5"><path d="M12 20h5M23 20h5M20 12v5M20 23v5"/></g></svg></dt><dd><b class="hml">PARTIAL WALLBANG · HS</b><span>A partial wallbang: the bullet went through cover, but part of the victim was in view. HS is added when it was also a headshot.</span></dd>
             </dl>
           </section>
-          <section><h3>Radar (2D)</h3>
-            <dl><dt>Drag</dt><dd>Move the map</dd>
-            <dt>Mouse wheel</dt><dd>Zoom</dd>
-            <dt>Click a dot</dt><dd>Highlight that player</dd>
-            <dt><kbd>?</kbd></dt><dd>Show this list</dd></dl>
+          <section class="hmsec"><h3>The timeline</h3>
+            <dl class="hmlist tllist">
+              <dt><svg class="tlm" viewBox="0 0 40 24" aria-hidden="true"><rect width="40" height="24" rx="3" fill="#15191c"/><rect x="2" y="8" width="17" height="16" fill="rgba(232,87,77,.3)"/><rect x="21" y="8" width="17" height="16" fill="rgba(94,163,232,.3)"/><text x="4" y="7" font-size="6" fill="#8d959c">12</text></svg></dt><dd><b>Rounds</b><span>Each round's stretch, red when the Terrorists won it, blue when the Counter-Terrorists did, grey with no result; its number above it.</span></dd>
+              <dt><svg class="tlm" viewBox="0 0 40 24" aria-hidden="true"><rect width="40" height="24" rx="3" fill="#15191c"/><rect x="13" y="12" width="2" height="12" fill="#e8574d"/><rect x="25" y="6" width="2" height="18" fill="#5ea3e8"/></svg></dt><dd><b>Kills</b><span>A thin bar in the killer's team colour; a taller one for a headshot.</span></dd>
+              <dt><svg class="tlm" viewBox="0 0 40 24" aria-hidden="true"><rect width="40" height="24" rx="3" fill="#15191c"/><path d="M9 8l4 4-4 4-4-4z" fill="#ff4fd8"/><path d="M20 8l4 4-4 4-4-4z" fill="#c9a3e8"/><path d="M31 8.5l3.5 3.5-3.5 3.5-3.5-3.5z" fill="none" stroke="#ffb347" stroke-width="1.4"/></svg></dt><dd><b>Diamonds</b><span>A wallbang (pink), a partial wallbang (lilac), and wall damage, hits through a wall with no kill (hollow orange).</span></dd>
+              <dt><svg class="tlm" viewBox="0 0 40 24" aria-hidden="true"><rect width="40" height="24" rx="3" fill="#15191c"/><path d="M20 16l4 8h-8z" fill="#ff9a3c"/></svg></dt><dd><b>Triangles</b><span>The bomb planted.</span></dd>
+              <dt><svg class="tlm" viewBox="0 0 40 24" aria-hidden="true"><rect width="40" height="24" rx="3" fill="#15191c"/><rect x="17" y="4" width="6" height="20" fill="#0e1012"/><path d="M16.5 22l3-17M20.5 22l3-17" stroke="#e7e3d9" stroke-width="1.5"/></svg></dt><dd><b>Gaps</b><span>// where the recording skips: HLTV left part of the game out, so players jump.</span></dd>
+              <dt><svg class="tlm" viewBox="0 0 40 24" aria-hidden="true"><rect width="40" height="24" rx="3" fill="#15191c"/><rect x="8" y="4" width="24" height="20" fill="rgba(231,227,217,.35)"/></svg></dt><dd><b>Pauses</b><span>A light stretch where the match was paused.</span></dd>
+              <dt><svg class="tlm" viewBox="0 0 40 24" aria-hidden="true"><rect width="40" height="24" rx="3" fill="#15191c"/><rect x="19" y="2" width="2" height="22" fill="#cbb47e"/><path d="M15 2h10l-5 6z" fill="#cbb47e"/></svg></dt><dd><b>Playhead</b><span>Where playback is. Click or drag on the timeline to move it.</span></dd>
+            </dl>
           </section>
         </div>
-        <div class="keys-foot"><span class="ver">Version 0.26.31 · <a href="https://github.com/deswalsujan/cs16-demo-viewer/blob/main/CHANGELOG.md" target="_blank" rel="noopener">What's new</a> · <a href="https://github.com/deswalsujan/cs16-demo-viewer/issues/new/choose" target="_blank" rel="noopener">Report a bug</a></span><span class="sp"></span><button class="btn" id="bDebug" type="button" title="Copies details for a bug report: browser, demo name, what loaded, errors. No file contents.">Copy debug info</button><button class="btn" id="bKeysClose" type="button">Close</button></div>
+        <h2 class="hpart">About</h2>
+        <div class="habout">
+          <p>CS 1.6 Demo Viewer, version 0.26.31. It plays HLTV and POV demos in the browser, from your own Half-Life folder; nothing leaves your computer.</p>
+          <p class="hlinks"><a href="https://github.com/deswalsujan/cs16-demo-viewer/blob/main/CHANGELOG.md" target="_blank" rel="noopener">What's new</a> · <a href="https://github.com/deswalsujan/cs16-demo-viewer" target="_blank" rel="noopener">Source on GitHub</a> · <a href="https://github.com/deswalsujan/cs16-demo-viewer/issues/new/choose" target="_blank" rel="noopener">Report a bug</a></p>
+          <p class="hdbg"><button class="btn" id="bDebug" type="button" title="Copies details for a bug report: browser, demo name, what loaded, errors. No file contents.">Copy debug info</button><span>Paste it into your bug report: it says which browser, demo and files, and any errors, with no file contents.</span></p>
+        </div>
+        <div class="keys-foot"><span class="sp"></span><button class="btn" id="bKeysClose" type="button">Close</button></div>
       </div>
     </div>
     <canvas id="cv" aria-label="Radar view of the match"></canvas>
@@ -838,7 +871,7 @@ addEventListener('resize', () => { if (applyUiSize()) dispatchEvent(new Event('u
         <div class="drophint">Or drop a .dem file, or an overview .bmp and .txt pair, anywhere on this page</div>
         <div class="prog" id="prog" hidden><i id="progBar"></i></div>
         <div class="msg" id="msg"></div>
-        <div class="loadfoot"><span>Version 0.26.31 · <a href="https://github.com/deswalsujan/cs16-demo-viewer" target="_blank" rel="noopener">Source on GitHub</a></span><button class="btn" id="bClear" type="button" title="Deletes the maps, models, sounds and overviews this browser saved from your Half-Life folder, and starts over as on a first visit">Clear saved files</button></div>
+        <div class="loadfoot"><span>Version 0.26.31 · <a href="https://github.com/deswalsujan/cs16-demo-viewer" target="_blank" rel="noopener">Source on GitHub</a> · <button class="lnk" id="bHelpStart" type="button" title="The keys, the colours and marks, and about the viewer (?)">Help</button></span><button class="btn" id="bClear" type="button" title="Deletes the maps, models, sounds and overviews this browser saved from your Half-Life folder, and starts over as on a first visit">Clear saved files</button></div>
       </div>
     </div>
   </section>
@@ -866,7 +899,7 @@ addEventListener('resize', () => { if (applyUiSize()) dispatchEvent(new Event('u
            of "Timeline: match"; one speed button showing the speed, opening the six -->
       <div class="seg tlseg" id="scopeSeg" role="group" aria-label="Timeline" title="The timeline shows the whole match or only this round"><button type="button" data-s="match" class="on">Match</button><button type="button" data-s="round">Round</button></div>
       <span class="sndgrp"><button class="btn ib" id="bSnd" type="button" title="Sound on or off (M)" aria-pressed="true"><svg viewBox="0 0 16 16" id="sndIcon"></svg></button><input type="range" id="sndVol" min="0" max="1" step="0.01" aria-label="Volume" title="Volume"></span>
-      <button class="btn" id="bKeys" type="button" title="Keyboard shortcuts (?)">Shortcuts <span class="kbd">?</span></button>
+      <button class="btn" id="bKeys" type="button" title="Help: the keys, the colours and marks, and about the viewer (?)">Help <span class="kbd">?</span></button>
       <div class="spwrap"><button class="btn" id="bSpeed" type="button" aria-expanded="false" aria-controls="speeds" title="Playback speed ([ slower, ] faster)">1×</button><div class="sppop" id="speeds" role="group" aria-label="Playback speed" hidden></div></div>
     </div>
   </footer>
@@ -5917,6 +5950,7 @@ document.addEventListener('keyup', (e) => { if (e.key === 'Tab') showScoreboard(
 window.addEventListener('blur', () => showScoreboard(false));
 function toggleKeys(v) { $('keys').hidden = v != null ? !v : !$('keys').hidden; }
 $('bKeys').onclick = () => toggleKeys();
+$('bHelpStart').onclick = () => toggleKeys(true); // the start screen's Help link: item 1 hid the bottom bar there (Sujan, 17 Nov 2026)
 $('bKeysClose').onclick = () => toggleKeys(false);
 $('bKeysX').onclick = () => toggleKeys(false);
 $('keys').onclick = (e) => { if (e.target === $('keys')) toggleKeys(false); };

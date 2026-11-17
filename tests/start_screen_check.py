@@ -25,6 +25,10 @@ with sync_playwright() as p:
     pg.keyboard.press('t'); pg.keyboard.press('f'); pg.wait_for_timeout(500)
     t = pg.evaluate("!document.querySelector('.app').classList.contains('theatre') && !document.fullscreenElement")
     print('T and F do nothing on the start screen:', t)
+    # Help from the start screen (UI review, item 9; Sujan, 17 Nov 2026): a link in the footer, since item 1 hid the bottom bar
+    pg.click('#bHelpStart'); pg.wait_for_timeout(200); hs = pg.evaluate("!document.getElementById('keys').hidden && document.getElementById('helpTitle').textContent")
+    pg.keyboard.press('Escape'); pg.wait_for_timeout(200); hs = hs == 'Help' and pg.evaluate("document.getElementById('keys').hidden")
+    print('Help from the start screen\'s link, closed with Esc:', hs); t = t and hs
     pg.screenshot(path='start_disabled.png', clip={'x': 1000, 'y': 0, 'width': 440, 'height': 60})
     # the footer's Source on GitHub link (0.25.1): the repo, in a new tab. Phone width is no longer checked (Sujan, 3 Nov
     # 2026: the viewer needs a Half-Life folder, which no phone has)

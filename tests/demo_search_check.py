@@ -652,9 +652,17 @@ with sync_playwright() as p:
               kt['off']['bands'] == kt['live'] + 1 and kt['off']['nc'] == 1 and (kt['off']['cur'] or '').startswith('Not counted') and (kt['off']['second'] or '').startswith('Round 1')
               and kt['on']['bands'] == kt['shown'] and kt['on']['nc'] == kt['shown'] - kt['live'] and (kt['on']['cur'] or '').startswith('Not counted'), str(kt))
         JS8("closeSummary()"); pg8.keyboard.press('?'); pg8.wait_for_timeout(300)
-        k = JS8(r"""(() => ({ foot: [...document.querySelectorAll('#keys .keys-foot button')].map((b) => b.textContent), ver: !!document.querySelector('#keys .keys-foot .ver') }))()""")
+        # Help (UI review, item 9, 17 Nov 2026; the shortcuts list up to then): Keys, Colours and marks, About; the version,
+        # its links and Copy debug info under About; Close alone in the footer; F and T each said on their own
+        k = JS8(r"""(() => { const K = $('keys'), dd = (key) => { const dt = [...K.querySelectorAll('dt')].find((d) => d.textContent.trim() === key); return dt ? dt.nextElementSibling.textContent : ''; };
+          return { title: $('helpTitle').textContent, parts: [...K.querySelectorAll('h2.hpart')].map((h) => h.textContent), foot: [...K.querySelectorAll('.keys-foot button')].map((b) => b.textContent),
+            about: [...K.querySelectorAll('.habout a')].map((a) => a.textContent).concat(K.querySelector('.habout #bDebug') ? ['Copy debug info'] : []), ver: /version \d/.test(K.querySelector('.habout').textContent),
+            timeline: K.querySelectorAll('.tllist dt').length, f: dd('F'), t: dd('T'), btn: $('bKeys').textContent.trim() }; })()""")
         pg8.click('#bKeysX'); pg8.wait_for_timeout(200)
-        check('the shortcuts list: its × closes it; the version, Copy debug info and Close in its footer', pg8.locator('#keys').is_hidden() and k['foot'] == ['Copy debug info', 'Close'] and k['ver'], str(k))
+        check('Help: its × closes it; Keys, Colours and marks (the timeline\'s marks too), About with the version, What\'s new, Source, Report a bug and Copy debug info; Close in its footer; F and T not explained through each other',
+              pg8.locator('#keys').is_hidden() and k['title'] == 'Help' and k['parts'] == ['Keys', 'Colours and marks', 'About'] and k['foot'] == ['Close'] and k['ver']
+              and k['about'] == ["What's new", 'Source on GitHub', 'Report a bug', 'Copy debug info'] and k['timeline'] == 7 and k['btn'] == 'Help ?'
+              and 'Theatre' not in k['f'] and 'full screen' not in k['t'].lower(), str(k))
         JS8("closeSummary(); tab = 'rounds'; renderPane(); $('bJoinWith').click()")
         pg8.wait_for_function("() => !!document.querySelector('#joinCard .jpick')", timeout=30000)
         j = JS8(r"""(() => { const card = $('joinCard').querySelector('.sum'), cr = card.getBoundingClientRect(), pk = card.querySelector('.jpick').getBoundingClientRect();

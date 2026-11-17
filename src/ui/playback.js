@@ -87,6 +87,7 @@ document.addEventListener('keyup', (e) => { if (e.key === 'Tab') showScoreboard(
 window.addEventListener('blur', () => showScoreboard(false));
 function toggleKeys(v) { $('keys').hidden = v != null ? !v : !$('keys').hidden; }
 $('bKeys').onclick = () => toggleKeys();
+$('bHelpStart').onclick = () => toggleKeys(true); // the start screen's Help link: item 1 hid the bottom bar there (Sujan, 17 Nov 2026)
 $('bKeysClose').onclick = () => toggleKeys(false);
 $('bKeysX').onclick = () => toggleKeys(false);
 $('keys').onclick = (e) => { if (e.target === $('keys')) toggleKeys(false); };
