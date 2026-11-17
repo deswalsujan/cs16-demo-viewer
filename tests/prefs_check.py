@@ -14,7 +14,8 @@ with sync_playwright() as p:
     pg.route('https://fonts.googleapis.com/**', lambda r: r.fulfill(body='', content_type='text/css'))
     url = f'http://127.0.0.1:{srv.server_port}/index.html'
     pg.goto(url)
-    r = pg.evaluate("[...document.querySelectorAll('#legend .btn')].map(b => b.id + ':' + b.classList.contains('on')).join(' ') + ' | ' + document.getElementById('bScope').textContent")
+    # the strip's own buttons: View settings, in it since the UI review (item 4), holds buttons of its own
+    r = pg.evaluate("[...document.querySelectorAll('#legend > .btn, #legend > .xwrap > .btn')].map(b => b.id + ':' + b.classList.contains('on')).join(' ') + ' | ' + document.getElementById('bScope').textContent")
     print('defaults on a first visit:', r); ok &= r == 'tgNames:true tgNades:true tgLines:true tgXray:false tgFit:false | Timeline: match'
     # no POV mode setting since the sign-off (0.26.30; up to 0.26.29 it was off on a first visit), and POV mode's own rows:
     # his crosshair From config.cfg, the flashbang dot and whiteout off (Sujan, 8 and 11 Nov 2026)
@@ -22,13 +23,13 @@ with sync_playwright() as p:
     print('no POV mode setting; his crosshair, flashbang dot, whiteout on a first visit:', r); ok &= r == [True, 'cfg', False, False]
     pg.evaluate("""localStorage.setItem('prefs', JSON.stringify({ view: '3d', names: false, nades: true, lines: false, xray: true, scope: 'round' }))""")
     pg.reload(); pg.wait_for_timeout(500)
-    r = pg.evaluate("[...document.querySelectorAll('#legend .btn')].map(b => b.id + ':' + b.classList.contains('on')).join(' ') + ' | ' + document.getElementById('bScope').textContent")
+    r = pg.evaluate("[...document.querySelectorAll('#legend > .btn, #legend > .xwrap > .btn')].map(b => b.id + ':' + b.classList.contains('on')).join(' ') + ' | ' + document.getElementById('bScope').textContent")
     print('after a reload with saved settings:', r); ok &= r == 'tgNames:false tgNades:true tgLines:false tgXray:true tgFit:false | Timeline: round'
     # Vanilla and Damage numbers (0.26.16, Sujan, 3 Nov 2026): Vanilla first in View settings, off on a first visit;
     # Damage numbers Wallbangs by default. Vanilla on turns off Names to See through walls, Glow on hits and the damage
     # numbers, and is kept after a reload; a single switch still works after; Vanilla off brings back what it turned off.
     pg.evaluate("localStorage.clear()"); pg.reload(); pg.wait_for_timeout(500)
-    st = "(() => { const L = (id) => document.getElementById(id); return [...document.querySelectorAll('#legend .btn')].slice(0, 4).map(b => b.classList.contains('on') ? 1 : 0).join('') + ' glow:' + L('glow3').checked + ' dn:' + (L('dn3') || {}).value + ' van:' + (L('van3') || {}).checked; })()"
+    st = "(() => { const L = (id) => document.getElementById(id); return [...document.querySelectorAll('#legend > .btn, #legend > .xwrap > .btn')].slice(0, 4).map(b => b.classList.contains('on') ? 1 : 0).join('') + ' glow:' + L('glow3').checked + ' dn:' + (L('dn3') || {}).value + ' van:' + (L('van3') || {}).checked; })()"
     try:
         first = pg.evaluate("document.querySelector('#vsetPanel .vrow input, #vsetPanel .vrow select, #vsetPanel .vrow button').id")
         r = pg.evaluate(st)

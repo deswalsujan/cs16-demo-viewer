@@ -39,7 +39,7 @@ function thOver(k, target) {
   const els = TH_PANELS[k]().filter(Boolean);
   if (target && els.some((el) => el.contains(target))) return true;
   const a = document.activeElement;
-  if (k === 't' && !$('vsetPanel').hidden) return true; // View settings is open
+  if (k === 'b' && !$('vsetPanel').hidden) return true; // View settings is open (in the strip at the bottom since the UI review, item 4)
   return !!(a && a.tagName === 'SELECT' && els.some((el) => el.contains(a)));
 }
 // what's under the pointer right now: a bar can slide in under a mouse that isn't moving

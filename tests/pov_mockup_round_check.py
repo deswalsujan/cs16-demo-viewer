@@ -79,12 +79,13 @@ NOTE = js(r'''(() => {
   const x0 = opts.xray; $('tgXray').click(); if (!opts.xray) $('tgXray').click(); const after = $('povNote'), byXray = !!after && !after.hidden; if (opts.xray !== x0) $('tgXray').click();
   return { was, open, top, viewH: rr.height, text: text.includes('anti-wallhack plugin') && text.includes('To stop wallhacks, the server shows the player an enemy only when that enemy is about to come into view.'), closed, byXray };
 })()''')
-# the notices' column against the kill feed, the round pill and the camera row (View settings), and each other
+# the notices' column against the kill feed, the round pill and the strip at the bottom left (with View settings since the
+# UI review, item 4; the camera row under the radar before), and each other
 OVERLAP = js(r'''(() => {
   const rr = $('radar').getBoundingClientRect();
   const R = (e) => { if (!e || e.hidden || !e.offsetParent) return null; const r = e.getBoundingClientRect(); return r.width ? { l: r.left - rr.left, t: r.top - rr.top, r: r.right - rr.left, b: r.bottom - rr.top } : null; };
   const hit = (a, b) => a && b && a.l < b.r && b.l < a.r && a.t < b.b && b.t < a.b;
-  const notes = { hint: R($('hint3')), toast: R($('toast')), note: R($('povNote')) }, others = { pill: R($('rclock')), cam: R($('cam3')) };
+  const notes = { hint: R($('hint3')), toast: R($('toast')), note: R($('povNote')) }, others = { pill: R($('rclock')), strip: R($('legend')) };
   [...$('feed').children].forEach((e, i) => { others['feed' + i] = R(e); });
   const over = []; for (const n in notes) for (const o in others) if (hit(notes[n], others[o])) over.push(n + '/' + o);
   for (const [a, b] of [['hint', 'toast'], ['toast', 'note'], ['hint', 'note']]) if (hit(notes[a], notes[b])) over.push(a + '/' + b);

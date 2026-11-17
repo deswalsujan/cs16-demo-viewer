@@ -136,9 +136,9 @@ with sync_playwright() as p:
     check('Round pill moves below the header', rc >= hh, f'pill top {rc:.0f}, header {hh}')
     pg.screenshot(path=f'th_{label}_top.png')
     # an open menu in that bar keeps it
-    # an open View settings panel in that bar keeps it (0.18.1; before, the Quality menu sat in the bar itself)
+    # an open View settings panel keeps the bars (0.18.1; in the strip at the bottom since the UI review, item 4)
     v("$('bVset').click()"); pg.mouse.move(W / 2, H / 2, steps=5); pg.wait_for_timeout(2600)
-    check('Header stays while its View settings panel is open', 'show-t' in cls())
+    check('The bars stay while View settings is open', 'show-t' in cls() and 'show-b' in cls())
     v("vsetOpen(false)"); pg.mouse.move(W / 2 + 10, H / 2, steps=2)
     check('Header hides after the panel closes', eventually("!$('app').classList.contains('show-t')"))
 

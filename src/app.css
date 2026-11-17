@@ -97,6 +97,13 @@ button { cursor: pointer; }
 .rclock b { color: var(--fg); font-weight: 500; }
 .legend { position: absolute; left: calc(12px * var(--ui)); bottom: calc(12px * var(--ui)); display: flex; gap: calc(6px * var(--ui)); flex-wrap: wrap; }
 .legend .btn { background: rgba(10,12,14,.82); font-size: calc(12px * var(--ui)); padding: calc(4px * var(--ui)) calc(8px * var(--ui)); }
+/* View settings in the strip (UI review, item 4): it opens upward, its chevron turned to match; rows only 3D uses (.v3)
+   aren't in 2D */
+.legend .vpanel { top: auto; bottom: calc(100% + calc(6px * var(--ui))); max-height: 70vh; overflow-y: auto; }
+.legend #bVset svg { transform: rotate(180deg); }
+.legend #bVset[aria-expanded="true"] svg { transform: none; }
+.radar.m2d .vpanel .v3 { display: none; }
+.xwrap:has(.xmark:not([hidden])) { margin-right: calc(6px * var(--ui)); } /* the ! clear of View settings beside it */
 /* POV mode on a server that held enemies back (POV mockup round, Sujan, 11 Nov 2026): a ! on See through walls, its own
    button, that shows the anti-wallhack note again at the top middle (#povNote) */
 .xwrap { position: relative; display: inline-flex; }

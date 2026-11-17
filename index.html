@@ -110,6 +110,13 @@ button { cursor: pointer; }
 .rclock b { color: var(--fg); font-weight: 500; }
 .legend { position: absolute; left: calc(12px * var(--ui)); bottom: calc(12px * var(--ui)); display: flex; gap: calc(6px * var(--ui)); flex-wrap: wrap; }
 .legend .btn { background: rgba(10,12,14,.82); font-size: calc(12px * var(--ui)); padding: calc(4px * var(--ui)) calc(8px * var(--ui)); }
+/* View settings in the strip (UI review, item 4): it opens upward, its chevron turned to match; rows only 3D uses (.v3)
+   aren't in 2D */
+.legend .vpanel { top: auto; bottom: calc(100% + calc(6px * var(--ui))); max-height: 70vh; overflow-y: auto; }
+.legend #bVset svg { transform: rotate(180deg); }
+.legend #bVset[aria-expanded="true"] svg { transform: none; }
+.radar.m2d .vpanel .v3 { display: none; }
+.xwrap:has(.xmark:not([hidden])) { margin-right: calc(6px * var(--ui)); } /* the ! clear of View settings beside it */
 /* POV mode on a server that held enemies back (POV mockup round, Sujan, 11 Nov 2026): a ! on See through walls, its own
    button, that shows the anti-wallhack note again at the top middle (#povNote) */
 .xwrap { position: relative; display: inline-flex; }
@@ -658,7 +665,8 @@ addEventListener('resize', () => { if (applyUiSize()) dispatchEvent(new Event('u
     <div class="cmsg" id="cmsg" hidden></div>
     <div class="skipnote" id="skipnote" hidden title="HLTV left part of the game out of this recording, so players jump to where they were after it"><svg viewBox="0 0 14 10" aria-hidden="true"><path d="M1 9L5 1M6 9l4-8"/></svg>Recording skips here</div>
     <!-- The 3D bar, one short row since 0.18.1 so the kill feed at the top right doesn't run into it (Sujan,
-         14 Oct 2026): the three cameras as one control, Prev and Next player as arrows, the rest in View settings -->
+         14 Oct 2026): the three cameras as one control, Prev and Next player as arrows. View settings moved to the strip at
+         the bottom left (UI review, item 4, 17 Nov 2026) -->
     <div class="cam3" id="cam3" hidden>
       <div class="seg camseg" role="group" aria-label="Camera">
         <button class="on" data-c="free" type="button" title="Free camera: fly around (V switches camera)">Free</button>
@@ -667,49 +675,6 @@ addEventListener('resize', () => { if (applyUiSize()) dispatchEvent(new Event('u
       </div>
       <button class="btn arr" id="bPrevP" type="button" title="Previous player (↓ or right-click)" aria-label="Previous player">‹</button>
       <button class="btn arr" id="bNextP" type="button" title="Next player (↑ or click)" aria-label="Next player">›</button>
-      <div class="vset">
-        <button class="btn" id="bVset" type="button" aria-expanded="false" aria-controls="vsetPanel" title="Vanilla, team colours, quality, damage numbers, crosshair size, interface size and flashbangs">View settings <svg viewBox="0 0 10 6" aria-hidden="true"><path d="M1 1l4 4 4-4"/></svg></button>
-        <div class="vpanel" id="vsetPanel" role="group" aria-label="View settings" hidden>
-          <div class="vhead">On the view</div>
-          <label class="vrow"><span>Vanilla<small>every overlay off, as in the game</small></span><input type="checkbox" id="van3" title="Turns off what the game's own demo player doesn't show: damage numbers, kill markers, glow, See through walls, names and HP over the players, kill lines, grenade paths, the death cam's red wash and banner, and the C4 countdown. The buttons and settings still work one by one after"></label>
-          <div class="vrow"><span>Team colours</span><button class="btn" id="tgModels" type="button" title="Draw the players in flat team colours: red for Terrorists, blue for Counter-Terrorists">Off</button></div>
-          <label class="vrow"><span>Damage numbers<small>which hits show their damage</small></span><select id="dn3" title="The damage each hit did, floating up beside the player hit. Wallbangs: hits through a wall, in orange. Direct hits: hits in the open, in white. Both: every hit. The killing bullet ends in a red skull">
-            <option value="wb">Wallbangs</option>
-            <option value="direct">Direct hits</option>
-            <option value="both">Both</option>
-            <option value="off">Off</option>
-          </select></label>
-          <label class="vrow"><span>Glow on hits<small>damage through walls, no kill</small></span><input type="checkbox" id="glow3" title="A short pink glow on a player each time a bullet hits him through a wall, for damage that doesn't end in a kill"></label>
-          <label class="vrow"><span>Crosshair<small>in Player's eyes</small></span><select id="xh3" title="Crosshair size in Player's eyes, like the game's crosshair size setting">
-            <option value="small">Small</option>
-            <option value="medium">Medium</option>
-            <option value="large">Large</option>
-          </select></label>
-          <label class="vrow" hidden><span>Crosshair<small>size only</small></span><select id="xhp3" title="The size of his crosshair. From config.cfg uses the size set in the game's config.cfg in your Half-Life folder, as the game's demo player uses the watcher's own settings. The colour always comes from config.cfg">
-            <option value="cfg">From config.cfg</option>
-            <option value="small">Small</option>
-            <option value="medium">Medium</option>
-            <option value="large">Large</option>
-          </select></label>
-          <div class="vhead">Picture</div>
-          <label class="vrow"><span>Quality</span><select id="q3" title="How sharp the 3D view is drawn. Auto starts sharp and steps down if playback can't keep up">
-            <option value="auto">Auto</option>
-            <option value="high">High</option>
-            <option value="low">Low</option>
-          </select></label>
-          <label class="vrow"><span>Interface size<small>text, buttons and labels</small></span><select id="ui3" title="Makes text, buttons, panels and the labels in the view bigger. Auto keeps them as they are on a laptop and makes them bigger on a large screen. A size too big for the window is lowered to fit">
-            <option value="auto">Auto</option>
-            <option value="100">100%</option>
-            <option value="125">125%</option>
-            <option value="150">150%</option>
-            <option value="175">175%</option>
-            <option value="200">200%</option>
-          </select></label>
-          <div class="vhead" hidden>Demos recorded by a player</div>
-          <label class="vrow" hidden><span>Flashbang dot<small>how blinded he was</small></span><input type="checkbox" id="fbDot3" title="A white dot under the crosshair that fades as his screen did when a flashbang blinded him, or a teammate he was watching"></label>
-          <label class="vrow" hidden><span>Flashbang whiteout<small>the white his screen showed, full screen</small></span><input type="checkbox" id="fbWhite3" title="The view goes white as his screen did when a flashbang blinded him, or a teammate he was watching. As in the game, his HUD and radar fade into the white"></label>
-        </div>
-      </div>
     </div>
     <div class="hint3" id="hint3">Press ? for keyboard shortcuts</div>
     <div class="overlay" id="sb" hidden></div>
@@ -768,12 +733,58 @@ addEventListener('resize', () => { if (applyUiSize()) dispatchEvent(new Event('u
     <canvas id="cv" aria-label="Radar view of the match"></canvas>
     <div class="rclock" id="rclock" hidden></div>
     <div class="feed" id="feed"></div>
+    <!-- The view's options in one strip at the bottom left in 2D, 3D and POV (UI review, item 4, 17 Nov 2026): Names,
+         Grenades, Kill lines, See through walls (not in 2D, where it does nothing), Reset view (not in POV), then View
+         settings, opening upward, with only the rows the view uses (.v3: 3D only) -->
     <div class="legend" id="legend" hidden>
       <button class="btn on" id="tgNames" type="button">Names</button>
       <button class="btn on" id="tgNades" type="button">Grenades</button>
       <button class="btn on" id="tgLines" type="button">Kill lines</button>
       <span class="xwrap"><button class="btn" id="tgXray" type="button" title="Show players behind walls, and their names, in 3D (H)">See through walls</button><button class="xmark" id="xrayMark" type="button" hidden title="This server seems to use an anti-wallhack plugin. Click the ! to read why." aria-label="Why few enemies show through walls">!</button></span>
       <button class="btn" id="tgFit" type="button" title="Back to the starting view: the whole radar in 2D, the overview camera in 3D">Reset view</button>
+      <div class="vset">
+        <button class="btn" id="bVset" type="button" aria-expanded="false" aria-controls="vsetPanel" title="Hide all overlays, and in 3D team colours, damage numbers, the crosshair and quality; interface size; in a POV demo the flashbangs">View settings <svg viewBox="0 0 10 6" aria-hidden="true"><path d="M1 1l4 4 4-4"/></svg></button>
+        <div class="vpanel" id="vsetPanel" role="group" aria-label="View settings" hidden>
+          <div class="vhead">On the view</div>
+          <label class="vrow"><span>Hide all overlays<small>as in the game's own demo player</small></span><input type="checkbox" id="van3" title="Turns off what the game's own demo player doesn't show: damage numbers, kill markers, glow, See through walls, names and HP over the players, kill lines, grenade paths, the death cam's red wash and banner, and the C4 countdown. The buttons and settings still work one by one after"></label>
+          <div class="vrow v3"><span>Team colours</span><button class="btn" id="tgModels" type="button" title="Draw the players in flat team colours: red for Terrorists, blue for Counter-Terrorists">Off</button></div>
+          <label class="vrow v3"><span>Damage numbers<small>which hits show their damage</small></span><select id="dn3" title="The damage each hit did, floating up beside the player hit. Wallbangs: hits through a wall, in orange. Direct hits: hits in the open, in white. Both: every hit. The killing bullet ends in a red skull">
+            <option value="wb">Wallbangs</option>
+            <option value="direct">Direct hits</option>
+            <option value="both">Both</option>
+            <option value="off">Off</option>
+          </select></label>
+          <label class="vrow v3"><span>Glow on hits<small>damage through walls, no kill</small></span><input type="checkbox" id="glow3" title="A short pink glow on a player each time a bullet hits him through a wall, for damage that doesn't end in a kill"></label>
+          <label class="vrow v3"><span>Crosshair<small>in Player's eyes</small></span><select id="xh3" title="Crosshair size in Player's eyes, like the game's crosshair size setting">
+            <option value="small">Small</option>
+            <option value="medium">Medium</option>
+            <option value="large">Large</option>
+          </select></label>
+          <label class="vrow" hidden><span>Crosshair<small>size only</small></span><select id="xhp3" title="The size of his crosshair. From config.cfg uses the size set in the game's config.cfg in your Half-Life folder, as the game's demo player uses the watcher's own settings. The colour always comes from config.cfg">
+            <option value="cfg">From config.cfg</option>
+            <option value="small">Small</option>
+            <option value="medium">Medium</option>
+            <option value="large">Large</option>
+          </select></label>
+          <div class="vhead">Picture</div>
+          <label class="vrow v3"><span>Quality</span><select id="q3" title="How sharp the 3D view is drawn. Auto starts sharp and steps down if playback can't keep up">
+            <option value="auto">Auto</option>
+            <option value="high">High</option>
+            <option value="low">Low</option>
+          </select></label>
+          <label class="vrow"><span>Interface size<small>text, buttons and labels</small></span><select id="ui3" title="Makes text, buttons, panels and the labels in the view bigger. Auto keeps them as they are on a laptop and makes them bigger on a large screen. A size too big for the window is lowered to fit">
+            <option value="auto">Auto</option>
+            <option value="100">100%</option>
+            <option value="125">125%</option>
+            <option value="150">150%</option>
+            <option value="175">175%</option>
+            <option value="200">200%</option>
+          </select></label>
+          <div class="vhead" hidden>Demos recorded by a player</div>
+          <label class="vrow" hidden><span>Flashbang dot<small>how blinded he was</small></span><input type="checkbox" id="fbDot3" title="A white dot under the crosshair that fades as his screen did when a flashbang blinded him, or a teammate he was watching"></label>
+          <label class="vrow" hidden><span>Flashbang whiteout<small>the white his screen showed, full screen</small></span><input type="checkbox" id="fbWhite3" title="The view goes white as his screen did when a flashbang blinded him, or a teammate he was watching. As in the game, his HUD and radar fade into the white"></label>
+        </div>
+      </div>
     </div>
     <div class="heatbar" id="heatbar" hidden>
       <select id="hmMode" aria-label="Heatmap">
@@ -6601,7 +6612,9 @@ function setView(v, save = true) {
   document.querySelectorAll('#viewSeg button').forEach((x) => x.classList.toggle('on', x.dataset.v === v));
   const r = $('radar');
   r.classList.toggle('m2d', v === '2d'); r.classList.toggle('m3d', v === '3d'); r.classList.toggle('msplit', v === 'split');
-  $('cam3').hidden = v === '2d' || !D;
+  // the camera bar is 3D's, and has nothing left in POV mode, where View settings is in the strip (UI review, item 4)
+  $('cam3').hidden = v === '2d' || !D || POV.on;
+  $('tgXray').closest('.xwrap').hidden = v === '2d'; // See through walls does nothing in 2D (only the 3D view reads opts.xray)
   if (v !== '2d' && !window.THREE) status3('The 3D engine could not load. Check your internet connection and reload the page.');
   else if (v !== '2d' && D && !MAP) loadMap(D.mapName);
   requestAnimationFrame(() => { resize(); resize3(); });
@@ -9111,8 +9124,8 @@ function povInit() {
   POV.on = !!(D && D.povOn && D.view);
   POV.i = 0; POV.t = T;
   D.ownShots = POV.on ? povShots() : null;
-  // the camera buttons that pick another view or player go; View settings stays, with his own crosshair's size in place of
-  // the viewer's (From config.cfg, Small, Medium, Large; Sujan, 11 Nov 2026), without Glow on hits (no wallbang damage in
+  // the camera buttons that pick another view or player go (and with them the camera bar, setView); View settings, in the
+  // strip at the bottom left, has his own crosshair's size in place of the viewer's (From config.cfg, Small, Medium, Large; Sujan, 11 Nov 2026), without Glow on hits (no wallbang damage in
   // POV mode, so nothing to glow; Sujan, 29 Oct 2026) and Damage numbers (Sujan, 3 Nov 2026), and with the flashbang rows
   $('cam3').querySelector('.camseg').hidden = POV.on;
   $('bPrevP').hidden = POV.on; $('bNextP').hidden = POV.on;
@@ -9911,7 +9924,7 @@ function thOver(k, target) {
   const els = TH_PANELS[k]().filter(Boolean);
   if (target && els.some((el) => el.contains(target))) return true;
   const a = document.activeElement;
-  if (k === 't' && !$('vsetPanel').hidden) return true; // View settings is open
+  if (k === 'b' && !$('vsetPanel').hidden) return true; // View settings is open (in the strip at the bottom since the UI review, item 4)
   return !!(a && a.tagName === 'SELECT' && els.some((el) => el.contains(a)));
 }
 // what's under the pointer right now: a bar can slide in under a mouse that isn't moving

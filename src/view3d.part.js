@@ -20,7 +20,9 @@ function setView(v, save = true) {
   document.querySelectorAll('#viewSeg button').forEach((x) => x.classList.toggle('on', x.dataset.v === v));
   const r = $('radar');
   r.classList.toggle('m2d', v === '2d'); r.classList.toggle('m3d', v === '3d'); r.classList.toggle('msplit', v === 'split');
-  $('cam3').hidden = v === '2d' || !D;
+  // the camera bar is 3D's, and has nothing left in POV mode, where View settings is in the strip (UI review, item 4)
+  $('cam3').hidden = v === '2d' || !D || POV.on;
+  $('tgXray').closest('.xwrap').hidden = v === '2d'; // See through walls does nothing in 2D (only the 3D view reads opts.xray)
   if (v !== '2d' && !window.THREE) status3('The 3D engine could not load. Check your internet connection and reload the page.');
   else if (v !== '2d' && D && !MAP) loadMap(D.mapName);
   requestAnimationFrame(() => { resize(); resize3(); });
@@ -983,8 +985,8 @@ function povInit() {
   POV.on = !!(D && D.povOn && D.view);
   POV.i = 0; POV.t = T;
   D.ownShots = POV.on ? povShots() : null;
-  // the camera buttons that pick another view or player go; View settings stays, with his own crosshair's size in place of
-  // the viewer's (From config.cfg, Small, Medium, Large; Sujan, 11 Nov 2026), without Glow on hits (no wallbang damage in
+  // the camera buttons that pick another view or player go (and with them the camera bar, setView); View settings, in the
+  // strip at the bottom left, has his own crosshair's size in place of the viewer's (From config.cfg, Small, Medium, Large; Sujan, 11 Nov 2026), without Glow on hits (no wallbang damage in
   // POV mode, so nothing to glow; Sujan, 29 Oct 2026) and Damage numbers (Sujan, 3 Nov 2026), and with the flashbang rows
   $('cam3').querySelector('.camseg').hidden = POV.on;
   $('bPrevP').hidden = POV.on; $('bNextP').hidden = POV.on;

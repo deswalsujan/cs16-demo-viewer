@@ -624,10 +624,11 @@ with sync_playwright() as p:
               j['foot'] == ['jAdd', 'sp', 'jCancel', 'jGo'] and j['inset'] >= 24, str(j))
         JS8('closeJoinCard()')
         v = JS8(r"""(async () => { const w = (ms) => new Promise((r) => setTimeout(r, ms)); setView('3d'); await w(300); const s = $('ui3'); s.value = '200'; s.dispatchEvent(new Event('change')); await w(400); vsetOpen(true); await w(200);
-          const p = $('vsetPanel'), b = p.getBoundingClientRect(), out = { heads: [...p.querySelectorAll('.vhead')].map((h) => h.textContent), first: p.querySelector('.vrow input, .vrow select, .vrow button').id, bottom: Math.round(b.bottom), right: Math.round(b.right), ui: UI };
+          const p = $('vsetPanel'), b = p.getBoundingClientRect(), out = { heads: [...p.querySelectorAll('.vhead')].map((h) => h.textContent), first: p.querySelector('.vrow input, .vrow select, .vrow button').id, top: Math.round(b.top), bottom: Math.round(b.bottom), right: Math.round(b.right), above: Math.round($('bVset').getBoundingClientRect().top - b.bottom), ui: UI };
           vsetOpen(false); s.value = 'auto'; s.dispatchEvent(new Event('change')); return out; })()""")
-        check('View settings at the largest Interface size: three groups, Vanilla first, the panel inside the 1512x982 window',
-              v['heads'] == ['On the view', 'Picture', 'Demos recorded by a player'] and v['first'] == 'van3' and v['bottom'] <= 982 and v['right'] <= 1512, str(v))
+        # in the strip at the bottom left, opening upward, since the UI review (item 4, 17 Nov 2026)
+        check('View settings at the largest Interface size: three groups, Hide all overlays first, the panel above its button and inside the 1512x982 window',
+              v['heads'] == ['On the view', 'Picture', 'Demos recorded by a player'] and v['first'] == 'van3' and v['top'] >= 0 and v['bottom'] <= 982 and v['right'] <= 1512 and v['above'] >= 0, str(v))
         check('no page error on the dialogs checks', not errs8, '; '.join(errs8[:3]))
     except Exception as e:
         check('the dialogs: the can\'t-play card, the shortcuts list, the Join card, View settings', False, str(e).split('\n')[0])
