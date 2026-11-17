@@ -682,7 +682,7 @@ with sync_playwright() as p:
               and 'Theatre' not in k['f'] and 'full screen' not in k['t'].lower(), str(k))
         # quieter Join (UI review, item 10): SK vs Na`Vi has a winner and no offer to join, so a small link ends the Rounds tab
         jl = JS8("(() => { closeSummary(); tab = 'rounds'; renderPane(); const b = $('bJoinWith'); return { link: b.classList.contains('lnk'), text: b.textContent, question: !!$('pane').querySelector('.joinrow') }; })()")
-        check('the Rounds tab of a finished map: a small "Join with another demo…" link at the end, no question', jl == {'link': True, 'text': 'Join with another demo…', 'question': False}, str(jl))
+        check('the Rounds tab of a finished map: a small "Join parts…" link at the end (one name for the action, Sujan, 17 Nov 2026), no question', jl == {'link': True, 'text': 'Join parts…', 'question': False}, str(jl))
         # the Players and Rounds tabs (UI review, item 13): the Rounds tab's heading row and its switch after the last round; the
         # Players tab's Key column, a dead player's skull beside his name, the note on one line
         pr = JS8(r"""(() => { const P = $('pane'), rows = [...P.querySelectorAll('.row[data-t]')], sw = $('optAll').closest('label');
