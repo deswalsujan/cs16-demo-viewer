@@ -4998,7 +4998,8 @@ const unsureTag = (k) => (k.wb && skipNear(k.t) ? `<span class="wbtag unsure" ti
 const LOOSE_TIP = (k) => k.wb.open ? `Partial wallbang: the killer's bullet on the victim ${k.wb.open.before.toFixed(2)} s before the kill did ${k.wb.open.dmg} HP, what the killer's gun does in the open (at least ${k.wb.open.low}), so the game hit the victim in view a moment before; the recorded positions have the victim behind cover by then` : k.wb.dmg ? `Partial wallbang: part of the victim was in view, and the demo's damage shows a bullet of the killer's went through cover just before the kill (${k.wb.dmg.dmg} HP where the killer's gun does at least ${k.wb.dmg.open} in the open)` : k.wb.sliver ? `Partial wallbang: the bullet went through cover, but part of the victim was in view from the shooter's eye: some of the finder's sight lines reach the victim, and ${k.wb.loose} pixels of them show in the check` : `Partial wallbang: the bullet went through cover, but part of the victim was in view from the shooter's eye (${k.wb.loose} pixels in the check, 50 or more counts as in view)`;
 const looseTag = (k) => (k.wb && k.wb.loose ? `<span class="wbtag loose" title="${LOOSE_TIP(k)}">PARTIAL WALLBANG</span>` : '');
 const STRICT_TIP = 'Wallbang: the bullet went through cover and none of the victim was in view from the shooter\'s eye';
-const DMG_TIP = 'Wall damage: hits through cover that didn\'t kill the player they hit';
+// the Wall damage tooltip (Sujan, 20 Nov 2026; "…that didn't kill the player they hit" up to then)
+const DMG_TIP = 'Wall damage: hits through cover that didn\'t kill';
 
 // ---------------- shorter names ----------------
 // The team heading already names the team, so the clan tag most of the team shares is dropped there:
