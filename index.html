@@ -10292,11 +10292,12 @@ async function loadSummary(sndDone) {
   // through walls brings it back), as a line of its own that keeps the card open (Sujan, 19 Nov 2026; up to then one short
   // line with "His view only, in 3D", the UI review's item 2)
   if (D.povOn && POV.on && povHidesEnemies().on) rows.push({ s: 'info', keep: true, t: 'It seems the server used an anti-wallhack plugin. Click ! on the **See through walls** button below to know more.' });
-  // A map recorded in two or more files: a part on its own says so whenever it starts late or ends before anyone won,
-  // with Join parts…, naming the other parts when they're in the folder (same map, at least 8 of the same Steam IDs) and
-  // opening the Join card's picker when they aren't (Sujan, 19 Nov 2026). Up to then only when another part was in the
-  // folder, since those two alone were wrong on all four demos on Sujan's Mac that showed them with no other part (2 Oct
-  // 2026): a draw the server announced, two recordings cut off in their last round, and an overtime-only file.
+  // A map recorded in two or more files: a part on its own says so whenever it starts late or ends before anyone won, with
+  // Join parts… (Sujan, 19 Nov 2026). With other parts in the folder (same map, at least 8 of the same Steam IDs) the note
+  // names them and keeps the card open; with none, the note and its Join parts…, which opens the Join card's picker, are only
+  // under Details and the card doesn't stay open, since those two alone were wrong on all four demos on Sujan's Mac that
+  // showed them with no other part (2 Oct 2026): a draw the server announced, two recordings cut off in their last round,
+  // and an overtime-only file. Up to 19 Nov 2026 the note showed only with another part in the folder.
   if (D.parts) {
     const js = joinedSetOf(D.parts[0].fileName);
     // a joined map is a quiet note, unless it was joined in an order the rounds don't support, which keeps the card open
@@ -10318,15 +10319,22 @@ async function loadSummary(sndDone) {
         n += others.length === 1 ? ` ${others[0].name} has the same players on ${D.mapName}.` : ` ${others.length} other demos have the same players on ${D.mapName}: ${others.map((f) => f.name).join(', ')}.`;
         SUM.joinList = [CUR_FILE || fileByName(D.fileName), ...others].filter(Boolean);
       } else n += ' **Join parts…** picks the other part, from your Half-Life folder or from anywhere.';
-      rows.push({ s: 'info', t, n, btn: { id: 'sumJoin', label: 'Join parts…' } }); // one name for it (UI review, item 10)
+      // one name for it (UI review, item 10); quiet: a button that doesn't keep the card open
+      rows.push({ s: 'info', t, n, btn: { id: 'sumJoin', label: 'Join parts…' }, quiet: !others.length, notail: !others.length });
       SUM.joinOffer = true;
       if (tab === 'rounds') renderPane(); // the Rounds tab asks about joining now
     }
   }
   // the recording switched maps: no longer the card's first note (Sujan, 19 Nov 2026); under Details when the other maps
-  // played under a minute in all, a note that keeps the card open from a minute (up to then it always kept the card open)
+  // played under a minute in all, a note that keeps the card open from a minute (up to then it always kept the card open).
+  // The other maps are every stretch but the one shown, added up, with three or more maps too (Sujan, 19 Nov 2026): the
+  // reader plays the first stretch when it's the longest, else the last (parseDemo), and the viewer only that one
   if (D.maps && D.maps.length > 1) {
-    const other = D.maps.filter((m) => m.map.toLowerCase() !== D.mapName.toLowerCase()).reduce((a, m) => a + Math.max(0, m.dur), 0);
+    const L = D.maps, nm = (m) => m.map.toLowerCase(), want = D.mapName.toLowerCase();
+    const longest = L.reduce((b, m, i) => (m.dur > L[b].dur ? i : b), 0);
+    let shown = longest === 0 ? 0 : L.length - 1;
+    if (nm(L[shown]) !== want) { shown = -1; L.forEach((m, i) => { if (nm(m) === want) shown = i; }); }
+    const other = L.reduce((a, m, i) => a + (i === shown ? 0 : Math.max(0, m.dur)), 0);
     rows.push({ s: 'info', keep: other >= 60, notail: true, t: `The recording switched maps. Showing ${D.mapName}, where it spent longest.`, n: D.maps.map((m) => `${m.map} ${fmt(m.dur)}`).join(', then ') });
   }
   if (!map) rows.push({ s: 'fail', t: `Map ${D.mapName} not found`, n: 'No 3D view and no wallbang finder. Add the .bsp from cstrike\\maps or cstrike_downloads\\maps.' });
@@ -10375,7 +10383,8 @@ async function loadSummary(sndDone) {
 // map loaded, so there's a 3D view (without it an HLTV demo plays in 2D only)
 function demoKindLine(map) {
   if (D.povOn) return 'You are viewing a POV demo (3D only)';
-  const a = D.pov ? 'a POV demo' : 'an HLTV demo';
+  // a POV file without the record of the player's view plays like an HLTV demo (Sujan, 19 Nov 2026)
+  const a = D.pov ? "a POV demo without the player's view" : 'an HLTV demo';
   return `You are viewing ${a} (${map ? '2D and 3D available' : '2D only, without the map file'})`;
 }
 
@@ -10439,10 +10448,12 @@ function renderSummary(r) {
   SUM.r = r; SUM.back = r.state === 'fail' ? (r.closeDemo ? 'close' : 'keep') : null;
   const icon = { ok: '✓', warn: '!', fail: '✕', info: 'i', busy: '…' };
   const md = (t) => esc(t).replace(/\*\*(.+?)\*\*/g, '<b>$1</b>');
-  // Only a row with a button, a warning or the map switch (keep) keeps the full card open (the UI review's final list,
-  // item 2; Sujan, 17 Nov 2026): a note that needs nothing done (custom models, extra bytes after the end, a joined map,
-  // the POV line) goes under Details, with a short tail on the one-line card ("Ready: 27 rounds · custom models")
-  const keeps = (x) => x.s === 'warn' || x.s === 'fail' || !!x.btn || !!x.keep;
+  // Only a row with a button, a warning or keep (the map switch of a minute or more, the anti-wallhack note) keeps the full
+  // card open (the UI review's final list, item 2; Sujan, 17 and 19 Nov 2026): a note that needs nothing done (custom models,
+  // extra bytes after the end, a joined map) goes under Details, with a short tail on the one-line card ("Ready: HLTV demo,
+  // 27 rounds (2D and 3D) · custom models"); a quiet row's button (the split-map note with no other part found) is only
+  // under Details too, and a notail row has no tail
+  const keeps = (x) => x.s === 'warn' || x.s === 'fail' || (!!x.btn && !x.quiet) || !!x.keep;
   const notes = r.rows.filter(keeps), quiet = r.rows.filter((x) => x.s === 'info' && !keeps(x));
   const line = r.state === 'busy' || (r.state === 'ok' && !notes.length && !r.details);
   // a note marked notail (a map switch of under a minute) is only under Details
