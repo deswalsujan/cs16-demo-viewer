@@ -596,6 +596,17 @@ with sync_playwright() as p:
               [re.search(r'-(\d{10})-', n).group(1)[-4:] for n in c['names']] == ['1609', '1740', '1724'] and w == ['Not in the order they were recorded The recording times in the file names put them in another order: 16:09, 17:24, 17:40. Use the recorded order']
               and [re.search(r'-(\d{10})-', n).group(1)[-4:] for n in c2['names']] == ['1609', '1724', '1740'] and c2['order'] == 'In the order they were recorded: 16:09, 17:24, 17:40. The rounds agree.'
               and not any(x['s'] == 'warn' for x in c2['checks']), f"{c['names']}; {w}; then {c2['names']}; {c2['order']!r}")
+        # the same recording twice under two names (Sujan, 20 Nov 2026): part 1 of WeMadeFox vs Ravens and a copy of it made in
+        # the page under another name: a warning, Join parts off, and Remove part 2 takes it out
+        JS5(f"(async () => {{ const f = files.demos.find((x) => x.name === {W1!r}); const c = new File([await f.arrayBuffer()], 'wmf-part1-copy.dem', {{ lastModified: f.lastModified }}); closeJoinCard(); openJoinCard([f, c]); }})()")
+        pg5.wait_for_function('__v("!JOIN.reading && !JOIN.checking && JOIN.list.length === 2 && JOIN.F.has(\'wmf-part1-copy.dem\') && !!$(\'jGo\')")', timeout=120000)
+        dp = JS5(r"""(() => ({ warns: [...$('joinCard').querySelectorAll('.sum-list li:not(.jv)')].filter((li) => li.querySelector('.sum-ic.warn')).map((li) => li.innerText.replace(/\s+/g, ' ').trim().replace(/^! /, '')), go: !$('jGo').disabled }))()""")
+        JS5("$('jDrop').click()")
+        pg5.wait_for_function('__v("!JOIN.reading && !JOIN.checking && JOIN.list.length === 1")', timeout=60000)
+        dp['after'] = JS5("JOIN.list.map((f) => f.name)")
+        check('Join card, the same file twice under two names: "Part 2 is the same recording as part 1, under another name" with Remove part 2, Join parts off; Remove part 2 takes the copy out',
+              dp == {'warns': ['Part 2 is the same recording as part 1, under another name Remove part 2'], 'go': False, 'after': [W1]}, str(dp))
+        JS5('closeJoinCard()')
         check('no page error on the joined map and the Join cards', not errs5, '; '.join(errs5[:3]))
     except Exception as e:
         check('a half replayed and a half carried on, WeMadeFox vs Ravens, Nuke, EM4 finals', False, str(e).split('\n')[0])
