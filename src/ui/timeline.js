@@ -76,16 +76,34 @@ function drawPlayhead() {
 }
 let tlDrag = false;
 const tlTime = (e) => { const r = tlc.getBoundingClientRect(); const [a, b] = tlRange(); return a + Math.max(0, Math.min(1, (e.clientX - r.left) / r.width)) * (b - a); };
-tl.addEventListener('pointerdown', (e) => { if (!D) return; tlDrag = true; tl.setPointerCapture(e.pointerId); seek(tlTime(e)); });
-tl.addEventListener('pointermove', (e) => {
-  if (!D) return;
-  const t = tlTime(e);
-  if (tlDrag) seek(t);
-  // tooltip: nearest kill within 6px
+// the kill mark nearest the mouse within 6 px (at 100% Interface size), as the tooltip finds it
+function tlKillAt(e) {
   const r = tlc.getBoundingClientRect(); const [a, b] = tlRange();
   let best = null, bd = 6 * UI;
   const liveSet = new Set(visibleRounds().map((x) => x.n));
   for (const k of D.kills) { if (!liveSet.has(k.round)) continue; const x = (k.t - a) / (b - a) * r.width; const d = Math.abs(x - (e.clientX - r.left)); if (d < bd) { bd = d; best = k; } }
+  return best;
+}
+// A click on a kill mark does what a click on that kill in the Kills tab does: a few seconds before it, the killer followed
+// in Eyes (the victim when there's no player killer), playing, the kill marked (Sujan, 19 Nov 2026). Only a click: on a kill
+// mark the playhead waits until the mouse moves 4 px or more, which makes it a drag as before; a click anywhere else moves
+// the playhead at once and leaves the camera and play state as they are.
+let tlPress = null;
+tl.addEventListener('pointerdown', (e) => {
+  if (!D) return;
+  tl.setPointerCapture(e.pointerId);
+  const k = tlKillAt(e);
+  if (k) { tlPress = { x: e.clientX, k }; return; }
+  tlPress = null; tlDrag = true; seek(tlTime(e));
+});
+tl.addEventListener('pointermove', (e) => {
+  if (!D) return;
+  const t = tlTime(e);
+  if (tlPress && Math.abs(e.clientX - tlPress.x) >= 4 * UI) { tlPress = null; tlDrag = true; }
+  if (tlDrag) seek(t);
+  // tooltip: nearest kill within 6px
+  const best = tlKillAt(e);
+  const r = tlc.getBoundingClientRect(); const [a, b] = tlRange();
   const tip = $('tip');
   const rr = roundAt(t);
   // "R23 1:18", as in the lists, then the demo time (UI review, item 3; up to then "34:12 · round 23 · 1:18")
@@ -99,5 +117,10 @@ tl.addEventListener('pointermove', (e) => {
   const half = tip.offsetWidth / 2, tr = tl.getBoundingClientRect(), lo = 8 + half - tr.left, hi = window.innerWidth - 8 - half - tr.left;
   tip.style.left = (hi < lo ? lo : Math.max(lo, Math.min(hi, e.clientX - tr.left))) + 'px';
 });
-tl.addEventListener('pointerup', () => { tlDrag = false; });
+tl.addEventListener('pointerup', () => {
+  tlDrag = false;
+  const p = tlPress; tlPress = null;
+  if (p && D) { pickedKill = p.k; pickedBurst = null; watchKill(p.k, 4); }
+});
+tl.addEventListener('pointercancel', () => { tlDrag = false; tlPress = null; });
 tl.addEventListener('pointerleave', () => { $('tip').hidden = true; });
