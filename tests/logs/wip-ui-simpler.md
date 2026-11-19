@@ -100,3 +100,14 @@ Looked at in the headless page with a throwaway script, at 1512x982, 1440x900, 1
 | The folder alone again | full size | one piece |
 
 `start_screen_check.py` (the bracket at the five sizes) and `folder_row_test.py` (the headline in B1 and B5) were updated for them, not run.
+
+### Sujan's second look in Chrome, 20 Nov 2026: three fixups
+
+Everything from the two rounds above passed (Sujan, 20 Nov 2026). Looked at in the headless page with a throwaway script:
+
+| Change | Where | Seen |
+|---|---|---|
+| Step 1's text as wide as step 2's description; each path in a box with a copy icon | the start screen at 1512x982, 1440x900, 1920x1080, 1536x864 and 1707x960, each at Auto and at 200%, as a Mac and as Windows (the browser told it was Windows, as `folder_row_test.py` does), before a folder; then the Half-Life folder alone (no demos) and with the test demos | the right edge of the line under the title, the path's box, the Cmd+Shift+G line and the upload line 0 px from step 2's description's at every size; the path on two lines, broken only after a slash, nothing past the box, the icon at its top right; the copy icon copied "~/Library/Application Support/Steam/steamapps/common/Half-Life" and "C:\Program Files (x86)\Steam\steamapps\common\Half-Life" word for word, "Copied" above it for 1.5 s; with a folder picked, the status line 0 px from step 2's description |
+| The Rounds tab's second line in brackets | Na`Vi vs FX, Dust2, SEC 2011 final, at the five sizes, at Auto and at 200% | one line each, 55 px or more to spare |
+
+The first try at the paths showed each part between the slashes outlined: the parts used the class `.seg`, the 2D | 3D switch's; renamed `.pseg` before the commit. `start_screen_check.py` (the Mac layout at the five sizes), `folder_row_test.py` (Windows and Mac at the five sizes, the copy icon) and `demo_search_check.py` (the brackets) were updated, not run.
