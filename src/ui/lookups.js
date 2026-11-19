@@ -356,4 +356,11 @@ function roundAt(t) {
   return cur;
 }
 function visibleRounds() { return showAll ? M.rounds.filter((r) => r.dur > 0.5 || r.missing) : M.liveR; }
+// the rounds the Rounds tab's switch adds to the list (Show N uncounted rounds, Sujan, 19 Nov 2026): every round shown with it
+// on and not without it, where a round played after the match with kills in it is listed either way (renderPane)
+function uncountedRounds() {
+  const shown = new Set(M.liveR), A = M.after16;
+  if (A) for (const r of M.rounds) if (r.afterMatch && r.kills.length && r.start > A.at.start) shown.add(r);
+  return M.rounds.filter((r) => (r.dur > 0.5 || r.missing) && !shown.has(r));
+}
 let showAll = false;

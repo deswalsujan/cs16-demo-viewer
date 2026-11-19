@@ -141,9 +141,12 @@ function renderPane() {
   const p = $('pane');
   const cr = roundAt(T);
   if (tab === 'rounds') {
-    // UI review, item 13 (17 Nov 2026): a heading over the columns, the right-hand one the score and the round's length, and
-    // Show warmup, restarts and idle rounds at the end of the list (at its top up to then)
-    let h = `<div class="row rhd"><span class="n">Round</span><span class="main">Won by</span><span class="d">Score<br>Length</span></div>`;
+    // UI review, item 13 (17 Nov 2026): a heading over the columns, the right-hand one the score and the round's length. The
+    // switch for the rounds that don't count is one short line at the top, "Show N uncounted rounds" (Sujan, 19 Nov 2026;
+    // "Show warmup, restarts and idle rounds", at the end of the list since item 13, at its top before), only when there are some
+    const nUn = uncountedRounds().length;
+    let h = nUn ? `<label class="opt optall" title="Warmup, restarts, idle rounds and rounds before the match: listed, and on the timeline, without counting"><input type="checkbox" id="optAll" ${showAll ? 'checked' : ''}> Show ${plural(nUn, 'uncounted round')}</label>` : '';
+    h += `<div class="row rhd"><span class="n">Round</span><span class="main">Won by</span><span class="d">Score<br>Length</span></div>`;
     if (D.parts) h += `<div class="joinrow"><span>One map, joined from ${D.parts.length} files.</span><button class="btn sm" type="button" id="bSplit">Split them</button></div>`;
     let prevPart = D.parts ? 0 : null;
     // rounds played after a team reached 16: listed after a note, faded unless this demo counts them
@@ -177,13 +180,12 @@ function renderPane() {
         <span class="main"><span class="pill ${side}">${r.winner || '—'}</span>${esc(who)}${after ? '<span class="tag16">after the match</span>' : ''}<div class="sub">${esc(r.replayed ? 'replayed from 0:0' + (r.reason ? ' · ' + r.reason : '') : r.notFull ? 'teams not full yet' + (r.reason ? ' · ' + r.reason : '') : r.beforeMatch ? 'before the match' + (r.reason ? ' · ' + r.reason : '') : r.reason || (r.live ? '' : 'not counted'))} · ${r.kills.length} kills${r.sides ? ' · ' + Math.max(0, Object.keys(r.sides).length - new Set(r.kills.map((k) => k.victim)).size) + ' alive at end' : ''}</div></span>
         <span class="d">${sc}<br>${fmt(clockSpan(r.start, r.start + r.dur))}</span></div>`;
     }
-    h += `<label class="opt optend"><input type="checkbox" id="optAll" ${showAll ? 'checked' : ''}> Show warmup, restarts and idle rounds</label>`;
     // Quieter Join (UI review, item 10, 17 Nov 2026): the question only when the demo looks unfinished (no winner at the end,
     // or the load summary offered to join), otherwise a small link at the end of the list; one name for it, Join parts
     if (!M.wonAt || (typeof SUM === 'object' && SUM.joinOffer)) h += `<div class="joinrow"><span>${D.parts ? 'Another part of this map in a file of its own?' : 'Is this map split over two or more demo files?'}</span><button class="btn sm" type="button" id="bJoinWith">Join parts…</button></div>`;
     else h += `<div class="joinlnk"><button class="lnk" type="button" id="bJoinWith" title="A map recorded in two or more files: join them into one">Join parts…</button></div>`;
     p.innerHTML = h;
-    $('optAll').onchange = (e) => { showAll = e.target.checked; renderPane(); drawTimeline(); };
+    if ($('optAll')) $('optAll').onchange = (e) => { showAll = e.target.checked; renderPane(); drawTimeline(); };
     if ($('bSplit')) $('bSplit').onclick = splitJoined;
     $('bJoinWith').onclick = openJoinPicker;
     if ($('bCount30')) $('bCount30').onclick = () => setCount30(!M.count30);
@@ -194,7 +196,7 @@ function renderPane() {
     // now alone). POV mode (POV mockup round, section 5; Sujan, 9 and 11 Nov 2026): his own kills and deaths, his side that
     // round on the band, and a round he had no kill or death in isn't listed. Kills as in the Players tab (no team kills),
     // deaths with any death of his.
-    // HLTV demos: the rounds the Rounds tab shows (visibleRounds: with Show warmup, restarts and idle rounds, the ones that
+    // HLTV demos: the rounds the Rounds tab shows (visibleRounds: with Show N uncounted rounds, the ones that
     // don't count too, on a "Not counted" band), and the round playing now even when it doesn't count, so it's always
     // highlighted (Sujan, 17 Nov 2026)
     const pov = D.povOn;
