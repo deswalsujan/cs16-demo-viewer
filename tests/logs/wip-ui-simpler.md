@@ -36,3 +36,27 @@ Every step that failed waits a fixed time for something the page draws over seve
 | `demo_search_check.py` | the three fixups before their commits | 1 step of 130 failed, 7 min 17 s: SK vs AGAiN, Train, Arbalet Cup Europe 2009, the folder pick not done in 30 s (the speed button and the new Wallbangs dropdown step passed); that block alone on the same page, 6 s, PASS |
 | `demo_search_check.py` | 8ab46f4 (Sujan's go) | PASS, 135 steps, 2 min 27 s |
 | `notes_check.py` | each commit | PASS |
+
+## Sujan's judgement of 19 Nov 2026: the fixups and bug fixes built, the checks not run yet
+
+Sujan judged the branch live on 19 Nov 2026 and kept all 14 items; his fixups and bug fixes of that day, and his answers of the same day in the review chat, are built on the branch (`DECISIONS.md`, 19 Nov 2026), from e7fbc13 on. On his word the checks they touch wait until the review chat has checked the commits, and run once after that, on his go: `demo_search_check.py`, `theatre_test.py` at all five window sizes, `pov_mockup_round_check.py`, `pov_feedback_check.py`, `pov_reopen_check.py`, `panel_click_check.py`, `folder_row_test.py`, `start_screen_check.py`, `prefs_check.py` and `notes_check.py`, about 12 minutes; `ground_truth_check.py`, `late_kill_timing_check.py` and `light_check.py` are left out, since nothing in these changes touches counting, kill timing or the light. The checks were updated for the new words and buttons, with new steps for each change, but none of them has run on these commits; `start_screen_check.py` ran once, by mistake, before the estimate was given, on 81e113b's build before its commit: its words step passed (the rest of its output not kept).
+
+`notes_check.py` passed before every commit. Each change was looked at in the headless page with a throwaway script (not one of the checks), with the Half-Life folder alone and the test demos opened from elsewhere, or with them in the folder:
+
+| Change | Demo | Seen |
+|---|---|---|
+| The load card's first line and one-line title | SK vs Na`Vi, Train, DreamHack Winter 2011; the GP Tourney POV | "Ready: HLTV demo, 48 rounds (2D and 3D)"; "You are viewing a POV demo (3D only)" and the anti-wallhack line, the card open |
+| The split-map note, no other part | Fnatic vs mousesports, Tuscan, ESWC 2011 (15:15); WeMadeFox vs Ravens, Nuke, EM4 finals, part 1, each from elsewhere | the one-line card, the note under **Details**, **Join parts…** opening the Join card's picker |
+| The split-map note, part 2 in the folder | WeMadeFox vs Ravens, part 1 from the demo list | the full card, open, naming part 2, with **Join parts…** |
+| The map switch | SK vs Na`Vi with D.maps set to 40 s and 75 s of de_dust2 | under **Details**, then on the card |
+| A POV file without the player's view | the GP Tourney POV, `demoKindLine` with D.povOn off | "You are viewing a POV demo without the player's view (2D and 3D available)" |
+| The header | the same demos | "HLTV demo · de_train · 103:25 · …", "POV demo · de_mirage_32 · 38:18 · …" |
+| The Join card's verdict | Na`Vi vs SK, Inferno, ESWC 2011, 3 files; WeMadeFox vs Ravens, part 2 first | the verdict closed and open; 16:09, 17:40, 17:24 with its warning, **Use the recorded order** putting them back; part 2 first: one **Use the recorded order** and **Keep my order** |
+| The Rounds tab's switch | SK vs Na`Vi | "Show 52 uncounted rounds" first, 48 rows off, 100 on |
+| The start screen | the folder alone; a folder with no demos | the headline, step 2's two lines, no **More**; the no-demos message's new end |
+| The bottom bar | SK vs Na`Vi at 1512x982 and 1138x640 | the group's middle within 0.01 px of the bar's, **Help** flush right, the speed list above its button |
+| A kill with no player killer | SK vs Na`Vi, R48, Delpan's fall | Delpan followed, the kill marked, playing |
+| A click on a timeline kill mark | SK vs Na`Vi from R31, RobbaN on edzie at R23 1:18; the GP Tourney POV, R7's first kill | the Kills tab on R23, the row marked, its details in view; in POV 3.97 s before, playing, nothing else |
+| The Tab scoreboard and the start screen | SK vs Na`Vi with Tab held; the GP Tourney POV paused at 345.63 s | hidden over the start screen, back with the POV demo |
+| The Rounds tab on opening | SK vs Na`Vi, the Kills tab last used | the Rounds tab |
+| The POV round box over "ROULETTE" | the GP Tourney POV, R1 freeze 0:07, on main 0.26.31 and on the branch | the same on both: BAJRANG \|\| ROULETTE's name label in the 3D view, gone with **Names** off; in IDEAS.md |
