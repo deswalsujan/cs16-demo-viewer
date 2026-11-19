@@ -230,6 +230,7 @@ finally:
     os.remove(test_page)
 for ok, name, got in checks:
     print(('ok   ' if ok else 'FAIL ') + name + '  ' + json.dumps(got))
-passed = len(checks) == 11 and all(c[0] for c in checks)
+# 13 steps since 19 Nov 2026 (the Tab scoreboard over the start screen, the timeline click in POV mode); 11 before
+passed = len(checks) == 13 and all(c[0] for c in checks)
 print(f'{"PASS" if passed else "FAIL"} ({time.time() - t0:.0f} s)')
 sys.exit(0 if passed else 1)
