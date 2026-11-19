@@ -471,7 +471,8 @@ with sync_playwright() as p:
             wrong: t('.jwrong p')[0] || null, go: !$('jGo').disabled }; })()""")
         # part 1 alone ends before anyone won: the load card says so with Join parts…, naming part 2 and staying open when it's in
         # the folder; with no other part found, the one-line card, the note and its Join parts… under Details, opening the Join
-        # card's picker (Sujan, 19 Nov 2026; up to then the note showed only when another part was in the folder)
+        # card's picker (Sujan, 19 Nov 2026; up to then the note showed only when another part was in the folder); with none, the
+        # words say it may have been a draw or a recording that stopped early (Sujan, 20 Nov 2026)
         pg5.wait_for_function('__v("SUM.r && SUM.r.state !== \'busy\'")', timeout=60000)
         lc = JS5(r"""(async () => { const txt = () => $('sumCard').innerText.replace(/\s+/g, ' ').trim(), a = { text: txt(), btn: $('sumJoin') ? $('sumJoin').textContent : null, list: (SUM.joinList || []).map((f) => f.name) };
           const keep = files.demos; files.demos = keep.filter((f) => !/^ravens\.wmf/.test(f.name)); SUM.closedFor = null;
@@ -480,9 +481,22 @@ with sync_playwright() as p:
           Object.assign(b, { text: txt(), btn: $('sumJoin') ? $('sumJoin').textContent : null, list: SUM.joinList });
           $('sumJoin').click(); await new Promise((r) => setTimeout(r, 1500)); b.picking = JOIN.picking && !$('joinCard').hidden && !!$('joinCard').querySelector('.jpick'); closeJoinCard();
           return { a, b }; })()""")
-        check('the load card of a part that ends before anyone won: Join parts… naming part 2 in the folder, the card open; with no part found, the one-line card, the note under Details, Join parts… opening the picker',
+        check('the load card of a part that ends before anyone won: Join parts… naming part 2 in the folder, the card open; with no part found, the one-line card, the neutral note under Details, Join parts… opening the picker',
               'This recording ends at 4:0, before anyone won' in lc['a']['text'] and W2 in lc['a']['text'] and lc['a']['btn'] == 'Join parts…' and lc['a']['list'] == [W1, W2]
-              and lc['b']['line'] and not lc['b']['lineBtn'] and 'before anyone won' not in lc['b']['lineText'] and 'Join parts… picks the other part, from your Half-Life folder or from anywhere.' in lc['b']['text'] and lc['b']['btn'] == 'Join parts…' and lc['b']['list'] is None and lc['b']['picking'], str(lc))
+              and lc['b']['line'] and not lc['b']['lineBtn'] and 'no winner' not in lc['b']['lineText'] and 'before anyone won' not in lc['b']['text']
+              and 'This recording ends at 4:0 with no winner. It may have been a draw, or the recording may have stopped early. If the rest of the map is in another file, Join parts… adds it, from your Half-Life folder or from anywhere.' in lc['b']['text']
+              and lc['b']['btn'] == 'Join parts…' and lc['b']['list'] is None and lc['b']['picking'], str(lc))
+        # the other two cases with no other part found (Sujan, 20 Nov 2026), on Na`Vi vs SK's third file alone, which starts
+        # partway into a round and ends with no winner, then as if it had a winner; then part 1 of WeMadeFox vs Ravens again
+        JS5("window.__demos = files.demos; files.demos = files.demos.filter((x) => !/NaVi_SK|^ravens\\.wmf/.test(x.name)); SUM.r = null; loadDemoFile(__demos.find((x) => x.name === %r)); 0" % NS[2])
+        pg5.wait_for_function('__v("!!(D && D.fileName === %r && SUM.r && SUM.r.state !== \'busy\')")' % NS[2], timeout=120000)
+        lc2 = JS5(r"""(async () => { const rows = () => SUM.r.rows.filter((r) => r.btn && r.btn.id === 'sumJoin').map((r) => r.t + ' ' + r.n.replace(/\*\*/g, '')); const out = { both: rows() };
+          M.wonAt = { winTeam: 0 }; SUM.closedFor = null; await loadSummary(Promise.resolve()); out.late = rows(); files.demos = __demos; closeSummary(); return out; })()""")
+        check('the split-map note with no other part found: starting partway through the map; starting late and ending with no winner, both, with no score',
+              lc2 == {'late': ['This recording starts partway through the map. The recording starts partway into a round. If the start of the map is in another file, Join parts… adds it, from your Half-Life folder or from anywhere.'],
+                      'both': ['This recording starts partway through the map and ends with no winner. The recording starts partway into a round. It may have been a draw, or the recording may have stopped early. If the start or the rest of the map is in another file, Join parts… adds it, from your Half-Life folder or from anywhere.']}, str(lc2))
+        JS5("SUM.r = null; loadDemoFile(files.demos.find((x) => x.name === %r)); 0" % W1)
+        pg5.wait_for_function('__v("!!(D && D.fileName === %r && M && SUM.r && SUM.r.state !== \'busy\')")' % W1, timeout=120000)
         # part 1 alone ends before anyone won: the Rounds tab asks, with Join parts… (UI review, item 10)
         jq = JS5("(() => { closeSummary(); tab = 'rounds'; renderPane(); const b = $('bJoinWith'), q = $('pane').querySelector('.joinrow span'); return { text: b.textContent, question: q ? q.textContent : null }; })()")
         check('the Rounds tab of a part that ends before anyone won: the question, with Join parts…', jq == {'text': 'Join parts…', 'question': 'Is this map split over two or more demo files?'}, str(jq))
@@ -527,6 +541,12 @@ with sync_playwright() as p:
         JS5('useSuggested()')
         JS5("$('jGo').click()")
         pg5.wait_for_function('__v("!!(D && D.parts && D.parts.length === 2 && M && M.liveR.length > 20)")', timeout=120000)
+        # the joined map's note under Details: each part on its own line (Sujan, 20 Nov 2026)
+        pg5.wait_for_function('__v("!!(SUM.r && SUM.r.state !== \'busy\')")', timeout=60000)
+        jn = JS5(r"""(() => { SUM.closedFor = null; renderSummary(Object.assign({}, SUM.r, { details: true })); const li = [...$('sumCard').querySelectorAll('.sum-list li')].find((x) => /One map, joined from 2 files/.test(x.innerText));
+          return li ? li.querySelector('small').innerText.split('\n') : null; })()""")
+        check('the joined map on the load card: each part on its own line, then Split them in the Rounds tab',
+              jn == [f'Part 1: {W1}', f'Part 2: {W2}', 'Split them in the Rounds tab.'], str(jn))
         j = JS5(r"""(() => { closeSummary(); const L = M.liveR, last = L[L.length - 1], st = statsFor('all');
           showAll = true; tab = 'rounds'; renderPane();
           const subs = [...$('pane').querySelectorAll('.row .sub')].map((x) => x.textContent.replace(/\s+/g, ' ').trim());

@@ -10309,11 +10309,13 @@ async function loadSummary(sndDone) {
   // names them and keeps the card open; with none, the note and its Join parts…, which opens the Join card's picker, are only
   // under Details and the card doesn't stay open, since those two alone were wrong on all four demos on Sujan's Mac that
   // showed them with no other part (2 Oct 2026): a draw the server announced, two recordings cut off in their last round,
-  // and an overtime-only file. Up to 19 Nov 2026 the note showed only with another part in the folder.
+  // and an overtime-only file. Up to 19 Nov 2026 the note showed only with another part in the folder. With none, its words
+  // say it may have been a draw or a recording that stopped early (Sujan, 20 Nov 2026).
   if (D.parts) {
     const js = joinedSetOf(D.parts[0].fileName);
-    // a joined map is a quiet note, unless it was joined in an order the rounds don't support, which keeps the card open
-    rows.push({ s: 'info', tail: `joined from ${D.parts.length} files`, keep: !!(js && js.keep && js.why), t: `One map, joined from ${D.parts.length} files`, n: D.parts.map((x, i) => `Part ${i + 1}: ${x.fileName}`).join('. ') + '.' + (js && js.keep && js.why ? ` Joined in your order, which the rounds don't support: ${js.why}` : '') + ' Split them in the Rounds tab.' });
+    // a joined map is a quiet note, unless it was joined in an order the rounds don't support, which keeps the card open; each
+    // part on its own line (Sujan, 20 Nov 2026)
+    rows.push({ s: 'info', tail: `joined from ${D.parts.length} files`, keep: !!(js && js.keep && js.why), t: `One map, joined from ${D.parts.length} files`, n: D.parts.map((x, i) => `Part ${i + 1}: ${x.fileName}`).join('\n') + '\n' + (js && js.keep && js.why ? `Joined in your order, which the rounds don't support: ${js.why} ` : '') + 'Split them in the Rounds tab.' });
   } else {
     const st = liveStart(M), before = st.sbT + st.sbCT, partway = st.partway;
     const last = M.liveR[M.liveR.length - 1], open = !!last && !M.wonAt, late = before > 0 || partway;
@@ -10323,14 +10325,22 @@ async function loadSummary(sndDone) {
       const ends = last ? `${last.scoreAfter[0]}:${last.scoreAfter[1]}` : '';
       const lateText = (partway ? 'The recording starts partway into a round.' : '') + (before ? ` The game's scoreboard already shows ${plural(before, 'round')} played before ${partway ? 'that one' : 'the recording starts'}.` : '');
       let t, n;
-      if (late && !open) { t = 'This is probably part 2 of a map recorded in two or more files'; n = lateText.trim(); }
-      else if (open && !late) { t = `This recording ends at ${ends}, before anyone won`; n = 'The rest of the map is probably in another file.'; }
-      else { t = 'This is probably one part of a map recorded in two or more files'; n = `${lateText.trim()} It ends before anyone won.`; } // this file's own score means nothing for the map
       SUM.joinList = null;
       if (others.length) {
+        if (late && !open) { t = 'This is probably part 2 of a map recorded in two or more files'; n = lateText.trim(); }
+        else if (open && !late) { t = `This recording ends at ${ends}, before anyone won`; n = 'The rest of the map is probably in another file.'; }
+        else { t = 'This is probably one part of a map recorded in two or more files'; n = `${lateText.trim()} It ends before anyone won.`; } // this file's own score means nothing for the map
         n += others.length === 1 ? ` ${others[0].name} has the same players on ${D.mapName}.` : ` ${others.length} other demos have the same players on ${D.mapName}: ${others.map((f) => f.name).join(', ')}.`;
         SUM.joinList = [CUR_FILE || fileByName(D.fileName), ...others].filter(Boolean);
-      } else n += ' **Join parts…** picks the other part, from your Half-Life folder or from anywhere.';
+      } else {
+        // no other part found: neutral words, since the file may be a plain draw or a recording that stopped early (Sujan,
+        // 20 Nov 2026). Starting late and ending with no winner, the title has no score: this file's own score leaves out
+        // the rounds before it
+        const may = 'It may have been a draw, or the recording may have stopped early.', join = ' **Join parts…** adds it, from your Half-Life folder or from anywhere.';
+        if (open && !late) { t = `This recording ends at ${ends} with no winner.`; n = `${may} If the rest of the map is in another file,${join}`; }
+        else if (late && !open) { t = 'This recording starts partway through the map.'; n = `${lateText.trim()} If the start of the map is in another file,${join}`; }
+        else { t = 'This recording starts partway through the map and ends with no winner.'; n = `${lateText.trim()} ${may} If the start or the rest of the map is in another file,${join}`; }
+      }
       // one name for it (UI review, item 10); quiet: a button that doesn't keep the card open
       rows.push({ s: 'info', t, n, btn: { id: 'sumJoin', label: 'Join parts…' }, quiet: !others.length, notail: !others.length });
       SUM.joinOffer = true;
@@ -10459,7 +10469,8 @@ function renderSummary(r) {
   const el = $('sumCard');
   SUM.r = r; SUM.back = r.state === 'fail' ? (r.closeDemo ? 'close' : 'keep') : null;
   const icon = { ok: '✓', warn: '!', fail: '✕', info: 'i', busy: '…' };
-  const md = (t) => esc(t).replace(/\*\*(.+?)\*\*/g, '<b>$1</b>');
+  // a line break in a note's text starts a new line (a joined map's parts)
+  const md = (t) => esc(t).replace(/\*\*(.+?)\*\*/g, '<b>$1</b>').replace(/\n/g, '<br>');
   // Only a row with a button, a warning or keep (the map switch of a minute or more, the anti-wallhack note) keeps the full
   // card open (the UI review's final list, item 2; Sujan, 17 and 19 Nov 2026): a note that needs nothing done (custom models,
   // extra bytes after the end, a joined map) goes under Details, with a short tail on the one-line card ("Ready: HLTV demo,
