@@ -188,7 +188,13 @@ const clockText = (t, countdown) => { const c = clockAt(t, countdown); return c 
 // round's freeze time has begun ("R23 freeze 0:15" for minet on dennis, mTw vs Lions, Nuke, DreamHack Summer 2011):
 // its timer is the round's own, as last recorded before the skip (23 Oct 2026)
 const killClock = (t) => clockText(M && M.skipRestart && M.skipRestart.some((st) => Math.abs(st - t) < 0.06) ? t - 0.05 : t);
-const cellClock = (t) => { const c = killClock(t); return c.startsWith('freeze ') ? `<span class="nw">freeze</span><br><span class="nw">${c.slice(7)}</span>` : `<span class="nw">${c}</span>`; };
+// One shape for a moment in the lists and tooltips (UI review, item 3, 17 Nov 2026): "R23 1:18", "R23 C4 0:16" after the
+// plant, the round's number only in a round that counts; the demo time on hover and in Copy list. Up to then the Wallbangs
+// list had the round, the timer and the demo time on three lines, the Kills list the timer alone.
+const roundTime = (t) => { const r = roundAt(t); return (r && r.live ? 'R' + r.ln + ' ' : '') + killClock(t); };
+// in a list's time cell: "C4 0:16" and "freeze 0:15" never split, the round's number goes above them when the cell is narrow
+const cellClock = (t) => { const r = roundAt(t); return `${r && r.live ? `<span class="nw">R${r.ln}</span> ` : ''}<span class="nw">${killClock(t)}</span>`; };
+const demoTip = (t) => `Demo time ${fmt(t - D.start)}`;
 // ---- team names ----
 // Well-known CS 1.6 team names, keyed by how they tend to appear in demo file names and clan tags.
 const KNOWN_TEAMS = {
@@ -350,4 +356,11 @@ function roundAt(t) {
   return cur;
 }
 function visibleRounds() { return showAll ? M.rounds.filter((r) => r.dur > 0.5 || r.missing) : M.liveR; }
+// the rounds the Rounds tab's switch adds to the list (Show N uncounted rounds, Sujan, 19 Nov 2026): every round shown with it
+// on and not without it, where a round played after the match with kills in it is listed either way (renderPane)
+function uncountedRounds() {
+  const shown = new Set(M.liveR), A = M.after16;
+  if (A) for (const r of M.rounds) if (r.afterMatch && r.kills.length && r.start > A.at.start) shown.add(r);
+  return M.rounds.filter((r) => (r.dur > 0.5 || r.missing) && !shown.has(r));
+}
 let showAll = false;

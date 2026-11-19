@@ -55,7 +55,10 @@ function indexFolder(list) {
   files.demos.sort((a, b) => b.lastModified - a.lastModified);
   renderDemoList();
   const nPm = Object.keys(files.mdl).filter((k) => k.startsWith('models/player/')).length;
-  if (list.length) setMsg(`Found ${Object.keys(files.maps).length} maps, ${Object.keys(files.overviews).length} overviews, ${nPm} player models, ${Object.keys(files.snd).length} sounds and ${files.demos.length} demos.`);
+  // the long "Found 38 maps, 31 overviews, …" line went (UI review, item 12): the folder row says how many demos, and the
+  // counts of maps, overviews, models and sounds are in Copy debug info
+  if (list.length) setMsg('');
+  void nPm;
   retryMissingModels(); retryMissingSounds(); SND.sentences = null; LANG.map = null; loadLang();
   if (D) preloadSounds();
   if (D && !MAP) loadMap(D.mapName);
@@ -177,6 +180,7 @@ const kicon = (w, cls = '') => (KICONS[w] ? `<span class="kico ki-${w}${cls ? ' 
 // The demo list, narrowed by the search box: a demo stays when its file name contains every word typed
 // (upper or lower case), and the typed letters are highlighted. Only the file name is searched, so a demo
 // whose name doesn't say the map or the teams can only be found by scrolling.
+const demoDate = (ms) => { try { return new Date(ms).toLocaleDateString('en-GB', { day: 'numeric', month: 'short', year: 'numeric' }); } catch (e) { return ''; } };
 function renderDemoList() {
   const el = $('demoList');
   el.innerHTML = '';
@@ -195,7 +199,9 @@ function renderDemoList() {
     shown++;
     const b = document.createElement('button');
     b.type = 'button';
-    b.innerHTML = `<em>${words.length ? mark(f.name) : esc(f.name)}</em><span>${(f.size / 1048576).toFixed(0)} MB</span>`;
+    // the name and the file's date, newest first; the size on hover (UI review, item 12; the size in the row up to then)
+    b.innerHTML = `<em>${words.length ? mark(f.name) : esc(f.name)}</em><span>${demoDate(f.lastModified)}</span>`;
+    b.title = `${f.name} · ${(f.size / 1048576).toFixed(0)} MB`;
     b.onclick = () => loadDemoFile(f);
     el.appendChild(b);
   }
@@ -250,7 +256,16 @@ function hlOS() {
   try { p = (navigator.userAgentData && navigator.userAgentData.platform) || navigator.platform || ''; } catch (e) { }
   return /^win/i.test(p) ? 'win' : /^mac/i.test(p) ? 'mac' : '';
 }
-$('hlPathWin').textContent = HL_EXAMPLE; $('hlPathMac').textContent = HL_EXAMPLE_MAC;
+// each path in a box like a code block, broken only after a slash (each part between them kept whole), with a copy icon at its
+// top right that shows "Copied" for a moment (Sujan, 20 Nov 2026; a Copy link after the path since the UI review's item 12);
+// both paths stay word for word (2 Nov 2026), and the text copied is the path itself
+const pathHtml = (p) => p.replace(/[\\/]/g, '$&\u0000').split('\u0000').filter(Boolean).map((x) => `<span class="pseg">${esc(x)}</span>`).join('<wbr>');
+$('hlPathWin').innerHTML = pathHtml(HL_EXAMPLE); $('hlPathMac').innerHTML = pathHtml(HL_EXAMPLE_MAC);
+document.querySelectorAll('.cpy').forEach((b) => b.onclick = () => {
+  const t = b.querySelector('.cpyt');
+  const done = (txt, ok) => { t.textContent = txt; t.hidden = false; b.classList.add('on'); b.classList.toggle('ok', ok); clearTimeout(b._t); b._t = setTimeout(() => { t.hidden = true; b.classList.remove('on', 'ok'); }, 1500); };
+  try { navigator.clipboard.writeText($(b.dataset.copy).textContent).then(() => done('Copied', true), () => done('Select and copy it', false)); } catch (e) { done('Select and copy it', false); }
+});
 { const os = hlOS(); $('hlWin').hidden = os === 'mac'; $('hlMac').hidden = $('hlTip').hidden = os === 'win'; }
 // the files the viewer reads, for telling what changed between two picks in one visit (hlApply)
 const HL_WANT = /(?:^|\/)(?:cstrike|cstrike_downloads|valve)\/(?:maps\/[^/]+\.bsp|overviews\/[^/]+\.(?:bmp|txt)|models\/.+\.mdl|sound\/.+\.wav|sound\/(?:sentences|materials)\.txt|resource\/cstrike_english\.txt|sprites\/hud\.txt|sprites\/640hud\d+\.spr|sprites\/(?:muzzleflash[1-3]|blood|bloodspray|640_pain)\.spr|gfx\/palette\.lmp|[^/]+\.wad)$|(?:^|\/)cstrike\/(?:config\.cfg|sprites\/weapon_\w+\.txt)$|\.dem$/;
@@ -295,7 +310,7 @@ function hlRender(state, o = {}) {
     // no dot beside the count: the folder isn't watched, so there's no "Up to date" to show (Sujan, 2 Nov 2026)
     const n = files.demos.length;
     st.innerHTML = n ? esc(`${n} ${n === 1 ? 'demo' : 'demos'} found.`)
-      : line('chg', 'No demos found.', 'The folder is fine, but has no .dem files. Put demos in cstrike, or open one from anywhere with Open .dem.');
+      : line('chg', 'No demos found.', 'The folder is fine, but has no .dem files. Put demos in cstrike, or open one from anywhere with the option below.');
   }
   $('btnDemo').disabled = !HL.ok;
   $('btnDemo').title = HL.ok ? '' : 'Choose your Half-Life folder first';

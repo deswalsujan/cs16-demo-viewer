@@ -63,7 +63,7 @@ READER_HLTV = js(r'''({ pov: !!D.povOn, pings: [1, 2, 3, 4].map((e) => pingAt(e,
 ROWS = js(r'''(() => { const sh = (id) => !!$(id) && !$(id).closest('.vrow').hidden; return { xh: sh('xh3'), xhp: sh('xhp3'), dot: sh('fbDot3'), white: sh('fbWhite3'), glow: sh('glow3'), dn: sh('dn3'),
   xhpVal: $('xhp3') ? $('xhp3').value : null, opts: $('xhp3') ? [...$('xhp3').options].map((o) => o.value) : null, dotOn: $('fbDot3') ? $('fbDot3').checked : null, whiteOn: $('fbWhite3') ? $('fbWhite3').checked : null }; })()''')
 XHAIR = js(r'''(() => { const o = {}; for (const v of ['large', 'small', 'medium', 'cfg']) { $('xhp3').value = v; o[v] = povXhBase(); } o.cfgBase = XCFG.base; return o; })()''')
-SUMMARY = js(r'''({ lines: [...document.querySelectorAll('#sumCard .sum-list li')].map((l) => l.textContent) })''')
+SUMMARY = js(r'''({ lines: [...document.querySelectorAll('#sumCard .sum-list li, #sumCard .sline .slt')].map((l) => l.textContent) })''')
 FLASH = js(r'''({ white: !$('flash3').hidden, wo: +getComputedStyle($('flash3')).opacity, dot: !$('fbdot').hidden, dO: +getComputedStyle($('fbdot')).opacity })''')
 SB = js(r'''(() => { const g = $('sb').querySelector('.gsb'); if (!g) return { gsb: false };
   const rows = [...g.querySelectorAll('.gr:not(.title):not(.th)')], lat = rows.map((r) => r.lastElementChild.textContent).filter((x) => /^\d+$/.test(x)).length;
@@ -97,7 +97,7 @@ try:
             pg.evaluate('(n) => __v(`loadDemoFile(files.demos.find((f) => f.name.toLowerCase() === ${JSON.stringify(n)}))`)', name)
             pg.wait_for_function(f'__v("{READY}")', timeout=240000)
             pg.evaluate('__v("playing = false; setPlayIcon(); SUM.closedFor = null; loadSummary(true)")')
-            pg.wait_for_function('__v("!$(\'sumCard\').hidden && $(\'sumCard\').querySelectorAll(\'.sum-list li\').length > 0")', timeout=30000)
+            pg.wait_for_function('__v("!$(\'sumCard\').hidden && !$(\'sumCard\').querySelector(\'.busy\')")', timeout=30000)  # one line or a card (UI review, item 2)
             s = ev(SUMMARY)
             pg.evaluate('__v("closeSummary(); 0")')
             return s

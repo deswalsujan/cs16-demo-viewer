@@ -47,6 +47,23 @@ with sync_playwright() as p:
     rect = lambda sel: v(f"(() => {{ const r = document.querySelector('{sel}').getBoundingClientRect(); return [Math.round(r.width), Math.round(r.height)]; }})()")
     cls = lambda: v("$('app').className")
     normal = rect('#gl')
+    # the bottom bar (Sujan, 19 Nov 2026): one group of controls centred in the bar, on one row, and Help alone at its right
+    # edge, apart from the group; read here and again in Full screen's bar
+    BAR = """(() => { const c = document.querySelector('.ctrls'), g = c.querySelector('.cgrp'), h = $('bKeys'), cr = c.getBoundingClientRect(), gr = g.getBoundingClientRect(), hr = h.getBoundingClientRect();
+      const kids = [...g.children].filter((x) => x.offsetParent), mid = kids.map((x) => { const r = x.getBoundingClientRect(); return r.top + r.height / 2; });
+      return { off: Math.round((gr.left + gr.right) / 2 - (cr.left + cr.right) / 2), helpGap: Math.round(cr.right - hr.right), oneRow: Math.max(...mid) - Math.min(...mid) <= 2,
+        apart: Math.round(hr.left - gr.right), order: kids.map((x) => x.id || x.className).join(' '), helpOut: !g.contains(h) }; })()"""
+    def bar_ok(o): return abs(o['off']) <= 2 and o['helpGap'] <= 1 and o['oneRow'] and o['apart'] >= 8 and o['helpOut'] and o['order'] == 'bPrevR bBack bPlay bFwd bNextR time scopeSeg sndgrp spwrap'
+    bar0 = v(BAR)
+    check('Bottom bar: one centred group on one row (skip back to Speed), Help alone at the right edge', bar_ok(bar0), str(bar0))
+    # the Rounds tab's switch (Sujan, 20 Nov 2026): "Show N uncounted rounds" and the small line under it each on one line, at
+    # this window's Auto size and at the largest Interface size (200%, lowered to what the window allows)
+    OPT = """(() => { tab = 'rounds'; renderPane(); const sw = $('optAll') && $('optAll').closest('label'); if (!sw) return null; const x = sw.querySelector('.optx'), r = document.createRange();
+      r.selectNodeContents(x.firstChild); return { ui: UI, main: r.getClientRects().length, sub: sw.querySelector('small').getClientRects().length }; })()"""
+    SIZE = lambda s: v(f"(() => {{ localStorage.setItem('uiSize', JSON.stringify('{s}')); applyUiSize(); dispatchEvent(new Event('uisize')); return UI; }})()")
+    opt0 = v(OPT); SIZE('200'); pg.wait_for_timeout(300); opt1 = v(OPT); SIZE('auto'); pg.wait_for_timeout(300)
+    check('Rounds tab: "Show N uncounted rounds" and the line under it, each on one line, at Auto and at Interface size 200%',
+          bool(opt0) and bool(opt1) and opt0['main'] == opt0['sub'] == opt1['main'] == opt1['sub'] == 1, f'{opt0}, {opt1}')
 
     # 1. T turns it on and the view fills the whole window
     pg.mouse.move(W / 2, H / 2)
@@ -76,6 +93,8 @@ with sync_playwright() as p:
     tr = v("(() => { const r = document.querySelector('.transport').getBoundingClientRect(); return [Math.round(r.top), Math.round(r.bottom), Math.round(r.width)]; })()")
     check('Bar sits on screen, full width', tr[1] == H and tr[2] == W, str(tr))
     pov_b = v("parseFloat(getComputedStyle($('pov')).bottom)"); trh = v("$('app').querySelector('.transport').offsetHeight")
+    bar1 = v(BAR)
+    check('Bottom bar in Full screen: the same centred group on one row, Help alone at the right edge', bar_ok(bar1), str(bar1))
     check('Player name strip moves above the bar', pov_b >= trh, f'strip bottom {pov_b}px, bar {trh}px')
     pg.screenshot(path=f'th_{label}_bottom.png')
 
@@ -136,9 +155,9 @@ with sync_playwright() as p:
     check('Round pill moves below the header', rc >= hh, f'pill top {rc:.0f}, header {hh}')
     pg.screenshot(path=f'th_{label}_top.png')
     # an open menu in that bar keeps it
-    # an open View settings panel in that bar keeps it (0.18.1; before, the Quality menu sat in the bar itself)
+    # an open View settings panel keeps the bars (0.18.1; in the strip at the bottom since the UI review, item 4)
     v("$('bVset').click()"); pg.mouse.move(W / 2, H / 2, steps=5); pg.wait_for_timeout(2600)
-    check('Header stays while its View settings panel is open', 'show-t' in cls())
+    check('The bars stay while View settings is open', 'show-t' in cls() and 'show-b' in cls())
     v("vsetOpen(false)"); pg.mouse.move(W / 2 + 10, H / 2, steps=2)
     check('Header hides after the panel closes', eventually("!$('app').classList.contains('show-t')"))
 

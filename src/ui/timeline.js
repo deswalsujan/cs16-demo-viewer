@@ -11,7 +11,7 @@ const tlCache = { cv: document.createElement('canvas'), key: '' };
 // Drawn at the Interface size (0.26.13): the whole strip is drawn UI times larger, in a space UI times smaller, so its
 // marks and round numbers grow with the bar it sits in and look exactly as before at 100%.
 function drawTimeline() {
-  if (!D) return;
+  if (!D || !tlc.width || !tlc.height) return; // a bar not laid out yet (drawImage throws on a 0-size canvas)
   const W = tlc.width / dpr / UI, H = tlc.height / dpr / UI;
   const [a, b] = tlRange();
   const key = [D.fileName, D.end, tlc.width, tlc.height, dpr, UI, a, b, showAll, visibleRounds().length, M.wbs ? M.wbs.length : -1, M.skipT ? M.skipT.length : 0].join('|');
@@ -76,19 +76,49 @@ function drawPlayhead() {
 }
 let tlDrag = false;
 const tlTime = (e) => { const r = tlc.getBoundingClientRect(); const [a, b] = tlRange(); return a + Math.max(0, Math.min(1, (e.clientX - r.left) / r.width)) * (b - a); };
-tl.addEventListener('pointerdown', (e) => { if (!D) return; tlDrag = true; tl.setPointerCapture(e.pointerId); seek(tlTime(e)); });
-tl.addEventListener('pointermove', (e) => {
-  if (!D) return;
-  const t = tlTime(e);
-  if (tlDrag) seek(t);
-  // tooltip: nearest kill within 6px
+// the kill mark nearest the mouse within 6 px (at 100% Interface size), as the tooltip finds it
+function tlKillAt(e) {
   const r = tlc.getBoundingClientRect(); const [a, b] = tlRange();
   let best = null, bd = 6 * UI;
   const liveSet = new Set(visibleRounds().map((x) => x.n));
   for (const k of D.kills) { if (!liveSet.has(k.round)) continue; const x = (k.t - a) / (b - a) * r.width; const d = Math.abs(x - (e.clientX - r.left)); if (d < bd) { bd = d; best = k; } }
+  return best;
+}
+// A click on a kill mark does what a click on that kill in the Kills tab does: a few seconds before it, the killer followed
+// in Eyes (the victim when there's no player killer), playing, the kill marked; and the side panel goes to the Kills tab,
+// that kill's row and its details in view. In POV mode it only jumps a few seconds before the kill and plays: there's no
+// other player's eyes to follow (Sujan, 19 Nov 2026). Only a click: on a kill mark the playhead waits until the mouse moves
+// 4 px or more, which makes it a drag as before; a click anywhere else moves the playhead at once and leaves the camera and
+// play state as they are.
+function tlWatch(k) {
+  if (D.povOn) { seek(k.t - 4); playing = true; setPlayIcon(); return; }
+  pickedKill = k; pickedBurst = null;
+  if (tab !== 'kills') document.querySelector('.tabs button[data-tab="kills"]').click();
+  watchKill(k, 4);
+  const row = $('pane').querySelector('.krow.pick'), det = row && row.nextElementSibling && row.nextElementSibling.classList.contains('kdet') ? row.nextElementSibling : null;
+  if (det) det.scrollIntoView({ block: 'nearest' });
+  if (row) row.scrollIntoView({ block: 'nearest' });
+}
+let tlPress = null;
+tl.addEventListener('pointerdown', (e) => {
+  if (!D) return;
+  tl.setPointerCapture(e.pointerId);
+  const k = tlKillAt(e);
+  if (k) { tlPress = { x: e.clientX, k }; return; }
+  tlPress = null; tlDrag = true; seek(tlTime(e));
+});
+tl.addEventListener('pointermove', (e) => {
+  if (!D) return;
+  const t = tlTime(e);
+  if (tlPress && Math.abs(e.clientX - tlPress.x) >= 4 * UI) { tlPress = null; tlDrag = true; }
+  if (tlDrag) seek(t);
+  // tooltip: nearest kill within 6px
+  const best = tlKillAt(e);
+  const r = tlc.getBoundingClientRect(); const [a, b] = tlRange();
   const tip = $('tip');
   const rr = roundAt(t);
-  tip.innerHTML = best ? `${rr && rr.live ? 'R' + rr.ln + ' ' : ''}${killClock(best.t)} · ${killHtml(best)}` : `${fmt(t - D.start)}${rr && rr.live ? ' · round ' + rr.ln + ' · ' + clockText(t) : ''}`;
+  // "R23 1:18", as in the lists, then the demo time (UI review, item 3; up to then "34:12 · round 23 · 1:18")
+  tip.innerHTML = best ? `${roundTime(best.t)} · ${killHtml(best)}` : `${rr ? esc(roundTime(t)) + ' · ' : ''}demo ${fmt(t - D.start)}`;
   // a skip in the recording within 6 px: say what the // means, above the rest
   const sk = (M.skipT || []).find((st) => Math.abs((st - a) / (b - a) * r.width - (e.clientX - r.left)) < 6 * UI);
   if (sk != null) tip.innerHTML = `<b>Recording skips here</b>: HLTV left part of the game out, so players jump<br>` + tip.innerHTML;
@@ -98,5 +128,10 @@ tl.addEventListener('pointermove', (e) => {
   const half = tip.offsetWidth / 2, tr = tl.getBoundingClientRect(), lo = 8 + half - tr.left, hi = window.innerWidth - 8 - half - tr.left;
   tip.style.left = (hi < lo ? lo : Math.max(lo, Math.min(hi, e.clientX - tr.left))) + 'px';
 });
-tl.addEventListener('pointerup', () => { tlDrag = false; });
+tl.addEventListener('pointerup', () => {
+  tlDrag = false;
+  const p = tlPress; tlPress = null;
+  if (p && D) tlWatch(p.k);
+});
+tl.addEventListener('pointercancel', () => { tlDrag = false; tlPress = null; });
 tl.addEventListener('pointerleave', () => { $('tip').hidden = true; });

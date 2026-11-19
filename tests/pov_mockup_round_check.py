@@ -14,8 +14,8 @@ recorded by BAJRANG || forgotteN_), in POV mode, and on mTw vs mousesports, Infe
   summary's two lines, a notice at the top middle, no shortcuts line; the ! shows the anti-wallhack note at the top middle and
   closes it, and switching See through walls on doesn't show it; in the HLTV demo the switch, 2D (the saved choice),
   Reset view and the Wallbangs tab are back, the POV mode row and its heading in View settings are gone, no !;
-- the Kills tab of the POV demo lists his kills and deaths for the whole match, by round, every row his, the round
-  playing now highlighted; the HLTV demo's lists the round playing now;
+- the Kills tab of the POV demo lists his kills and deaths for the whole match, by round, every row his, the band of
+  the round playing now highlighted and none of its rows tinted for it; the HLTV demo's too, every kill by round;
 - at the widest kill feed rows of the POV demo (R3, 4 rows), with "Stopping at 16" and the anti-wallhack note open,
   the notice and the note overlap neither the feed, the round pill, View settings nor each other, at 1512x982
   (Interface size Auto and 115%, the largest it allows there) and 1280x720;
@@ -60,7 +60,7 @@ READER = js(r'''(() => {
   return { dmg: near(D.dmg, 6, 742.87, 0.02), bar2: near(D.bars, 3, 1086.08, 0.02), plus, tab: near(D.tabs, 2, 344.43, 0.02).concat(near(D.tabs, 2, 347.16, 0.02)) };
 })()''')
 DRAWN = js(r'''({ pain: [742.88, 743.3].map((t) => povPainAt(t).map((x) => +x.toFixed(2))), bar: [1085.5, 1086.5, 1086.8].map((t) => { const f = povBarAt(t); return f == null ? null : +f.toFixed(2); }) })''')
-SB = js(r'''({ open: !$('sb').hidden, held: !!$('sb').querySelector('.sbheld') })''')
+SB = js(r'''({ open: !$('sb').hidden, held: !!$('sb').querySelector('.sbheld'), heldText: ($('sb').querySelector('.sbheld') || {}).textContent || null })''')
 def offers_js():
     return js(r'''(() => {
   const vis = (el) => !!el && !el.hidden && !!el.offsetParent;
@@ -69,7 +69,7 @@ def offers_js():
   toast('Stopping at 16. Rounds tab: Count them to count the rounds played after.', 20000);
   return { view: viewMode, seg: !$('viewSeg').hidden, fit: !$('tgFit').hidden, wbTab: !document.querySelector('.tabs button[data-tab=wb]').hidden,
     povRow: !!row && !row.hidden, povHead: !!head && !head.hidden, mark: vis($('xrayMark')),
-    hintTop: vis($('hint3')) ? top($('hint3')) : null, toastTop: top($('toast')), viewH: rr.height };
+    hintTop: vis($('hint3')) ? top($('hint3')) : null, toastTop: top($('toast')), viewH: rr.height, kind: ($('meta').querySelector('.dkind') || {}).textContent || null };
 })()''')
 NOTE = js(r'''(() => {
   const n0 = $('povNote'), was = !!n0 && !n0.hidden;
@@ -77,14 +77,15 @@ NOTE = js(r'''(() => {
   const open = !!n && !n.hidden, top = open ? n.getBoundingClientRect().top - rr.top : null, text = open ? n.textContent : '';
   $('xrayMark').click(); const closed = !n || n.hidden;
   const x0 = opts.xray; $('tgXray').click(); if (!opts.xray) $('tgXray').click(); const after = $('povNote'), byXray = !!after && !after.hidden; if (opts.xray !== x0) $('tgXray').click();
-  return { was, open, top, viewH: rr.height, text: text.includes('anti-wallhack plugin') && text.includes('To stop wallhacks, the server shows the player an enemy only when that enemy is about to come into view.'), closed, byXray };
+  return { was, open, top, viewH: rr.height, text: text.includes('anti-wallhack plugin') && text.includes("To stop wallhacks, the server shows the player (whose POV you're watching) an enemy only when that enemy is about to come into view."), closed, byXray };
 })()''')
-# the notices' column against the kill feed, the round pill and the camera row (View settings), and each other
+# the notices' column against the kill feed, the round pill and the strip at the bottom left (with View settings since the
+# UI review, item 4; the camera row under the radar before), and each other
 OVERLAP = js(r'''(() => {
   const rr = $('radar').getBoundingClientRect();
   const R = (e) => { if (!e || e.hidden || !e.offsetParent) return null; const r = e.getBoundingClientRect(); return r.width ? { l: r.left - rr.left, t: r.top - rr.top, r: r.right - rr.left, b: r.bottom - rr.top } : null; };
   const hit = (a, b) => a && b && a.l < b.r && b.l < a.r && a.t < b.b && b.t < a.b;
-  const notes = { hint: R($('hint3')), toast: R($('toast')), note: R($('povNote')) }, others = { pill: R($('rclock')), cam: R($('cam3')) };
+  const notes = { hint: R($('hint3')), toast: R($('toast')), note: R($('povNote')) }, others = { pill: R($('rclock')), strip: R($('legend')) };
   [...$('feed').children].forEach((e, i) => { others['feed' + i] = R(e); });
   const over = []; for (const n in notes) for (const o in others) if (hit(notes[n], others[o])) over.push(n + '/' + o);
   for (const [a, b] of [['hint', 'toast'], ['toast', 'note'], ['hint', 'note']]) if (hit(notes[a], notes[b])) over.push(a + '/' + b);
@@ -98,7 +99,8 @@ KILLS = js(r'''(() => {
   const his = (k) => k && (k.killer === rec || k.victim === rec);
   let want = 0; for (const r of M.liveR) for (const k of r.kills) if (his(k)) want++;
   const cur = roundAt(T);
-  return { rows: rows.length, allHis: rows.every((el) => his(D.kills[+el.dataset.ki])), want, rounds: heads.filter((h) => /^Round /.test(h.textContent)).length,
+  // the round playing now is shown by its band alone (item 6's fixup, Sujan, 17 Nov 2026): no row carries its tint
+  return { rows: rows.length, curRows: rows.filter((el) => el.classList.contains('cur')).length, allHis: rows.every((el) => his(D.kills[+el.dataset.ki])), want, rounds: heads.filter((h) => /^Round /.test(h.textContent)).length,
     curHead: (heads.find((h) => h.classList.contains('cur')) || {}).textContent || null, curRound: cur && cur.live ? 'Round ' + cur.ln : null, top: heads[0] ? heads[0].textContent : null };
 })()''')
 
@@ -125,8 +127,8 @@ try:
             pg.wait_for_function(f'__v("{READY}")', timeout=240000)
             pg.evaluate('__v("playing = false; setPlayIcon(); SUM.closedFor = null; loadSummary(true)")')
             # the load summary, built afresh and read as soon as its lines are there (it closes by itself later)
-            pg.wait_for_function('__v("!$(\'sumCard\').hidden && $(\'sumCard\').querySelectorAll(\'.sum-list li\').length > 0")', timeout=30000)
-            return [l for l in json.loads(pg.evaluate('__v("JSON.stringify([...document.querySelectorAll(\'#sumCard .sum-list li\')].map((l) => l.textContent))")'))]
+            pg.wait_for_function('__v("!$(\'sumCard\').hidden && !$(\'sumCard\').querySelector(\'.busy\')")', timeout=30000)  # one line or a card (UI review, item 2)
+            return [l for l in json.loads(pg.evaluate('__v("JSON.stringify([...document.querySelectorAll(\'#sumCard .sum-kind, #sumCard .sum-list li, #sumCard .sline .slt\')].map((l) => l.textContent))")'))]
 
         def at(t):
             pg.evaluate(f'__v("playing = false; setPlayIcon(); seek({t})")')
@@ -144,21 +146,43 @@ try:
         s1 = ev(SB)
         at(349.0)
         s2 = ev(SB)
-        check(s1.get('open') and s1.get('held') and not s2.get('open'), 'Tab scoreboard while he held Tab, closed after', {'held': s1, 'after': s2})
+        # gender-neutral words for the player whose demo it is (Sujan, 19 Nov 2026; "He held Tab here" up to then)
+        check(s1.get('open') and s1.get('held') and s1.get('heldText') == 'The player held Tab here' and not s2.get('open'), 'Tab scoreboard while the player held Tab, with "The player held Tab here", closed after', {'held': s1, 'after': s2})
+        # never over the start screen (Sujan, 19 Nov 2026: it stayed there after Open another demo, paused on a Tab hold), and back
+        # with the demo
+        at(345.63)
+        pg.click('#btnOpen'); pg.wait_for_timeout(800)
+        s3 = ev(js("({ sb: !$('sb').hidden, load: !$('load').hidden })"))
+        pg.click('#btnOpen'); pg.wait_for_timeout(800)
+        s4 = ev(js("({ sb: !$('sb').hidden, load: !$('load').hidden })"))
+        check(s3 == {'sb': False, 'load': True} and s4 == {'sb': True, 'load': False}, 'the recorded Tab scoreboard hidden over the start screen, back with the demo', {'start screen': s3, 'back': s4})
+        # a click on a kill mark in the timeline, in POV mode: only the jump to a few seconds before the kill, playing; no player
+        # followed, no kill marked, the side panel's tab as it was (Sujan, 19 Nov 2026)
+        tk = ev(js(r'''(() => { playing = false; setPlayIcon(); setScope('match'); drawTimeline(); pickedKill = null; const sel0 = selected, tab0 = tab;
+          const rr = tlc.getBoundingClientRect(), [a, b] = tlRange(), k = M.liveR[6].kills[0]; window.__pk = [k, sel0, tab0];
+          return { x: rr.left + (k.t - a) / (b - a) * rr.width, y: rr.top + rr.height - 4 }; })()'''))
+        pg.mouse.click(tk['x'], tk['y']); pg.wait_for_timeout(200)
+        tk2 = ev(js(r'''(() => { const [k, sel0, tab0] = __pk, o = { before: +(k.t - T).toFixed(1), playing, picked: pickedKill, sameSel: selected === sel0, sameTab: tab === tab0 }; playing = false; setPlayIcon(); return o; })()'''))
+        pg.mouse.move(10, 10)
+        check(3 <= tk2.get('before', 0) <= 4.1 and tk2.get('playing') and tk2.get('picked') is None and tk2.get('sameSel') and tk2.get('sameTab'),
+              'a click on a kill mark in the timeline, POV mode: only the jump a few seconds before, playing', tk2)
         at(809.0)
         o = ev(offers_js())
-        o['sumOnly'] = any('Only his own view, in 3D' in x for x in sum1)
-        o['sumPlugin'] = any('This server seems to use an anti-wallhack plugin' in x for x in sum1)
+        # the card's first line says the demo type, and the anti-wallhack note is a line of its own (Sujan, 19 Nov 2026; one short
+        # line with "His view only, in 3D" since the UI review, item 2)
+        o['sumOnly'] = any(x == 'You are viewing a POV demo (3D only)' for x in sum1)
+        o['sumPlugin'] = any('It seems the server used an anti-wallhack plugin. Click ! on the See through walls button below to know more.' in x for x in sum1)
         check(o.get('view') == '3d' and not o.get('seg') and not o.get('fit') and not o.get('wbTab') and not o.get('povRow') and o.get('mark')
-              and o.get('sumOnly') and o.get('sumPlugin') and o.get('hintTop') is None and o.get('toastTop') is not None and o['toastTop'] < 100,
+              and o.get('sumOnly') and o.get('sumPlugin') and o.get('kind') == 'POV demo' and o.get('hintTop') is None and o.get('toastTop') is not None and o['toastTop'] < 100,
               'options by demo type: the POV demo', o)
         n = ev(NOTE)
         check(n.get('open') and n.get('text') and n.get('top') is not None and n['top'] < n['viewH'] / 3 and n.get('closed') and not n.get('byXray'),
               'the ! shows the anti-wallhack note at the top middle and closes it; See through walls alone does not', n)
         at(742.91)
         k = ev(KILLS)
-        check(k.get('rows') == k.get('want') and k.get('rows', 0) > 20 and k.get('allHis') and k.get('rounds', 0) >= 10 and k.get('curHead', '') .startswith(k.get('curRound') or '?'),
-              'Kills tab: his kills and deaths, the whole match by round, R7 highlighted', k)
+        check(k.get('rows') == k.get('want') and k.get('rows', 0) > 20 and k.get('allHis') and (k.get('top') or '').startswith("The player's kills and deaths") and k.get('rounds', 0) >= 10 and k.get('curHead', '') .startswith(k.get('curRound') or '?')
+              and k.get('curRows') == 0,
+              'Kills tab: the player\'s kills and deaths, the whole match by round, R7\'s band highlighted, no row tinted for it', k)
         # the widest kill feed rows in this demo (R3, 4 rows from 498.33), with "Stopping at 16" and the note open,
         # at 1512x982 (Auto and the largest Interface size it allows, 115%) and 1280x720 (100%)
         ov = []
@@ -188,14 +212,17 @@ try:
               'notices and the note clear of the kill feed, the round pill and View settings at the widest feed', ov)
         sum2 = open_demo(HLTV)
         o2 = ev(offers_js())
-        o2['sumOnly'] = any('Only his own view' in x for x in sum2)
-        o2['sumPlugin'] = any('This server seems to use an anti-wallhack plugin' in x for x in sum2)
+        o2['sumOnly'] = any('POV demo' in x for x in sum2) or not any('HLTV demo' in x for x in sum2)
+        o2['sumPlugin'] = any('anti-wallhack' in x for x in sum2)
         check(o2.get('view') == '2d' and o2.get('seg') and o2.get('fit') and o2.get('wbTab') and not o2.get('povRow') and not o2.get('povHead') and not o2.get('mark')
-              and not o2.get('sumOnly') and not o2.get('sumPlugin') and o2.get('toastTop') is not None and o2['toastTop'] > o2['viewH'] / 2,
+              and not o2.get('sumOnly') and not o2.get('sumPlugin') and o2.get('kind') == 'HLTV demo' and o2.get('toastTop') is not None and o2['toastTop'] > o2['viewH'] / 2,
               'options by demo type: the HLTV demo', o2)
         pg.evaluate("__v(\"setView('3d', false)\")")
         k2 = ev(KILLS)
-        check((k2.get('top') or '').startswith('Round ') and k2.get('rounds') == 1, 'Kills tab of the HLTV demo: the round playing now', k2)
+        # the whole match by round in HLTV demos too since the UI review (item 6, 17 Nov 2026; the round playing now alone before)
+        check((k2.get('top') or '').startswith('Round ') and k2.get('rounds', 0) > 1 and k2.get('curHead', '').startswith(k2.get('curRound') or '?')
+              and k2.get('curRows') == 0,
+              'Kills tab of the HLTV demo: the whole match by round, the round playing now\'s band highlighted, no row tinted for it', k2)
         check(not errs, 'no page errors', errs[:3])
         b.close()
 finally:
@@ -203,6 +230,7 @@ finally:
     os.remove(test_page)
 for ok, name, got in checks:
     print(('ok   ' if ok else 'FAIL ') + name + '  ' + json.dumps(got))
-passed = len(checks) == 11 and all(c[0] for c in checks)
+# 13 steps since 19 Nov 2026 (the Tab scoreboard over the start screen, the timeline click in POV mode); 11 before
+passed = len(checks) == 13 and all(c[0] for c in checks)
 print(f'{"PASS" if passed else "FAIL"} ({time.time() - t0:.0f} s)')
 sys.exit(0 if passed else 1)

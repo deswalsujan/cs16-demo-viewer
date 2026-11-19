@@ -11,7 +11,7 @@ a frame from another site, like the claude.ai artifact.
 
     python3 folder_row_test.py [page]      (default ../index.html; screenshots go to tests/folder_*.png)
 """
-import os, sys, shutil, tempfile, threading, functools, http.server
+import os, re, sys, shutil, tempfile, threading, functools, http.server
 from playwright.sync_api import sync_playwright
 
 HERE = os.path.dirname(os.path.abspath(__file__))
@@ -83,6 +83,30 @@ with sync_playwright() as p:
               r['title'] == 'Choose your Half-Life folder' and r['status'] == HELP and r['pick'] == 'Choose folder' and not r['tip'] and paths_ok
               and UPLOAD in r['paths'] and r['demo_off'] and not r['done'] and not r['old'], r)
         shot(pg, f'a1_{key}')
+        # step 1's text as wide as step 2's description, lined up on the right; the path in a box like a code block in the
+        # fixed-width font, its copy icon at the top right, broken only after a slash; at the five window sizes, at Auto and at
+        # 200%; the icon copies the path and shows "Copied" for a moment (Sujan, 20 Nov 2026; a Copy link after the path before)
+        if key in ('windows', 'mac'):
+            al = []
+            for w0, h0 in [(1512, 982), (1440, 900), (1920, 1080), (1536, 864), (1707, 960)]:
+                pg.set_viewport_size({'width': w0, 'height': h0})
+                for s0 in ('auto', '200'): al.append(pg.evaluate("""(s) => { localStorage.setItem('uiSize', JSON.stringify(s)); applyUiSize(); dispatchEvent(new Event('uisize'));
+              const vis = (e) => e && e.getClientRects().length > 0, R = (e) => e.getBoundingClientRect(), r2 = R(document.querySelector('#stepDemo .tx')).right;
+              const off = [...document.querySelectorAll('#stepFolder .tx, #hlStatus, #stepFolder .pbox, #hlTip, #stepFolder .hlup')].filter(vis).map((e) => Math.round(R(e).right - r2));
+              const boxes = [...document.querySelectorAll('#stepFolder .pbox')].filter(vis).map((b) => { const c = b.querySelector('.cpy'), br = R(b), cr = R(c), code = b.querySelector('.p');
+                return { mono: /monospace/.test(getComputedStyle(code).fontFamily), icon: !!c.querySelector('svg') && cr.right <= br.right && cr.right > br.right - 12 * UI && cr.top >= br.top && cr.top < br.top + 12 * UI,
+                  whole: [...code.querySelectorAll('.pseg')].every((x) => x.getClientRects().length === 1), fits: b.scrollWidth <= b.clientWidth + 1 }; });
+              return { size: innerWidth + 'x' + innerHeight + ' ' + s, off, boxes }; }""", s0))
+            pg.evaluate("() => { localStorage.removeItem('uiSize'); applyUiSize(); dispatchEvent(new Event('uisize')); }"); pg.set_viewport_size({'width': 1280, 'height': 800})
+            check(f'A4 {key}: step 1\'s text as wide as step 2\'s description, its path in a box in the fixed-width font with the copy icon at its top right, broken only after a slash, at the five window sizes, at Auto and at 200%',
+                  all(len(x['off']) >= 3 and all(abs(o) <= 1 for o in x['off']) and len(x['boxes']) == 1 and all(all(b.values()) for b in x['boxes']) for x in al), al)
+            ctx.grant_permissions(['clipboard-read', 'clipboard-write'])
+            pid = 'hlPathWin' if key == 'windows' else 'hlPathMac'
+            pg.click(f'button[data-copy="{pid}"]'); pg.wait_for_timeout(200)
+            cp = pg.evaluate("(id) => navigator.clipboard.readText().then((t) => { const c = document.querySelector(`button[data-copy='${id}'] .cpyt`); return { clip: t, shown: c.hidden ? null : c.textContent }; })", pid)
+            pg.wait_for_timeout(1700); gone = pg.evaluate("(id) => document.querySelector(`button[data-copy='${id}'] .cpyt`).hidden", pid)
+            want = 'C:\\Program Files (x86)\\Steam\\steamapps\\common\\Half-Life' if key == 'windows' else '~/Library/Application Support/Steam/steamapps/common/Half-Life'
+            check(f'A5 {key}: the copy icon copies the path, word for word, and shows "Copied" for a moment', cp == {'clip': want, 'shown': 'Copied'} and gone, f'{cp}, gone after 1.9 s: {gone}')
         if key == 'windows':
             with pg.expect_file_chooser() as fc: pg.click('#btnFolder')
             check('A2 Choose folder opens the ordinary folder pick, never Chrome and Edge\'s folder access', fc.value.element.get_attribute('id') == 'fFolder' and not pg.evaluate('window.__picked || 0'))
@@ -99,11 +123,19 @@ with sync_playwright() as p:
     ctx = b.new_context(viewport={'width': 1280, 'height': 800}); ctx.add_init_script(WINDOWS); ctx.add_init_script(NO_FOLDER_ACCESS)
     pg = ctx.new_page(); setup(pg); errors = []; pg.on('pageerror', lambda e: errors.append(str(e)))
     pg.goto(url); pg.wait_for_timeout(500)
+    # the headline's size (Sujan, 20 Nov 2026): it shrinks only when there's a demo list to make room for
+    H1 = "(() => { const h = getComputedStyle(document.querySelector('.load h1')); return h.fontSize + ' ' + h.whiteSpace; })()"
+    full = pg.evaluate(H1)
     write_tree(BASE); pg.set_input_files('#fFolder', hl); wait_status(pg, '2 demos found.')
+    small = pg.evaluate(H1)
+    check('B1 the headline shrinks to one line with the demo list (full size before the pick)', small.endswith(' nowrap') and float(small.split('px')[0]) < float(full.split('px')[0]), f'{full} -> {small}')
     r = row(pg)
     check('B1 picked: "Folder selected: Half-Life", "2 demos found." with no dot, Choose again with its tooltip, no paths, Open .dem on',
           r['title'] == 'Folder selected: Half-Life' and r['status'] == '2 demos found.' and not r['dot'] and r['pick'] == 'Choose again'
           and r['tip'] == TOOLTIP and r['paths'] is None and r['demos'] == 2 and r['done'] and not r['demo_off'], r); shot(pg, 'b1_picked')
+    # each demo row: its name and the file's date, the size on hover (UI review, item 12, 17 Nov 2026; the size in the row before)
+    dr = pg.evaluate("[...document.querySelectorAll('#demoList button')].map((b) => [b.querySelector('span').textContent, b.title])")
+    check("B1 the demo rows: the file's date beside each name, the size on hover", len(dr) == 2 and all(re.match(r'^\d{1,2} \w{3,4} \d{4}$', d) and t.endswith(' MB') for d, t in dr), dr)
     fs2 = dict(BASE); fs2.pop('cstrike/old-2006.dem')
     for n in ('a', 'b', 'c'): fs2[f'cstrike/new-{n}.dem'] = [1000, 2000]
     write_tree(fs2); pg.set_input_files('#fFolder', hl); wait_status(pg, '4 demos found.')
@@ -116,7 +148,10 @@ with sync_playwright() as p:
     pg.set_input_files('#fFolder', os.path.join(hl, 'cstrike')); wait_status(pg, 'one level up')
     r = row(pg); check('B4 the cstrike folder itself: asks for the folder one level up', 'one level up' in r['status'] and r['demo_off'], r)
     write_tree({k: v for k, v in BASE.items() if not k.endswith('.dem')}); pg.set_input_files('#fFolder', hl); wait_status(pg, 'No demos found')
-    r = row(pg); check('B5 Half-Life folder with no demos: "No demos found" warning, Open .dem still on', r['dot'] and not r['demo_off'] and r['demos'] == 0, r); shot(pg, 'b5_no_demos')
+    nod = pg.evaluate(H1)
+    check('B5 the headline full size with no demos, no list to make room for (Sujan, 20 Nov 2026)', nod == full, f'{full} before the pick, {nod} with no demos')
+    # its last words point at the button below it (Sujan, 19 Nov 2026; "with Open .dem" up to then)
+    r = row(pg); check('B5 Half-Life folder with no demos: "No demos found" warning ending "with the option below.", Open .dem still on', r['dot'] and not r['demo_off'] and r['demos'] == 0 and r['status'].endswith('open one from anywhere with the option below.'), r); shot(pg, 'b5_no_demos')
 
     # demos deleted or changed after the pick: the page finds out only when it reads them
     fs3 = dict(BASE); fs3['cstrike/third.dem'] = [1500, 1000]; fs3['cstrike/fourth.dem'] = [1500, 1000]

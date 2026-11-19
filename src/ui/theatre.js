@@ -20,8 +20,6 @@ function applyTheatre() {
   const app = $('app'), act = theatreActive();
   const was = app.classList.contains('theatre');
   app.classList.toggle('theatre', act);
-  $('bTheatre').classList.toggle('on', act);
-  $('bTheatre').textContent = act ? 'Exit theatre' : 'Theatre';
   if (!act) { app.classList.remove('show-t', 'show-r', 'show-b', 'idle'); for (const k in TH.timers) clearTimeout(TH.timers[k]); clearTimeout(TH.idle); }
   else measureTheatre();
   if (was !== act) requestAnimationFrame(() => { resize(); resize3(); measureTheatre(); });
@@ -39,7 +37,7 @@ function thOver(k, target) {
   const els = TH_PANELS[k]().filter(Boolean);
   if (target && els.some((el) => el.contains(target))) return true;
   const a = document.activeElement;
-  if (k === 't' && !$('vsetPanel').hidden) return true; // View settings is open
+  if (k === 'b' && !$('vsetPanel').hidden) return true; // View settings is open (in the strip at the bottom since the UI review, item 4)
   return !!(a && a.tagName === 'SELECT' && els.some((el) => el.contains(a)));
 }
 // what's under the pointer right now: a bar can slide in under a mouse that isn't moving
@@ -83,20 +81,23 @@ document.addEventListener('pointercancel', () => { TH.drag = false; }, true);
 document.documentElement.addEventListener('mouseleave', () => { if (!theatreActive()) return; TH.x = -1; TH.lastTarget = null; thUpdate(null); });
 window.addEventListener('blur', () => { if (theatreActive()) { TH.x = -1; TH.lastTarget = null; thUpdate(null); } });
 window.addEventListener('resize', () => { if (theatreActive()) measureTheatre(); });
-$('bTheatre').onclick = () => setTheatre(!TH.on);
+// Theatre mode has no button of its own since the UI review (item 7, 17 Nov 2026): T, and Full screen, which uses it
 $('sndVol').oninput = (e) => setVolume(+e.target.value);
 // browsers only let a page make sound after you've clicked or pressed a key on it
 const wake = () => { if (SND.on) audio(); };
 document.addEventListener('pointerdown', wake, true); document.addEventListener('keydown', wake, true);
 function isDeathSeq(e) { const a = D.slots[e], i = M.idxAt(T), sq = a ? a[i * D.stride + 9] : 0; return sq >= 101 && sq <= 110; }
 setSound(SND.on);
-// Viewing preferences carry over to the next demo and the next visit: the view (2D, 3D or split), Names,
+// Viewing preferences carry over to the next demo and the next visit: the view (2D or 3D) and Radar (UI review, item 5), Names,
 // Grenades, Kill lines, See through walls and the timeline's match or round. (Team colours, Quality and
 // sound are saved on their own above.) Playback speed is not a preference: every demo opens at 1x, paused.
-function savePrefs() { ls.set('prefs', { view: viewPref, names: opts.names, nades: opts.nades, lines: opts.lines, xray: opts.xray, scope }); }
+function savePrefs() { ls.set('prefs', { view: viewPref, radar: radar3, names: opts.names, nades: opts.nades, lines: opts.lines, xray: opts.xray, scope }); }
 (() => {
   const p = ls.get('prefs'); if (!p || typeof p !== 'object') return;
   for (const [k, id] of [['names', 'tgNames'], ['nades', 'tgNades'], ['lines', 'tgLines'], ['xray', 'tgXray']]) if (typeof p[k] === 'boolean') { opts[k] = p[k]; $(id).classList.toggle('on', p[k]); }
-  if (p.scope === 'match' || p.scope === 'round') { scope = p.scope; $('bScope').textContent = 'Timeline: ' + scope; }
-  if (['2d', '3d', 'split'].includes(p.view)) viewMode = viewPref = p.view; // applied when a demo opens (onDemo calls setView)
+  if (p.scope === 'match' || p.scope === 'round') setScope(p.scope);
+  if (['2d', '3d'].includes(p.view)) viewMode = viewPref = p.view; // applied when a demo opens (onDemo calls setView)
+  if (typeof p.radar === 'boolean') radar3 = p.radar;
+  if (p.view === 'split') { viewMode = viewPref = '3d'; radar3 = true; } // a saved 3D + radar: 3D with Radar on
+  $('radar3').checked = radar3;
 })();

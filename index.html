@@ -37,6 +37,8 @@
      as on most Linux machines. */
   --f-display: Verdana, "DejaVu Sans", "Bitstream Vera Sans", sans-serif;
   --f-body: Tahoma, "Liberation Sans", Arial, "DejaVu Sans", sans-serif;
+  /* the Half-Life folder's paths on the start screen only, in the computer's own fixed-width font (Sujan, 20 Nov 2026) */
+  --f-mono: ui-monospace, Menlo, Consolas, "Liberation Mono", "DejaVu Sans Mono", monospace;
   /* Interface size (0.26.13, Sujan, 3 Nov 2026): every size below is written calc(Npx * var(--ui)), and the page sets
      --ui (applyUiSize in src/ui/common.js): 1 up to a 1920x1080 window, so laptops look exactly as before, bigger on
      big screens, or the size picked in View settings. Left fixed: 1px lines and borders, media queries (they can't
@@ -62,6 +64,12 @@ button { cursor: pointer; }
   grid-template-areas: "head head" "radar side" "transport transport";
 }
 
+/* The start screen shows only the start steps (UI review, item 1, 17 Nov 2026): no view switch, Theatre, Full screen, side
+   panel or bottom bar while it's up, before a demo is open and when it comes back over one; the start screen takes the
+   whole width under the header */
+.app.start { grid-template-columns: minmax(0, 1fr); grid-template-rows: auto minmax(0, 1fr); grid-template-areas: "head" "radar"; }
+.app.start .side, .app.start .transport, .app.start #viewSeg, .app.start #bFull { display: none; }
+
 /* header */
 .head {
   grid-area: head; display: flex; align-items: center; gap: calc(16px * var(--ui)); flex-wrap: wrap;
@@ -70,6 +78,7 @@ button { cursor: pointer; }
 .brand { font-family: var(--f-display); font-weight: 700; letter-spacing: .04em; text-transform: uppercase; font-size: calc(15px * var(--ui)); }
 .brand span { color: var(--sand); }
 .meta { flex: 1 1 0; color: var(--muted); font-family: var(--f-body); font-size: calc(12px * var(--ui)); min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.meta .dkind { color: var(--fg); font-weight: 600; } /* the demo type, first in the file line (Sujan, 19 Nov 2026) */
 .score { display: flex; align-items: center; gap: calc(10px * var(--ui)); font-family: var(--f-display); font-weight: 700; }
 .score .tn { font-size: calc(14px * var(--ui)); max-width: calc(160px * var(--ui)); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; border-bottom: 1px dashed transparent; }
 .score .tn:hover { border-bottom-color: var(--faint); }
@@ -104,6 +113,13 @@ button { cursor: pointer; }
 .rclock b { color: var(--fg); font-weight: 500; }
 .legend { position: absolute; left: calc(12px * var(--ui)); bottom: calc(12px * var(--ui)); display: flex; gap: calc(6px * var(--ui)); flex-wrap: wrap; }
 .legend .btn { background: rgba(10,12,14,.82); font-size: calc(12px * var(--ui)); padding: calc(4px * var(--ui)) calc(8px * var(--ui)); }
+/* View settings in the strip (UI review, item 4): it opens upward, its chevron turned to match; rows only 3D uses (.v3)
+   aren't in 2D */
+.legend .vpanel { top: auto; bottom: calc(100% + calc(6px * var(--ui))); max-height: 70vh; overflow-y: auto; }
+.legend #bVset svg { transform: rotate(180deg); }
+.legend #bVset[aria-expanded="true"] svg { transform: none; }
+.radar.m2d .vpanel .v3 { display: none; }
+.xwrap:has(.xmark:not([hidden])) { margin-right: calc(6px * var(--ui)); } /* the ! clear of View settings beside it */
 /* POV mode on a server that held enemies back (POV mockup round, Sujan, 11 Nov 2026): a ! on See through walls, its own
    button, that shows the anti-wallhack note again at the top middle (#povNote) */
 .xwrap { position: relative; display: inline-flex; }
@@ -198,7 +214,11 @@ button { cursor: pointer; }
 .kdet b { color: var(--fg); font-weight: 600; }
 .kdet .ksum { margin-bottom: calc(3px * var(--ui)); }
 .kdet .kpre { margin-bottom: calc(4px * var(--ui)); }
-.kdet .kb { display: grid; grid-template-columns: calc(12px * var(--ui)) calc(76px * var(--ui)) 1fr auto; gap: calc(6px * var(--ui)); align-items: baseline; width: 100%; padding: calc(2px * var(--ui)) calc(3px * var(--ui)); margin: 0 calc(-3px * var(--ui)); background: none; border: 0; border-radius: calc(3px * var(--ui)); color: var(--fg); font: inherit; text-align: left; cursor: pointer; }
+.kdet .kpre summary { cursor: pointer; color: var(--muted); text-decoration: underline dotted; text-underline-offset: calc(2px * var(--ui)); list-style-position: inside; }
+.kdet .kpre summary:hover { color: var(--fg); }
+.kdet .kpre .kpl { margin-top: calc(2px * var(--ui)); }
+.kdet .est { cursor: help; border-bottom: 1px dotted var(--faint); }
+.kdet .kb { display: grid; grid-template-columns: calc(12px * var(--ui)) calc(60px * var(--ui)) 1fr auto; /* 60 px: room for "0.51 s before" (item 11) */ gap: calc(6px * var(--ui)); align-items: baseline; width: 100%; padding: calc(2px * var(--ui)) calc(3px * var(--ui)); margin: 0 calc(-3px * var(--ui)); background: none; border: 0; border-radius: calc(3px * var(--ui)); color: var(--fg); font: inherit; text-align: left; cursor: pointer; }
 .kdet .kb:hover { background: var(--panel-2); }
 .kdet .kb .i { color: var(--faint); }
 .kdet .kb .d { font-weight: 600; } .kdet .kb .d.w { color: var(--hit); } .kdet .kb .d.o { color: #f4f1ea; }
@@ -207,9 +227,10 @@ button { cursor: pointer; }
 .kdet .kb .sk svg { display: inline-block; width: calc(12px * var(--ui)); height: calc(12px * var(--ui)); vertical-align: calc(-2px * var(--ui)); }
 .kdet .kb .wh { color: var(--muted); } .kdet .kb .tm { color: var(--faint); text-align: right; }
 .kdet .knote { color: var(--faint); font-size: calc(11px * var(--ui)); margin-top: calc(4px * var(--ui)); }
-.wbchips { display: flex; flex-wrap: wrap; gap: calc(6px * var(--ui)); padding: calc(8px * var(--ui)) calc(14px * var(--ui)); border-bottom: 1px solid var(--line); }
-.wbchips button { font: calc(12px * var(--ui)) var(--f-body); color: var(--muted); background: none; border: 1px solid var(--line); border-radius: calc(12px * var(--ui)); padding: 1px calc(9px * var(--ui)); }
-.wbchips button.on { color: #1b1a16; background: var(--sand); border-color: var(--sand); }
+/* the Wallbangs tab's filter, one dropdown with the counts, and Copy list on the same row; the picture check's line under it
+   while it runs (item 3's fixup, 17 Nov 2026; four chips up to then) */
+.wbbar select { min-width: 0; background: var(--panel-2); color: var(--fg); border: 1px solid var(--line); border-radius: calc(4px * var(--ui)); padding: calc(5px * var(--ui)) calc(6px * var(--ui)); font-size: calc(12px * var(--ui)); }
+.wbbusy { padding: calc(6px * var(--ui)) calc(14px * var(--ui)); border-bottom: 1px solid var(--line); color: var(--fg); font-weight: 700; font-size: calc(12px * var(--ui)); line-height: 1.4; }
 .skipk { display: block; color: var(--fg); font-weight: 600; letter-spacing: -.05em; margin-top: calc(2px * var(--ui)); cursor: help; }
 .pov { position: absolute; left: 50%; bottom: calc(56px * var(--ui)); transform: translateX(-50%); font-family: var(--f-body); font-size: calc(12px * var(--ui)); background: rgba(10,12,14,.82); border: 1px solid var(--line); padding: calc(4px * var(--ui)) calc(10px * var(--ui)); border-radius: calc(3px * var(--ui)); }
 .pov.dead { border-color: #8a2b2b; background: rgba(40,6,6,.9); padding: calc(6px * var(--ui)) calc(12px * var(--ui)); font-size: calc(13px * var(--ui)); }
@@ -229,7 +250,7 @@ button { cursor: pointer; }
 .kico.hs { background: var(--kill); }
 .wbtag { font: 600 calc(10px * var(--ui)) var(--f-body); color: var(--wb); border: 1px solid color-mix(in srgb, var(--wb) 55%, transparent); border-radius: calc(3px * var(--ui)); padding: 0 calc(4px * var(--ui)); letter-spacing: .06em; }
 .copyrow { padding: calc(10px * var(--ui)) calc(14px * var(--ui)); display: flex; gap: calc(8px * var(--ui)); align-items: center; border-bottom: 1px solid var(--line); color: var(--muted); font-size: calc(12px * var(--ui)); line-height: 1.4; }
-.copyrow .btn { flex-shrink: 0; }
+.copyrow .btn { flex-shrink: 0; margin-left: auto; }
 
 .statseg { display: flex; gap: 0; margin: calc(10px * var(--ui)) calc(14px * var(--ui)) calc(4px * var(--ui)); border: 1px solid var(--line); border-radius: calc(4px * var(--ui)); overflow: hidden; }
 .statseg button { flex: 1; background: var(--panel-2); border: 0; padding: calc(6px * var(--ui)) calc(4px * var(--ui)); font-size: calc(12px * var(--ui)); color: var(--muted); }
@@ -242,8 +263,17 @@ button { cursor: pointer; }
 .prow.gone .main { opacity: .5; }
 .prow.dead { cursor: not-allowed; }
 .prow.dead .main .nm, .prow.dead .main .sub, .prow.dead .sc { opacity: .45; }
-.pnum.skull { color: var(--t); vertical-align: -1px; }
-.pnum.skull svg { display: block; width: calc(12px * var(--ui)); height: calc(12px * var(--ui)); }
+/* the skull of a dead player beside his name, out of the Key column (UI review, item 13) */
+.prow .skull { color: var(--t); display: inline-block; margin-left: calc(6px * var(--ui)); vertical-align: -1px; }
+.prow .skull svg { display: block; width: calc(12px * var(--ui)); height: calc(12px * var(--ui)); }
+.pnum.pkey { width: auto; font-size: calc(10px * var(--ui)); text-transform: uppercase; letter-spacing: .06em; color: var(--muted); }
+/* the Rounds tab's heading row (UI review, item 13) and the switch at the top, "Show N uncounted rounds" (Sujan, 19 Nov 2026) */
+.row.rhd { cursor: default; padding-top: calc(6px * var(--ui)); padding-bottom: calc(6px * var(--ui)); font-size: calc(10px * var(--ui)); text-transform: uppercase; letter-spacing: .06em; color: var(--muted); }
+.row.rhd:hover { background: none; }
+.row.rhd .n, .row.rhd .d { font-size: calc(10px * var(--ui)); }
+.opt.optall { cursor: pointer; align-items: flex-start; }
+.opt.optall input { margin-top: calc(2px * var(--ui)); }
+.opt.optall small { display: block; margin-top: calc(1px * var(--ui)); color: var(--muted); font-size: calc(11px * var(--ui)); }
 .stathead { cursor: default; padding-top: calc(2px * var(--ui)); padding-bottom: calc(4px * var(--ui)); }
 .stathead:hover { background: none; }
 .stathead .sc { color: var(--muted); font-size: calc(11px * var(--ui)); }
@@ -275,7 +305,6 @@ button { cursor: pointer; }
 .gsb .gfoot { display: flex; justify-content: space-between; gap: calc(12px * var(--ui)); padding: calc(6px * var(--ui)) calc(14px * var(--ui)) 0; font-size: calc(11px * var(--ui)); color: #ccc; }
 .gsb .sbheld { color: rgb(255,140,0); } /* POV mode: the scoreboard opened because he held Tab (Sujan, 11 Nov 2026) */
 .sbtag { font-family: var(--f-body); font-size: calc(10px * var(--ui)); color: var(--muted); border: 1px solid var(--line); border-radius: calc(3px * var(--ui)); padding: 0 calc(4px * var(--ui)); }
-.viewers { font-family: var(--f-body); font-size: calc(12px * var(--ui)); color: var(--muted); white-space: nowrap; }
 .keys-card { width: min(calc(900px * var(--ui)), 100%); max-height: 100%; overflow-y: auto; background: var(--panel); border: 1px solid var(--line); border-radius: calc(10px * var(--ui)); padding: 0; display: grid; gap: 0; }
 .keys-head { display: flex; justify-content: space-between; align-items: center; gap: calc(12px * var(--ui)); padding: calc(24px * var(--ui)) calc(24px * var(--ui)) calc(16px * var(--ui)); font-size: calc(18px * var(--ui)); }
 .keys-head b { font-family: var(--f-display); }
@@ -288,6 +317,16 @@ button { cursor: pointer; }
 .keys-grid dt { white-space: nowrap; color: var(--muted); }
 .keys-grid dd { margin: 0; }
 .hmsec { grid-column: 1 / -1; }
+/* Help's three parts (UI review, item 9) */
+.keys-card h2.hpart { margin: 0; padding: calc(4px * var(--ui)) calc(24px * var(--ui)) calc(12px * var(--ui)); font-family: var(--f-display); font-size: calc(14px * var(--ui)); color: var(--fg); border-top: 1px solid var(--line); padding-top: calc(16px * var(--ui)); }
+.keys-head + .dbgbox + h2.hpart, .keys-head + h2.hpart { border-top: 0; padding-top: 0; }
+.tlm { width: calc(40px * var(--ui)); height: calc(24px * var(--ui)); display: block; }
+.tllist dd b { font-family: var(--f-body); font-size: calc(12px * var(--ui)); color: var(--fg); }
+.habout { padding: 0 calc(24px * var(--ui)) calc(20px * var(--ui)); display: grid; gap: calc(10px * var(--ui)); font-size: calc(13px * var(--ui)); color: var(--muted); line-height: 1.5; }
+.habout p { margin: 0; }
+.habout a { color: var(--sand); }
+.hdbg { display: flex; align-items: center; gap: calc(12px * var(--ui)); }
+.hdbg span { font-size: calc(12px * var(--ui)); }
 .hmnote { margin: 0 0 calc(8px * var(--ui)); color: var(--muted); font-size: calc(13px * var(--ui)); line-height: 1.5; max-width: 70ch; }
 .hmlist { grid-template-columns: calc(44px * var(--ui)) minmax(0, 1fr) !important; align-items: center; }
 .hmlist dd { display: grid; gap: calc(2px * var(--ui)); font-size: calc(13px * var(--ui)); line-height: 1.45; }
@@ -334,6 +373,7 @@ kbd { font-family: var(--f-body); font-size: calc(11px * var(--ui)); background:
 .row.gap { background: repeating-linear-gradient(135deg, transparent 0 calc(7px * var(--ui)), color-mix(in srgb, var(--fg) 5%, transparent) calc(7px * var(--ui)) calc(9px * var(--ui))); cursor: default; }
 .joinrow { display: flex; gap: calc(8px * var(--ui)); align-items: center; justify-content: flex-end; padding: calc(10px * var(--ui)) calc(14px * var(--ui)); border-bottom: 1px solid var(--line); font-size: calc(12px * var(--ui)); color: var(--muted); }
 .joinrow span { flex: 1; }
+.joinlnk { padding: calc(10px * var(--ui)) calc(14px * var(--ui)); text-align: right; } /* quieter Join (UI review, item 10) */
 .sum.join { width: min(calc(640px * var(--ui)), 100%); max-height: calc(100% - calc(8px * var(--ui))); overflow: auto; }
 .jparts { list-style: none; margin: calc(4px * var(--ui)) calc(24px * var(--ui)) calc(16px * var(--ui)); padding: 0; border: 1px solid var(--line); border-radius: calc(6px * var(--ui)); display: grid; }
 .jparts li { display: grid; grid-template-columns: calc(52px * var(--ui)) minmax(0, 1fr) auto; gap: calc(10px * var(--ui)); align-items: start; padding: calc(12px * var(--ui)); }
@@ -345,9 +385,12 @@ kbd { font-family: var(--f-body); font-size: calc(11px * var(--ui)); background:
 .btn.sq { width: calc(30px * var(--ui)); height: calc(30px * var(--ui)); padding: 0; display: grid; place-items: center; font-size: calc(14px * var(--ui)); }
 .jbar { display: inline-block; width: calc(120px * var(--ui)); height: calc(3px * var(--ui)); background: var(--panel-2); vertical-align: middle; margin-left: calc(6px * var(--ui)); }
 .jbar i { display: block; height: 100%; width: 0; background: var(--sand); }
-.jorder { padding: 0 calc(24px * var(--ui)) calc(12px * var(--ui)); font-size: calc(12px * var(--ui)); line-height: 1.5; color: var(--muted); }
 .sum.join .sum-list { padding-top: 0; }
-.jorder b { color: var(--good); font-weight: 500; }
+/* the verdict: which order the parts are in, the checks that pass and the notes folded behind it (Sujan, 19 Nov 2026) */
+.jchecks li.jv { display: grid; grid-template-columns: calc(22px * var(--ui)) minmax(0, 1fr); gap: calc(8px * var(--ui)); }
+/* the link that opens the checks behind the verdict, at its right (Sujan, 20 Nov 2026) */
+.jchecks li.jv.more { grid-template-columns: calc(22px * var(--ui)) minmax(0, 1fr) auto; gap: calc(8px * var(--ui)) calc(12px * var(--ui)); }
+.jchecks li.jv .jvt, .jchecks li.jv .lnk { align-self: baseline; }
 .jwrong { margin: 0 calc(24px * var(--ui)) calc(16px * var(--ui)); padding: calc(12px * var(--ui)) calc(16px * var(--ui)); border: 1px solid color-mix(in srgb, var(--kill) 40%, transparent); border-radius: calc(6px * var(--ui)); background: color-mix(in srgb, var(--kill) 9%, var(--panel)); }
 .jwrong h3 { margin: 0 0 calc(4px * var(--ui)); font-family: var(--f-body); font-size: calc(13px * var(--ui)); font-weight: 700; color: var(--kill); display: flex; align-items: center; gap: calc(8px * var(--ui)); }
 .jwrong h3::before { content: '!'; width: calc(18px * var(--ui)); height: calc(18px * var(--ui)); line-height: calc(18px * var(--ui)); border-radius: 50%; text-align: center; font-size: calc(11px * var(--ui)); background: color-mix(in srgb, var(--kill) 22%, transparent); }
@@ -362,7 +405,7 @@ kbd { font-family: var(--f-body); font-size: calc(11px * var(--ui)); background:
 .pill.t { background: color-mix(in srgb, var(--t) 22%, transparent); color: var(--t); }
 .pill.ct { background: color-mix(in srgb, var(--ct) 22%, transparent); color: var(--ct); }
 .pill.x { background: var(--panel-2); color: var(--muted); }
-.krow { grid-template-columns: calc(62px * var(--ui)) minmax(0, 1fr); }
+.krow { grid-template-columns: calc(78px * var(--ui)) minmax(0, 1fr); } /* "R23 C4 0:16" on one line (UI review, item 3) */
 .kt { color: var(--t); } .kct { color: var(--ct); }
 .kw { color: var(--muted); font-family: var(--f-body); font-size: calc(12px * var(--ui)); margin-inline: calc(5px * var(--ui)); }
 .khs { color: var(--kill); font-family: var(--f-body); font-size: calc(11px * var(--ui)); margin-left: calc(4px * var(--ui)); }
@@ -387,11 +430,20 @@ kbd { font-family: var(--f-body); font-size: calc(11px * var(--ui)); background:
 .tl { position: relative; height: calc(38px * var(--ui)); cursor: pointer; touch-action: none; }
 #tlc { width: 100%; height: 100%; display: block; }
 .tip { position: absolute; bottom: calc(44px * var(--ui)); transform: translateX(-50%); background: var(--panel-2); border: 1px solid var(--line); border-radius: calc(4px * var(--ui)); padding: calc(4px * var(--ui)) calc(8px * var(--ui)); font-size: calc(12px * var(--ui)); font-family: var(--f-body); white-space: nowrap; pointer-events: none; z-index: 5; }
-.ctrls { display: flex; align-items: center; gap: calc(8px * var(--ui)); flex-wrap: wrap; }
+/* one group of controls centred in the bar, Help alone at its right edge (Sujan, 19 Nov 2026): the two side columns share the
+   room left equally, so the group sits in the middle; the right one is never narrower than Help, and the group wraps only
+   when the bar has no room for it on one row */
+.ctrls { display: grid; grid-template-columns: 1fr auto 1fr; align-items: center; gap: calc(8px * var(--ui)); }
+.ctrls .cgrp { grid-column: 2; display: flex; align-items: center; justify-content: center; gap: calc(8px * var(--ui)); flex-wrap: wrap; min-width: 0; }
+.ctrls #bKeys { grid-column: 3; justify-self: end; }
 .ctrls .time { font-family: var(--f-body); font-size: calc(13px * var(--ui)); font-variant-numeric: tabular-nums; color: var(--muted); }
 .ctrls .time b { color: var(--fg); font-weight: 500; }
-.ctrls .sp { margin-left: auto; display: flex; gap: calc(4px * var(--ui)); flex-wrap: wrap; }
-.ctrls .sp button { min-width: calc(44px * var(--ui)); justify-content: center; }
+/* the speed button and the six above it (UI review, item 8) */
+.spwrap { position: relative; }
+#bSpeed { min-width: calc(98px * var(--ui)); justify-content: center; } /* "Speed 0.25×" fits, so the button keeps one width at every speed (item 8's fixup) */
+.sppop { position: absolute; right: 0; bottom: calc(100% + calc(6px * var(--ui))); z-index: 8; display: grid; gap: calc(2px * var(--ui)); padding: calc(4px * var(--ui)); background: var(--panel); border: 1px solid var(--line); border-radius: calc(6px * var(--ui)); box-shadow: 0 calc(8px * var(--ui)) calc(24px * var(--ui)) rgba(0,0,0,.5); }
+.sppop button { min-width: calc(60px * var(--ui)); justify-content: center; }
+.tlseg button { padding: calc(6px * var(--ui)) calc(10px * var(--ui)); }
 .ib { width: calc(34px * var(--ui)); height: calc(32px * var(--ui)); padding: 0; justify-content: center; }
 .ib svg { width: calc(16px * var(--ui)); height: calc(16px * var(--ui)); fill: currentColor; }
 .kbd { color: var(--faint); font-size: calc(11px * var(--ui)); font-family: var(--f-body); }
@@ -403,6 +455,18 @@ kbd { font-family: var(--f-body); font-size: calc(11px * var(--ui)); background:
 #toast { white-space: pre-line; line-height: 1.5; }
 /* load summary card */
 .sumwrap { z-index: 15; background: rgba(8, 10, 12, .45); }
+/* the one-line load card (UI review, item 2): at the top middle of the view, with no dimming, so the match shows round it */
+.sumwrap.line { background: none; pointer-events: none; place-items: start center; padding-top: calc(12px * var(--ui)); }
+.sumwrap.line .sum { pointer-events: auto; width: auto; max-width: min(calc(640px * var(--ui)), 100%); box-shadow: 0 calc(6px * var(--ui)) calc(20px * var(--ui)) rgba(0,0,0,.45); }
+.sline .sl { display: flex; align-items: center; gap: calc(10px * var(--ui)); padding: calc(8px * var(--ui)) calc(10px * var(--ui)) calc(8px * var(--ui)) calc(12px * var(--ui)); font-size: calc(13px * var(--ui)); line-height: 1.4; }
+.sline .slt { min-width: 0; }
+.sline .slt b { color: var(--good); font-weight: 600; }
+.sline.busy .slt b { color: var(--sand); }
+.sline .slx { color: var(--muted); }
+.sline .slx b { color: var(--fg); font-weight: 500; }
+.sline .sum-x { margin: 0 calc(-2px * var(--ui)) 0 0; width: calc(26px * var(--ui)); height: calc(26px * var(--ui)); font-size: calc(16px * var(--ui)); }
+.lnk { background: none; border: 0; padding: 0; color: var(--sand); text-decoration: underline; text-underline-offset: calc(2px * var(--ui)); font-size: calc(12px * var(--ui)); white-space: nowrap; }
+.lnk:hover { color: var(--fg); }
 .sum { width: min(calc(520px * var(--ui)), 100%); background: var(--panel); border: 1px solid var(--line); border-radius: calc(10px * var(--ui)); overflow: hidden; box-shadow: 0 calc(12px * var(--ui)) calc(40px * var(--ui)) rgba(0,0,0,.45); }
 /* Dialogs and cards (0.26.23, docs/dialogs-mock.jpg, Sujan, 8 Nov 2026): a header with the title, one line and the close
    button; the body; a footer with any note on the left and the buttons on the right, the main one last. Spacing in steps
@@ -416,6 +480,8 @@ kbd { font-family: var(--f-body); font-size: calc(11px * var(--ui)); background:
 .sum-top.ok h2::before { content: '✓'; background: color-mix(in srgb, var(--good) 16%, transparent); }
 .sum-top.warn h2::before { content: '!'; background: color-mix(in srgb, var(--kill) 16%, transparent); }
 .sum-top.fail h2::before { content: '✕'; background: color-mix(in srgb, var(--t) 16%, transparent); }
+/* the card's first line: which kind of demo it is and which views it has (Sujan, 19 Nov 2026) */
+.sum-kind { color: var(--sand); font-family: var(--f-body); font-size: calc(12px * var(--ui)); line-height: 1.4; margin: 0 0 calc(6px * var(--ui)); }
 .sum-top p { margin: 0; color: var(--muted); font-size: calc(13px * var(--ui)); line-height: 1.5; }
 .sum-x { background: none; border: 1px solid transparent; border-radius: calc(6px * var(--ui)); color: var(--muted); width: calc(30px * var(--ui)); height: calc(30px * var(--ui)); font-size: calc(18px * var(--ui)); line-height: 1; flex-shrink: 0; margin: calc(-6px * var(--ui)) calc(-8px * var(--ui)) 0 0; }
 .sum-x:hover { color: var(--fg); border-color: var(--line); }
@@ -450,8 +516,10 @@ kbd { font-family: var(--f-body); font-size: calc(11px * var(--ui)); background:
 .load h1 { font-family: var(--f-display); font-size: clamp(calc(26px * var(--ui)), 5vw, calc(38px * var(--ui))); line-height: 1.05; text-transform: uppercase; letter-spacing: .02em; text-wrap: balance; margin: 0; }
 .load h1 span { color: var(--sand); }
 .load p { color: var(--muted); margin: 0; line-height: 1.55; max-width: 60ch; }
-.steps { display: grid; gap: calc(10px * var(--ui)); }
-.step { display: grid; grid-template-columns: calc(28px * var(--ui)) minmax(0,1fr) auto; gap: calc(12px * var(--ui)); align-items: center; background: var(--panel); border: 1px solid var(--line); border-radius: calc(6px * var(--ui)); padding: calc(12px * var(--ui)) calc(14px * var(--ui)); }
+/* the two steps share their columns (subgrid), so step 1's text is as wide as step 2's description and the two line up on the
+   right, the buttons in one column at the right (Sujan, 20 Nov 2026) */
+.steps { display: grid; grid-template-columns: calc(28px * var(--ui)) minmax(0,1fr) auto; column-gap: calc(12px * var(--ui)); row-gap: calc(10px * var(--ui)); }
+.step { grid-column: 1 / -1; display: grid; grid-template-columns: subgrid; gap: calc(12px * var(--ui)); align-items: center; background: var(--panel); border: 1px solid var(--line); border-radius: calc(6px * var(--ui)); padding: calc(12px * var(--ui)) calc(14px * var(--ui)); }
 .step .k { font-family: var(--f-display); color: var(--sand); font-size: calc(18px * var(--ui)); text-align: center; }
 .step .tx b { display: block; font-weight: 600; margin-bottom: calc(2px * var(--ui)); }
 .step .tx small { color: var(--muted); font-size: calc(12px * var(--ui)); line-height: 1.4; display: block; }
@@ -474,7 +542,15 @@ kbd { font-family: var(--f-body); font-size: calc(11px * var(--ui)); background:
 .steps.ready #stepDemo > .tx b { font-family: var(--f-display); font-size: calc(19px * var(--ui)); margin-bottom: calc(4px * var(--ui)); }
 .steps.ready #stepDemo > .k { font-size: calc(22px * var(--ui)); }
 .steps.ready #stepDemo .stepin { margin-top: calc(6px * var(--ui)); }
-.steps.ready .demos { max-height: calc(260px * var(--ui)); }
+.steps.ready .demos { max-height: max(calc(260px * var(--ui)), calc(100vh - 570px * var(--ui))); }
+/* step 2's protocol line, shown on a line of its own (Sujan, 19 Nov 2026; behind More since item 12); its bracket never breaks
+   across lines, moving whole to the next line when it doesn't fit beside the button (Sujan, 20 Nov 2026) */
+.step .tx small .proto { display: block; }
+.step .tx small .proto .nw { white-space: nowrap; }
+/* once a folder with demos is picked the big heading shrinks to one line, so more of the list shows (UI review, item 12); a
+   folder with no demos keeps it full size, with no list to make room for (Sujan, 20 Nov 2026) */
+.load-card:has(.steps.ready #demoFind:not([hidden])) h1 { font-size: calc(20px * var(--ui)); white-space: nowrap; }
+.load-card:has(.steps.ready #demoFind:not([hidden])) { gap: calc(14px * var(--ui)); }
 /* the Half-Life folder row: folder name, a status line and its buttons */
 .hlbtns { display: flex; gap: calc(6px * var(--ui)); flex-wrap: wrap; justify-content: flex-end; }
 #hlTitle .nm { color: var(--sand); font-family: var(--f-body); font-weight: 500; }
@@ -484,7 +560,8 @@ kbd { font-family: var(--f-body); font-size: calc(11px * var(--ui)); background:
 .hlst.chg { color: var(--kill); } .hlst.chg::before { background: var(--kill); }
 .hlst.wait { color: var(--sand); } .hlst.wait::before { background: var(--sand); }
 .hlst.bad { color: var(--t); } .hlst.bad::before { background: var(--t); }
-@media (max-width: 520px) { .step { grid-template-columns: calc(28px * var(--ui)) minmax(0,1fr); } .step > .btn, .step > .hlbtns { grid-column: 2; justify-content: flex-start; } }
+.step > .btn { justify-self: end; }
+@media (max-width: 520px) { .step { grid-template-columns: calc(28px * var(--ui)) minmax(0,1fr); } .step > .btn, .step > .hlbtns { grid-column: 2; justify-content: flex-start; justify-self: start; } }
 /* The folder row before a folder is chosen (0.26.10, docs/folder-steam-default-mock.png): the title and Choose folder
    on one line, then across the row the help, where Steam puts the folder, and the line for Steam's default folder,
    which Chrome and Edge's folder access refuses (Program Files on Windows, Library on a Mac) */
@@ -492,11 +569,23 @@ kbd { font-family: var(--f-body); font-size: calc(11px * var(--ui)); background:
 .steps:not(.ready) #stepFolder .k { grid-row: 1; }
 .steps:not(.ready) #hlTitle { grid-column: 2; grid-row: 1; margin: 0; }
 .steps:not(.ready) #stepFolder .hlbtns { grid-column: 3; grid-row: 1; }
-.steps:not(.ready) #hlStatus { grid-column: 2 / -1; margin-top: calc(-6px * var(--ui)); }
-#stepFolder .hlx { grid-column: 2 / -1; font-size: calc(12px * var(--ui)); line-height: 1.45; color: var(--muted); }
+.steps:not(.ready) #hlStatus { grid-column: 2; margin-top: calc(-6px * var(--ui)); }
+#stepFolder .hlx { grid-column: 2; font-size: calc(12px * var(--ui)); line-height: 1.45; color: var(--muted); }
 #stepFolder .hlpaths { margin-top: calc(-4px * var(--ui)); }
-#stepFolder .hlpaths .p { color: var(--fg); overflow-wrap: anywhere; }
-#stepFolder .hlpaths .hltip { font-style: italic; }
+/* each path in a box like a code block, a copy icon at its top right (Sujan, 20 Nov 2026; a Copy link after the path since the
+   UI review's item 12); it breaks only after a slash, each part between them kept whole */
+#stepFolder .hlpaths #hlWin:not([hidden]) + #hlMac { margin-top: calc(8px * var(--ui)); }
+#stepFolder .hlpaths .plab { margin-bottom: calc(3px * var(--ui)); }
+#stepFolder .pbox { position: relative; background: var(--radar); border: 1px solid var(--line); border-radius: calc(5px * var(--ui)); padding: calc(7px * var(--ui)) calc(36px * var(--ui)) calc(7px * var(--ui)) calc(10px * var(--ui)); }
+#stepFolder .pbox .p { display: block; font-family: var(--f-mono); font-size: calc(12px * var(--ui)); line-height: 1.5; color: var(--fg); overflow-wrap: anywhere; user-select: all; }
+#stepFolder .pbox .p .pseg { white-space: nowrap; }
+#stepFolder .pbox .cpy { position: absolute; top: calc(4px * var(--ui)); right: calc(4px * var(--ui)); height: calc(24px * var(--ui)); min-width: calc(24px * var(--ui)); display: inline-flex; align-items: center; justify-content: center; padding: 0 calc(5px * var(--ui)); background: none; border: 1px solid transparent; border-radius: calc(4px * var(--ui)); color: var(--muted); font: inherit; font-size: calc(11px * var(--ui)); cursor: pointer; }
+#stepFolder .pbox .cpy:hover { color: var(--fg); border-color: var(--line); background: var(--panel-2); }
+#stepFolder .pbox .cpy svg { width: calc(14px * var(--ui)); height: calc(14px * var(--ui)); fill: none; stroke: currentColor; stroke-width: 1.3; }
+/* "Copied" for a moment just above the icon, on the label line's empty end, so it covers none of the path */
+#stepFolder .pbox .cpyt { position: absolute; right: 0; bottom: calc(100% + 6px * var(--ui)); white-space: nowrap; font-size: calc(11px * var(--ui)); line-height: 1.2; }
+#stepFolder .pbox .cpy.ok { color: var(--good); }
+#stepFolder .hlpaths .hltip { font-style: italic; margin-top: calc(4px * var(--ui)); }
 #stepFolder .hlpaths .hlup { margin-top: calc(6px * var(--ui)); }
 @media (max-width: 520px) { .steps:not(.ready) #stepFolder .hlbtns { grid-column: 2; grid-row: auto; } }
 .demos { display: grid; gap: calc(6px * var(--ui)); max-height: calc(220px * var(--ui)); overflow-y: auto; }
@@ -610,19 +699,19 @@ addEventListener('resize', () => { if (applyUiSize()) dispatchEvent(new Event('u
 })();
 </script>
 
-<div class="app" id="app">
+<div class="app start" id="app">
   <header class="head">
     <div class="brand">CS 1.6 <span>Demo Viewer</span></div>
-    <div class="meta" id="meta">CS 1.6 HLTV demos, played in your browser</div>
+    <div class="meta" id="meta">CS 1.6 HLTV and POV demos, played in your browser</div>
     <div class="score" id="score" hidden>
       <span class="tn" id="tnA" title="Click to rename"></span>
       <span class="num" id="scA">0</span><span class="sep">:</span><span class="num" id="scB">0</span>
       <span class="tn" id="tnB" title="Click to rename"></span>
-      <span class="viewers" id="viewers" title="People watching the HLTV broadcast at this moment"></span>
       <button class="chip" type="button" id="partsChip" hidden></button>
     </div>
-    <div class="seg" id="viewSeg" role="group" aria-label="View"><button type="button" data-v="2d" class="on">2D</button><button type="button" data-v="3d">3D</button><button type="button" data-v="split">3D + radar</button></div>
-    <div class="hbtns"><button class="btn" id="bTheatre" type="button" title="Theatre mode: the view fills the window, controls appear at the edges (T)">Theatre</button><button class="btn" id="bFull" type="button" title="Full screen, in Theatre mode (F)">Full screen</button><button class="btn" id="btnOpen" type="button">Open another demo</button></div>
+    <div class="seg" id="viewSeg" role="group" aria-label="View"><button type="button" data-v="2d" class="on">2D</button><button type="button" data-v="3d">3D</button></div>
+    <!-- one Full screen button (UI review, item 7, 17 Nov 2026): Theatre mode's own button went; T still fills the window -->
+    <div class="hbtns"><button class="btn" id="bFull" type="button" aria-pressed="false" title="Full screen: the view fills the screen, and the controls come in when the mouse moves to an edge (F)">Full screen</button><button class="btn" id="btnOpen" type="button">Open another demo</button></div>
   </header>
 
   <section class="radar m2d" id="radar">
@@ -640,7 +729,8 @@ addEventListener('resize', () => { if (applyUiSize()) dispatchEvent(new Event('u
     <div class="cmsg" id="cmsg" hidden></div>
     <div class="skipnote" id="skipnote" hidden title="HLTV left part of the game out of this recording, so players jump to where they were after it"><svg viewBox="0 0 14 10" aria-hidden="true"><path d="M1 9L5 1M6 9l4-8"/></svg>Recording skips here</div>
     <!-- The 3D bar, one short row since 0.18.1 so the kill feed at the top right doesn't run into it (Sujan,
-         14 Oct 2026): the three cameras as one control, Prev and Next player as arrows, the rest in View settings -->
+         14 Oct 2026): the three cameras as one control, Prev and Next player as arrows. View settings moved to the strip at
+         the bottom left (UI review, item 4, 17 Nov 2026) -->
     <div class="cam3" id="cam3" hidden>
       <div class="seg camseg" role="group" aria-label="Camera">
         <button class="on" data-c="free" type="button" title="Free camera: fly around (V switches camera)">Free</button>
@@ -649,57 +739,17 @@ addEventListener('resize', () => { if (applyUiSize()) dispatchEvent(new Event('u
       </div>
       <button class="btn arr" id="bPrevP" type="button" title="Previous player (↓ or right-click)" aria-label="Previous player">‹</button>
       <button class="btn arr" id="bNextP" type="button" title="Next player (↑ or click)" aria-label="Next player">›</button>
-      <div class="vset">
-        <button class="btn" id="bVset" type="button" aria-expanded="false" aria-controls="vsetPanel" title="Vanilla, team colours, quality, damage numbers, crosshair size, interface size and flashbangs">View settings <svg viewBox="0 0 10 6" aria-hidden="true"><path d="M1 1l4 4 4-4"/></svg></button>
-        <div class="vpanel" id="vsetPanel" role="group" aria-label="View settings" hidden>
-          <div class="vhead">On the view</div>
-          <label class="vrow"><span>Vanilla<small>every overlay off, as in the game</small></span><input type="checkbox" id="van3" title="Turns off what the game's own demo player doesn't show: damage numbers, kill markers, glow, See through walls, names and HP over the players, kill lines, grenade paths, the death cam's red wash and banner, and the C4 countdown. The buttons and settings still work one by one after"></label>
-          <div class="vrow"><span>Team colours</span><button class="btn" id="tgModels" type="button" title="Draw the players in flat team colours: red for Terrorists, blue for Counter-Terrorists">Off</button></div>
-          <label class="vrow"><span>Damage numbers<small>which hits show their damage</small></span><select id="dn3" title="The damage each hit did, floating up beside the player hit. Wallbangs: hits through a wall, in orange. Direct hits: hits in the open, in white. Both: every hit. The killing bullet ends in a red skull">
-            <option value="wb">Wallbangs</option>
-            <option value="direct">Direct hits</option>
-            <option value="both">Both</option>
-            <option value="off">Off</option>
-          </select></label>
-          <label class="vrow"><span>Glow on hits<small>damage through walls, no kill</small></span><input type="checkbox" id="glow3" title="A short pink glow on a player each time a bullet hits him through a wall, for damage that doesn't end in a kill"></label>
-          <label class="vrow"><span>Crosshair<small>in Player's eyes</small></span><select id="xh3" title="Crosshair size in Player's eyes, like the game's crosshair size setting">
-            <option value="small">Small</option>
-            <option value="medium">Medium</option>
-            <option value="large">Large</option>
-          </select></label>
-          <label class="vrow" hidden><span>Crosshair<small>size only</small></span><select id="xhp3" title="The size of his crosshair. From config.cfg uses the size set in the game's config.cfg in your Half-Life folder, as the game's demo player uses the watcher's own settings. The colour always comes from config.cfg">
-            <option value="cfg">From config.cfg</option>
-            <option value="small">Small</option>
-            <option value="medium">Medium</option>
-            <option value="large">Large</option>
-          </select></label>
-          <div class="vhead">Picture</div>
-          <label class="vrow"><span>Quality</span><select id="q3" title="How sharp the 3D view is drawn. Auto starts sharp and steps down if playback can't keep up">
-            <option value="auto">Auto</option>
-            <option value="high">High</option>
-            <option value="low">Low</option>
-          </select></label>
-          <label class="vrow"><span>Interface size<small>text, buttons and labels</small></span><select id="ui3" title="Makes text, buttons, panels and the labels in the view bigger. Auto keeps them as they are on a laptop and makes them bigger on a large screen. A size too big for the window is lowered to fit">
-            <option value="auto">Auto</option>
-            <option value="100">100%</option>
-            <option value="125">125%</option>
-            <option value="150">150%</option>
-            <option value="175">175%</option>
-            <option value="200">200%</option>
-          </select></label>
-          <div class="vhead" hidden>Demos recorded by a player</div>
-          <label class="vrow" hidden><span>Flashbang dot<small>how blinded he was</small></span><input type="checkbox" id="fbDot3" title="A white dot under the crosshair that fades as his screen did when a flashbang blinded him, or a teammate he was watching"></label>
-          <label class="vrow" hidden><span>Flashbang whiteout<small>the white his screen showed, full screen</small></span><input type="checkbox" id="fbWhite3" title="The view goes white as his screen did when a flashbang blinded him, or a teammate he was watching. As in the game, his HUD and radar fade into the white"></label>
-        </div>
-      </div>
     </div>
-    <div class="hint3" id="hint3">Press ? for keyboard shortcuts</div>
+    <div class="hint3" id="hint3">Press ? for help and the keys</div>
     <div class="overlay" id="sb" hidden></div>
     <div class="overlay sumwrap" id="sumCard" hidden></div>
+    <!-- Help (UI review, item 9, 17 Nov 2026; Shortcuts and kill markers up to then): three parts, Keys, Colours and marks
+         (the kill markers and the timeline's colours, diamonds and gaps, which nothing explained before), About -->
     <div class="overlay keys" id="keys" hidden>
-      <div class="keys-card">
-        <div class="keys-head"><b>Shortcuts and kill markers</b><button class="sum-x" id="bKeysX" type="button" title="Close (Esc)" aria-label="Close">×</button></div>
+      <div class="keys-card" role="dialog" aria-labelledby="helpTitle">
+        <div class="keys-head"><b id="helpTitle">Help</b><button class="sum-x" id="bKeysX" type="button" title="Close (Esc)" aria-label="Close">×</button></div>
         <textarea class="dbgbox" id="dbgBox" readonly hidden aria-label="Debug info"></textarea>
+        <h2 class="hpart">Keys</h2>
         <div class="keys-grid">
           <section><h3>Playback</h3>
             <dl><dt><kbd>Space</kbd></dt><dd>Play or pause</dd>
@@ -717,8 +767,8 @@ addEventListener('resize', () => { if (applyUiSize()) dispatchEvent(new Event('u
             <dt><kbd>N</kbd></dt><dd>Show or hide names</dd>
             <dt><kbd>H</kbd></dt><dd>See through walls on or off: players behind walls, and their names, drawn on top of the walls (3D)</dd>
             <dt><kbd>M</kbd></dt><dd>Sound on or off</dd>
-            <dt><kbd>F</kbd></dt><dd>Full screen on or off (full screen uses Theatre mode)</dd>
-            <dt><kbd>T</kbd></dt><dd>Theatre mode on or off: the view fills the window, and all the controls slide in when the mouse moves to the top, right or bottom edge</dd></dl>
+            <dt><kbd>F</kbd></dt><dd>Full screen on or off. The controls come in when the mouse moves to the top, right or bottom edge</dd>
+            <dt><kbd>T</kbd></dt><dd>Theatre mode on or off: the view fills the browser window. The controls come in when the mouse moves to the top, right or bottom edge</dd></dl>
           </section>
           <section><h3>3D camera</h3>
             <dl><dt><kbd>V</kbd></dt><dd>Switch camera: free, player's eyes, behind player</dd>
@@ -728,34 +778,106 @@ addEventListener('resize', () => { if (applyUiSize()) dispatchEvent(new Event('u
             <dt><kbd>Shift</kbd></dt><dd>Move faster</dd>
             <dt>Mouse wheel</dt><dd>Fly forward or back</dd></dl>
           </section>
+          <section><h3>Radar (2D)</h3>
+            <dl><dt>Drag</dt><dd>Move the map</dd>
+            <dt>Mouse wheel</dt><dd>Zoom</dd>
+            <dt>Click a dot</dt><dd>Highlight that player</dd>
+            <dt><kbd>?</kbd></dt><dd>Show this help</dd></dl>
+          </section>
+        </div>
+        <h2 class="hpart">Colours and marks</h2>
+        <div class="keys-grid">
           <section class="hmsec"><h3>Kill markers</h3>
             <p class="hmnote">In Player's eyes, small ticks flash around the crosshair when the player you're watching gets a kill. In the other views, a ring in the same colour bursts out from the victim.</p>
             <dl class="hmlist">
               <dt><svg class="hm" viewBox="0 0 40 40" aria-hidden="true"><g stroke="#000" stroke-opacity=".45" stroke-width="3" stroke-linecap="round"><path d="M28 28l4 4M28 12l4-4M12 28l-4 4M12 12l-4-4"/></g><g stroke="#ffffff" stroke-width="1.5" stroke-linecap="round"><path d="M28 28l4 4M28 12l4-4M12 28l-4 4M12 12l-4-4"/></g><g stroke="#5aff5a" stroke-width="1.5"><path d="M12 20h5M23 20h5M20 12v5M20 23v5"/></g></svg></dt><dd><b class="hmw">KILL</b><span>A normal kill. Example: an AK spray to the body in the open.</span></dd>
               <dt><svg class="hm" viewBox="0 0 40 40" aria-hidden="true"><g stroke="#000" stroke-opacity=".45" stroke-width="3" stroke-linecap="round"><path d="M28 28l4 4M28 12l4-4M12 28l-4 4M12 12l-4-4"/></g><g stroke="#ff9a3c" stroke-width="1.5" stroke-linecap="round"><path d="M28 28l4 4M28 12l4-4M12 28l-4 4M12 12l-4-4"/></g><g stroke="#5aff5a" stroke-width="1.5"><path d="M12 20h5M23 20h5M20 12v5M20 23v5"/></g></svg></dt><dd><b class="hmo">HEADSHOT</b><span>The killing bullet hit the head. Example: a one-tap with the AK.</span></dd>
               <dt><svg class="hm" viewBox="0 0 40 40" aria-hidden="true"><g stroke="#000" stroke-opacity=".45" stroke-width="3" stroke-linecap="round"><path d="M28 28l4 4M28 12l4-4M12 28l-4 4M12 12l-4-4"/></g><g stroke="#ff4fd8" stroke-width="1.5" stroke-linecap="round"><path d="M28 28l4 4M28 12l4-4M12 28l-4 4M12 12l-4-4"/></g><g stroke="#5aff5a" stroke-width="1.5"><path d="M12 20h5M23 20h5M20 12v5M20 23v5"/></g></svg></dt><dd><b class="hms">WALLBANG · HS</b><span>The bullet went through cover, with the victim fully hidden. HS is added when it was also a headshot.</span></dd>
-              <dt><svg class="hm" viewBox="0 0 40 40" aria-hidden="true"><g stroke="#000" stroke-opacity=".45" stroke-width="3" stroke-linecap="round"><path d="M28 28l4 4M28 12l4-4M12 28l-4 4M12 12l-4-4"/></g><g stroke="#c9a3e8" stroke-width="1.5" stroke-linecap="round"><path d="M28 28l4 4M28 12l4-4M12 28l-4 4M12 12l-4-4"/></g><g stroke="#5aff5a" stroke-width="1.5"><path d="M12 20h5M23 20h5M20 12v5M20 23v5"/></g></svg></dt><dd><b class="hml">LOOSE WB</b><span>A loose wallbang: the bullet went through cover, but part of the victim was in view.</span></dd>
+              <dt><svg class="hm" viewBox="0 0 40 40" aria-hidden="true"><g stroke="#000" stroke-opacity=".45" stroke-width="3" stroke-linecap="round"><path d="M28 28l4 4M28 12l4-4M12 28l-4 4M12 12l-4-4"/></g><g stroke="#c9a3e8" stroke-width="1.5" stroke-linecap="round"><path d="M28 28l4 4M28 12l4-4M12 28l-4 4M12 12l-4-4"/></g><g stroke="#5aff5a" stroke-width="1.5"><path d="M12 20h5M23 20h5M20 12v5M20 23v5"/></g></svg></dt><dd><b class="hml">PARTIAL WALLBANG · HS</b><span>A partial wallbang: the bullet went through cover, but part of the victim was in view. HS is added when it was also a headshot.</span></dd>
             </dl>
           </section>
-          <section><h3>Radar (2D)</h3>
-            <dl><dt>Drag</dt><dd>Move the map</dd>
-            <dt>Mouse wheel</dt><dd>Zoom</dd>
-            <dt>Click a dot</dt><dd>Highlight that player</dd>
-            <dt><kbd>?</kbd></dt><dd>Show this list</dd></dl>
+          <section class="hmsec"><h3>The side panel</h3>
+            <p class="hmnote">Players: kills and deaths come from the kill feed, so there are no bonus points for bomb plants or defuses, and a team kill (TK) isn't counted as a kill. Only the rounds that count are counted; overtime is every round after the regulation ones. Click a player to follow them; Key is the 1 to 0 key that jumps to them. In a POV demo the highlighted player is the one whose eyes the view shows.</p>
+            <p class="hmnote">Rounds: the score after each round, and how long it lasted. <b>Show N uncounted rounds</b>, at the top of the list, also lists the rounds that don't count: warmup, restarts and idle rounds, like time-outs.</p>
+          </section>
+          <section class="hmsec"><h3>The timeline</h3>
+            <dl class="hmlist tllist">
+              <dt><svg class="tlm" viewBox="0 0 40 24" aria-hidden="true"><rect width="40" height="24" rx="3" fill="#15191c"/><rect x="2" y="8" width="17" height="16" fill="rgba(232,87,77,.3)"/><rect x="21" y="8" width="17" height="16" fill="rgba(94,163,232,.3)"/><text x="4" y="7" font-size="6" fill="#8d959c">12</text></svg></dt><dd><b>Rounds</b><span>Each round's stretch, red when the Terrorists won it, blue when the Counter-Terrorists did, grey with no result; its number above it.</span></dd>
+              <dt><svg class="tlm" viewBox="0 0 40 24" aria-hidden="true"><rect width="40" height="24" rx="3" fill="#15191c"/><rect x="13" y="12" width="2" height="12" fill="#e8574d"/><rect x="25" y="6" width="2" height="18" fill="#5ea3e8"/></svg></dt><dd><b>Kills</b><span>A thin bar in the killer's team colour; a taller one for a headshot. Click one to watch that kill and open it in the Kills tab; in a POV demo, to jump to a few seconds before it.</span></dd>
+              <dt><svg class="tlm" viewBox="0 0 40 24" aria-hidden="true"><rect width="40" height="24" rx="3" fill="#15191c"/><path d="M9 8l4 4-4 4-4-4z" fill="#ff4fd8"/><path d="M20 8l4 4-4 4-4-4z" fill="#c9a3e8"/><path d="M31 8.5l3.5 3.5-3.5 3.5-3.5-3.5z" fill="none" stroke="#ffb347" stroke-width="1.4"/></svg></dt><dd><b>Diamonds</b><span>A wallbang (pink), a partial wallbang (lilac), and wall damage, hits through a wall with no kill (hollow orange).</span></dd>
+              <dt><svg class="tlm" viewBox="0 0 40 24" aria-hidden="true"><rect width="40" height="24" rx="3" fill="#15191c"/><path d="M20 16l4 8h-8z" fill="#ff9a3c"/></svg></dt><dd><b>Triangles</b><span>The bomb planted.</span></dd>
+              <dt><svg class="tlm" viewBox="0 0 40 24" aria-hidden="true"><rect width="40" height="24" rx="3" fill="#15191c"/><rect x="17" y="4" width="6" height="20" fill="#0e1012"/><path d="M16.5 22l3-17M20.5 22l3-17" stroke="#e7e3d9" stroke-width="1.5"/></svg></dt><dd><b>Gaps</b><span>// where the recording skips: HLTV left part of the game out, so players jump.</span></dd>
+              <dt><svg class="tlm" viewBox="0 0 40 24" aria-hidden="true"><rect width="40" height="24" rx="3" fill="#15191c"/><rect x="8" y="4" width="24" height="20" fill="rgba(231,227,217,.35)"/></svg></dt><dd><b>Pauses</b><span>A light stretch where the match was paused.</span></dd>
+              <dt><svg class="tlm" viewBox="0 0 40 24" aria-hidden="true"><rect width="40" height="24" rx="3" fill="#15191c"/><rect x="19" y="2" width="2" height="22" fill="#cbb47e"/><path d="M15 2h10l-5 6z" fill="#cbb47e"/></svg></dt><dd><b>Playhead</b><span>Where playback is. Click or drag on the timeline to move it.</span></dd>
+            </dl>
           </section>
         </div>
-        <div class="keys-foot"><span class="ver">Version 0.26.31 · <a href="https://github.com/deswalsujan/cs16-demo-viewer/blob/main/CHANGELOG.md" target="_blank" rel="noopener">What's new</a> · <a href="https://github.com/deswalsujan/cs16-demo-viewer/issues/new/choose" target="_blank" rel="noopener">Report a bug</a></span><span class="sp"></span><button class="btn" id="bDebug" type="button" title="Copies details for a bug report: browser, demo name, what loaded, errors. No file contents.">Copy debug info</button><button class="btn" id="bKeysClose" type="button">Close</button></div>
+        <h2 class="hpart">About</h2>
+        <div class="habout">
+          <p>CS 1.6 Demo Viewer, version 0.27.0. It plays HLTV and POV demos in the browser, from your own Half-Life folder; nothing leaves your computer.</p>
+          <p>A map with no radar picture: drop its overview, the .bmp and .txt pair from cstrike\overviews, anywhere on the page.</p>
+          <p class="hlinks"><a href="https://github.com/deswalsujan/cs16-demo-viewer/blob/main/CHANGELOG.md" target="_blank" rel="noopener">What's new</a> · <a href="https://github.com/deswalsujan/cs16-demo-viewer" target="_blank" rel="noopener">Source on GitHub</a> · <a href="https://github.com/deswalsujan/cs16-demo-viewer/issues/new/choose" target="_blank" rel="noopener">Report a bug</a></p>
+          <p class="hdbg"><button class="btn" id="bDebug" type="button" title="Copies details for a bug report: browser, demo name, what loaded, errors. No file contents.">Copy debug info</button><span>Paste it into your bug report: it says which browser, demo and files, and any errors, with no file contents.</span></p>
+        </div>
+        <div class="keys-foot"><span class="sp"></span><button class="btn" id="bKeysClose" type="button">Close</button></div>
       </div>
     </div>
     <canvas id="cv" aria-label="Radar view of the match"></canvas>
     <div class="rclock" id="rclock" hidden></div>
     <div class="feed" id="feed"></div>
+    <!-- The view's options in one strip at the bottom left in 2D, 3D and POV (UI review, item 4, 17 Nov 2026): Names,
+         Grenades, Kill lines, See through walls (not in 2D, where it does nothing), Reset view (not in POV), then View
+         settings, opening upward, with only the rows the view uses (.v3: 3D only) -->
     <div class="legend" id="legend" hidden>
       <button class="btn on" id="tgNames" type="button">Names</button>
       <button class="btn on" id="tgNades" type="button">Grenades</button>
       <button class="btn on" id="tgLines" type="button">Kill lines</button>
       <span class="xwrap"><button class="btn" id="tgXray" type="button" title="Show players behind walls, and their names, in 3D (H)">See through walls</button><button class="xmark" id="xrayMark" type="button" hidden title="This server seems to use an anti-wallhack plugin. Click the ! to read why." aria-label="Why few enemies show through walls">!</button></span>
       <button class="btn" id="tgFit" type="button" title="Back to the starting view: the whole radar in 2D, the overview camera in 3D">Reset view</button>
+      <div class="vset">
+        <button class="btn" id="bVset" type="button" aria-expanded="false" aria-controls="vsetPanel" title="Hide all overlays, and in 3D team colours, damage numbers, the crosshair and quality; interface size; in a POV demo the flashbangs">View settings <svg viewBox="0 0 10 6" aria-hidden="true"><path d="M1 1l4 4 4-4"/></svg></button>
+        <div class="vpanel" id="vsetPanel" role="group" aria-label="View settings" hidden>
+          <div class="vhead">On the view</div>
+          <label class="vrow"><span>Hide all overlays<small>as in the game's own demo player</small></span><input type="checkbox" id="van3" title="Turns off what the game's own demo player doesn't show: damage numbers, kill markers, glow, See through walls, names and HP over the players, kill lines, grenade paths, the death cam's red wash and banner, and the C4 countdown. The buttons and settings still work one by one after"></label>
+          <label class="vrow v3"><span>Radar<small>the 2D map in a corner of the 3D view</small></span><input type="checkbox" id="radar3" title="Shows the 2D radar in the bottom right corner of the 3D view"></label>
+          <div class="vrow v3"><span>Team colours</span><button class="btn" id="tgModels" type="button" title="Draw the players in flat team colours: red for Terrorists, blue for Counter-Terrorists">Off</button></div>
+          <label class="vrow v3"><span>Damage numbers<small>which hits show their damage</small></span><select id="dn3" title="The damage each hit did, floating up beside the player hit. Wallbangs: hits through a wall, in orange. Direct hits: hits in the open, in white. Both: every hit. The killing bullet ends in a red skull">
+            <option value="wb">Wallbangs</option>
+            <option value="direct">Direct hits</option>
+            <option value="both">Both</option>
+            <option value="off">Off</option>
+          </select></label>
+          <label class="vrow v3"><span>Glow on hits<small>damage through walls, no kill</small></span><input type="checkbox" id="glow3" title="A short pink glow on a player each time a bullet hits them through a wall, for damage that doesn't end in a kill"></label>
+          <label class="vrow v3"><span>Crosshair<small>in Player's eyes</small></span><select id="xh3" title="Crosshair size in Player's eyes, like the game's crosshair size setting">
+            <option value="small">Small</option>
+            <option value="medium">Medium</option>
+            <option value="large">Large</option>
+          </select></label>
+          <label class="vrow" hidden><span>Crosshair<small>size only</small></span><select id="xhp3" title="The size of the player's crosshair. From config.cfg uses the size set in the game's config.cfg in your Half-Life folder, as the game's demo player uses the watcher's own settings. The colour always comes from config.cfg">
+            <option value="cfg">From config.cfg</option>
+            <option value="small">Small</option>
+            <option value="medium">Medium</option>
+            <option value="large">Large</option>
+          </select></label>
+          <div class="vhead">Picture</div>
+          <label class="vrow v3"><span>Quality</span><select id="q3" title="How sharp the 3D view is drawn. Auto starts sharp and steps down if playback can't keep up">
+            <option value="auto">Auto</option>
+            <option value="high">High</option>
+            <option value="low">Low</option>
+          </select></label>
+          <label class="vrow"><span>Interface size<small>text, buttons and labels</small></span><select id="ui3" title="Makes text, buttons, panels and the labels in the view bigger. Auto keeps them as they are on a laptop and makes them bigger on a large screen. A size too big for the window is lowered to fit">
+            <option value="auto">Auto</option>
+            <option value="100">100%</option>
+            <option value="125">125%</option>
+            <option value="150">150%</option>
+            <option value="175">175%</option>
+            <option value="200">200%</option>
+          </select></label>
+          <div class="vhead" hidden>Demos recorded by a player</div>
+          <label class="vrow" hidden><span>Flashbang dot<small>how blinded the player was</small></span><input type="checkbox" id="fbDot3" title="A white dot under the crosshair that fades as the player's screen did when a flashbang blinded them, or a teammate they were watching"></label>
+          <label class="vrow" hidden><span>Flashbang whiteout<small>the white the player's screen showed, full screen</small></span><input type="checkbox" id="fbWhite3" title="The view goes white as the player's screen did when a flashbang blinded them, or a teammate they were watching. As in the game, the player's HUD and radar fade into the white"></label>
+        </div>
+      </div>
     </div>
     <div class="heatbar" id="heatbar" hidden>
       <select id="hmMode" aria-label="Heatmap">
@@ -764,12 +886,12 @@ addEventListener('resize', () => { if (applyUiSize()) dispatchEvent(new Event('u
         <option value="kills">Heatmap: where kills were made from</option>
         <option value="presence">Heatmap: where players stand</option>
       </select>
-      <select id="hmSide" aria-label="Heatmap filter">
+      <select id="hmSide" aria-label="Heatmap filter" hidden>
         <option value="all">Both sides</option>
         <option value="1">T side</option>
         <option value="2">CT side</option>
       </select>
-      <select id="hmScope" aria-label="Heatmap rounds">
+      <select id="hmScope" aria-label="Heatmap rounds" hidden>
         <option value="match">Whole match</option>
         <option value="round">This round</option>
       </select>
@@ -777,7 +899,7 @@ addEventListener('resize', () => { if (applyUiSize()) dispatchEvent(new Event('u
 
     <div class="load" id="load">
       <div class="load-card">
-        <h1>Play a <span>CS 1.6</span> demo in the browser</h1>
+        <h1>Play <span>CS 1.6</span> demos in your browser</h1>
         <p>Everything stays on your computer. The demo and map files are read by this page and never uploaded.</p>
         <p>Needs your own copy of Counter-Strike 1.6, installed through Steam.</p>
         <div class="steps">
@@ -785,11 +907,11 @@ addEventListener('resize', () => { if (applyUiSize()) dispatchEvent(new Event('u
             <div class="k">1</div>
             <div class="tx"><b id="hlTitle">Choose your Half-Life folder</b><small id="hlStatus">The Half-Life folder from your Steam install, the one with cstrike and valve inside.</small></div>
             <div class="hlbtns"><button class="btn" id="btnFolder" type="button">Choose folder</button></div>
-            <div class="hlx hlpaths" id="hlPaths" hidden><div id="hlWin">Windows: <span class="p" id="hlPathWin"></span></div><div id="hlMac">Mac: <span class="p" id="hlPathMac"></span></div><div class="hltip" id="hlTip">In the Mac's dialog, press Cmd+Shift+G and paste it.</div><div class="hlup">Your browser may call it an upload, but nothing leaves your computer.</div></div>
+            <div class="hlx hlpaths" id="hlPaths" hidden><div id="hlWin"><div class="plab">Windows:</div><div class="pbox"><code class="p" id="hlPathWin"></code><button class="cpy" type="button" data-copy="hlPathWin" title="Copy the path" aria-label="Copy the Windows path"><svg viewBox="0 0 16 16" aria-hidden="true"><rect x="5.5" y="5.5" width="8" height="8" rx="1.5"/><path d="M10.5 5.5V4A1.5 1.5 0 0 0 9 2.5H4A1.5 1.5 0 0 0 2.5 4v5A1.5 1.5 0 0 0 4 10.5h1.5"/></svg><span class="cpyt" hidden>Copied</span></button></div></div><div id="hlMac"><div class="plab">Mac:</div><div class="pbox"><code class="p" id="hlPathMac"></code><button class="cpy" type="button" data-copy="hlPathMac" title="Copy the path" aria-label="Copy the Mac path"><svg viewBox="0 0 16 16" aria-hidden="true"><rect x="5.5" y="5.5" width="8" height="8" rx="1.5"/><path d="M10.5 5.5V4A1.5 1.5 0 0 0 9 2.5H4A1.5 1.5 0 0 0 2.5 4v5A1.5 1.5 0 0 0 4 10.5h1.5"/></svg><span class="cpyt" hidden>Copied</span></button></div></div><div class="hltip" id="hlTip">In the Mac's dialog, press Cmd+Shift+G and paste it.</div><div class="hlup">Your browser may call it an upload, but nothing leaves your computer.</div></div>
           </div>
           <div class="step" id="stepDemo">
             <div class="k">2</div>
-            <div class="tx"><b>Open a demo</b><small>A .dem file, recorded by HLTV or by a player. Pick one below or open a file from anywhere. Also plays pre-2008 (protocol 47) demos the Steam game won't open.</small></div>
+            <div class="tx"><b>Open a demo</b><small>Pick a demo below, or open a .dem file from anywhere.<span class="proto">HLTV or POV demos both play <span class="nw">(Protocol 47 &amp; 48 supported).</span></span></small></div>
             <button class="btn" id="btnDemo" type="button" disabled title="Choose your Half-Life folder first">Open .dem</button>
             <div class="stepin">
               <div class="dfind" id="demoFind" hidden>
@@ -800,10 +922,10 @@ addEventListener('resize', () => { if (applyUiSize()) dispatchEvent(new Event('u
             </div>
           </div>
         </div>
-        <div class="drophint">Or drop a .dem file, or an overview .bmp and .txt pair, anywhere on this page</div>
+        <div class="drophint">Or drop a .dem file anywhere on this page</div>
         <div class="prog" id="prog" hidden><i id="progBar"></i></div>
         <div class="msg" id="msg"></div>
-        <div class="loadfoot"><span>Version 0.26.31 · <a href="https://github.com/deswalsujan/cs16-demo-viewer" target="_blank" rel="noopener">Source on GitHub</a></span><button class="btn" id="bClear" type="button" title="Deletes the maps, models, sounds and overviews this browser saved from your Half-Life folder, and starts over as on a first visit">Clear saved files</button></div>
+        <div class="loadfoot"><span>Version 0.27.0 · <a href="https://github.com/deswalsujan/cs16-demo-viewer" target="_blank" rel="noopener">Source on GitHub</a> · <button class="lnk" id="bHelpStart" type="button" title="The keys, the colours and marks, and about the viewer (?)">Help</button></span><button class="btn" id="bClear" type="button" title="Deletes the copies of maps, models, sounds and radar overviews this browser saved from your Half-Life folder. The folder closes until you pick it again, as on a first visit">Delete saved files</button></div>
       </div>
     </div>
   </section>
@@ -820,17 +942,22 @@ addEventListener('resize', () => { if (applyUiSize()) dispatchEvent(new Event('u
 
   <footer class="transport">
     <div class="tl" id="tl"><canvas id="tlc" aria-label="Timeline"></canvas><div class="tip" id="tip" hidden></div></div>
+    <!-- one centred group, Help alone at the right edge (Sujan, 19 Nov 2026) -->
     <div class="ctrls">
+      <div class="cgrp">
       <button class="btn ib" id="bPrevR" type="button" title="Previous round (Z)"><svg viewBox="0 0 16 16"><path d="M3 2h2v12H3zM14 2v12L6 8z"/></svg></button>
       <button class="btn ib" id="bBack" type="button" title="Back 5 seconds (←)"><svg viewBox="0 0 16 16"><path d="M8 3v10L1 8zM15 3v10L8 8z"/></svg></button>
       <button class="btn ib primary" id="bPlay" type="button" title="Play or pause (Space)"><svg viewBox="0 0 16 16" id="playIcon"><path d="M4 2l10 6-10 6z"/></svg></button>
       <button class="btn ib" id="bFwd" type="button" title="Forward 5 seconds (→)"><svg viewBox="0 0 16 16"><path d="M1 3v10l7-5zM8 3v10l7-5z"/></svg></button>
       <button class="btn ib" id="bNextR" type="button" title="Next round (X)"><svg viewBox="0 0 16 16"><path d="M11 2h2v12h-2zM2 2v12l8-6z"/></svg></button>
       <span class="time" id="time"><b>0:00</b> / 0:00</span>
-      <button class="btn" id="bScope" type="button" title="Timeline shows the whole match or only this round">Timeline: match</button>
+      <!-- the bottom bar (UI review, item 8, 17 Nov 2026): the timeline's range as a two-part switch, Match | Round, in place
+           of "Timeline: match"; one speed button showing the speed ("Speed 1×", Sujan, 17 Nov 2026), opening the six -->
+      <div class="seg tlseg" id="scopeSeg" role="group" aria-label="Timeline" title="The timeline shows the whole match or only this round"><button type="button" data-s="match" class="on">Match</button><button type="button" data-s="round">Round</button></div>
       <span class="sndgrp"><button class="btn ib" id="bSnd" type="button" title="Sound on or off (M)" aria-pressed="true"><svg viewBox="0 0 16 16" id="sndIcon"></svg></button><input type="range" id="sndVol" min="0" max="1" step="0.01" aria-label="Volume" title="Volume"></span>
-      <button class="btn" id="bKeys" type="button" title="Keyboard shortcuts (?)">Shortcuts <span class="kbd">?</span></button>
-      <div class="sp" id="speeds"></div>
+      <div class="spwrap"><button class="btn" id="bSpeed" type="button" aria-expanded="false" aria-controls="speeds" title="Playback speed ([ slower, ] faster)">Speed 1×</button><div class="sppop" id="speeds" role="group" aria-label="Playback speed" hidden></div></div>
+      </div>
+      <button class="btn" id="bKeys" type="button" title="Help: the keys, the colours and marks, and about the viewer (?)">Help <span class="kbd">?</span></button>
     </div>
   </footer>
 </div>
@@ -2508,7 +2635,10 @@ function indexFolder(list) {
   files.demos.sort((a, b) => b.lastModified - a.lastModified);
   renderDemoList();
   const nPm = Object.keys(files.mdl).filter((k) => k.startsWith('models/player/')).length;
-  if (list.length) setMsg(`Found ${Object.keys(files.maps).length} maps, ${Object.keys(files.overviews).length} overviews, ${nPm} player models, ${Object.keys(files.snd).length} sounds and ${files.demos.length} demos.`);
+  // the long "Found 38 maps, 31 overviews, …" line went (UI review, item 12): the folder row says how many demos, and the
+  // counts of maps, overviews, models and sounds are in Copy debug info
+  if (list.length) setMsg('');
+  void nPm;
   retryMissingModels(); retryMissingSounds(); SND.sentences = null; LANG.map = null; loadLang();
   if (D) preloadSounds();
   if (D && !MAP) loadMap(D.mapName);
@@ -2630,6 +2760,7 @@ const kicon = (w, cls = '') => (KICONS[w] ? `<span class="kico ki-${w}${cls ? ' 
 // The demo list, narrowed by the search box: a demo stays when its file name contains every word typed
 // (upper or lower case), and the typed letters are highlighted. Only the file name is searched, so a demo
 // whose name doesn't say the map or the teams can only be found by scrolling.
+const demoDate = (ms) => { try { return new Date(ms).toLocaleDateString('en-GB', { day: 'numeric', month: 'short', year: 'numeric' }); } catch (e) { return ''; } };
 function renderDemoList() {
   const el = $('demoList');
   el.innerHTML = '';
@@ -2648,7 +2779,9 @@ function renderDemoList() {
     shown++;
     const b = document.createElement('button');
     b.type = 'button';
-    b.innerHTML = `<em>${words.length ? mark(f.name) : esc(f.name)}</em><span>${(f.size / 1048576).toFixed(0)} MB</span>`;
+    // the name and the file's date, newest first; the size on hover (UI review, item 12; the size in the row up to then)
+    b.innerHTML = `<em>${words.length ? mark(f.name) : esc(f.name)}</em><span>${demoDate(f.lastModified)}</span>`;
+    b.title = `${f.name} · ${(f.size / 1048576).toFixed(0)} MB`;
     b.onclick = () => loadDemoFile(f);
     el.appendChild(b);
   }
@@ -2703,7 +2836,16 @@ function hlOS() {
   try { p = (navigator.userAgentData && navigator.userAgentData.platform) || navigator.platform || ''; } catch (e) { }
   return /^win/i.test(p) ? 'win' : /^mac/i.test(p) ? 'mac' : '';
 }
-$('hlPathWin').textContent = HL_EXAMPLE; $('hlPathMac').textContent = HL_EXAMPLE_MAC;
+// each path in a box like a code block, broken only after a slash (each part between them kept whole), with a copy icon at its
+// top right that shows "Copied" for a moment (Sujan, 20 Nov 2026; a Copy link after the path since the UI review's item 12);
+// both paths stay word for word (2 Nov 2026), and the text copied is the path itself
+const pathHtml = (p) => p.replace(/[\\/]/g, '$&\u0000').split('\u0000').filter(Boolean).map((x) => `<span class="pseg">${esc(x)}</span>`).join('<wbr>');
+$('hlPathWin').innerHTML = pathHtml(HL_EXAMPLE); $('hlPathMac').innerHTML = pathHtml(HL_EXAMPLE_MAC);
+document.querySelectorAll('.cpy').forEach((b) => b.onclick = () => {
+  const t = b.querySelector('.cpyt');
+  const done = (txt, ok) => { t.textContent = txt; t.hidden = false; b.classList.add('on'); b.classList.toggle('ok', ok); clearTimeout(b._t); b._t = setTimeout(() => { t.hidden = true; b.classList.remove('on', 'ok'); }, 1500); };
+  try { navigator.clipboard.writeText($(b.dataset.copy).textContent).then(() => done('Copied', true), () => done('Select and copy it', false)); } catch (e) { done('Select and copy it', false); }
+});
 { const os = hlOS(); $('hlWin').hidden = os === 'mac'; $('hlMac').hidden = $('hlTip').hidden = os === 'win'; }
 // the files the viewer reads, for telling what changed between two picks in one visit (hlApply)
 const HL_WANT = /(?:^|\/)(?:cstrike|cstrike_downloads|valve)\/(?:maps\/[^/]+\.bsp|overviews\/[^/]+\.(?:bmp|txt)|models\/.+\.mdl|sound\/.+\.wav|sound\/(?:sentences|materials)\.txt|resource\/cstrike_english\.txt|sprites\/hud\.txt|sprites\/640hud\d+\.spr|sprites\/(?:muzzleflash[1-3]|blood|bloodspray|640_pain)\.spr|gfx\/palette\.lmp|[^/]+\.wad)$|(?:^|\/)cstrike\/(?:config\.cfg|sprites\/weapon_\w+\.txt)$|\.dem$/;
@@ -2748,7 +2890,7 @@ function hlRender(state, o = {}) {
     // no dot beside the count: the folder isn't watched, so there's no "Up to date" to show (Sujan, 2 Nov 2026)
     const n = files.demos.length;
     st.innerHTML = n ? esc(`${n} ${n === 1 ? 'demo' : 'demos'} found.`)
-      : line('chg', 'No demos found.', 'The folder is fine, but has no .dem files. Put demos in cstrike, or open one from anywhere with Open .dem.');
+      : line('chg', 'No demos found.', 'The folder is fine, but has no .dem files. Put demos in cstrike, or open one from anywhere with the option below.');
   }
   $('btnDemo').disabled = !HL.ok;
   $('btnDemo').title = HL.ok ? '' : 'Choose your Half-Life folder first';
@@ -2842,11 +2984,18 @@ self.onmessage = (e) => {
 }
 
 async function loadDemoFile(f, opts = {}) {
-  // a part of a map joined before: open the joined map, when every part is still in the folder
+  // a part of a map joined before: open the joined map when every part is still in the folder at the size it had when joined.
+  // A part missing or with another size (another file under the same name; a join remembered before the sizes were, which
+  // can't be checked): the file opens on its own, the join is forgotten, and the load card says why (Sujan, 20 Nov 2026; up to
+  // then the names alone decided, so different files with the same names were joined)
   const js = !opts.alone && joinedSetOf(f.name);
+  let dropped = null;
   if (js) {
     const list = js.set.map((n) => n === f.name ? f : (files && files.demos || []).find((x) => x.name === n));
-    if (list.every(Boolean)) { CUR_FILE = f; return openJoinedUI(list); }
+    const miss = js.set.find((n, i) => !list[i]), changed = js.sizes ? js.set.find((n, i) => list[i] && list[i].size !== js.sizes[i]) : null;
+    if (!miss && !changed && js.sizes) { CUR_FILE = f; return openJoinedUI(list); }
+    forgetJoin(js.set);
+    dropped = { others: js.set.filter((n) => n !== f.name), name: changed || miss || null, why: changed ? 'changed' : miss ? 'missing' : 'unchecked' };
   }
   CUR_FILE = f;
   setMsg(`Reading ${f.name}…`);
@@ -2869,12 +3018,12 @@ async function loadDemoFile(f, opts = {}) {
   worker.onmessage = async (e) => {
     const m = e.data;
     if (m.progress != null) { $('progBar').style.width = (m.progress * 100).toFixed(0) + '%'; return; }
-    if (m.error) { setMsg('This file could not be read as a CS 1.6 demo: ' + m.error, true); $('prog').hidden = true; showFailCard(f.name, m.error); return; }
+    if (m.error) { setMsg("This file couldn't be read as a CS 1.6 demo.", true); $('prog').hidden = true; showFailCard(f.name, m.error); return; }
     if (m.done) {
       worker.terminate(); worker = null;
       $('progBar').style.width = '100%';
       resetForNewDemo();
-      D = m.done; D.fileName = f.name;
+      D = m.done; D.fileName = f.name; D.joinDropped = dropped;
       if (MAP && MAP.name !== (D.mapName || '').toLowerCase()) { MAP = null; clear3d(); }
       await onDemo();
     }
@@ -3061,11 +3210,9 @@ function fileTime(name) {
 }
 const hhmm = (d) => String(d.getUTCHours()).padStart(2, '0') + ':' + String(d.getUTCMinutes()).padStart(2, '0');
 const dayOf = (d) => `${d.getUTCDate()} ${MON[d.getUTCMonth()]} ${d.getUTCFullYear()}`;
-// "24 Apr 2011 at 00:25 and at 01:12"
-function fileTimesText(ts) {
-  const ds = ts.map((t) => new Date(t));
-  const bits = ds.map((d, i) => (i && dayOf(d) === dayOf(ds[i - 1]) ? '' : dayOf(d) + ' ') + 'at ' + hhmm(d));
-  return bits.length < 3 ? bits.join(' and ') : bits.slice(0, -1).join(', ') + ' and ' + bits[bits.length - 1];
+// "16:09, 17:24, 17:40": the recording times as clock times, with the day where it changes from the time before
+function clockList(ts) {
+  return ts.map((t, k) => { const d = new Date(t), p = k ? new Date(ts[k - 1]) : null; return (p && dayOf(d) !== dayOf(p) ? `${d.getUTCDate()} ${MON[d.getUTCMonth()]} ` : '') + hhmm(d); }).join(', ');
 }
 // A file name shown in full, with .dem. It may wrap only after a - _ or . and never inside its last piece
 // ("de_inferno.dem"), since the part that tells two parts apart is often in the middle.
@@ -3223,9 +3370,10 @@ function suggestOrder(F) {
   return valid.length === 1 ? { order: valid[0], by: 'rounds', agree: true, roundsOrder: valid[0] } : null;
 }
 
-// Joined sets are remembered per file, so opening any part opens the joined map; Split them forgets it.
+// Joined sets are remembered per file, so opening any part opens the joined map; Split them forgets it. Each part's size is
+// remembered with them (Sujan, 20 Nov 2026), so another file with the same name isn't joined: see loadDemoFile.
 const joinedSetOf = (name) => { const v = ls.get('join:' + name); return v && Array.isArray(v.set) && v.set.length > 1 ? v : null; };
-function rememberJoin(names, keep, why) { for (const n of names) ls.set('join:' + n, { set: names, keep: !!keep, why: why || null }); }
+function rememberJoin(list, keep, why) { const names = list.map((f) => f.name), sizes = list.map((f) => f.size); for (const n of names) ls.set('join:' + n, { set: names, sizes, keep: !!keep, why: why || null }); }
 function forgetJoin(names) { for (const n of names) ls.set('join:' + n, null); }
 let CUR_FILE = null; // the file the open demo came from (one opened from elsewhere isn't in the folder list)
 const fileByName = (n) => (CUR_FILE && CUR_FILE.name === n ? CUR_FILE : null) || (files && files.demos || []).find((f) => f.name === n) || ((D && D.partFiles) || []).find((f) => f.name === n) || null;
@@ -3247,16 +3395,22 @@ function splitJoined() {
 }
 
 // ---- the Join card ----
-const JOIN = { list: [], P: new Map(), F: new Map(), keep: false, moved: false, sugg: null, err: null, picking: false, reading: null, carry: null };
+const JOIN = { list: [], P: new Map(), F: new Map(), keep: false, moved: false, sugg: null, err: null, picking: false, reading: null, carry: null, dup: null, checking: false };
 function joinEl() {
   let el = $('joinCard');
   if (!el) { el = document.createElement('div'); el.className = 'overlay sumwrap'; el.id = 'joinCard'; el.hidden = true; $('sumCard').after(el); }
   return el;
 }
 function closeJoinCard() { joinEl().hidden = true; JOIN.picking = false; JOIN.err = null; }
+// the Join card with the open demo's parts and its picker open, to add a part: the Rounds tab's Join parts…, and the load
+// card's when no other part is in the folder (Sujan, 19 Nov 2026)
+function openJoinPicker() {
+  const cur = D.parts ? D.parts.map((x) => fileByName(x.fileName)).filter(Boolean) : [CUR_FILE || fileByName(D.fileName)].filter(Boolean);
+  JOIN.picking = true; openJoinCard(cur).then(() => { JOIN.picking = true; renderJoinCard(); });
+}
 async function openJoinCard(list) {
   closeSummary();
-  Object.assign(JOIN, { list: list.slice(), keep: false, moved: false, sugg: null, err: null, picking: false });
+  Object.assign(JOIN, { list: list.slice(), keep: false, moved: false, sugg: null, err: null, picking: false, okOpen: false, dup: null, checking: false });
   await readJoinParts();
 }
 // Add a demo to the parts: refused when it's another map or has different players
@@ -3265,6 +3419,23 @@ async function addJoinPart(f) {
   if (JOIN.list.some((x) => x.name === f.name)) { renderJoinCard(); return; }
   JOIN.list.push(f);
   await readJoinParts(f);
+}
+// Whether two files are the same recording under two names (Sujan, 20 Nov 2026): the same size, then the same bytes, read 8 MB
+// at a time from each; remembered per pair
+const SAME = new Map();
+async function sameFile(a, b) {
+  if (a.size !== b.size) return false;
+  const key = [a, b].map((f) => `${f.name}|${f.size}|${f.lastModified}`).sort().join('\n');
+  if (SAME.has(key)) return SAME.get(key);
+  let same = true;
+  try {
+    for (let o = 0; o < a.size && same; o += 8 << 20) {
+      const [x, y] = await Promise.all([a, b].map((f) => f.slice(o, o + (8 << 20)).arrayBuffer().then((v) => new Uint8Array(v))));
+      for (let i = 0; i < x.length; i++) if (x[i] !== y[i]) { same = false; break; }
+    }
+  } catch (e) { same = false; }
+  SAME.set(key, same);
+  return same;
 }
 async function readJoinParts(added) {
   for (const f of JOIN.list) {
@@ -3293,6 +3464,11 @@ async function readJoinParts(added) {
     const e = bad(F[i]);
     if (e) { JOIN.err = e; JOIN.list.splice(i, 1); F.splice(i, 1); i--; }
   }
+  // a part that is byte for byte an earlier one under another name: a warning, Join parts off until it's removed (Sujan, 20 Nov
+  // 2026; joined, its rounds counted again, as overtime after a 15:15 part: Na`Vi vs SK, Inferno, ESWC 2011, the first file twice)
+  JOIN.dup = null; JOIN.checking = true;
+  for (let j = 1; j < JOIN.list.length && !JOIN.dup; j++) for (let i = 0; i < j; i++) if (await sameFile(JOIN.list[i], JOIN.list[j])) { JOIN.dup = [JOIN.list[i].name, JOIN.list[j].name]; break; }
+  JOIN.checking = false;
   if (!JOIN.moved) {
     JOIN.sugg = suggestOrder(F);
     if (JOIN.sugg) JOIN.list = JOIN.sugg.order.map((i) => JOIN.list[i]);
@@ -3303,6 +3479,12 @@ function joinMove(i, d) {
   const j = i + d; if (j < 0 || j >= JOIN.list.length) return;
   [JOIN.list[i], JOIN.list[j]] = [JOIN.list[j], JOIN.list[i]];
   JOIN.moved = true; JOIN.keep = false; renderJoinCard();
+}
+// the order of the recording times in the file names (Sujan, 19 Nov 2026)
+function useRecorded() {
+  const t = JOIN.list.map((f) => JOIN.F.get(f.name).time);
+  JOIN.list = JOIN.list.map((f, i) => i).sort((a, b) => t[a] - t[b]).map((i) => JOIN.list[i]);
+  JOIN.keep = false; JOIN.moved = false; renderJoinCard();
 }
 function useSuggested() {
   const F = JOIN.list.map((f) => JOIN.F.get(f.name));
@@ -3354,18 +3536,29 @@ function renderJoinCard() {
     return `<li><span class="jn">Part ${i + 1}</span><span class="jf"><span class="jname">${fileNameHtml(f.name)}</span><small>${meta}</small></span>
       <span class="ja"><button class="btn sq" type="button" data-mv="${i},-1" ${i ? '' : 'disabled'} title="Move up" aria-label="Move part ${i + 1} up">↑</button><button class="btn sq" type="button" data-mv="${i},1" ${i < JOIN.list.length - 1 ? '' : 'disabled'} title="Move down" aria-label="Move part ${i + 1} down">↓</button></span></li>`;
   }).join('');
-  // how the order was found
-  let order = '';
+  // The verdict (Sujan, 19 Nov 2026): one line saying which order the parts are in and whether the rounds agree, in place of
+  // the order line and the "N checks pass" count of the UI review's item 10, which misled him: on Na`Vi vs SK, Inferno, ESWC
+  // 2011 the wrong order (16:09, 17:40, 17:24) showed 3 passes and the right one 2. An order that differs from the recording
+  // times in the file names is a warning with Use the recorded order (grey words in the order line up to then, 7 Nov 2026).
+  // the same recording twice under two names, named by where the two are now
+  const dupAt = JOIN.dup ? JOIN.dup.map((n) => JOIN.list.findIndex((f) => f.name === n)).sort((a, b) => a - b) : null;
+  const dupWarn = dupAt && dupAt[0] >= 0 ? { s: 'warn', t: `Part ${dupAt[1] + 1} is the same recording as part ${dupAt[0] + 1}, under another name`, btn: { id: 'jDrop', label: `Remove part ${dupAt[1] + 1}` } } : null;
+  let verdict = null, recWarn = null, recIdx = null;
   if (F.length === JOIN.list.length && F.length > 1) {
-    const s = JOIN.sugg;
-    if (JOIN.moved) {
-      // the file names' recording times named whenever the player's order differs from them (Sujan, 7 Nov 2026)
-      const t = F.map((f) => f.time), off = t.every((x) => x != null) && t.some((x, k) => k && t[k - 1] > x);
-      order = (problem ? 'Your order.' : 'Your order. The rounds agree.') + (off ? ` The recording times in the file names, ${fileTimesText(t.slice().sort((x, y) => x - y))}, put them ${F.length === 2 ? 'the other way round' : 'in another order'}.` : '');
+    const s = JOIN.sugg, t = F.map((f) => f.time), timed = t.every((x) => x != null);
+    const off = timed && t.some((x, k) => k && t[k - 1] > x), agree = problem ? '' : ' The rounds agree.';
+    let txt;
+    if (timed && !off) txt = `In the order they were recorded: ${clockList(t)}.${agree}`;
+    else if (JOIN.moved) txt = `In your order.${agree}`;
+    else if (s && s.by === 'rounds') txt = 'In the only order the rounds allow: the first part starts from 0:0 and only the last one has a winner.';
+    else txt = "The files don't say which order they go in. Put the parts in order with the arrows.";
+    // no green tick on an order the rounds allow but the recording times don't: that tick misled Sujan (19 Nov 2026)
+    verdict = { s: problem || off || dupWarn ? 'warn' : txt.startsWith('In ') ? 'ok' : 'info', t: txt };
+    if (off) {
+      recIdx = F.map((f, i) => i).sort((a, b) => t[a] - t[b]);
+      // its button the primary (gold) one (Sujan, 20 Nov 2026); in the "doesn't add up" box below when that shows
+      recWarn = { s: 'warn', t: 'Not in the order they were recorded', n: `The recording times in the file names put them ${F.length === 2 ? 'the other way round' : 'in another order'}: ${clockList(recIdx.map((i) => t[i]))}.`, btn: { id: 'jRec', label: 'Use the recorded order', primary: true } };
     }
-    else if (s && s.by === 'times') order = `from the recording times in the file names, ${fileTimesText(F.map((f) => f.time))}.${s.agree ? ' The rounds agree.' : ''}`;
-    else if (s) order = 'from the rounds: the first part starts from 0:0 and only the last one has a winner, and no other order does that.';
-    else order = "the files don't say. Put the parts in order with the arrows.";
   }
   // the checks
   const checks = [];
@@ -3403,9 +3596,15 @@ function renderJoinCard() {
   if (problem && !JOIN.keep) {
     const s = suggestOrder(F);
     const better = s && (s.agree ? s.order : s.roundsOrder);
-    // (the recording times are in the order line above when the order is the player's)
+    // no second button for the same order when the recorded one is also the rounds' order (Sujan, 19 Nov 2026)
+    const same = (a, b) => !!a && !!b && a.every((v, k) => v === b[k]);
+    // Use the recorded order moves into this box as its primary (gold) button, beside Keep my order, and the warning above
+    // keeps only its text (Sujan, 20 Nov 2026). When the recorded order doesn't add up either, the rounds' order stays the gold
+    // button and the recorded one a plain button beside it
+    const recOk = !!recIdx && !orderProblem(recIdx.map((i) => F[i]));
+    if (recWarn) recWarn.btn = null;
     wrong = `<div class="jwrong"><h3>This order doesn't add up</h3><p>${esc(problem)}</p>
-      <div class="jbtns"><button class="btn" type="button" id="jKeep">Keep my order</button>${better && better.some((v, k) => v !== k) ? '<button class="btn primary" type="button" id="jSugg">Use the suggested order</button>' : ''}</div></div>`;
+      <div class="jbtns"><button class="btn" type="button" id="jKeep">Keep my order</button>${recIdx ? `<button class="btn${recOk ? ' primary' : ''}" type="button" id="jRec">Use the recorded order</button>` : ''}${better && better.some((v, k) => v !== k) && !same(better, recIdx) ? `<button class="btn${recOk ? '' : ' primary'}" type="button" id="jSugg">Use the suggested order</button>` : ''}</div></div>`;
   }
   // picking another part: the folder's demos, the same map first, or a file from elsewhere
   let picker = '', noneHere = false;
@@ -3422,17 +3621,27 @@ function renderJoinCard() {
     picker = `<div class="jpick">${from}
       <button class="btn sm" type="button" id="jFile">A file from elsewhere…</button><input type="file" id="jFileIn" accept=".dem" hidden></div>`;
   }
-  const busy = !!JOIN.reading || F.length < JOIN.list.length;
+  const busy = !!JOIN.reading || !!JOIN.checking || F.length < JOIN.list.length;
+  // the checks that pass and the notes fold behind the verdict, opening with the link at its right, "Show N checks" / "Hide
+  // checks", styled like the load card's Details (Sujan, 20 Nov 2026; a ▸ after the verdict up to then, which nobody saw);
+  // warnings always in full (Sujan, 19 Nov 2026; each part's own line stays as approved, 7 Nov 2026)
+  const li = (c) => `<li><span class="sum-ic ${c.s}" aria-hidden="true">${ic[c.s]}</span><span>${esc(c.t)}${c.n ? `<small>${esc(c.n)}</small>` : ''}${c.btn ? `<div class="li-btn"><button class="btn sm${c.btn.primary ? ' primary' : ''}" type="button" id="${c.btn.id}">${esc(c.btn.label)}</button></div>` : ''}</span></li>`;
+  const folded = checks.filter((c) => c.s !== 'warn'), warns = (dupWarn ? [dupWarn] : []).concat(recWarn ? [recWarn] : [], checks.filter((c) => c.s === 'warn'));
+  const vText = verdict ? `<span class="sum-ic ${verdict.s}" aria-hidden="true">${ic[verdict.s]}</span><span class="jvt">${esc(verdict.t)}</span>` : '';
+  const vRow = !verdict ? '' : `<li class="jv${folded.length ? ' more' : ''}">${vText}${folded.length ? `<button class="lnk" type="button" id="jVerdict" aria-expanded="${JOIN.okOpen ? 'true' : 'false'}">${JOIN.okOpen ? 'Hide checks' : `Show ${plural(folded.length, 'check')}`}</button>` : ''}</li>`;
+  const checkRows = vRow + (JOIN.okOpen ? folded.map(li).join('') : '') + warns.map(li).join('');
   el.innerHTML = `<div class="sum join" role="dialog" aria-labelledby="jTitle">
     <div class="sum-top"><div class="ti"><h2 id="jTitle">Count these demos as one map?</h2><p>Score, rounds and player stats will cover all parts. Playback runs straight on from one part to the next.</p></div>${x}</div>
     <ol class="jparts">${rows}</ol>
-    ${order ? `<div class="jorder"><b>Order:</b> ${esc(order)}</div>` : ''}
-    ${checks.length ? `<ul class="sum-list">${checks.map((c) => `<li><span class="sum-ic ${c.s}" aria-hidden="true">${ic[c.s]}</span><span>${esc(c.t)}${c.n ? `<small>${esc(c.n)}</small>` : ''}</span></li>`).join('')}</ul>` : ''}
+    ${checkRows ? `<ul class="sum-list jchecks">${checkRows}</ul>` : ''}
     ${wrong}${picker}
-    <div class="sum-foot"><button class="btn" type="button" id="jAdd" ${busy || JOIN.picking ? 'disabled' : ''} ${JOIN.picking ? `title="${noneHere ? 'Pick a file from elsewhere above' : 'Pick a demo above, or a file from elsewhere'}"` : ''}>Add another part…</button><span class="sp"></span><button class="btn" type="button" id="jCancel">Cancel</button><button class="btn primary" type="button" id="jGo" ${busy || JOIN.list.length < 2 || (problem && !JOIN.keep) ? 'disabled' : ''}>Join them</button></div>
+    <div class="sum-foot"><button class="btn" type="button" id="jAdd" ${busy || JOIN.picking ? 'disabled' : ''} ${JOIN.picking ? `title="${noneHere ? 'Pick a file from elsewhere above' : 'Pick a demo above, or a file from elsewhere'}"` : ''}>Add another part…</button><span class="sp"></span><button class="btn" type="button" id="jCancel">Cancel</button><button class="btn primary" type="button" id="jGo" ${busy || JOIN.list.length < 2 || (problem && !JOIN.keep) || dupWarn ? 'disabled' : ''}>Join parts</button></div>
   </div>`;
   el.hidden = false;
   $('jX').onclick = closeJoinCard; $('jCancel').onclick = closeJoinCard;
+  if ($('jVerdict')) $('jVerdict').onclick = () => { JOIN.okOpen = !JOIN.okOpen; renderJoinCard(); };
+  if ($('jRec')) $('jRec').onclick = useRecorded;
+  if ($('jDrop')) $('jDrop').onclick = () => { JOIN.list.splice(dupAt[1], 1); JOIN.dup = null; JOIN.checking = true; renderJoinCard(); readJoinParts(); };
   el.onclick = (e) => { if (e.target === el) closeJoinCard(); };
   el.querySelectorAll('[data-mv]').forEach((b) => b.onclick = () => { const [i, d] = b.dataset.mv.split(',').map(Number); joinMove(i, d); });
   // greyed out while the picker row is open and empty: clicking it there only closed the row (Sujan, 23 Oct 2026)
@@ -3442,8 +3651,7 @@ function renderJoinCard() {
   if ($('jSel')) $('jSel').onchange = (e) => { const f = (files.demos || []).find((x) => x.name === e.target.value); if (f) addJoinPart(f); };
   if ($('jFile')) { $('jFile').onclick = () => $('jFileIn').click(); $('jFileIn').onchange = (e) => { const f = e.target.files[0]; if (f) addJoinPart(f); }; }
   $('jGo').onclick = () => {
-    const names = JOIN.list.map((f) => f.name);
-    rememberJoin(names, JOIN.keep && !!problem, problem);
+    rememberJoin(JOIN.list, JOIN.keep && !!problem, problem);
     const parsed = JOIN.list.map((f) => JOIN.P.get(f.name));
     closeJoinCard();
     JOIN.P.clear(); JOIN.F.clear(); JOIN.carry = null; // the read parts go to the joined map; nothing else keeps them
@@ -4807,10 +5015,14 @@ const UNSURE_TIP = 'The recording skips at this kill, so the wallbang was judged
 const unsureTag = (k) => (k.wb && skipNear(k.t) ? `<span class="wbtag unsure" title="${UNSURE_TIP}">UNSURE</span>` : '');
 // Sujan's three levels (24 Oct 2026; built in 0.23.0): a strict wallbang has none of the victim in view from the
 // shooter's eye; a loose one has part of him in view (50 pixels or more in the picture check, view3d.part.js).
-const LOOSE_TIP = (k) => k.wb.open ? `Loose wallbang: the killer's bullet on him ${k.wb.open.before.toFixed(2)} s before the kill did ${k.wb.open.dmg} HP, what his gun does in the open (at least ${k.wb.open.low}), so the game hit him in view a moment before; the recorded positions have him behind cover by then` : k.wb.dmg ? `Loose wallbang: part of him was in view, and the demo's damage shows a bullet of the killer's went through cover just before the kill (${k.wb.dmg.dmg} HP where his gun does at least ${k.wb.dmg.open} in the open)` : k.wb.sliver ? `Loose wallbang: the bullet went through cover, but part of him was in view from the shooter's eye: some of the finder's sight lines reach him, and ${k.wb.loose} pixels of him show in the check` : `Loose wallbang: the bullet went through cover, but part of him was in view from the shooter's eye (${k.wb.loose} pixels in the check, 50 or more counts as in view)`;
-const looseTag = (k) => (k.wb && k.wb.loose ? `<span class="wbtag loose" title="${LOOSE_TIP(k)}">LOOSE WB</span>` : '');
-const STRICT_TIP = 'Strict wallbang: the bullet went through cover and none of him was in view from the shooter\'s eye';
-const DMG_TIP = 'Wallbang damage: hits through cover that didn\'t kill him';
+// The words (UI review, item 3, 17 Nov 2026): Wallbang (none of him in view, STRICT WB before), Partial wallbang (part of
+// him in view, LOOSE WB before), Wall damage (hits through a wall with no kill, DAMAGE before)
+// gender-neutral, for every player (Sujan, 19 Nov 2026): the victim, the killer, they
+const LOOSE_TIP = (k) => k.wb.open ? `Partial wallbang: the killer's bullet on the victim ${k.wb.open.before.toFixed(2)} s before the kill did ${k.wb.open.dmg} HP, what the killer's gun does in the open (at least ${k.wb.open.low}), so the game hit the victim in view a moment before; the recorded positions have the victim behind cover by then` : k.wb.dmg ? `Partial wallbang: part of the victim was in view, and the demo's damage shows a bullet of the killer's went through cover just before the kill (${k.wb.dmg.dmg} HP where the killer's gun does at least ${k.wb.dmg.open} in the open)` : k.wb.sliver ? `Partial wallbang: the bullet went through cover, but part of the victim was in view from the shooter's eye: some of the finder's sight lines reach the victim, and ${k.wb.loose} pixels of them show in the check` : `Partial wallbang: the bullet went through cover, but part of the victim was in view from the shooter's eye (${k.wb.loose} pixels in the check, 50 or more counts as in view)`;
+const looseTag = (k) => (k.wb && k.wb.loose ? `<span class="wbtag loose" title="${LOOSE_TIP(k)}">PARTIAL WALLBANG</span>` : '');
+const STRICT_TIP = 'Wallbang: the bullet went through cover and none of the victim was in view from the shooter\'s eye';
+// the Wall damage tooltip (Sujan, 20 Nov 2026; "…that didn't kill the player they hit" up to then)
+const DMG_TIP = 'Wall damage: hits through cover that didn\'t kill';
 
 // ---------------- shorter names ----------------
 // The team heading already names the team, so the clan tag most of the team shares is dropped there:
@@ -5147,7 +5359,13 @@ const clockText = (t, countdown) => { const c = clockAt(t, countdown); return c 
 // round's freeze time has begun ("R23 freeze 0:15" for minet on dennis, mTw vs Lions, Nuke, DreamHack Summer 2011):
 // its timer is the round's own, as last recorded before the skip (23 Oct 2026)
 const killClock = (t) => clockText(M && M.skipRestart && M.skipRestart.some((st) => Math.abs(st - t) < 0.06) ? t - 0.05 : t);
-const cellClock = (t) => { const c = killClock(t); return c.startsWith('freeze ') ? `<span class="nw">freeze</span><br><span class="nw">${c.slice(7)}</span>` : `<span class="nw">${c}</span>`; };
+// One shape for a moment in the lists and tooltips (UI review, item 3, 17 Nov 2026): "R23 1:18", "R23 C4 0:16" after the
+// plant, the round's number only in a round that counts; the demo time on hover and in Copy list. Up to then the Wallbangs
+// list had the round, the timer and the demo time on three lines, the Kills list the timer alone.
+const roundTime = (t) => { const r = roundAt(t); return (r && r.live ? 'R' + r.ln + ' ' : '') + killClock(t); };
+// in a list's time cell: "C4 0:16" and "freeze 0:15" never split, the round's number goes above them when the cell is narrow
+const cellClock = (t) => { const r = roundAt(t); return `${r && r.live ? `<span class="nw">R${r.ln}</span> ` : ''}<span class="nw">${killClock(t)}</span>`; };
+const demoTip = (t) => `Demo time ${fmt(t - D.start)}`;
 // ---- team names ----
 // Well-known CS 1.6 team names, keyed by how they tend to appear in demo file names and clan tags.
 const KNOWN_TEAMS = {
@@ -5309,6 +5527,13 @@ function roundAt(t) {
   return cur;
 }
 function visibleRounds() { return showAll ? M.rounds.filter((r) => r.dur > 0.5 || r.missing) : M.liveR; }
+// the rounds the Rounds tab's switch adds to the list (Show N uncounted rounds, Sujan, 19 Nov 2026): every round shown with it
+// on and not without it, where a round played after the match with kills in it is listed either way (renderPane)
+function uncountedRounds() {
+  const shown = new Set(M.liveR), A = M.after16;
+  if (A) for (const r of M.rounds) if (r.afterMatch && r.kills.length && r.start > A.at.start) shown.add(r);
+  return M.rounds.filter((r) => (r.dur > 0.5 || r.missing) && !shown.has(r));
+}
 let showAll = false;
 
 // ---------------- after load ----------------
@@ -5347,7 +5572,7 @@ function povApply() {
 function demoOffers() {
   const pov = !!(D && D.povOn);
   return {
-    views: pov ? ['3d'] : ['2d', '3d', 'split'],
+    views: pov ? ['3d'] : ['2d', '3d'], // 3D + radar is 3D with the Radar row on since the UI review, item 5
     cameras: pov ? ['eyes'] : ['free', 'eyes', 'behind'],
     resetView: !pov,
     crosshairSize: !pov, povCrosshair: pov, flashbangs: pov, glowOnHits: !pov, damageNumbers: !pov,
@@ -5376,13 +5601,22 @@ async function onDemo() {
   const first = M.liveR[0];
   T = first ? first.start : D.start;
   playing = false; selected = null; pickedKill = null; pickedBurst = null;
-  $('meta').textContent = D.parts ? `${D.mapName} · ${D.parts[0].fileName} and ${plural(D.parts.length - 1, 'more file')} · ${fmt(D.end - D.start)}` : `${D.mapName} · ${D.fileName} · ${fmt(D.end - D.start)}`;
+  // every demo opens on the Rounds tab (Sujan, 19 Nov 2026; up to then the last tab used carried over)
+  tab = 'rounds'; document.querySelectorAll('.tabs button').forEach((x) => x.classList.toggle('on', x.dataset.tab === 'rounds')); $('pane').scrollTop = 0;
+  // a thinner header (UI review, item 14, 17 Nov 2026): the map and the length first, the file name last, where the line may
+  // cut it, and in full on hover (up to then the file name came second, and at 1512 px the length was cut off after it);
+  // the demo type before them all, "HLTV demo" or "POV demo", so it's always in view (Sujan, 19 Nov 2026)
+  $('meta').innerHTML = `<b class="dkind">${D.pov ? 'POV demo' : 'HLTV demo'}</b> · ` + esc(D.parts ? `${D.mapName} · ${fmt(D.end - D.start)} · ${D.parts[0].fileName} and ${plural(D.parts.length - 1, 'more file')}` : `${D.mapName} · ${fmt(D.end - D.start)} · ${D.fileName}`);
+  $('meta').title = D.parts ? D.parts.map((p) => p.fileName).join(', then ') : D.fileName;
   const chip = $('partsChip');
   chip.onclick = () => { const b = document.querySelector('.tabs button[data-tab="rounds"]'); if (b) b.click(); $('pane').scrollTop = 0; };
   chip.hidden = !D.parts; if (D.parts) { chip.textContent = `${D.parts.length} files`; chip.title = 'One map joined from ' + D.parts.map((p) => p.fileName).join(', then ') + '. Rounds tab: Split them to undo.'; }
   $('score').hidden = false; $('legend').hidden = false; $('heatbar').hidden = false; $('rclock').hidden = false;
   $('tnA').textContent = M.tnames[0]; $('tnB').textContent = M.tnames[1];
-  heat = null; $('hmMode').value = 'off';
+  heat = null; $('hmMode').value = 'off'; heatControls();
+  // "Press ? for keyboard shortcuts" in the view for the first few demos only, then only in Help (UI review, item 8); the
+  // rule of 11 Nov 2026 hiding it in POV mode, 2D, Theatre mode and under 1100 px stays
+  { const n = (+ls.get('demosOpened') || 0) + 1; ls.set('demosOpened', n); $('hint3').hidden = n > 3; }
   afterOverview(ok, true);
   M.wbs = [];
   buildHp(); buildPack(); buildPings(); buildBrk(); buildPose(); prepAnim(); buildZoom();
@@ -5421,7 +5655,7 @@ function closeDemo() {
   sndPreload++; // stops a sound preload that's still running for this demo
   resetForNewDemo(); clear3d(); closeSummary(); if ($('joinCard')) closeJoinCard();
   D = null; M = null; MAP = null; OV = null; T = 0; prevT = null; pickedKill = null; pickedBurst = null; heat = null;
-  $('meta').textContent = 'CS 1.6 HLTV demos, played in your browser';
+  $('meta').textContent = 'CS 1.6 HLTV and POV demos, played in your browser'; $('meta').title = '';
   for (const id of ['score', 'legend', 'heatbar', 'rclock', 'cam3', 'status3', 'pov', 'sb']) $(id).hidden = true;
   $('feed').innerHTML = '';
   $('pane').innerHTML = '<div class="opt">Rounds, kills and player stats appear here once a demo is open.</div>';
@@ -5433,19 +5667,25 @@ function closeDemo() {
 }
 function showLoad(v) {
   $('load').hidden = !v;
+  // only the start steps while it's up (UI review, item 1); the side panel and the bottom bar come back with a demo, so
+  // the canvases take their new sizes at once, before onDemo draws the timeline into them
+  $('app').classList.toggle('start', !!v);
+  if (!v) resize();
   applyTheatre(); // the start screen needs the header, so Theatre mode pauses while it's open
   // the load summary goes at once rather than counting down behind the start screen (Sujan, 14 Oct 2026).
   // The message line starts empty each time the start screen comes back, whether or not an overview loaded: up to
   // 0.26.11 "Reading name…" stayed there after a demo whose map has no overview (Sujan, 3 Nov 2026). checkDemoList
   // runs after, so its note on a demo deleted since the pick still shows.
-  if (v) { playing = false; setPlayIcon(); $('prog').hidden = true; setMsg(''); if (D && $('sumCard') && !$('sumCard').hidden) closeSummary(); checkDemoList(); }
+  // no Tab scoreboard over it: a POV demo's recorded one, or one held by hand (Sujan, 19 Nov 2026: "He held Tab here" stayed
+  // over the start screen after Open another demo while paused on a Tab hold)
+  if (v) { playing = false; setPlayIcon(); $('prog').hidden = true; setMsg(''); showScoreboard(false); if (D && $('sumCard') && !$('sumCard').hidden) closeSummary(); checkDemoList(); }
   setControls(!v && !!D);
 }
 // Everything that needs a demo stays disabled until one is loaded (Shortcuts always works)
 function setControls(on) {
-  const ids = ['bPrevR', 'bBack', 'bPlay', 'bFwd', 'bNextR', 'bScope', 'bTheatre', 'bFull'];
+  const ids = ['bPrevR', 'bBack', 'bPlay', 'bFwd', 'bNextR', 'bSpeed', 'bFull'];
   for (const id of ids) $(id).disabled = !on;
-  document.querySelectorAll('#speeds button, #viewSeg button, .tabs button').forEach((b) => b.disabled = !on);
+  document.querySelectorAll('#speeds button, #scopeSeg button, #viewSeg button, .tabs button').forEach((b) => b.disabled = !on);
   $('tl').classList.toggle('off', !on);
   $('btnOpen').hidden = !D; // nothing to go "back" to until a demo has been opened once
   if (D && !on) $('btnOpen').textContent = 'Back to the demo';
@@ -5462,7 +5702,9 @@ document.querySelectorAll('.tabs button').forEach((b) => b.onclick = () => {
   if (tab === 'rounds') { const cur = $('pane').querySelector('.row.cur'); if (cur) cur.scrollIntoView({ block: 'center' }); }
   // the other tabs open at the top: the panel kept the Rounds list's scroll, so the Kills list opened scrolled down with
   // its "Round 23" heading out of sight (Sujan, 2 Nov 2026)
-  else if (tab === 'kills' && D && D.povOn) { const cur = $('pane').querySelector('.sechead.cur'); $('pane').scrollTop = cur ? Math.max(0, cur.offsetTop - 120 * UI) : 0; }
+  // the Kills tab, the whole match by round (POV mode since 0.26.29, HLTV demos since the UI review, item 6): the round
+  // playing now near the top
+  else if (tab === 'kills' && D) { const cur = $('pane').querySelector('.sechead.cur'); $('pane').scrollTop = cur ? Math.max(0, cur.offsetTop - 120 * UI) : 0; }
   else $('pane').scrollTop = 0;
 });
 // POV mode: the recorder's slot at a moment, from his own view frames (each frame names his slot; joined parts can differ)
@@ -5488,7 +5730,7 @@ function killHtml(k) {
   const ks = k.kteam === 'TERRORIST' ? 1 : k.kteam === 'CT' ? 2 : 0;
   const vs = k.vteam === 'TERRORIST' ? 1 : k.vteam === 'CT' ? 2 : 0;
   if (k.killer === k.victim || !k.kp) return `${nameHtml(k.vp, vs)}<span class="kw">${esc(k.weapon || 'suicide')}</span>`;
-  return `${nameHtml(k.kp, ks)}<span class="kw">${esc(k.weapon)}</span>${nameHtml(k.vp, vs)}${k.hs ? '<span class="khs">HS</span>' : ''}${k.wb ? `<span class="kwb${k.wb.loose ? ' loose' : ''}" title="Through ${k.wb.thick} units of ${k.wb.what === 'object' ? 'a breakable or door' : 'wall or crate'}">WB</span>` : ''}`;
+  return `${nameHtml(k.kp, ks)}<span class="kw">${esc(k.weapon)}</span>${nameHtml(k.vp, vs)}${k.hs ? '<span class="khs">HS</span>' : ''}${k.wb ? `<span class="kwb${k.wb.loose ? ' loose' : ''}" title="Through ${k.wb.thick} units of ${k.wb.what === 'object' ? 'a breakable or door' : 'wall or crate'}">${k.wb.loose ? 'PARTIAL WALLBANG' : 'WALLBANG'}</span>` : ''}`;
 }
 // A kill on three lines, for the Kills and Wallbangs lists: killer, then the gun (its kill feed icon from the
 // player's own files, its name, and the headshot icon), then the victim.
@@ -5501,10 +5743,10 @@ function killRow3(k, wbTag) {
   const hs = k.hs ? (KICONS.headshot ? kicon('headshot', 'hs') : '<span class="khs">HS</span>') : '';
   // WALLBANG and UNSURE on a line of their own under the gun, so they always fit the panel (Sujan, 15 Oct 2026,
   // docs/skip-tags-mock.png; side by side after the gun, UNSURE was cut off at the right edge)
-  // LOOSE (0.23.0) follows WALLBANG in the Kills list and stands alone in the Wallbangs list, like UNSURE
-  // Kills list: WALLBANG for a strict one, LOOSE WB for a loose one; Wallbangs list: STRICT WB or LOOSE WB (Sujan, 25 Oct 2026)
+  // WALLBANG or PARTIAL WALLBANG in both lists (UI review, item 3, 17 Nov 2026; up to then WALLBANG or LOOSE WB in the
+  // Kills list, STRICT WB or LOOSE WB in the Wallbangs list, Sujan, 25 Oct 2026)
   const strict = k.wb && !k.wb.loose;
-  const tags = (strict ? (wbTag ? '<span class="wbtag">WALLBANG</span>' : `<span class="wbtag" title="${STRICT_TIP}">STRICT WB</span>`) : '') + looseTag(k) + unsureTag(k) + (wbTag && teamKill(k) ? `<span class="wbtag tk" title="${TK_TIP}">TK</span>` : '');
+  const tags = (strict ? `<span class="wbtag" title="${STRICT_TIP}">WALLBANG</span>` : '') + looseTag(k) + unsureTag(k) + (wbTag && teamKill(k) ? `<span class="wbtag tk" title="${TK_TIP}">TK</span>` : '');
   // the damage line under the gun (Sujan's option 2, 25 Oct 2026): what this shooter took through walls in the burst, and teammates' share before it
   const b = !wbTag && k.burst;
   const dline = b ? `<span class="dline"><b>${b.share[k.killer]} HP</b> (${hitCounts({ hits: b.hits.filter((h) => h.s === k.killer) }, k.t)})${dmore(Object.keys(b.share).filter((e) => +e !== k.killer).map((e) => `${esc(labelAt(+e, k.t))} ${b.share[e]} before`))}</span>` : '';
@@ -5528,23 +5770,40 @@ function killDetailsHtml(k) {
   const n = list.length, walls = list.filter((h) => h.wall).length, total = list.reduce((a, h) => a + h.dmg, 0);
   const gun = !!MAX_DMG[k.weapon] || ONE_SURFACE.has(k.weapon);
   let h = `<div class="ksum"><b>${n} hit${n > 1 ? 's' : ''}</b>${walls && gun ? ` · ${walls} through a wall` : ''} · ${total} HP${n > 1 ? ` in ${(k.t - list[0].t).toFixed(2)} s` : ''}</div>`;
+  // UI review, item 11 (17 Nov 2026): the summary line leads, then one row per hit; "Earlier:" is one line, "75 HP lost
+  // before this fight", that opens the list on a click (open up to then, 0.26.16; kept open through the pane's rebuilds)
   const earlier = earlierDamage(k, list);
-  if (earlier) h += `<div class="kpre">Earlier: ${earlier.map((x) => `<b>−${x.dmg}</b>${x.from ? ` from ${esc(x.from)}` : ''}${x.when ? ` at ${esc(x.when)}` : ''}${x.from ? '' : ', source unknown'}`).join(', ')}.</div>`;
-  let est = false;
+  if (earlier) {
+    const lost = earlier.reduce((a, x) => a + x.dmg, 0), ki = D.kills.indexOf(k);
+    h += `<details class="kpre"${KD_EARLY === ki ? ' open' : ''}><summary>${lost} HP lost before this fight</summary><div class="kpl">Earlier: ${earlier.map((x) => `<b>−${x.dmg}</b>${x.from ? ` from ${esc(x.from)}` : ''}${x.when ? ` at ${esc(x.when)}` : ''}${x.from ? '' : ', source unknown'}`).join(', ')}.</div></details>`;
+  }
   list.forEach((x, i) => {
-    let where = bodyPart(x); if (where.endsWith('*')) est = true;
+    let where = bodyPart(x);
+    // the * note as hover text on the starred word (UI review, item 11; a note under the rows up to then)
+    if (where.endsWith('*')) where = `<span class="est" title="Estimated from the damage: the demo says only head or body">${where}</span>`;
     if (x.kill && !gun) where = /grenade/.test(k.weapon) ? 'grenade' : esc(k.weapon || '');
     // the killing bullet on a skip across a restart: where it came from isn't in the file (Sujan, 8 Nov 2026)
     const how = gun ? ` · ${x.kill && onRestartSkip(k.t) ? 'the recording skips here' : x.wall ? 'through a wall' : 'in the open'}` : '';
-    h += `<button type="button" class="kb" data-bt="${x.t}" title="Jump to this ${x.kill ? 'kill' : 'bullet'}"><span class="i">${i + 1}</span><span><span class="d ${x.wall ? 'w' : 'o'}">−${x.dmg}</span>${x.head ? '<span class="hs">HS</span>' : ''}${x.kill ? `<span class="sk" aria-label="the kill">${SKULL}</span>` : ''}</span><span class="wh">${where}${how}</span><span class="tm">${x.kill ? 'kill' : '−' + (k.t - x.t).toFixed(2) + ' s'}</span></button>`;
+    h += `<button type="button" class="kb" data-bt="${x.t}" title="Jump to this ${x.kill ? 'kill' : 'bullet'}"><span class="i">${i + 1}</span><span><span class="d ${x.wall ? 'w' : 'o'}">−${x.dmg}</span>${x.head ? '<span class="hs">HS</span>' : ''}${x.kill ? `<span class="sk" aria-label="the kill">${SKULL}</span>` : ''}</span><span class="wh">${where}${how}</span><span class="tm">${x.kill ? 'kill' : (k.t - x.t).toFixed(2) + ' s before'}</span></button>`;
   });
   const last = list[n - 1];
-  h += `<div class="knote">−${last.dmg}${last.head ? ' HS' : ''}: the health he had left.${est ? ' *Estimated from the damage; the demo says only head or body.' : ''}</div>`;
+  h += `<div class="knote">−${last.dmg}${last.head ? ' HS' : ''}: the health the victim had left.</div>`;
   return box(h);
 }
 // The kill last clicked in the Kills or Wallbangs list: it keeps its highlight until another kill is
 // clicked or another demo is opened. A kill that playback is passing gets a lighter one.
 let pickedKill = null;
+let KD_EARLY = null; // the kill whose "HP lost before this fight" list is open (item 11)
+// The Wallbangs list's rows as last shown, for Copy list (item 3's fixup), and the text it copies: the demo's file name,
+// then one line per row in the list's order
+let WB_SHOWN = [];
+function wbCopyText() {
+  const line = (x) => {
+    if (x.k) { const k = x.k; return `${roundTime(k.t)}  demo ${fmt(k.t - D.start)}  ${M.pl[k.kp] ? M.pl[k.kp].name : '?'} -> ${M.pl[k.vp] ? M.pl[k.vp].name : '?'}  ${k.weapon}${k.hs ? ' HS' : ''}  (${k.wb.thick} units)  ${k.wb.loose ? 'PARTIAL WALLBANG: part of the victim in view' : 'WALLBANG'}${skipNear(k.t) ? '  UNSURE: the recording skips here' : ''}`; }
+    const b = x.b; return `${roundTime(b.start)}  demo ${fmt(b.start - D.start)}  WALL DAMAGE ${b.total} HP to ${labelAt(b.v, b.start)}: ${Object.keys(b.share).map((e) => `${labelAt(+e, b.start)} ${b.share[e]}`).join(', ')}`;
+  };
+  return [D.fileName].concat(WB_SHOWN.map(line)).join('\n');
+}
 const MARK = '<svg class="mark" viewBox="0 0 10 13" aria-hidden="true"><path d="M1 0h8v13L5 9.5 1 13z" fill="currentColor"/></svg>';
 const killState = (k) => (k === pickedKill ? ' pick' : Math.abs(k.t - T) < 2 ? ' pass' : '');
 // The side panel used to be rebuilt every half second of playback on the Kills and Wallbangs tabs (to move
@@ -5576,7 +5835,13 @@ function renderPane() {
   const p = $('pane');
   const cr = roundAt(T);
   if (tab === 'rounds') {
-    let h = `<label class="opt"><input type="checkbox" id="optAll" ${showAll ? 'checked' : ''}> Show warmup, restarts and idle rounds</label>`;
+    // UI review, item 13 (17 Nov 2026): a heading over the columns, the right-hand one the score and the round's length. The
+    // switch for the rounds that don't count is at the top, "Show N uncounted rounds" (Sujan, 19 Nov 2026; "Show warmup,
+    // restarts and idle rounds", at the end of the list since item 13, at its top before), only when there are some, with what
+    // they are under it, small and grey, in brackets, the tooltip and Help saying the same (Sujan, 20 Nov 2026)
+    const nUn = uncountedRounds().length;
+    let h = nUn ? `<label class="opt optall" title="Warmup, restarts and idle rounds, like time-outs: listed, and on the timeline, without counting"><input type="checkbox" id="optAll" ${showAll ? 'checked' : ''}><span class="optx">Show ${plural(nUn, 'uncounted round')}<small>(warmup, restarts and idle rounds, like time-outs)</small></span></label>` : '';
+    h += `<div class="row rhd"><span class="n">Round</span><span class="main">Won by</span><span class="d">Score<br>Length</span></div>`;
     if (D.parts) h += `<div class="joinrow"><span>One map, joined from ${D.parts.length} files.</span><button class="btn sm" type="button" id="bSplit">Split them</button></div>`;
     let prevPart = D.parts ? 0 : null;
     // rounds played after a team reached 16: listed after a note, faded unless this demo counts them
@@ -5610,51 +5875,60 @@ function renderPane() {
         <span class="main"><span class="pill ${side}">${r.winner || '—'}</span>${esc(who)}${after ? '<span class="tag16">after the match</span>' : ''}<div class="sub">${esc(r.replayed ? 'replayed from 0:0' + (r.reason ? ' · ' + r.reason : '') : r.notFull ? 'teams not full yet' + (r.reason ? ' · ' + r.reason : '') : r.beforeMatch ? 'before the match' + (r.reason ? ' · ' + r.reason : '') : r.reason || (r.live ? '' : 'not counted'))} · ${r.kills.length} kills${r.sides ? ' · ' + Math.max(0, Object.keys(r.sides).length - new Set(r.kills.map((k) => k.victim)).size) + ' alive at end' : ''}</div></span>
         <span class="d">${sc}<br>${fmt(clockSpan(r.start, r.start + r.dur))}</span></div>`;
     }
-    h += `<div class="joinrow"><span>${D.parts ? 'Another part of this map in a file of its own?' : 'Is this map split over two or more demo files?'}</span><button class="btn sm" type="button" id="bJoinWith">Join with another demo…</button></div>`;
+    // Quieter Join (UI review, item 10, 17 Nov 2026): the question only when the demo looks unfinished (no winner at the end,
+    // or the load summary offered to join), otherwise a small link at the end of the list; one name for it, Join parts
+    if (!M.wonAt || (typeof SUM === 'object' && SUM.joinOffer)) h += `<div class="joinrow"><span>${D.parts ? 'Another part of this map in a file of its own?' : 'Is this map split over two or more demo files?'}</span><button class="btn sm" type="button" id="bJoinWith">Join parts…</button></div>`;
+    else h += `<div class="joinlnk"><button class="lnk" type="button" id="bJoinWith" title="A map recorded in two or more files: join them into one">Join parts…</button></div>`;
     p.innerHTML = h;
-    $('optAll').onchange = (e) => { showAll = e.target.checked; renderPane(); drawTimeline(); };
+    if ($('optAll')) $('optAll').onchange = (e) => { showAll = e.target.checked; renderPane(); drawTimeline(); };
     if ($('bSplit')) $('bSplit').onclick = splitJoined;
-    $('bJoinWith').onclick = () => { const cur = D.parts ? D.parts.map((x) => fileByName(x.fileName)).filter(Boolean) : [CUR_FILE || fileByName(D.fileName)].filter(Boolean); JOIN.picking = true; openJoinCard(cur).then(() => { JOIN.picking = true; renderJoinCard(); }); };
+    $('bJoinWith').onclick = openJoinPicker;
     if ($('bCount30')) $('bCount30').onclick = () => setCount30(!M.count30);
-  } else if (tab === 'kills' && D.povOn) {
-    // POV mode (POV mockup round, section 5; Sujan, 9 and 11 Nov 2026): his own kills and deaths, the whole match by
-    // round, the round playing now highlighted; a round he had no kill or death in isn't listed. Kills as in the
-    // Players tab (no team kills), deaths with any death of his.
+  } else if (tab === 'kills') {
+    // The whole match by round, each round a band set apart from the rows (docs/pov-scoreboard-radar-flashbang-mock.jpg,
+    // section B; Sujan, 11 Nov 2026: the band with stronger contrast against the rows, no won or lost mark), the round
+    // playing now highlighted. In HLTV demos too since the UI review (item 6, 17 Nov 2026; up to then the round playing
+    // now alone). POV mode (POV mockup round, section 5; Sujan, 9 and 11 Nov 2026): his own kills and deaths, his side that
+    // round on the band, and a round he had no kill or death in isn't listed. Kills as in the Players tab (no team kills),
+    // deaths with any death of his.
+    // HLTV demos: the rounds the Rounds tab shows (visibleRounds: with Show N uncounted rounds, the ones that
+    // don't count too, on a "Not counted" band), and the round playing now even when it doesn't count, so it's always
+    // highlighted (Sujan, 17 Nov 2026)
+    const pov = D.povOn;
     let nk = 0, nd = 0, body = '';
-    for (const r of (M.liveR.length ? M.liveR : M.rounds)) {
-      const ks = r.kills.filter(povHis); if (!ks.length) continue;
-      const a = ks.filter((k) => k.killer === povRecAt(k.t) && k.victim !== k.killer && !teamKill(k)).length, b = ks.filter((k) => k.victim === povRecAt(k.t)).length;
-      nk += a; nd += b;
+    let list = pov ? (M.liveR.length ? M.liveR : M.rounds) : visibleRounds().slice();
+    if (!pov && cr && !list.includes(cr)) { list.push(cr); list.sort((a, b) => a.start - b.start); }
+    for (const r of list) {
+      const ks = pov ? r.kills.filter(povHis) : r.kills; if (pov && !ks.length) continue;
       const cur = r === cr;
-      // each round a band set apart from the rows, with his side that round (docs/pov-scoreboard-radar-flashbang-mock.jpg,
-      // section B; Sujan, 11 Nov 2026: the band with stronger contrast against the rows, no won or lost mark)
-      const se = povRecAt(r.start + 1), ps = se && playerState(se, r.start + 3), sd = ps && ps.state ? Math.abs(ps.state) : 0;
-      const chip = sd ? `<span class="sdchip ${sd === 1 ? 't' : 'ct'}">${sd === 1 ? 'T' : 'CT'}</span>` : '';
-      body += `<div class="sechead rhead${cur ? ' cur' : ''}"><span>${r.live ? 'Round ' + r.ln : 'Before the match'}${chip}</span><span>${[a ? plural(a, 'kill') : '', b ? plural(b, 'death') : ''].filter(Boolean).join(' · ')}</span></div>`;
+      let right, chip = '';
+      if (pov) {
+        const a = ks.filter((k) => k.killer === povRecAt(k.t) && k.victim !== k.killer && !teamKill(k)).length, b = ks.filter((k) => k.victim === povRecAt(k.t)).length;
+        nk += a; nd += b;
+        right = [a ? plural(a, 'kill') : '', b ? plural(b, 'death') : ''].filter(Boolean).join(' · ');
+        const se = povRecAt(r.start + 1), ps = se && playerState(se, r.start + 3), sd = ps && ps.state ? Math.abs(ps.state) : 0;
+        chip = sd ? `<span class="sdchip ${sd === 1 ? 't' : 'ct'}">${sd === 1 ? 'T' : 'CT'}</span>` : '';
+      } else right = ks.length ? plural(ks.length, 'kill') : 'no kills';
+      body += `<div class="sechead rhead${cur ? ' cur' : ''}"><span>${r.live ? 'Round ' + r.ln : pov ? 'Before the match' : 'Not counted'}${chip}</span><span>${right}</span></div>`;
+      // the round playing now is shown by its band alone, with no tint on its rows, so the clicked kill (strong tint and
+      // bar) and a kill playback is passing (light tint) are the only states a row has (Sujan, 17 Nov 2026: a row both in
+      // the round playing and passing took the lighter style, and read less highlighted than its neighbours)
       for (const k of ks) {
+        // a kill inside a skip in the recording: // by its time (0.20.0), wallbangs included since 0.21.0, which keep UNSURE too
         const sk = skipNear(k.t) ? SKIP_MARK : '';
-        body += `<div class="row krow kill3${killState(k)}${cur ? ' cur' : ''}" data-kill="${k.t}" data-ki="${D.kills.indexOf(k)}"><span class="n" title="Round timer as shown in game">${k === pickedKill ? MARK : ''}${killClock(k.t) ? cellClock(k.t) : '<span class="nw">+' + fmt(k.t - r.start) + '</span>'}${sk}</span><span class="main">${killRow3(k, true)}</span></div>`;
+        body += `<div class="row krow kill3${killState(k)}" data-kill="${k.t}" data-ki="${D.kills.indexOf(k)}"><span class="n" title="${demoTip(k.t)}">${k === pickedKill ? MARK : ''}${killClock(k.t) ? cellClock(k.t) : '<span class="nw">+' + fmt(k.t - r.start) + '</span>'}${sk}</span><span class="main">${killRow3(k, true)}</span></div>`;
         if (k === pickedKill) body += killDetailsHtml(k);
       }
     }
-    p.innerHTML = `<div class="sechead"><span>His kills and deaths</span><span>${plural(nk, 'kill')} · ${plural(nd, 'death')}</span></div>` + (body || '<div class="opt">No kills or deaths of his in the match.</div>');
-  } else if (tab === 'kills') {
-    const r = cr;
-    let h = `<div class="sechead"><span>${r && r.live ? 'Round ' + r.ln : 'This round'}</span><span>${r ? r.kills.length : 0} kills</span></div>`;
-    if (r) for (const k of r.kills) {
-      // a kill inside a skip in the recording: // by its time (0.20.0), wallbangs included since 0.21.0, which keep UNSURE too
-      const sk = skipNear(k.t) ? SKIP_MARK : '';
-      h += `<div class="row krow kill3${killState(k)}" data-kill="${k.t}" data-ki="${D.kills.indexOf(k)}"><span class="n" title="Round timer as shown in game">${k === pickedKill ? MARK : ''}${killClock(k.t) ? cellClock(k.t) : '<span class="nw">+' + fmt(k.t - r.start) + '</span>'}${sk}</span><span class="main">${killRow3(k, true)}</span></div>`;
-      if (k === pickedKill) h += killDetailsHtml(k);
-    }
-    if (!r || !r.kills.length) h += `<div class="opt">No kills in this round.</div>`;
-    p.innerHTML = h;
+    p.innerHTML = pov ? `<div class="sechead"><span>The player's kills and deaths</span><span>${plural(nk, 'kill')} · ${plural(nd, 'death')}</span></div>` + (body || '<div class="opt">The player has no kills or deaths in the match.</div>')
+      : (body || '<div class="opt">No kills in the match.</div>');
   } else if (tab === 'wb') {
     let h;
     if (!MAP || MAP.name !== D.mapName.toLowerCase()) h = `<div class="opt">Wallbang detection needs the map file (${esc(D.mapName)}.bsp). Choose your Half-Life folder or drop the .bsp here.</div>`;
     else {
-      // filters (Sujan, 25 Oct 2026): All, Strict wb, Loose wb, Damage, each with a tooltip; rows tagged STRICT WB,
-      // LOOSE WB or DAMAGE; a damage row is a burst of hits through cover that didn't kill (wip/wallbang-hits)
+      // filters (Sujan, 25 Oct 2026; the words since the UI review, item 3): All, Wallbang, Partial, Wall damage, each with
+      // a tooltip; rows tagged WALLBANG, PARTIAL WALLBANG or WALL DAMAGE; a wall damage row is a burst of hits through cover
+      // that didn't kill (wip/wallbang-hits)
       const busy = !!M.seenPending;
       // POV mode, a server that sent him every enemy: only his own wallbangs (Sujan, 9 Nov 2026)
       const kills = M.wbs.filter((k) => !D.povOn || povHis(k)).map((k) => ({ t: k.t, k, kind: k.wb.loose ? 'loose' : 'strict' }));
@@ -5662,17 +5936,23 @@ function renderPane() {
       const all = kills.concat(dmg).sort((a, b) => a.t - b.t);
       const n = { all: all.length, strict: kills.filter((x) => x.kind === 'strict').length, loose: kills.filter((x) => x.kind === 'loose').length, damage: dmg.length };
       if (!n[wbFilter]) wbFilter = 'all';
-      const TIPS = { all: 'Every kill and every burst of damage through walls', strict: 'Kills through cover with none of the victim in view from the shooter\'s eye', loose: 'Kills through cover with part of the victim in view from the shooter\'s eye', damage: D.povOn ? 'Not found in POV mode: the server sends a player only his teammates\' health, so hits through cover can\'t be checked' : `Hits through cover that didn't kill: ${HITS_MIN} HP or more from one or more shooters, each hit within 2 s of the last` };
-      const LBL = { all: 'All', strict: 'Strict wb', loose: 'Loose wb', damage: 'Damage' };
-      h = `<div class="wbchips" role="group" aria-label="Show">${['all', 'strict', 'loose', 'damage'].map((f) => `<button type="button" data-wf="${f}" class="${wbFilter === f ? 'on' : ''}" title="${TIPS[f]}">${LBL[f]} ${n[f]}</button>`).join('')}</div>`;
-      h += `<div class="copyrow"><span>Times: round and in-game round timer, then demo time.${busy ? ` <b>Checking ${M.seenPending} from the shooter's eye…</b>` : ''}</span><button class="btn" id="bCopyWb" type="button">Copy list</button></div>`;
-      for (const x of all) {
-        if (wbFilter !== 'all' && x.kind !== wbFilter) continue;
+      const TIPS = { all: 'Every kill and every burst of damage through walls', strict: 'Wallbangs: kills through cover with none of the victim in view from the shooter\'s eye', loose: 'Partial wallbangs: kills through cover with part of the victim in view from the shooter\'s eye', damage: D.povOn ? 'Not found in POV mode: the server sends the player only their teammates\' health, so hits through cover can\'t be checked' : `Wall damage: hits through cover that didn't kill, ${HITS_MIN} HP or more from one or more shooters, each hit within 2 s of the last` };
+      const LBL = { all: 'All', strict: 'Wallbang', loose: 'Partial', damage: 'Wall damage' };
+      // the four filters as one dropdown with each count in it ("Wallbang (17)"), Copy list on the same row, and the picture
+      // check's "Checking N from the shooter's eye…" on a line under that row while it runs (item 3's fixup, Sujan, 17 Nov
+      // 2026; four chips and the message beside Copy list up to then). A filter with nothing in it can't be picked. The
+      // tooltip of the filter picked is on the dropdown itself, since a Mac's open list doesn't show an option's.
+      h = `<div class="copyrow wbbar"><select id="wbSel" aria-label="Show" title="${TIPS[wbFilter]}">${['all', 'strict', 'loose', 'damage'].map((f) => `<option value="${f}"${wbFilter === f ? ' selected' : ''}${n[f] || f === 'all' ? '' : ' disabled'} title="${TIPS[f]}">${LBL[f]} (${n[f]})</option>`).join('')}</select><button class="btn" id="bCopyWb" type="button" title="Copies the rows shown as text, with the demo's file name and each row's demo time">Copy list</button></div>`;
+      // the "Times: round and in-game round timer, then demo time." line went with the one time shape (UI review, item 3)
+      if (busy) h += `<div class="wbbusy">Checking ${M.seenPending} from the shooter's eye…</div>`;
+      const shown = all.filter((x) => wbFilter === 'all' || x.kind === wbFilter);
+      WB_SHOWN = shown;
+      for (const x of shown) {
         if (x.k) {
           const k = x.k, r = M.rounds.find((y) => y.n === k.round);
-          // the round, the round timer and the demo time on three lines; "C4 0:16" never splits (0.21.1, Sujan 15 Oct 2026);
-          // // under them for a wallbang inside a skip in the recording, as in the Kills list (Sujan, 2 Nov 2026)
-          h += `<div class="row krow wbrow kill3${killState(k)}" data-wb="${k.t}" data-ki="${D.kills.indexOf(k)}" title="Through ${k.wb.thick} units of ${k.wb.what === 'object' ? 'a breakable or door' : 'wall or crate'}"><span class="n">${k === pickedKill ? MARK : ''}R${r ? r.ln : '?'} ·<br>${cellClock(k.t)}<br>${fmt(k.t - D.start)}${skipNear(k.t) ? SKIP_MARK : ''}</span><span class="main">${killRow3(k, false)}</span></div>`;
+          // "R23 1:18", the demo time on hover (UI review, item 3; three lines up to then, 0.21.1); "C4 0:16" never splits;
+          // // under it for a wallbang inside a skip in the recording, as in the Kills list (Sujan, 2 Nov 2026)
+          h += `<div class="row krow wbrow kill3${killState(k)}" data-wb="${k.t}" data-ki="${D.kills.indexOf(k)}" title="Through ${k.wb.thick} units of ${k.wb.what === 'object' ? 'a breakable or door' : 'wall or crate'}"><span class="n" title="${demoTip(k.t)}">${k === pickedKill ? MARK : ''}${cellClock(k.t)}${skipNear(k.t) ? SKIP_MARK : ''}</span><span class="main">${killRow3(k, false)}</span></div>`;
           if (k === pickedKill) h += killDetailsHtml(k);
         } else {
           const b = x.b, r = M.rounds.find((y) => y.n === b.round), bi = M.bursts.indexOf(b);
@@ -5680,20 +5960,20 @@ function renderPane() {
           const gun = b.hits.find((hh) => hh.s === b.main).gun;
           const others = dmore(Object.keys(b.share).filter((e) => +e !== b.main).map((e) => `${esc(labelAt(+e, b.start))} ${b.share[e]}`));
           const mine = b.hits.filter((hh) => hh.s === b.main);
-          h += `<div class="row krow wbrow kill3${b === pickedBurst ? ' pick' : ''}" data-hb="${bi}" title="${DMG_TIP}"><span class="n">${b === pickedBurst ? MARK : ''}R${r ? r.ln : '?'} ·<br>${cellClock(b.start)}<br>${fmt(b.start - D.start)}</span><span class="main"><span class="kname"><span class="${sideOf(b.main) === 1 ? 'kt' : 'kct'}">${esc(labelAt(b.main, b.start))}</span></span><span class="gun">${kicon(gun)}${esc(gun)}</span><span class="ktags"><span class="wbtag dmg" title="${DMG_TIP}">DAMAGE</span></span><span class="dline"><b>${b.share[b.main]} HP</b> (${hitCounts({ hits: mine }, b.end)})${others}</span><span class="kname"><span class="${sideOf(b.v) === 1 ? 'kt' : 'kct'}">${esc(labelAt(b.v, b.start))}</span></span></span></div>`;
+          h += `<div class="row krow wbrow kill3${b === pickedBurst ? ' pick' : ''}" data-hb="${bi}" title="${DMG_TIP}"><span class="n" title="${demoTip(b.start)}">${b === pickedBurst ? MARK : ''}${cellClock(b.start)}</span><span class="main"><span class="kname"><span class="${sideOf(b.main) === 1 ? 'kt' : 'kct'}">${esc(labelAt(b.main, b.start))}</span></span><span class="gun">${kicon(gun)}${esc(gun)}</span><span class="ktags"><span class="wbtag dmg" title="${DMG_TIP}">WALL DAMAGE</span></span><span class="dline"><b>${b.share[b.main]} HP</b> (${hitCounts({ hits: mine }, b.end)})${others}</span><span class="kname"><span class="${sideOf(b.v) === 1 ? 'kt' : 'kct'}">${esc(labelAt(b.v, b.start))}</span></span></span></div>`;
         }
       }
-      if (!all.length) h += `<div class="opt">No wallbang kills or wallbang damage found in the live rounds.</div>`;
+      if (!all.length) h += `<div class="opt">No wallbangs, partial wallbangs or wall damage found in the live rounds.</div>`;
     }
     p.innerHTML = h;
+    // Copy list copies what the filter shows, in the list's order: the file name line, then one line per row shown (item 3's
+    // fixup, Sujan, 17 Nov 2026; every wallbang, then every wall damage row, whatever the filter, up to then)
     if ($('bCopyWb')) $('bCopyWb').onclick = () => {
-      const txt = M.wbs.map((k) => { const r = M.rounds.find((x) => x.n === k.round); return `R${r ? r.ln : '?'}  timer ${clockText(k.t)}  demo ${fmt(k.t - D.start)}  ${M.pl[k.kp] ? M.pl[k.kp].name : '?'} -> ${M.pl[k.vp] ? M.pl[k.vp].name : '?'}  ${k.weapon}${k.hs ? ' HS' : ''}  (${k.wb.thick} units)${k.wb.loose ? '  LOOSE: part of him in view' : ''}${skipNear(k.t) ? '  UNSURE: the recording skips here' : ''}`; }).join('\n');
       const b = $('bCopyWb');
       const ok = () => { b.textContent = 'Copied'; setTimeout(() => b.textContent = 'Copy list', 1500); };
-      const dtx = (M.bursts || []).filter((b) => !b.kill).map((b) => { const r = M.rounds.find((y) => y.n === b.round); return `R${r ? r.ln : '?'}  timer ${clockText(b.start)}  demo ${fmt(b.start - D.start)}  DAMAGE ${b.total} HP to ${labelAt(b.v, b.start)}: ${Object.keys(b.share).map((e) => `${labelAt(+e, b.start)} ${b.share[e]}`).join(', ')}`; }).join('\n');
-      try { navigator.clipboard.writeText(`${D.fileName}\n${txt}${dtx ? '\n' + dtx : ''}`).then(ok, () => { b.textContent = 'Copy failed'; }); } catch { b.textContent = 'Copy failed'; }
+      try { navigator.clipboard.writeText(wbCopyText()).then(ok, () => { b.textContent = 'Copy failed'; }); } catch { b.textContent = 'Copy failed'; }
     };
-    p.querySelectorAll('[data-wf]').forEach((el) => el.onclick = () => { wbFilter = el.dataset.wf; renderPane(); });
+    if ($('wbSel')) $('wbSel').onchange = (e) => { wbFilter = e.target.value; renderPane(); };
     p.querySelectorAll('[data-hb]').forEach((el) => el.onclick = () => {
       const b = M.bursts[+el.dataset.hb]; if (!b) return;
       pickedBurst = b; pickedKill = null; selected = b.main;
@@ -5718,15 +5998,16 @@ function renderPane() {
       const tk = rows.reduce((a, x) => a + x.s.k, 0);
       const short = M.short || {};
       h += `<div class="sechead"><span>${esc(M.tnames[ti])}${firstSide ? ` · started ${firstSide}` : ''}</span></div>
-        <div class="row prow stathead"><span class="main"></span><span class="sc">K</span><span class="sc">D</span><span class="sc" title="Kills minus deaths">K−D</span><span class="sc" title="Headshot kills as a share of all kills">HS</span></div>`;
+        <div class="row prow stathead"><span class="main">${D.povOn ? '' : '<span class="pnum pkey" title="The 1 to 0 key that jumps to the player">Key</span>'}</span><span class="sc">K</span><span class="sc">D</span><span class="sc" title="Kills minus deaths">K−D</span><span class="sc" title="Headshot kills as a share of all kills">HS</span></div>`;
       for (const { e, s: x } of rows) {
         const pm = x.k - x.d;
         const slot = M.slotOf(e, T), dead = slot != null && isDeadNow(slot);
         const full = M.pl[e].name, nm = short[e] || full;
-        h += `<div class="row prow${selected != null && slot === selected ? ' sel' : ''}${slot == null ? ' gone' : ''}${dead ? ' dead' : ''}" data-p="${e}" title="${esc(full)}${dead ? ' · dead until the next round' : ''}"><span class="main">${dead ? `<span class="pnum skull" aria-label="dead">${SKULL}</span>` : (D.povOn ? '' : `<span class="pnum">${(playerOrder().indexOf(e) + 1) % 10}</span>`)}<span class="nm">${esc(nm)}</span>${x.tk ? `<span class="sub"> · ${x.tk} TK</span>` : ''}</span><span class="sc">${x.k}</span><span class="sc">${x.d}</span><span class="sc ${pm > 0 ? 'pos' : pm < 0 ? 'neg' : ''}">${pm > 0 ? '+' : ''}${pm}</span><span class="sc">${x.k ? Math.round(x.hs / x.k * 100) : 0}%</span></div>`;
+        h += `<div class="row prow${selected != null && slot === selected ? ' sel' : ''}${slot == null ? ' gone' : ''}${dead ? ' dead' : ''}" data-p="${e}" title="${esc(full)}${dead ? ' · dead until the next round' : ''}"><span class="main">${D.povOn ? '' : `<span class="pnum">${(playerOrder().indexOf(e) + 1) % 10}</span>`}<span class="nm">${esc(nm)}</span>${dead ? `<span class="skull" aria-label="dead">${SKULL}</span>` : ''}${x.tk ? `<span class="sub"> · ${x.tk} TK</span>` : ''}</span><span class="sc">${x.k}</span><span class="sc">${x.d}</span><span class="sc ${pm > 0 ? 'pos' : pm < 0 ? 'neg' : ''}">${pm > 0 ? '+' : ''}${pm}</span><span class="sc">${x.k ? Math.round(x.hs / x.k * 100) : 0}%</span></div>`;
       }
     }
-    h += `<div class="opt">Kills and deaths from the kill feed only: no bonus points for bomb plants or defuses, and team kills (TK) are not counted as kills. Only live rounds count${M.hasOT ? `; overtime is every round after round ${M.reg}` : ''}. ${D.povOn ? 'The highlighted player is the one whose eyes the 3D view shows.' : 'Click a player to highlight them. The number is their 1 to 0 key.'}</div>`;
+    // one line; the rest is in Help, Colours and marks (UI review, item 13)
+    h += `<div class="opt">Kills and deaths from the kill feed, live rounds only.</div>`;
     p.innerHTML = h;
     p.querySelectorAll('[data-b]').forEach((b) => b.onclick = () => { statBucket = b.dataset.b; renderPane(); });
   }
@@ -5738,11 +6019,13 @@ function renderPane() {
     const k = D.kills[+el.dataset.ki];
     if (!k) return;
     pickedKill = k;
-    // POV mode's Kills tab lists the whole match: a click leaves the list where it is, even when the kill is in another
-    // round (Sujan, 11 Nov 2026; up to 0.26.29 the round change it causes threw the list back to its top)
-    PANE.keep = D.povOn && tab === 'kills';
+    // the Kills tab lists the whole match (POV mode, and HLTV demos since the UI review, item 6): a click leaves the list
+    // where it is, even when the kill is in another round (Sujan, 11 Nov 2026; up to 0.26.29 the round change it caused
+    // threw POV mode's list back to its top)
+    PANE.keep = tab === 'kills';
     try { watchKill(k, 4); renderPane(); } finally { PANE.keep = false; }
   });
+  p.querySelectorAll('details.kpre').forEach((d) => d.ontoggle = () => { KD_EARLY = d.open ? +d.closest('.kdet').dataset.kd : null; });
   p.querySelectorAll('[data-bt]').forEach((el) => el.onclick = () => {
     const k = D.kills[+el.closest('.kdet').dataset.kd]; if (!k) return;
     selected = k.killer; playing = false; setPlayIcon();
@@ -5797,13 +6080,20 @@ function jumpRound(dir) {
 }
 $('bPrevR').onclick = () => jumpRound(-1);
 $('bNextR').onclick = () => jumpRound(1);
-$('bScope').onclick = () => { scope = scope === 'match' ? 'round' : 'match'; $('bScope').textContent = 'Timeline: ' + scope; savePrefs(); drawTimeline(); };
+// the timeline's range, Match | Round (UI review, item 8; a "Timeline: match" button up to then)
+function setScope(s) { scope = s; document.querySelectorAll('#scopeSeg button').forEach((b) => b.classList.toggle('on', b.dataset.s === s)); }
+document.querySelectorAll('#scopeSeg button').forEach((b) => b.onclick = () => { setScope(b.dataset.s); savePrefs(); drawTimeline(); });
+// one speed button showing the speed, opening the six above it (UI review, item 8; six buttons up to then); [ and ] stay
 const spEl = $('speeds');
+const speedOpen = (on) => { spEl.hidden = !on; $('bSpeed').setAttribute('aria-expanded', on ? 'true' : 'false'); };
 for (const s of SPEEDS) {
   const b = document.createElement('button'); b.type = 'button'; b.className = 'btn' + (s === 1 ? ' on' : ''); b.textContent = s + '×';
-  b.onclick = () => setSpeed(s); spEl.appendChild(b);
+  b.onclick = () => { setSpeed(s); speedOpen(false); }; spEl.appendChild(b);
 }
-function setSpeed(s) { speed = s; [...spEl.children].forEach((b, i) => b.classList.toggle('on', SPEEDS[i] === s)); }
+$('bSpeed').onclick = (e) => { e.stopPropagation(); speedOpen(spEl.hidden); };
+document.addEventListener('pointerdown', (e) => { if (!spEl.hidden && !e.target.closest('.spwrap')) speedOpen(false); }, true);
+document.addEventListener('keydown', (e) => { if (e.key === 'Escape' && !spEl.hidden) { e.stopPropagation(); speedOpen(false); $('bSpeed').focus(); } }, true);
+function setSpeed(s) { speed = s; [...spEl.children].forEach((b, i) => b.classList.toggle('on', SPEEDS[i] === s)); $('bSpeed').textContent = 'Speed ' + s + '×'; $('bSpeed').classList.toggle('on', s !== 1); }
 
 // the shortcuts list works everywhere, including the start screen
 document.addEventListener('keydown', (e) => {
@@ -5851,6 +6141,7 @@ document.addEventListener('keyup', (e) => { if (e.key === 'Tab') showScoreboard(
 window.addEventListener('blur', () => showScoreboard(false));
 function toggleKeys(v) { $('keys').hidden = v != null ? !v : !$('keys').hidden; }
 $('bKeys').onclick = () => toggleKeys();
+$('bHelpStart').onclick = () => toggleKeys(true); // the start screen's Help link: item 1 hid the bottom bar there (Sujan, 17 Nov 2026)
 $('bKeysClose').onclick = () => toggleKeys(false);
 $('bKeysX').onclick = () => toggleKeys(false);
 $('keys').onclick = (e) => { if (e.target === $('keys')) toggleKeys(false); };
@@ -5872,7 +6163,7 @@ function povTabHeld(t) {
   const r = idxAt(A, 2, t); return r >= 0 && A[r * 2 + 1] === 1;
 }
 function povTabTick() {
-  if (!D || !D.povOn || SB.user) return;
+  if (!D || !D.povOn || SB.user || !$('load').hidden) return; // never over the start screen (Sujan, 19 Nov 2026)
   const held = povTabHeld(T);
   if (held && !SB.auto) showScoreboard(true, true);
   else if (!held && SB.auto) showScoreboard(false);
@@ -5961,7 +6252,7 @@ function showScoreboard(v, auto = false) {
     const specNow = now.filter((x) => !x.side).sort((a, b) => (M.teamOf[a.pid] != null) - (M.teamOf[b.pid] != null) || (a.pid < b.pid ? -1 : 1)).map((x) => esc(M.pl[x.pid].name) + (M.pl[x.pid].hltv ? ' <span class="sbtag">HLTV</span>' : ''));
     const v = viewersAt(T);
     h += `<div class="spech">Spectators</div><div class="specs">${specNow.length ? specNow.join('<span class="gsep">·</span>') : 'none on the server'}</div>`;
-    if (v != null || SB.auto) h += `<div class="gfoot"><span>${v != null ? `${v.toLocaleString('en-US')} watching on HLTV` : ''}</span>${SB.auto ? '<span class="sbheld">He held Tab here</span>' : ''}</div>`;
+    if (v != null || SB.auto) h += `<div class="gfoot"><span>${v != null ? `${v.toLocaleString('en-US')} watching on HLTV` : ''}</span>${SB.auto ? '<span class="sbheld">The player held Tab here</span>' : ''}</div>`;
     el.innerHTML = h + '</div>';
   };
   render(); el.hidden = false;
@@ -5998,7 +6289,7 @@ function updateHud(force) {
   // score shown is the score at the start of the current round
   const sc = r ? (T >= (r.endT || r.end) && r.scoreAfter ? r.scoreAfter : r.scoreBefore) : [0, 0];
   $('scA').textContent = sc[0]; $('scB').textContent = sc[1];
-  const vw = viewersAt(T); $('viewers').textContent = vw != null ? `${vw.toLocaleString('en-US')} watching` : '';
+  // the spectator count left the header: it's in the Tab scoreboard's footer (UI review, item 14, 17 Nov 2026)
   const side = (i) => r && r.tTeam != null ? (r.tTeam === i ? 'side-t' : 'side-ct') : '';
   $('tnA').className = 'tn ' + side(0); $('tnB').className = 'tn ' + side(1);
   const paused = (() => { let on = false; for (const p of D.pauses || []) { if (p.t > T) break; on = p.on; } return on; })();
@@ -6017,14 +6308,10 @@ function updateHud(force) {
     if (changed && scope === 'round') drawTimeline();
     if (changed && heat && $('hmScope').value === 'round') heat = null;
     if (changed || force) { const cur = $('pane').querySelector('.row.cur'); if (cur && tab === 'rounds') cur.scrollIntoView({ block: 'nearest' }); }
-    // a new round on the Kills tab: its heading at the top, not wherever the last round's list was scrolled to. POV mode's
-    // Kills tab lists the whole match by round (0.26.29), so there the new round's heading comes to the top, the list
-    // stays where it is for a round with no kill or death of his yet (it has no heading) and after a click on a row
-    // (Sujan, 11 Nov 2026; up to 0.26.29 it went back to the list's top at every round change)
-    if (changed && tab === 'kills') {
-      if (!D.povOn) $('pane').scrollTop = 0;
-      else if (!PANE.keep) { const P = $('pane'), cur = P.querySelector('.sechead.rhead.cur'); if (cur) P.scrollTop += cur.getBoundingClientRect().top - P.getBoundingClientRect().top; }
-    }
+    // a new round on the Kills tab, which lists the whole match by round (POV mode since 0.26.29, HLTV demos since the UI
+    // review, item 6): the new round's heading comes to the top; the list stays where it is for a round with no heading
+    // (in POV mode, no kill or death of his yet) and after a click on a row (Sujan, 11 Nov 2026)
+    if (changed && tab === 'kills' && !PANE.keep) { const P = $('pane'), cur = P.querySelector('.sechead.rhead.cur'); if (cur) P.scrollTop += cur.getBoundingClientRect().top - P.getBoundingClientRect().top; }
   }
 }
 
@@ -6091,8 +6378,11 @@ function toggleOpt(k, id) {
   savePrefs();
 }
 // Jump to a moment before a kill and watch it through the shooter's eyes (in 3D)
+// The killer is followed, or the victim when there's no player killer (a fall or a drowning: killed by the world) or the
+// kill is a suicide (a player's own grenade): up to 19 Nov 2026 such a click followed no one (Sujan: Delpan's fall, R48 of SK
+// vs Na`Vi, Train, DreamHack Winter 2011)
 function watchKill(k, before) {
-  if (k.kp && k.killer !== k.victim) selected = k.killer;
+  selected = k.kp && k.killer !== k.victim ? k.killer : k.victim;
   seek(k.t - before); playing = true; setPlayIcon();
   if (viewMode !== '2d') setCam('eyes', true);
   renderPane();
@@ -6356,13 +6646,19 @@ function draw() {
     if (opts.names) {
       const nm = labelAt(+e, T);
       const w = weaponShort(s.weapon);
-      ctx.font = `500 ${11 * u}px ${mono}`; ctx.textAlign = 'left';
       const label = nm.length > 16 ? nm.slice(0, 15) + '…' : nm;
-      ctx.lineWidth = 3 * u; ctx.strokeStyle = 'rgba(8,10,12,.85)';
-      ctx.strokeText(label, sx + rad + 4 * u, sy - u); ctx.fillStyle = '#eee8dc'; ctx.fillText(label, sx + rad + 4 * u, sy - u);
       const hpv = hpAt(+e, T);
       const sub = [hpv != null ? hpv + ' hp' : '', w].filter(Boolean).join(' · ');
-      if (sub) { ctx.font = `400 ${10 * u}px ${mono}`; ctx.strokeText(sub, sx + rad + 4 * u, sy + 10 * u); ctx.fillStyle = col; ctx.fillText(sub, sx + rad + 4 * u, sy + 10 * u); }
+      // a label that would run off the right edge goes to the left of the dot (the 3D view's radar cut them off: UI review,
+      // item 5, and IDEAS.md, Seen while building 0.26.13)
+      ctx.font = `400 ${10 * u}px ${mono}`; const sw = sub ? ctx.measureText(sub).width : 0;
+      ctx.font = `500 ${11 * u}px ${mono}`; const lw = Math.max(ctx.measureText(label).width, sw);
+      const flip = sx + rad + 4 * u + lw > cw - 2 * u && sx - rad - 4 * u - lw >= 0;
+      const lx = flip ? sx - rad - 4 * u : sx + rad + 4 * u; ctx.textAlign = flip ? 'right' : 'left';
+      ctx.lineWidth = 3 * u; ctx.strokeStyle = 'rgba(8,10,12,.85)';
+      ctx.strokeText(label, lx, sy - u); ctx.fillStyle = '#eee8dc'; ctx.fillText(label, lx, sy - u);
+      if (sub) { ctx.font = `400 ${10 * u}px ${mono}`; ctx.strokeText(sub, lx, sy + 10 * u); ctx.fillStyle = col; ctx.fillText(sub, lx, sy + 10 * u); }
+      ctx.textAlign = 'left';
     }
   }
 }
@@ -6379,7 +6675,10 @@ function c4Tag(x, y, small) {
 // ---------------- heatmap ----------------
 let heat = null;
 const heatOn = () => $('hmMode').value !== 'off';
-['hmMode', 'hmSide', 'hmScope'].forEach((id) => $(id).onchange = () => { heat = null; });
+['hmMode', 'hmSide', 'hmScope'].forEach((id) => $(id).onchange = () => { heat = null; if (id === 'hmMode') heatControls(); });
+// one Heatmap control: its side and range show only while it's on (UI review, item 8); the 2D map is fitted again in case
+// the controls' row changed height, so it still ends above them (0.26.14)
+function heatControls() { const on = heatOn(); $('hmSide').hidden = !on; $('hmScope').hidden = !on; if (D) requestAnimationFrame(() => fitView(true)); }
 // when a round is live: from the end of freeze time to the moment it's won
 function playSpan(r) {
   const rts = (D.roundTimes || []).filter((x) => x.t >= r.start - 1 && x.t < r.end);
@@ -6456,7 +6755,7 @@ const tlCache = { cv: document.createElement('canvas'), key: '' };
 // Drawn at the Interface size (0.26.13): the whole strip is drawn UI times larger, in a space UI times smaller, so its
 // marks and round numbers grow with the bar it sits in and look exactly as before at 100%.
 function drawTimeline() {
-  if (!D) return;
+  if (!D || !tlc.width || !tlc.height) return; // a bar not laid out yet (drawImage throws on a 0-size canvas)
   const W = tlc.width / dpr / UI, H = tlc.height / dpr / UI;
   const [a, b] = tlRange();
   const key = [D.fileName, D.end, tlc.width, tlc.height, dpr, UI, a, b, showAll, visibleRounds().length, M.wbs ? M.wbs.length : -1, M.skipT ? M.skipT.length : 0].join('|');
@@ -6521,19 +6820,49 @@ function drawPlayhead() {
 }
 let tlDrag = false;
 const tlTime = (e) => { const r = tlc.getBoundingClientRect(); const [a, b] = tlRange(); return a + Math.max(0, Math.min(1, (e.clientX - r.left) / r.width)) * (b - a); };
-tl.addEventListener('pointerdown', (e) => { if (!D) return; tlDrag = true; tl.setPointerCapture(e.pointerId); seek(tlTime(e)); });
-tl.addEventListener('pointermove', (e) => {
-  if (!D) return;
-  const t = tlTime(e);
-  if (tlDrag) seek(t);
-  // tooltip: nearest kill within 6px
+// the kill mark nearest the mouse within 6 px (at 100% Interface size), as the tooltip finds it
+function tlKillAt(e) {
   const r = tlc.getBoundingClientRect(); const [a, b] = tlRange();
   let best = null, bd = 6 * UI;
   const liveSet = new Set(visibleRounds().map((x) => x.n));
   for (const k of D.kills) { if (!liveSet.has(k.round)) continue; const x = (k.t - a) / (b - a) * r.width; const d = Math.abs(x - (e.clientX - r.left)); if (d < bd) { bd = d; best = k; } }
+  return best;
+}
+// A click on a kill mark does what a click on that kill in the Kills tab does: a few seconds before it, the killer followed
+// in Eyes (the victim when there's no player killer), playing, the kill marked; and the side panel goes to the Kills tab,
+// that kill's row and its details in view. In POV mode it only jumps a few seconds before the kill and plays: there's no
+// other player's eyes to follow (Sujan, 19 Nov 2026). Only a click: on a kill mark the playhead waits until the mouse moves
+// 4 px or more, which makes it a drag as before; a click anywhere else moves the playhead at once and leaves the camera and
+// play state as they are.
+function tlWatch(k) {
+  if (D.povOn) { seek(k.t - 4); playing = true; setPlayIcon(); return; }
+  pickedKill = k; pickedBurst = null;
+  if (tab !== 'kills') document.querySelector('.tabs button[data-tab="kills"]').click();
+  watchKill(k, 4);
+  const row = $('pane').querySelector('.krow.pick'), det = row && row.nextElementSibling && row.nextElementSibling.classList.contains('kdet') ? row.nextElementSibling : null;
+  if (det) det.scrollIntoView({ block: 'nearest' });
+  if (row) row.scrollIntoView({ block: 'nearest' });
+}
+let tlPress = null;
+tl.addEventListener('pointerdown', (e) => {
+  if (!D) return;
+  tl.setPointerCapture(e.pointerId);
+  const k = tlKillAt(e);
+  if (k) { tlPress = { x: e.clientX, k }; return; }
+  tlPress = null; tlDrag = true; seek(tlTime(e));
+});
+tl.addEventListener('pointermove', (e) => {
+  if (!D) return;
+  const t = tlTime(e);
+  if (tlPress && Math.abs(e.clientX - tlPress.x) >= 4 * UI) { tlPress = null; tlDrag = true; }
+  if (tlDrag) seek(t);
+  // tooltip: nearest kill within 6px
+  const best = tlKillAt(e);
+  const r = tlc.getBoundingClientRect(); const [a, b] = tlRange();
   const tip = $('tip');
   const rr = roundAt(t);
-  tip.innerHTML = best ? `${rr && rr.live ? 'R' + rr.ln + ' ' : ''}${killClock(best.t)} · ${killHtml(best)}` : `${fmt(t - D.start)}${rr && rr.live ? ' · round ' + rr.ln + ' · ' + clockText(t) : ''}`;
+  // "R23 1:18", as in the lists, then the demo time (UI review, item 3; up to then "34:12 · round 23 · 1:18")
+  tip.innerHTML = best ? `${roundTime(best.t)} · ${killHtml(best)}` : `${rr ? esc(roundTime(t)) + ' · ' : ''}demo ${fmt(t - D.start)}`;
   // a skip in the recording within 6 px: say what the // means, above the rest
   const sk = (M.skipT || []).find((st) => Math.abs((st - a) / (b - a) * r.width - (e.clientX - r.left)) < 6 * UI);
   if (sk != null) tip.innerHTML = `<b>Recording skips here</b>: HLTV left part of the game out, so players jump<br>` + tip.innerHTML;
@@ -6543,7 +6872,12 @@ tl.addEventListener('pointermove', (e) => {
   const half = tip.offsetWidth / 2, tr = tl.getBoundingClientRect(), lo = 8 + half - tr.left, hi = window.innerWidth - 8 - half - tr.left;
   tip.style.left = (hi < lo ? lo : Math.max(lo, Math.min(hi, e.clientX - tr.left))) + 'px';
 });
-tl.addEventListener('pointerup', () => { tlDrag = false; });
+tl.addEventListener('pointerup', () => {
+  tlDrag = false;
+  const p = tlPress; tlPress = null;
+  if (p && D) tlWatch(p.k);
+});
+tl.addEventListener('pointercancel', () => { tlDrag = false; tlPress = null; });
 tl.addEventListener('pointerleave', () => { $('tip').hidden = true; });
 
 // ---------------- 3D view ----------------
@@ -6563,12 +6897,23 @@ function status3(t, withButton) {
   if (withButton) $('bFolder3').onclick = () => pickFolder();
 }
 document.querySelectorAll('#viewSeg button').forEach((b) => b.onclick = () => setView(b.dataset.v));
+$('radar3').onchange = () => { radar3 = $('radar3').checked; savePrefs(); if (D && viewMode !== '2d') setView('3d', false); };
+// The Radar row in View settings (UI review, item 5, 17 Nov 2026): the 2D map in a corner of the 3D view, in HLTV demos,
+// saved with the view's settings; it took the place of the header's third view, 3D + radar. viewMode stays 'split' for
+// 3D with the radar, as before; the switch shows 2D and 3D, and a saved 3D + radar opens as 3D with Radar on.
+let radar3 = false;
 function setView(v, save = true) {
-  viewMode = v; if (save) { viewPref = v; savePrefs(); }
-  document.querySelectorAll('#viewSeg button').forEach((x) => x.classList.toggle('on', x.dataset.v === v));
+  if (v === 'split') { radar3 = true; v = '3d'; }
+  if (save) { viewPref = v; savePrefs(); }
+  if (v === '3d' && radar3 && !POV.on) v = 'split';
+  viewMode = v;
+  $('radar3').checked = radar3;
+  document.querySelectorAll('#viewSeg button').forEach((x) => x.classList.toggle('on', x.dataset.v === (v === 'split' ? '3d' : v)));
   const r = $('radar');
   r.classList.toggle('m2d', v === '2d'); r.classList.toggle('m3d', v === '3d'); r.classList.toggle('msplit', v === 'split');
-  $('cam3').hidden = v === '2d' || !D;
+  // the camera bar is 3D's, and has nothing left in POV mode, where View settings is in the strip (UI review, item 4)
+  $('cam3').hidden = v === '2d' || !D || POV.on;
+  $('tgXray').closest('.xwrap').hidden = v === '2d'; // See through walls does nothing in 2D (only the 3D view reads opts.xray)
   if (v !== '2d' && !window.THREE) status3('The 3D engine could not load. Check your internet connection and reload the page.');
   else if (v !== '2d' && D && !MAP) loadMap(D.mapName);
   requestAnimationFrame(() => { resize(); resize3(); });
@@ -8752,7 +9097,7 @@ function update3Now() {
       const rr = M.rounds.find((r) => r.n === death.round);
       const kside = rr && rr.tTeam != null && death.kp ? (M.teamOf[death.kp] === rr.tTeam ? 'kt' : 'kct') : '';
       const kn = death.kp && death.killer !== death.victim
-        ? `killed by <span class="${kside}">${esc(M.pl[death.kp].name)}</span> · ${esc(death.weapon)}${death.hs ? ' · <span class="khs">HS</span>' : ''}${death.wb ? (death.wb.loose ? ' · <span class="kwb loose">loose wallbang</span>' : ' · <span class="kwb">wallbang</span>') : ''}`
+        ? `killed by <span class="${kside}">${esc(M.pl[death.kp].name)}</span> · ${esc(death.weapon)}${death.hs ? ' · <span class="khs">HS</span>' : ''}${death.wb ? (death.wb.loose ? ' · <span class="kwb loose">partial wallbang</span>' : ' · <span class="kwb">wallbang</span>') : ''}`
         : (death.weapon === 'world' ? 'died' : 'killed themselves');
       pov.hidden = false; pov.classList.add('dead');
       // Vanilla (0.26.16): the name bar stays (Sujan, 3 Nov 2026), without the death cam's banner
@@ -8887,7 +9232,7 @@ function drawHitMarker(lx, cx, cy, xh = XHAIR.small) {
     for (const [dx, dy] of [[1, 1], [1, -1], [-1, 1], [-1, -1]]) { lx.moveTo(cx + dx * g0, cy + dy * g0); lx.lineTo(cx + dx * g1, cy + dy * g1); }
     lx.stroke();
   }
-  const label = k.wb ? `${k.wb.loose ? 'LOOSE WB' : 'WALLBANG'}${k.hs ? ' · HS' : ''}` : k.hs ? 'HEADSHOT' : 'KILL';
+  const label = k.wb ? `${k.wb.loose ? 'PARTIAL WALLBANG' : 'WALLBANG'}${k.hs ? ' · HS' : ''}` : k.hs ? 'HEADSHOT' : 'KILL';
   // the label at the Interface size (UI, 0.26.13); the ticks above stay with the crosshair, which doesn't scale
   lx.font = `500 ${10 * UI}px ${textFont()}`; lx.textAlign = 'center';
   lx.lineWidth = 2.5 * UI; lx.strokeStyle = 'rgba(0,0,0,.6)'; lx.strokeText(label, cx, cy + xh.end + 20 * UI); lx.fillStyle = col; lx.fillText(label, cx, cy + xh.end + 20 * UI);
@@ -9078,13 +9423,14 @@ function povInit() {
   POV.on = !!(D && D.povOn && D.view);
   POV.i = 0; POV.t = T;
   D.ownShots = POV.on ? povShots() : null;
-  // the camera buttons that pick another view or player go; View settings stays, with his own crosshair's size in place of
-  // the viewer's (From config.cfg, Small, Medium, Large; Sujan, 11 Nov 2026), without Glow on hits (no wallbang damage in
+  // the camera buttons that pick another view or player go (and with them the camera bar, setView); View settings, in the
+  // strip at the bottom left, has his own crosshair's size in place of the viewer's (From config.cfg, Small, Medium, Large; Sujan, 11 Nov 2026), without Glow on hits (no wallbang damage in
   // POV mode, so nothing to glow; Sujan, 29 Oct 2026) and Damage numbers (Sujan, 3 Nov 2026), and with the flashbang rows
   $('cam3').querySelector('.camseg').hidden = POV.on;
   $('bPrevP').hidden = POV.on; $('bNextP').hidden = POV.on;
   $('xh3').closest('.vrow').hidden = POV.on; $('glow3').closest('.vrow').hidden = POV.on;
   $('dn3').closest('.vrow').hidden = POV.on;
+  $('radar3').closest('.vrow').hidden = POV.on; // his own radar is drawn in POV mode (UI review, item 5: HLTV demos only)
   $('xhp3').closest('.vrow').hidden = !POV.on;
   for (const id of ['fbDot3', 'fbWhite3']) $(id).closest('.vrow').hidden = !POV.on;
   { const h = $('fbDot3').closest('.vrow').previousElementSibling; if (h && h.classList.contains('vhead')) h.hidden = !POV.on; }
@@ -9662,7 +10008,7 @@ function povHidesEnemies() {
 // the load summary's line and the note: the headline, then the detail, feature names between ** (bold); one text in both
 // places (Sujan, 11 Nov 2026; up to 0.26.29 it gave the counts of enemy and teammate sightings)
 function hiddenEnemiesText(h) {
-  return { t: 'This server seems to use an anti-wallhack plugin', n: 'To stop wallhacks, the server shows the player an enemy only when that enemy is about to come into view. So **See through walls** won\'t work as intended until the player is dead.' };
+  return { t: 'This server seems to use an anti-wallhack plugin', n: 'To stop wallhacks, the server shows the player (whose POV you\'re watching) an enemy only when that enemy is about to come into view. So **See through walls** won\'t work as intended until the player is dead.' };
 }
 // the ! on See through walls, only in POV mode on such a server
 function povMarkInit() {
@@ -9832,7 +10178,8 @@ function toggleFull() {
 $('bFull').onclick = toggleFull;
 document.addEventListener('fullscreenchange', () => {
   const fs = !!document.fullscreenElement;
-  $('bFull').textContent = fs ? 'Exit full screen' : 'Full screen';
+  // the button shows its on state instead of renaming itself (UI review, item 7; "Exit full screen" up to then)
+  $('bFull').classList.toggle('on', fs); $('bFull').setAttribute('aria-pressed', fs ? 'true' : 'false');
   // full screen always uses Theatre mode; leaving it puts back whatever was on before
   if (fs) { TH.before = TH.on; setTheatre(true); } else setTheatre(TH.before);
 });
@@ -9859,8 +10206,6 @@ function applyTheatre() {
   const app = $('app'), act = theatreActive();
   const was = app.classList.contains('theatre');
   app.classList.toggle('theatre', act);
-  $('bTheatre').classList.toggle('on', act);
-  $('bTheatre').textContent = act ? 'Exit theatre' : 'Theatre';
   if (!act) { app.classList.remove('show-t', 'show-r', 'show-b', 'idle'); for (const k in TH.timers) clearTimeout(TH.timers[k]); clearTimeout(TH.idle); }
   else measureTheatre();
   if (was !== act) requestAnimationFrame(() => { resize(); resize3(); measureTheatre(); });
@@ -9878,7 +10223,7 @@ function thOver(k, target) {
   const els = TH_PANELS[k]().filter(Boolean);
   if (target && els.some((el) => el.contains(target))) return true;
   const a = document.activeElement;
-  if (k === 't' && !$('vsetPanel').hidden) return true; // View settings is open
+  if (k === 'b' && !$('vsetPanel').hidden) return true; // View settings is open (in the strip at the bottom since the UI review, item 4)
   return !!(a && a.tagName === 'SELECT' && els.some((el) => el.contains(a)));
 }
 // what's under the pointer right now: a bar can slide in under a mouse that isn't moving
@@ -9922,22 +10267,25 @@ document.addEventListener('pointercancel', () => { TH.drag = false; }, true);
 document.documentElement.addEventListener('mouseleave', () => { if (!theatreActive()) return; TH.x = -1; TH.lastTarget = null; thUpdate(null); });
 window.addEventListener('blur', () => { if (theatreActive()) { TH.x = -1; TH.lastTarget = null; thUpdate(null); } });
 window.addEventListener('resize', () => { if (theatreActive()) measureTheatre(); });
-$('bTheatre').onclick = () => setTheatre(!TH.on);
+// Theatre mode has no button of its own since the UI review (item 7, 17 Nov 2026): T, and Full screen, which uses it
 $('sndVol').oninput = (e) => setVolume(+e.target.value);
 // browsers only let a page make sound after you've clicked or pressed a key on it
 const wake = () => { if (SND.on) audio(); };
 document.addEventListener('pointerdown', wake, true); document.addEventListener('keydown', wake, true);
 function isDeathSeq(e) { const a = D.slots[e], i = M.idxAt(T), sq = a ? a[i * D.stride + 9] : 0; return sq >= 101 && sq <= 110; }
 setSound(SND.on);
-// Viewing preferences carry over to the next demo and the next visit: the view (2D, 3D or split), Names,
+// Viewing preferences carry over to the next demo and the next visit: the view (2D or 3D) and Radar (UI review, item 5), Names,
 // Grenades, Kill lines, See through walls and the timeline's match or round. (Team colours, Quality and
 // sound are saved on their own above.) Playback speed is not a preference: every demo opens at 1x, paused.
-function savePrefs() { ls.set('prefs', { view: viewPref, names: opts.names, nades: opts.nades, lines: opts.lines, xray: opts.xray, scope }); }
+function savePrefs() { ls.set('prefs', { view: viewPref, radar: radar3, names: opts.names, nades: opts.nades, lines: opts.lines, xray: opts.xray, scope }); }
 (() => {
   const p = ls.get('prefs'); if (!p || typeof p !== 'object') return;
   for (const [k, id] of [['names', 'tgNames'], ['nades', 'tgNades'], ['lines', 'tgLines'], ['xray', 'tgXray']]) if (typeof p[k] === 'boolean') { opts[k] = p[k]; $(id).classList.toggle('on', p[k]); }
-  if (p.scope === 'match' || p.scope === 'round') { scope = p.scope; $('bScope').textContent = 'Timeline: ' + scope; }
-  if (['2d', '3d', 'split'].includes(p.view)) viewMode = viewPref = p.view; // applied when a demo opens (onDemo calls setView)
+  if (p.scope === 'match' || p.scope === 'round') setScope(p.scope);
+  if (['2d', '3d'].includes(p.view)) viewMode = viewPref = p.view; // applied when a demo opens (onDemo calls setView)
+  if (typeof p.radar === 'boolean') radar3 = p.radar;
+  if (p.view === 'split') { viewMode = viewPref = '3d'; radar3 = true; } // a saved 3D + radar: 3D with Radar on
+  $('radar3').checked = radar3;
 })();
 
 // ---------------- what loaded ----------------
@@ -9946,6 +10294,7 @@ function savePrefs() { ls.set('prefs', { view: viewPref, names: opts.names, nade
 let ASSETS = null;
 async function loadSummary(sndDone) {
   const d = D;
+  SUM.joinList = null; SUM.joinOffer = false; // a previous demo's offer to join (the Rounds tab reads it, item 10)
   openSummary({ state: 'busy' });
   // A file that reads but has no player movement, or no rounds, can't be played. Say what was found and
   // list the likely reasons, the likeliest first.
@@ -9956,14 +10305,16 @@ async function loadSummary(sndDone) {
     const why = other ? [`It's from another game: the file says "${game}", and the viewer only plays Counter-Strike 1.6.`] : [];
     const hr = fileHealthRow(D.health, D.end - D.start);
     if (hr && hr.s === 'warn') {
-      // the file's own structure says what's wrong: that's the reason, not a guess
-      renderSummary({ state: 'fail', title: "This demo can't be played", text: !moved ? 'The file stops before any player moved, so there is nothing to show.' : 'The file stops before the first round started, so there is nothing to show.', rows: [Object.assign({}, hr, { s: 'fail', n: hr.n.replace(/ It plays up to where the file stops: .*$/, '') + ` What's readable is ${fmt(D.end - D.start)} of recording.` })] });
+      // the file's own structure says what's wrong: that's the reason, not a guess. The card says it in plain words; the
+      // file's detail (its index, where it stops, in bytes) goes to Copy debug info (UI review, item 2)
+      ERRLOG.push(`Can't play ${D.fileName}: ${hr.t}. ${hr.n.replace(/ It plays up to where the file stops: .*$/, '')} What's readable is ${fmt(D.end - D.start)} of recording.`);
+      renderSummary({ state: 'fail', closeDemo: true, title: "This demo can't be played", text: (!moved ? 'The file stops before any player moved, so there is nothing to show.' : 'The file stops before the first round started, so there is nothing to show.') + ' It was probably cut off by an interrupted recording, download or copy. Try another copy of the demo.', rows: [] });
       return;
     }
     if (!moved) why.push('It was stopped right after it started, before anyone moved.', 'It was cut off: the download or the recording was interrupted.');
     else why.push("It's from a game mode without rounds, like deathmatch or a training map.", 'It was stopped before the first round started.');
     if (!other) why.push("It's from another game: the viewer only plays Counter-Strike 1.6.");
-    renderSummary({ state: 'fail', title: "This demo can't be played", text: !moved ? "The file opened, but there's no player movement in it. The likely reasons:" : "The file opened and players move in it, but there are no rounds the viewer can find. The likely reasons:", rows: why.map((t) => ({ s: 'info', t })) });
+    renderSummary({ state: 'fail', closeDemo: true, title: "This demo can't be played", text: !moved ? "The file opened, but there's no player movement in it. The likely reasons:" : "The file opened and players move in it, but there are no rounds the viewer can find. The likely reasons:", rows: why.map((t) => ({ s: 'info', t })) });
     return;
   }
   const pm = [...new Set((D.pmodels || []).filter((n) => /\.mdl$/i.test(n)).map((n) => n.toLowerCase()))];
@@ -10009,23 +10360,34 @@ async function loadSummary(sndDone) {
     const A = M.after16, n = A.extra, who = M.tnames[A.team], sc = `${Math.max(...A.score)}:${Math.min(...A.score)}`;
     rows.push({ s: 'info', t: `${n} ${n === 1 ? 'round was' : 'rounds were'} played after ${who} reached 16 (${sc})`, n: M.auto30 ? 'Counted: the teams played on to round 30, as events that count all 30 rounds did.' : M.count30 ? 'Counted, as chosen for this demo (up to round 30).' : `Some events played all 30 rounds and count them. Not counted now: the match ends at ${sc}.`, btn: { id: 'sumCount30', label: M.count30 ? 'Stop at 16' : 'Count them' } });
   }
-  if (D.maps && D.maps.length > 1) rows.push({ s: 'info', t: `The recording switched maps. Showing ${D.mapName}, where it spent longest.`, n: D.maps.map((m) => `${m.map} ${fmt(m.dur)}`).join(', then ') });
   // POV mode's own line and its Turn on button went with the setting (Sujan signed POV mode off, 11 Nov 2026; 0.26.30):
   // a POV demo always opens in it. Only a file without the record of his own view, which POV mode needs, says why.
-  if (D.pov && !D.povOn) rows.push({ s: 'info', t: 'Recorded by a player (a POV demo)', n: "This file has no record of his own view, so it plays like an HLTV demo, with him at the map's zero point." });
-  // the POV mockup round (docs/pov-mockup-round-mock.jpg, sections 1 and 6; Sujan, 11 Nov 2026): what a POV demo doesn't
-  // have, and the anti-wallhack note, which no longer shows over his HUD (the ! on See through walls brings it back)
-  if (D.povOn) {
-    rows.push({ s: 'info', t: 'Only his own view, in 3D', n: "A POV demo has no **2D** or **3D + radar** view, so no heatmaps, and no **Free** or **Behind player** camera: his game only received the players near him. The Kills tab lists his own kills and deaths." });
-    if (POV.on && povHidesEnemies().on) rows.push({ s: 'info', ...hiddenEnemiesText(povHidesEnemies()) });
+  // the card's first line says what kind of demo it is (Sujan, 19 Nov 2026), so a POV demo without the record of the player's
+  // own view only says what that changes
+  if (D.pov && !D.povOn) rows.push({ s: 'info', tail: "without the player's view", t: "No record of the player's own view", n: "This file has no record of the player's own view, so it plays like an HLTV demo, with the player at the map's zero point." });
+  // the anti-wallhack note, which no longer shows over the HUD (the POV mockup round, Sujan, 11 Nov 2026; the ! on See
+  // through walls brings it back), as a line of its own that keeps the card open (Sujan, 19 Nov 2026; up to then one short
+  // line with "His view only, in 3D", the UI review's item 2)
+  if (D.povOn && POV.on && povHidesEnemies().on) rows.push({ s: 'info', keep: true, t: 'It seems the server used an anti-wallhack plugin. Click ! on the **See through walls** button below to know more.' });
+  // A map recorded in two or more files: a part on its own says so whenever it starts late or ends before anyone won, with
+  // Join parts… (Sujan, 19 Nov 2026). With other parts in the folder (same map, at least 8 of the same Steam IDs) the note
+  // names them and keeps the card open; with none, the note and its Join parts…, which opens the Join card's picker, are only
+  // under Details and the card doesn't stay open, since those two alone were wrong on all four demos on Sujan's Mac that
+  // showed them with no other part (2 Oct 2026): a draw the server announced, two recordings cut off in their last round,
+  // and an overtime-only file. Up to 19 Nov 2026 the note showed only with another part in the folder. With none, its words
+  // say it may have been a draw or a recording that stopped early (Sujan, 20 Nov 2026).
+  // a join remembered for this file that couldn't be used: a part changed or missing, so it opened on its own (Sujan, 20 Nov 2026;
+  // a missing part with no "now", since a part picked from elsewhere was never in the folder)
+  if (D.joinDropped) {
+    const J = D.joinDropped, others = J.others.length > 1 ? J.others.slice(0, -1).join(', ') + ' and ' + J.others[J.others.length - 1] : J.others[0];
+    const why = J.why === 'changed' ? `${J.name} has changed` : J.why === 'missing' ? `${J.name} isn't in your Half-Life folder` : "The viewer can't tell whether the parts have changed since";
+    rows.push({ s: 'info', keep: true, t: `This file was joined with ${others} before. ${why}, so it opened on its own.` });
   }
-  // A map recorded in two or more files. A part on its own says so only when another part is in the folder
-  // (same map, at least 8 of the same Steam IDs) and this one starts late or ends before anyone won. Those two
-  // alone were wrong on all four demos on Sujan's Mac that showed them with no other part (2 Oct 2026): a draw
-  // the server announced, two recordings cut off in their last round, and an overtime-only file.
   if (D.parts) {
     const js = joinedSetOf(D.parts[0].fileName);
-    rows.push({ s: 'info', t: `One map, joined from ${D.parts.length} files`, n: D.parts.map((x, i) => `Part ${i + 1}: ${x.fileName}`).join('. ') + '.' + (js && js.keep && js.why ? ` Joined in your order, which the rounds don't support: ${js.why}` : '') + ' Split them in the Rounds tab.' });
+    // a joined map is a quiet note, unless it was joined in an order the rounds don't support, which keeps the card open; each
+    // part on its own line (Sujan, 20 Nov 2026)
+    rows.push({ s: 'info', tail: `joined from ${D.parts.length} files`, keep: !!(js && js.keep && js.why), t: `One map, joined from ${D.parts.length} files`, n: D.parts.map((x, i) => `Part ${i + 1}: ${x.fileName}`).join('\n') + '\n' + (js && js.keep && js.why ? `Joined in your order, which the rounds don't support: ${js.why} ` : '') + 'Split them in the Rounds tab.' });
   } else {
     const st = liveStart(M), before = st.sbT + st.sbCT, partway = st.partway;
     const last = M.liveR[M.liveR.length - 1], open = !!last && !M.wonAt, late = before > 0 || partway;
@@ -10035,16 +10397,39 @@ async function loadSummary(sndDone) {
       const ends = last ? `${last.scoreAfter[0]}:${last.scoreAfter[1]}` : '';
       const lateText = (partway ? 'The recording starts partway into a round.' : '') + (before ? ` The game's scoreboard already shows ${plural(before, 'round')} played before ${partway ? 'that one' : 'the recording starts'}.` : '');
       let t, n;
-      if (late && !open) { t = 'This is probably part 2 of a map recorded in two or more files'; n = lateText.trim(); }
-      else if (open && !late) { t = `This recording ends at ${ends}, before anyone won`; n = 'The rest of the map is probably in another file.'; }
-      else { t = 'This is probably one part of a map recorded in two or more files'; n = `${lateText.trim()} It ends before anyone won.`; } // this file's own score means nothing for the map
       SUM.joinList = null;
       if (others.length) {
+        if (late && !open) { t = 'This is probably part 2 of a map recorded in two or more files'; n = lateText.trim(); }
+        else if (open && !late) { t = `This recording ends at ${ends}, before anyone won`; n = 'The rest of the map is probably in another file.'; }
+        else { t = 'This is probably one part of a map recorded in two or more files'; n = `${lateText.trim()} It ends before anyone won.`; } // this file's own score means nothing for the map
         n += others.length === 1 ? ` ${others[0].name} has the same players on ${D.mapName}.` : ` ${others.length} other demos have the same players on ${D.mapName}: ${others.map((f) => f.name).join(', ')}.`;
         SUM.joinList = [CUR_FILE || fileByName(D.fileName), ...others].filter(Boolean);
-        rows.push({ s: 'info', t, n, btn: { id: 'sumJoin', label: 'Join the parts' } });
+      } else {
+        // no other part found: neutral words, since the file may be a plain draw or a recording that stopped early (Sujan,
+        // 20 Nov 2026). Starting late and ending with no winner, the title has no score: this file's own score leaves out
+        // the rounds before it
+        const may = 'It may have been a draw, or the recording may have stopped early.', join = ' **Join parts…** adds it, from your Half-Life folder or from anywhere.';
+        if (open && !late) { t = `This recording ends at ${ends} with no winner.`; n = `${may} If the rest of the map is in another file,${join}`; }
+        else if (late && !open) { t = 'This recording starts partway through the map.'; n = `${lateText.trim()} If the start of the map is in another file,${join}`; }
+        else { t = 'This recording starts partway through the map and ends with no winner.'; n = `${lateText.trim()} ${may} If the start or the rest of the map is in another file,${join}`; }
       }
+      // one name for it (UI review, item 10); quiet: a button that doesn't keep the card open
+      rows.push({ s: 'info', t, n, btn: { id: 'sumJoin', label: 'Join parts…' }, quiet: !others.length, notail: !others.length });
+      SUM.joinOffer = true;
+      if (tab === 'rounds') renderPane(); // the Rounds tab asks about joining now
     }
+  }
+  // the recording switched maps: no longer the card's first note (Sujan, 19 Nov 2026); under Details when the other maps
+  // played under a minute in all, a note that keeps the card open from a minute (up to then it always kept the card open).
+  // The other maps are every stretch but the one shown, added up, with three or more maps too (Sujan, 19 Nov 2026): the
+  // reader plays the first stretch when it's the longest, else the last (parseDemo), and the viewer only that one
+  if (D.maps && D.maps.length > 1) {
+    const L = D.maps, nm = (m) => m.map.toLowerCase(), want = D.mapName.toLowerCase();
+    const longest = L.reduce((b, m, i) => (m.dur > L[b].dur ? i : b), 0);
+    let shown = longest === 0 ? 0 : L.length - 1;
+    if (nm(L[shown]) !== want) { shown = -1; L.forEach((m, i) => { if (nm(m) === want) shown = i; }); }
+    const other = L.reduce((a, m, i) => a + (i === shown ? 0 : Math.max(0, m.dur)), 0);
+    rows.push({ s: 'info', keep: other >= 60, notail: true, t: `The recording switched maps. Showing ${D.mapName}, where it spent longest.`, n: D.maps.map((m) => `${m.map} ${fmt(m.dur)}`).join(', then ') });
   }
   if (!map) rows.push({ s: 'fail', t: `Map ${D.mapName} not found`, n: 'No 3D view and no wallbang finder. Add the .bsp from cstrike\\maps or cstrike_downloads\\maps.' });
   else if (map.missingTex) rows.push({ s: 'warn', t: `Map loaded, ${map.missingTex} textures missing`, n: 'Those surfaces show a grey checkerboard in 3D.' });
@@ -10060,7 +10445,7 @@ async function loadSummary(sndDone) {
     modelRow('Weapons in hand', weapons, 'Those players are drawn without a gun.'),
     modelRow("First-person weapons", views, "Player's eyes shows no gun for those weapons.")]) if (r) rows.push(r);
   const custom = [...players.custom, ...weapons.custom, ...views.custom];
-  if (custom.length) rows.push({ s: 'info', t: `Custom models: ${few(custom)}`, n: 'Different from the stock game files. Used as they are; they may look or move slightly differently.' });
+  if (custom.length) rows.push({ s: 'info', tail: 'custom models', t: `Custom models: ${few(custom)}`, n: 'Different from the stock game files. Used as they are; they may look or move slightly differently.' });
   if (!sounds.total) { /* nothing to play */ }
   else if (sounds.found === sounds.total) rows.push({ s: 'ok', t: `Sounds: ${sounds.found} of ${sounds.total}`, n: '' });
   else {
@@ -10082,9 +10467,19 @@ async function loadSummary(sndDone) {
   }
   // the only problem is the file stopping early: say that plainly in the title
   else if (healthRows.some((r) => r.s === 'warn') && !rows.some((r) => (r.s === 'warn' || r.s === 'fail') && !healthRows.includes(r))) res = { state: 'warn', title: 'The demo will play up to where the file stops', text: 'Everything it needs loaded. The file itself is incomplete; what follows says exactly how.' };
-  else if (!anyBad) res = { state: 'ok', title: 'Ready to watch', text: rows.some((r) => r.s === 'info') ? 'Everything loaded. The demo will play in full; a note on it below.' : 'Everything loaded. The demo will play in full.' };
+  // the one-line card says the demo type too ("Ready: HLTV demo, 27 rounds (2D and 3D)"; Sujan, 19 Nov 2026); the full card
+  // has it in its first line, so its title stays "Ready: 27 rounds"
+  else if (!anyBad) res = { state: 'ok', title: `Ready: ${plural(live, 'round')}`, lineTitle: `Ready: ${D.pov ? 'POV' : 'HLTV'} demo, ${plural(live, 'round')}${D.povOn ? '' : ' (2D and 3D)'}`, text: '' };
   else res = { state: 'warn', title: 'The demo will play, with a few gaps', text: 'Some files are missing or damaged. Playback works; the parts marked below will look or sound different.', folder: !map || STALE.size > 0 };
-  renderSummary(Object.assign(res, { rows }));
+  renderSummary(Object.assign(res, { rows, kind: demoKindLine(!!map) }));
+}
+// The card's first line whenever it's open (Sujan, 19 Nov 2026): which kind of demo it is and which views it has. map: the
+// map loaded, so there's a 3D view (without it an HLTV demo plays in 2D only)
+function demoKindLine(map) {
+  if (D.povOn) return 'You are viewing a POV demo (3D only)';
+  // a POV file without the record of the player's view plays like an HLTV demo (Sujan, 19 Nov 2026)
+  const a = D.pov ? "a POV demo without the player's view" : 'an HLTV demo';
+  return `You are viewing ${a} (${map ? '2D and 3D available' : '2D only, without the map file'})`;
 }
 
 // What the file itself says about how it was recorded (demo.js, readIndex): a recording never closed, a
@@ -10098,14 +10493,17 @@ function fileHealthRow(h, dur, lead = '') {
   const tail = h.cutInFrame ? ` The file also stops ${plural(h.cutInFrame, 'byte')} into its last frame.` : '';
   const bad = h.badFrame != null ? ` Past ${mb(h.stopAt)} of ${mb(h.fileLen)} the frames can't be read (a damaged stretch), so the rest is left out.` : '';
   if (h.index === 'ok' || (h.index === 'extra' && h.badFrame != null)) return { s: 'warn', t: `${lead}Part of this file is damaged`, n: `Past ${mb(h.stopAt)} of ${mb(h.fileLen)} the frames can't be read, so the rest is left out. ${plays.replace('the file stops', 'the damage starts')}` };
-  if (h.index === 'extra') return { s: 'info', t: `${lead}This file has ${plural(h.extra, 'extra byte')} after its end`, n: 'They come after the index the recorder writes when it stops, so they were added later (by a download or copy, say). The demo is complete and plays in full; the extra bytes are left out.' };
+  if (h.index === 'extra') return { s: 'info', tail: 'extra bytes after the end', t: `${lead}This file has ${plural(h.extra, 'extra byte')} after its end`, n: 'They come after the index the recorder writes when it stops, so they were added later (by a download or copy, say). The demo is complete and plays in full; the extra bytes are left out.' };
   if (h.index === 'never') return { s: 'warn', t: `${lead}This recording was never finished`, n: `When a recording stops properly, the recorder writes an index at the end of the file, and this file has none: HLTV or the game stopped without closing the file, or it was copied or downloaded while still being written.${tail}${bad} ${plays}` };
   if (h.index === 'past' || h.index === 'short') return { s: 'warn', t: `${lead}This file was cut short`, n: `The recording was finished, but ${h.index === 'past' ? "the index it ends with isn't in the file" : "the index it ends with is only partly in the file"}: the end of the file is missing, usually from an interrupted download or copy.${tail}${bad} ${plays}` };
   return { s: 'warn', t: `${lead}This file's index is damaged`, n: `The index at the end of the file doesn't fit the file, so the frames were read one by one from the start instead.${tail}${bad} ${plays}` };
 }
 
-// the card itself: opens in the middle of the view, closes on its own (not when it reports a failure)
-const SUM = { timer: null, left: 0, total: 0, paused: false, last: 0 };
+// the card itself (UI review, item 2, 17 Nov 2026): one line at the top of the view while it checks and when everything
+// loaded with nothing to say ("Ready: 48 rounds", Details for the list), closing itself after a few seconds; a card in the
+// middle of the view with only the notes when there's a note or a button, staying until it's closed, the passed checks
+// under Details; the can't-play card, whose closing goes back to the start screen
+const SUM = { timer: null, left: 0, total: 0, paused: false, last: 0, back: null, r: null };
 function openSummary(o) { renderSummary(Object.assign({ state: 'busy', title: 'Checking your files…', text: 'Looking for the map, models and sounds this demo needs.', rows: [] }, o)); }
 // Count the rounds played after a team reached 16 (up to round 30), or stop at 16: remembered per demo
 function setCount30(on) {
@@ -10119,15 +10517,21 @@ function setCount30(on) {
   const A = M.after16;
   if (A) toast(on ? `Counting the ${A.extra} ${A.extra === 1 ? 'round' : 'rounds'} played after ${M.tnames[A.team]} reached 16. Rounds tab: Stop at 16 to undo.` : `Stopping at 16. Rounds tab: Count them to count the rounds played after.`, 5000);
 }
-function closeSummary() { const el = $('sumCard'); if (el) el.hidden = true; clearInterval(SUM.timer); SUM.timer = null; SUM.closedFor = D; }
+function closeSummary() {
+  const el = $('sumCard'); if (el) el.hidden = true; clearInterval(SUM.timer); SUM.timer = null; SUM.closedFor = D;
+  // the can't-play card goes back to the start screen, closing a demo that can't be played (UI review, item 2)
+  const back = SUM.back; SUM.back = null;
+  if (back) { if (back === 'close' && D) closeDemo(); if ($('load').hidden) showLoad(true); }
+}
 function showFailCard(name, err) {
   ERRLOG.push('Demo read failed: ' + err);
   // A file that isn't cut off or unfinished (those open and play up to where they stop, see fileHealthRow)
   // but still can't be read: say what the reader met, and only suggest checking the game when the file
   // isn't a Half-Life demo at all.
+  // plain words on the card; where the reader stopped (the bytes, its message) is in Copy debug info (UI review, item 2)
   const why = /not a half-life demo/i.test(err) ? "It isn't a Half-Life demo file: it doesn't start the way every demo does. Check that it's a .dem recorded in Counter-Strike 1.6."
-    : /bad frame type/i.test(err) ? `It's damaged near its start, ${(+((err.match(/at (\d+)/) || [])[1] || 0) / 1024).toFixed(0)} KB in, before the match begins, so nothing after that can be read. Try another copy of the demo.`
-    : `Part of it is damaged in a way the reader can't get past (it stopped with "${err}"). Try another copy of the demo.`;
+    : /bad frame type/i.test(err) ? "It's damaged near its start, before the match begins, so nothing after that can be read. Try another copy of the demo."
+    : "Part of it is damaged in a way the viewer can't get past. Try another copy of the demo.";
   renderSummary({ state: 'fail', title: "This demo can't be played", text: `${name} couldn't be opened. ${why}`, rows: [] });
 }
 function renderSummary(r) {
@@ -10135,32 +10539,51 @@ function renderSummary(r) {
   // when the check finishes. A demo that can't be played still says so.
   if (SUM.closedFor && SUM.closedFor === D && r.state !== 'fail') return;
   const el = $('sumCard');
+  SUM.r = r; SUM.back = r.state === 'fail' ? (r.closeDemo ? 'close' : 'keep') : null;
   const icon = { ok: '✓', warn: '!', fail: '✕', info: 'i', busy: '…' };
-  el.innerHTML = `<div class="sum" role="dialog" aria-live="polite" aria-labelledby="sumTitle">
-    <div class="sum-top ${r.state}"><div class="ti"><h2 id="sumTitle">${esc(r.title)}</h2><p>${esc(r.text)}</p></div><button class="sum-x" type="button" id="sumX" title="Close (Esc)" aria-label="Close">×</button></div>
-    ${r.rows.length ? `<ul class="sum-list">${r.rows.map((x) => `<li><span class="sum-ic ${x.s}" aria-hidden="true">${icon[x.s]}</span><span>${esc(x.t)}${x.n ? `<small>${esc(x.n).replace(/\*\*(.+?)\*\*/g, '<b>$1</b>')}</small>` : ''}${x.btn ? `<div class="li-btn"><button class="btn sm" type="button" id="${x.btn.id}">${esc(x.btn.label)}</button></div>` : ''}</span></li>`).join('')}</ul>` : ''}
-    ${r.state === 'busy' ? '' : `<div class="sum-foot">${r.folder ? `<button class="btn" type="button" id="sumFolder">Choose Half-Life folder</button>` : ''}<span class="sp"></span><span id="sumCount"></span>${r.state === 'fail' ? '<button class="btn" type="button" id="sumClose">Close</button><button class="btn primary" type="button" id="sumAnother">Open another demo</button>' : ''}</div>`}
-    ${r.state === 'busy' || r.state === 'fail' ? '' : '<div class="sum-bar"><i id="sumBar"></i></div>'}
+  // a line break in a note's text starts a new line (a joined map's parts)
+  const md = (t) => esc(t).replace(/\*\*(.+?)\*\*/g, '<b>$1</b>').replace(/\n/g, '<br>');
+  // Only a row with a button, a warning or keep (the map switch of a minute or more, the anti-wallhack note) keeps the full
+  // card open (the UI review's final list, item 2; Sujan, 17 and 19 Nov 2026): a note that needs nothing done (custom models,
+  // extra bytes after the end, a joined map) goes under Details, with a short tail on the one-line card ("Ready: HLTV demo,
+  // 27 rounds (2D and 3D) · custom models"); a quiet row's button (the split-map note with no other part found) is only
+  // under Details too, and a notail row has no tail
+  const keeps = (x) => x.s === 'warn' || x.s === 'fail' || (!!x.btn && !x.quiet) || !!x.keep;
+  const notes = r.rows.filter(keeps), quiet = r.rows.filter((x) => x.s === 'info' && !keeps(x));
+  const line = r.state === 'busy' || (r.state === 'ok' && !notes.length && !r.details);
+  // a note marked notail (a map switch of under a minute) is only under Details
+  const tails = quiet.filter((x) => !x.notail).map((x) => x.tail || x.t);
+  // a full card shows its notes; the rest is under Details
+  const shown = r.details ? r.rows : r.rows.filter(keeps), hiddenOk = r.rows.length - shown.length;
+  el.classList.toggle('line', line);
+  if (line) el.innerHTML = `<div class="sum sline ${r.state}" role="status" aria-live="polite">
+    <div class="sl"><span class="sum-ic ${r.state === 'busy' ? 'busy' : 'ok'}" aria-hidden="true">${icon[r.state]}</span><span class="slt"><b id="sumTitle">${esc(r.lineTitle || r.title)}</b>${tails.length ? `<span class="slx"> · ${tails.map(md).join(' · ')}</span>` : ''}</span>${r.state === 'busy' ? '' : '<button class="lnk" type="button" id="sumDetails">Details</button>'}<button class="sum-x" type="button" id="sumX" title="Close (Esc)" aria-label="Close">×</button></div>
+    ${r.state === 'busy' ? '' : '<div class="sum-bar"><i id="sumBar"></i></div>'}
+  </div>`;
+  else el.innerHTML = `<div class="sum" role="dialog" aria-live="polite" aria-labelledby="sumTitle">
+    <div class="sum-top ${r.state}"><div class="ti">${r.kind ? `<div class="sum-kind" id="sumKind">${esc(r.kind)}</div>` : ''}<h2 id="sumTitle">${esc(r.title)}</h2>${r.text ? `<p>${esc(r.text)}</p>` : ''}</div><button class="sum-x" type="button" id="sumX" title="Close (Esc)" aria-label="Close">×</button></div>
+    ${shown.length ? `<ul class="sum-list">${shown.map((x) => `<li><span class="sum-ic ${x.s}" aria-hidden="true">${icon[x.s]}</span><span>${md(x.t)}${x.n ? `<small>${md(x.n)}</small>` : ''}${x.btn ? `<div class="li-btn"><button class="btn sm" type="button" id="${x.btn.id}">${esc(x.btn.label)}</button></div>` : ''}</span></li>`).join('')}</ul>` : ''}
+    <div class="sum-foot">${hiddenOk ? `<button class="lnk" type="button" id="sumDetails" title="What loaded: the demo, the map, the overview, models and sounds">Details</button>` : ''}${r.folder ? `<button class="btn" type="button" id="sumFolder">Choose Half-Life folder</button>` : ''}<span class="sp"></span>${r.state === 'fail' ? '<button class="btn primary" type="button" id="sumAnother">Open another demo</button>' : '<button class="btn" type="button" id="sumClose">Close</button>'}</div>
   </div>`;
   el.hidden = false;
   $('sumX').onclick = closeSummary;
+  if ($('sumDetails')) $('sumDetails').onclick = () => renderSummary(Object.assign({}, r, { details: true }));
   if ($('sumCount30')) $('sumCount30').onclick = () => setCount30(!M.count30);
-  if ($('sumJoin')) $('sumJoin').onclick = () => { if (SUM.joinList) openJoinCard(SUM.joinList); };
+  // the other parts found in the folder open the Join card with them; with none found, its picker (Sujan, 19 Nov 2026)
+  if ($('sumJoin')) $('sumJoin').onclick = () => { if (SUM.joinList) openJoinCard(SUM.joinList); else openJoinPicker(); };
   if ($('sumFolder')) $('sumFolder').onclick = () => { closeSummary(); pickFolder(); };
-  // the can't-play card (0.26.23, docs/dialogs-mock.jpg; Sujan, 8 Nov 2026: Open another demo the main button): back to the
-  // demo list, as the header's Open another demo does, or the list itself when it's already showing
   if ($('sumClose')) $('sumClose').onclick = closeSummary;
-  if ($('sumAnother')) $('sumAnother').onclick = () => { closeSummary(); if ($('load').hidden && $('btnOpen') && !$('btnOpen').hidden) $('btnOpen').click(); const q = $('demoQ'); if (q && !$('load').hidden && q.offsetParent) q.focus(); };
-  el.onclick = (e) => { if (e.target === el && r.state !== 'busy') closeSummary(); };
+  // the can't-play card: back to the demo list (closeSummary goes back to the start screen), its search box ready
+  if ($('sumAnother')) $('sumAnother').onclick = () => { closeSummary(); const q = $('demoQ'); if (q && !$('load').hidden && q.offsetParent) q.focus(); };
+  el.onclick = (e) => { if (e.target === el && r.state !== 'busy' && !line) closeSummary(); };
   clearInterval(SUM.timer); SUM.timer = null;
   const card = el.querySelector('.sum');
   // pause only when the mouse actually moves over the card (it often opens right under a resting cursor)
   SUM.paused = false;
   card.onpointermove = () => { SUM.paused = true; }; card.onpointerleave = () => { SUM.paused = false; };
-  if (r.state === 'busy') return;
-  if (r.state === 'fail') return;
-  // closes on its own: sooner when there's nothing to read
-  SUM.total = SUM.left = r.state === 'ok' && !r.rows.some((x) => x.s === 'info') ? 6 : 15; SUM.last = performance.now();
+  if (!line || r.state === 'busy') return;
+  // the one-line card closes on its own after a few seconds, paused while the mouse is on it
+  SUM.total = SUM.left = 6; SUM.last = performance.now();
   // The bar is animated by the browser, so it shrinks smoothly on every frame instead of in
   // 10-a-second steps. It pauses and resumes with the countdown.
   const bar = $('sumBar');
@@ -10169,7 +10592,6 @@ function renderSummary(r) {
     const now = performance.now(), dt = (now - SUM.last) / 1000; SUM.last = now;
     if (!SUM.paused) SUM.left -= dt;
     if (SUM.left <= 0) { closeSummary(); return; }
-    $('sumCount').textContent = SUM.paused ? 'Paused while you read' : `Closes in ${Math.ceil(SUM.left)} s`;
     if (SUM.anim) {
       if (SUM.paused && SUM.anim.playState === 'running') SUM.anim.pause();
       else if (!SUM.paused && SUM.anim.playState === 'paused') { SUM.anim.currentTime = (SUM.total - SUM.left) * 1000; SUM.anim.play(); }
@@ -10200,7 +10622,7 @@ function frameError(e) {
 function debugInfo() {
   let gpu = '';
   try { const gl = document.createElement('canvas').getContext('webgl'); const x = gl && gl.getExtension('WEBGL_debug_renderer_info'); gpu = gl ? (x ? gl.getParameter(x.UNMASKED_RENDERER_WEBGL) : 'WebGL available') : 'no WebGL'; } catch (e) { gpu = 'unknown'; }
-  const L = [`CS 1.6 Demo Viewer 0.26.31`, `Browser: ${navigator.userAgent}`, `Screen: ${screen.width}x${screen.height} at ${devicePixelRatio}x, window ${innerWidth}x${innerHeight}`, `Graphics: ${gpu}`];
+  const L = [`CS 1.6 Demo Viewer 0.27.0`, `Browser: ${navigator.userAgent}`, `Screen: ${screen.width}x${screen.height} at ${devicePixelRatio}x, window ${innerWidth}x${innerHeight}`, `Graphics: ${gpu}`];
   L.push(`Folder: ${Object.keys(files.maps).length} maps, ${Object.keys(files.overviews).length} overviews, ${Object.keys(files.mdl).length} models, ${Object.keys(files.snd).length} sounds, ${files.demos.length} demos`);
   if (D) {
     L.push(`Demo: ${D.fileName}, protocol ${(D.header && D.header.netProtocol) || '?'}, ${D.pov ? 'POV (recorded by a player)' : 'HLTV'}, map ${D.mapName}, length ${fmt(D.end - D.start)}, ${M.liveR.length} live rounds, final ${M.liveR.length ? M.liveR[M.liveR.length - 1].scoreAfter.join(':') : '-'}`);
@@ -10230,17 +10652,20 @@ async function savedSize() {
   try { const e = navigator.storage && await navigator.storage.estimate(); return e && e.usage ? e.usage : null; } catch (e) { return null; }
 }
 let clearArmed = null;
+const CLEAR_NAME = 'Delete saved files';
 $('bClear').onclick = async () => {
   const b = $('bClear');
   if (!clearArmed) {
     const sz = await savedSize();
-    b.textContent = `Click again to delete ${sz == null ? 'saved files' : sz < 1048576 ? 'less than 1 MB of saved files' : Math.round(sz / 1048576) + ' MB of saved files'}`;
-    clearArmed = setTimeout(() => { clearArmed = null; b.textContent = 'Clear saved files'; }, 4000);
+    // the name says what it does (UI review, item 12, 17 Nov 2026; Clear saved files up to then; not "forget folder", since the
+    // viewer asks for the folder on every visit anyway, Sujan, 17 Nov 2026); the second click states the size
+    b.textContent = `Click again to delete ${sz == null ? 'the saved files' : sz < 1048576 ? 'less than 1 MB of saved files' : Math.round(sz / 1048576) + ' MB of saved files'}`;
+    clearArmed = setTimeout(() => { clearArmed = null; b.textContent = CLEAR_NAME; }, 4000);
     return;
   }
   clearTimeout(clearArmed); clearArmed = null;
   try { const db = await idb.open(); await new Promise((res) => { const q = db.transaction('overviews', 'readwrite').objectStore('overviews').clear(); q.onsuccess = res; q.onerror = res; }); } catch (e) { }
-  b.textContent = 'Clear saved files';
+  b.textContent = CLEAR_NAME;
   // back to a first visit straight away, without a reload
   hlForget(); closeDemo();
   setMsg('Done: the saved files are deleted. Choose your Half-Life folder to go on.');

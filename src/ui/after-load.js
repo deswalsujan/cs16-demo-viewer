@@ -34,7 +34,7 @@ function povApply() {
 function demoOffers() {
   const pov = !!(D && D.povOn);
   return {
-    views: pov ? ['3d'] : ['2d', '3d', 'split'],
+    views: pov ? ['3d'] : ['2d', '3d'], // 3D + radar is 3D with the Radar row on since the UI review, item 5
     cameras: pov ? ['eyes'] : ['free', 'eyes', 'behind'],
     resetView: !pov,
     crosshairSize: !pov, povCrosshair: pov, flashbangs: pov, glowOnHits: !pov, damageNumbers: !pov,
@@ -63,13 +63,22 @@ async function onDemo() {
   const first = M.liveR[0];
   T = first ? first.start : D.start;
   playing = false; selected = null; pickedKill = null; pickedBurst = null;
-  $('meta').textContent = D.parts ? `${D.mapName} · ${D.parts[0].fileName} and ${plural(D.parts.length - 1, 'more file')} · ${fmt(D.end - D.start)}` : `${D.mapName} · ${D.fileName} · ${fmt(D.end - D.start)}`;
+  // every demo opens on the Rounds tab (Sujan, 19 Nov 2026; up to then the last tab used carried over)
+  tab = 'rounds'; document.querySelectorAll('.tabs button').forEach((x) => x.classList.toggle('on', x.dataset.tab === 'rounds')); $('pane').scrollTop = 0;
+  // a thinner header (UI review, item 14, 17 Nov 2026): the map and the length first, the file name last, where the line may
+  // cut it, and in full on hover (up to then the file name came second, and at 1512 px the length was cut off after it);
+  // the demo type before them all, "HLTV demo" or "POV demo", so it's always in view (Sujan, 19 Nov 2026)
+  $('meta').innerHTML = `<b class="dkind">${D.pov ? 'POV demo' : 'HLTV demo'}</b> · ` + esc(D.parts ? `${D.mapName} · ${fmt(D.end - D.start)} · ${D.parts[0].fileName} and ${plural(D.parts.length - 1, 'more file')}` : `${D.mapName} · ${fmt(D.end - D.start)} · ${D.fileName}`);
+  $('meta').title = D.parts ? D.parts.map((p) => p.fileName).join(', then ') : D.fileName;
   const chip = $('partsChip');
   chip.onclick = () => { const b = document.querySelector('.tabs button[data-tab="rounds"]'); if (b) b.click(); $('pane').scrollTop = 0; };
   chip.hidden = !D.parts; if (D.parts) { chip.textContent = `${D.parts.length} files`; chip.title = 'One map joined from ' + D.parts.map((p) => p.fileName).join(', then ') + '. Rounds tab: Split them to undo.'; }
   $('score').hidden = false; $('legend').hidden = false; $('heatbar').hidden = false; $('rclock').hidden = false;
   $('tnA').textContent = M.tnames[0]; $('tnB').textContent = M.tnames[1];
-  heat = null; $('hmMode').value = 'off';
+  heat = null; $('hmMode').value = 'off'; heatControls();
+  // "Press ? for keyboard shortcuts" in the view for the first few demos only, then only in Help (UI review, item 8); the
+  // rule of 11 Nov 2026 hiding it in POV mode, 2D, Theatre mode and under 1100 px stays
+  { const n = (+ls.get('demosOpened') || 0) + 1; ls.set('demosOpened', n); $('hint3').hidden = n > 3; }
   afterOverview(ok, true);
   M.wbs = [];
   buildHp(); buildPack(); buildPings(); buildBrk(); buildPose(); prepAnim(); buildZoom();
@@ -108,7 +117,7 @@ function closeDemo() {
   sndPreload++; // stops a sound preload that's still running for this demo
   resetForNewDemo(); clear3d(); closeSummary(); if ($('joinCard')) closeJoinCard();
   D = null; M = null; MAP = null; OV = null; T = 0; prevT = null; pickedKill = null; pickedBurst = null; heat = null;
-  $('meta').textContent = 'CS 1.6 HLTV demos, played in your browser';
+  $('meta').textContent = 'CS 1.6 HLTV and POV demos, played in your browser'; $('meta').title = '';
   for (const id of ['score', 'legend', 'heatbar', 'rclock', 'cam3', 'status3', 'pov', 'sb']) $(id).hidden = true;
   $('feed').innerHTML = '';
   $('pane').innerHTML = '<div class="opt">Rounds, kills and player stats appear here once a demo is open.</div>';
@@ -120,19 +129,25 @@ function closeDemo() {
 }
 function showLoad(v) {
   $('load').hidden = !v;
+  // only the start steps while it's up (UI review, item 1); the side panel and the bottom bar come back with a demo, so
+  // the canvases take their new sizes at once, before onDemo draws the timeline into them
+  $('app').classList.toggle('start', !!v);
+  if (!v) resize();
   applyTheatre(); // the start screen needs the header, so Theatre mode pauses while it's open
   // the load summary goes at once rather than counting down behind the start screen (Sujan, 14 Oct 2026).
   // The message line starts empty each time the start screen comes back, whether or not an overview loaded: up to
   // 0.26.11 "Reading name…" stayed there after a demo whose map has no overview (Sujan, 3 Nov 2026). checkDemoList
   // runs after, so its note on a demo deleted since the pick still shows.
-  if (v) { playing = false; setPlayIcon(); $('prog').hidden = true; setMsg(''); if (D && $('sumCard') && !$('sumCard').hidden) closeSummary(); checkDemoList(); }
+  // no Tab scoreboard over it: a POV demo's recorded one, or one held by hand (Sujan, 19 Nov 2026: "He held Tab here" stayed
+  // over the start screen after Open another demo while paused on a Tab hold)
+  if (v) { playing = false; setPlayIcon(); $('prog').hidden = true; setMsg(''); showScoreboard(false); if (D && $('sumCard') && !$('sumCard').hidden) closeSummary(); checkDemoList(); }
   setControls(!v && !!D);
 }
 // Everything that needs a demo stays disabled until one is loaded (Shortcuts always works)
 function setControls(on) {
-  const ids = ['bPrevR', 'bBack', 'bPlay', 'bFwd', 'bNextR', 'bScope', 'bTheatre', 'bFull'];
+  const ids = ['bPrevR', 'bBack', 'bPlay', 'bFwd', 'bNextR', 'bSpeed', 'bFull'];
   for (const id of ids) $(id).disabled = !on;
-  document.querySelectorAll('#speeds button, #viewSeg button, .tabs button').forEach((b) => b.disabled = !on);
+  document.querySelectorAll('#speeds button, #scopeSeg button, #viewSeg button, .tabs button').forEach((b) => b.disabled = !on);
   $('tl').classList.toggle('off', !on);
   $('btnOpen').hidden = !D; // nothing to go "back" to until a demo has been opened once
   if (D && !on) $('btnOpen').textContent = 'Back to the demo';

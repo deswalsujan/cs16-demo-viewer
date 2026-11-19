@@ -6,19 +6,19 @@
 /*INLINE ui/size.js*/
 </script>
 
-<div class="app" id="app">
+<div class="app start" id="app">
   <header class="head">
     <div class="brand">CS 1.6 <span>Demo Viewer</span></div>
-    <div class="meta" id="meta">CS 1.6 HLTV demos, played in your browser</div>
+    <div class="meta" id="meta">CS 1.6 HLTV and POV demos, played in your browser</div>
     <div class="score" id="score" hidden>
       <span class="tn" id="tnA" title="Click to rename"></span>
       <span class="num" id="scA">0</span><span class="sep">:</span><span class="num" id="scB">0</span>
       <span class="tn" id="tnB" title="Click to rename"></span>
-      <span class="viewers" id="viewers" title="People watching the HLTV broadcast at this moment"></span>
       <button class="chip" type="button" id="partsChip" hidden></button>
     </div>
-    <div class="seg" id="viewSeg" role="group" aria-label="View"><button type="button" data-v="2d" class="on">2D</button><button type="button" data-v="3d">3D</button><button type="button" data-v="split">3D + radar</button></div>
-    <div class="hbtns"><button class="btn" id="bTheatre" type="button" title="Theatre mode: the view fills the window, controls appear at the edges (T)">Theatre</button><button class="btn" id="bFull" type="button" title="Full screen, in Theatre mode (F)">Full screen</button><button class="btn" id="btnOpen" type="button">Open another demo</button></div>
+    <div class="seg" id="viewSeg" role="group" aria-label="View"><button type="button" data-v="2d" class="on">2D</button><button type="button" data-v="3d">3D</button></div>
+    <!-- one Full screen button (UI review, item 7, 17 Nov 2026): Theatre mode's own button went; T still fills the window -->
+    <div class="hbtns"><button class="btn" id="bFull" type="button" aria-pressed="false" title="Full screen: the view fills the screen, and the controls come in when the mouse moves to an edge (F)">Full screen</button><button class="btn" id="btnOpen" type="button">Open another demo</button></div>
   </header>
 
   <section class="radar m2d" id="radar">
@@ -36,7 +36,8 @@
     <div class="cmsg" id="cmsg" hidden></div>
     <div class="skipnote" id="skipnote" hidden title="HLTV left part of the game out of this recording, so players jump to where they were after it"><svg viewBox="0 0 14 10" aria-hidden="true"><path d="M1 9L5 1M6 9l4-8"/></svg>Recording skips here</div>
     <!-- The 3D bar, one short row since 0.18.1 so the kill feed at the top right doesn't run into it (Sujan,
-         14 Oct 2026): the three cameras as one control, Prev and Next player as arrows, the rest in View settings -->
+         14 Oct 2026): the three cameras as one control, Prev and Next player as arrows. View settings moved to the strip at
+         the bottom left (UI review, item 4, 17 Nov 2026) -->
     <div class="cam3" id="cam3" hidden>
       <div class="seg camseg" role="group" aria-label="Camera">
         <button class="on" data-c="free" type="button" title="Free camera: fly around (V switches camera)">Free</button>
@@ -45,57 +46,17 @@
       </div>
       <button class="btn arr" id="bPrevP" type="button" title="Previous player (↓ or right-click)" aria-label="Previous player">‹</button>
       <button class="btn arr" id="bNextP" type="button" title="Next player (↑ or click)" aria-label="Next player">›</button>
-      <div class="vset">
-        <button class="btn" id="bVset" type="button" aria-expanded="false" aria-controls="vsetPanel" title="Vanilla, team colours, quality, damage numbers, crosshair size, interface size and flashbangs">View settings <svg viewBox="0 0 10 6" aria-hidden="true"><path d="M1 1l4 4 4-4"/></svg></button>
-        <div class="vpanel" id="vsetPanel" role="group" aria-label="View settings" hidden>
-          <div class="vhead">On the view</div>
-          <label class="vrow"><span>Vanilla<small>every overlay off, as in the game</small></span><input type="checkbox" id="van3" title="Turns off what the game's own demo player doesn't show: damage numbers, kill markers, glow, See through walls, names and HP over the players, kill lines, grenade paths, the death cam's red wash and banner, and the C4 countdown. The buttons and settings still work one by one after"></label>
-          <div class="vrow"><span>Team colours</span><button class="btn" id="tgModels" type="button" title="Draw the players in flat team colours: red for Terrorists, blue for Counter-Terrorists">Off</button></div>
-          <label class="vrow"><span>Damage numbers<small>which hits show their damage</small></span><select id="dn3" title="The damage each hit did, floating up beside the player hit. Wallbangs: hits through a wall, in orange. Direct hits: hits in the open, in white. Both: every hit. The killing bullet ends in a red skull">
-            <option value="wb">Wallbangs</option>
-            <option value="direct">Direct hits</option>
-            <option value="both">Both</option>
-            <option value="off">Off</option>
-          </select></label>
-          <label class="vrow"><span>Glow on hits<small>damage through walls, no kill</small></span><input type="checkbox" id="glow3" title="A short pink glow on a player each time a bullet hits him through a wall, for damage that doesn't end in a kill"></label>
-          <label class="vrow"><span>Crosshair<small>in Player's eyes</small></span><select id="xh3" title="Crosshair size in Player's eyes, like the game's crosshair size setting">
-            <option value="small">Small</option>
-            <option value="medium">Medium</option>
-            <option value="large">Large</option>
-          </select></label>
-          <label class="vrow" hidden><span>Crosshair<small>size only</small></span><select id="xhp3" title="The size of his crosshair. From config.cfg uses the size set in the game's config.cfg in your Half-Life folder, as the game's demo player uses the watcher's own settings. The colour always comes from config.cfg">
-            <option value="cfg">From config.cfg</option>
-            <option value="small">Small</option>
-            <option value="medium">Medium</option>
-            <option value="large">Large</option>
-          </select></label>
-          <div class="vhead">Picture</div>
-          <label class="vrow"><span>Quality</span><select id="q3" title="How sharp the 3D view is drawn. Auto starts sharp and steps down if playback can't keep up">
-            <option value="auto">Auto</option>
-            <option value="high">High</option>
-            <option value="low">Low</option>
-          </select></label>
-          <label class="vrow"><span>Interface size<small>text, buttons and labels</small></span><select id="ui3" title="Makes text, buttons, panels and the labels in the view bigger. Auto keeps them as they are on a laptop and makes them bigger on a large screen. A size too big for the window is lowered to fit">
-            <option value="auto">Auto</option>
-            <option value="100">100%</option>
-            <option value="125">125%</option>
-            <option value="150">150%</option>
-            <option value="175">175%</option>
-            <option value="200">200%</option>
-          </select></label>
-          <div class="vhead" hidden>Demos recorded by a player</div>
-          <label class="vrow" hidden><span>Flashbang dot<small>how blinded he was</small></span><input type="checkbox" id="fbDot3" title="A white dot under the crosshair that fades as his screen did when a flashbang blinded him, or a teammate he was watching"></label>
-          <label class="vrow" hidden><span>Flashbang whiteout<small>the white his screen showed, full screen</small></span><input type="checkbox" id="fbWhite3" title="The view goes white as his screen did when a flashbang blinded him, or a teammate he was watching. As in the game, his HUD and radar fade into the white"></label>
-        </div>
-      </div>
     </div>
-    <div class="hint3" id="hint3">Press ? for keyboard shortcuts</div>
+    <div class="hint3" id="hint3">Press ? for help and the keys</div>
     <div class="overlay" id="sb" hidden></div>
     <div class="overlay sumwrap" id="sumCard" hidden></div>
+    <!-- Help (UI review, item 9, 17 Nov 2026; Shortcuts and kill markers up to then): three parts, Keys, Colours and marks
+         (the kill markers and the timeline's colours, diamonds and gaps, which nothing explained before), About -->
     <div class="overlay keys" id="keys" hidden>
-      <div class="keys-card">
-        <div class="keys-head"><b>Shortcuts and kill markers</b><button class="sum-x" id="bKeysX" type="button" title="Close (Esc)" aria-label="Close">×</button></div>
+      <div class="keys-card" role="dialog" aria-labelledby="helpTitle">
+        <div class="keys-head"><b id="helpTitle">Help</b><button class="sum-x" id="bKeysX" type="button" title="Close (Esc)" aria-label="Close">×</button></div>
         <textarea class="dbgbox" id="dbgBox" readonly hidden aria-label="Debug info"></textarea>
+        <h2 class="hpart">Keys</h2>
         <div class="keys-grid">
           <section><h3>Playback</h3>
             <dl><dt><kbd>Space</kbd></dt><dd>Play or pause</dd>
@@ -113,8 +74,8 @@
             <dt><kbd>N</kbd></dt><dd>Show or hide names</dd>
             <dt><kbd>H</kbd></dt><dd>See through walls on or off: players behind walls, and their names, drawn on top of the walls (3D)</dd>
             <dt><kbd>M</kbd></dt><dd>Sound on or off</dd>
-            <dt><kbd>F</kbd></dt><dd>Full screen on or off (full screen uses Theatre mode)</dd>
-            <dt><kbd>T</kbd></dt><dd>Theatre mode on or off: the view fills the window, and all the controls slide in when the mouse moves to the top, right or bottom edge</dd></dl>
+            <dt><kbd>F</kbd></dt><dd>Full screen on or off. The controls come in when the mouse moves to the top, right or bottom edge</dd>
+            <dt><kbd>T</kbd></dt><dd>Theatre mode on or off: the view fills the browser window. The controls come in when the mouse moves to the top, right or bottom edge</dd></dl>
           </section>
           <section><h3>3D camera</h3>
             <dl><dt><kbd>V</kbd></dt><dd>Switch camera: free, player's eyes, behind player</dd>
@@ -124,34 +85,106 @@
             <dt><kbd>Shift</kbd></dt><dd>Move faster</dd>
             <dt>Mouse wheel</dt><dd>Fly forward or back</dd></dl>
           </section>
+          <section><h3>Radar (2D)</h3>
+            <dl><dt>Drag</dt><dd>Move the map</dd>
+            <dt>Mouse wheel</dt><dd>Zoom</dd>
+            <dt>Click a dot</dt><dd>Highlight that player</dd>
+            <dt><kbd>?</kbd></dt><dd>Show this help</dd></dl>
+          </section>
+        </div>
+        <h2 class="hpart">Colours and marks</h2>
+        <div class="keys-grid">
           <section class="hmsec"><h3>Kill markers</h3>
             <p class="hmnote">In Player's eyes, small ticks flash around the crosshair when the player you're watching gets a kill. In the other views, a ring in the same colour bursts out from the victim.</p>
             <dl class="hmlist">
               <dt><svg class="hm" viewBox="0 0 40 40" aria-hidden="true"><g stroke="#000" stroke-opacity=".45" stroke-width="3" stroke-linecap="round"><path d="M28 28l4 4M28 12l4-4M12 28l-4 4M12 12l-4-4"/></g><g stroke="#ffffff" stroke-width="1.5" stroke-linecap="round"><path d="M28 28l4 4M28 12l4-4M12 28l-4 4M12 12l-4-4"/></g><g stroke="#5aff5a" stroke-width="1.5"><path d="M12 20h5M23 20h5M20 12v5M20 23v5"/></g></svg></dt><dd><b class="hmw">KILL</b><span>A normal kill. Example: an AK spray to the body in the open.</span></dd>
               <dt><svg class="hm" viewBox="0 0 40 40" aria-hidden="true"><g stroke="#000" stroke-opacity=".45" stroke-width="3" stroke-linecap="round"><path d="M28 28l4 4M28 12l4-4M12 28l-4 4M12 12l-4-4"/></g><g stroke="#ff9a3c" stroke-width="1.5" stroke-linecap="round"><path d="M28 28l4 4M28 12l4-4M12 28l-4 4M12 12l-4-4"/></g><g stroke="#5aff5a" stroke-width="1.5"><path d="M12 20h5M23 20h5M20 12v5M20 23v5"/></g></svg></dt><dd><b class="hmo">HEADSHOT</b><span>The killing bullet hit the head. Example: a one-tap with the AK.</span></dd>
               <dt><svg class="hm" viewBox="0 0 40 40" aria-hidden="true"><g stroke="#000" stroke-opacity=".45" stroke-width="3" stroke-linecap="round"><path d="M28 28l4 4M28 12l4-4M12 28l-4 4M12 12l-4-4"/></g><g stroke="#ff4fd8" stroke-width="1.5" stroke-linecap="round"><path d="M28 28l4 4M28 12l4-4M12 28l-4 4M12 12l-4-4"/></g><g stroke="#5aff5a" stroke-width="1.5"><path d="M12 20h5M23 20h5M20 12v5M20 23v5"/></g></svg></dt><dd><b class="hms">WALLBANG · HS</b><span>The bullet went through cover, with the victim fully hidden. HS is added when it was also a headshot.</span></dd>
-              <dt><svg class="hm" viewBox="0 0 40 40" aria-hidden="true"><g stroke="#000" stroke-opacity=".45" stroke-width="3" stroke-linecap="round"><path d="M28 28l4 4M28 12l4-4M12 28l-4 4M12 12l-4-4"/></g><g stroke="#c9a3e8" stroke-width="1.5" stroke-linecap="round"><path d="M28 28l4 4M28 12l4-4M12 28l-4 4M12 12l-4-4"/></g><g stroke="#5aff5a" stroke-width="1.5"><path d="M12 20h5M23 20h5M20 12v5M20 23v5"/></g></svg></dt><dd><b class="hml">LOOSE WB</b><span>A loose wallbang: the bullet went through cover, but part of the victim was in view.</span></dd>
+              <dt><svg class="hm" viewBox="0 0 40 40" aria-hidden="true"><g stroke="#000" stroke-opacity=".45" stroke-width="3" stroke-linecap="round"><path d="M28 28l4 4M28 12l4-4M12 28l-4 4M12 12l-4-4"/></g><g stroke="#c9a3e8" stroke-width="1.5" stroke-linecap="round"><path d="M28 28l4 4M28 12l4-4M12 28l-4 4M12 12l-4-4"/></g><g stroke="#5aff5a" stroke-width="1.5"><path d="M12 20h5M23 20h5M20 12v5M20 23v5"/></g></svg></dt><dd><b class="hml">PARTIAL WALLBANG · HS</b><span>A partial wallbang: the bullet went through cover, but part of the victim was in view. HS is added when it was also a headshot.</span></dd>
             </dl>
           </section>
-          <section><h3>Radar (2D)</h3>
-            <dl><dt>Drag</dt><dd>Move the map</dd>
-            <dt>Mouse wheel</dt><dd>Zoom</dd>
-            <dt>Click a dot</dt><dd>Highlight that player</dd>
-            <dt><kbd>?</kbd></dt><dd>Show this list</dd></dl>
+          <section class="hmsec"><h3>The side panel</h3>
+            <p class="hmnote">Players: kills and deaths come from the kill feed, so there are no bonus points for bomb plants or defuses, and a team kill (TK) isn't counted as a kill. Only the rounds that count are counted; overtime is every round after the regulation ones. Click a player to follow them; Key is the 1 to 0 key that jumps to them. In a POV demo the highlighted player is the one whose eyes the view shows.</p>
+            <p class="hmnote">Rounds: the score after each round, and how long it lasted. <b>Show N uncounted rounds</b>, at the top of the list, also lists the rounds that don't count: warmup, restarts and idle rounds, like time-outs.</p>
+          </section>
+          <section class="hmsec"><h3>The timeline</h3>
+            <dl class="hmlist tllist">
+              <dt><svg class="tlm" viewBox="0 0 40 24" aria-hidden="true"><rect width="40" height="24" rx="3" fill="#15191c"/><rect x="2" y="8" width="17" height="16" fill="rgba(232,87,77,.3)"/><rect x="21" y="8" width="17" height="16" fill="rgba(94,163,232,.3)"/><text x="4" y="7" font-size="6" fill="#8d959c">12</text></svg></dt><dd><b>Rounds</b><span>Each round's stretch, red when the Terrorists won it, blue when the Counter-Terrorists did, grey with no result; its number above it.</span></dd>
+              <dt><svg class="tlm" viewBox="0 0 40 24" aria-hidden="true"><rect width="40" height="24" rx="3" fill="#15191c"/><rect x="13" y="12" width="2" height="12" fill="#e8574d"/><rect x="25" y="6" width="2" height="18" fill="#5ea3e8"/></svg></dt><dd><b>Kills</b><span>A thin bar in the killer's team colour; a taller one for a headshot. Click one to watch that kill and open it in the Kills tab; in a POV demo, to jump to a few seconds before it.</span></dd>
+              <dt><svg class="tlm" viewBox="0 0 40 24" aria-hidden="true"><rect width="40" height="24" rx="3" fill="#15191c"/><path d="M9 8l4 4-4 4-4-4z" fill="#ff4fd8"/><path d="M20 8l4 4-4 4-4-4z" fill="#c9a3e8"/><path d="M31 8.5l3.5 3.5-3.5 3.5-3.5-3.5z" fill="none" stroke="#ffb347" stroke-width="1.4"/></svg></dt><dd><b>Diamonds</b><span>A wallbang (pink), a partial wallbang (lilac), and wall damage, hits through a wall with no kill (hollow orange).</span></dd>
+              <dt><svg class="tlm" viewBox="0 0 40 24" aria-hidden="true"><rect width="40" height="24" rx="3" fill="#15191c"/><path d="M20 16l4 8h-8z" fill="#ff9a3c"/></svg></dt><dd><b>Triangles</b><span>The bomb planted.</span></dd>
+              <dt><svg class="tlm" viewBox="0 0 40 24" aria-hidden="true"><rect width="40" height="24" rx="3" fill="#15191c"/><rect x="17" y="4" width="6" height="20" fill="#0e1012"/><path d="M16.5 22l3-17M20.5 22l3-17" stroke="#e7e3d9" stroke-width="1.5"/></svg></dt><dd><b>Gaps</b><span>// where the recording skips: HLTV left part of the game out, so players jump.</span></dd>
+              <dt><svg class="tlm" viewBox="0 0 40 24" aria-hidden="true"><rect width="40" height="24" rx="3" fill="#15191c"/><rect x="8" y="4" width="24" height="20" fill="rgba(231,227,217,.35)"/></svg></dt><dd><b>Pauses</b><span>A light stretch where the match was paused.</span></dd>
+              <dt><svg class="tlm" viewBox="0 0 40 24" aria-hidden="true"><rect width="40" height="24" rx="3" fill="#15191c"/><rect x="19" y="2" width="2" height="22" fill="#cbb47e"/><path d="M15 2h10l-5 6z" fill="#cbb47e"/></svg></dt><dd><b>Playhead</b><span>Where playback is. Click or drag on the timeline to move it.</span></dd>
+            </dl>
           </section>
         </div>
-        <div class="keys-foot"><span class="ver">Version __VERSION__ · <a href="https://github.com/deswalsujan/cs16-demo-viewer/blob/main/CHANGELOG.md" target="_blank" rel="noopener">What's new</a> · <a href="https://github.com/deswalsujan/cs16-demo-viewer/issues/new/choose" target="_blank" rel="noopener">Report a bug</a></span><span class="sp"></span><button class="btn" id="bDebug" type="button" title="Copies details for a bug report: browser, demo name, what loaded, errors. No file contents.">Copy debug info</button><button class="btn" id="bKeysClose" type="button">Close</button></div>
+        <h2 class="hpart">About</h2>
+        <div class="habout">
+          <p>CS 1.6 Demo Viewer, version __VERSION__. It plays HLTV and POV demos in the browser, from your own Half-Life folder; nothing leaves your computer.</p>
+          <p>A map with no radar picture: drop its overview, the .bmp and .txt pair from cstrike\overviews, anywhere on the page.</p>
+          <p class="hlinks"><a href="https://github.com/deswalsujan/cs16-demo-viewer/blob/main/CHANGELOG.md" target="_blank" rel="noopener">What's new</a> · <a href="https://github.com/deswalsujan/cs16-demo-viewer" target="_blank" rel="noopener">Source on GitHub</a> · <a href="https://github.com/deswalsujan/cs16-demo-viewer/issues/new/choose" target="_blank" rel="noopener">Report a bug</a></p>
+          <p class="hdbg"><button class="btn" id="bDebug" type="button" title="Copies details for a bug report: browser, demo name, what loaded, errors. No file contents.">Copy debug info</button><span>Paste it into your bug report: it says which browser, demo and files, and any errors, with no file contents.</span></p>
+        </div>
+        <div class="keys-foot"><span class="sp"></span><button class="btn" id="bKeysClose" type="button">Close</button></div>
       </div>
     </div>
     <canvas id="cv" aria-label="Radar view of the match"></canvas>
     <div class="rclock" id="rclock" hidden></div>
     <div class="feed" id="feed"></div>
+    <!-- The view's options in one strip at the bottom left in 2D, 3D and POV (UI review, item 4, 17 Nov 2026): Names,
+         Grenades, Kill lines, See through walls (not in 2D, where it does nothing), Reset view (not in POV), then View
+         settings, opening upward, with only the rows the view uses (.v3: 3D only) -->
     <div class="legend" id="legend" hidden>
       <button class="btn on" id="tgNames" type="button">Names</button>
       <button class="btn on" id="tgNades" type="button">Grenades</button>
       <button class="btn on" id="tgLines" type="button">Kill lines</button>
       <span class="xwrap"><button class="btn" id="tgXray" type="button" title="Show players behind walls, and their names, in 3D (H)">See through walls</button><button class="xmark" id="xrayMark" type="button" hidden title="This server seems to use an anti-wallhack plugin. Click the ! to read why." aria-label="Why few enemies show through walls">!</button></span>
       <button class="btn" id="tgFit" type="button" title="Back to the starting view: the whole radar in 2D, the overview camera in 3D">Reset view</button>
+      <div class="vset">
+        <button class="btn" id="bVset" type="button" aria-expanded="false" aria-controls="vsetPanel" title="Hide all overlays, and in 3D team colours, damage numbers, the crosshair and quality; interface size; in a POV demo the flashbangs">View settings <svg viewBox="0 0 10 6" aria-hidden="true"><path d="M1 1l4 4 4-4"/></svg></button>
+        <div class="vpanel" id="vsetPanel" role="group" aria-label="View settings" hidden>
+          <div class="vhead">On the view</div>
+          <label class="vrow"><span>Hide all overlays<small>as in the game's own demo player</small></span><input type="checkbox" id="van3" title="Turns off what the game's own demo player doesn't show: damage numbers, kill markers, glow, See through walls, names and HP over the players, kill lines, grenade paths, the death cam's red wash and banner, and the C4 countdown. The buttons and settings still work one by one after"></label>
+          <label class="vrow v3"><span>Radar<small>the 2D map in a corner of the 3D view</small></span><input type="checkbox" id="radar3" title="Shows the 2D radar in the bottom right corner of the 3D view"></label>
+          <div class="vrow v3"><span>Team colours</span><button class="btn" id="tgModels" type="button" title="Draw the players in flat team colours: red for Terrorists, blue for Counter-Terrorists">Off</button></div>
+          <label class="vrow v3"><span>Damage numbers<small>which hits show their damage</small></span><select id="dn3" title="The damage each hit did, floating up beside the player hit. Wallbangs: hits through a wall, in orange. Direct hits: hits in the open, in white. Both: every hit. The killing bullet ends in a red skull">
+            <option value="wb">Wallbangs</option>
+            <option value="direct">Direct hits</option>
+            <option value="both">Both</option>
+            <option value="off">Off</option>
+          </select></label>
+          <label class="vrow v3"><span>Glow on hits<small>damage through walls, no kill</small></span><input type="checkbox" id="glow3" title="A short pink glow on a player each time a bullet hits them through a wall, for damage that doesn't end in a kill"></label>
+          <label class="vrow v3"><span>Crosshair<small>in Player's eyes</small></span><select id="xh3" title="Crosshair size in Player's eyes, like the game's crosshair size setting">
+            <option value="small">Small</option>
+            <option value="medium">Medium</option>
+            <option value="large">Large</option>
+          </select></label>
+          <label class="vrow" hidden><span>Crosshair<small>size only</small></span><select id="xhp3" title="The size of the player's crosshair. From config.cfg uses the size set in the game's config.cfg in your Half-Life folder, as the game's demo player uses the watcher's own settings. The colour always comes from config.cfg">
+            <option value="cfg">From config.cfg</option>
+            <option value="small">Small</option>
+            <option value="medium">Medium</option>
+            <option value="large">Large</option>
+          </select></label>
+          <div class="vhead">Picture</div>
+          <label class="vrow v3"><span>Quality</span><select id="q3" title="How sharp the 3D view is drawn. Auto starts sharp and steps down if playback can't keep up">
+            <option value="auto">Auto</option>
+            <option value="high">High</option>
+            <option value="low">Low</option>
+          </select></label>
+          <label class="vrow"><span>Interface size<small>text, buttons and labels</small></span><select id="ui3" title="Makes text, buttons, panels and the labels in the view bigger. Auto keeps them as they are on a laptop and makes them bigger on a large screen. A size too big for the window is lowered to fit">
+            <option value="auto">Auto</option>
+            <option value="100">100%</option>
+            <option value="125">125%</option>
+            <option value="150">150%</option>
+            <option value="175">175%</option>
+            <option value="200">200%</option>
+          </select></label>
+          <div class="vhead" hidden>Demos recorded by a player</div>
+          <label class="vrow" hidden><span>Flashbang dot<small>how blinded the player was</small></span><input type="checkbox" id="fbDot3" title="A white dot under the crosshair that fades as the player's screen did when a flashbang blinded them, or a teammate they were watching"></label>
+          <label class="vrow" hidden><span>Flashbang whiteout<small>the white the player's screen showed, full screen</small></span><input type="checkbox" id="fbWhite3" title="The view goes white as the player's screen did when a flashbang blinded them, or a teammate they were watching. As in the game, the player's HUD and radar fade into the white"></label>
+        </div>
+      </div>
     </div>
     <div class="heatbar" id="heatbar" hidden>
       <select id="hmMode" aria-label="Heatmap">
@@ -160,12 +193,12 @@
         <option value="kills">Heatmap: where kills were made from</option>
         <option value="presence">Heatmap: where players stand</option>
       </select>
-      <select id="hmSide" aria-label="Heatmap filter">
+      <select id="hmSide" aria-label="Heatmap filter" hidden>
         <option value="all">Both sides</option>
         <option value="1">T side</option>
         <option value="2">CT side</option>
       </select>
-      <select id="hmScope" aria-label="Heatmap rounds">
+      <select id="hmScope" aria-label="Heatmap rounds" hidden>
         <option value="match">Whole match</option>
         <option value="round">This round</option>
       </select>
@@ -173,7 +206,7 @@
 
     <div class="load" id="load">
       <div class="load-card">
-        <h1>Play a <span>CS 1.6</span> demo in the browser</h1>
+        <h1>Play <span>CS 1.6</span> demos in your browser</h1>
         <p>Everything stays on your computer. The demo and map files are read by this page and never uploaded.</p>
         <p>Needs your own copy of Counter-Strike 1.6, installed through Steam.</p>
         <div class="steps">
@@ -181,11 +214,11 @@
             <div class="k">1</div>
             <div class="tx"><b id="hlTitle">Choose your Half-Life folder</b><small id="hlStatus">The Half-Life folder from your Steam install, the one with cstrike and valve inside.</small></div>
             <div class="hlbtns"><button class="btn" id="btnFolder" type="button">Choose folder</button></div>
-            <div class="hlx hlpaths" id="hlPaths" hidden><div id="hlWin">Windows: <span class="p" id="hlPathWin"></span></div><div id="hlMac">Mac: <span class="p" id="hlPathMac"></span></div><div class="hltip" id="hlTip">In the Mac's dialog, press Cmd+Shift+G and paste it.</div><div class="hlup">Your browser may call it an upload, but nothing leaves your computer.</div></div>
+            <div class="hlx hlpaths" id="hlPaths" hidden><div id="hlWin"><div class="plab">Windows:</div><div class="pbox"><code class="p" id="hlPathWin"></code><button class="cpy" type="button" data-copy="hlPathWin" title="Copy the path" aria-label="Copy the Windows path"><svg viewBox="0 0 16 16" aria-hidden="true"><rect x="5.5" y="5.5" width="8" height="8" rx="1.5"/><path d="M10.5 5.5V4A1.5 1.5 0 0 0 9 2.5H4A1.5 1.5 0 0 0 2.5 4v5A1.5 1.5 0 0 0 4 10.5h1.5"/></svg><span class="cpyt" hidden>Copied</span></button></div></div><div id="hlMac"><div class="plab">Mac:</div><div class="pbox"><code class="p" id="hlPathMac"></code><button class="cpy" type="button" data-copy="hlPathMac" title="Copy the path" aria-label="Copy the Mac path"><svg viewBox="0 0 16 16" aria-hidden="true"><rect x="5.5" y="5.5" width="8" height="8" rx="1.5"/><path d="M10.5 5.5V4A1.5 1.5 0 0 0 9 2.5H4A1.5 1.5 0 0 0 2.5 4v5A1.5 1.5 0 0 0 4 10.5h1.5"/></svg><span class="cpyt" hidden>Copied</span></button></div></div><div class="hltip" id="hlTip">In the Mac's dialog, press Cmd+Shift+G and paste it.</div><div class="hlup">Your browser may call it an upload, but nothing leaves your computer.</div></div>
           </div>
           <div class="step" id="stepDemo">
             <div class="k">2</div>
-            <div class="tx"><b>Open a demo</b><small>A .dem file, recorded by HLTV or by a player. Pick one below or open a file from anywhere. Also plays pre-2008 (protocol 47) demos the Steam game won't open.</small></div>
+            <div class="tx"><b>Open a demo</b><small>Pick a demo below, or open a .dem file from anywhere.<span class="proto">HLTV or POV demos both play <span class="nw">(Protocol 47 &amp; 48 supported).</span></span></small></div>
             <button class="btn" id="btnDemo" type="button" disabled title="Choose your Half-Life folder first">Open .dem</button>
             <div class="stepin">
               <div class="dfind" id="demoFind" hidden>
@@ -196,10 +229,10 @@
             </div>
           </div>
         </div>
-        <div class="drophint">Or drop a .dem file, or an overview .bmp and .txt pair, anywhere on this page</div>
+        <div class="drophint">Or drop a .dem file anywhere on this page</div>
         <div class="prog" id="prog" hidden><i id="progBar"></i></div>
         <div class="msg" id="msg"></div>
-        <div class="loadfoot"><span>Version __VERSION__ · <a href="https://github.com/deswalsujan/cs16-demo-viewer" target="_blank" rel="noopener">Source on GitHub</a></span><button class="btn" id="bClear" type="button" title="Deletes the maps, models, sounds and overviews this browser saved from your Half-Life folder, and starts over as on a first visit">Clear saved files</button></div>
+        <div class="loadfoot"><span>Version __VERSION__ · <a href="https://github.com/deswalsujan/cs16-demo-viewer" target="_blank" rel="noopener">Source on GitHub</a> · <button class="lnk" id="bHelpStart" type="button" title="The keys, the colours and marks, and about the viewer (?)">Help</button></span><button class="btn" id="bClear" type="button" title="Deletes the copies of maps, models, sounds and radar overviews this browser saved from your Half-Life folder. The folder closes until you pick it again, as on a first visit">Delete saved files</button></div>
       </div>
     </div>
   </section>
@@ -216,17 +249,22 @@
 
   <footer class="transport">
     <div class="tl" id="tl"><canvas id="tlc" aria-label="Timeline"></canvas><div class="tip" id="tip" hidden></div></div>
+    <!-- one centred group, Help alone at the right edge (Sujan, 19 Nov 2026) -->
     <div class="ctrls">
+      <div class="cgrp">
       <button class="btn ib" id="bPrevR" type="button" title="Previous round (Z)"><svg viewBox="0 0 16 16"><path d="M3 2h2v12H3zM14 2v12L6 8z"/></svg></button>
       <button class="btn ib" id="bBack" type="button" title="Back 5 seconds (←)"><svg viewBox="0 0 16 16"><path d="M8 3v10L1 8zM15 3v10L8 8z"/></svg></button>
       <button class="btn ib primary" id="bPlay" type="button" title="Play or pause (Space)"><svg viewBox="0 0 16 16" id="playIcon"><path d="M4 2l10 6-10 6z"/></svg></button>
       <button class="btn ib" id="bFwd" type="button" title="Forward 5 seconds (→)"><svg viewBox="0 0 16 16"><path d="M1 3v10l7-5zM8 3v10l7-5z"/></svg></button>
       <button class="btn ib" id="bNextR" type="button" title="Next round (X)"><svg viewBox="0 0 16 16"><path d="M11 2h2v12h-2zM2 2v12l8-6z"/></svg></button>
       <span class="time" id="time"><b>0:00</b> / 0:00</span>
-      <button class="btn" id="bScope" type="button" title="Timeline shows the whole match or only this round">Timeline: match</button>
+      <!-- the bottom bar (UI review, item 8, 17 Nov 2026): the timeline's range as a two-part switch, Match | Round, in place
+           of "Timeline: match"; one speed button showing the speed ("Speed 1×", Sujan, 17 Nov 2026), opening the six -->
+      <div class="seg tlseg" id="scopeSeg" role="group" aria-label="Timeline" title="The timeline shows the whole match or only this round"><button type="button" data-s="match" class="on">Match</button><button type="button" data-s="round">Round</button></div>
       <span class="sndgrp"><button class="btn ib" id="bSnd" type="button" title="Sound on or off (M)" aria-pressed="true"><svg viewBox="0 0 16 16" id="sndIcon"></svg></button><input type="range" id="sndVol" min="0" max="1" step="0.01" aria-label="Volume" title="Volume"></span>
-      <button class="btn" id="bKeys" type="button" title="Keyboard shortcuts (?)">Shortcuts <span class="kbd">?</span></button>
-      <div class="sp" id="speeds"></div>
+      <div class="spwrap"><button class="btn" id="bSpeed" type="button" aria-expanded="false" aria-controls="speeds" title="Playback speed ([ slower, ] faster)">Speed 1×</button><div class="sppop" id="speeds" role="group" aria-label="Playback speed" hidden></div></div>
+      </div>
+      <button class="btn" id="bKeys" type="button" title="Help: the keys, the colours and marks, and about the viewer (?)">Help <span class="kbd">?</span></button>
     </div>
   </footer>
 </div>

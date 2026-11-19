@@ -30,7 +30,9 @@ ED1KASDDSA's AWP kill on face, with no shot recorded, out of the wallbangs by th
 ED1KASDDSA still STRICT WB; the blood points and helmet sparks read (0.26.26). The shot feedback on SK vs Na`Vi: the gun flash from
 behind at the p_ model's muzzle (AK-47, AWP) or, with none there, at the player model's hand (silenced M4A1), for one frame,
 with Vanilla too; in Player's eyes at the v_ model's attachment (the silenced M4A1's small one), none on a scoped AWP shot;
-shells in Player's eyes only, thrown left; a blood puff at every blood point of a round (0.26.27). About two and a half minutes.
+shells in Player's eyes only, thrown left; a blood puff at every blood point of a round (0.26.27). On wip/ui-simpler (the UI review): the
+speed button's "Speed 1×" (item 8); the Wallbangs tab's one dropdown with the counts, Copy list on its row copying the rows
+shown, and the picture check's line under it (item 3). About two and a half minutes (7 under heavy load, 17 Nov 2026).
 """
 import os, re, sys, http.server, functools, threading, tempfile, shutil, subprocess, atexit
 from playwright.sync_api import sync_playwright
@@ -113,6 +115,26 @@ with sync_playwright() as p:
     pg.click('#tgFit'); pg.wait_for_timeout(500); reset = pg.evaluate(under)
     check('2D map zoomed in goes under the controls, Reset view brings it back above them (1366x768)', zoomed['below'] > 0 and reset['below'] == 0 and reset['above'] > 0,
           f"zoomed: {zoomed['below']} pixels under; after Reset view: {reset['below']}")
+    # the bottom of the 2D view at 1512x982 with Heatmap on (UI review, items 4 and 8, 17 Nov 2026): the strip at the bottom
+    # left (with View settings since item 4) and the Heatmap control (its side and range show only while it's on since item
+    # 8) side by side, apart, and the map still ending above them (0.26.14)
+    pg.set_viewport_size({'width': 1512, 'height': 982}); pg.wait_for_timeout(500)
+    off = pg.evaluate("() => [document.getElementById('hmSide').hidden, document.getElementById('hmScope').hidden]")
+    pg.select_option('#hmMode', 'deaths'); pg.wait_for_timeout(600)
+    hm = pg.evaluate("""() => { const L = document.getElementById('legend').getBoundingClientRect(), H = document.getElementById('heatbar').getBoundingClientRect();
+      return { gap: Math.round(H.left - L.right), rows: [Math.round(L.height), Math.round(H.height)], shown: [!document.getElementById('hmSide').hidden, !document.getElementById('hmScope').hidden] }; }""")
+    u = pg.evaluate(under)
+    check('2D at 1512x982 with Heatmap on: side and range shown only while it is on, the strip and the Heatmap control apart on one row each, the map above them',
+          off == [True, True] and hm['shown'] == [True, True] and hm['gap'] >= 8 and max(hm['rows']) < 40 and u['below'] == 0 and u['above'] > 0, f"{hm}; hidden while off: {off}; {u['below']} pixels under the controls")
+    pg.select_option('#hmMode', 'off'); pg.wait_for_timeout(300)
+    # one speed button (UI review, item 8): it shows the speed and opens the six; [ and ] still step it
+    sp = pg.evaluate("""async () => { const w = (ms) => new Promise((r) => setTimeout(r, ms)), b = document.getElementById('bSpeed'), pop = document.getElementById('speeds');
+      const was = b.textContent; b.click(); await w(100); const open = !pop.hidden, n = pop.querySelectorAll('button').length; pop.querySelectorAll('button')[4].click(); await w(100);
+      const picked = [b.textContent, pop.hidden]; document.dispatchEvent(new KeyboardEvent('keydown', { key: ']' })); await w(50); const up = b.textContent;
+      document.dispatchEvent(new KeyboardEvent('keydown', { key: '[' })); document.dispatchEvent(new KeyboardEvent('keydown', { key: '[' })); document.dispatchEvent(new KeyboardEvent('keydown', { key: '[' })); await w(50);
+      return { was, open, n, picked, up, back: b.textContent }; }""")
+    check('one speed button: Speed 1× opens the six, 4× picked closes them and shows Speed 4×, ] makes it Speed 8×, [ three times Speed 1×',
+          sp == {'was': 'Speed 1×', 'open': True, 'n': 6, 'picked': ['Speed 4×', True], 'up': 'Speed 8×', 'back': 'Speed 1×'}, str(sp))
     pg.set_viewport_size({'width': 880, 'height': 1300})
 
     # Player's eyes keeps the game's 4:3 view top to bottom (0.26.15, Sujan, 3 Nov 2026): the game's 90 degrees, or a
@@ -146,13 +168,17 @@ with sync_playwright() as p:
         kd = JS(r"""(async () => { const w = (ms) => new Promise((r) => setTimeout(r, ms));
           const k = window.__kd = D.kills.find((x) => Math.abs(x.t - D.start - 2790.34) < 0.05);
           selected = k.killer; setCam('eyes', true); playing = false; T = k.t + 0.03; pickedKill = k; tab = 'kills'; renderPane(); await w(300);
-          const read = () => { const b = document.querySelector('.kdet'); return b ? [b.querySelector('.ksum'), b.querySelector('.kpre')].map((e) => e ? e.innerText.trim() : '').concat([...b.querySelectorAll('.kb')].map((x) => x.innerText.replace(/\s+/g, ' ').trim())) : null; };
+          // since the UI review (item 11): "Earlier:" folded into "N HP lost before this fight", its list read with the line shut
+          const read = () => { const b = document.querySelector('.kdet'); if (!b) return null; const p = b.querySelector('.kpre');
+            return [b.querySelector('.ksum').innerText.trim(), p ? `${p.querySelector('summary').innerText.trim()} [${p.open ? 'open' : 'shut'}] ${p.querySelector('.kpl').textContent.trim()}` : ''].concat([...b.querySelectorAll('.kb')].map((x) => x.innerText.replace(/\s+/g, ' ').trim()))
+              .concat([[...b.querySelectorAll('.est')].map((e) => e.title).join(), b.querySelector('.knote').innerText.trim()]); };
           const kills = read(); tab = 'wb'; renderPane(); await w(300); const wb = read(); tab = 'kills'; renderPane(); await w(200);
           document.querySelectorAll('.kdet .kb')[1].click(); await w(300);
           const jump = { t: +(T - D.start).toFixed(2), paused: !playing, eyes: cam3.mode === 'eyes' && selected === k.killer };
           return { kills, wb, jump }; })()""")
-        want = ['5 hits · 4 through a wall · 93 HP in 0.30 s', 'Earlier: −7 from a grenade at 0:45.', '1 −30 chest or arm* · in the open −0.30 s',
-                '2 −17 body · through a wall −0.30 s', '3 −17 body · through a wall −0.21 s', '4 −17 body · through a wall −0.11 s', '5 −12HS head · through a wall kill']
+        want = ['5 hits · 4 through a wall · 93 HP in 0.30 s', '7 HP lost before this fight [shut] Earlier: −7 from a grenade at 0:45.', '1 −30 chest or arm* · in the open 0.30 s before',
+                '2 −17 body · through a wall 0.30 s before', '3 −17 body · through a wall 0.21 s before', '4 −17 body · through a wall 0.11 s before', '5 −12HS head · through a wall kill',
+                'Estimated from the damage: the demo says only head or body', '−12 HS: the health the victim had left.']
         check('kill details: the picked kill in the Kills list opens to one line per bullet, the "Earlier:" line and the order of the demo', kd['kills'] == want, ' | '.join(kd['kills'] or ['no box']))
         check('kill details: the same in the Wallbangs list', kd['wb'] == want, ' | '.join(kd['wb'] or ['no box']))
         check("kill details: a bullet's line jumps playback to it, paused, through the killer's eyes", kd['jump'] == {'t': 2790.07, 'paused': True, 'eyes': True}, str(kd['jump']))
@@ -162,7 +188,7 @@ with sync_playwright() as p:
         # listed bullets; as first built it counted only those before edzie's first and read "−42, source unknown".
         cf = JS(r"""(async () => { const w = (ms) => new Promise((r) => setTimeout(r, ms));
           const k = D.kills.find((x) => Math.abs(x.t - D.start - 2667.38) < 0.05); T = k.t + 0.03; pickedKill = k; renderPane(); await w(300);
-          const p = document.querySelector('.kdet .kpre'), out = p ? p.innerText.trim() : null;
+          const p = document.querySelector('.kdet .kpre'), out = p ? p.querySelector('.kpl').textContent.trim() : null;
           pickedKill = __kd; T = __kd.t + 0.03; renderPane(); await w(200); return out; })()""")
         check('kill details: "Earlier:" names a crossfire hit between the killer\'s bullets (starix on face, R23 1:18), "source unknown" only with its time',
               cf == 'Earlier: −12 from a grenade at 1:25, −8 from a grenade at 1:23, −13 from a grenade at 1:23, −21 from starix at 1:19, −21 at 1:19, source unknown.', repr(cf))
@@ -438,14 +464,56 @@ with sync_playwright() as p:
         JS5 = lambda c: pg5.evaluate('(c) => __v(c)', c)
         pg5.evaluate('(n) => __v(`loadDemoFile(files.demos.find((f) => f.name === ${JSON.stringify(n)}))`)', W1)
         pg5.wait_for_function('__v("!!(D && M)")', timeout=120000)
-        card = lambda: JS5(r"""(() => { const el = $('joinCard'); const t = (s) => [...el.querySelectorAll(s)].map((x) => x.innerText.replace(/\s+/g, ' ').trim());
-          return { parts: t('.jparts li .jf small'), names: t('.jparts li .jname'), order: t('.jorder')[0] || '', checks: [...el.querySelectorAll('.sum-list li')].map((li) => ({ s: li.querySelector('.sum-ic').className.replace('sum-ic ', ''), t: li.innerText.replace(/\s+/g, ' ').trim().replace(/^[✓!i✕] /, '') })),
+        # the checks that pass and the notes fold behind the verdict line (Sujan, 19 Nov 2026; "N checks pass" since the UI
+        # review's item 10): opened before reading them all
+        card = lambda: JS5(r"""(() => { JOIN.okOpen = true; renderJoinCard(); const el = $('joinCard'); const t = (s) => [...el.querySelectorAll(s)].map((x) => x.innerText.replace(/\s+/g, ' ').trim());
+          return { parts: t('.jparts li .jf small'), names: t('.jparts li .jname'), order: t('.jv .jvt')[0] || '', checks: [...el.querySelectorAll('.sum-list li:not(.jv)')].map((li) => ({ s: li.querySelector('.sum-ic').className.replace('sum-ic ', ''), t: li.innerText.replace(/\s+/g, ' ').trim().replace(/^[✓!i✕] /, '') })),
             wrong: t('.jwrong p')[0] || null, go: !$('jGo').disabled }; })()""")
+        # part 1 alone ends before anyone won: the load card says so with Join parts…, naming part 2 and staying open when it's in
+        # the folder; with no other part found, the one-line card, the note and its Join parts… under Details, opening the Join
+        # card's picker (Sujan, 19 Nov 2026; up to then the note showed only when another part was in the folder); with none, the
+        # words say it may have been a draw or a recording that stopped early (Sujan, 20 Nov 2026)
+        pg5.wait_for_function('__v("SUM.r && SUM.r.state !== \'busy\'")', timeout=60000)
+        lc = JS5(r"""(async () => { const txt = () => $('sumCard').innerText.replace(/\s+/g, ' ').trim(), a = { text: txt(), btn: $('sumJoin') ? $('sumJoin').textContent : null, list: (SUM.joinList || []).map((f) => f.name) };
+          const keep = files.demos; files.demos = keep.filter((f) => !/^ravens\.wmf/.test(f.name)); SUM.closedFor = null;
+          try { await loadSummary(Promise.resolve()); } finally { files.demos = keep; }
+          const b = { line: $('sumCard').classList.contains('line'), lineText: txt(), lineBtn: !!$('sumJoin') }; $('sumDetails').click();
+          Object.assign(b, { text: txt(), btn: $('sumJoin') ? $('sumJoin').textContent : null, list: SUM.joinList });
+          $('sumJoin').click(); await new Promise((r) => setTimeout(r, 1500)); b.picking = JOIN.picking && !$('joinCard').hidden && !!$('joinCard').querySelector('.jpick'); closeJoinCard();
+          return { a, b }; })()""")
+        check('the load card of a part that ends before anyone won: Join parts… naming part 2 in the folder, the card open; with no part found, the one-line card, the neutral note under Details, Join parts… opening the picker',
+              'This recording ends at 4:0, before anyone won' in lc['a']['text'] and W2 in lc['a']['text'] and lc['a']['btn'] == 'Join parts…' and lc['a']['list'] == [W1, W2]
+              and lc['b']['line'] and not lc['b']['lineBtn'] and 'no winner' not in lc['b']['lineText'] and 'before anyone won' not in lc['b']['text']
+              and 'This recording ends at 4:0 with no winner. It may have been a draw, or the recording may have stopped early. If the rest of the map is in another file, Join parts… adds it, from your Half-Life folder or from anywhere.' in lc['b']['text']
+              and lc['b']['btn'] == 'Join parts…' and lc['b']['list'] is None and lc['b']['picking'], str(lc))
+        # the other two cases with no other part found (Sujan, 20 Nov 2026), on Na`Vi vs SK's third file alone, which starts
+        # partway into a round and ends with no winner, then as if it had a winner; then part 1 of WeMadeFox vs Ravens again
+        JS5("window.__demos = files.demos; files.demos = files.demos.filter((x) => !/NaVi_SK|^ravens\\.wmf/.test(x.name)); SUM.r = null; loadDemoFile(__demos.find((x) => x.name === %r)); 0" % NS[2])
+        pg5.wait_for_function('__v("!!(D && D.fileName === %r && SUM.r && SUM.r.state !== \'busy\')")' % NS[2], timeout=120000)
+        lc2 = JS5(r"""(async () => { const rows = () => SUM.r.rows.filter((r) => r.btn && r.btn.id === 'sumJoin').map((r) => r.t + ' ' + r.n.replace(/\*\*/g, '')); const out = { both: rows() };
+          M.wonAt = { winTeam: 0 }; SUM.closedFor = null; await loadSummary(Promise.resolve()); out.late = rows(); files.demos = __demos; closeSummary(); return out; })()""")
+        check('the split-map note with no other part found: starting partway through the map; starting late and ending with no winner, both, with no score',
+              lc2 == {'late': ['This recording starts partway through the map. The recording starts partway into a round. If the start of the map is in another file, Join parts… adds it, from your Half-Life folder or from anywhere.'],
+                      'both': ['This recording starts partway through the map and ends with no winner. The recording starts partway into a round. It may have been a draw, or the recording may have stopped early. If the start or the rest of the map is in another file, Join parts… adds it, from your Half-Life folder or from anywhere.']}, str(lc2))
+        JS5("SUM.r = null; loadDemoFile(files.demos.find((x) => x.name === %r)); 0" % W1)
+        pg5.wait_for_function('__v("!!(D && D.fileName === %r && M && SUM.r && SUM.r.state !== \'busy\')")' % W1, timeout=120000)
+        # part 1 alone ends before anyone won: the Rounds tab asks, with Join parts… (UI review, item 10)
+        jq = JS5("(() => { closeSummary(); tab = 'rounds'; renderPane(); const b = $('bJoinWith'), q = $('pane').querySelector('.joinrow span'); return { text: b.textContent, question: q ? q.textContent : null }; })()")
+        check('the Rounds tab of a part that ends before anyone won: the question, with Join parts…', jq == {'text': 'Join parts…', 'question': 'Is this map split over two or more demo files?'}, str(jq))
         JS5(f"closeSummary(); openJoinCard([{W1!r}, {W2!r}].map((n) => files.demos.find((f) => f.name === n)))")
         pg5.wait_for_function('__v("!JOIN.reading && JOIN.F.size === 2 && !!$(\'jGo\')")', timeout=120000)
+        # the link at the verdict's right, "Show N checks" / "Hide checks", styled like the load card's Details (Sujan, 20 Nov 2026)
+        f0 = JS5(r"""(() => { const el = $('joinCard'), read = () => { const v = el.querySelector('.jv .jvt'), l = $('jVerdict'), vr = v.getBoundingClientRect(), lr = l.getBoundingClientRect(), li = v.closest('li').getBoundingClientRect();
+              return { verdict: v.textContent, open: l.getAttribute('aria-expanded'), link: l.textContent, lnk: l.classList.contains('lnk'), right: lr.left >= vr.right && li.right - lr.right <= 1,
+                rows: [...el.querySelectorAll('.sum-list li:not(.jv)')].map((li) => li.querySelector('.sum-ic').className.replace('sum-ic ', '')), count: /\d+ checks? pass/.test(el.innerText) }; };
+          const closed = read(); $('jVerdict').click(); const open = read(); $('jVerdict').click(); return { closed, open, go: $('jGo').textContent }; })()""")
+        V = 'In the order they were recorded: 09:51, 10:26. The rounds agree.'
+        check('Join card: one verdict line, no "N checks pass" count; the 2 checks that pass and the note on the half behind it, opening with "Show 3 checks" at its right, closing with "Hide checks"; the button reads Join parts',
+              f0 == {'closed': {'verdict': V, 'open': 'false', 'link': 'Show 3 checks', 'lnk': True, 'right': True, 'rows': [], 'count': False},
+                     'open': {'verdict': V, 'open': 'true', 'link': 'Hide checks', 'lnk': True, 'right': True, 'rows': ['ok', 'ok', 'info'], 'count': False}, 'go': 'Join parts'}, str(f0))
         c = card()
-        check('Join card, WeMadeFox vs Ravens in the suggested order: part 1 first, Join them on, no "doesn\'t add up"',
-              c['names'] == [W1, W2] and c['go'] and c['wrong'] is None, f"{c['names']}, Join them {'on' if c['go'] else 'off'}, {c['wrong']!r}")
+        check('Join card, WeMadeFox vs Ravens in the suggested order: part 1 first, Join parts on, no "doesn\'t add up"',
+              c['names'] == [W1, W2] and c['go'] and c['wrong'] is None, f"{c['names']}, Join parts {'on' if c['go'] else 'off'}, {c['wrong']!r}")
         check("Join card: part 1's line, its 4 rounds and the 13 replayed before them (the approved words)",
               c['parts'][:1] == ['4 rounds count, ending at WeMadeFox 4 : 0 Ravens, no winner. 13 earlier rounds were replayed: restarted from 0:0 on the same sides.'], repr(c['parts'][:1]))
         check("Join card: part 2's line says where the map stands, not its own 0:0",
@@ -454,24 +522,35 @@ with sync_playwright() as p:
               {'s': 'info', 't': "Part 2 carries on part 1's half Same sides: part 1's 4 rounds count, and part 2's 11 complete the half of 15. 3 rounds at its start were replayed."} in c['checks'],
               '; '.join(f"[{x['s']}] {x['t']}" for x in c['checks']))
         check('Join card: the same 10 players by Steam ID (SIA, bail and BERRY were one person up to 0.26.18), the order from the recording times',
-              {'s': 'ok', 't': 'Same 10 players, by Steam ID'} in c['checks'] and c['order'] == 'Order: from the recording times in the file names, 3 Mar 2010 at 09:51 and at 10:26. The rounds agree.', c['order'])
+              {'s': 'ok', 't': 'Same 10 players, by Steam ID'} in c['checks'] and c['order'] == 'In the order they were recorded: 09:51, 10:26. The rounds agree.', c['order'])
         JS5("JOIN.picking = true; renderJoinCard()")
         jp = JS5("(() => { const p = document.querySelector('#joinCard .jpick'); return { sel: p.querySelectorAll('#jSel option').length, none: !!p.querySelector('.jnone') }; })()")
         check('Join card with other demos in the folder: the list of them, no "no other demos" line', jp['sel'] > 2 and not jp['none'], str(jp))
         JS5("JOIN.picking = false; renderJoinCard()")
         JS5('joinMove(1, -1)')
         c = card()
-        check("Join card, part 2 put first: check A says the order doesn't add up, and Join them is off",
-              c['names'] == [W2, W1] and c['wrong'] == "Part 1's teams change sides after 11 rounds, so its first half began in an earlier recording." and not c['go'], f"{c['wrong']!r}, Join them {'on' if c['go'] else 'off'}")
-        check('Join card, part 2 put first: the recording times named, and no green tick for the teams swapping sides',
-              c['order'] == 'Order: Your order. The recording times in the file names, 3 Mar 2010 at 09:51 and at 10:26, put them the other way round.'
-              and {'s': 'warn', 't': 'Teams swapped sides between the parts'} in c['checks'], f"{c['order']!r}; " + '; '.join(f"[{x['s']}] {x['t']}" for x in c['checks']))
+        check("Join card, part 2 put first: check A says the order doesn't add up, and Join parts is off",
+              c['names'] == [W2, W1] and c['wrong'] == "Part 1's teams change sides after 11 rounds, so its first half began in an earlier recording." and not c['go'], f"{c['wrong']!r}, Join parts {'on' if c['go'] else 'off'}")
+        # an order that differs from the recording times: a warning (Sujan, 19 Nov 2026; grey words in the order line up to then);
+        # with the "doesn't add up" box, Use the recorded order is that box's gold button beside Keep my order and the warning keeps
+        # only its text (Sujan, 20 Nov 2026), and no second button for the same order
+        sg = JS5("(() => ({ sugg: !!$('jSugg'), btns: [...document.querySelectorAll('#joinCard .jwrong .jbtns .btn')].map((b) => b.id + (b.classList.contains('primary') ? ' gold' : '')) }))()")
+        check('Join card, part 2 put first: "In your order.", the warning that it isn\'t the recorded order, its Use the recorded order the gold button in the "doesn\'t add up" box beside Keep my order, and no green tick for the teams swapping sides',
+              c['order'] == 'In your order.' and sg == {'sugg': False, 'btns': ['jKeep', 'jRec gold']}
+              and {'s': 'warn', 't': 'Not in the order they were recorded The recording times in the file names put them the other way round: 09:51, 10:26.'} in c['checks']
+              and {'s': 'warn', 't': 'Teams swapped sides between the parts'} in c['checks'], f"{c['order']!r}; Use the suggested order {sg}; " + '; '.join(f"[{x['s']}] {x['t']}" for x in c['checks']))
         B = JS5("orderProblem([JOIN.F.get(JOIN.list[0].name), Object.assign({}, JOIN.F.get(JOIN.list[1].name))].map((f, i) => i ? f : Object.assign({}, f, { swapAt: null })))")
         check('check B on the same order (check A left out): other sides after 26 rounds, partway through a half',
               B == 'The map is 26 rounds in when part 1 ends, partway through a half, but the teams are on other sides in part 2.', repr(B))
         JS5('useSuggested()')
         JS5("$('jGo').click()")
         pg5.wait_for_function('__v("!!(D && D.parts && D.parts.length === 2 && M && M.liveR.length > 20)")', timeout=120000)
+        # the joined map's note under Details: each part on its own line (Sujan, 20 Nov 2026)
+        pg5.wait_for_function('__v("!!(SUM.r && SUM.r.state !== \'busy\')")', timeout=60000)
+        jn = JS5(r"""(() => { SUM.closedFor = null; renderSummary(Object.assign({}, SUM.r, { details: true })); const li = [...$('sumCard').querySelectorAll('.sum-list li')].find((x) => /One map, joined from 2 files/.test(x.innerText));
+          return li ? li.querySelector('small').innerText.split('\n') : null; })()""")
+        check('the joined map on the load card: each part on its own line, then Split them in the Rounds tab',
+              jn == [f'Part 1: {W1}', f'Part 2: {W2}', 'Split them in the Rounds tab.'], str(jn))
         j = JS5(r"""(() => { closeSummary(); const L = M.liveR, last = L[L.length - 1], st = statsFor('all');
           showAll = true; tab = 'rounds'; renderPane();
           const subs = [...$('pane').querySelectorAll('.row .sub')].map((x) => x.textContent.replace(/\s+/g, ' ').trim());
@@ -485,13 +564,49 @@ with sync_playwright() as p:
         check('joined: 10 players in the stats, BERRY and bail among them', len(j['people']) == 10 and any('BERRY' in p for p in j['people']) and any('bail' in p for p in j['people']), ', '.join(j['people']))
         check('Rounds tab with Show warmup, restarts and idle rounds: the 16 replayed rounds read "replayed from 0:0" before their result',
               j['replayed'] == 16 and j['first'] == 'replayed from 0:0 · elimination · 6 kills', f"{j['replayed']} rows; the first {j['first']!r}")
+        # a remembered join keeps each part's size (Sujan, 20 Nov 2026): opening part 1 opens the joined map; with part 2's size
+        # changed (another file under the same name), part 1 opens on its own, the join is forgotten, and the load card says why
+        rj = JS5(f"(() => {{ const v = ls.get('join:' + {W1!r}), f = (n) => files.demos.find((x) => x.name === n); return {{ set: v.set, sizes: v.sizes, real: [f({W1!r}).size, f({W2!r}).size] }}; }})()")
+        JS5(f"closeSummary(); D.__old = true; loadDemoFile(files.demos.find((x) => x.name === {W1!r})); 0")
+        pg5.wait_for_function('__v("!!(D && !D.__old && D.parts && D.parts.length === 2 && M)")', timeout=120000)
+        JS5(f"(() => {{ closeSummary(); for (const n of [{W1!r}, {W2!r}]) {{ const v = ls.get('join:' + n); v.sizes[1] += 1; ls.set('join:' + n, v); }} SUM.r = null; loadDemoFile(files.demos.find((x) => x.name === {W1!r})); }})()")
+        pg5.wait_for_function('__v("!!(D && !D.parts && D.fileName === %s && SUM.r && SUM.r.state !== \'busy\')")' % repr(W1), timeout=120000)
+        rd = JS5(f"(() => ({{ forgot: !joinedSetOf({W1!r}) && !joinedSetOf({W2!r}), open: !$('sumCard').classList.contains('line') && !$('sumCard').hidden, rows: SUM.r.rows.filter((r) => r.t.startsWith('This file was joined')).map((r) => r.t) }}))()")
+        check('a remembered join: each part\'s size kept; part 1 opens the joined map, and with part 2\'s size changed opens on its own, the join forgotten, the load card open saying why',
+              rj['set'] == [W1, W2] and rj['sizes'] == rj['real'] and rd == {'forgot': True, 'open': True, 'rows': [f'This file was joined with {W2} before. {W2} has changed, so it opened on its own.']}, f'{rj}; {rd}')
+        JS5('closeSummary()')
         # Na`Vi vs SK, Inferno, ESWC 2011: the order the Join card suggests, from the times later in the names
         JS5("closeJoinCard(); openJoinCard(%s.map((n) => files.demos.find((f) => f.name === n)))" % repr(NS))
         pg5.wait_for_function('__v("!JOIN.reading && JOIN.F.size >= 3 && !!$(\'jGo\')")', timeout=180000)
         c = card()
         check('Join card, Na`Vi vs SK, Inferno, ESWC 2011: suggests 1609, 1724, 1740 from the times later in the names (1609, 1740, 1724 up to 0.26.18)',
               [re.search(r'-(\d{10})-', n).group(1)[-4:] for n in c['names']] == ['1609', '1724', '1740']
-              and c['order'] == 'Order: from the recording times in the file names, 24 Oct 2011 at 16:09, at 17:24 and at 17:40. The rounds agree.', f"{c['names']}; {c['order']!r}")
+              and c['order'] == 'In the order they were recorded: 16:09, 17:24, 17:40. The rounds agree.', f"{c['names']}; {c['order']!r}")
+        # the order that misled Sujan with "3 checks pass" (19 Nov 2026): 16:09, 17:40, 17:24 is a warning, and Use the recorded
+        # order puts them back
+        JS5('joinMove(1, 1)')
+        c = card()
+        w = [x['t'] for x in c['checks'] if x['s'] == 'warn' and x['t'].startswith('Not in the order they were recorded')]
+        gold = JS5("(() => ({ gold: $('jRec').classList.contains('primary'), inBox: !!$('jRec').closest('.jwrong'), box: !!document.querySelector('#joinCard .jwrong') }))()")
+        check('Join card, Na`Vi vs SK in the order 16:09, 17:40, 17:24, an order the rounds allow: no "doesn\'t add up" box, the warning\'s Use the recorded order the gold button',
+              gold == {'gold': True, 'inBox': False, 'box': False}, str(gold))
+        JS5("$('jRec').click()")
+        c2 = card()
+        check('Join card, Na`Vi vs SK in the order 16:09, 17:40, 17:24: the warning with Use the recorded order, which puts them back to 16:09, 17:24, 17:40',
+              [re.search(r'-(\d{10})-', n).group(1)[-4:] for n in c['names']] == ['1609', '1740', '1724'] and w == ['Not in the order they were recorded The recording times in the file names put them in another order: 16:09, 17:24, 17:40. Use the recorded order']
+              and [re.search(r'-(\d{10})-', n).group(1)[-4:] for n in c2['names']] == ['1609', '1724', '1740'] and c2['order'] == 'In the order they were recorded: 16:09, 17:24, 17:40. The rounds agree.'
+              and not any(x['s'] == 'warn' for x in c2['checks']), f"{c['names']}; {w}; then {c2['names']}; {c2['order']!r}")
+        # the same recording twice under two names (Sujan, 20 Nov 2026): part 1 of WeMadeFox vs Ravens and a copy of it made in
+        # the page under another name: a warning, Join parts off, and Remove part 2 takes it out
+        JS5(f"(async () => {{ const f = files.demos.find((x) => x.name === {W1!r}); const c = new File([await f.arrayBuffer()], 'wmf-part1-copy.dem', {{ lastModified: f.lastModified }}); closeJoinCard(); openJoinCard([f, c]); }})()")
+        pg5.wait_for_function('__v("!JOIN.reading && !JOIN.checking && JOIN.list.length === 2 && JOIN.F.has(\'wmf-part1-copy.dem\') && !!$(\'jGo\')")', timeout=120000)
+        dp = JS5(r"""(() => ({ warns: [...$('joinCard').querySelectorAll('.sum-list li:not(.jv)')].filter((li) => li.querySelector('.sum-ic.warn')).map((li) => li.innerText.replace(/\s+/g, ' ').trim().replace(/^! /, '')), go: !$('jGo').disabled }))()""")
+        JS5("$('jDrop').click()")
+        pg5.wait_for_function('__v("!JOIN.reading && !JOIN.checking && JOIN.list.length === 1")', timeout=60000)
+        dp['after'] = JS5("JOIN.list.map((f) => f.name)")
+        check('Join card, the same file twice under two names: "Part 2 is the same recording as part 1, under another name" with Remove part 2, Join parts off; Remove part 2 takes the copy out',
+              dp == {'warns': ['Part 2 is the same recording as part 1, under another name Remove part 2'], 'go': False, 'after': [W1]}, str(dp))
+        JS5('closeJoinCard()')
         check('no page error on the joined map and the Join cards', not errs5, '; '.join(errs5[:3]))
     except Exception as e:
         check('a half replayed and a half carried on, WeMadeFox vs Ravens, Nuke, EM4 finals', False, str(e).split('\n')[0])
@@ -569,18 +684,42 @@ with sync_playwright() as p:
           const tag = row && row.querySelector('.wbtag.loose');
           const dmg = (M.bursts || []).filter((b) => !b.kill).map((b) => `R${lnOf(b.start)} ${killClock(b.start)} ${nameAt(b.main, b.start)} > ${nameAt(b.v, b.start)} ${b.total}`);
           const zeus = (M.hits || []).find((h) => lnOf(h.t) === 30 && nameAt(h.s, h.t) === 'RobbaN' && nameAt(h.v, h.t) === 'Zeus' && h.dmg === 83);
-          return { loose: k && k.wb && k.wb.loose, tag: tag ? tag.textContent : null, tip: tag ? tag.title : null, zeusRow: dmg.some((s) => s.startsWith('R30 1:30 RobbaN > Zeus')), zeusWall: zeus ? zeus.wall : 'no hit' }; })()""")
-        check('Edward-FoCuS on Gux, SK vs Na`Vi, IEM4, R11 0:52: LOOSE WB in the Wallbangs list, the tooltip saying why (STRICT WB up to 0.26.21)',
-              w['loose'] == 'open' and w['tag'] == 'LOOSE WB' and (w['tip'] or '').startswith("Loose wallbang: the killer's bullet on him 0.04 s before the kill did 21 HP, what his gun does in the open"), str(w))
+          const dt = $('pane').querySelector('.wbtag.dmg');
+          return { loose: k && k.wb && k.wb.loose, tag: tag ? tag.textContent : null, tip: tag ? tag.title : null, dmgTip: dt ? dt.title : null, zeusRow: dmg.some((s) => s.startsWith('R30 1:30 RobbaN > Zeus')), zeusWall: zeus ? zeus.wall : 'no hit' }; })()""")
+        check('Edward-FoCuS on Gux, SK vs Na`Vi, IEM4, R11 0:52: PARTIAL WALLBANG in the Wallbangs list (LOOSE WB up to the UI review, item 3), the tooltip saying why (STRICT WB up to 0.26.21)',
+              w['loose'] == 'open' and w['tag'] == 'PARTIAL WALLBANG' and (w['tip'] or '').startswith("Partial wallbang: the killer's bullet on the victim 0.04 s before the kill did 21 HP, what the killer's gun does in the open"), str(w))
+        check('the WALL DAMAGE tag\'s tooltip: "Wall damage: hits through cover that didn\'t kill" (Sujan, 20 Nov 2026)', w['dmgTip'] == "Wall damage: hits through cover that didn't kill", str(w['dmgTip']))
         check('RobbaN\'s AWP on Zeus, R30 1:30, 83 (a leg in the open): no damage row, the hit judged in the open (a DAMAGE row up to 0.26.21)', not w['zeusRow'] and w['zeusWall'] is False, str(w))
         t = JS7(r"""(() => { const k = M.wbs.find((x) => !x.wb.loose), was = k.vteam, n0 = M.wbs.length;
           k.vteam = k.kteam; M.wbs = listedWbs(); tab = 'wb'; renderPane();
-          const inWb = !!$('pane').querySelector(`.wbrow[data-ki="${D.kills.indexOf(k)}"]`), chip = $('pane').querySelector('[data-wf="all"]').textContent;
+          const inWb = !!$('pane').querySelector(`.wbrow[data-ki="${D.kills.indexOf(k)}"]`), chip = $('pane').querySelector('#wbSel option[value="all"]').textContent;
           tab = 'kills'; seek(k.t - 1); renderPane(); const row = $('pane').querySelector(`[data-ki="${D.kills.indexOf(k)}"]`);
           const out = { n0, n1: M.wbs.length, inWb, chip, tk: row && row.querySelector('.wbtag.tk') ? row.querySelector('.wbtag.tk').textContent : null, wbTag: row && row.querySelector('.wbtag:not(.tk)') ? row.querySelector('.wbtag:not(.tk)').textContent : null };
           k.vteam = was; M.wbs = listedWbs(); renderPane(); return out; })()""")
         check('a teamkill through a wall: out of the Wallbangs list and its count, WALLBANG and TK in the Kills list',
               t['n1'] == t['n0'] - 1 and not t['inWb'] and t['tk'] == 'TK' and t['wbTag'] == 'WALLBANG', str(t))
+        # The Wallbangs tab's filter (item 3's fixup of wip/ui-simpler, Sujan, 17 Nov 2026): one dropdown with each count
+        # in it, Copy list on the same row; Copy list copies the file name, then the rows the filter shows; "Checking N
+        # from the shooter's eye…" on a line under that row while the picture check runs (set by hand here, as it's over)
+        f = JS7(r"""(() => { tab = 'wb'; const out = {}, P = $('pane');
+          const read = () => { const sel = $('wbSel'), cp = $('bCopyWb'), s = sel.getBoundingClientRect(), c = cp.getBoundingClientRect();
+            return { opts: [...sel.options].map((o) => o.textContent + (o.disabled ? ' [off]' : '')), sameRow: Math.abs((s.top + s.bottom) / 2 - (c.top + c.bottom) / 2) < 4 && c.left > s.right,
+              rows: P.querySelectorAll('.wbrow').length, copy: wbCopyText().split('\n') }; };
+          for (const v of ['all', 'strict', 'loose', 'damage']) { wbFilter = v; renderPane(); out[v] = read(); }
+          wbFilter = 'all'; M.seenPending = 3; renderPane();
+          const bar = P.querySelector('.wbbar').getBoundingClientRect(), busy = P.querySelector('.wbbusy');
+          out.busy = busy ? { text: busy.textContent, under: busy.getBoundingClientRect().top >= bar.bottom - 1 } : null;
+          M.seenPending = 0; renderPane(); out.busyAfter = !!P.querySelector('.wbbusy');
+          out.n = { strict: M.wbs.filter((k) => !k.wb.loose).length, loose: M.wbs.filter((k) => k.wb.loose).length, damage: (M.bursts || []).filter((b) => !b.kill).length };
+          out.chips = P.querySelectorAll('.wbchips, [data-wf]').length; out.file = D.fileName; return out; })()""")
+        n = f['n']; want = [f"All ({n['strict'] + n['loose'] + n['damage']})", f"Wallbang ({n['strict']})", f"Partial ({n['loose']})" + ('' if n['loose'] else ' [off]'), f"Wall damage ({n['damage']})" + ('' if n['damage'] else ' [off]')]
+        copies = all(f[v]['copy'][0] == f['file'] and len(f[v]['copy']) == f[v]['rows'] + 1 for v in ['all', 'strict', 'loose', 'damage'])
+        kinds = all('WALL DAMAGE' not in s and 'PARTIAL' not in s for s in f['strict']['copy'][1:]) and all('PARTIAL WALLBANG' in s for s in f['loose']['copy'][1:]) and all('WALL DAMAGE' in s for s in f['damage']['copy'][1:])
+        check('Wallbangs tab: one dropdown with the counts ("Wallbang (N)"), Copy list on its row, Copy list copying the file name then the rows shown, "Checking N from the shooter\'s eye…" on a line under the row while it runs',
+              f['all']['opts'] == want and f['all']['sameRow'] and f['chips'] == 0 and n['strict'] and n['loose'] and n['damage'] and copies and kinds
+              and f['strict']['rows'] == n['strict'] and f['loose']['rows'] == n['loose'] and f['damage']['rows'] == n['damage']
+              and f['busy'] and f['busy']['text'] == "Checking 3 from the shooter's eye…" and f['busy']['under'] and not f['busyAfter'],
+              str({k: (v if k not in ('all', 'strict', 'loose', 'damage') else {**v, 'copy': v['copy'][:2] + ['…%d lines' % len(v['copy'])]}) for k, v in f.items()}) + f'; want {want}')
         check('no page error on the wallbang finder checks', not errs7, '; '.join(errs7[:3]))
     except Exception as e:
         check('the wallbang finder: Edward-FoCuS on Gux, RobbaN\'s AWP on Zeus, a teamkill', False, str(e).split('\n')[0])
@@ -605,27 +744,129 @@ with sync_playwright() as p:
         # before it (older than 0.26.23; IDEAS.md, **A damaged demo can leave the page stuck**)
         JS8("closeSummary(); window.__prevD = D; showFailCard('broken-recording.dem', 'Not a Half-Life demo')")
         pg8.wait_for_function("() => { const c = document.getElementById('sumCard'); return c && !c.hidden && /can't be played/.test(c.innerText); }", timeout=10000)
-        f = JS8(r"""(() => { const ft = $('sumCard').querySelector('.sum-foot'); return { buttons: [...ft.querySelectorAll('button')].map((b) => b.textContent + (b.classList.contains('primary') ? ' (main)' : '')), note: $('sumCount').textContent }; })()""")
-        check("the can't-play card: Close, then Open another demo as the main button, no \"Stays open until you close it\"", f['buttons'] == ['Close', 'Open another demo (main)'] and f['note'] == '', str(f))
+        f = JS8(r"""(() => { const c = $('sumCard'), ft = c.querySelector('.sum-foot'); return { buttons: [...ft.querySelectorAll('button')].map((b) => b.textContent + (b.classList.contains('primary') ? ' (main)' : '')), text: c.querySelector('.sum-top p').textContent }; })()""")
+        # one button since the UI review (item 2, 17 Nov 2026): closing the card goes back to the start screen anyway; plain
+        # words, the reader's own message only in Copy debug info
+        check("the can't-play card: Open another demo, its one button; plain words", f['buttons'] == ['Open another demo (main)'] and 'Not a Half-Life demo' not in f['text'] and "isn't a Half-Life demo file" in f['text'], str(f))
         pg8.click('#sumAnother'); pg8.wait_for_timeout(300)
         check("Open another demo closes the card and shows the demo list", pg8.locator('#sumCard').is_hidden() and pg8.locator('#load').is_visible(), '')
+        # the load card's shapes (UI review, item 2; Sujan, 17 Nov 2026): a note that needs nothing done (custom models)
+        # stays on the one-line card as a tail, its row under Details; a row with a button, a warning or the map switch
+        # keeps the full card, with only those rows until Details
+        c = JS8(r"""(() => { const ok = { s: 'ok', t: 'Map and textures', n: '' }, shape = (rows) => { SUM.closedFor = null; renderSummary({ state: 'ok', title: 'Ready: 27 rounds', text: '', rows }); const el = $('sumCard');
+            const o = { line: el.classList.contains('line'), text: (el.querySelector('.sline .slt') || {}).textContent || null, rows: el.querySelectorAll('.sum-list li').length, details: !!$('sumDetails') }; closeSummary(); return o; };
+          return { quiet: shape([ok, { s: 'info', tail: 'custom models', t: 'Custom models: leet.mdl', n: '' }]), button: shape([ok, { s: 'info', t: '3 rounds were played after SK reached 16', n: '', btn: { id: 'sumCount30', label: 'Count them' } }]),
+            maps: shape([ok, { s: 'info', keep: true, t: 'The recording switched maps.', n: '' }]) }; })()""")
+        check('the load card: a quiet note on the one line ("Ready: 27 rounds · custom models"), a button or the map switch keeps the full card with that row alone until Details',
+              c['quiet']['line'] and c['quiet']['text'] == 'Ready: 27 rounds · custom models' and c['quiet']['details']
+              and not c['button']['line'] and c['button']['rows'] == 1 and c['button']['details'] and not c['maps']['line'] and c['maps']['rows'] == 1, str(c))
+        # every demo opens on the Rounds tab (Sujan, 19 Nov 2026; up to then the last tab used carried over)
+        JS8("tab = 'kills'; document.querySelectorAll('.tabs button').forEach((x) => x.classList.toggle('on', x.dataset.tab === 'kills'))")
         pg8.click(f'#demoList button:has-text("{SK}")'); pg8.wait_for_function('() => document.getElementById("load").hidden', timeout=120000)
+        rt = JS8("({ tab, on: document.querySelector('.tabs button.on').dataset.tab, rows: $('pane').querySelectorAll('.row[data-t]').length > 0 })")
+        check('a demo opened after the Kills tab was last used opens on the Rounds tab', rt == {'tab': 'rounds', 'on': 'rounds', 'rows': True}, str(rt))
+        # the card's first line, the demo type, and the map switch (Sujan, 19 Nov 2026): "Ready: HLTV demo, 48 rounds (2D and 3D)" on
+        # the one-line card, "You are viewing an HLTV demo (2D and 3D available)" first on the full one; a switch whose other map
+        # played under a minute only under Details, from a minute a note that keeps the card open (it always did up to then)
+        pg8.wait_for_function('__v("SUM.r && SUM.r.state !== \'busy\' && SUM.r.state !== \'fail\'")', timeout=60000)
+        m = JS8(r"""(async () => { const keep = D.maps, read = () => { const el = $('sumCard'); return { line: el.classList.contains('line'), title: $('sumTitle').textContent, kind: $('sumKind') ? $('sumKind').textContent : null, rows: [...el.querySelectorAll('.sum-list li')].map((l) => l.innerText.replace(/\s+/g, ' ').trim()) }; };
+            const run = async (maps) => { D.maps = maps; SUM.closedFor = null; await loadSummary(Promise.resolve()); const o = read(); if ($('sumDetails')) { $('sumDetails').click(); o.details = read(); } closeSummary(); return o; };
+            try { return { none: await run(keep), short: await run([{ map: 'de_dust2', dur: 59 }, { map: D.mapName, dur: 6000 }]), long: await run([{ map: 'de_dust2', dur: 60 }, { map: D.mapName, dur: 6000 }]),
+              three: await run([{ map: 'de_dust2', dur: 30 }, { map: D.mapName, dur: 6000 }, { map: 'de_nuke', dur: 35 }]) }; } finally { D.maps = keep; } })()""")
+        sw = lambda o: [r for r in o['rows'] if r.startswith('i The recording switched maps')]
+        # with three or more maps, the other maps' stretch is every map but the one shown, added up (Sujan, 19 Nov 2026): 30 s and 35 s
+        check('the load card: "Ready: HLTV demo, 48 rounds (2D and 3D)", the demo type first under Details; a map switch under a minute only under Details, from a minute on the card, three maps added up',
+              m['none']['line'] and m['none']['title'] == 'Ready: HLTV demo, 48 rounds (2D and 3D)' and m['none']['details']['kind'] == 'You are viewing an HLTV demo (2D and 3D available)' and m['none']['details']['title'] == 'Ready: 48 rounds'
+              and m['short']['line'] and len(sw(m['short']['details'])) == 1 and not m['three']['line'] and len(sw(m['three'])) == 1 and not m['long']['line'] and m['long']['kind'] == 'You are viewing an HLTV demo (2D and 3D available)' and len(sw(m['long'])) == 1, str(m))
+        # the Kills tab at demo 4:00, in a round that doesn't count (UI review, item 6; Sujan, 17 Nov 2026): its band, "Not
+        # counted", highlighted above Round 1 with Show warmup, restarts and idle rounds off; with it on, the rounds that
+        # don't count on bands of their own, as in the Rounds tab (visibleRounds)
+        kt = JS8(r"""(() => { closeSummary(); seek(D.start + 240); updateHud(true); const tabOf = () => document.querySelector('.tabs button[data-tab=kills]').click();
+          const read = () => { tabOf(); const hs = [...$('pane').querySelectorAll('.sechead.rhead')]; return { bands: hs.length, nc: hs.filter((h) => /^Not counted/.test(h.textContent)).length, cur: (hs.find((h) => h.classList.contains('cur')) || {}).textContent || null, second: hs[1] ? hs[1].textContent : null }; };
+          const off = read(); showAll = true; const on = read(); showAll = false; tab = 'rounds'; renderPane(); return { off, on, live: M.liveR.length, shown: M.rounds.filter((r) => r.dur > 0.5 || r.missing).length }; })()""")
+        check('the Kills tab at demo 4:00 (a round that doesn\'t count): its "Not counted" band highlighted above Round 1; with Show warmup, restarts and idle rounds, every round the Rounds tab shows',
+              kt['off']['bands'] == kt['live'] + 1 and kt['off']['nc'] == 1 and (kt['off']['cur'] or '').startswith('Not counted') and (kt['off']['second'] or '').startswith('Round 1')
+              and kt['on']['bands'] == kt['shown'] and kt['on']['nc'] == kt['shown'] - kt['live'] and (kt['on']['cur'] or '').startswith('Not counted'), str(kt))
+        # a thinner header (UI review, item 14): the map and the length first, the file name last and in full on hover, not cut
+        # at 1512 px; no spectator count (the Tab scoreboard's footer has it); the demo type before them all (Sujan, 19 Nov 2026)
+        hd = JS8("(() => { const m = $('meta'); return { text: m.textContent, kind: (m.querySelector('.dkind') || {}).textContent || null, title: m.title, cut: m.scrollWidth > m.clientWidth, viewers: !!$('viewers') }; })()")
+        check('the header at 1512x982: "HLTV demo · de_train · 103:25 · " then the file name, not cut, in full on hover; no spectator count',
+              hd == {'text': f'HLTV demo · de_train · 103:25 · {SK}', 'kind': 'HLTV demo', 'title': SK, 'cut': False, 'viewers': False}, str(hd))
+        # a kill with no player killer follows the victim (Sujan, 19 Nov 2026; such a click followed no one up to then): Delpan's
+        # fall at R48, killed by the world
+        fa = JS8(r"""(() => { closeSummary(); const r = M.liveR.find((x) => x.ln === 48), k = r.kills.find((x) => !x.kp && /Delpan/.test(M.pl[x.vp].name)); selected = null;
+          document.querySelector('.tabs button[data-tab=kills]').click(); $('pane').querySelector(`[data-ki="${D.kills.indexOf(k)}"]`).click();
+          const out = { weapon: k.weapon, followed: selected === k.victim, picked: pickedKill === k, playing }; playing = false; setPlayIcon(); document.querySelector('.tabs button[data-tab=rounds]').click(); return out; })()""")
+        check("a click on Delpan's fall at R48 in the Kills tab follows Delpan, the victim, since no player killed him", fa == {'weapon': 'worldspawn', 'followed': True, 'picked': True, 'playing': True}, str(fa))
+        # a click on a kill mark in the timeline (Sujan, 19 Nov 2026): what a click on that kill in the Kills tab does, and the side
+        # panel on the Kills tab with that kill's row and its details in view; a click on empty space and a drag that starts on a
+        # kill mark only move the playhead, as before
+        tp = JS8(r"""(() => { closeSummary(); playing = false; setPlayIcon(); selected = null; pickedKill = null; setScope('match'); drawTimeline();
+          const rr = tlc.getBoundingClientRect(), [a, b] = tlRange(), X = (t) => rr.left + (t - a) / (b - a) * rr.width, y = rr.top + rr.height - 4, live = new Set(visibleRounds().map((x) => x.n));
+          const k = M.liveR[4].kills[0], k2 = M.liveR[10].kills[0]; window.__tk = [k, k2];
+          let ex = null; for (let x = rr.left + 40; x < rr.right; x += 3) if (!D.kills.some((q) => live.has(q.round) && Math.abs(X(q.t) - x) < 8 * UI)) { ex = x; break; }
+          return { k: [X(k.t), y], k2: [X(k2.t), y], ex: [ex, y], et: a + (ex - rr.left) / rr.width * (b - a), d1: a + (X(k2.t) + 60 - rr.left) / rr.width * (b - a) }; })()""")
+        pg8.mouse.click(*tp['k']); pg8.wait_for_timeout(200)
+        t1 = JS8(r"""(() => { const k = __tk[0], P = $('pane'), row = P.querySelector('.krow.pick'), det = row && row.nextElementSibling, pr = P.getBoundingClientRect(), rr = row ? row.getBoundingClientRect() : null;
+          const o = { picked: pickedKill === k, followed: selected === k.killer, playing, before: +(k.t - T).toFixed(1), tab, row: !!row && D.kills[+row.dataset.ki] === k, details: !!det && det.classList.contains('kdet'), inView: !!rr && rr.top >= pr.top - 1 && rr.bottom <= pr.bottom + 1 };
+          playing = false; setPlayIcon(); return o; })()""")
+        pg8.mouse.click(*tp['ex']); pg8.wait_for_timeout(200)
+        t2 = JS8(f"({{ picked: pickedKill === __tk[0], playing, at: Math.abs(T - {tp['et']}) < 0.5 }})")
+        pg8.mouse.move(*tp['k2']); pg8.mouse.down(); pg8.mouse.move(tp['k2'][0] + 60, tp['k2'][1], steps=4); pg8.mouse.up(); pg8.wait_for_timeout(200)
+        t3 = JS8(f"({{ picked: pickedKill === __tk[1], other: pickedKill === __tk[0], playing, at: Math.abs(T - {tp['d1']}) < 0.5 }})")
+        pg8.mouse.move(10, 10)
+        check('a click on a kill mark in the timeline watches that kill (the killer followed, playing, marked, a few seconds before) and opens it in the Kills tab with its details, in view; a click on empty space and a drag from a kill mark only move the playhead',
+              t1['picked'] and t1['followed'] and t1['playing'] and 3 <= t1['before'] <= 4.1 and t1['tab'] == 'kills' and t1['row'] and t1['details'] and t1['inView'] and t2 == {'picked': True, 'playing': False, 'at': True} and t3 == {'picked': False, 'other': True, 'playing': False, 'at': True}, str([t1, t2, t3]))
+        # no Tab scoreboard over the start screen (Sujan, 19 Nov 2026): held by hand while Open another demo is clicked, gone with
+        # the start screen, and not there when the demo comes back without Tab
+        pg8.keyboard.down('Tab'); pg8.wait_for_timeout(300); s0 = JS8("!$('sb').hidden")
+        pg8.click('#btnOpen'); pg8.wait_for_timeout(500); s1 = JS8("({ sb: !$('sb').hidden, load: !$('load').hidden })")
+        pg8.keyboard.up('Tab'); pg8.click('#btnOpen'); pg8.wait_for_timeout(500); s2 = JS8("({ sb: !$('sb').hidden, load: !$('load').hidden })")
+        check('the Tab scoreboard held by hand goes when Open another demo shows the start screen', s0 and s1 == {'sb': False, 'load': True} and s2 == {'sb': False, 'load': False}, str([s0, s1, s2]))
         JS8("closeSummary()"); pg8.keyboard.press('?'); pg8.wait_for_timeout(300)
-        k = JS8(r"""(() => ({ foot: [...document.querySelectorAll('#keys .keys-foot button')].map((b) => b.textContent), ver: !!document.querySelector('#keys .keys-foot .ver') }))()""")
+        # Help (UI review, item 9, 17 Nov 2026; the shortcuts list up to then): Keys, Colours and marks, About; the version,
+        # its links and Copy debug info under About; Close alone in the footer; F and T each said on their own
+        k = JS8(r"""(() => { const K = $('keys'), dd = (key) => { const dt = [...K.querySelectorAll('dt')].find((d) => d.textContent.trim() === key); return dt ? dt.nextElementSibling.textContent : ''; };
+          return { title: $('helpTitle').textContent, parts: [...K.querySelectorAll('h2.hpart')].map((h) => h.textContent), foot: [...K.querySelectorAll('.keys-foot button')].map((b) => b.textContent),
+            about: [...K.querySelectorAll('.habout a')].map((a) => a.textContent).concat(K.querySelector('.habout #bDebug') ? ['Copy debug info'] : []), ver: /version \d/.test(K.querySelector('.habout').textContent),
+            timeline: K.querySelectorAll('.tllist dt').length, f: dd('F'), t: dd('T'), btn: $('bKeys').textContent.trim() }; })()""")
         pg8.click('#bKeysX'); pg8.wait_for_timeout(200)
-        check('the shortcuts list: its × closes it; the version, Copy debug info and Close in its footer', pg8.locator('#keys').is_hidden() and k['foot'] == ['Copy debug info', 'Close'] and k['ver'], str(k))
+        check('Help: its × closes it; Keys, Colours and marks (the timeline\'s marks too), About with the version, What\'s new, Source, Report a bug and Copy debug info; Close in its footer; F and T not explained through each other',
+              pg8.locator('#keys').is_hidden() and k['title'] == 'Help' and k['parts'] == ['Keys', 'Colours and marks', 'About'] and k['foot'] == ['Close'] and k['ver']
+              and k['about'] == ["What's new", 'Source on GitHub', 'Report a bug', 'Copy debug info'] and k['timeline'] == 7 and k['btn'] == 'Help ?'
+              and 'Theatre' not in k['f'] and 'full screen' not in k['t'].lower(), str(k))
+        # quieter Join (UI review, item 10): SK vs Na`Vi has a winner and no offer to join, so a small link ends the Rounds tab
+        jl = JS8("(() => { closeSummary(); tab = 'rounds'; renderPane(); const b = $('bJoinWith'); return { link: b.classList.contains('lnk'), text: b.textContent, question: !!$('pane').querySelector('.joinrow') }; })()")
+        check('the Rounds tab of a finished map: a small "Join parts…" link at the end (one name for the action, Sujan, 17 Nov 2026), no question', jl == {'link': True, 'text': 'Join parts…', 'question': False}, str(jl))
+        # the Players and Rounds tabs (UI review, item 13): the Rounds tab's heading row, and its switch at the top, "Show N
+        # uncounted rounds" (Sujan, 19 Nov 2026; after the last round since item 13), with what they are under it, the tooltip and
+        # Help saying the same (Sujan, 20 Nov 2026); the Players tab's Key column, a dead player's skull beside the name, the note on
+        # one line
+        pr = JS8(r"""(() => { const P = $('pane'), sw = $('optAll').closest('label'), on = () => { showAll = false; sw.querySelector('input').click(); const n = P.querySelectorAll('.row[data-t]').length; $('optAll').click(); return n; };
+          const out = { head: P.querySelector('.row.rhd') ? P.querySelector('.row.rhd').innerText.replace(/\s+/g, ' ').trim() : null, switchFirst: P.firstElementChild === sw, label: sw.querySelector('.optx').firstChild.textContent.trim(),
+            sub: sw.querySelector('.optx small').textContent, tip: sw.title, help: [...document.querySelectorAll('.hmnote')].map((x) => x.textContent).find((x) => x.includes('uncounted')),
+            n: uncountedRounds().length, rowsOff: P.querySelectorAll('.row[data-t]').length };
+          out.rowsOn = on(); out.rowsBack = P.querySelectorAll('.row[data-t]').length;
+          const k = M.liveR[22].kills[2]; T = k.t + 1; tab = 'players'; renderPane();
+          Object.assign(out, { key: [...P.querySelectorAll('.stathead .pkey')].map((e) => e.textContent), skullInKey: !!P.querySelector('.pnum.skull, .pnum svg'), skulls: P.querySelectorAll('.prow .nm + .skull').length, note: P.querySelector('.opt').textContent });
+          tab = 'rounds'; renderPane(); return out; })()""")
+        check('the Rounds tab: "Show N uncounted rounds" first, "(warmup, restarts and idle rounds, like time-outs)" under it, the same words in its tooltip and Help, adding N rows, then a heading row (Round, Won by, Score Length); the Players tab: Key over the digits, a dead player\'s skull beside the name, the one-line note',
+              (pr['head'] or '').upper() == 'ROUND WON BY SCORE LENGTH' and pr['switchFirst'] and pr['n'] > 0 and pr['label'] == f"Show {pr['n']} uncounted rounds"
+              and pr['sub'] == '(warmup, restarts and idle rounds, like time-outs)' and pr['tip'].startswith('Warmup, restarts and idle rounds, like time-outs: ') and (pr['help'] or '').endswith("the rounds that don't count: warmup, restarts and idle rounds, like time-outs.")
+              and pr['rowsOn'] == pr['rowsOff'] + pr['n'] and pr['rowsBack'] == pr['rowsOff'] and pr['key'] == ['Key', 'Key'] and not pr['skullInKey'] and pr['skulls'] >= 1 and pr['note'] == 'Kills and deaths from the kill feed, live rounds only.', str(pr))
         JS8("closeSummary(); tab = 'rounds'; renderPane(); $('bJoinWith').click()")
         pg8.wait_for_function("() => !!document.querySelector('#joinCard .jpick')", timeout=30000)
         j = JS8(r"""(() => { const card = $('joinCard').querySelector('.sum'), cr = card.getBoundingClientRect(), pk = card.querySelector('.jpick').getBoundingClientRect();
           return { foot: [...card.querySelectorAll('.sum-foot > *')].map((e) => e.id || e.className), inset: Math.round(pk.left - cr.left) }; })()""")
-        check("the Join card: Add another part… on the footer's left, Cancel and Join them on its right; the folder row inside the card's 24 px",
+        check("the Join card: Add another part… on the footer's left, Cancel and Join parts on its right; the folder row inside the card's 24 px",
               j['foot'] == ['jAdd', 'sp', 'jCancel', 'jGo'] and j['inset'] >= 24, str(j))
         JS8('closeJoinCard()')
         v = JS8(r"""(async () => { const w = (ms) => new Promise((r) => setTimeout(r, ms)); setView('3d'); await w(300); const s = $('ui3'); s.value = '200'; s.dispatchEvent(new Event('change')); await w(400); vsetOpen(true); await w(200);
-          const p = $('vsetPanel'), b = p.getBoundingClientRect(), out = { heads: [...p.querySelectorAll('.vhead')].map((h) => h.textContent), first: p.querySelector('.vrow input, .vrow select, .vrow button').id, bottom: Math.round(b.bottom), right: Math.round(b.right), ui: UI };
+          const p = $('vsetPanel'), b = p.getBoundingClientRect(), out = { heads: [...p.querySelectorAll('.vhead')].map((h) => h.textContent), first: p.querySelector('.vrow input, .vrow select, .vrow button').id, top: Math.round(b.top), bottom: Math.round(b.bottom), right: Math.round(b.right), above: Math.round($('bVset').getBoundingClientRect().top - b.bottom), ui: UI };
           vsetOpen(false); s.value = 'auto'; s.dispatchEvent(new Event('change')); return out; })()""")
-        check('View settings at the largest Interface size: three groups, Vanilla first, the panel inside the 1512x982 window',
-              v['heads'] == ['On the view', 'Picture', 'Demos recorded by a player'] and v['first'] == 'van3' and v['bottom'] <= 982 and v['right'] <= 1512, str(v))
+        # in the strip at the bottom left, opening upward, since the UI review (item 4, 17 Nov 2026)
+        check('View settings at the largest Interface size: three groups, Hide all overlays first, the panel above its button and inside the 1512x982 window',
+              v['heads'] == ['On the view', 'Picture', 'Demos recorded by a player'] and v['first'] == 'van3' and v['top'] >= 0 and v['bottom'] <= 982 and v['right'] <= 1512 and v['above'] >= 0, str(v))
         check('no page error on the dialogs checks', not errs8, '; '.join(errs8[:3]))
     except Exception as e:
         check('the dialogs: the can\'t-play card, the shortcuts list, the Join card, View settings', False, str(e).split('\n')[0])

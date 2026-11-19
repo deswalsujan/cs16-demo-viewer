@@ -115,7 +115,8 @@ function toggleFull() {
 $('bFull').onclick = toggleFull;
 document.addEventListener('fullscreenchange', () => {
   const fs = !!document.fullscreenElement;
-  $('bFull').textContent = fs ? 'Exit full screen' : 'Full screen';
+  // the button shows its on state instead of renaming itself (UI review, item 7; "Exit full screen" up to then)
+  $('bFull').classList.toggle('on', fs); $('bFull').setAttribute('aria-pressed', fs ? 'true' : 'false');
   // full screen always uses Theatre mode; leaving it puts back whatever was on before
   if (fs) { TH.before = TH.on; setTheatre(true); } else setTheatre(TH.before);
 });

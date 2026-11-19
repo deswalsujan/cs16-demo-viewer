@@ -14,7 +14,8 @@ with sync_playwright() as p:
     pg.route('https://fonts.googleapis.com/**', lambda r: r.fulfill(body='', content_type='text/css'))
     url = f'http://127.0.0.1:{srv.server_port}/index.html'
     pg.goto(url)
-    r = pg.evaluate("[...document.querySelectorAll('#legend .btn')].map(b => b.id + ':' + b.classList.contains('on')).join(' ') + ' | ' + document.getElementById('bScope').textContent")
+    # the strip's own buttons: View settings, in it since the UI review (item 4), holds buttons of its own
+    r = pg.evaluate("[...document.querySelectorAll('#legend > .btn, #legend > .xwrap > .btn')].map(b => b.id + ':' + b.classList.contains('on')).join(' ') + ' | ' + 'Timeline: ' + document.querySelector('#scopeSeg button.on').dataset.s")
     print('defaults on a first visit:', r); ok &= r == 'tgNames:true tgNades:true tgLines:true tgXray:false tgFit:false | Timeline: match'
     # no POV mode setting since the sign-off (0.26.30; up to 0.26.29 it was off on a first visit), and POV mode's own rows:
     # his crosshair From config.cfg, the flashbang dot and whiteout off (Sujan, 8 and 11 Nov 2026)
@@ -22,13 +23,20 @@ with sync_playwright() as p:
     print('no POV mode setting; his crosshair, flashbang dot, whiteout on a first visit:', r); ok &= r == [True, 'cfg', False, False]
     pg.evaluate("""localStorage.setItem('prefs', JSON.stringify({ view: '3d', names: false, nades: true, lines: false, xray: true, scope: 'round' }))""")
     pg.reload(); pg.wait_for_timeout(500)
-    r = pg.evaluate("[...document.querySelectorAll('#legend .btn')].map(b => b.id + ':' + b.classList.contains('on')).join(' ') + ' | ' + document.getElementById('bScope').textContent")
+    r = pg.evaluate("[...document.querySelectorAll('#legend > .btn, #legend > .xwrap > .btn')].map(b => b.id + ':' + b.classList.contains('on')).join(' ') + ' | ' + 'Timeline: ' + document.querySelector('#scopeSeg button.on').dataset.s")
     print('after a reload with saved settings:', r); ok &= r == 'tgNames:false tgNades:true tgLines:false tgXray:true tgFit:false | Timeline: round'
+    # 2D and 3D in the header, Radar a row in View settings (UI review, item 5, 17 Nov 2026): a saved 3D + radar opens as 3D
+    # with Radar on, and stays so after the next save
+    pg.evaluate("""localStorage.setItem('prefs', JSON.stringify({ view: 'split', names: true, nades: true, lines: true, xray: false, scope: 'match' }))""")
+    pg.reload(); pg.wait_for_timeout(500)
+    r = pg.evaluate("""() => { document.getElementById('tgNames').click(); const p = JSON.parse(localStorage.getItem('prefs'));
+      return [[...document.querySelectorAll('#viewSeg button')].map((b) => b.dataset.v).join(' '), document.getElementById('radar3').checked, p.view, p.radar]; }""")
+    print('a saved 3D + radar: the switch, Radar, and what is saved after:', r); ok &= r == ['2d 3d', True, '3d', True]
     # Vanilla and Damage numbers (0.26.16, Sujan, 3 Nov 2026): Vanilla first in View settings, off on a first visit;
     # Damage numbers Wallbangs by default. Vanilla on turns off Names to See through walls, Glow on hits and the damage
     # numbers, and is kept after a reload; a single switch still works after; Vanilla off brings back what it turned off.
     pg.evaluate("localStorage.clear()"); pg.reload(); pg.wait_for_timeout(500)
-    st = "(() => { const L = (id) => document.getElementById(id); return [...document.querySelectorAll('#legend .btn')].slice(0, 4).map(b => b.classList.contains('on') ? 1 : 0).join('') + ' glow:' + L('glow3').checked + ' dn:' + (L('dn3') || {}).value + ' van:' + (L('van3') || {}).checked; })()"
+    st = "(() => { const L = (id) => document.getElementById(id); return [...document.querySelectorAll('#legend > .btn, #legend > .xwrap > .btn')].slice(0, 4).map(b => b.classList.contains('on') ? 1 : 0).join('') + ' glow:' + L('glow3').checked + ' dn:' + (L('dn3') || {}).value + ' van:' + (L('van3') || {}).checked; })()"
     try:
         first = pg.evaluate("document.querySelector('#vsetPanel .vrow input, #vsetPanel .vrow select, #vsetPanel .vrow button').id")
         r = pg.evaluate(st)
@@ -46,7 +54,7 @@ with sync_playwright() as p:
     except Exception as e:
         print('Vanilla and Damage numbers: FAIL,', str(e).split('\n')[0]); ok = False
     pg.evaluate("localStorage.setItem('prefs', '{broken')"); pg.reload(); pg.wait_for_timeout(500)
-    r = pg.evaluate("document.getElementById('bScope').textContent"); errs = []
+    r = pg.evaluate("'Timeline: ' + document.querySelector('#scopeSeg button.on').dataset.s"); errs = []
     print('with damaged saved settings the page still opens with defaults:', r); ok &= r == 'Timeline: match'
     b.close()
 print('PASS' if ok else 'FAIL')

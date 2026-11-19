@@ -15,11 +15,9 @@ function fileTime(name) {
 }
 const hhmm = (d) => String(d.getUTCHours()).padStart(2, '0') + ':' + String(d.getUTCMinutes()).padStart(2, '0');
 const dayOf = (d) => `${d.getUTCDate()} ${MON[d.getUTCMonth()]} ${d.getUTCFullYear()}`;
-// "24 Apr 2011 at 00:25 and at 01:12"
-function fileTimesText(ts) {
-  const ds = ts.map((t) => new Date(t));
-  const bits = ds.map((d, i) => (i && dayOf(d) === dayOf(ds[i - 1]) ? '' : dayOf(d) + ' ') + 'at ' + hhmm(d));
-  return bits.length < 3 ? bits.join(' and ') : bits.slice(0, -1).join(', ') + ' and ' + bits[bits.length - 1];
+// "16:09, 17:24, 17:40": the recording times as clock times, with the day where it changes from the time before
+function clockList(ts) {
+  return ts.map((t, k) => { const d = new Date(t), p = k ? new Date(ts[k - 1]) : null; return (p && dayOf(d) !== dayOf(p) ? `${d.getUTCDate()} ${MON[d.getUTCMonth()]} ` : '') + hhmm(d); }).join(', ');
 }
 // A file name shown in full, with .dem. It may wrap only after a - _ or . and never inside its last piece
 // ("de_inferno.dem"), since the part that tells two parts apart is often in the middle.
@@ -177,9 +175,10 @@ function suggestOrder(F) {
   return valid.length === 1 ? { order: valid[0], by: 'rounds', agree: true, roundsOrder: valid[0] } : null;
 }
 
-// Joined sets are remembered per file, so opening any part opens the joined map; Split them forgets it.
+// Joined sets are remembered per file, so opening any part opens the joined map; Split them forgets it. Each part's size is
+// remembered with them (Sujan, 20 Nov 2026), so another file with the same name isn't joined: see loadDemoFile.
 const joinedSetOf = (name) => { const v = ls.get('join:' + name); return v && Array.isArray(v.set) && v.set.length > 1 ? v : null; };
-function rememberJoin(names, keep, why) { for (const n of names) ls.set('join:' + n, { set: names, keep: !!keep, why: why || null }); }
+function rememberJoin(list, keep, why) { const names = list.map((f) => f.name), sizes = list.map((f) => f.size); for (const n of names) ls.set('join:' + n, { set: names, sizes, keep: !!keep, why: why || null }); }
 function forgetJoin(names) { for (const n of names) ls.set('join:' + n, null); }
 let CUR_FILE = null; // the file the open demo came from (one opened from elsewhere isn't in the folder list)
 const fileByName = (n) => (CUR_FILE && CUR_FILE.name === n ? CUR_FILE : null) || (files && files.demos || []).find((f) => f.name === n) || ((D && D.partFiles) || []).find((f) => f.name === n) || null;
@@ -201,16 +200,22 @@ function splitJoined() {
 }
 
 // ---- the Join card ----
-const JOIN = { list: [], P: new Map(), F: new Map(), keep: false, moved: false, sugg: null, err: null, picking: false, reading: null, carry: null };
+const JOIN = { list: [], P: new Map(), F: new Map(), keep: false, moved: false, sugg: null, err: null, picking: false, reading: null, carry: null, dup: null, checking: false };
 function joinEl() {
   let el = $('joinCard');
   if (!el) { el = document.createElement('div'); el.className = 'overlay sumwrap'; el.id = 'joinCard'; el.hidden = true; $('sumCard').after(el); }
   return el;
 }
 function closeJoinCard() { joinEl().hidden = true; JOIN.picking = false; JOIN.err = null; }
+// the Join card with the open demo's parts and its picker open, to add a part: the Rounds tab's Join parts…, and the load
+// card's when no other part is in the folder (Sujan, 19 Nov 2026)
+function openJoinPicker() {
+  const cur = D.parts ? D.parts.map((x) => fileByName(x.fileName)).filter(Boolean) : [CUR_FILE || fileByName(D.fileName)].filter(Boolean);
+  JOIN.picking = true; openJoinCard(cur).then(() => { JOIN.picking = true; renderJoinCard(); });
+}
 async function openJoinCard(list) {
   closeSummary();
-  Object.assign(JOIN, { list: list.slice(), keep: false, moved: false, sugg: null, err: null, picking: false });
+  Object.assign(JOIN, { list: list.slice(), keep: false, moved: false, sugg: null, err: null, picking: false, okOpen: false, dup: null, checking: false });
   await readJoinParts();
 }
 // Add a demo to the parts: refused when it's another map or has different players
@@ -219,6 +224,23 @@ async function addJoinPart(f) {
   if (JOIN.list.some((x) => x.name === f.name)) { renderJoinCard(); return; }
   JOIN.list.push(f);
   await readJoinParts(f);
+}
+// Whether two files are the same recording under two names (Sujan, 20 Nov 2026): the same size, then the same bytes, read 8 MB
+// at a time from each; remembered per pair
+const SAME = new Map();
+async function sameFile(a, b) {
+  if (a.size !== b.size) return false;
+  const key = [a, b].map((f) => `${f.name}|${f.size}|${f.lastModified}`).sort().join('\n');
+  if (SAME.has(key)) return SAME.get(key);
+  let same = true;
+  try {
+    for (let o = 0; o < a.size && same; o += 8 << 20) {
+      const [x, y] = await Promise.all([a, b].map((f) => f.slice(o, o + (8 << 20)).arrayBuffer().then((v) => new Uint8Array(v))));
+      for (let i = 0; i < x.length; i++) if (x[i] !== y[i]) { same = false; break; }
+    }
+  } catch (e) { same = false; }
+  SAME.set(key, same);
+  return same;
 }
 async function readJoinParts(added) {
   for (const f of JOIN.list) {
@@ -247,6 +269,11 @@ async function readJoinParts(added) {
     const e = bad(F[i]);
     if (e) { JOIN.err = e; JOIN.list.splice(i, 1); F.splice(i, 1); i--; }
   }
+  // a part that is byte for byte an earlier one under another name: a warning, Join parts off until it's removed (Sujan, 20 Nov
+  // 2026; joined, its rounds counted again, as overtime after a 15:15 part: Na`Vi vs SK, Inferno, ESWC 2011, the first file twice)
+  JOIN.dup = null; JOIN.checking = true;
+  for (let j = 1; j < JOIN.list.length && !JOIN.dup; j++) for (let i = 0; i < j; i++) if (await sameFile(JOIN.list[i], JOIN.list[j])) { JOIN.dup = [JOIN.list[i].name, JOIN.list[j].name]; break; }
+  JOIN.checking = false;
   if (!JOIN.moved) {
     JOIN.sugg = suggestOrder(F);
     if (JOIN.sugg) JOIN.list = JOIN.sugg.order.map((i) => JOIN.list[i]);
@@ -257,6 +284,12 @@ function joinMove(i, d) {
   const j = i + d; if (j < 0 || j >= JOIN.list.length) return;
   [JOIN.list[i], JOIN.list[j]] = [JOIN.list[j], JOIN.list[i]];
   JOIN.moved = true; JOIN.keep = false; renderJoinCard();
+}
+// the order of the recording times in the file names (Sujan, 19 Nov 2026)
+function useRecorded() {
+  const t = JOIN.list.map((f) => JOIN.F.get(f.name).time);
+  JOIN.list = JOIN.list.map((f, i) => i).sort((a, b) => t[a] - t[b]).map((i) => JOIN.list[i]);
+  JOIN.keep = false; JOIN.moved = false; renderJoinCard();
 }
 function useSuggested() {
   const F = JOIN.list.map((f) => JOIN.F.get(f.name));
@@ -308,18 +341,29 @@ function renderJoinCard() {
     return `<li><span class="jn">Part ${i + 1}</span><span class="jf"><span class="jname">${fileNameHtml(f.name)}</span><small>${meta}</small></span>
       <span class="ja"><button class="btn sq" type="button" data-mv="${i},-1" ${i ? '' : 'disabled'} title="Move up" aria-label="Move part ${i + 1} up">↑</button><button class="btn sq" type="button" data-mv="${i},1" ${i < JOIN.list.length - 1 ? '' : 'disabled'} title="Move down" aria-label="Move part ${i + 1} down">↓</button></span></li>`;
   }).join('');
-  // how the order was found
-  let order = '';
+  // The verdict (Sujan, 19 Nov 2026): one line saying which order the parts are in and whether the rounds agree, in place of
+  // the order line and the "N checks pass" count of the UI review's item 10, which misled him: on Na`Vi vs SK, Inferno, ESWC
+  // 2011 the wrong order (16:09, 17:40, 17:24) showed 3 passes and the right one 2. An order that differs from the recording
+  // times in the file names is a warning with Use the recorded order (grey words in the order line up to then, 7 Nov 2026).
+  // the same recording twice under two names, named by where the two are now
+  const dupAt = JOIN.dup ? JOIN.dup.map((n) => JOIN.list.findIndex((f) => f.name === n)).sort((a, b) => a - b) : null;
+  const dupWarn = dupAt && dupAt[0] >= 0 ? { s: 'warn', t: `Part ${dupAt[1] + 1} is the same recording as part ${dupAt[0] + 1}, under another name`, btn: { id: 'jDrop', label: `Remove part ${dupAt[1] + 1}` } } : null;
+  let verdict = null, recWarn = null, recIdx = null;
   if (F.length === JOIN.list.length && F.length > 1) {
-    const s = JOIN.sugg;
-    if (JOIN.moved) {
-      // the file names' recording times named whenever the player's order differs from them (Sujan, 7 Nov 2026)
-      const t = F.map((f) => f.time), off = t.every((x) => x != null) && t.some((x, k) => k && t[k - 1] > x);
-      order = (problem ? 'Your order.' : 'Your order. The rounds agree.') + (off ? ` The recording times in the file names, ${fileTimesText(t.slice().sort((x, y) => x - y))}, put them ${F.length === 2 ? 'the other way round' : 'in another order'}.` : '');
+    const s = JOIN.sugg, t = F.map((f) => f.time), timed = t.every((x) => x != null);
+    const off = timed && t.some((x, k) => k && t[k - 1] > x), agree = problem ? '' : ' The rounds agree.';
+    let txt;
+    if (timed && !off) txt = `In the order they were recorded: ${clockList(t)}.${agree}`;
+    else if (JOIN.moved) txt = `In your order.${agree}`;
+    else if (s && s.by === 'rounds') txt = 'In the only order the rounds allow: the first part starts from 0:0 and only the last one has a winner.';
+    else txt = "The files don't say which order they go in. Put the parts in order with the arrows.";
+    // no green tick on an order the rounds allow but the recording times don't: that tick misled Sujan (19 Nov 2026)
+    verdict = { s: problem || off || dupWarn ? 'warn' : txt.startsWith('In ') ? 'ok' : 'info', t: txt };
+    if (off) {
+      recIdx = F.map((f, i) => i).sort((a, b) => t[a] - t[b]);
+      // its button the primary (gold) one (Sujan, 20 Nov 2026); in the "doesn't add up" box below when that shows
+      recWarn = { s: 'warn', t: 'Not in the order they were recorded', n: `The recording times in the file names put them ${F.length === 2 ? 'the other way round' : 'in another order'}: ${clockList(recIdx.map((i) => t[i]))}.`, btn: { id: 'jRec', label: 'Use the recorded order', primary: true } };
     }
-    else if (s && s.by === 'times') order = `from the recording times in the file names, ${fileTimesText(F.map((f) => f.time))}.${s.agree ? ' The rounds agree.' : ''}`;
-    else if (s) order = 'from the rounds: the first part starts from 0:0 and only the last one has a winner, and no other order does that.';
-    else order = "the files don't say. Put the parts in order with the arrows.";
   }
   // the checks
   const checks = [];
@@ -357,9 +401,15 @@ function renderJoinCard() {
   if (problem && !JOIN.keep) {
     const s = suggestOrder(F);
     const better = s && (s.agree ? s.order : s.roundsOrder);
-    // (the recording times are in the order line above when the order is the player's)
+    // no second button for the same order when the recorded one is also the rounds' order (Sujan, 19 Nov 2026)
+    const same = (a, b) => !!a && !!b && a.every((v, k) => v === b[k]);
+    // Use the recorded order moves into this box as its primary (gold) button, beside Keep my order, and the warning above
+    // keeps only its text (Sujan, 20 Nov 2026). When the recorded order doesn't add up either, the rounds' order stays the gold
+    // button and the recorded one a plain button beside it
+    const recOk = !!recIdx && !orderProblem(recIdx.map((i) => F[i]));
+    if (recWarn) recWarn.btn = null;
     wrong = `<div class="jwrong"><h3>This order doesn't add up</h3><p>${esc(problem)}</p>
-      <div class="jbtns"><button class="btn" type="button" id="jKeep">Keep my order</button>${better && better.some((v, k) => v !== k) ? '<button class="btn primary" type="button" id="jSugg">Use the suggested order</button>' : ''}</div></div>`;
+      <div class="jbtns"><button class="btn" type="button" id="jKeep">Keep my order</button>${recIdx ? `<button class="btn${recOk ? ' primary' : ''}" type="button" id="jRec">Use the recorded order</button>` : ''}${better && better.some((v, k) => v !== k) && !same(better, recIdx) ? `<button class="btn${recOk ? '' : ' primary'}" type="button" id="jSugg">Use the suggested order</button>` : ''}</div></div>`;
   }
   // picking another part: the folder's demos, the same map first, or a file from elsewhere
   let picker = '', noneHere = false;
@@ -376,17 +426,27 @@ function renderJoinCard() {
     picker = `<div class="jpick">${from}
       <button class="btn sm" type="button" id="jFile">A file from elsewhere…</button><input type="file" id="jFileIn" accept=".dem" hidden></div>`;
   }
-  const busy = !!JOIN.reading || F.length < JOIN.list.length;
+  const busy = !!JOIN.reading || !!JOIN.checking || F.length < JOIN.list.length;
+  // the checks that pass and the notes fold behind the verdict, opening with the link at its right, "Show N checks" / "Hide
+  // checks", styled like the load card's Details (Sujan, 20 Nov 2026; a ▸ after the verdict up to then, which nobody saw);
+  // warnings always in full (Sujan, 19 Nov 2026; each part's own line stays as approved, 7 Nov 2026)
+  const li = (c) => `<li><span class="sum-ic ${c.s}" aria-hidden="true">${ic[c.s]}</span><span>${esc(c.t)}${c.n ? `<small>${esc(c.n)}</small>` : ''}${c.btn ? `<div class="li-btn"><button class="btn sm${c.btn.primary ? ' primary' : ''}" type="button" id="${c.btn.id}">${esc(c.btn.label)}</button></div>` : ''}</span></li>`;
+  const folded = checks.filter((c) => c.s !== 'warn'), warns = (dupWarn ? [dupWarn] : []).concat(recWarn ? [recWarn] : [], checks.filter((c) => c.s === 'warn'));
+  const vText = verdict ? `<span class="sum-ic ${verdict.s}" aria-hidden="true">${ic[verdict.s]}</span><span class="jvt">${esc(verdict.t)}</span>` : '';
+  const vRow = !verdict ? '' : `<li class="jv${folded.length ? ' more' : ''}">${vText}${folded.length ? `<button class="lnk" type="button" id="jVerdict" aria-expanded="${JOIN.okOpen ? 'true' : 'false'}">${JOIN.okOpen ? 'Hide checks' : `Show ${plural(folded.length, 'check')}`}</button>` : ''}</li>`;
+  const checkRows = vRow + (JOIN.okOpen ? folded.map(li).join('') : '') + warns.map(li).join('');
   el.innerHTML = `<div class="sum join" role="dialog" aria-labelledby="jTitle">
     <div class="sum-top"><div class="ti"><h2 id="jTitle">Count these demos as one map?</h2><p>Score, rounds and player stats will cover all parts. Playback runs straight on from one part to the next.</p></div>${x}</div>
     <ol class="jparts">${rows}</ol>
-    ${order ? `<div class="jorder"><b>Order:</b> ${esc(order)}</div>` : ''}
-    ${checks.length ? `<ul class="sum-list">${checks.map((c) => `<li><span class="sum-ic ${c.s}" aria-hidden="true">${ic[c.s]}</span><span>${esc(c.t)}${c.n ? `<small>${esc(c.n)}</small>` : ''}</span></li>`).join('')}</ul>` : ''}
+    ${checkRows ? `<ul class="sum-list jchecks">${checkRows}</ul>` : ''}
     ${wrong}${picker}
-    <div class="sum-foot"><button class="btn" type="button" id="jAdd" ${busy || JOIN.picking ? 'disabled' : ''} ${JOIN.picking ? `title="${noneHere ? 'Pick a file from elsewhere above' : 'Pick a demo above, or a file from elsewhere'}"` : ''}>Add another part…</button><span class="sp"></span><button class="btn" type="button" id="jCancel">Cancel</button><button class="btn primary" type="button" id="jGo" ${busy || JOIN.list.length < 2 || (problem && !JOIN.keep) ? 'disabled' : ''}>Join them</button></div>
+    <div class="sum-foot"><button class="btn" type="button" id="jAdd" ${busy || JOIN.picking ? 'disabled' : ''} ${JOIN.picking ? `title="${noneHere ? 'Pick a file from elsewhere above' : 'Pick a demo above, or a file from elsewhere'}"` : ''}>Add another part…</button><span class="sp"></span><button class="btn" type="button" id="jCancel">Cancel</button><button class="btn primary" type="button" id="jGo" ${busy || JOIN.list.length < 2 || (problem && !JOIN.keep) || dupWarn ? 'disabled' : ''}>Join parts</button></div>
   </div>`;
   el.hidden = false;
   $('jX').onclick = closeJoinCard; $('jCancel').onclick = closeJoinCard;
+  if ($('jVerdict')) $('jVerdict').onclick = () => { JOIN.okOpen = !JOIN.okOpen; renderJoinCard(); };
+  if ($('jRec')) $('jRec').onclick = useRecorded;
+  if ($('jDrop')) $('jDrop').onclick = () => { JOIN.list.splice(dupAt[1], 1); JOIN.dup = null; JOIN.checking = true; renderJoinCard(); readJoinParts(); };
   el.onclick = (e) => { if (e.target === el) closeJoinCard(); };
   el.querySelectorAll('[data-mv]').forEach((b) => b.onclick = () => { const [i, d] = b.dataset.mv.split(',').map(Number); joinMove(i, d); });
   // greyed out while the picker row is open and empty: clicking it there only closed the row (Sujan, 23 Oct 2026)
@@ -396,8 +456,7 @@ function renderJoinCard() {
   if ($('jSel')) $('jSel').onchange = (e) => { const f = (files.demos || []).find((x) => x.name === e.target.value); if (f) addJoinPart(f); };
   if ($('jFile')) { $('jFile').onclick = () => $('jFileIn').click(); $('jFileIn').onchange = (e) => { const f = e.target.files[0]; if (f) addJoinPart(f); }; }
   $('jGo').onclick = () => {
-    const names = JOIN.list.map((f) => f.name);
-    rememberJoin(names, JOIN.keep && !!problem, problem);
+    rememberJoin(JOIN.list, JOIN.keep && !!problem, problem);
     const parsed = JOIN.list.map((f) => JOIN.P.get(f.name));
     closeJoinCard();
     JOIN.P.clear(); JOIN.F.clear(); JOIN.carry = null; // the read parts go to the joined map; nothing else keeps them

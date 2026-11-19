@@ -26,13 +26,20 @@ function jumpRound(dir) {
 }
 $('bPrevR').onclick = () => jumpRound(-1);
 $('bNextR').onclick = () => jumpRound(1);
-$('bScope').onclick = () => { scope = scope === 'match' ? 'round' : 'match'; $('bScope').textContent = 'Timeline: ' + scope; savePrefs(); drawTimeline(); };
+// the timeline's range, Match | Round (UI review, item 8; a "Timeline: match" button up to then)
+function setScope(s) { scope = s; document.querySelectorAll('#scopeSeg button').forEach((b) => b.classList.toggle('on', b.dataset.s === s)); }
+document.querySelectorAll('#scopeSeg button').forEach((b) => b.onclick = () => { setScope(b.dataset.s); savePrefs(); drawTimeline(); });
+// one speed button showing the speed, opening the six above it (UI review, item 8; six buttons up to then); [ and ] stay
 const spEl = $('speeds');
+const speedOpen = (on) => { spEl.hidden = !on; $('bSpeed').setAttribute('aria-expanded', on ? 'true' : 'false'); };
 for (const s of SPEEDS) {
   const b = document.createElement('button'); b.type = 'button'; b.className = 'btn' + (s === 1 ? ' on' : ''); b.textContent = s + '×';
-  b.onclick = () => setSpeed(s); spEl.appendChild(b);
+  b.onclick = () => { setSpeed(s); speedOpen(false); }; spEl.appendChild(b);
 }
-function setSpeed(s) { speed = s; [...spEl.children].forEach((b, i) => b.classList.toggle('on', SPEEDS[i] === s)); }
+$('bSpeed').onclick = (e) => { e.stopPropagation(); speedOpen(spEl.hidden); };
+document.addEventListener('pointerdown', (e) => { if (!spEl.hidden && !e.target.closest('.spwrap')) speedOpen(false); }, true);
+document.addEventListener('keydown', (e) => { if (e.key === 'Escape' && !spEl.hidden) { e.stopPropagation(); speedOpen(false); $('bSpeed').focus(); } }, true);
+function setSpeed(s) { speed = s; [...spEl.children].forEach((b, i) => b.classList.toggle('on', SPEEDS[i] === s)); $('bSpeed').textContent = 'Speed ' + s + '×'; $('bSpeed').classList.toggle('on', s !== 1); }
 
 // the shortcuts list works everywhere, including the start screen
 document.addEventListener('keydown', (e) => {
@@ -80,6 +87,7 @@ document.addEventListener('keyup', (e) => { if (e.key === 'Tab') showScoreboard(
 window.addEventListener('blur', () => showScoreboard(false));
 function toggleKeys(v) { $('keys').hidden = v != null ? !v : !$('keys').hidden; }
 $('bKeys').onclick = () => toggleKeys();
+$('bHelpStart').onclick = () => toggleKeys(true); // the start screen's Help link: item 1 hid the bottom bar there (Sujan, 17 Nov 2026)
 $('bKeysClose').onclick = () => toggleKeys(false);
 $('bKeysX').onclick = () => toggleKeys(false);
 $('keys').onclick = (e) => { if (e.target === $('keys')) toggleKeys(false); };
@@ -101,7 +109,7 @@ function povTabHeld(t) {
   const r = idxAt(A, 2, t); return r >= 0 && A[r * 2 + 1] === 1;
 }
 function povTabTick() {
-  if (!D || !D.povOn || SB.user) return;
+  if (!D || !D.povOn || SB.user || !$('load').hidden) return; // never over the start screen (Sujan, 19 Nov 2026)
   const held = povTabHeld(T);
   if (held && !SB.auto) showScoreboard(true, true);
   else if (!held && SB.auto) showScoreboard(false);
@@ -190,7 +198,7 @@ function showScoreboard(v, auto = false) {
     const specNow = now.filter((x) => !x.side).sort((a, b) => (M.teamOf[a.pid] != null) - (M.teamOf[b.pid] != null) || (a.pid < b.pid ? -1 : 1)).map((x) => esc(M.pl[x.pid].name) + (M.pl[x.pid].hltv ? ' <span class="sbtag">HLTV</span>' : ''));
     const v = viewersAt(T);
     h += `<div class="spech">Spectators</div><div class="specs">${specNow.length ? specNow.join('<span class="gsep">·</span>') : 'none on the server'}</div>`;
-    if (v != null || SB.auto) h += `<div class="gfoot"><span>${v != null ? `${v.toLocaleString('en-US')} watching on HLTV` : ''}</span>${SB.auto ? '<span class="sbheld">He held Tab here</span>' : ''}</div>`;
+    if (v != null || SB.auto) h += `<div class="gfoot"><span>${v != null ? `${v.toLocaleString('en-US')} watching on HLTV` : ''}</span>${SB.auto ? '<span class="sbheld">The player held Tab here</span>' : ''}</div>`;
     el.innerHTML = h + '</div>';
   };
   render(); el.hidden = false;
@@ -227,7 +235,7 @@ function updateHud(force) {
   // score shown is the score at the start of the current round
   const sc = r ? (T >= (r.endT || r.end) && r.scoreAfter ? r.scoreAfter : r.scoreBefore) : [0, 0];
   $('scA').textContent = sc[0]; $('scB').textContent = sc[1];
-  const vw = viewersAt(T); $('viewers').textContent = vw != null ? `${vw.toLocaleString('en-US')} watching` : '';
+  // the spectator count left the header: it's in the Tab scoreboard's footer (UI review, item 14, 17 Nov 2026)
   const side = (i) => r && r.tTeam != null ? (r.tTeam === i ? 'side-t' : 'side-ct') : '';
   $('tnA').className = 'tn ' + side(0); $('tnB').className = 'tn ' + side(1);
   const paused = (() => { let on = false; for (const p of D.pauses || []) { if (p.t > T) break; on = p.on; } return on; })();
@@ -246,13 +254,9 @@ function updateHud(force) {
     if (changed && scope === 'round') drawTimeline();
     if (changed && heat && $('hmScope').value === 'round') heat = null;
     if (changed || force) { const cur = $('pane').querySelector('.row.cur'); if (cur && tab === 'rounds') cur.scrollIntoView({ block: 'nearest' }); }
-    // a new round on the Kills tab: its heading at the top, not wherever the last round's list was scrolled to. POV mode's
-    // Kills tab lists the whole match by round (0.26.29), so there the new round's heading comes to the top, the list
-    // stays where it is for a round with no kill or death of his yet (it has no heading) and after a click on a row
-    // (Sujan, 11 Nov 2026; up to 0.26.29 it went back to the list's top at every round change)
-    if (changed && tab === 'kills') {
-      if (!D.povOn) $('pane').scrollTop = 0;
-      else if (!PANE.keep) { const P = $('pane'), cur = P.querySelector('.sechead.rhead.cur'); if (cur) P.scrollTop += cur.getBoundingClientRect().top - P.getBoundingClientRect().top; }
-    }
+    // a new round on the Kills tab, which lists the whole match by round (POV mode since 0.26.29, HLTV demos since the UI
+    // review, item 6): the new round's heading comes to the top; the list stays where it is for a round with no heading
+    // (in POV mode, no kill or death of his yet) and after a click on a row (Sujan, 11 Nov 2026)
+    if (changed && tab === 'kills' && !PANE.keep) { const P = $('pane'), cur = P.querySelector('.sechead.rhead.cur'); if (cur) P.scrollTop += cur.getBoundingClientRect().top - P.getBoundingClientRect().top; }
   }
 }

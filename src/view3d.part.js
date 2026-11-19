@@ -15,12 +15,23 @@ function status3(t, withButton) {
   if (withButton) $('bFolder3').onclick = () => pickFolder();
 }
 document.querySelectorAll('#viewSeg button').forEach((b) => b.onclick = () => setView(b.dataset.v));
+$('radar3').onchange = () => { radar3 = $('radar3').checked; savePrefs(); if (D && viewMode !== '2d') setView('3d', false); };
+// The Radar row in View settings (UI review, item 5, 17 Nov 2026): the 2D map in a corner of the 3D view, in HLTV demos,
+// saved with the view's settings; it took the place of the header's third view, 3D + radar. viewMode stays 'split' for
+// 3D with the radar, as before; the switch shows 2D and 3D, and a saved 3D + radar opens as 3D with Radar on.
+let radar3 = false;
 function setView(v, save = true) {
-  viewMode = v; if (save) { viewPref = v; savePrefs(); }
-  document.querySelectorAll('#viewSeg button').forEach((x) => x.classList.toggle('on', x.dataset.v === v));
+  if (v === 'split') { radar3 = true; v = '3d'; }
+  if (save) { viewPref = v; savePrefs(); }
+  if (v === '3d' && radar3 && !POV.on) v = 'split';
+  viewMode = v;
+  $('radar3').checked = radar3;
+  document.querySelectorAll('#viewSeg button').forEach((x) => x.classList.toggle('on', x.dataset.v === (v === 'split' ? '3d' : v)));
   const r = $('radar');
   r.classList.toggle('m2d', v === '2d'); r.classList.toggle('m3d', v === '3d'); r.classList.toggle('msplit', v === 'split');
-  $('cam3').hidden = v === '2d' || !D;
+  // the camera bar is 3D's, and has nothing left in POV mode, where View settings is in the strip (UI review, item 4)
+  $('cam3').hidden = v === '2d' || !D || POV.on;
+  $('tgXray').closest('.xwrap').hidden = v === '2d'; // See through walls does nothing in 2D (only the 3D view reads opts.xray)
   if (v !== '2d' && !window.THREE) status3('The 3D engine could not load. Check your internet connection and reload the page.');
   else if (v !== '2d' && D && !MAP) loadMap(D.mapName);
   requestAnimationFrame(() => { resize(); resize3(); });
@@ -657,7 +668,7 @@ function update3Now() {
       const rr = M.rounds.find((r) => r.n === death.round);
       const kside = rr && rr.tTeam != null && death.kp ? (M.teamOf[death.kp] === rr.tTeam ? 'kt' : 'kct') : '';
       const kn = death.kp && death.killer !== death.victim
-        ? `killed by <span class="${kside}">${esc(M.pl[death.kp].name)}</span> · ${esc(death.weapon)}${death.hs ? ' · <span class="khs">HS</span>' : ''}${death.wb ? (death.wb.loose ? ' · <span class="kwb loose">loose wallbang</span>' : ' · <span class="kwb">wallbang</span>') : ''}`
+        ? `killed by <span class="${kside}">${esc(M.pl[death.kp].name)}</span> · ${esc(death.weapon)}${death.hs ? ' · <span class="khs">HS</span>' : ''}${death.wb ? (death.wb.loose ? ' · <span class="kwb loose">partial wallbang</span>' : ' · <span class="kwb">wallbang</span>') : ''}`
         : (death.weapon === 'world' ? 'died' : 'killed themselves');
       pov.hidden = false; pov.classList.add('dead');
       // Vanilla (0.26.16): the name bar stays (Sujan, 3 Nov 2026), without the death cam's banner
@@ -792,7 +803,7 @@ function drawHitMarker(lx, cx, cy, xh = XHAIR.small) {
     for (const [dx, dy] of [[1, 1], [1, -1], [-1, 1], [-1, -1]]) { lx.moveTo(cx + dx * g0, cy + dy * g0); lx.lineTo(cx + dx * g1, cy + dy * g1); }
     lx.stroke();
   }
-  const label = k.wb ? `${k.wb.loose ? 'LOOSE WB' : 'WALLBANG'}${k.hs ? ' · HS' : ''}` : k.hs ? 'HEADSHOT' : 'KILL';
+  const label = k.wb ? `${k.wb.loose ? 'PARTIAL WALLBANG' : 'WALLBANG'}${k.hs ? ' · HS' : ''}` : k.hs ? 'HEADSHOT' : 'KILL';
   // the label at the Interface size (UI, 0.26.13); the ticks above stay with the crosshair, which doesn't scale
   lx.font = `500 ${10 * UI}px ${textFont()}`; lx.textAlign = 'center';
   lx.lineWidth = 2.5 * UI; lx.strokeStyle = 'rgba(0,0,0,.6)'; lx.strokeText(label, cx, cy + xh.end + 20 * UI); lx.fillStyle = col; lx.fillText(label, cx, cy + xh.end + 20 * UI);
@@ -983,13 +994,14 @@ function povInit() {
   POV.on = !!(D && D.povOn && D.view);
   POV.i = 0; POV.t = T;
   D.ownShots = POV.on ? povShots() : null;
-  // the camera buttons that pick another view or player go; View settings stays, with his own crosshair's size in place of
-  // the viewer's (From config.cfg, Small, Medium, Large; Sujan, 11 Nov 2026), without Glow on hits (no wallbang damage in
+  // the camera buttons that pick another view or player go (and with them the camera bar, setView); View settings, in the
+  // strip at the bottom left, has his own crosshair's size in place of the viewer's (From config.cfg, Small, Medium, Large; Sujan, 11 Nov 2026), without Glow on hits (no wallbang damage in
   // POV mode, so nothing to glow; Sujan, 29 Oct 2026) and Damage numbers (Sujan, 3 Nov 2026), and with the flashbang rows
   $('cam3').querySelector('.camseg').hidden = POV.on;
   $('bPrevP').hidden = POV.on; $('bNextP').hidden = POV.on;
   $('xh3').closest('.vrow').hidden = POV.on; $('glow3').closest('.vrow').hidden = POV.on;
   $('dn3').closest('.vrow').hidden = POV.on;
+  $('radar3').closest('.vrow').hidden = POV.on; // his own radar is drawn in POV mode (UI review, item 5: HLTV demos only)
   $('xhp3').closest('.vrow').hidden = !POV.on;
   for (const id of ['fbDot3', 'fbWhite3']) $(id).closest('.vrow').hidden = !POV.on;
   { const h = $('fbDot3').closest('.vrow').previousElementSibling; if (h && h.classList.contains('vhead')) h.hidden = !POV.on; }
@@ -1567,7 +1579,7 @@ function povHidesEnemies() {
 // the load summary's line and the note: the headline, then the detail, feature names between ** (bold); one text in both
 // places (Sujan, 11 Nov 2026; up to 0.26.29 it gave the counts of enemy and teammate sightings)
 function hiddenEnemiesText(h) {
-  return { t: 'This server seems to use an anti-wallhack plugin', n: 'To stop wallhacks, the server shows the player an enemy only when that enemy is about to come into view. So **See through walls** won\'t work as intended until the player is dead.' };
+  return { t: 'This server seems to use an anti-wallhack plugin', n: 'To stop wallhacks, the server shows the player (whose POV you\'re watching) an enemy only when that enemy is about to come into view. So **See through walls** won\'t work as intended until the player is dead.' };
 }
 // the ! on See through walls, only in POV mode on such a server
 function povMarkInit() {
