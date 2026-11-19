@@ -756,6 +756,12 @@ with sync_playwright() as p:
         pg8.mouse.move(10, 10)
         check('a click on a kill mark in the timeline watches that kill (the killer followed, playing, marked, a few seconds before); a click on empty space and a drag from a kill mark only move the playhead',
               t1['picked'] and t1['followed'] and t1['playing'] and 3 <= t1['before'] <= 4.1 and t2 == {'picked': True, 'playing': False, 'at': True} and t3 == {'picked': False, 'other': True, 'playing': False, 'at': True}, str([t1, t2, t3]))
+        # no Tab scoreboard over the start screen (Sujan, 19 Nov 2026): held by hand while Open another demo is clicked, gone with
+        # the start screen, and not there when the demo comes back without Tab
+        pg8.keyboard.down('Tab'); pg8.wait_for_timeout(300); s0 = JS8("!$('sb').hidden")
+        pg8.click('#btnOpen'); pg8.wait_for_timeout(500); s1 = JS8("({ sb: !$('sb').hidden, load: !$('load').hidden })")
+        pg8.keyboard.up('Tab'); pg8.click('#btnOpen'); pg8.wait_for_timeout(500); s2 = JS8("({ sb: !$('sb').hidden, load: !$('load').hidden })")
+        check('the Tab scoreboard held by hand goes when Open another demo shows the start screen', s0 and s1 == {'sb': False, 'load': True} and s2 == {'sb': False, 'load': False}, str([s0, s1, s2]))
         JS8("closeSummary()"); pg8.keyboard.press('?'); pg8.wait_for_timeout(300)
         # Help (UI review, item 9, 17 Nov 2026; the shortcuts list up to then): Keys, Colours and marks, About; the version,
         # its links and Copy debug info under About; Close alone in the footer; F and T each said on their own

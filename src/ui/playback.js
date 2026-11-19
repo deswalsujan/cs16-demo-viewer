@@ -109,7 +109,7 @@ function povTabHeld(t) {
   const r = idxAt(A, 2, t); return r >= 0 && A[r * 2 + 1] === 1;
 }
 function povTabTick() {
-  if (!D || !D.povOn || SB.user) return;
+  if (!D || !D.povOn || SB.user || !$('load').hidden) return; // never over the start screen (Sujan, 19 Nov 2026)
   const held = povTabHeld(T);
   if (held && !SB.auto) showScoreboard(true, true);
   else if (!held && SB.auto) showScoreboard(false);

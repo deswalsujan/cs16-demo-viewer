@@ -148,6 +148,14 @@ try:
         s2 = ev(SB)
         # gender-neutral words for the player whose demo it is (Sujan, 19 Nov 2026; "He held Tab here" up to then)
         check(s1.get('open') and s1.get('held') and s1.get('heldText') == 'The player held Tab here' and not s2.get('open'), 'Tab scoreboard while the player held Tab, with "The player held Tab here", closed after', {'held': s1, 'after': s2})
+        # never over the start screen (Sujan, 19 Nov 2026: it stayed there after Open another demo, paused on a Tab hold), and back
+        # with the demo
+        at(345.63)
+        pg.click('#btnOpen'); pg.wait_for_timeout(800)
+        s3 = ev(js("({ sb: !$('sb').hidden, load: !$('load').hidden })"))
+        pg.click('#btnOpen'); pg.wait_for_timeout(800)
+        s4 = ev(js("({ sb: !$('sb').hidden, load: !$('load').hidden })"))
+        check(s3 == {'sb': False, 'load': True} and s4 == {'sb': True, 'load': False}, 'the recorded Tab scoreboard hidden over the start screen, back with the demo', {'start screen': s3, 'back': s4})
         at(809.0)
         o = ev(offers_js())
         # the card's first line says the demo type, and the anti-wallhack note is a line of its own (Sujan, 19 Nov 2026; one short
