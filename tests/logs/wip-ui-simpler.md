@@ -87,3 +87,16 @@ With a throwaway script (not one of the checks), with the Half-Life folder and t
 | The gold **Use the recorded order** | WeMadeFox vs Ravens, part 2 first; Na`Vi vs SK, 16:09, 17:40, 17:24 | in the box, **Keep my order** and the gold **Use the recorded order**, the warning with its text only; no box, the warning's button gold |
 | A remembered join | WeMadeFox vs Ravens joined, then part 1 opened again | the joined map; with part 2's remembered size changed, part 1 alone, the join forgotten, "This file was joined with … before. … has changed, so it opened on its own." on the open card; part 2 out of the folder list: "… isn't in your Half-Life folder now, …"; a join saved without sizes: "The viewer can't tell whether the parts have changed since, …" |
 | The same file twice | the four Na`Vi vs SK files above; WeMadeFox part 1 and a copy made in the page | "Part 2 is the same recording as part 1, under another name" with **Remove part 2**, **Join parts** off; moved to part 4, "Part 4 is …"; removed, "In the order they were recorded: 16:09, 17:24, 17:40. The rounds agree." and **Join parts** on |
+
+### The start screen, item 12's two fixups (Sujan, 20 Nov 2026)
+
+Looked at in the headless page with a throwaway script, at 1512x982, 1440x900, 1920x1080, 1536x864 and 1707x960, each at Auto and at Interface size 200% (1.15, 1.1, 1.5, 1.2 and 1.3), before a folder is picked, with the Half-Life folder alone (no demos: "No demos found.") and with the test demos in its clone (79 demos), then the folder alone again:
+
+| State | Headline | Step 2's bracket |
+|---|---|---|
+| No folder yet | full size (38 px at Auto, 57 px at 1920x1080 and 200%), two lines, nothing cut | one piece, beside "HLTV or POV demos both play" |
+| Folder with no demos | the same full size as before the pick, at every size | one piece, moved whole to the next line (the button is **Open .dem from elsewhere** by then) |
+| Folder with demos | one line, 20 px at Auto (30 px at 1920x1080 and 200%) | one piece, on the next line |
+| The folder alone again | full size | one piece |
+
+`start_screen_check.py` (the bracket at the five sizes) and `folder_row_test.py` (the headline in B1 and B5) were updated for them, not run.
