@@ -119,7 +119,8 @@ with sync_playwright() as p:
     pg.set_input_files('#fFolder', os.path.join(hl, 'cstrike')); wait_status(pg, 'one level up')
     r = row(pg); check('B4 the cstrike folder itself: asks for the folder one level up', 'one level up' in r['status'] and r['demo_off'], r)
     write_tree({k: v for k, v in BASE.items() if not k.endswith('.dem')}); pg.set_input_files('#fFolder', hl); wait_status(pg, 'No demos found')
-    r = row(pg); check('B5 Half-Life folder with no demos: "No demos found" warning, Open .dem still on', r['dot'] and not r['demo_off'] and r['demos'] == 0, r); shot(pg, 'b5_no_demos')
+    # its last words point at the button below it (Sujan, 19 Nov 2026; "with Open .dem" up to then)
+    r = row(pg); check('B5 Half-Life folder with no demos: "No demos found" warning ending "with the option below.", Open .dem still on', r['dot'] and not r['demo_off'] and r['demos'] == 0 and r['status'].endswith('open one from anywhere with the option below.'), r); shot(pg, 'b5_no_demos')
 
     # demos deleted or changed after the pick: the page finds out only when it reads them
     fs3 = dict(BASE); fs3['cstrike/third.dem'] = [1500, 1000]; fs3['cstrike/fourth.dem'] = [1500, 1000]

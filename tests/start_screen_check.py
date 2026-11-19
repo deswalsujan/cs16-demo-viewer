@@ -29,16 +29,17 @@ with sync_playwright() as p:
     pg.click('#bHelpStart'); pg.wait_for_timeout(200); hs = pg.evaluate("!document.getElementById('keys').hidden && document.getElementById('helpTitle').textContent")
     pg.keyboard.press('Escape'); pg.wait_for_timeout(200); hs = hs == 'Help' and pg.evaluate("document.getElementById('keys').hidden")
     print('Help from the start screen\'s link, closed with Esc:', hs); t = t and hs
-    # the start screen's words (UI review, item 12, 17 Nov 2026): the tagline says HLTV and POV, step 2 is one sentence with
-    # the pre-2008 note behind More, the drop line is about .dem files only, a Copy button beside each path, and the button
-    # that deletes the saved files says it forgets the folder too
+    # the start screen's words (UI review, item 12, 17 Nov 2026): the tagline says HLTV and POV, the drop line is about .dem
+    # files only, a Copy button beside each path, and the button that deletes the saved files says it forgets the folder too;
+    # the headline "Play CS 1.6 demos in your browser", and step 2's protocol line shown under its sentence, with no More
+    # (Sujan, 19 Nov 2026; behind More since item 12)
     w = pg.evaluate("""() => { const $ = (id) => document.getElementById(id), step = () => $('stepDemo').querySelector('.tx small').innerText.trim();
-      const before = step(); $('bStepMore').click(); return { meta: $('meta').textContent, before, after: step(), drop: document.querySelector('.drophint').textContent,
+      return { meta: $('meta').textContent, h1: document.querySelector('.load h1').textContent, step: step(), more: !!$('bStepMore'), drop: document.querySelector('.drophint').textContent,
         copies: document.querySelectorAll('#hlPaths .cpy').length, clear: $('bClear').textContent }; }""")
-    words = (w['meta'] == 'CS 1.6 HLTV and POV demos, played in your browser' and w['before'] == 'Pick a demo below, or open a .dem file from anywhere. More'
-             and 'protocol 47' in w['after'] and 'More' not in w['after'] and w['drop'] == 'Or drop a .dem file anywhere on this page' and w['copies'] == 2
-             and w['clear'] == 'Delete saved files')
-    print('The start screen\'s words:', 'as item 12 says' if words else w); t = t and words
+    words = (w['meta'] == 'CS 1.6 HLTV and POV demos, played in your browser' and w['h1'] == 'Play CS 1.6 demos in your browser'
+             and w['step'] == 'Pick a demo below, or open a .dem file from anywhere.\nHLTV or POV demos both play (Protocol 47 & 48 supported).' and not w['more']
+             and w['drop'] == 'Or drop a .dem file anywhere on this page' and w['copies'] == 2 and w['clear'] == 'Delete saved files')
+    print('The start screen\'s words:', 'as item 12 and its fixup say' if words else w); t = t and words
     pg.screenshot(path='start_disabled.png', clip={'x': 1000, 'y': 0, 'width': 440, 'height': 60})
     # the footer's Source on GitHub link (0.25.1): the repo, in a new tab. Phone width is no longer checked (Sujan, 3 Nov
     # 2026: the viewer needs a Half-Life folder, which no phone has)

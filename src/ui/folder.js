@@ -262,8 +262,6 @@ document.querySelectorAll('.cpy').forEach((b) => b.onclick = () => {
   const done = (t) => { b.textContent = t; setTimeout(() => { b.textContent = 'Copy'; }, 1500); };
   try { navigator.clipboard.writeText($(b.dataset.copy).textContent).then(() => done('Copied'), () => done('Select and copy it')); } catch (e) { done('Select and copy it'); }
 });
-// step 2's More: the demos it plays, pre-2008 ones too (UI review, item 12)
-$('bStepMore').onclick = () => { const m = $('stepMore'), on = m.hidden; m.hidden = !on; $('bStepMore').hidden = on; $('bStepMore').setAttribute('aria-expanded', on ? 'true' : 'false'); };
 { const os = hlOS(); $('hlWin').hidden = os === 'mac'; $('hlMac').hidden = $('hlTip').hidden = os === 'win'; }
 // the files the viewer reads, for telling what changed between two picks in one visit (hlApply)
 const HL_WANT = /(?:^|\/)(?:cstrike|cstrike_downloads|valve)\/(?:maps\/[^/]+\.bsp|overviews\/[^/]+\.(?:bmp|txt)|models\/.+\.mdl|sound\/.+\.wav|sound\/(?:sentences|materials)\.txt|resource\/cstrike_english\.txt|sprites\/hud\.txt|sprites\/640hud\d+\.spr|sprites\/(?:muzzleflash[1-3]|blood|bloodspray|640_pain)\.spr|gfx\/palette\.lmp|[^/]+\.wad)$|(?:^|\/)cstrike\/(?:config\.cfg|sprites\/weapon_\w+\.txt)$|\.dem$/;
@@ -308,7 +306,7 @@ function hlRender(state, o = {}) {
     // no dot beside the count: the folder isn't watched, so there's no "Up to date" to show (Sujan, 2 Nov 2026)
     const n = files.demos.length;
     st.innerHTML = n ? esc(`${n} ${n === 1 ? 'demo' : 'demos'} found.`)
-      : line('chg', 'No demos found.', 'The folder is fine, but has no .dem files. Put demos in cstrike, or open one from anywhere with Open .dem.');
+      : line('chg', 'No demos found.', 'The folder is fine, but has no .dem files. Put demos in cstrike, or open one from anywhere with the option below.');
   }
   $('btnDemo').disabled = !HL.ok;
   $('btnDemo').title = HL.ok ? '' : 'Choose your Half-Life folder first';
