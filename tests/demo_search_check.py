@@ -531,12 +531,13 @@ with sync_playwright() as p:
         c = card()
         check("Join card, part 2 put first: check A says the order doesn't add up, and Join parts is off",
               c['names'] == [W2, W1] and c['wrong'] == "Part 1's teams change sides after 11 rounds, so its first half began in an earlier recording." and not c['go'], f"{c['wrong']!r}, Join parts {'on' if c['go'] else 'off'}")
-        # an order that differs from the recording times: a warning with Use the recorded order (Sujan, 19 Nov 2026; grey words
-        # in the order line up to then), and no second button for the same order in the "doesn't add up" box
-        sg = JS5("(() => !!$('jSugg'))()")
-        check('Join card, part 2 put first: "In your order.", the warning that it isn\'t the recorded order with Use the recorded order, and no green tick for the teams swapping sides',
-              c['order'] == 'In your order.' and not sg
-              and {'s': 'warn', 't': 'Not in the order they were recorded The recording times in the file names put them the other way round: 09:51, 10:26. Use the recorded order'} in c['checks']
+        # an order that differs from the recording times: a warning (Sujan, 19 Nov 2026; grey words in the order line up to then);
+        # with the "doesn't add up" box, Use the recorded order is that box's gold button beside Keep my order and the warning keeps
+        # only its text (Sujan, 20 Nov 2026), and no second button for the same order
+        sg = JS5("(() => ({ sugg: !!$('jSugg'), btns: [...document.querySelectorAll('#joinCard .jwrong .jbtns .btn')].map((b) => b.id + (b.classList.contains('primary') ? ' gold' : '')) }))()")
+        check('Join card, part 2 put first: "In your order.", the warning that it isn\'t the recorded order, its Use the recorded order the gold button in the "doesn\'t add up" box beside Keep my order, and no green tick for the teams swapping sides',
+              c['order'] == 'In your order.' and sg == {'sugg': False, 'btns': ['jKeep', 'jRec gold']}
+              and {'s': 'warn', 't': 'Not in the order they were recorded The recording times in the file names put them the other way round: 09:51, 10:26.'} in c['checks']
               and {'s': 'warn', 't': 'Teams swapped sides between the parts'} in c['checks'], f"{c['order']!r}; Use the suggested order {sg}; " + '; '.join(f"[{x['s']}] {x['t']}" for x in c['checks']))
         B = JS5("orderProblem([JOIN.F.get(JOIN.list[0].name), Object.assign({}, JOIN.F.get(JOIN.list[1].name))].map((f, i) => i ? f : Object.assign({}, f, { swapAt: null })))")
         check('check B on the same order (check A left out): other sides after 26 rounds, partway through a half',
@@ -575,6 +576,9 @@ with sync_playwright() as p:
         JS5('joinMove(1, 1)')
         c = card()
         w = [x['t'] for x in c['checks'] if x['s'] == 'warn' and x['t'].startswith('Not in the order they were recorded')]
+        gold = JS5("(() => ({ gold: $('jRec').classList.contains('primary'), inBox: !!$('jRec').closest('.jwrong'), box: !!document.querySelector('#joinCard .jwrong') }))()")
+        check('Join card, Na`Vi vs SK in the order 16:09, 17:40, 17:24, an order the rounds allow: no "doesn\'t add up" box, the warning\'s Use the recorded order the gold button',
+              gold == {'gold': True, 'inBox': False, 'box': False}, str(gold))
         JS5("$('jRec').click()")
         c2 = card()
         check('Join card, Na`Vi vs SK in the order 16:09, 17:40, 17:24: the warning with Use the recorded order, which puts them back to 16:09, 17:24, 17:40',

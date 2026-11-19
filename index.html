@@ -3500,7 +3500,8 @@ function renderJoinCard() {
     verdict = { s: problem || off ? 'warn' : txt.startsWith('In ') ? 'ok' : 'info', t: txt };
     if (off) {
       recIdx = F.map((f, i) => i).sort((a, b) => t[a] - t[b]);
-      recWarn = { s: 'warn', t: 'Not in the order they were recorded', n: `The recording times in the file names put them ${F.length === 2 ? 'the other way round' : 'in another order'}: ${clockList(recIdx.map((i) => t[i]))}.`, btn: { id: 'jRec', label: 'Use the recorded order' } };
+      // its button the primary (gold) one (Sujan, 20 Nov 2026); in the "doesn't add up" box below when that shows
+      recWarn = { s: 'warn', t: 'Not in the order they were recorded', n: `The recording times in the file names put them ${F.length === 2 ? 'the other way round' : 'in another order'}: ${clockList(recIdx.map((i) => t[i]))}.`, btn: { id: 'jRec', label: 'Use the recorded order', primary: true } };
     }
   }
   // the checks
@@ -3539,11 +3540,15 @@ function renderJoinCard() {
   if (problem && !JOIN.keep) {
     const s = suggestOrder(F);
     const better = s && (s.agree ? s.order : s.roundsOrder);
-    // (the recording times are in the order line above when the order is the player's)
-    // no second button for the same order when the warning above already offers the recorded one
+    // no second button for the same order when the recorded one is also the rounds' order (Sujan, 19 Nov 2026)
     const same = (a, b) => !!a && !!b && a.every((v, k) => v === b[k]);
+    // Use the recorded order moves into this box as its primary (gold) button, beside Keep my order, and the warning above
+    // keeps only its text (Sujan, 20 Nov 2026). When the recorded order doesn't add up either, the rounds' order stays the gold
+    // button and the recorded one a plain button beside it
+    const recOk = !!recIdx && !orderProblem(recIdx.map((i) => F[i]));
+    if (recWarn) recWarn.btn = null;
     wrong = `<div class="jwrong"><h3>This order doesn't add up</h3><p>${esc(problem)}</p>
-      <div class="jbtns"><button class="btn" type="button" id="jKeep">Keep my order</button>${better && better.some((v, k) => v !== k) && !same(better, recIdx) ? '<button class="btn primary" type="button" id="jSugg">Use the suggested order</button>' : ''}</div></div>`;
+      <div class="jbtns"><button class="btn" type="button" id="jKeep">Keep my order</button>${recIdx ? `<button class="btn${recOk ? ' primary' : ''}" type="button" id="jRec">Use the recorded order</button>` : ''}${better && better.some((v, k) => v !== k) && !same(better, recIdx) ? `<button class="btn${recOk ? '' : ' primary'}" type="button" id="jSugg">Use the suggested order</button>` : ''}</div></div>`;
   }
   // picking another part: the folder's demos, the same map first, or a file from elsewhere
   let picker = '', noneHere = false;
@@ -3564,7 +3569,7 @@ function renderJoinCard() {
   // the checks that pass and the notes fold behind the verdict, opening with the link at its right, "Show N checks" / "Hide
   // checks", styled like the load card's Details (Sujan, 20 Nov 2026; a ▸ after the verdict up to then, which nobody saw);
   // warnings always in full (Sujan, 19 Nov 2026; each part's own line stays as approved, 7 Nov 2026)
-  const li = (c) => `<li><span class="sum-ic ${c.s}" aria-hidden="true">${ic[c.s]}</span><span>${esc(c.t)}${c.n ? `<small>${esc(c.n)}</small>` : ''}${c.btn ? `<div class="li-btn"><button class="btn sm" type="button" id="${c.btn.id}">${esc(c.btn.label)}</button></div>` : ''}</span></li>`;
+  const li = (c) => `<li><span class="sum-ic ${c.s}" aria-hidden="true">${ic[c.s]}</span><span>${esc(c.t)}${c.n ? `<small>${esc(c.n)}</small>` : ''}${c.btn ? `<div class="li-btn"><button class="btn sm${c.btn.primary ? ' primary' : ''}" type="button" id="${c.btn.id}">${esc(c.btn.label)}</button></div>` : ''}</span></li>`;
   const folded = checks.filter((c) => c.s !== 'warn'), warns = (recWarn ? [recWarn] : []).concat(checks.filter((c) => c.s === 'warn'));
   const vText = verdict ? `<span class="sum-ic ${verdict.s}" aria-hidden="true">${ic[verdict.s]}</span><span class="jvt">${esc(verdict.t)}</span>` : '';
   const vRow = !verdict ? '' : `<li class="jv${folded.length ? ' more' : ''}">${vText}${folded.length ? `<button class="lnk" type="button" id="jVerdict" aria-expanded="${JOIN.okOpen ? 'true' : 'false'}">${JOIN.okOpen ? 'Hide checks' : `Show ${plural(folded.length, 'check')}`}</button>` : ''}</li>`;
