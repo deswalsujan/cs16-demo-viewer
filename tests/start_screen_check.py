@@ -41,7 +41,7 @@ with sync_playwright() as p:
              and w['drop'] == 'Or drop a .dem file anywhere on this page' and w['copies'] == 2 and w['clear'] == 'Delete saved files')
     print('The start screen\'s words:', 'as item 12 and its fixup say' if words else w); t = t and words
     # step 2's bracket, "(Protocol 47 & 48 supported).", never breaks across lines, moving whole to the next line when it doesn't
-    # fit beside the button; step 1's text as wide as step 2's description, lined up on the right, the Mac path in a box like a
+    # fit beside the button; step 1's text as wide as step 2's description, lined up on the right, the path in a box like a
     # code block in the fixed-width font, its copy icon at the top right, broken only after a slash (Sujan, 20 Nov 2026): at
     # the five window sizes, at Auto and at Interface size 200%
     br, al = [], []
@@ -61,8 +61,9 @@ with sync_playwright() as p:
     pg.evaluate("() => { localStorage.removeItem('uiSize'); applyUiSize(); dispatchEvent(new Event('uisize')); }"); pg.set_viewport_size({'width': 1440, 'height': 900})
     bok = all(x['rects'] == 1 and x['inside'] for x in br)
     print("Step 2's bracket in one piece at the five window sizes, at Auto and at 200%:", bok if bok else br); t = t and bok
-    aok = all(len(x['off']) >= 4 and all(abs(o) <= 1 for o in x['off']) and len(x['boxes']) == 1 and all(all(b.values()) for b in x['boxes']) for x in al)
-    print("Step 1's text lined up with step 2's, the Mac path in its box with the copy icon, at the five window sizes, at Auto and at 200%:", aok if aok else al); t = t and aok
+    # the system's own path: one box on a Mac or Windows, both on Linux (GitHub's check), as hlOS says
+    aok = all(len(x['off']) >= 4 and all(abs(o) <= 1 for o in x['off']) and 1 <= len(x['boxes']) <= 2 and all(all(b.values()) for b in x['boxes']) for x in al)
+    print("Step 1's text lined up with step 2's, the path in its box with the copy icon, at the five window sizes, at Auto and at 200%:", aok if aok else al); t = t and aok
     pg.screenshot(path='start_disabled.png', clip={'x': 1000, 'y': 0, 'width': 440, 'height': 60})
     # the footer's Source on GitHub link (0.25.1): the repo, in a new tab. Phone width is no longer checked (Sujan, 3 Nov
     # 2026: the viewer needs a Half-Life folder, which no phone has)
