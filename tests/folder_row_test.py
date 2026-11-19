@@ -83,6 +83,30 @@ with sync_playwright() as p:
               r['title'] == 'Choose your Half-Life folder' and r['status'] == HELP and r['pick'] == 'Choose folder' and not r['tip'] and paths_ok
               and UPLOAD in r['paths'] and r['demo_off'] and not r['done'] and not r['old'], r)
         shot(pg, f'a1_{key}')
+        # step 1's text as wide as step 2's description, lined up on the right; the path in a box like a code block in the
+        # fixed-width font, its copy icon at the top right, broken only after a slash; at the five window sizes, at Auto and at
+        # 200%; the icon copies the path and shows "Copied" for a moment (Sujan, 20 Nov 2026; a Copy link after the path before)
+        if key in ('windows', 'mac'):
+            al = []
+            for w0, h0 in [(1512, 982), (1440, 900), (1920, 1080), (1536, 864), (1707, 960)]:
+                pg.set_viewport_size({'width': w0, 'height': h0})
+                for s0 in ('auto', '200'): al.append(pg.evaluate("""(s) => { localStorage.setItem('uiSize', JSON.stringify(s)); applyUiSize(); dispatchEvent(new Event('uisize'));
+              const vis = (e) => e && e.getClientRects().length > 0, R = (e) => e.getBoundingClientRect(), r2 = R(document.querySelector('#stepDemo .tx')).right;
+              const off = [...document.querySelectorAll('#stepFolder .tx, #hlStatus, #stepFolder .pbox, #hlTip, #stepFolder .hlup')].filter(vis).map((e) => Math.round(R(e).right - r2));
+              const boxes = [...document.querySelectorAll('#stepFolder .pbox')].filter(vis).map((b) => { const c = b.querySelector('.cpy'), br = R(b), cr = R(c), code = b.querySelector('.p');
+                return { mono: /monospace/.test(getComputedStyle(code).fontFamily), icon: !!c.querySelector('svg') && cr.right <= br.right && cr.right > br.right - 12 * UI && cr.top >= br.top && cr.top < br.top + 12 * UI,
+                  whole: [...code.querySelectorAll('.pseg')].every((x) => x.getClientRects().length === 1), fits: b.scrollWidth <= b.clientWidth + 1 }; });
+              return { size: innerWidth + 'x' + innerHeight + ' ' + s, off, boxes }; }""", s0))
+            pg.evaluate("() => { localStorage.removeItem('uiSize'); applyUiSize(); dispatchEvent(new Event('uisize')); }"); pg.set_viewport_size({'width': 1280, 'height': 800})
+            check(f'A4 {key}: step 1\'s text as wide as step 2\'s description, its path in a box in the fixed-width font with the copy icon at its top right, broken only after a slash, at the five window sizes, at Auto and at 200%',
+                  all(len(x['off']) >= 3 and all(abs(o) <= 1 for o in x['off']) and len(x['boxes']) == 1 and all(all(b.values()) for b in x['boxes']) for x in al), al)
+            ctx.grant_permissions(['clipboard-read', 'clipboard-write'])
+            pid = 'hlPathWin' if key == 'windows' else 'hlPathMac'
+            pg.click(f'button[data-copy="{pid}"]'); pg.wait_for_timeout(200)
+            cp = pg.evaluate("(id) => navigator.clipboard.readText().then((t) => { const c = document.querySelector(`button[data-copy='${id}'] .cpyt`); return { clip: t, shown: c.hidden ? null : c.textContent }; })", pid)
+            pg.wait_for_timeout(1700); gone = pg.evaluate("(id) => document.querySelector(`button[data-copy='${id}'] .cpyt`).hidden", pid)
+            want = 'C:\\Program Files (x86)\\Steam\\steamapps\\common\\Half-Life' if key == 'windows' else '~/Library/Application Support/Steam/steamapps/common/Half-Life'
+            check(f'A5 {key}: the copy icon copies the path, word for word, and shows "Copied" for a moment', cp == {'clip': want, 'shown': 'Copied'} and gone, f'{cp}, gone after 1.9 s: {gone}')
         if key == 'windows':
             with pg.expect_file_chooser() as fc: pg.click('#btnFolder')
             check('A2 Choose folder opens the ordinary folder pick, never Chrome and Edge\'s folder access', fc.value.element.get_attribute('id') == 'fFolder' and not pg.evaluate('window.__picked || 0'))

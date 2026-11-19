@@ -24,6 +24,8 @@
      as on most Linux machines. */
   --f-display: Verdana, "DejaVu Sans", "Bitstream Vera Sans", sans-serif;
   --f-body: Tahoma, "Liberation Sans", Arial, "DejaVu Sans", sans-serif;
+  /* the Half-Life folder's paths on the start screen only, in the computer's own fixed-width font (Sujan, 20 Nov 2026) */
+  --f-mono: ui-monospace, Menlo, Consolas, "Liberation Mono", "DejaVu Sans Mono", monospace;
   /* Interface size (0.26.13, Sujan, 3 Nov 2026): every size below is written calc(Npx * var(--ui)), and the page sets
      --ui (applyUiSize in src/ui/common.js): 1 up to a 1920x1080 window, so laptops look exactly as before, bigger on
      big screens, or the size picked in View settings. Left fixed: 1px lines and borders, media queries (they can't
@@ -501,8 +503,10 @@ kbd { font-family: var(--f-body); font-size: calc(11px * var(--ui)); background:
 .load h1 { font-family: var(--f-display); font-size: clamp(calc(26px * var(--ui)), 5vw, calc(38px * var(--ui))); line-height: 1.05; text-transform: uppercase; letter-spacing: .02em; text-wrap: balance; margin: 0; }
 .load h1 span { color: var(--sand); }
 .load p { color: var(--muted); margin: 0; line-height: 1.55; max-width: 60ch; }
-.steps { display: grid; gap: calc(10px * var(--ui)); }
-.step { display: grid; grid-template-columns: calc(28px * var(--ui)) minmax(0,1fr) auto; gap: calc(12px * var(--ui)); align-items: center; background: var(--panel); border: 1px solid var(--line); border-radius: calc(6px * var(--ui)); padding: calc(12px * var(--ui)) calc(14px * var(--ui)); }
+/* the two steps share their columns (subgrid), so step 1's text is as wide as step 2's description and the two line up on the
+   right, the buttons in one column at the right (Sujan, 20 Nov 2026) */
+.steps { display: grid; grid-template-columns: calc(28px * var(--ui)) minmax(0,1fr) auto; column-gap: calc(12px * var(--ui)); row-gap: calc(10px * var(--ui)); }
+.step { grid-column: 1 / -1; display: grid; grid-template-columns: subgrid; gap: calc(12px * var(--ui)); align-items: center; background: var(--panel); border: 1px solid var(--line); border-radius: calc(6px * var(--ui)); padding: calc(12px * var(--ui)) calc(14px * var(--ui)); }
 .step .k { font-family: var(--f-display); color: var(--sand); font-size: calc(18px * var(--ui)); text-align: center; }
 .step .tx b { display: block; font-weight: 600; margin-bottom: calc(2px * var(--ui)); }
 .step .tx small { color: var(--muted); font-size: calc(12px * var(--ui)); line-height: 1.4; display: block; }
@@ -534,7 +538,6 @@ kbd { font-family: var(--f-body); font-size: calc(11px * var(--ui)); background:
    folder with no demos keeps it full size, with no list to make room for (Sujan, 20 Nov 2026) */
 .load-card:has(.steps.ready #demoFind:not([hidden])) h1 { font-size: calc(20px * var(--ui)); white-space: nowrap; }
 .load-card:has(.steps.ready #demoFind:not([hidden])) { gap: calc(14px * var(--ui)); }
-#stepFolder .hlpaths .cpy { margin-left: calc(4px * var(--ui)); font-size: calc(11px * var(--ui)); }
 /* the Half-Life folder row: folder name, a status line and its buttons */
 .hlbtns { display: flex; gap: calc(6px * var(--ui)); flex-wrap: wrap; justify-content: flex-end; }
 #hlTitle .nm { color: var(--sand); font-family: var(--f-body); font-weight: 500; }
@@ -544,7 +547,8 @@ kbd { font-family: var(--f-body); font-size: calc(11px * var(--ui)); background:
 .hlst.chg { color: var(--kill); } .hlst.chg::before { background: var(--kill); }
 .hlst.wait { color: var(--sand); } .hlst.wait::before { background: var(--sand); }
 .hlst.bad { color: var(--t); } .hlst.bad::before { background: var(--t); }
-@media (max-width: 520px) { .step { grid-template-columns: calc(28px * var(--ui)) minmax(0,1fr); } .step > .btn, .step > .hlbtns { grid-column: 2; justify-content: flex-start; } }
+.step > .btn { justify-self: end; }
+@media (max-width: 520px) { .step { grid-template-columns: calc(28px * var(--ui)) minmax(0,1fr); } .step > .btn, .step > .hlbtns { grid-column: 2; justify-content: flex-start; justify-self: start; } }
 /* The folder row before a folder is chosen (0.26.10, docs/folder-steam-default-mock.png): the title and Choose folder
    on one line, then across the row the help, where Steam puts the folder, and the line for Steam's default folder,
    which Chrome and Edge's folder access refuses (Program Files on Windows, Library on a Mac) */
@@ -552,11 +556,23 @@ kbd { font-family: var(--f-body); font-size: calc(11px * var(--ui)); background:
 .steps:not(.ready) #stepFolder .k { grid-row: 1; }
 .steps:not(.ready) #hlTitle { grid-column: 2; grid-row: 1; margin: 0; }
 .steps:not(.ready) #stepFolder .hlbtns { grid-column: 3; grid-row: 1; }
-.steps:not(.ready) #hlStatus { grid-column: 2 / -1; margin-top: calc(-6px * var(--ui)); }
-#stepFolder .hlx { grid-column: 2 / -1; font-size: calc(12px * var(--ui)); line-height: 1.45; color: var(--muted); }
+.steps:not(.ready) #hlStatus { grid-column: 2; margin-top: calc(-6px * var(--ui)); }
+#stepFolder .hlx { grid-column: 2; font-size: calc(12px * var(--ui)); line-height: 1.45; color: var(--muted); }
 #stepFolder .hlpaths { margin-top: calc(-4px * var(--ui)); }
-#stepFolder .hlpaths .p { color: var(--fg); overflow-wrap: anywhere; }
-#stepFolder .hlpaths .hltip { font-style: italic; }
+/* each path in a box like a code block, a copy icon at its top right (Sujan, 20 Nov 2026; a Copy link after the path since the
+   UI review's item 12); it breaks only after a slash, each part between them kept whole */
+#stepFolder .hlpaths #hlWin:not([hidden]) + #hlMac { margin-top: calc(8px * var(--ui)); }
+#stepFolder .hlpaths .plab { margin-bottom: calc(3px * var(--ui)); }
+#stepFolder .pbox { position: relative; background: var(--radar); border: 1px solid var(--line); border-radius: calc(5px * var(--ui)); padding: calc(7px * var(--ui)) calc(36px * var(--ui)) calc(7px * var(--ui)) calc(10px * var(--ui)); }
+#stepFolder .pbox .p { display: block; font-family: var(--f-mono); font-size: calc(12px * var(--ui)); line-height: 1.5; color: var(--fg); overflow-wrap: anywhere; user-select: all; }
+#stepFolder .pbox .p .pseg { white-space: nowrap; }
+#stepFolder .pbox .cpy { position: absolute; top: calc(4px * var(--ui)); right: calc(4px * var(--ui)); height: calc(24px * var(--ui)); min-width: calc(24px * var(--ui)); display: inline-flex; align-items: center; justify-content: center; padding: 0 calc(5px * var(--ui)); background: none; border: 1px solid transparent; border-radius: calc(4px * var(--ui)); color: var(--muted); font: inherit; font-size: calc(11px * var(--ui)); cursor: pointer; }
+#stepFolder .pbox .cpy:hover { color: var(--fg); border-color: var(--line); background: var(--panel-2); }
+#stepFolder .pbox .cpy svg { width: calc(14px * var(--ui)); height: calc(14px * var(--ui)); fill: none; stroke: currentColor; stroke-width: 1.3; }
+/* "Copied" for a moment just above the icon, on the label line's empty end, so it covers none of the path */
+#stepFolder .pbox .cpyt { position: absolute; right: 0; bottom: calc(100% + 6px * var(--ui)); white-space: nowrap; font-size: calc(11px * var(--ui)); line-height: 1.2; }
+#stepFolder .pbox .cpy.ok { color: var(--good); }
+#stepFolder .hlpaths .hltip { font-style: italic; margin-top: calc(4px * var(--ui)); }
 #stepFolder .hlpaths .hlup { margin-top: calc(6px * var(--ui)); }
 @media (max-width: 520px) { .steps:not(.ready) #stepFolder .hlbtns { grid-column: 2; grid-row: auto; } }
 .demos { display: grid; gap: calc(6px * var(--ui)); max-height: calc(220px * var(--ui)); overflow-y: auto; }

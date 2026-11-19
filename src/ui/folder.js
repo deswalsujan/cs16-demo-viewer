@@ -256,11 +256,15 @@ function hlOS() {
   try { p = (navigator.userAgentData && navigator.userAgentData.platform) || navigator.platform || ''; } catch (e) { }
   return /^win/i.test(p) ? 'win' : /^mac/i.test(p) ? 'mac' : '';
 }
-$('hlPathWin').textContent = HL_EXAMPLE; $('hlPathMac').textContent = HL_EXAMPLE_MAC;
-// a Copy button beside each path (UI review, item 12); both paths stay word for word (2 Nov 2026)
+// each path in a box like a code block, broken only after a slash (each part between them kept whole), with a copy icon at its
+// top right that shows "Copied" for a moment (Sujan, 20 Nov 2026; a Copy link after the path since the UI review's item 12);
+// both paths stay word for word (2 Nov 2026), and the text copied is the path itself
+const pathHtml = (p) => p.replace(/[\\/]/g, '$&\u0000').split('\u0000').filter(Boolean).map((x) => `<span class="pseg">${esc(x)}</span>`).join('<wbr>');
+$('hlPathWin').innerHTML = pathHtml(HL_EXAMPLE); $('hlPathMac').innerHTML = pathHtml(HL_EXAMPLE_MAC);
 document.querySelectorAll('.cpy').forEach((b) => b.onclick = () => {
-  const done = (t) => { b.textContent = t; setTimeout(() => { b.textContent = 'Copy'; }, 1500); };
-  try { navigator.clipboard.writeText($(b.dataset.copy).textContent).then(() => done('Copied'), () => done('Select and copy it')); } catch (e) { done('Select and copy it'); }
+  const t = b.querySelector('.cpyt');
+  const done = (txt, ok) => { t.textContent = txt; t.hidden = false; b.classList.add('on'); b.classList.toggle('ok', ok); clearTimeout(b._t); b._t = setTimeout(() => { t.hidden = true; b.classList.remove('on', 'ok'); }, 1500); };
+  try { navigator.clipboard.writeText($(b.dataset.copy).textContent).then(() => done('Copied', true), () => done('Select and copy it', false)); } catch (e) { done('Select and copy it', false); }
 });
 { const os = hlOS(); $('hlWin').hidden = os === 'mac'; $('hlMac').hidden = $('hlTip').hidden = os === 'win'; }
 // the files the viewer reads, for telling what changed between two picks in one visit (hlApply)
