@@ -109,6 +109,7 @@ Built:
 
 Also on the branch, outside the 14 items (Sujan, 19 Nov 2026, judging the branch live):
 - The player whose demo it is in gender-neutral words everywhere the viewer talks about them: "The player's kills and deaths" in a POV demo's Kills tab, "The player held Tab here" on the Tab scoreboard, the flashbang and Crosshair rows of **View settings**, the **Wall damage** tooltip in **POV mode** and the load card's line for a POV demo without the player's view ("His kills and deaths", "He held Tab here" up to then); the **!** note: "To stop wallhacks, the server shows the player (whose POV you're watching) an enemy only when that enemy is about to come into view. So **See through walls** won't work as intended until the player is dead."
+- A click on a kill with no player killer (a fall or a drowning, killed by the world) or a suicide (a player's own grenade) follows the victim; it followed no one up to then (Delpan's fall at R48 of SK vs Na`Vi, Train, DreamHack Winter 2011).
 
 To try the branch in Chrome on the Mac without switching the working copy (it fetches the branch and opens its built page from a copy in /tmp; run it again after later commits):
 

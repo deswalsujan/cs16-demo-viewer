@@ -61,8 +61,11 @@ function toggleOpt(k, id) {
   savePrefs();
 }
 // Jump to a moment before a kill and watch it through the shooter's eyes (in 3D)
+// The killer is followed, or the victim when there's no player killer (a fall or a drowning: killed by the world) or the
+// kill is a suicide (a player's own grenade): up to 19 Nov 2026 such a click followed no one (Sujan: Delpan's fall, R48 of SK
+// vs Na`Vi, Train, DreamHack Winter 2011)
 function watchKill(k, before) {
-  if (k.kp && k.killer !== k.victim) selected = k.killer;
+  selected = k.kp && k.killer !== k.victim ? k.killer : k.victim;
   seek(k.t - before); playing = true; setPlayIcon();
   if (viewMode !== '2d') setCam('eyes', true);
   renderPane();

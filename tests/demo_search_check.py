@@ -734,6 +734,12 @@ with sync_playwright() as p:
         hd = JS8("(() => { const m = $('meta'); return { text: m.textContent, kind: (m.querySelector('.dkind') || {}).textContent || null, title: m.title, cut: m.scrollWidth > m.clientWidth, viewers: !!$('viewers') }; })()")
         check('the header at 1512x982: "HLTV demo · de_train · 103:25 · " then the file name, not cut, in full on hover; no spectator count',
               hd == {'text': f'HLTV demo · de_train · 103:25 · {SK}', 'kind': 'HLTV demo', 'title': SK, 'cut': False, 'viewers': False}, str(hd))
+        # a kill with no player killer follows the victim (Sujan, 19 Nov 2026; such a click followed no one up to then): Delpan's
+        # fall at R48, killed by the world
+        fa = JS8(r"""(() => { closeSummary(); const r = M.liveR.find((x) => x.ln === 48), k = r.kills.find((x) => !x.kp && /Delpan/.test(M.pl[x.vp].name)); selected = null;
+          document.querySelector('.tabs button[data-tab=kills]').click(); $('pane').querySelector(`[data-ki="${D.kills.indexOf(k)}"]`).click();
+          const out = { weapon: k.weapon, followed: selected === k.victim, picked: pickedKill === k, playing }; playing = false; setPlayIcon(); document.querySelector('.tabs button[data-tab=rounds]').click(); return out; })()""")
+        check("a click on Delpan's fall at R48 in the Kills tab follows Delpan, the victim, since no player killed him", fa == {'weapon': 'worldspawn', 'followed': True, 'picked': True, 'playing': True}, str(fa))
         JS8("closeSummary()"); pg8.keyboard.press('?'); pg8.wait_for_timeout(300)
         # Help (UI review, item 9, 17 Nov 2026; the shortcuts list up to then): Keys, Colours and marks, About; the version,
         # its links and Copy debug info under About; Close alone in the footer; F and T each said on their own
