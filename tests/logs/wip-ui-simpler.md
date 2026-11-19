@@ -111,3 +111,26 @@ Everything from the two rounds above passed (Sujan, 20 Nov 2026). Looked at in t
 | The Rounds tab's second line in brackets | Na`Vi vs FX, Dust2, SEC 2011 final, at the five sizes, at Auto and at 200% | one line each, 55 px or more to spare |
 
 The first try at the paths showed each part between the slashes outlined: the parts used the class `.seg`, the 2D | 3D switch's; renamed `.pseg` before the commit. `start_screen_check.py` (the Mac layout at the five sizes), `folder_row_test.py` (Windows and Mac at the five sizes, the copy icon) and `demo_search_check.py` (the brackets) were updated, not run.
+
+## The checks the changes of 19 and 20 Nov 2026 touch (Sujan's go, 20 Nov 2026), on 475dba0
+
+The ten checks, one at a time, each on its own result line, 02:02 to 02:16 (about 13 minutes, as estimated): the WeMadeFox copies gone from `cstrike` (no demo there, checked by listing) and nothing else parsing demos (Sujan); the Mac's 1-minute load average 2 at the start, 5 to 9 during the run (the checks themselves and Sujan's own Chrome). `theatre_test.py` read from its "N of M passed" line, since it exits 0 when a step fails.
+
+| Check | Result |
+|---|---|
+| `demo_search_check.py` | PASS, 148 steps, 0 failed, 166 s |
+| `theatre_test.py`, 1512x982 at 2x | 42 of 42, 92 s |
+| `theatre_test.py`, 1440x900 at 2x | 42 of 42, 95 s |
+| `theatre_test.py`, 1920x1080 at 1x | 42 of 42, 65 s |
+| `theatre_test.py`, 1536x864 at 1.25x | 42 of 42, 63 s |
+| `theatre_test.py`, 1707x960 at 1.5x | 42 of 42, 85 s |
+| `pov_mockup_round_check.py` | first run FAIL, 26 s: all 13 steps ok, but the script still counted on the 11 it had before 19 Nov 2026 (the two steps added then, the recorded Tab scoreboard over the start screen and a timeline kill mark in **POV mode**, didn't raise the count it checks); the count fixed in 093aa38 (the check only, the page the same), run again: PASS, 13 steps, 26 s |
+| `pov_feedback_check.py` | PASS, 20 steps, 28 s |
+| `pov_reopen_check.py` | PASS, 16 s |
+| `panel_click_check.py` | PASS, 10 s |
+| `folder_row_test.py` | PASS, 30 of 30, 12 s |
+| `start_screen_check.py` | PASS, 6 s |
+| `prefs_check.py` | PASS, 4 s |
+| `notes_check.py` | PASS |
+
+No timing failure. The one FAIL was the check's own step count, a mistake in the check's update of 19 Nov, not the viewer. `theatre_test.py` has 42 steps since 19 Nov 2026 (39 before: the bottom bar, the bottom bar in Full screen, the Rounds tab's switch). Two false starts before its first size: run from a zsh loop, which doesn't split a loop's words, it got its four arguments as one and stopped at once (0 s, no step run); each size then ran on its own.
