@@ -15,11 +15,9 @@ function fileTime(name) {
 }
 const hhmm = (d) => String(d.getUTCHours()).padStart(2, '0') + ':' + String(d.getUTCMinutes()).padStart(2, '0');
 const dayOf = (d) => `${d.getUTCDate()} ${MON[d.getUTCMonth()]} ${d.getUTCFullYear()}`;
-// "24 Apr 2011 at 00:25 and at 01:12"
-function fileTimesText(ts) {
-  const ds = ts.map((t) => new Date(t));
-  const bits = ds.map((d, i) => (i && dayOf(d) === dayOf(ds[i - 1]) ? '' : dayOf(d) + ' ') + 'at ' + hhmm(d));
-  return bits.length < 3 ? bits.join(' and ') : bits.slice(0, -1).join(', ') + ' and ' + bits[bits.length - 1];
+// "16:09, 17:24, 17:40": the recording times as clock times, with the day where it changes from the time before
+function clockList(ts) {
+  return ts.map((t, k) => { const d = new Date(t), p = k ? new Date(ts[k - 1]) : null; return (p && dayOf(d) !== dayOf(p) ? `${d.getUTCDate()} ${MON[d.getUTCMonth()]} ` : '') + hhmm(d); }).join(', ');
 }
 // A file name shown in full, with .dem. It may wrap only after a - _ or . and never inside its last piece
 // ("de_inferno.dem"), since the part that tells two parts apart is often in the middle.
@@ -264,6 +262,12 @@ function joinMove(i, d) {
   [JOIN.list[i], JOIN.list[j]] = [JOIN.list[j], JOIN.list[i]];
   JOIN.moved = true; JOIN.keep = false; renderJoinCard();
 }
+// the order of the recording times in the file names (Sujan, 19 Nov 2026)
+function useRecorded() {
+  const t = JOIN.list.map((f) => JOIN.F.get(f.name).time);
+  JOIN.list = JOIN.list.map((f, i) => i).sort((a, b) => t[a] - t[b]).map((i) => JOIN.list[i]);
+  JOIN.keep = false; JOIN.moved = false; renderJoinCard();
+}
 function useSuggested() {
   const F = JOIN.list.map((f) => JOIN.F.get(f.name));
   const s = suggestOrder(F);
@@ -314,18 +318,25 @@ function renderJoinCard() {
     return `<li><span class="jn">Part ${i + 1}</span><span class="jf"><span class="jname">${fileNameHtml(f.name)}</span><small>${meta}</small></span>
       <span class="ja"><button class="btn sq" type="button" data-mv="${i},-1" ${i ? '' : 'disabled'} title="Move up" aria-label="Move part ${i + 1} up">↑</button><button class="btn sq" type="button" data-mv="${i},1" ${i < JOIN.list.length - 1 ? '' : 'disabled'} title="Move down" aria-label="Move part ${i + 1} down">↓</button></span></li>`;
   }).join('');
-  // how the order was found
-  let order = '';
+  // The verdict (Sujan, 19 Nov 2026): one line saying which order the parts are in and whether the rounds agree, in place of
+  // the order line and the "N checks pass" count of the UI review's item 10, which misled him: on Na`Vi vs SK, Inferno, ESWC
+  // 2011 the wrong order (16:09, 17:40, 17:24) showed 3 passes and the right one 2. An order that differs from the recording
+  // times in the file names is a warning with Use the recorded order (grey words in the order line up to then, 7 Nov 2026).
+  let verdict = null, recWarn = null, recIdx = null;
   if (F.length === JOIN.list.length && F.length > 1) {
-    const s = JOIN.sugg;
-    if (JOIN.moved) {
-      // the file names' recording times named whenever the player's order differs from them (Sujan, 7 Nov 2026)
-      const t = F.map((f) => f.time), off = t.every((x) => x != null) && t.some((x, k) => k && t[k - 1] > x);
-      order = (problem ? 'Your order.' : 'Your order. The rounds agree.') + (off ? ` The recording times in the file names, ${fileTimesText(t.slice().sort((x, y) => x - y))}, put them ${F.length === 2 ? 'the other way round' : 'in another order'}.` : '');
+    const s = JOIN.sugg, t = F.map((f) => f.time), timed = t.every((x) => x != null);
+    const off = timed && t.some((x, k) => k && t[k - 1] > x), agree = problem ? '' : ' The rounds agree.';
+    let txt;
+    if (timed && !off) txt = `In the order they were recorded: ${clockList(t)}.${agree}`;
+    else if (JOIN.moved) txt = `In your order.${agree}`;
+    else if (s && s.by === 'rounds') txt = 'In the only order the rounds allow: the first part starts from 0:0 and only the last one has a winner.';
+    else txt = "The files don't say which order they go in. Put the parts in order with the arrows.";
+    // no green tick on an order the rounds allow but the recording times don't: that tick misled Sujan (19 Nov 2026)
+    verdict = { s: problem || off ? 'warn' : txt.startsWith('In ') ? 'ok' : 'info', t: txt };
+    if (off) {
+      recIdx = F.map((f, i) => i).sort((a, b) => t[a] - t[b]);
+      recWarn = { s: 'warn', t: 'Not in the order they were recorded', n: `The recording times in the file names put them ${F.length === 2 ? 'the other way round' : 'in another order'}: ${clockList(recIdx.map((i) => t[i]))}.`, btn: { id: 'jRec', label: 'Use the recorded order' } };
     }
-    else if (s && s.by === 'times') order = `from the recording times in the file names, ${fileTimesText(F.map((f) => f.time))}.${s.agree ? ' The rounds agree.' : ''}`;
-    else if (s) order = 'from the rounds: the first part starts from 0:0 and only the last one has a winner, and no other order does that.';
-    else order = "the files don't say. Put the parts in order with the arrows.";
   }
   // the checks
   const checks = [];
@@ -364,8 +375,10 @@ function renderJoinCard() {
     const s = suggestOrder(F);
     const better = s && (s.agree ? s.order : s.roundsOrder);
     // (the recording times are in the order line above when the order is the player's)
+    // no second button for the same order when the warning above already offers the recorded one
+    const same = (a, b) => !!a && !!b && a.every((v, k) => v === b[k]);
     wrong = `<div class="jwrong"><h3>This order doesn't add up</h3><p>${esc(problem)}</p>
-      <div class="jbtns"><button class="btn" type="button" id="jKeep">Keep my order</button>${better && better.some((v, k) => v !== k) ? '<button class="btn primary" type="button" id="jSugg">Use the suggested order</button>' : ''}</div></div>`;
+      <div class="jbtns"><button class="btn" type="button" id="jKeep">Keep my order</button>${better && better.some((v, k) => v !== k) && !same(better, recIdx) ? '<button class="btn primary" type="button" id="jSugg">Use the suggested order</button>' : ''}</div></div>`;
   }
   // picking another part: the folder's demos, the same map first, or a file from elsewhere
   let picker = '', noneHere = false;
@@ -383,22 +396,24 @@ function renderJoinCard() {
       <button class="btn sm" type="button" id="jFile">A file from elsewhere…</button><input type="file" id="jFileIn" accept=".dem" hidden></div>`;
   }
   const busy = !!JOIN.reading || F.length < JOIN.list.length;
-  // the checks that pass fold into one line that opens on a click; warnings and notes stay in full (UI review, item 10,
-  // 17 Nov 2026; each part's own line stays as approved, 7 Nov 2026)
-  const li = (c) => `<li><span class="sum-ic ${c.s}" aria-hidden="true">${ic[c.s]}</span><span>${esc(c.t)}${c.n ? `<small>${esc(c.n)}</small>` : ''}</span></li>`;
-  const passed = checks.filter((c) => c.s === 'ok');
-  const checkRows = (JOIN.okOpen || passed.length < 2 ? checks.map(li) : [`<li class="jfold"><span class="sum-ic ok" aria-hidden="true">✓</span><span><button class="lnk" type="button" id="jFold" title="${esc(passed.map((c) => c.t).join('. '))}">${passed.length} checks pass</button></span></li>`].concat(checks.filter((c) => c.s !== 'ok').map(li))).join('');
+  // the checks that pass and the notes fold behind the verdict, opening on a click; warnings always in full (Sujan, 19 Nov
+  // 2026; each part's own line stays as approved, 7 Nov 2026)
+  const li = (c) => `<li><span class="sum-ic ${c.s}" aria-hidden="true">${ic[c.s]}</span><span>${esc(c.t)}${c.n ? `<small>${esc(c.n)}</small>` : ''}${c.btn ? `<div class="li-btn"><button class="btn sm" type="button" id="${c.btn.id}">${esc(c.btn.label)}</button></div>` : ''}</span></li>`;
+  const folded = checks.filter((c) => c.s !== 'warn'), warns = (recWarn ? [recWarn] : []).concat(checks.filter((c) => c.s === 'warn'));
+  const vText = verdict ? `<span class="sum-ic ${verdict.s}" aria-hidden="true">${ic[verdict.s]}</span><span class="jvt">${esc(verdict.t)}</span>` : '';
+  const vRow = !verdict ? '' : folded.length ? `<li class="jv"><button class="jverdict" type="button" id="jVerdict" aria-expanded="${JOIN.okOpen ? 'true' : 'false'}" title="${JOIN.okOpen ? 'Hide' : 'Show'} the ${plural(folded.length, 'check')} behind it">${vText}<span class="jcaret" aria-hidden="true">${JOIN.okOpen ? '▾' : '▸'}</span></button></li>` : `<li class="jv">${vText}</li>`;
+  const checkRows = vRow + (JOIN.okOpen ? folded.map(li).join('') : '') + warns.map(li).join('');
   el.innerHTML = `<div class="sum join" role="dialog" aria-labelledby="jTitle">
     <div class="sum-top"><div class="ti"><h2 id="jTitle">Count these demos as one map?</h2><p>Score, rounds and player stats will cover all parts. Playback runs straight on from one part to the next.</p></div>${x}</div>
     <ol class="jparts">${rows}</ol>
-    ${order ? `<div class="jorder"><b>Order:</b> ${esc(order)}</div>` : ''}
-    ${checks.length ? `<ul class="sum-list">${checkRows}</ul>` : ''}
+    ${checkRows ? `<ul class="sum-list jchecks">${checkRows}</ul>` : ''}
     ${wrong}${picker}
     <div class="sum-foot"><button class="btn" type="button" id="jAdd" ${busy || JOIN.picking ? 'disabled' : ''} ${JOIN.picking ? `title="${noneHere ? 'Pick a file from elsewhere above' : 'Pick a demo above, or a file from elsewhere'}"` : ''}>Add another part…</button><span class="sp"></span><button class="btn" type="button" id="jCancel">Cancel</button><button class="btn primary" type="button" id="jGo" ${busy || JOIN.list.length < 2 || (problem && !JOIN.keep) ? 'disabled' : ''}>Join parts</button></div>
   </div>`;
   el.hidden = false;
   $('jX').onclick = closeJoinCard; $('jCancel').onclick = closeJoinCard;
-  if ($('jFold')) $('jFold').onclick = () => { JOIN.okOpen = true; renderJoinCard(); };
+  if ($('jVerdict')) $('jVerdict').onclick = () => { JOIN.okOpen = !JOIN.okOpen; renderJoinCard(); };
+  if ($('jRec')) $('jRec').onclick = useRecorded;
   el.onclick = (e) => { if (e.target === el) closeJoinCard(); };
   el.querySelectorAll('[data-mv]').forEach((b) => b.onclick = () => { const [i, d] = b.dataset.mv.split(',').map(Number); joinMove(i, d); });
   // greyed out while the picker row is open and empty: clicking it there only closed the row (Sujan, 23 Oct 2026)

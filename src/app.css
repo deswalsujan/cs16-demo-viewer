@@ -368,9 +368,13 @@ kbd { font-family: var(--f-body); font-size: calc(11px * var(--ui)); background:
 .btn.sq { width: calc(30px * var(--ui)); height: calc(30px * var(--ui)); padding: 0; display: grid; place-items: center; font-size: calc(14px * var(--ui)); }
 .jbar { display: inline-block; width: calc(120px * var(--ui)); height: calc(3px * var(--ui)); background: var(--panel-2); vertical-align: middle; margin-left: calc(6px * var(--ui)); }
 .jbar i { display: block; height: 100%; width: 0; background: var(--sand); }
-.jorder { padding: 0 calc(24px * var(--ui)) calc(12px * var(--ui)); font-size: calc(12px * var(--ui)); line-height: 1.5; color: var(--muted); }
 .sum.join .sum-list { padding-top: 0; }
-.jorder b { color: var(--good); font-weight: 500; }
+/* the verdict: which order the parts are in, the checks that pass and the notes folded behind it (Sujan, 19 Nov 2026) */
+.jchecks li.jv { display: grid; grid-template-columns: calc(22px * var(--ui)) minmax(0, 1fr); gap: calc(8px * var(--ui)); }
+.jchecks li.jv:has(.jverdict) { display: block; }
+.jverdict { display: grid; grid-template-columns: calc(22px * var(--ui)) minmax(0, 1fr) auto; gap: calc(8px * var(--ui)); align-items: start; width: 100%; padding: 0; background: none; border: 0; color: var(--fg); font-size: calc(13px * var(--ui)); line-height: 1.4; text-align: left; }
+.jverdict:hover .jvt { text-decoration: underline; text-underline-offset: calc(2px * var(--ui)); }
+.jcaret { color: var(--muted); font-size: calc(11px * var(--ui)); padding-top: calc(2px * var(--ui)); }
 .jwrong { margin: 0 calc(24px * var(--ui)) calc(16px * var(--ui)); padding: calc(12px * var(--ui)) calc(16px * var(--ui)); border: 1px solid color-mix(in srgb, var(--kill) 40%, transparent); border-radius: calc(6px * var(--ui)); background: color-mix(in srgb, var(--kill) 9%, var(--panel)); }
 .jwrong h3 { margin: 0 0 calc(4px * var(--ui)); font-family: var(--f-body); font-size: calc(13px * var(--ui)); font-weight: 700; color: var(--kill); display: flex; align-items: center; gap: calc(8px * var(--ui)); }
 .jwrong h3::before { content: '!'; width: calc(18px * var(--ui)); height: calc(18px * var(--ui)); line-height: calc(18px * var(--ui)); border-radius: 50%; text-align: center; font-size: calc(11px * var(--ui)); background: color-mix(in srgb, var(--kill) 22%, transparent); }

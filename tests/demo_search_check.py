@@ -464,9 +464,10 @@ with sync_playwright() as p:
         JS5 = lambda c: pg5.evaluate('(c) => __v(c)', c)
         pg5.evaluate('(n) => __v(`loadDemoFile(files.demos.find((f) => f.name === ${JSON.stringify(n)}))`)', W1)
         pg5.wait_for_function('__v("!!(D && M)")', timeout=120000)
-        # the checks that pass fold into one line since the UI review (item 10): opened before reading them all
-        card = lambda: JS5(r"""(() => { if ($('jFold')) { JOIN.okOpen = true; renderJoinCard(); } const el = $('joinCard'); const t = (s) => [...el.querySelectorAll(s)].map((x) => x.innerText.replace(/\s+/g, ' ').trim());
-          return { parts: t('.jparts li .jf small'), names: t('.jparts li .jname'), order: t('.jorder')[0] || '', checks: [...el.querySelectorAll('.sum-list li')].map((li) => ({ s: li.querySelector('.sum-ic').className.replace('sum-ic ', ''), t: li.innerText.replace(/\s+/g, ' ').trim().replace(/^[✓!i✕] /, '') })),
+        # the checks that pass and the notes fold behind the verdict line (Sujan, 19 Nov 2026; "N checks pass" since the UI
+        # review's item 10): opened before reading them all
+        card = lambda: JS5(r"""(() => { JOIN.okOpen = true; renderJoinCard(); const el = $('joinCard'); const t = (s) => [...el.querySelectorAll(s)].map((x) => x.innerText.replace(/\s+/g, ' ').trim());
+          return { parts: t('.jparts li .jf small'), names: t('.jparts li .jname'), order: t('.jv .jvt')[0] || '', checks: [...el.querySelectorAll('.sum-list li:not(.jv)')].map((li) => ({ s: li.querySelector('.sum-ic').className.replace('sum-ic ', ''), t: li.innerText.replace(/\s+/g, ' ').trim().replace(/^[✓!i✕] /, '') })),
             wrong: t('.jwrong p')[0] || null, go: !$('jGo').disabled }; })()""")
         # part 1 alone ends before anyone won: the load card says so with Join parts…, naming part 2 when it's in the folder,
         # and with no other part found its Join parts… opens the Join card's picker (Sujan, 19 Nov 2026; up to then the note
@@ -486,10 +487,12 @@ with sync_playwright() as p:
         check('the Rounds tab of a part that ends before anyone won: the question, with Join parts…', jq == {'text': 'Join parts…', 'question': 'Is this map split over two or more demo files?'}, str(jq))
         JS5(f"closeSummary(); openJoinCard([{W1!r}, {W2!r}].map((n) => files.demos.find((f) => f.name === n)))")
         pg5.wait_for_function('__v("!JOIN.reading && JOIN.F.size === 2 && !!$(\'jGo\')")', timeout=120000)
-        f0 = JS5(r"""(() => { const el = $('joinCard'); return { fold: el.querySelector('#jFold') ? el.querySelector('#jFold').textContent : null, oks: [...el.querySelectorAll('.sum-list li:not(.jfold) .sum-ic.ok')].length,
-          rest: [...el.querySelectorAll('.sum-list li:not(.jfold)')].length, go: $('jGo').textContent }; })()""")
-        check('Join card: the 2 checks that pass on one line, "2 checks pass", the note on the half in full; the button reads Join parts (UI review, item 10)',
-              f0 == {'fold': '2 checks pass', 'oks': 0, 'rest': 1, 'go': 'Join parts'}, str(f0))
+        f0 = JS5(r"""(() => { const el = $('joinCard'), read = () => ({ verdict: (el.querySelector('#jVerdict .jvt') || {}).textContent || null, open: $('jVerdict') ? $('jVerdict').getAttribute('aria-expanded') : null,
+            rows: [...el.querySelectorAll('.sum-list li:not(.jv)')].map((li) => li.querySelector('.sum-ic').className.replace('sum-ic ', '')), count: /\d+ checks? pass/.test(el.innerText) });
+          const closed = read(); $('jVerdict').click(); const open = read(); $('jVerdict').click(); return { closed, open, go: $('jGo').textContent }; })()""")
+        check('Join card: one verdict line, no "N checks pass" count; the 2 checks that pass and the note on the half behind it, opening on a click; the button reads Join parts',
+              f0 == {'closed': {'verdict': 'In the order they were recorded: 09:51, 10:26. The rounds agree.', 'open': 'false', 'rows': [], 'count': False},
+                     'open': {'verdict': 'In the order they were recorded: 09:51, 10:26. The rounds agree.', 'open': 'true', 'rows': ['ok', 'ok', 'info'], 'count': False}, 'go': 'Join parts'}, str(f0))
         c = card()
         check('Join card, WeMadeFox vs Ravens in the suggested order: part 1 first, Join parts on, no "doesn\'t add up"',
               c['names'] == [W1, W2] and c['go'] and c['wrong'] is None, f"{c['names']}, Join parts {'on' if c['go'] else 'off'}, {c['wrong']!r}")
@@ -501,7 +504,7 @@ with sync_playwright() as p:
               {'s': 'info', 't': "Part 2 carries on part 1's half Same sides: part 1's 4 rounds count, and part 2's 11 complete the half of 15. 3 rounds at its start were replayed."} in c['checks'],
               '; '.join(f"[{x['s']}] {x['t']}" for x in c['checks']))
         check('Join card: the same 10 players by Steam ID (SIA, bail and BERRY were one person up to 0.26.18), the order from the recording times',
-              {'s': 'ok', 't': 'Same 10 players, by Steam ID'} in c['checks'] and c['order'] == 'Order: from the recording times in the file names, 3 Mar 2010 at 09:51 and at 10:26. The rounds agree.', c['order'])
+              {'s': 'ok', 't': 'Same 10 players, by Steam ID'} in c['checks'] and c['order'] == 'In the order they were recorded: 09:51, 10:26. The rounds agree.', c['order'])
         JS5("JOIN.picking = true; renderJoinCard()")
         jp = JS5("(() => { const p = document.querySelector('#joinCard .jpick'); return { sel: p.querySelectorAll('#jSel option').length, none: !!p.querySelector('.jnone') }; })()")
         check('Join card with other demos in the folder: the list of them, no "no other demos" line', jp['sel'] > 2 and not jp['none'], str(jp))
@@ -510,9 +513,13 @@ with sync_playwright() as p:
         c = card()
         check("Join card, part 2 put first: check A says the order doesn't add up, and Join parts is off",
               c['names'] == [W2, W1] and c['wrong'] == "Part 1's teams change sides after 11 rounds, so its first half began in an earlier recording." and not c['go'], f"{c['wrong']!r}, Join parts {'on' if c['go'] else 'off'}")
-        check('Join card, part 2 put first: the recording times named, and no green tick for the teams swapping sides',
-              c['order'] == 'Order: Your order. The recording times in the file names, 3 Mar 2010 at 09:51 and at 10:26, put them the other way round.'
-              and {'s': 'warn', 't': 'Teams swapped sides between the parts'} in c['checks'], f"{c['order']!r}; " + '; '.join(f"[{x['s']}] {x['t']}" for x in c['checks']))
+        # an order that differs from the recording times: a warning with Use the recorded order (Sujan, 19 Nov 2026; grey words
+        # in the order line up to then), and no second button for the same order in the "doesn't add up" box
+        sg = JS5("(() => !!$('jSugg'))()")
+        check('Join card, part 2 put first: "In your order.", the warning that it isn\'t the recorded order with Use the recorded order, and no green tick for the teams swapping sides',
+              c['order'] == 'In your order.' and not sg
+              and {'s': 'warn', 't': 'Not in the order they were recorded The recording times in the file names put them the other way round: 09:51, 10:26. Use the recorded order'} in c['checks']
+              and {'s': 'warn', 't': 'Teams swapped sides between the parts'} in c['checks'], f"{c['order']!r}; Use the suggested order {sg}; " + '; '.join(f"[{x['s']}] {x['t']}" for x in c['checks']))
         B = JS5("orderProblem([JOIN.F.get(JOIN.list[0].name), Object.assign({}, JOIN.F.get(JOIN.list[1].name))].map((f, i) => i ? f : Object.assign({}, f, { swapAt: null })))")
         check('check B on the same order (check A left out): other sides after 26 rounds, partway through a half',
               B == 'The map is 26 rounds in when part 1 ends, partway through a half, but the teams are on other sides in part 2.', repr(B))
@@ -538,7 +545,18 @@ with sync_playwright() as p:
         c = card()
         check('Join card, Na`Vi vs SK, Inferno, ESWC 2011: suggests 1609, 1724, 1740 from the times later in the names (1609, 1740, 1724 up to 0.26.18)',
               [re.search(r'-(\d{10})-', n).group(1)[-4:] for n in c['names']] == ['1609', '1724', '1740']
-              and c['order'] == 'Order: from the recording times in the file names, 24 Oct 2011 at 16:09, at 17:24 and at 17:40. The rounds agree.', f"{c['names']}; {c['order']!r}")
+              and c['order'] == 'In the order they were recorded: 16:09, 17:24, 17:40. The rounds agree.', f"{c['names']}; {c['order']!r}")
+        # the order that misled Sujan with "3 checks pass" (19 Nov 2026): 16:09, 17:40, 17:24 is a warning, and Use the recorded
+        # order puts them back
+        JS5('joinMove(1, 1)')
+        c = card()
+        w = [x['t'] for x in c['checks'] if x['s'] == 'warn' and x['t'].startswith('Not in the order they were recorded')]
+        JS5("$('jRec').click()")
+        c2 = card()
+        check('Join card, Na`Vi vs SK in the order 16:09, 17:40, 17:24: the warning with Use the recorded order, which puts them back to 16:09, 17:24, 17:40',
+              [re.search(r'-(\d{10})-', n).group(1)[-4:] for n in c['names']] == ['1609', '1740', '1724'] and w == ['Not in the order they were recorded The recording times in the file names put them in another order: 16:09, 17:24, 17:40. Use the recorded order']
+              and [re.search(r'-(\d{10})-', n).group(1)[-4:] for n in c2['names']] == ['1609', '1724', '1740'] and c2['order'] == 'In the order they were recorded: 16:09, 17:24, 17:40. The rounds agree.'
+              and not any(x['s'] == 'warn' for x in c2['checks']), f"{c['names']}; {w}; then {c2['names']}; {c2['order']!r}")
         check('no page error on the joined map and the Join cards', not errs5, '; '.join(errs5[:3]))
     except Exception as e:
         check('a half replayed and a half carried on, WeMadeFox vs Ravens, Nuke, EM4 finals', False, str(e).split('\n')[0])
