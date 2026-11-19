@@ -850,9 +850,9 @@ with sync_playwright() as p:
           const k = M.liveR[22].kills[2]; T = k.t + 1; tab = 'players'; renderPane();
           Object.assign(out, { key: [...P.querySelectorAll('.stathead .pkey')].map((e) => e.textContent), skullInKey: !!P.querySelector('.pnum.skull, .pnum svg'), skulls: P.querySelectorAll('.prow .nm + .skull').length, note: P.querySelector('.opt').textContent });
           tab = 'rounds'; renderPane(); return out; })()""")
-        check('the Rounds tab: "Show N uncounted rounds" first, "warmup, restarts and idle rounds, like time-outs" under it and in its tooltip and Help, adding N rows, then a heading row (Round, Won by, Score Length); the Players tab: Key over the digits, a dead player\'s skull beside the name, the one-line note',
+        check('the Rounds tab: "Show N uncounted rounds" first, "(warmup, restarts and idle rounds, like time-outs)" under it, the same words in its tooltip and Help, adding N rows, then a heading row (Round, Won by, Score Length); the Players tab: Key over the digits, a dead player\'s skull beside the name, the one-line note',
               (pr['head'] or '').upper() == 'ROUND WON BY SCORE LENGTH' and pr['switchFirst'] and pr['n'] > 0 and pr['label'] == f"Show {pr['n']} uncounted rounds"
-              and pr['sub'] == 'warmup, restarts and idle rounds, like time-outs' and pr['tip'].startswith('Warmup, restarts and idle rounds, like time-outs: ') and (pr['help'] or '').endswith("the rounds that don't count: warmup, restarts and idle rounds, like time-outs.")
+              and pr['sub'] == '(warmup, restarts and idle rounds, like time-outs)' and pr['tip'].startswith('Warmup, restarts and idle rounds, like time-outs: ') and (pr['help'] or '').endswith("the rounds that don't count: warmup, restarts and idle rounds, like time-outs.")
               and pr['rowsOn'] == pr['rowsOff'] + pr['n'] and pr['rowsBack'] == pr['rowsOff'] and pr['key'] == ['Key', 'Key'] and not pr['skullInKey'] and pr['skulls'] >= 1 and pr['note'] == 'Kills and deaths from the kill feed, live rounds only.', str(pr))
         JS8("closeSummary(); tab = 'rounds'; renderPane(); $('bJoinWith').click()")
         pg8.wait_for_function("() => !!document.querySelector('#joinCard .jpick')", timeout=30000)
