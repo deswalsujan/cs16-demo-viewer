@@ -156,6 +156,16 @@ try:
         pg.click('#btnOpen'); pg.wait_for_timeout(800)
         s4 = ev(js("({ sb: !$('sb').hidden, load: !$('load').hidden })"))
         check(s3 == {'sb': False, 'load': True} and s4 == {'sb': True, 'load': False}, 'the recorded Tab scoreboard hidden over the start screen, back with the demo', {'start screen': s3, 'back': s4})
+        # a click on a kill mark in the timeline, in POV mode: only the jump to a few seconds before the kill, playing; no player
+        # followed, no kill marked, the side panel's tab as it was (Sujan, 19 Nov 2026)
+        tk = ev(js(r'''(() => { playing = false; setPlayIcon(); setScope('match'); drawTimeline(); pickedKill = null; const sel0 = selected, tab0 = tab;
+          const rr = tlc.getBoundingClientRect(), [a, b] = tlRange(), k = M.liveR[6].kills[0]; window.__pk = [k, sel0, tab0];
+          return { x: rr.left + (k.t - a) / (b - a) * rr.width, y: rr.top + rr.height - 4 }; })()'''))
+        pg.mouse.click(tk['x'], tk['y']); pg.wait_for_timeout(200)
+        tk2 = ev(js(r'''(() => { const [k, sel0, tab0] = __pk, o = { before: +(k.t - T).toFixed(1), playing, picked: pickedKill, sameSel: selected === sel0, sameTab: tab === tab0 }; playing = false; setPlayIcon(); return o; })()'''))
+        pg.mouse.move(10, 10)
+        check(3 <= tk2.get('before', 0) <= 4.1 and tk2.get('playing') and tk2.get('picked') is None and tk2.get('sameSel') and tk2.get('sameTab'),
+              'a click on a kill mark in the timeline, POV mode: only the jump a few seconds before, playing', tk2)
         at(809.0)
         o = ev(offers_js())
         # the card's first line says the demo type, and the anti-wallhack note is a line of its own (Sujan, 19 Nov 2026; one short

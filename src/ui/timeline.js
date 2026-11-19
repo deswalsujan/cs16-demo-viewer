@@ -85,9 +85,20 @@ function tlKillAt(e) {
   return best;
 }
 // A click on a kill mark does what a click on that kill in the Kills tab does: a few seconds before it, the killer followed
-// in Eyes (the victim when there's no player killer), playing, the kill marked (Sujan, 19 Nov 2026). Only a click: on a kill
-// mark the playhead waits until the mouse moves 4 px or more, which makes it a drag as before; a click anywhere else moves
-// the playhead at once and leaves the camera and play state as they are.
+// in Eyes (the victim when there's no player killer), playing, the kill marked; and the side panel goes to the Kills tab,
+// that kill's row and its details in view. In POV mode it only jumps a few seconds before the kill and plays: there's no
+// other player's eyes to follow (Sujan, 19 Nov 2026). Only a click: on a kill mark the playhead waits until the mouse moves
+// 4 px or more, which makes it a drag as before; a click anywhere else moves the playhead at once and leaves the camera and
+// play state as they are.
+function tlWatch(k) {
+  if (D.povOn) { seek(k.t - 4); playing = true; setPlayIcon(); return; }
+  pickedKill = k; pickedBurst = null;
+  if (tab !== 'kills') document.querySelector('.tabs button[data-tab="kills"]').click();
+  watchKill(k, 4);
+  const row = $('pane').querySelector('.krow.pick'), det = row && row.nextElementSibling && row.nextElementSibling.classList.contains('kdet') ? row.nextElementSibling : null;
+  if (det) det.scrollIntoView({ block: 'nearest' });
+  if (row) row.scrollIntoView({ block: 'nearest' });
+}
 let tlPress = null;
 tl.addEventListener('pointerdown', (e) => {
   if (!D) return;
@@ -120,7 +131,7 @@ tl.addEventListener('pointermove', (e) => {
 tl.addEventListener('pointerup', () => {
   tlDrag = false;
   const p = tlPress; tlPress = null;
-  if (p && D) { pickedKill = p.k; pickedBurst = null; watchKill(p.k, 4); }
+  if (p && D) tlWatch(p.k);
 });
 tl.addEventListener('pointercancel', () => { tlDrag = false; tlPress = null; });
 tl.addEventListener('pointerleave', () => { $('tip').hidden = true; });

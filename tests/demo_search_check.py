@@ -747,22 +747,25 @@ with sync_playwright() as p:
           document.querySelector('.tabs button[data-tab=kills]').click(); $('pane').querySelector(`[data-ki="${D.kills.indexOf(k)}"]`).click();
           const out = { weapon: k.weapon, followed: selected === k.victim, picked: pickedKill === k, playing }; playing = false; setPlayIcon(); document.querySelector('.tabs button[data-tab=rounds]').click(); return out; })()""")
         check("a click on Delpan's fall at R48 in the Kills tab follows Delpan, the victim, since no player killed him", fa == {'weapon': 'worldspawn', 'followed': True, 'picked': True, 'playing': True}, str(fa))
-        # a click on a kill mark in the timeline (Sujan, 19 Nov 2026): what a click on that kill in the Kills tab does; a click on
-        # empty space and a drag that starts on a kill mark only move the playhead, as before
+        # a click on a kill mark in the timeline (Sujan, 19 Nov 2026): what a click on that kill in the Kills tab does, and the side
+        # panel on the Kills tab with that kill's row and its details in view; a click on empty space and a drag that starts on a
+        # kill mark only move the playhead, as before
         tp = JS8(r"""(() => { closeSummary(); playing = false; setPlayIcon(); selected = null; pickedKill = null; setScope('match'); drawTimeline();
           const rr = tlc.getBoundingClientRect(), [a, b] = tlRange(), X = (t) => rr.left + (t - a) / (b - a) * rr.width, y = rr.top + rr.height - 4, live = new Set(visibleRounds().map((x) => x.n));
           const k = M.liveR[4].kills[0], k2 = M.liveR[10].kills[0]; window.__tk = [k, k2];
           let ex = null; for (let x = rr.left + 40; x < rr.right; x += 3) if (!D.kills.some((q) => live.has(q.round) && Math.abs(X(q.t) - x) < 8 * UI)) { ex = x; break; }
           return { k: [X(k.t), y], k2: [X(k2.t), y], ex: [ex, y], et: a + (ex - rr.left) / rr.width * (b - a), d1: a + (X(k2.t) + 60 - rr.left) / rr.width * (b - a) }; })()""")
         pg8.mouse.click(*tp['k']); pg8.wait_for_timeout(200)
-        t1 = JS8("(() => { const k = __tk[0], o = { picked: pickedKill === k, followed: selected === k.killer, playing, before: +(k.t - T).toFixed(1) }; playing = false; setPlayIcon(); return o; })()")
+        t1 = JS8(r"""(() => { const k = __tk[0], P = $('pane'), row = P.querySelector('.krow.pick'), det = row && row.nextElementSibling, pr = P.getBoundingClientRect(), rr = row ? row.getBoundingClientRect() : null;
+          const o = { picked: pickedKill === k, followed: selected === k.killer, playing, before: +(k.t - T).toFixed(1), tab, row: !!row && D.kills[+row.dataset.ki] === k, details: !!det && det.classList.contains('kdet'), inView: !!rr && rr.top >= pr.top - 1 && rr.bottom <= pr.bottom + 1 };
+          playing = false; setPlayIcon(); return o; })()""")
         pg8.mouse.click(*tp['ex']); pg8.wait_for_timeout(200)
         t2 = JS8(f"({{ picked: pickedKill === __tk[0], playing, at: Math.abs(T - {tp['et']}) < 0.5 }})")
         pg8.mouse.move(*tp['k2']); pg8.mouse.down(); pg8.mouse.move(tp['k2'][0] + 60, tp['k2'][1], steps=4); pg8.mouse.up(); pg8.wait_for_timeout(200)
         t3 = JS8(f"({{ picked: pickedKill === __tk[1], other: pickedKill === __tk[0], playing, at: Math.abs(T - {tp['d1']}) < 0.5 }})")
         pg8.mouse.move(10, 10)
-        check('a click on a kill mark in the timeline watches that kill (the killer followed, playing, marked, a few seconds before); a click on empty space and a drag from a kill mark only move the playhead',
-              t1['picked'] and t1['followed'] and t1['playing'] and 3 <= t1['before'] <= 4.1 and t2 == {'picked': True, 'playing': False, 'at': True} and t3 == {'picked': False, 'other': True, 'playing': False, 'at': True}, str([t1, t2, t3]))
+        check('a click on a kill mark in the timeline watches that kill (the killer followed, playing, marked, a few seconds before) and opens it in the Kills tab with its details, in view; a click on empty space and a drag from a kill mark only move the playhead',
+              t1['picked'] and t1['followed'] and t1['playing'] and 3 <= t1['before'] <= 4.1 and t1['tab'] == 'kills' and t1['row'] and t1['details'] and t1['inView'] and t2 == {'picked': True, 'playing': False, 'at': True} and t3 == {'picked': False, 'other': True, 'playing': False, 'at': True}, str([t1, t2, t3]))
         # no Tab scoreboard over the start screen (Sujan, 19 Nov 2026): held by hand while Open another demo is clicked, gone with
         # the start screen, and not there when the demo comes back without Tab
         pg8.keyboard.down('Tab'); pg8.wait_for_timeout(300); s0 = JS8("!$('sb').hidden")
