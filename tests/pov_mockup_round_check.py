@@ -69,7 +69,7 @@ def offers_js():
   toast('Stopping at 16. Rounds tab: Count them to count the rounds played after.', 20000);
   return { view: viewMode, seg: !$('viewSeg').hidden, fit: !$('tgFit').hidden, wbTab: !document.querySelector('.tabs button[data-tab=wb]').hidden,
     povRow: !!row && !row.hidden, povHead: !!head && !head.hidden, mark: vis($('xrayMark')),
-    hintTop: vis($('hint3')) ? top($('hint3')) : null, toastTop: top($('toast')), viewH: rr.height };
+    hintTop: vis($('hint3')) ? top($('hint3')) : null, toastTop: top($('toast')), viewH: rr.height, kind: ($('meta').querySelector('.dkind') || {}).textContent || null };
 })()''')
 NOTE = js(r'''(() => {
   const n0 = $('povNote'), was = !!n0 && !n0.hidden;
@@ -154,7 +154,7 @@ try:
         o['sumOnly'] = any(x == 'You are viewing a POV demo (3D only)' for x in sum1)
         o['sumPlugin'] = any('It seems the server used an anti-wallhack plugin. Click ! on the See through walls button below to know more.' in x for x in sum1)
         check(o.get('view') == '3d' and not o.get('seg') and not o.get('fit') and not o.get('wbTab') and not o.get('povRow') and o.get('mark')
-              and o.get('sumOnly') and o.get('sumPlugin') and o.get('hintTop') is None and o.get('toastTop') is not None and o['toastTop'] < 100,
+              and o.get('sumOnly') and o.get('sumPlugin') and o.get('kind') == 'POV demo' and o.get('hintTop') is None and o.get('toastTop') is not None and o['toastTop'] < 100,
               'options by demo type: the POV demo', o)
         n = ev(NOTE)
         check(n.get('open') and n.get('text') and n.get('top') is not None and n['top'] < n['viewH'] / 3 and n.get('closed') and not n.get('byXray'),
@@ -196,7 +196,7 @@ try:
         o2['sumOnly'] = any('POV demo' in x for x in sum2) or not any('HLTV demo' in x for x in sum2)
         o2['sumPlugin'] = any('anti-wallhack' in x for x in sum2)
         check(o2.get('view') == '2d' and o2.get('seg') and o2.get('fit') and o2.get('wbTab') and not o2.get('povRow') and not o2.get('povHead') and not o2.get('mark')
-              and not o2.get('sumOnly') and not o2.get('sumPlugin') and o2.get('toastTop') is not None and o2['toastTop'] > o2['viewH'] / 2,
+              and not o2.get('sumOnly') and not o2.get('sumPlugin') and o2.get('kind') == 'HLTV demo' and o2.get('toastTop') is not None and o2['toastTop'] > o2['viewH'] / 2,
               'options by demo type: the HLTV demo', o2)
         pg.evaluate("__v(\"setView('3d', false)\")")
         k2 = ev(KILLS)

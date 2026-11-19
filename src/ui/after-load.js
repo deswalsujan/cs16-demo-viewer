@@ -64,8 +64,9 @@ async function onDemo() {
   T = first ? first.start : D.start;
   playing = false; selected = null; pickedKill = null; pickedBurst = null;
   // a thinner header (UI review, item 14, 17 Nov 2026): the map and the length first, the file name last, where the line may
-  // cut it, and in full on hover (up to then the file name came second, and at 1512 px the length was cut off after it)
-  $('meta').textContent = D.parts ? `${D.mapName} · ${fmt(D.end - D.start)} · ${D.parts[0].fileName} and ${plural(D.parts.length - 1, 'more file')}` : `${D.mapName} · ${fmt(D.end - D.start)} · ${D.fileName}`;
+  // cut it, and in full on hover (up to then the file name came second, and at 1512 px the length was cut off after it);
+  // the demo type before them all, "HLTV demo" or "POV demo", so it's always in view (Sujan, 19 Nov 2026)
+  $('meta').innerHTML = `<b class="dkind">${D.pov ? 'POV demo' : 'HLTV demo'}</b> · ` + esc(D.parts ? `${D.mapName} · ${fmt(D.end - D.start)} · ${D.parts[0].fileName} and ${plural(D.parts.length - 1, 'more file')}` : `${D.mapName} · ${fmt(D.end - D.start)} · ${D.fileName}`);
   $('meta').title = D.parts ? D.parts.map((p) => p.fileName).join(', then ') : D.fileName;
   const chip = $('partsChip');
   chip.onclick = () => { const b = document.querySelector('.tabs button[data-tab="rounds"]'); if (b) b.click(); $('pane').scrollTop = 0; };
