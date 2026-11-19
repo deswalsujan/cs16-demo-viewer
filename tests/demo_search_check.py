@@ -708,7 +708,11 @@ with sync_playwright() as p:
         check('the load card: a quiet note on the one line ("Ready: 27 rounds · custom models"), a button or the map switch keeps the full card with that row alone until Details',
               c['quiet']['line'] and c['quiet']['text'] == 'Ready: 27 rounds · custom models' and c['quiet']['details']
               and not c['button']['line'] and c['button']['rows'] == 1 and c['button']['details'] and not c['maps']['line'] and c['maps']['rows'] == 1, str(c))
+        # every demo opens on the Rounds tab (Sujan, 19 Nov 2026; up to then the last tab used carried over)
+        JS8("tab = 'kills'; document.querySelectorAll('.tabs button').forEach((x) => x.classList.toggle('on', x.dataset.tab === 'kills'))")
         pg8.click(f'#demoList button:has-text("{SK}")'); pg8.wait_for_function('() => document.getElementById("load").hidden', timeout=120000)
+        rt = JS8("({ tab, on: document.querySelector('.tabs button.on').dataset.tab, rows: $('pane').querySelectorAll('.row[data-t]').length > 0 })")
+        check('a demo opened after the Kills tab was last used opens on the Rounds tab', rt == {'tab': 'rounds', 'on': 'rounds', 'rows': True}, str(rt))
         # the card's first line, the demo type, and the map switch (Sujan, 19 Nov 2026): "Ready: HLTV demo, 48 rounds (2D and 3D)" on
         # the one-line card, "You are viewing an HLTV demo (2D and 3D available)" first on the full one; a switch whose other map
         # played under a minute only under Details, from a minute a note that keeps the card open (it always did up to then)

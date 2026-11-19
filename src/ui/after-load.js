@@ -63,6 +63,8 @@ async function onDemo() {
   const first = M.liveR[0];
   T = first ? first.start : D.start;
   playing = false; selected = null; pickedKill = null; pickedBurst = null;
+  // every demo opens on the Rounds tab (Sujan, 19 Nov 2026; up to then the last tab used carried over)
+  tab = 'rounds'; document.querySelectorAll('.tabs button').forEach((x) => x.classList.toggle('on', x.dataset.tab === 'rounds')); $('pane').scrollTop = 0;
   // a thinner header (UI review, item 14, 17 Nov 2026): the map and the length first, the file name last, where the line may
   // cut it, and in full on hover (up to then the file name came second, and at 1512 px the length was cut off after it);
   // the demo type before them all, "HLTV demo" or "POV demo", so it's always in view (Sujan, 19 Nov 2026)

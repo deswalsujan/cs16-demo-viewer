@@ -112,6 +112,7 @@ Also on the branch, outside the 14 items (Sujan, 19 Nov 2026, judging the branch
 - A click on a kill with no player killer (a fall or a drowning, killed by the world) or a suicide (a player's own grenade) follows the victim; it followed no one up to then (Delpan's fall at R48 of SK vs Na`Vi, Train, DreamHack Winter 2011).
 - A click on a kill mark in the timeline does what a click on that kill in the Kills tab does: a few seconds before it, the killer followed in **Player's eyes** (the victim with no player killer), playing, the kill marked; the tooltip's test, the nearest kill within 6 px; a drag still moves the playhead, and a click on empty space moves it alone, as before. Help's line on the timeline's kills says so.
 - No Tab scoreboard over the start screen: a POV demo's recorded one ("The player held Tab here") stayed there after **Open another demo** while paused on a Tab hold, and so did one held by hand in any demo; it goes whenever the start screen shows and comes back with the demo.
+- Every demo opens on the Rounds tab; up to then the last tab used carried over.
 
 To try the branch in Chrome on the Mac without switching the working copy (it fetches the branch and opens its built page from a copy in /tmp; run it again after later commits):
 
