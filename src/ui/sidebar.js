@@ -93,7 +93,7 @@ function killDetailsHtml(k) {
     h += `<button type="button" class="kb" data-bt="${x.t}" title="Jump to this ${x.kill ? 'kill' : 'bullet'}"><span class="i">${i + 1}</span><span><span class="d ${x.wall ? 'w' : 'o'}">−${x.dmg}</span>${x.head ? '<span class="hs">HS</span>' : ''}${x.kill ? `<span class="sk" aria-label="the kill">${SKULL}</span>` : ''}</span><span class="wh">${where}${how}</span><span class="tm">${x.kill ? 'kill' : (k.t - x.t).toFixed(2) + ' s before'}</span></button>`;
   });
   const last = list[n - 1];
-  h += `<div class="knote">−${last.dmg}${last.head ? ' HS' : ''}: the health he had left.</div>`;
+  h += `<div class="knote">−${last.dmg}${last.head ? ' HS' : ''}: the health the victim had left.</div>`;
   return box(h);
 }
 // The kill last clicked in the Kills or Wallbangs list: it keeps its highlight until another kill is
@@ -105,7 +105,7 @@ let KD_EARLY = null; // the kill whose "HP lost before this fight" list is open 
 let WB_SHOWN = [];
 function wbCopyText() {
   const line = (x) => {
-    if (x.k) { const k = x.k; return `${roundTime(k.t)}  demo ${fmt(k.t - D.start)}  ${M.pl[k.kp] ? M.pl[k.kp].name : '?'} -> ${M.pl[k.vp] ? M.pl[k.vp].name : '?'}  ${k.weapon}${k.hs ? ' HS' : ''}  (${k.wb.thick} units)  ${k.wb.loose ? 'PARTIAL WALLBANG: part of him in view' : 'WALLBANG'}${skipNear(k.t) ? '  UNSURE: the recording skips here' : ''}`; }
+    if (x.k) { const k = x.k; return `${roundTime(k.t)}  demo ${fmt(k.t - D.start)}  ${M.pl[k.kp] ? M.pl[k.kp].name : '?'} -> ${M.pl[k.vp] ? M.pl[k.vp].name : '?'}  ${k.weapon}${k.hs ? ' HS' : ''}  (${k.wb.thick} units)  ${k.wb.loose ? 'PARTIAL WALLBANG: part of the victim in view' : 'WALLBANG'}${skipNear(k.t) ? '  UNSURE: the recording skips here' : ''}`; }
     const b = x.b; return `${roundTime(b.start)}  demo ${fmt(b.start - D.start)}  WALL DAMAGE ${b.total} HP to ${labelAt(b.v, b.start)}: ${Object.keys(b.share).map((e) => `${labelAt(+e, b.start)} ${b.share[e]}`).join(', ')}`;
   };
   return [D.fileName].concat(WB_SHOWN.map(line)).join('\n');

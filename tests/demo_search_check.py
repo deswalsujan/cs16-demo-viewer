@@ -178,7 +178,7 @@ with sync_playwright() as p:
           return { kills, wb, jump }; })()""")
         want = ['5 hits · 4 through a wall · 93 HP in 0.30 s', '7 HP lost before this fight [shut] Earlier: −7 from a grenade at 0:45.', '1 −30 chest or arm* · in the open 0.30 s before',
                 '2 −17 body · through a wall 0.30 s before', '3 −17 body · through a wall 0.21 s before', '4 −17 body · through a wall 0.11 s before', '5 −12HS head · through a wall kill',
-                'Estimated from the damage: the demo says only head or body', '−12 HS: the health he had left.']
+                'Estimated from the damage: the demo says only head or body', '−12 HS: the health the victim had left.']
         check('kill details: the picked kill in the Kills list opens to one line per bullet, the "Earlier:" line and the order of the demo', kd['kills'] == want, ' | '.join(kd['kills'] or ['no box']))
         check('kill details: the same in the Wallbangs list', kd['wb'] == want, ' | '.join(kd['wb'] or ['no box']))
         check("kill details: a bullet's line jumps playback to it, paused, through the killer's eyes", kd['jump'] == {'t': 2790.07, 'paused': True, 'eyes': True}, str(kd['jump']))
@@ -637,7 +637,7 @@ with sync_playwright() as p:
           const zeus = (M.hits || []).find((h) => lnOf(h.t) === 30 && nameAt(h.s, h.t) === 'RobbaN' && nameAt(h.v, h.t) === 'Zeus' && h.dmg === 83);
           return { loose: k && k.wb && k.wb.loose, tag: tag ? tag.textContent : null, tip: tag ? tag.title : null, zeusRow: dmg.some((s) => s.startsWith('R30 1:30 RobbaN > Zeus')), zeusWall: zeus ? zeus.wall : 'no hit' }; })()""")
         check('Edward-FoCuS on Gux, SK vs Na`Vi, IEM4, R11 0:52: PARTIAL WALLBANG in the Wallbangs list (LOOSE WB up to the UI review, item 3), the tooltip saying why (STRICT WB up to 0.26.21)',
-              w['loose'] == 'open' and w['tag'] == 'PARTIAL WALLBANG' and (w['tip'] or '').startswith("Partial wallbang: the killer's bullet on him 0.04 s before the kill did 21 HP, what his gun does in the open"), str(w))
+              w['loose'] == 'open' and w['tag'] == 'PARTIAL WALLBANG' and (w['tip'] or '').startswith("Partial wallbang: the killer's bullet on the victim 0.04 s before the kill did 21 HP, what the killer's gun does in the open"), str(w))
         check('RobbaN\'s AWP on Zeus, R30 1:30, 83 (a leg in the open): no damage row, the hit judged in the open (a DAMAGE row up to 0.26.21)', not w['zeusRow'] and w['zeusWall'] is False, str(w))
         t = JS7(r"""(() => { const k = M.wbs.find((x) => !x.wb.loose), was = k.vteam, n0 = M.wbs.length;
           k.vteam = k.kteam; M.wbs = listedWbs(); tab = 'wb'; renderPane();
