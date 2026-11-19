@@ -107,6 +107,9 @@ Built:
 - Item 13, the Players and Rounds tabs: the Players tab's digits under a **Key** heading, a dead player's skull beside his name, the note one line ("Kills and deaths from the kill feed, live rounds only."), the rest in Help; the Rounds tab with a heading row (Round, Won by, Score and Length) and **Show warmup, restarts and idle rounds** at the end of the list.
 - Item 14, a thinner header: the demo type first, "HLTV demo" or "POV demo", always in view (Sujan, 19 Nov 2026), then the map and the demo's length, then the file name, not cut at 1512 px and in full on hover; the spectator count is only in the Tab scoreboard's footer.
 
+Also on the branch, outside the 14 items (Sujan, 19 Nov 2026, judging the branch live):
+- The player whose demo it is in gender-neutral words everywhere the viewer talks about them: "The player's kills and deaths" in a POV demo's Kills tab, "The player held Tab here" on the Tab scoreboard, the flashbang and Crosshair rows of **View settings**, the **Wall damage** tooltip in **POV mode** and the load card's line for a POV demo without the player's view ("His kills and deaths", "He held Tab here" up to then); the **!** note: "To stop wallhacks, the server shows the player (whose POV you're watching) an enemy only when that enemy is about to come into view. So **See through walls** won't work as intended until the player is dead."
+
 To try the branch in Chrome on the Mac without switching the working copy (it fetches the branch and opens its built page from a copy in /tmp; run it again after later commits):
 
 ```

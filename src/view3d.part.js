@@ -1579,7 +1579,7 @@ function povHidesEnemies() {
 // the load summary's line and the note: the headline, then the detail, feature names between ** (bold); one text in both
 // places (Sujan, 11 Nov 2026; up to 0.26.29 it gave the counts of enemy and teammate sightings)
 function hiddenEnemiesText(h) {
-  return { t: 'This server seems to use an anti-wallhack plugin', n: 'To stop wallhacks, the server shows the player an enemy only when that enemy is about to come into view. So **See through walls** won\'t work as intended until the player is dead.' };
+  return { t: 'This server seems to use an anti-wallhack plugin', n: 'To stop wallhacks, the server shows the player (whose POV you\'re watching) an enemy only when that enemy is about to come into view. So **See through walls** won\'t work as intended until the player is dead.' };
 }
 // the ! on See through walls, only in POV mode on such a server
 function povMarkInit() {

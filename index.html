@@ -822,7 +822,7 @@ addEventListener('resize', () => { if (applyUiSize()) dispatchEvent(new Event('u
             <option value="medium">Medium</option>
             <option value="large">Large</option>
           </select></label>
-          <label class="vrow" hidden><span>Crosshair<small>size only</small></span><select id="xhp3" title="The size of his crosshair. From config.cfg uses the size set in the game's config.cfg in your Half-Life folder, as the game's demo player uses the watcher's own settings. The colour always comes from config.cfg">
+          <label class="vrow" hidden><span>Crosshair<small>size only</small></span><select id="xhp3" title="The size of the player's crosshair. From config.cfg uses the size set in the game's config.cfg in your Half-Life folder, as the game's demo player uses the watcher's own settings. The colour always comes from config.cfg">
             <option value="cfg">From config.cfg</option>
             <option value="small">Small</option>
             <option value="medium">Medium</option>
@@ -843,8 +843,8 @@ addEventListener('resize', () => { if (applyUiSize()) dispatchEvent(new Event('u
             <option value="200">200%</option>
           </select></label>
           <div class="vhead" hidden>Demos recorded by a player</div>
-          <label class="vrow" hidden><span>Flashbang dot<small>how blinded he was</small></span><input type="checkbox" id="fbDot3" title="A white dot under the crosshair that fades as his screen did when a flashbang blinded him, or a teammate he was watching"></label>
-          <label class="vrow" hidden><span>Flashbang whiteout<small>the white his screen showed, full screen</small></span><input type="checkbox" id="fbWhite3" title="The view goes white as his screen did when a flashbang blinded him, or a teammate he was watching. As in the game, his HUD and radar fade into the white"></label>
+          <label class="vrow" hidden><span>Flashbang dot<small>how blinded the player was</small></span><input type="checkbox" id="fbDot3" title="A white dot under the crosshair that fades as the player's screen did when a flashbang blinded them, or a teammate they were watching"></label>
+          <label class="vrow" hidden><span>Flashbang whiteout<small>the white the player's screen showed, full screen</small></span><input type="checkbox" id="fbWhite3" title="The view goes white as the player's screen did when a flashbang blinded them, or a teammate they were watching. As in the game, the player's HUD and radar fade into the white"></label>
         </div>
       </div>
     </div>
@@ -5814,7 +5814,7 @@ function renderPane() {
         if (k === pickedKill) body += killDetailsHtml(k);
       }
     }
-    p.innerHTML = pov ? `<div class="sechead"><span>His kills and deaths</span><span>${plural(nk, 'kill')} · ${plural(nd, 'death')}</span></div>` + (body || '<div class="opt">No kills or deaths of his in the match.</div>')
+    p.innerHTML = pov ? `<div class="sechead"><span>The player's kills and deaths</span><span>${plural(nk, 'kill')} · ${plural(nd, 'death')}</span></div>` + (body || '<div class="opt">The player has no kills or deaths in the match.</div>')
       : (body || '<div class="opt">No kills in the match.</div>');
   } else if (tab === 'wb') {
     let h;
@@ -5830,7 +5830,7 @@ function renderPane() {
       const all = kills.concat(dmg).sort((a, b) => a.t - b.t);
       const n = { all: all.length, strict: kills.filter((x) => x.kind === 'strict').length, loose: kills.filter((x) => x.kind === 'loose').length, damage: dmg.length };
       if (!n[wbFilter]) wbFilter = 'all';
-      const TIPS = { all: 'Every kill and every burst of damage through walls', strict: 'Wallbangs: kills through cover with none of the victim in view from the shooter\'s eye', loose: 'Partial wallbangs: kills through cover with part of the victim in view from the shooter\'s eye', damage: D.povOn ? 'Not found in POV mode: the server sends a player only his teammates\' health, so hits through cover can\'t be checked' : `Wall damage: hits through cover that didn't kill, ${HITS_MIN} HP or more from one or more shooters, each hit within 2 s of the last` };
+      const TIPS = { all: 'Every kill and every burst of damage through walls', strict: 'Wallbangs: kills through cover with none of the victim in view from the shooter\'s eye', loose: 'Partial wallbangs: kills through cover with part of the victim in view from the shooter\'s eye', damage: D.povOn ? 'Not found in POV mode: the server sends the player only their teammates\' health, so hits through cover can\'t be checked' : `Wall damage: hits through cover that didn't kill, ${HITS_MIN} HP or more from one or more shooters, each hit within 2 s of the last` };
       const LBL = { all: 'All', strict: 'Wallbang', loose: 'Partial', damage: 'Wall damage' };
       // the four filters as one dropdown with each count in it ("Wallbang (17)"), Copy list on the same row, and the picture
       // check's "Checking N from the shooter's eye…" on a line under that row while it runs (item 3's fixup, Sujan, 17 Nov
@@ -6146,7 +6146,7 @@ function showScoreboard(v, auto = false) {
     const specNow = now.filter((x) => !x.side).sort((a, b) => (M.teamOf[a.pid] != null) - (M.teamOf[b.pid] != null) || (a.pid < b.pid ? -1 : 1)).map((x) => esc(M.pl[x.pid].name) + (M.pl[x.pid].hltv ? ' <span class="sbtag">HLTV</span>' : ''));
     const v = viewersAt(T);
     h += `<div class="spech">Spectators</div><div class="specs">${specNow.length ? specNow.join('<span class="gsep">·</span>') : 'none on the server'}</div>`;
-    if (v != null || SB.auto) h += `<div class="gfoot"><span>${v != null ? `${v.toLocaleString('en-US')} watching on HLTV` : ''}</span>${SB.auto ? '<span class="sbheld">He held Tab here</span>' : ''}</div>`;
+    if (v != null || SB.auto) h += `<div class="gfoot"><span>${v != null ? `${v.toLocaleString('en-US')} watching on HLTV` : ''}</span>${SB.auto ? '<span class="sbheld">The player held Tab here</span>' : ''}</div>`;
     el.innerHTML = h + '</div>';
   };
   render(); el.hidden = false;
@@ -9865,7 +9865,7 @@ function povHidesEnemies() {
 // the load summary's line and the note: the headline, then the detail, feature names between ** (bold); one text in both
 // places (Sujan, 11 Nov 2026; up to 0.26.29 it gave the counts of enemy and teammate sightings)
 function hiddenEnemiesText(h) {
-  return { t: 'This server seems to use an anti-wallhack plugin', n: 'To stop wallhacks, the server shows the player an enemy only when that enemy is about to come into view. So **See through walls** won\'t work as intended until the player is dead.' };
+  return { t: 'This server seems to use an anti-wallhack plugin', n: 'To stop wallhacks, the server shows the player (whose POV you\'re watching) an enemy only when that enemy is about to come into view. So **See through walls** won\'t work as intended until the player is dead.' };
 }
 // the ! on See through walls, only in POV mode on such a server
 function povMarkInit() {
@@ -10221,7 +10221,7 @@ async function loadSummary(sndDone) {
   // a POV demo always opens in it. Only a file without the record of his own view, which POV mode needs, says why.
   // the card's first line says what kind of demo it is (Sujan, 19 Nov 2026), so a POV demo without the record of the player's
   // own view only says what that changes
-  if (D.pov && !D.povOn) rows.push({ s: 'info', tail: "without the player's view", t: "No record of the player's own view", n: "This file has no record of his own view, so it plays like an HLTV demo, with him at the map's zero point." });
+  if (D.pov && !D.povOn) rows.push({ s: 'info', tail: "without the player's view", t: "No record of the player's own view", n: "This file has no record of the player's own view, so it plays like an HLTV demo, with the player at the map's zero point." });
   // the anti-wallhack note, which no longer shows over the HUD (the POV mockup round, Sujan, 11 Nov 2026; the ! on See
   // through walls brings it back), as a line of its own that keeps the card open (Sujan, 19 Nov 2026; up to then one short
   // line with "His view only, in 3D", the UI review's item 2)

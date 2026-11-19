@@ -74,7 +74,7 @@ async function loadSummary(sndDone) {
   // a POV demo always opens in it. Only a file without the record of his own view, which POV mode needs, says why.
   // the card's first line says what kind of demo it is (Sujan, 19 Nov 2026), so a POV demo without the record of the player's
   // own view only says what that changes
-  if (D.pov && !D.povOn) rows.push({ s: 'info', tail: "without the player's view", t: "No record of the player's own view", n: "This file has no record of his own view, so it plays like an HLTV demo, with him at the map's zero point." });
+  if (D.pov && !D.povOn) rows.push({ s: 'info', tail: "without the player's view", t: "No record of the player's own view", n: "This file has no record of the player's own view, so it plays like an HLTV demo, with the player at the map's zero point." });
   // the anti-wallhack note, which no longer shows over the HUD (the POV mockup round, Sujan, 11 Nov 2026; the ! on See
   // through walls brings it back), as a line of its own that keeps the card open (Sujan, 19 Nov 2026; up to then one short
   // line with "His view only, in 3D", the UI review's item 2)

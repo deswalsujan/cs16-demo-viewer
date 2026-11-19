@@ -60,7 +60,7 @@ READER = js(r'''(() => {
   return { dmg: near(D.dmg, 6, 742.87, 0.02), bar2: near(D.bars, 3, 1086.08, 0.02), plus, tab: near(D.tabs, 2, 344.43, 0.02).concat(near(D.tabs, 2, 347.16, 0.02)) };
 })()''')
 DRAWN = js(r'''({ pain: [742.88, 743.3].map((t) => povPainAt(t).map((x) => +x.toFixed(2))), bar: [1085.5, 1086.5, 1086.8].map((t) => { const f = povBarAt(t); return f == null ? null : +f.toFixed(2); }) })''')
-SB = js(r'''({ open: !$('sb').hidden, held: !!$('sb').querySelector('.sbheld') })''')
+SB = js(r'''({ open: !$('sb').hidden, held: !!$('sb').querySelector('.sbheld'), heldText: ($('sb').querySelector('.sbheld') || {}).textContent || null })''')
 def offers_js():
     return js(r'''(() => {
   const vis = (el) => !!el && !el.hidden && !!el.offsetParent;
@@ -77,7 +77,7 @@ NOTE = js(r'''(() => {
   const open = !!n && !n.hidden, top = open ? n.getBoundingClientRect().top - rr.top : null, text = open ? n.textContent : '';
   $('xrayMark').click(); const closed = !n || n.hidden;
   const x0 = opts.xray; $('tgXray').click(); if (!opts.xray) $('tgXray').click(); const after = $('povNote'), byXray = !!after && !after.hidden; if (opts.xray !== x0) $('tgXray').click();
-  return { was, open, top, viewH: rr.height, text: text.includes('anti-wallhack plugin') && text.includes('To stop wallhacks, the server shows the player an enemy only when that enemy is about to come into view.'), closed, byXray };
+  return { was, open, top, viewH: rr.height, text: text.includes('anti-wallhack plugin') && text.includes("To stop wallhacks, the server shows the player (whose POV you're watching) an enemy only when that enemy is about to come into view."), closed, byXray };
 })()''')
 # the notices' column against the kill feed, the round pill and the strip at the bottom left (with View settings since the
 # UI review, item 4; the camera row under the radar before), and each other
@@ -146,7 +146,8 @@ try:
         s1 = ev(SB)
         at(349.0)
         s2 = ev(SB)
-        check(s1.get('open') and s1.get('held') and not s2.get('open'), 'Tab scoreboard while he held Tab, closed after', {'held': s1, 'after': s2})
+        # gender-neutral words for the player whose demo it is (Sujan, 19 Nov 2026; "He held Tab here" up to then)
+        check(s1.get('open') and s1.get('held') and s1.get('heldText') == 'The player held Tab here' and not s2.get('open'), 'Tab scoreboard while the player held Tab, with "The player held Tab here", closed after', {'held': s1, 'after': s2})
         at(809.0)
         o = ev(offers_js())
         # the card's first line says the demo type, and the anti-wallhack note is a line of its own (Sujan, 19 Nov 2026; one short
@@ -161,9 +162,9 @@ try:
               'the ! shows the anti-wallhack note at the top middle and closes it; See through walls alone does not', n)
         at(742.91)
         k = ev(KILLS)
-        check(k.get('rows') == k.get('want') and k.get('rows', 0) > 20 and k.get('allHis') and k.get('rounds', 0) >= 10 and k.get('curHead', '') .startswith(k.get('curRound') or '?')
+        check(k.get('rows') == k.get('want') and k.get('rows', 0) > 20 and k.get('allHis') and (k.get('top') or '').startswith("The player's kills and deaths") and k.get('rounds', 0) >= 10 and k.get('curHead', '') .startswith(k.get('curRound') or '?')
               and k.get('curRows') == 0,
-              'Kills tab: his kills and deaths, the whole match by round, R7\'s band highlighted, no row tinted for it', k)
+              'Kills tab: the player\'s kills and deaths, the whole match by round, R7\'s band highlighted, no row tinted for it', k)
         # the widest kill feed rows in this demo (R3, 4 rows from 498.33), with "Stopping at 16" and the note open,
         # at 1512x982 (Auto and the largest Interface size it allows, 115%) and 1280x720 (100%)
         ov = []

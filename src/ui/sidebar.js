@@ -223,7 +223,7 @@ function renderPane() {
         if (k === pickedKill) body += killDetailsHtml(k);
       }
     }
-    p.innerHTML = pov ? `<div class="sechead"><span>His kills and deaths</span><span>${plural(nk, 'kill')} · ${plural(nd, 'death')}</span></div>` + (body || '<div class="opt">No kills or deaths of his in the match.</div>')
+    p.innerHTML = pov ? `<div class="sechead"><span>The player's kills and deaths</span><span>${plural(nk, 'kill')} · ${plural(nd, 'death')}</span></div>` + (body || '<div class="opt">The player has no kills or deaths in the match.</div>')
       : (body || '<div class="opt">No kills in the match.</div>');
   } else if (tab === 'wb') {
     let h;
@@ -239,7 +239,7 @@ function renderPane() {
       const all = kills.concat(dmg).sort((a, b) => a.t - b.t);
       const n = { all: all.length, strict: kills.filter((x) => x.kind === 'strict').length, loose: kills.filter((x) => x.kind === 'loose').length, damage: dmg.length };
       if (!n[wbFilter]) wbFilter = 'all';
-      const TIPS = { all: 'Every kill and every burst of damage through walls', strict: 'Wallbangs: kills through cover with none of the victim in view from the shooter\'s eye', loose: 'Partial wallbangs: kills through cover with part of the victim in view from the shooter\'s eye', damage: D.povOn ? 'Not found in POV mode: the server sends a player only his teammates\' health, so hits through cover can\'t be checked' : `Wall damage: hits through cover that didn't kill, ${HITS_MIN} HP or more from one or more shooters, each hit within 2 s of the last` };
+      const TIPS = { all: 'Every kill and every burst of damage through walls', strict: 'Wallbangs: kills through cover with none of the victim in view from the shooter\'s eye', loose: 'Partial wallbangs: kills through cover with part of the victim in view from the shooter\'s eye', damage: D.povOn ? 'Not found in POV mode: the server sends the player only their teammates\' health, so hits through cover can\'t be checked' : `Wall damage: hits through cover that didn't kill, ${HITS_MIN} HP or more from one or more shooters, each hit within 2 s of the last` };
       const LBL = { all: 'All', strict: 'Wallbang', loose: 'Partial', damage: 'Wall damage' };
       // the four filters as one dropdown with each count in it ("Wallbang (17)"), Copy list on the same row, and the picture
       // check's "Checking N from the shooter's eye…" on a line under that row while it runs (item 3's fixup, Sujan, 17 Nov
