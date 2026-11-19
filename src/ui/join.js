@@ -396,12 +396,13 @@ function renderJoinCard() {
       <button class="btn sm" type="button" id="jFile">A file from elsewhere…</button><input type="file" id="jFileIn" accept=".dem" hidden></div>`;
   }
   const busy = !!JOIN.reading || F.length < JOIN.list.length;
-  // the checks that pass and the notes fold behind the verdict, opening on a click; warnings always in full (Sujan, 19 Nov
-  // 2026; each part's own line stays as approved, 7 Nov 2026)
+  // the checks that pass and the notes fold behind the verdict, opening with the link at its right, "Show N checks" / "Hide
+  // checks", styled like the load card's Details (Sujan, 20 Nov 2026; a ▸ after the verdict up to then, which nobody saw);
+  // warnings always in full (Sujan, 19 Nov 2026; each part's own line stays as approved, 7 Nov 2026)
   const li = (c) => `<li><span class="sum-ic ${c.s}" aria-hidden="true">${ic[c.s]}</span><span>${esc(c.t)}${c.n ? `<small>${esc(c.n)}</small>` : ''}${c.btn ? `<div class="li-btn"><button class="btn sm" type="button" id="${c.btn.id}">${esc(c.btn.label)}</button></div>` : ''}</span></li>`;
   const folded = checks.filter((c) => c.s !== 'warn'), warns = (recWarn ? [recWarn] : []).concat(checks.filter((c) => c.s === 'warn'));
   const vText = verdict ? `<span class="sum-ic ${verdict.s}" aria-hidden="true">${ic[verdict.s]}</span><span class="jvt">${esc(verdict.t)}</span>` : '';
-  const vRow = !verdict ? '' : folded.length ? `<li class="jv"><button class="jverdict" type="button" id="jVerdict" aria-expanded="${JOIN.okOpen ? 'true' : 'false'}" title="${JOIN.okOpen ? 'Hide' : 'Show'} the ${plural(folded.length, 'check')} behind it">${vText}<span class="jcaret" aria-hidden="true">${JOIN.okOpen ? '▾' : '▸'}</span></button></li>` : `<li class="jv">${vText}</li>`;
+  const vRow = !verdict ? '' : `<li class="jv${folded.length ? ' more' : ''}">${vText}${folded.length ? `<button class="lnk" type="button" id="jVerdict" aria-expanded="${JOIN.okOpen ? 'true' : 'false'}">${JOIN.okOpen ? 'Hide checks' : `Show ${plural(folded.length, 'check')}`}</button>` : ''}</li>`;
   const checkRows = vRow + (JOIN.okOpen ? folded.map(li).join('') : '') + warns.map(li).join('');
   el.innerHTML = `<div class="sum join" role="dialog" aria-labelledby="jTitle">
     <div class="sum-top"><div class="ti"><h2 id="jTitle">Count these demos as one map?</h2><p>Score, rounds and player stats will cover all parts. Playback runs straight on from one part to the next.</p></div>${x}</div>

@@ -502,12 +502,15 @@ with sync_playwright() as p:
         check('the Rounds tab of a part that ends before anyone won: the question, with Join parts…', jq == {'text': 'Join parts…', 'question': 'Is this map split over two or more demo files?'}, str(jq))
         JS5(f"closeSummary(); openJoinCard([{W1!r}, {W2!r}].map((n) => files.demos.find((f) => f.name === n)))")
         pg5.wait_for_function('__v("!JOIN.reading && JOIN.F.size === 2 && !!$(\'jGo\')")', timeout=120000)
-        f0 = JS5(r"""(() => { const el = $('joinCard'), read = () => ({ verdict: (el.querySelector('#jVerdict .jvt') || {}).textContent || null, open: $('jVerdict') ? $('jVerdict').getAttribute('aria-expanded') : null,
-            rows: [...el.querySelectorAll('.sum-list li:not(.jv)')].map((li) => li.querySelector('.sum-ic').className.replace('sum-ic ', '')), count: /\d+ checks? pass/.test(el.innerText) });
+        # the link at the verdict's right, "Show N checks" / "Hide checks", styled like the load card's Details (Sujan, 20 Nov 2026)
+        f0 = JS5(r"""(() => { const el = $('joinCard'), read = () => { const v = el.querySelector('.jv .jvt'), l = $('jVerdict'), vr = v.getBoundingClientRect(), lr = l.getBoundingClientRect(), li = v.closest('li').getBoundingClientRect();
+              return { verdict: v.textContent, open: l.getAttribute('aria-expanded'), link: l.textContent, lnk: l.classList.contains('lnk'), right: lr.left >= vr.right && li.right - lr.right <= 1,
+                rows: [...el.querySelectorAll('.sum-list li:not(.jv)')].map((li) => li.querySelector('.sum-ic').className.replace('sum-ic ', '')), count: /\d+ checks? pass/.test(el.innerText) }; };
           const closed = read(); $('jVerdict').click(); const open = read(); $('jVerdict').click(); return { closed, open, go: $('jGo').textContent }; })()""")
-        check('Join card: one verdict line, no "N checks pass" count; the 2 checks that pass and the note on the half behind it, opening on a click; the button reads Join parts',
-              f0 == {'closed': {'verdict': 'In the order they were recorded: 09:51, 10:26. The rounds agree.', 'open': 'false', 'rows': [], 'count': False},
-                     'open': {'verdict': 'In the order they were recorded: 09:51, 10:26. The rounds agree.', 'open': 'true', 'rows': ['ok', 'ok', 'info'], 'count': False}, 'go': 'Join parts'}, str(f0))
+        V = 'In the order they were recorded: 09:51, 10:26. The rounds agree.'
+        check('Join card: one verdict line, no "N checks pass" count; the 2 checks that pass and the note on the half behind it, opening with "Show 3 checks" at its right, closing with "Hide checks"; the button reads Join parts',
+              f0 == {'closed': {'verdict': V, 'open': 'false', 'link': 'Show 3 checks', 'lnk': True, 'right': True, 'rows': [], 'count': False},
+                     'open': {'verdict': V, 'open': 'true', 'link': 'Hide checks', 'lnk': True, 'right': True, 'rows': ['ok', 'ok', 'info'], 'count': False}, 'go': 'Join parts'}, str(f0))
         c = card()
         check('Join card, WeMadeFox vs Ravens in the suggested order: part 1 first, Join parts on, no "doesn\'t add up"',
               c['names'] == [W1, W2] and c['go'] and c['wrong'] is None, f"{c['names']}, Join parts {'on' if c['go'] else 'off'}, {c['wrong']!r}")
