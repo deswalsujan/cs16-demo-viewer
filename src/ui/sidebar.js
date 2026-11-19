@@ -142,10 +142,11 @@ function renderPane() {
   const cr = roundAt(T);
   if (tab === 'rounds') {
     // UI review, item 13 (17 Nov 2026): a heading over the columns, the right-hand one the score and the round's length. The
-    // switch for the rounds that don't count is one short line at the top, "Show N uncounted rounds" (Sujan, 19 Nov 2026;
-    // "Show warmup, restarts and idle rounds", at the end of the list since item 13, at its top before), only when there are some
+    // switch for the rounds that don't count is at the top, "Show N uncounted rounds" (Sujan, 19 Nov 2026; "Show warmup,
+    // restarts and idle rounds", at the end of the list since item 13, at its top before), only when there are some, with what
+    // they are under it, small and grey, the tooltip and Help saying the same (Sujan, 20 Nov 2026)
     const nUn = uncountedRounds().length;
-    let h = nUn ? `<label class="opt optall" title="Warmup, restarts, idle rounds and rounds before the match: listed, and on the timeline, without counting"><input type="checkbox" id="optAll" ${showAll ? 'checked' : ''}> Show ${plural(nUn, 'uncounted round')}</label>` : '';
+    let h = nUn ? `<label class="opt optall" title="Warmup, restarts and idle rounds, like time-outs: listed, and on the timeline, without counting"><input type="checkbox" id="optAll" ${showAll ? 'checked' : ''}><span class="optx">Show ${plural(nUn, 'uncounted round')}<small>warmup, restarts and idle rounds, like time-outs</small></span></label>` : '';
     h += `<div class="row rhd"><span class="n">Round</span><span class="main">Won by</span><span class="d">Score<br>Length</span></div>`;
     if (D.parts) h += `<div class="joinrow"><span>One map, joined from ${D.parts.length} files.</span><button class="btn sm" type="button" id="bSplit">Split them</button></div>`;
     let prevPart = D.parts ? 0 : null;

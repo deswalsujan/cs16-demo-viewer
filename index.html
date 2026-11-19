@@ -269,7 +269,9 @@ button { cursor: pointer; }
 .row.rhd { cursor: default; padding-top: calc(6px * var(--ui)); padding-bottom: calc(6px * var(--ui)); font-size: calc(10px * var(--ui)); text-transform: uppercase; letter-spacing: .06em; color: var(--muted); }
 .row.rhd:hover { background: none; }
 .row.rhd .n, .row.rhd .d { font-size: calc(10px * var(--ui)); }
-.opt.optall { cursor: pointer; }
+.opt.optall { cursor: pointer; align-items: flex-start; }
+.opt.optall input { margin-top: calc(2px * var(--ui)); }
+.opt.optall small { display: block; margin-top: calc(1px * var(--ui)); color: var(--muted); font-size: calc(11px * var(--ui)); }
 .stathead { cursor: default; padding-top: calc(2px * var(--ui)); padding-bottom: calc(4px * var(--ui)); }
 .stathead:hover { background: none; }
 .stathead .sc { color: var(--muted); font-size: calc(11px * var(--ui)); }
@@ -778,7 +780,7 @@ addEventListener('resize', () => { if (applyUiSize()) dispatchEvent(new Event('u
           </section>
           <section class="hmsec"><h3>The side panel</h3>
             <p class="hmnote">Players: kills and deaths come from the kill feed, so there are no bonus points for bomb plants or defuses, and a team kill (TK) isn't counted as a kill. Only the rounds that count are counted; overtime is every round after the regulation ones. Click a player to follow them; Key is the 1 to 0 key that jumps to them. In a POV demo the highlighted player is the one whose eyes the view shows.</p>
-            <p class="hmnote">Rounds: the score after each round, and how long it lasted. <b>Show N uncounted rounds</b>, at the top of the list, also lists the rounds that don't count: the warmup, restarts, idle rounds and rounds before the match.</p>
+            <p class="hmnote">Rounds: the score after each round, and how long it lasted. <b>Show N uncounted rounds</b>, at the top of the list, also lists the rounds that don't count: warmup, restarts and idle rounds, like time-outs.</p>
           </section>
           <section class="hmsec"><h3>The timeline</h3>
             <dl class="hmlist tllist">
@@ -5772,10 +5774,11 @@ function renderPane() {
   const cr = roundAt(T);
   if (tab === 'rounds') {
     // UI review, item 13 (17 Nov 2026): a heading over the columns, the right-hand one the score and the round's length. The
-    // switch for the rounds that don't count is one short line at the top, "Show N uncounted rounds" (Sujan, 19 Nov 2026;
-    // "Show warmup, restarts and idle rounds", at the end of the list since item 13, at its top before), only when there are some
+    // switch for the rounds that don't count is at the top, "Show N uncounted rounds" (Sujan, 19 Nov 2026; "Show warmup,
+    // restarts and idle rounds", at the end of the list since item 13, at its top before), only when there are some, with what
+    // they are under it, small and grey, the tooltip and Help saying the same (Sujan, 20 Nov 2026)
     const nUn = uncountedRounds().length;
-    let h = nUn ? `<label class="opt optall" title="Warmup, restarts, idle rounds and rounds before the match: listed, and on the timeline, without counting"><input type="checkbox" id="optAll" ${showAll ? 'checked' : ''}> Show ${plural(nUn, 'uncounted round')}</label>` : '';
+    let h = nUn ? `<label class="opt optall" title="Warmup, restarts and idle rounds, like time-outs: listed, and on the timeline, without counting"><input type="checkbox" id="optAll" ${showAll ? 'checked' : ''}><span class="optx">Show ${plural(nUn, 'uncounted round')}<small>warmup, restarts and idle rounds, like time-outs</small></span></label>` : '';
     h += `<div class="row rhd"><span class="n">Round</span><span class="main">Won by</span><span class="d">Score<br>Length</span></div>`;
     if (D.parts) h += `<div class="joinrow"><span>One map, joined from ${D.parts.length} files.</span><button class="btn sm" type="button" id="bSplit">Split them</button></div>`;
     let prevPart = D.parts ? 0 : null;

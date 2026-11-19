@@ -56,6 +56,14 @@ with sync_playwright() as p:
     def bar_ok(o): return abs(o['off']) <= 2 and o['helpGap'] <= 1 and o['oneRow'] and o['apart'] >= 8 and o['helpOut'] and o['order'] == 'bPrevR bBack bPlay bFwd bNextR time scopeSeg sndgrp spwrap'
     bar0 = v(BAR)
     check('Bottom bar: one centred group on one row (skip back to Speed), Help alone at the right edge', bar_ok(bar0), str(bar0))
+    # the Rounds tab's switch (Sujan, 20 Nov 2026): "Show N uncounted rounds" and the small line under it each on one line, at
+    # this window's Auto size and at the largest Interface size (200%, lowered to what the window allows)
+    OPT = """(() => { tab = 'rounds'; renderPane(); const sw = $('optAll') && $('optAll').closest('label'); if (!sw) return null; const x = sw.querySelector('.optx'), r = document.createRange();
+      r.selectNodeContents(x.firstChild); return { ui: UI, main: r.getClientRects().length, sub: sw.querySelector('small').getClientRects().length }; })()"""
+    SIZE = lambda s: v(f"(() => {{ localStorage.setItem('uiSize', JSON.stringify('{s}')); applyUiSize(); dispatchEvent(new Event('uisize')); return UI; }})()")
+    opt0 = v(OPT); SIZE('200'); pg.wait_for_timeout(300); opt1 = v(OPT); SIZE('auto'); pg.wait_for_timeout(300)
+    check('Rounds tab: "Show N uncounted rounds" and the line under it, each on one line, at Auto and at Interface size 200%',
+          bool(opt0) and bool(opt1) and opt0['main'] == opt0['sub'] == opt1['main'] == opt1['sub'] == 1, f'{opt0}, {opt1}')
 
     # 1. T turns it on and the view fills the whole window
     pg.mouse.move(W / 2, H / 2)

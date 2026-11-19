@@ -256,7 +256,9 @@ button { cursor: pointer; }
 .row.rhd { cursor: default; padding-top: calc(6px * var(--ui)); padding-bottom: calc(6px * var(--ui)); font-size: calc(10px * var(--ui)); text-transform: uppercase; letter-spacing: .06em; color: var(--muted); }
 .row.rhd:hover { background: none; }
 .row.rhd .n, .row.rhd .d { font-size: calc(10px * var(--ui)); }
-.opt.optall { cursor: pointer; }
+.opt.optall { cursor: pointer; align-items: flex-start; }
+.opt.optall input { margin-top: calc(2px * var(--ui)); }
+.opt.optall small { display: block; margin-top: calc(1px * var(--ui)); color: var(--muted); font-size: calc(11px * var(--ui)); }
 .stathead { cursor: default; padding-top: calc(2px * var(--ui)); padding-bottom: calc(4px * var(--ui)); }
 .stathead:hover { background: none; }
 .stathead .sc { color: var(--muted); font-size: calc(11px * var(--ui)); }
