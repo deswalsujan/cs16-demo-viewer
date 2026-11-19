@@ -208,6 +208,12 @@ function joinEl() {
   return el;
 }
 function closeJoinCard() { joinEl().hidden = true; JOIN.picking = false; JOIN.err = null; }
+// the Join card with the open demo's parts and its picker open, to add a part: the Rounds tab's Join parts…, and the load
+// card's when no other part is in the folder (Sujan, 19 Nov 2026)
+function openJoinPicker() {
+  const cur = D.parts ? D.parts.map((x) => fileByName(x.fileName)).filter(Boolean) : [CUR_FILE || fileByName(D.fileName)].filter(Boolean);
+  JOIN.picking = true; openJoinCard(cur).then(() => { JOIN.picking = true; renderJoinCard(); });
+}
 async function openJoinCard(list) {
   closeSummary();
   Object.assign(JOIN, { list: list.slice(), keep: false, moved: false, sugg: null, err: null, picking: false, okOpen: false });

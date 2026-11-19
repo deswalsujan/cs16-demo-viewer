@@ -180,12 +180,12 @@ function renderPane() {
     h += `<label class="opt optend"><input type="checkbox" id="optAll" ${showAll ? 'checked' : ''}> Show warmup, restarts and idle rounds</label>`;
     // Quieter Join (UI review, item 10, 17 Nov 2026): the question only when the demo looks unfinished (no winner at the end,
     // or the load summary offered to join), otherwise a small link at the end of the list; one name for it, Join parts
-    if (!M.wonAt || (typeof SUM === 'object' && SUM.joinList)) h += `<div class="joinrow"><span>${D.parts ? 'Another part of this map in a file of its own?' : 'Is this map split over two or more demo files?'}</span><button class="btn sm" type="button" id="bJoinWith">Join parts…</button></div>`;
+    if (!M.wonAt || (typeof SUM === 'object' && SUM.joinOffer)) h += `<div class="joinrow"><span>${D.parts ? 'Another part of this map in a file of its own?' : 'Is this map split over two or more demo files?'}</span><button class="btn sm" type="button" id="bJoinWith">Join parts…</button></div>`;
     else h += `<div class="joinlnk"><button class="lnk" type="button" id="bJoinWith" title="A map recorded in two or more files: join them into one">Join parts…</button></div>`;
     p.innerHTML = h;
     $('optAll').onchange = (e) => { showAll = e.target.checked; renderPane(); drawTimeline(); };
     if ($('bSplit')) $('bSplit').onclick = splitJoined;
-    $('bJoinWith').onclick = () => { const cur = D.parts ? D.parts.map((x) => fileByName(x.fileName)).filter(Boolean) : [CUR_FILE || fileByName(D.fileName)].filter(Boolean); JOIN.picking = true; openJoinCard(cur).then(() => { JOIN.picking = true; renderJoinCard(); }); };
+    $('bJoinWith').onclick = openJoinPicker;
     if ($('bCount30')) $('bCount30').onclick = () => setCount30(!M.count30);
   } else if (tab === 'kills') {
     // The whole match by round, each round a band set apart from the rows (docs/pov-scoreboard-radar-flashbang-mock.jpg,

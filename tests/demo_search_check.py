@@ -468,6 +468,19 @@ with sync_playwright() as p:
         card = lambda: JS5(r"""(() => { if ($('jFold')) { JOIN.okOpen = true; renderJoinCard(); } const el = $('joinCard'); const t = (s) => [...el.querySelectorAll(s)].map((x) => x.innerText.replace(/\s+/g, ' ').trim());
           return { parts: t('.jparts li .jf small'), names: t('.jparts li .jname'), order: t('.jorder')[0] || '', checks: [...el.querySelectorAll('.sum-list li')].map((li) => ({ s: li.querySelector('.sum-ic').className.replace('sum-ic ', ''), t: li.innerText.replace(/\s+/g, ' ').trim().replace(/^[✓!i✕] /, '') })),
             wrong: t('.jwrong p')[0] || null, go: !$('jGo').disabled }; })()""")
+        # part 1 alone ends before anyone won: the load card says so with Join parts…, naming part 2 when it's in the folder,
+        # and with no other part found its Join parts… opens the Join card's picker (Sujan, 19 Nov 2026; up to then the note
+        # showed only when another part was in the folder)
+        pg5.wait_for_function('__v("SUM.r && SUM.r.state !== \'busy\'")', timeout=60000)
+        lc = JS5(r"""(async () => { const txt = () => $('sumCard').innerText.replace(/\s+/g, ' ').trim(), a = { text: txt(), btn: $('sumJoin') ? $('sumJoin').textContent : null, list: (SUM.joinList || []).map((f) => f.name) };
+          const keep = files.demos; files.demos = keep.filter((f) => !/^ravens\.wmf/.test(f.name)); SUM.closedFor = null;
+          try { await loadSummary(Promise.resolve()); } finally { files.demos = keep; }
+          const b = { text: txt(), btn: $('sumJoin') ? $('sumJoin').textContent : null, list: SUM.joinList };
+          $('sumJoin').click(); await new Promise((r) => setTimeout(r, 1500)); b.picking = JOIN.picking && !$('joinCard').hidden && !!$('joinCard').querySelector('.jpick'); closeJoinCard();
+          return { a, b }; })()""")
+        check('the load card of a part that ends before anyone won: Join parts… naming part 2 in the folder; with no part found, Join parts… opens the picker',
+              'This recording ends at 4:0, before anyone won' in lc['a']['text'] and W2 in lc['a']['text'] and lc['a']['btn'] == 'Join parts…' and lc['a']['list'] == [W1, W2]
+              and 'Join parts… picks the other part, from your Half-Life folder or from anywhere.' in lc['b']['text'] and lc['b']['btn'] == 'Join parts…' and lc['b']['list'] is None and lc['b']['picking'], str(lc))
         # part 1 alone ends before anyone won: the Rounds tab asks, with Join parts… (UI review, item 10)
         jq = JS5("(() => { closeSummary(); tab = 'rounds'; renderPane(); const b = $('bJoinWith'), q = $('pane').querySelector('.joinrow span'); return { text: b.textContent, question: q ? q.textContent : null }; })()")
         check('the Rounds tab of a part that ends before anyone won: the question, with Join parts…', jq == {'text': 'Join parts…', 'question': 'Is this map split over two or more demo files?'}, str(jq))
@@ -678,6 +691,17 @@ with sync_playwright() as p:
               c['quiet']['line'] and c['quiet']['text'] == 'Ready: 27 rounds · custom models' and c['quiet']['details']
               and not c['button']['line'] and c['button']['rows'] == 1 and c['button']['details'] and not c['maps']['line'] and c['maps']['rows'] == 1, str(c))
         pg8.click(f'#demoList button:has-text("{SK}")'); pg8.wait_for_function('() => document.getElementById("load").hidden', timeout=120000)
+        # the card's first line, the demo type, and the map switch (Sujan, 19 Nov 2026): "Ready: HLTV demo, 48 rounds (2D and 3D)" on
+        # the one-line card, "You are viewing an HLTV demo (2D and 3D available)" first on the full one; a switch whose other map
+        # played under a minute only under Details, from a minute a note that keeps the card open (it always did up to then)
+        pg8.wait_for_function('__v("SUM.r && SUM.r.state !== \'busy\' && SUM.r.state !== \'fail\'")', timeout=60000)
+        m = JS8(r"""(async () => { const keep = D.maps, read = () => { const el = $('sumCard'); return { line: el.classList.contains('line'), title: $('sumTitle').textContent, kind: $('sumKind') ? $('sumKind').textContent : null, rows: [...el.querySelectorAll('.sum-list li')].map((l) => l.innerText.replace(/\s+/g, ' ').trim()) }; };
+            const run = async (maps) => { D.maps = maps; SUM.closedFor = null; await loadSummary(Promise.resolve()); const o = read(); if ($('sumDetails')) { $('sumDetails').click(); o.details = read(); } closeSummary(); return o; };
+            try { return { none: await run(keep), short: await run([{ map: 'de_dust2', dur: 59 }, { map: D.mapName, dur: 6000 }]), long: await run([{ map: 'de_dust2', dur: 60 }, { map: D.mapName, dur: 6000 }]) }; } finally { D.maps = keep; } })()""")
+        sw = lambda o: [r for r in o['rows'] if r.startswith('i The recording switched maps')]
+        check('the load card: "Ready: HLTV demo, 48 rounds (2D and 3D)", the demo type first under Details; a map switch under a minute only under Details, from a minute on the card',
+              m['none']['line'] and m['none']['title'] == 'Ready: HLTV demo, 48 rounds (2D and 3D)' and m['none']['details']['kind'] == 'You are viewing an HLTV demo (2D and 3D available)' and m['none']['details']['title'] == 'Ready: 48 rounds'
+              and m['short']['line'] and len(sw(m['short']['details'])) == 1 and not m['long']['line'] and m['long']['kind'] == 'You are viewing an HLTV demo (2D and 3D available)' and len(sw(m['long'])) == 1, str(m))
         # the Kills tab at demo 4:00, in a round that doesn't count (UI review, item 6; Sujan, 17 Nov 2026): its band, "Not
         # counted", highlighted above Round 1 with Show warmup, restarts and idle rounds off; with it on, the rounds that
         # don't count on bands of their own, as in the Rounds tab (visibleRounds)

@@ -4,7 +4,7 @@
 let ASSETS = null;
 async function loadSummary(sndDone) {
   const d = D;
-  SUM.joinList = null; // a previous demo's offer to join (the Rounds tab reads it, item 10)
+  SUM.joinList = null; SUM.joinOffer = false; // a previous demo's offer to join (the Rounds tab reads it, item 10)
   openSummary({ state: 'busy' });
   // A file that reads but has no player movement, or no rounds, can't be played. Say what was found and
   // list the likely reasons, the likeliest first.
@@ -70,19 +70,20 @@ async function loadSummary(sndDone) {
     const A = M.after16, n = A.extra, who = M.tnames[A.team], sc = `${Math.max(...A.score)}:${Math.min(...A.score)}`;
     rows.push({ s: 'info', t: `${n} ${n === 1 ? 'round was' : 'rounds were'} played after ${who} reached 16 (${sc})`, n: M.auto30 ? 'Counted: the teams played on to round 30, as events that count all 30 rounds did.' : M.count30 ? 'Counted, as chosen for this demo (up to round 30).' : `Some events played all 30 rounds and count them. Not counted now: the match ends at ${sc}.`, btn: { id: 'sumCount30', label: M.count30 ? 'Stop at 16' : 'Count them' } });
   }
-  if (D.maps && D.maps.length > 1) rows.push({ s: 'info', keep: true, t: `The recording switched maps. Showing ${D.mapName}, where it spent longest.`, n: D.maps.map((m) => `${m.map} ${fmt(m.dur)}`).join(', then ') });
   // POV mode's own line and its Turn on button went with the setting (Sujan signed POV mode off, 11 Nov 2026; 0.26.30):
   // a POV demo always opens in it. Only a file without the record of his own view, which POV mode needs, says why.
-  if (D.pov && !D.povOn) rows.push({ s: 'info', tail: 'a POV demo without his view', t: 'Recorded by a player (a POV demo)', n: "This file has no record of his own view, so it plays like an HLTV demo, with him at the map's zero point." });
-  // the POV mockup round (docs/pov-mockup-round-mock.jpg, sections 1 and 6; Sujan, 11 Nov 2026): what a POV demo doesn't
-  // have, and the anti-wallhack note, which no longer shows over his HUD (the ! on See through walls brings it back)
-  // UI review, item 2 (17 Nov 2026): the two as one short line, in the one-line card when nothing else needs saying; the
-  // anti-wallhack note's full text stays on the ! of See through walls
-  if (D.povOn) rows.push({ s: 'info', pov: true, t: 'His view only, in 3D' + (POV.on && povHidesEnemies().on ? '; the server seems to hide enemies behind walls (the ! on **See through walls**)' : '') });
-  // A map recorded in two or more files. A part on its own says so only when another part is in the folder
-  // (same map, at least 8 of the same Steam IDs) and this one starts late or ends before anyone won. Those two
-  // alone were wrong on all four demos on Sujan's Mac that showed them with no other part (2 Oct 2026): a draw
-  // the server announced, two recordings cut off in their last round, and an overtime-only file.
+  // the card's first line says what kind of demo it is (Sujan, 19 Nov 2026), so a POV demo without the record of the player's
+  // own view only says what that changes
+  if (D.pov && !D.povOn) rows.push({ s: 'info', tail: "without the player's view", t: "No record of the player's own view", n: "This file has no record of his own view, so it plays like an HLTV demo, with him at the map's zero point." });
+  // the anti-wallhack note, which no longer shows over the HUD (the POV mockup round, Sujan, 11 Nov 2026; the ! on See
+  // through walls brings it back), as a line of its own that keeps the card open (Sujan, 19 Nov 2026; up to then one short
+  // line with "His view only, in 3D", the UI review's item 2)
+  if (D.povOn && POV.on && povHidesEnemies().on) rows.push({ s: 'info', keep: true, t: 'It seems the server used an anti-wallhack plugin. Click ! on the **See through walls** button below to know more.' });
+  // A map recorded in two or more files: a part on its own says so whenever it starts late or ends before anyone won,
+  // with Join parts…, naming the other parts when they're in the folder (same map, at least 8 of the same Steam IDs) and
+  // opening the Join card's picker when they aren't (Sujan, 19 Nov 2026). Up to then only when another part was in the
+  // folder, since those two alone were wrong on all four demos on Sujan's Mac that showed them with no other part (2 Oct
+  // 2026): a draw the server announced, two recordings cut off in their last round, and an overtime-only file.
   if (D.parts) {
     const js = joinedSetOf(D.parts[0].fileName);
     // a joined map is a quiet note, unless it was joined in an order the rounds don't support, which keeps the card open
@@ -103,10 +104,17 @@ async function loadSummary(sndDone) {
       if (others.length) {
         n += others.length === 1 ? ` ${others[0].name} has the same players on ${D.mapName}.` : ` ${others.length} other demos have the same players on ${D.mapName}: ${others.map((f) => f.name).join(', ')}.`;
         SUM.joinList = [CUR_FILE || fileByName(D.fileName), ...others].filter(Boolean);
-        rows.push({ s: 'info', t, n, btn: { id: 'sumJoin', label: 'Join parts' } }); // one name for it (UI review, item 10)
-        if (tab === 'rounds') renderPane(); // the Rounds tab asks about joining now
-      }
+      } else n += ' **Join parts…** picks the other part, from your Half-Life folder or from anywhere.';
+      rows.push({ s: 'info', t, n, btn: { id: 'sumJoin', label: 'Join parts…' } }); // one name for it (UI review, item 10)
+      SUM.joinOffer = true;
+      if (tab === 'rounds') renderPane(); // the Rounds tab asks about joining now
     }
+  }
+  // the recording switched maps: no longer the card's first note (Sujan, 19 Nov 2026); under Details when the other maps
+  // played under a minute in all, a note that keeps the card open from a minute (up to then it always kept the card open)
+  if (D.maps && D.maps.length > 1) {
+    const other = D.maps.filter((m) => m.map.toLowerCase() !== D.mapName.toLowerCase()).reduce((a, m) => a + Math.max(0, m.dur), 0);
+    rows.push({ s: 'info', keep: other >= 60, notail: true, t: `The recording switched maps. Showing ${D.mapName}, where it spent longest.`, n: D.maps.map((m) => `${m.map} ${fmt(m.dur)}`).join(', then ') });
   }
   if (!map) rows.push({ s: 'fail', t: `Map ${D.mapName} not found`, n: 'No 3D view and no wallbang finder. Add the .bsp from cstrike\\maps or cstrike_downloads\\maps.' });
   else if (map.missingTex) rows.push({ s: 'warn', t: `Map loaded, ${map.missingTex} textures missing`, n: 'Those surfaces show a grey checkerboard in 3D.' });
@@ -144,9 +152,18 @@ async function loadSummary(sndDone) {
   }
   // the only problem is the file stopping early: say that plainly in the title
   else if (healthRows.some((r) => r.s === 'warn') && !rows.some((r) => (r.s === 'warn' || r.s === 'fail') && !healthRows.includes(r))) res = { state: 'warn', title: 'The demo will play up to where the file stops', text: 'Everything it needs loaded. The file itself is incomplete; what follows says exactly how.' };
-  else if (!anyBad) res = { state: 'ok', title: `Ready: ${plural(live, 'round')}`, text: '' };
+  // the one-line card says the demo type too ("Ready: HLTV demo, 27 rounds (2D and 3D)"; Sujan, 19 Nov 2026); the full card
+  // has it in its first line, so its title stays "Ready: 27 rounds"
+  else if (!anyBad) res = { state: 'ok', title: `Ready: ${plural(live, 'round')}`, lineTitle: `Ready: ${D.pov ? 'POV' : 'HLTV'} demo, ${plural(live, 'round')}${D.povOn ? '' : ' (2D and 3D)'}`, text: '' };
   else res = { state: 'warn', title: 'The demo will play, with a few gaps', text: 'Some files are missing or damaged. Playback works; the parts marked below will look or sound different.', folder: !map || STALE.size > 0 };
-  renderSummary(Object.assign(res, { rows }));
+  renderSummary(Object.assign(res, { rows, kind: demoKindLine(!!map) }));
+}
+// The card's first line whenever it's open (Sujan, 19 Nov 2026): which kind of demo it is and which views it has. map: the
+// map loaded, so there's a 3D view (without it an HLTV demo plays in 2D only)
+function demoKindLine(map) {
+  if (D.povOn) return 'You are viewing a POV demo (3D only)';
+  const a = D.pov ? 'a POV demo' : 'an HLTV demo';
+  return `You are viewing ${a} (${map ? '2D and 3D available' : '2D only, without the map file'})`;
 }
 
 // What the file itself says about how it was recorded (demo.js, readIndex): a recording never closed, a
@@ -215,16 +232,17 @@ function renderSummary(r) {
   const keeps = (x) => x.s === 'warn' || x.s === 'fail' || !!x.btn || !!x.keep;
   const notes = r.rows.filter(keeps), quiet = r.rows.filter((x) => x.s === 'info' && !keeps(x));
   const line = r.state === 'busy' || (r.state === 'ok' && !notes.length && !r.details);
-  const tails = quiet.map((x) => x.pov ? x.t : x.tail || x.t);
-  // a full card shows its notes and the POV line (item 2's one short line); the rest is under Details
-  const shown = r.details ? r.rows : r.rows.filter((x) => keeps(x) || x.pov), hiddenOk = r.rows.length - shown.length;
+  // a note marked notail (a map switch of under a minute) is only under Details
+  const tails = quiet.filter((x) => !x.notail).map((x) => x.tail || x.t);
+  // a full card shows its notes; the rest is under Details
+  const shown = r.details ? r.rows : r.rows.filter(keeps), hiddenOk = r.rows.length - shown.length;
   el.classList.toggle('line', line);
   if (line) el.innerHTML = `<div class="sum sline ${r.state}" role="status" aria-live="polite">
-    <div class="sl"><span class="sum-ic ${r.state === 'busy' ? 'busy' : 'ok'}" aria-hidden="true">${icon[r.state]}</span><span class="slt"><b id="sumTitle">${esc(r.title)}</b>${tails.length ? `<span class="slx"> · ${tails.map(md).join(' · ')}</span>` : ''}</span>${r.state === 'busy' ? '' : '<button class="lnk" type="button" id="sumDetails">Details</button>'}<button class="sum-x" type="button" id="sumX" title="Close (Esc)" aria-label="Close">×</button></div>
+    <div class="sl"><span class="sum-ic ${r.state === 'busy' ? 'busy' : 'ok'}" aria-hidden="true">${icon[r.state]}</span><span class="slt"><b id="sumTitle">${esc(r.lineTitle || r.title)}</b>${tails.length ? `<span class="slx"> · ${tails.map(md).join(' · ')}</span>` : ''}</span>${r.state === 'busy' ? '' : '<button class="lnk" type="button" id="sumDetails">Details</button>'}<button class="sum-x" type="button" id="sumX" title="Close (Esc)" aria-label="Close">×</button></div>
     ${r.state === 'busy' ? '' : '<div class="sum-bar"><i id="sumBar"></i></div>'}
   </div>`;
   else el.innerHTML = `<div class="sum" role="dialog" aria-live="polite" aria-labelledby="sumTitle">
-    <div class="sum-top ${r.state}"><div class="ti"><h2 id="sumTitle">${esc(r.title)}</h2>${r.text ? `<p>${esc(r.text)}</p>` : ''}</div><button class="sum-x" type="button" id="sumX" title="Close (Esc)" aria-label="Close">×</button></div>
+    <div class="sum-top ${r.state}"><div class="ti">${r.kind ? `<div class="sum-kind" id="sumKind">${esc(r.kind)}</div>` : ''}<h2 id="sumTitle">${esc(r.title)}</h2>${r.text ? `<p>${esc(r.text)}</p>` : ''}</div><button class="sum-x" type="button" id="sumX" title="Close (Esc)" aria-label="Close">×</button></div>
     ${shown.length ? `<ul class="sum-list">${shown.map((x) => `<li><span class="sum-ic ${x.s}" aria-hidden="true">${icon[x.s]}</span><span>${md(x.t)}${x.n ? `<small>${md(x.n)}</small>` : ''}${x.btn ? `<div class="li-btn"><button class="btn sm" type="button" id="${x.btn.id}">${esc(x.btn.label)}</button></div>` : ''}</span></li>`).join('')}</ul>` : ''}
     <div class="sum-foot">${hiddenOk ? `<button class="lnk" type="button" id="sumDetails" title="What loaded: the demo, the map, the overview, models and sounds">Details</button>` : ''}${r.folder ? `<button class="btn" type="button" id="sumFolder">Choose Half-Life folder</button>` : ''}<span class="sp"></span>${r.state === 'fail' ? '<button class="btn primary" type="button" id="sumAnother">Open another demo</button>' : '<button class="btn" type="button" id="sumClose">Close</button>'}</div>
   </div>`;
@@ -232,7 +250,8 @@ function renderSummary(r) {
   $('sumX').onclick = closeSummary;
   if ($('sumDetails')) $('sumDetails').onclick = () => renderSummary(Object.assign({}, r, { details: true }));
   if ($('sumCount30')) $('sumCount30').onclick = () => setCount30(!M.count30);
-  if ($('sumJoin')) $('sumJoin').onclick = () => { if (SUM.joinList) openJoinCard(SUM.joinList); };
+  // the other parts found in the folder open the Join card with them; with none found, its picker (Sujan, 19 Nov 2026)
+  if ($('sumJoin')) $('sumJoin').onclick = () => { if (SUM.joinList) openJoinCard(SUM.joinList); else openJoinPicker(); };
   if ($('sumFolder')) $('sumFolder').onclick = () => { closeSummary(); pickFolder(); };
   if ($('sumClose')) $('sumClose').onclick = closeSummary;
   // the can't-play card: back to the demo list (closeSummary goes back to the start screen), its search box ready
