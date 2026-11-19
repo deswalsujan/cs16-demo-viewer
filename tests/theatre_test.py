@@ -47,6 +47,15 @@ with sync_playwright() as p:
     rect = lambda sel: v(f"(() => {{ const r = document.querySelector('{sel}').getBoundingClientRect(); return [Math.round(r.width), Math.round(r.height)]; }})()")
     cls = lambda: v("$('app').className")
     normal = rect('#gl')
+    # the bottom bar (Sujan, 19 Nov 2026): one group of controls centred in the bar, on one row, and Help alone at its right
+    # edge, apart from the group; read here and again in Full screen's bar
+    BAR = """(() => { const c = document.querySelector('.ctrls'), g = c.querySelector('.cgrp'), h = $('bKeys'), cr = c.getBoundingClientRect(), gr = g.getBoundingClientRect(), hr = h.getBoundingClientRect();
+      const kids = [...g.children].filter((x) => x.offsetParent), mid = kids.map((x) => { const r = x.getBoundingClientRect(); return r.top + r.height / 2; });
+      return { off: Math.round((gr.left + gr.right) / 2 - (cr.left + cr.right) / 2), helpGap: Math.round(cr.right - hr.right), oneRow: Math.max(...mid) - Math.min(...mid) <= 2,
+        apart: Math.round(hr.left - gr.right), order: kids.map((x) => x.id || x.className).join(' '), helpOut: !g.contains(h) }; })()"""
+    def bar_ok(o): return abs(o['off']) <= 2 and o['helpGap'] <= 1 and o['oneRow'] and o['apart'] >= 8 and o['helpOut'] and o['order'] == 'bPrevR bBack bPlay bFwd bNextR time scopeSeg sndgrp spwrap'
+    bar0 = v(BAR)
+    check('Bottom bar: one centred group on one row (skip back to Speed), Help alone at the right edge', bar_ok(bar0), str(bar0))
 
     # 1. T turns it on and the view fills the whole window
     pg.mouse.move(W / 2, H / 2)
@@ -76,6 +85,8 @@ with sync_playwright() as p:
     tr = v("(() => { const r = document.querySelector('.transport').getBoundingClientRect(); return [Math.round(r.top), Math.round(r.bottom), Math.round(r.width)]; })()")
     check('Bar sits on screen, full width', tr[1] == H and tr[2] == W, str(tr))
     pov_b = v("parseFloat(getComputedStyle($('pov')).bottom)"); trh = v("$('app').querySelector('.transport').offsetHeight")
+    bar1 = v(BAR)
+    check('Bottom bar in Full screen: the same centred group on one row, Help alone at the right edge', bar_ok(bar1), str(bar1))
     check('Player name strip moves above the bar', pov_b >= trh, f'strip bottom {pov_b}px, bar {trh}px')
     pg.screenshot(path=f'th_{label}_bottom.png')
 

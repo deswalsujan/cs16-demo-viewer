@@ -249,7 +249,9 @@
 
   <footer class="transport">
     <div class="tl" id="tl"><canvas id="tlc" aria-label="Timeline"></canvas><div class="tip" id="tip" hidden></div></div>
+    <!-- one centred group, Help alone at the right edge (Sujan, 19 Nov 2026) -->
     <div class="ctrls">
+      <div class="cgrp">
       <button class="btn ib" id="bPrevR" type="button" title="Previous round (Z)"><svg viewBox="0 0 16 16"><path d="M3 2h2v12H3zM14 2v12L6 8z"/></svg></button>
       <button class="btn ib" id="bBack" type="button" title="Back 5 seconds (←)"><svg viewBox="0 0 16 16"><path d="M8 3v10L1 8zM15 3v10L8 8z"/></svg></button>
       <button class="btn ib primary" id="bPlay" type="button" title="Play or pause (Space)"><svg viewBox="0 0 16 16" id="playIcon"><path d="M4 2l10 6-10 6z"/></svg></button>
@@ -260,8 +262,9 @@
            of "Timeline: match"; one speed button showing the speed ("Speed 1×", Sujan, 17 Nov 2026), opening the six -->
       <div class="seg tlseg" id="scopeSeg" role="group" aria-label="Timeline" title="The timeline shows the whole match or only this round"><button type="button" data-s="match" class="on">Match</button><button type="button" data-s="round">Round</button></div>
       <span class="sndgrp"><button class="btn ib" id="bSnd" type="button" title="Sound on or off (M)" aria-pressed="true"><svg viewBox="0 0 16 16" id="sndIcon"></svg></button><input type="range" id="sndVol" min="0" max="1" step="0.01" aria-label="Volume" title="Volume"></span>
-      <button class="btn" id="bKeys" type="button" title="Help: the keys, the colours and marks, and about the viewer (?)">Help <span class="kbd">?</span></button>
       <div class="spwrap"><button class="btn" id="bSpeed" type="button" aria-expanded="false" aria-controls="speeds" title="Playback speed ([ slower, ] faster)">Speed 1×</button><div class="sppop" id="speeds" role="group" aria-label="Playback speed" hidden></div></div>
+      </div>
+      <button class="btn" id="bKeys" type="button" title="Help: the keys, the colours and marks, and about the viewer (?)">Help <span class="kbd">?</span></button>
     </div>
   </footer>
 </div>

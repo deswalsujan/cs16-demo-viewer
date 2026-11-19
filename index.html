@@ -427,11 +427,16 @@ kbd { font-family: var(--f-body); font-size: calc(11px * var(--ui)); background:
 .tl { position: relative; height: calc(38px * var(--ui)); cursor: pointer; touch-action: none; }
 #tlc { width: 100%; height: 100%; display: block; }
 .tip { position: absolute; bottom: calc(44px * var(--ui)); transform: translateX(-50%); background: var(--panel-2); border: 1px solid var(--line); border-radius: calc(4px * var(--ui)); padding: calc(4px * var(--ui)) calc(8px * var(--ui)); font-size: calc(12px * var(--ui)); font-family: var(--f-body); white-space: nowrap; pointer-events: none; z-index: 5; }
-.ctrls { display: flex; align-items: center; gap: calc(8px * var(--ui)); flex-wrap: wrap; }
+/* one group of controls centred in the bar, Help alone at its right edge (Sujan, 19 Nov 2026): the two side columns share the
+   room left equally, so the group sits in the middle; the right one is never narrower than Help, and the group wraps only
+   when the bar has no room for it on one row */
+.ctrls { display: grid; grid-template-columns: 1fr auto 1fr; align-items: center; gap: calc(8px * var(--ui)); }
+.ctrls .cgrp { grid-column: 2; display: flex; align-items: center; justify-content: center; gap: calc(8px * var(--ui)); flex-wrap: wrap; min-width: 0; }
+.ctrls #bKeys { grid-column: 3; justify-self: end; }
 .ctrls .time { font-family: var(--f-body); font-size: calc(13px * var(--ui)); font-variant-numeric: tabular-nums; color: var(--muted); }
 .ctrls .time b { color: var(--fg); font-weight: 500; }
 /* the speed button and the six above it (UI review, item 8) */
-.spwrap { margin-left: auto; position: relative; }
+.spwrap { position: relative; }
 #bSpeed { min-width: calc(98px * var(--ui)); justify-content: center; } /* "Speed 0.25×" fits, so the button keeps one width at every speed (item 8's fixup) */
 .sppop { position: absolute; right: 0; bottom: calc(100% + calc(6px * var(--ui))); z-index: 8; display: grid; gap: calc(2px * var(--ui)); padding: calc(4px * var(--ui)); background: var(--panel); border: 1px solid var(--line); border-radius: calc(6px * var(--ui)); box-shadow: 0 calc(8px * var(--ui)) calc(24px * var(--ui)) rgba(0,0,0,.5); }
 .sppop button { min-width: calc(60px * var(--ui)); justify-content: center; }
@@ -917,7 +922,9 @@ addEventListener('resize', () => { if (applyUiSize()) dispatchEvent(new Event('u
 
   <footer class="transport">
     <div class="tl" id="tl"><canvas id="tlc" aria-label="Timeline"></canvas><div class="tip" id="tip" hidden></div></div>
+    <!-- one centred group, Help alone at the right edge (Sujan, 19 Nov 2026) -->
     <div class="ctrls">
+      <div class="cgrp">
       <button class="btn ib" id="bPrevR" type="button" title="Previous round (Z)"><svg viewBox="0 0 16 16"><path d="M3 2h2v12H3zM14 2v12L6 8z"/></svg></button>
       <button class="btn ib" id="bBack" type="button" title="Back 5 seconds (←)"><svg viewBox="0 0 16 16"><path d="M8 3v10L1 8zM15 3v10L8 8z"/></svg></button>
       <button class="btn ib primary" id="bPlay" type="button" title="Play or pause (Space)"><svg viewBox="0 0 16 16" id="playIcon"><path d="M4 2l10 6-10 6z"/></svg></button>
@@ -928,8 +935,9 @@ addEventListener('resize', () => { if (applyUiSize()) dispatchEvent(new Event('u
            of "Timeline: match"; one speed button showing the speed ("Speed 1×", Sujan, 17 Nov 2026), opening the six -->
       <div class="seg tlseg" id="scopeSeg" role="group" aria-label="Timeline" title="The timeline shows the whole match or only this round"><button type="button" data-s="match" class="on">Match</button><button type="button" data-s="round">Round</button></div>
       <span class="sndgrp"><button class="btn ib" id="bSnd" type="button" title="Sound on or off (M)" aria-pressed="true"><svg viewBox="0 0 16 16" id="sndIcon"></svg></button><input type="range" id="sndVol" min="0" max="1" step="0.01" aria-label="Volume" title="Volume"></span>
-      <button class="btn" id="bKeys" type="button" title="Help: the keys, the colours and marks, and about the viewer (?)">Help <span class="kbd">?</span></button>
       <div class="spwrap"><button class="btn" id="bSpeed" type="button" aria-expanded="false" aria-controls="speeds" title="Playback speed ([ slower, ] faster)">Speed 1×</button><div class="sppop" id="speeds" role="group" aria-label="Playback speed" hidden></div></div>
+      </div>
+      <button class="btn" id="bKeys" type="button" title="Help: the keys, the colours and marks, and about the viewer (?)">Help <span class="kbd">?</span></button>
     </div>
   </footer>
 </div>
