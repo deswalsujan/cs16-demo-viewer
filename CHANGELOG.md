@@ -123,7 +123,7 @@ The UI made simpler: the UI review's final list (`docs/reviews/ui-review-final-2
 ### How it was tested
 - The full test run on a3f987c (17 Nov 2026): the eight checks, `pov_feedback_check.py`, `pov_mockup_round_check.py`, `light_check.py` and `theatre_test.py` at five window sizes pass (three checks and two Theatre sizes after a rerun alone: timing under load); `ground_truth_check.py` 233 kills and 46 scores and K-D, 0 mismatches.
 - The ten checks the changes of 19 and 20 Nov 2026 touch, on 475dba0 (20 Nov 2026): pass, `theatre_test.py` 42 of 42 at all five sizes; `pov_mockup_round_check.py` after its own step count was fixed (13 steps since 19 Nov).
-- On the release's last commit: RELEASE_CHECKS.
+- On the release's last commit (5b03efc, 20 Nov 2026): `ground_truth_check.py` 233 kills and 46 scores and K-D on 56 demos, 0 mismatches, the same 9 known gaps; `late_kill_timing_check.py` passes.
 - Every change looked at in the headless page on Sujan's demos, and judged by Sujan in Chrome on the Mac on 19 and 20 Nov 2026.
 - Full log: `tests/logs/0.27.0.md`; screenshots on `screenshots/0.27.0`.
 
