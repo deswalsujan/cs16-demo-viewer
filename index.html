@@ -539,11 +539,14 @@ kbd { font-family: var(--f-body); font-size: calc(11px * var(--ui)); background:
 .steps.ready #stepDemo > .k { font-size: calc(22px * var(--ui)); }
 .steps.ready #stepDemo .stepin { margin-top: calc(6px * var(--ui)); }
 .steps.ready .demos { max-height: max(calc(260px * var(--ui)), calc(100vh - 570px * var(--ui))); }
-/* step 2's protocol line, shown on a line of its own (Sujan, 19 Nov 2026; behind More since item 12) */
+/* step 2's protocol line, shown on a line of its own (Sujan, 19 Nov 2026; behind More since item 12); its bracket never breaks
+   across lines, moving whole to the next line when it doesn't fit beside the button (Sujan, 20 Nov 2026) */
 .step .tx small .proto { display: block; }
-/* once a folder is picked the big heading shrinks to one line, so more of the list shows (UI review, item 12) */
-.load-card:has(.steps.ready) h1 { font-size: calc(20px * var(--ui)); white-space: nowrap; }
-.load-card:has(.steps.ready) { gap: calc(14px * var(--ui)); }
+.step .tx small .proto .nw { white-space: nowrap; }
+/* once a folder with demos is picked the big heading shrinks to one line, so more of the list shows (UI review, item 12); a
+   folder with no demos keeps it full size, with no list to make room for (Sujan, 20 Nov 2026) */
+.load-card:has(.steps.ready #demoFind:not([hidden])) h1 { font-size: calc(20px * var(--ui)); white-space: nowrap; }
+.load-card:has(.steps.ready #demoFind:not([hidden])) { gap: calc(14px * var(--ui)); }
 #stepFolder .hlpaths .cpy { margin-left: calc(4px * var(--ui)); font-size: calc(11px * var(--ui)); }
 /* the Half-Life folder row: folder name, a status line and its buttons */
 .hlbtns { display: flex; gap: calc(6px * var(--ui)); flex-wrap: wrap; justify-content: flex-end; }
@@ -892,7 +895,7 @@ addEventListener('resize', () => { if (applyUiSize()) dispatchEvent(new Event('u
           </div>
           <div class="step" id="stepDemo">
             <div class="k">2</div>
-            <div class="tx"><b>Open a demo</b><small>Pick a demo below, or open a .dem file from anywhere.<span class="proto">HLTV or POV demos both play (Protocol 47 &amp; 48 supported).</span></small></div>
+            <div class="tx"><b>Open a demo</b><small>Pick a demo below, or open a .dem file from anywhere.<span class="proto">HLTV or POV demos both play <span class="nw">(Protocol 47 &amp; 48 supported).</span></span></small></div>
             <button class="btn" id="btnDemo" type="button" disabled title="Choose your Half-Life folder first">Open .dem</button>
             <div class="stepin">
               <div class="dfind" id="demoFind" hidden>

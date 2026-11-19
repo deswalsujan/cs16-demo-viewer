@@ -99,7 +99,12 @@ with sync_playwright() as p:
     ctx = b.new_context(viewport={'width': 1280, 'height': 800}); ctx.add_init_script(WINDOWS); ctx.add_init_script(NO_FOLDER_ACCESS)
     pg = ctx.new_page(); setup(pg); errors = []; pg.on('pageerror', lambda e: errors.append(str(e)))
     pg.goto(url); pg.wait_for_timeout(500)
+    # the headline's size (Sujan, 20 Nov 2026): it shrinks only when there's a demo list to make room for
+    H1 = "(() => { const h = getComputedStyle(document.querySelector('.load h1')); return h.fontSize + ' ' + h.whiteSpace; })()"
+    full = pg.evaluate(H1)
     write_tree(BASE); pg.set_input_files('#fFolder', hl); wait_status(pg, '2 demos found.')
+    small = pg.evaluate(H1)
+    check('B1 the headline shrinks to one line with the demo list (full size before the pick)', small.endswith(' nowrap') and float(small.split('px')[0]) < float(full.split('px')[0]), f'{full} -> {small}')
     r = row(pg)
     check('B1 picked: "Folder selected: Half-Life", "2 demos found." with no dot, Choose again with its tooltip, no paths, Open .dem on',
           r['title'] == 'Folder selected: Half-Life' and r['status'] == '2 demos found.' and not r['dot'] and r['pick'] == 'Choose again'
@@ -119,6 +124,8 @@ with sync_playwright() as p:
     pg.set_input_files('#fFolder', os.path.join(hl, 'cstrike')); wait_status(pg, 'one level up')
     r = row(pg); check('B4 the cstrike folder itself: asks for the folder one level up', 'one level up' in r['status'] and r['demo_off'], r)
     write_tree({k: v for k, v in BASE.items() if not k.endswith('.dem')}); pg.set_input_files('#fFolder', hl); wait_status(pg, 'No demos found')
+    nod = pg.evaluate(H1)
+    check('B5 the headline full size with no demos, no list to make room for (Sujan, 20 Nov 2026)', nod == full, f'{full} before the pick, {nod} with no demos')
     # its last words point at the button below it (Sujan, 19 Nov 2026; "with Open .dem" up to then)
     r = row(pg); check('B5 Half-Life folder with no demos: "No demos found" warning ending "with the option below.", Open .dem still on', r['dot'] and not r['demo_off'] and r['demos'] == 0 and r['status'].endswith('open one from anywhere with the option below.'), r); shot(pg, 'b5_no_demos')
 
