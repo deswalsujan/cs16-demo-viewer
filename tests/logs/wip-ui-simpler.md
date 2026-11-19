@@ -60,3 +60,30 @@ Sujan judged the branch live on 19 Nov 2026 and kept all 14 items; his fixups an
 | The Tab scoreboard and the start screen | SK vs Na`Vi with Tab held; the GP Tourney POV paused at 345.63 s | hidden over the start screen, back with the POV demo |
 | The Rounds tab on opening | SK vs Na`Vi, the Kills tab last used | the Rounds tab |
 | The POV round box over "ROULETTE" | the GP Tourney POV, R1 freeze 0:07, on main 0.26.31 and on the branch | the same on both: BAJRANG \|\| ROULETTE's name label in the 3D view, gone with **Names** off; in IDEAS.md |
+
+## Sujan's look in Chrome, 20 Nov 2026: eight changes built, the checks not run yet
+
+Sujan looked at the branch in Chrome on 20 Nov 2026 (review chat); everything else he checked passed. The eight changes are built from 95f5fe6 on (`DECISIONS.md`, 20 Nov 2026), pushed without running the checks, on his word. The checks were updated for them, none run: `demo_search_check.py` (the split-map note's words, a joined map's lines, the Join card's link and gold button, the remembered join's sizes, the same file twice, the Wall damage tooltip) and `theatre_test.py` (the Rounds tab's switch on one line each at Auto and at 200%). The checks they touch are the same ten as above, about 13 minutes with the new steps. `notes_check.py` passed before every commit.
+
+### The same file twice under two names, before the fix (Sujan's question)
+
+A copy of `2011-10-24_16h08_NaVi_SK-1110241609-de_inferno.dem` (Na`Vi vs SK, Inferno, ESWC 2011, the first file) as `NaVi_SK_inferno_copy.dem` in the session's scratch folder (not `cstrike`, not the hold-out folder), with the three real parts, in the Join card on 1d418f1's build (the Half-Life folder alone, the demos opened from elsewhere):
+
+- The card: no warning. The copy's line "Starts from 0:0, 30 rounds, no winner"; the verdict "The files don't say which order they go in. Put the parts in order with the arrows." (the copy has no recording time in its name), no suggested order; behind it "Same map: de_inferno, same server", "Same 10 players, by Steam ID", "Teams swapped sides between parts 1 and 2" (a tick), and the same-sides notes for parts 3 and 4. **Join parts** on.
+- In the order 16:09, copy, 17:24, 17:40: "In your order. The rounds agree."; joined: 47 live rounds, 22:25, a winner, the parts counting 30, 6, 6 and 5 rounds: the copy's first 6 rounds counted as overtime after the 15:15. The three real parts joined: 41 rounds, Natus Vincere 19 : 22 SK Gaming, parts counting 30, 6 and 5.
+
+Whether the order check catches a part that starts from 0:0 after one that already played rounds (nothing built; IDEAS.md): not as such. `orderProblem` catches it only when part 1 starts late and a later part is fresh ("part N starts from 0:0 with the first half"), or through the sides: the map partway through a half with the teams on other sides in the next part, or at 15 rounds with the same sides. After a 15:15 part, a 0:0 part with the sides swapped reads as overtime starting, as above; with the same sides before a half's end it's a half replayed from 0:0 (0.26.19).
+
+### Each change, looked at in the headless page
+
+With a throwaway script (not one of the checks), with the Half-Life folder and the test demos in its clone, or the folder alone and the demos opened from elsewhere:
+
+| Change | Demo | Seen |
+|---|---|---|
+| The split-map note, no other part | Fnatic vs mousesports, Tuscan, ESWC 2011; WeMadeFox vs Ravens, Nuke, EM4 finals, part 2 alone; Na`Vi vs SK's third file alone, then as if it had a winner | "This recording ends at 15:15 with no winner." and "…ends at 13:13 with no winner.", with "It may have been a draw, …"; "This recording starts partway through the map and ends with no winner." with the line on how it starts; "This recording starts partway through the map." |
+| A joined map's note | WeMadeFox vs Ravens joined | "Part 1: …", "Part 2: …", "Split them in the Rounds tab." on three lines under **Details** |
+| The Rounds tab's switch | Na`Vi vs FX, Dust2, SEC 2011 final, at 1512x982, 1440x900, 1920x1080, 1536x864 and 1707x960, each at Auto and at 200% (1.15, 1.1, 1.5, 1.2 and 1.3) | "Show 24 uncounted rounds" and "warmup, restarts and idle rounds, like time-outs" each on one line; the tooltip and Help the same words |
+| The verdict's link | WeMadeFox vs Ravens | "Show 3 checks" at the verdict's right, then "Hide checks" |
+| The gold **Use the recorded order** | WeMadeFox vs Ravens, part 2 first; Na`Vi vs SK, 16:09, 17:40, 17:24 | in the box, **Keep my order** and the gold **Use the recorded order**, the warning with its text only; no box, the warning's button gold |
+| A remembered join | WeMadeFox vs Ravens joined, then part 1 opened again | the joined map; with part 2's remembered size changed, part 1 alone, the join forgotten, "This file was joined with … before. … has changed, so it opened on its own." on the open card; part 2 out of the folder list: "… isn't in your Half-Life folder now, …"; a join saved without sizes: "The viewer can't tell whether the parts have changed since, …" |
+| The same file twice | the four Na`Vi vs SK files above; WeMadeFox part 1 and a copy made in the page | "Part 2 is the same recording as part 1, under another name" with **Remove part 2**, **Join parts** off; moved to part 4, "Part 4 is …"; removed, "In the order they were recorded: 16:09, 17:24, 17:40. The rounds agree." and **Join parts** on |
