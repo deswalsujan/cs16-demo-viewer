@@ -2961,11 +2961,18 @@ self.onmessage = (e) => {
 }
 
 async function loadDemoFile(f, opts = {}) {
-  // a part of a map joined before: open the joined map, when every part is still in the folder
+  // a part of a map joined before: open the joined map when every part is still in the folder at the size it had when joined.
+  // A part missing or with another size (another file under the same name; a join remembered before the sizes were, which
+  // can't be checked): the file opens on its own, the join is forgotten, and the load card says why (Sujan, 20 Nov 2026; up to
+  // then the names alone decided, so different files with the same names were joined)
   const js = !opts.alone && joinedSetOf(f.name);
+  let dropped = null;
   if (js) {
     const list = js.set.map((n) => n === f.name ? f : (files && files.demos || []).find((x) => x.name === n));
-    if (list.every(Boolean)) { CUR_FILE = f; return openJoinedUI(list); }
+    const miss = js.set.find((n, i) => !list[i]), changed = js.sizes ? js.set.find((n, i) => list[i] && list[i].size !== js.sizes[i]) : null;
+    if (!miss && !changed && js.sizes) { CUR_FILE = f; return openJoinedUI(list); }
+    forgetJoin(js.set);
+    dropped = { others: js.set.filter((n) => n !== f.name), name: changed || miss || null, why: changed ? 'changed' : miss ? 'missing' : 'unchecked' };
   }
   CUR_FILE = f;
   setMsg(`Reading ${f.name}…`);
@@ -2993,7 +3000,7 @@ async function loadDemoFile(f, opts = {}) {
       worker.terminate(); worker = null;
       $('progBar').style.width = '100%';
       resetForNewDemo();
-      D = m.done; D.fileName = f.name;
+      D = m.done; D.fileName = f.name; D.joinDropped = dropped;
       if (MAP && MAP.name !== (D.mapName || '').toLowerCase()) { MAP = null; clear3d(); }
       await onDemo();
     }
@@ -3340,9 +3347,10 @@ function suggestOrder(F) {
   return valid.length === 1 ? { order: valid[0], by: 'rounds', agree: true, roundsOrder: valid[0] } : null;
 }
 
-// Joined sets are remembered per file, so opening any part opens the joined map; Split them forgets it.
+// Joined sets are remembered per file, so opening any part opens the joined map; Split them forgets it. Each part's size is
+// remembered with them (Sujan, 20 Nov 2026), so another file with the same name isn't joined: see loadDemoFile.
 const joinedSetOf = (name) => { const v = ls.get('join:' + name); return v && Array.isArray(v.set) && v.set.length > 1 ? v : null; };
-function rememberJoin(names, keep, why) { for (const n of names) ls.set('join:' + n, { set: names, keep: !!keep, why: why || null }); }
+function rememberJoin(list, keep, why) { const names = list.map((f) => f.name), sizes = list.map((f) => f.size); for (const n of names) ls.set('join:' + n, { set: names, sizes, keep: !!keep, why: why || null }); }
 function forgetJoin(names) { for (const n of names) ls.set('join:' + n, null); }
 let CUR_FILE = null; // the file the open demo came from (one opened from elsewhere isn't in the folder list)
 const fileByName = (n) => (CUR_FILE && CUR_FILE.name === n ? CUR_FILE : null) || (files && files.demos || []).find((f) => f.name === n) || ((D && D.partFiles) || []).find((f) => f.name === n) || null;
@@ -3594,8 +3602,7 @@ function renderJoinCard() {
   if ($('jSel')) $('jSel').onchange = (e) => { const f = (files.demos || []).find((x) => x.name === e.target.value); if (f) addJoinPart(f); };
   if ($('jFile')) { $('jFile').onclick = () => $('jFileIn').click(); $('jFileIn').onchange = (e) => { const f = e.target.files[0]; if (f) addJoinPart(f); }; }
   $('jGo').onclick = () => {
-    const names = JOIN.list.map((f) => f.name);
-    rememberJoin(names, JOIN.keep && !!problem, problem);
+    rememberJoin(JOIN.list, JOIN.keep && !!problem, problem);
     const parsed = JOIN.list.map((f) => JOIN.P.get(f.name));
     closeJoinCard();
     JOIN.P.clear(); JOIN.F.clear(); JOIN.carry = null; // the read parts go to the joined map; nothing else keeps them
@@ -10319,6 +10326,12 @@ async function loadSummary(sndDone) {
   // showed them with no other part (2 Oct 2026): a draw the server announced, two recordings cut off in their last round,
   // and an overtime-only file. Up to 19 Nov 2026 the note showed only with another part in the folder. With none, its words
   // say it may have been a draw or a recording that stopped early (Sujan, 20 Nov 2026).
+  // a join remembered for this file that couldn't be used: a part changed or missing, so it opened on its own (Sujan, 20 Nov 2026)
+  if (D.joinDropped) {
+    const J = D.joinDropped, others = J.others.length > 1 ? J.others.slice(0, -1).join(', ') + ' and ' + J.others[J.others.length - 1] : J.others[0];
+    const why = J.why === 'changed' ? `${J.name} has changed` : J.why === 'missing' ? `${J.name} isn't in your Half-Life folder now` : "The viewer can't tell whether the parts have changed since";
+    rows.push({ s: 'info', keep: true, t: `This file was joined with ${others} before. ${why}, so it opened on its own.` });
+  }
   if (D.parts) {
     const js = joinedSetOf(D.parts[0].fileName);
     // a joined map is a quiet note, unless it was joined in an order the rounds don't support, which keeps the card open; each

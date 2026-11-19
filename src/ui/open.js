@@ -14,11 +14,18 @@ self.onmessage = (e) => {
 }
 
 async function loadDemoFile(f, opts = {}) {
-  // a part of a map joined before: open the joined map, when every part is still in the folder
+  // a part of a map joined before: open the joined map when every part is still in the folder at the size it had when joined.
+  // A part missing or with another size (another file under the same name; a join remembered before the sizes were, which
+  // can't be checked): the file opens on its own, the join is forgotten, and the load card says why (Sujan, 20 Nov 2026; up to
+  // then the names alone decided, so different files with the same names were joined)
   const js = !opts.alone && joinedSetOf(f.name);
+  let dropped = null;
   if (js) {
     const list = js.set.map((n) => n === f.name ? f : (files && files.demos || []).find((x) => x.name === n));
-    if (list.every(Boolean)) { CUR_FILE = f; return openJoinedUI(list); }
+    const miss = js.set.find((n, i) => !list[i]), changed = js.sizes ? js.set.find((n, i) => list[i] && list[i].size !== js.sizes[i]) : null;
+    if (!miss && !changed && js.sizes) { CUR_FILE = f; return openJoinedUI(list); }
+    forgetJoin(js.set);
+    dropped = { others: js.set.filter((n) => n !== f.name), name: changed || miss || null, why: changed ? 'changed' : miss ? 'missing' : 'unchecked' };
   }
   CUR_FILE = f;
   setMsg(`Reading ${f.name}…`);
@@ -46,7 +53,7 @@ async function loadDemoFile(f, opts = {}) {
       worker.terminate(); worker = null;
       $('progBar').style.width = '100%';
       resetForNewDemo();
-      D = m.done; D.fileName = f.name;
+      D = m.done; D.fileName = f.name; D.joinDropped = dropped;
       if (MAP && MAP.name !== (D.mapName || '').toLowerCase()) { MAP = null; clear3d(); }
       await onDemo();
     }

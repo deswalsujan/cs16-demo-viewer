@@ -86,6 +86,12 @@ async function loadSummary(sndDone) {
   // showed them with no other part (2 Oct 2026): a draw the server announced, two recordings cut off in their last round,
   // and an overtime-only file. Up to 19 Nov 2026 the note showed only with another part in the folder. With none, its words
   // say it may have been a draw or a recording that stopped early (Sujan, 20 Nov 2026).
+  // a join remembered for this file that couldn't be used: a part changed or missing, so it opened on its own (Sujan, 20 Nov 2026)
+  if (D.joinDropped) {
+    const J = D.joinDropped, others = J.others.length > 1 ? J.others.slice(0, -1).join(', ') + ' and ' + J.others[J.others.length - 1] : J.others[0];
+    const why = J.why === 'changed' ? `${J.name} has changed` : J.why === 'missing' ? `${J.name} isn't in your Half-Life folder now` : "The viewer can't tell whether the parts have changed since";
+    rows.push({ s: 'info', keep: true, t: `This file was joined with ${others} before. ${why}, so it opened on its own.` });
+  }
   if (D.parts) {
     const js = joinedSetOf(D.parts[0].fileName);
     // a joined map is a quiet note, unless it was joined in an order the rounds don't support, which keeps the card open; each

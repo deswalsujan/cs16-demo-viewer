@@ -564,6 +564,17 @@ with sync_playwright() as p:
         check('joined: 10 players in the stats, BERRY and bail among them', len(j['people']) == 10 and any('BERRY' in p for p in j['people']) and any('bail' in p for p in j['people']), ', '.join(j['people']))
         check('Rounds tab with Show warmup, restarts and idle rounds: the 16 replayed rounds read "replayed from 0:0" before their result',
               j['replayed'] == 16 and j['first'] == 'replayed from 0:0 · elimination · 6 kills', f"{j['replayed']} rows; the first {j['first']!r}")
+        # a remembered join keeps each part's size (Sujan, 20 Nov 2026): opening part 1 opens the joined map; with part 2's size
+        # changed (another file under the same name), part 1 opens on its own, the join is forgotten, and the load card says why
+        rj = JS5(f"(() => {{ const v = ls.get('join:' + {W1!r}), f = (n) => files.demos.find((x) => x.name === n); return {{ set: v.set, sizes: v.sizes, real: [f({W1!r}).size, f({W2!r}).size] }}; }})()")
+        JS5(f"closeSummary(); D.__old = true; loadDemoFile(files.demos.find((x) => x.name === {W1!r})); 0")
+        pg5.wait_for_function('__v("!!(D && !D.__old && D.parts && D.parts.length === 2 && M)")', timeout=120000)
+        JS5(f"(() => {{ closeSummary(); for (const n of [{W1!r}, {W2!r}]) {{ const v = ls.get('join:' + n); v.sizes[1] += 1; ls.set('join:' + n, v); }} SUM.r = null; loadDemoFile(files.demos.find((x) => x.name === {W1!r})); }})()")
+        pg5.wait_for_function('__v("!!(D && !D.parts && D.fileName === %s && SUM.r && SUM.r.state !== \'busy\')")' % repr(W1), timeout=120000)
+        rd = JS5(f"(() => ({{ forgot: !joinedSetOf({W1!r}) && !joinedSetOf({W2!r}), open: !$('sumCard').classList.contains('line') && !$('sumCard').hidden, rows: SUM.r.rows.filter((r) => r.t.startsWith('This file was joined')).map((r) => r.t) }}))()")
+        check('a remembered join: each part\'s size kept; part 1 opens the joined map, and with part 2\'s size changed opens on its own, the join forgotten, the load card open saying why',
+              rj['set'] == [W1, W2] and rj['sizes'] == rj['real'] and rd == {'forgot': True, 'open': True, 'rows': [f'This file was joined with {W2} before. {W2} has changed, so it opened on its own.']}, f'{rj}; {rd}')
+        JS5('closeSummary()')
         # Na`Vi vs SK, Inferno, ESWC 2011: the order the Join card suggests, from the times later in the names
         JS5("closeJoinCard(); openJoinCard(%s.map((n) => files.demos.find((f) => f.name === n)))" % repr(NS))
         pg5.wait_for_function('__v("!JOIN.reading && JOIN.F.size >= 3 && !!$(\'jGo\')")', timeout=180000)

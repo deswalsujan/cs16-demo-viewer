@@ -175,9 +175,10 @@ function suggestOrder(F) {
   return valid.length === 1 ? { order: valid[0], by: 'rounds', agree: true, roundsOrder: valid[0] } : null;
 }
 
-// Joined sets are remembered per file, so opening any part opens the joined map; Split them forgets it.
+// Joined sets are remembered per file, so opening any part opens the joined map; Split them forgets it. Each part's size is
+// remembered with them (Sujan, 20 Nov 2026), so another file with the same name isn't joined: see loadDemoFile.
 const joinedSetOf = (name) => { const v = ls.get('join:' + name); return v && Array.isArray(v.set) && v.set.length > 1 ? v : null; };
-function rememberJoin(names, keep, why) { for (const n of names) ls.set('join:' + n, { set: names, keep: !!keep, why: why || null }); }
+function rememberJoin(list, keep, why) { const names = list.map((f) => f.name), sizes = list.map((f) => f.size); for (const n of names) ls.set('join:' + n, { set: names, sizes, keep: !!keep, why: why || null }); }
 function forgetJoin(names) { for (const n of names) ls.set('join:' + n, null); }
 let CUR_FILE = null; // the file the open demo came from (one opened from elsewhere isn't in the folder list)
 const fileByName = (n) => (CUR_FILE && CUR_FILE.name === n ? CUR_FILE : null) || (files && files.demos || []).find((f) => f.name === n) || ((D && D.partFiles) || []).find((f) => f.name === n) || null;
@@ -429,8 +430,7 @@ function renderJoinCard() {
   if ($('jSel')) $('jSel').onchange = (e) => { const f = (files.demos || []).find((x) => x.name === e.target.value); if (f) addJoinPart(f); };
   if ($('jFile')) { $('jFile').onclick = () => $('jFileIn').click(); $('jFileIn').onchange = (e) => { const f = e.target.files[0]; if (f) addJoinPart(f); }; }
   $('jGo').onclick = () => {
-    const names = JOIN.list.map((f) => f.name);
-    rememberJoin(names, JOIN.keep && !!problem, problem);
+    rememberJoin(JOIN.list, JOIN.keep && !!problem, problem);
     const parsed = JOIN.list.map((f) => JOIN.P.get(f.name));
     closeJoinCard();
     JOIN.P.clear(); JOIN.F.clear(); JOIN.carry = null; // the read parts go to the joined map; nothing else keeps them
