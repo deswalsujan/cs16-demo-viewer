@@ -7256,8 +7256,9 @@ function resetForNewDemo() {
 // appears (it falls about 20 units and lands 0.2 s after the plant) until a defuse removes it or the explosion hides it.
 // Without the model, the orange ball of up to 0.27.1 resting on the floor where the bomb is. With no entity at that
 // moment (a POV demo, the bomb out of his view; HLTV's 256-object limit on de_tuscan), until the round's end message (the
-// defuse or the explosion): the bomb never moves once planted, so the model where the demo last had it in that round;
-// only a bomb never seen in that round gets the ball, at BombDrop's spot moved down to the floor (Sujan, 20 Nov 2026).
+// defuse or the explosion): the bomb never moves once planted, so the model where the demo last had it in that round, or
+// before its first sighting, where the demo first has it later in the round; only a bomb the demo never has in that
+// round gets the ball, at BombDrop's spot moved down to the floor (Sujan, 20 Nov 2026).
 // Hide all overlays keeps it, as the game's demo player shows it; its blink is fxGlows (shotfx.js).
 function c4Rig() {
   const M2 = getModel('models/w_c4.mdl'); if (!M2 || !M2.mdl) return null;
@@ -7284,7 +7285,8 @@ function c4Floor(bp) {
   return (bp.floorZ = fine ? top - fine.f0 * (top - zh + 0.01) : zh);
 }
 // where the planted bomb is drawn at t in round r: { kind: 'entity' (the demo has it), 'last' (where the demo last had
-// it this round) or 'marker' (never seen this round), x, y, z, a: pitch, yaw, roll }, or null
+// it this round), 'later' (where the demo first has it later this round, landed) or 'marker' (never in this round), x, y,
+// z, a: pitch, yaw, roll }, or null
 function c4State(r, t) {
   const rEnd = r.end != null ? r.end : D.end;
   const bp = D.bomb.find((b) => b.type === 'plantpos' && b.t >= r.start && b.t <= t && b.t <= rEnd);
@@ -7295,9 +7297,16 @@ function c4State(r, t) {
     const L = (k) => (u > 0 ? E[o + k] + (E[n + k] - E[o + k]) * u : E[o + k]);
     return { kind: 'entity', x: L(1), y: L(2), z: L(3), a: [E[o + 4], E[o + 5], E[o + 6]] };
   }
-  if (!bp || t >= (r.endT != null && r.endT >= bp.t ? r.endT : rEnd)) return null;
-  const from = Math.max(r.start, bp.t - 0.5);
-  for (let k = i; k >= 0 && E[k * 8] >= from; k--) if (E[k * 8 + 7]) { const q = k * 8; return { kind: 'last', x: E[q + 1], y: E[q + 2], z: E[q + 3], a: [E[q + 4], E[q + 5], E[q + 6]] }; }
+  const bEnd = r.endT != null && r.endT >= bp?.t ? r.endT : rEnd;
+  if (!bp || t >= bEnd) return null;
+  const from = Math.max(r.start, bp.t - 0.5), at = (kind, q) => ({ kind, x: E[q + 1], y: E[q + 2], z: E[q + 3], a: [E[q + 4], E[q + 5], E[q + 6]] });
+  for (let k = i; k >= 0 && E[k * 8] >= from; k--) if (E[k * 8 + 7]) return at('last', k * 8);
+  // its first sighting later in the round, to the last row of that stretch (it may still be falling when first seen)
+  for (let k = i + 1; k * 8 < E.length && E[k * 8] < bEnd; k++) {
+    if (E[k * 8] < from || !E[k * 8 + 7]) continue;
+    while ((k + 1) * 8 < E.length && E[(k + 1) * 8 + 7] && E[(k + 1) * 8] < bEnd) k++;
+    return at('later', k * 8);
+  }
   return { kind: 'marker', x: bp.pos[0], y: bp.pos[1], z: c4Floor(bp), a: [0, 0, 0] };
 }
 function plantedC4(r, ov) {
