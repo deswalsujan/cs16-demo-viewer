@@ -7138,8 +7138,10 @@ function build3dNow() {
 // engine's default, without one), six pictures gfx/env/<name>rt, bk, lf, ft, up, dn, .tga before .bmp, from cstrike,
 // cstrike_downloads or valve (folder.js, files.sky), unlit and with no texgamma (only Half-Life's own textures get it,
 // Image_SetPalette), on a box round the camera behind everything. Side i is drawn with picture SKY_ORDER[i]
-// (r_skyTexOrder), each corner (s, t) placed by st_to_vec (SKY_ST), the picture's top row at t = 1. Without all six, the
-// grey-blue background of up to 0.27.1. The wall tops seen from above stay black, as in the game: their lightmaps are.
+// (r_skyTexOrder), each corner (s, t) placed by st_to_vec (SKY_ST), the picture's top row at t = 1. A sky without all
+// six falls back to desert, as R_SetupSky does (DEFAULT_SKYBOX_NAME; Sujan, 20 Nov 2026); the grey-blue background of
+// up to 0.27.1 only when desert is missing too. The wall tops seen from above stay black, as in the game: their
+// lightmaps are.
 // The wallbang picture check hides it, as it hides everything but the map and the victim.
 const SKY_SUF = ['rt', 'bk', 'lf', 'ft', 'up', 'dn'];
 const SKY_ORDER = [0, 2, 1, 3, 4, 5];
@@ -7151,17 +7153,21 @@ function dropSky() {
   R3.sky.g.traverse((o) => { if (o.geometry) o.geometry.dispose(); if (o.material) { if (o.material.map) o.material.map.dispose(); o.material.dispose(); } });
   R3.sky = null;
 }
+// a sky's six pictures, .tga before .bmp, with or without "_" before the side (CheckSkybox), or null
+function skyPicks(name) {
+  const S = files.sky || {};
+  for (const ext of ['tga', 'bmp']) {
+    const L = SKY_SUF.map((s) => S[`${name}${s}.${ext}`] || S[`${name}_${s}.${ext}`]);
+    if (L.every(Boolean)) return { name, picks: L.map((f) => [f, ext]) };
+  }
+  return null;
+}
 async function loadSky(map) {
   dropSky();
   const ent = map.bsp.entities[0] || {};
-  const name = String(ent.skyname || 'desert').replace(/\\/g, '/').split('/').pop().replace(/\.[a-z0-9]+$/i, '').replace(/_$/, '').toLowerCase();
-  const S = files.sky || {};
-  let picks = null;
-  for (const ext of ['tga', 'bmp']) {
-    const L = SKY_SUF.map((s) => S[`${name}${s}.${ext}`] || S[`${name}_${s}.${ext}`]);
-    if (L.every(Boolean)) { picks = L.map((f) => [f, ext]); break; }
-  }
-  if (!picks) return;
+  const want = String(ent.skyname || 'desert').replace(/\\/g, '/').split('/').pop().replace(/\.[a-z0-9]+$/i, '').replace(/_$/, '').toLowerCase();
+  const found = skyPicks(want) || skyPicks('desert'); if (!found) return;
+  const { name, picks } = found;
   const imgs = await Promise.all(picks.map(async ([f, ext]) => { const u8 = await readPicked(f, 'gfx/env/' + f.name); return u8 ? (ext === 'tga' ? decodeTga(u8) : await decodeBmp(u8)) : null; }));
   if (MAP !== map || !R3 || imgs.some((x) => !x)) return;
   dropSky();
@@ -7181,7 +7187,7 @@ async function loadSky(map) {
     m.renderOrder = -1000; m.frustumCulled = false; m.userData.sky = SKY_SUF[SKY_ORDER[i]];
     g.add(m);
   }
-  R3.scene.add(g); R3.sky = { g, name, map: map.name, ext: picks[0][1] };
+  R3.scene.add(g); R3.sky = { g, name, want, map: map.name, ext: picks[0][1] };
 }
 // a .tga picture as top-down RGBA: uncompressed or run-length, true colour (16, 24 or 32 bits), grey or colour-mapped
 function decodeTga(u8) {
