@@ -94,6 +94,25 @@ Sujan's checks by eye of merged builds, kept for one sitting that he runs when h
 
 Everything raised in conversation that isn't finished, in one place. Each item says who does it. Ideas for new features are further down; this list is for loose ends.
 
+**Sujan's feedback of 20 Nov 2026 on four new demos** (in `~/Downloads/new-demos`, not moved yet; Claude's report, nothing built: `tests/logs/new-demos-feedback-2026-11-20.md`; pictures on `screenshots/new-demos-feedback`)
+- [ ] **Wallbang labels on four kills in the new demos**
+  - Status: on 0.27.3, bartZi on Edward (Na`Vi vs WinFakt, Train, ESWC 2011, R8 1:29) has no tag, his recorded aim at the kill clear beside the wheel end after seven bullets through it; shad on prophe7 (BIH vs SLOVENIA, Nuke, 18 Jan 2009, R9 1:24) reads **Partial wallbang** from snaroGOD's hit in the open 0.09 s before; bAiL's **Wall damage** 46 (WeMadeFox vs ATE Gaming, Dust2, MSI Beat IT! 2010, R20 1:14) is WUZZ's USP, which the aim fallback can't pick; FLEX0R on R!Go- (Team Belgium vs France, Tuscan, ClanBase NationsCup XII, R21 0:39) reads **Wallbang**, as Sujan says.
+  - Next step: Sujan decides on F1b, F2 and F3b (measured on the 83 demos; `ground_truth_check.py` passes with all three) and whether to check some of F1b's 18 new **Partial wallbang** kills by eye first; then Claude builds them on a `wip/` branch.
+  - Decided so far: Sujan's checks in his game, and the labels judge the moment of the shot only (Sujan, 20 Nov 2026; `DECISIONS.md`).
+- [ ] **The 3D view at a kill row's moment, and the name bar's health** (Sujan, 20 Nov 2026, on FLEX0R's kill on R!Go-)
+  - Status: the 3D view runs 0.1 s behind the kill feed (`LIMITS.md`), so at a kill row's moment it draws the victim 0.1 s before the shot: R!Go- in the open between the crates where the label says hidden; on the 83 demos, 56 of 534 **Wallbang** kills show 50 pixels or more of the victim there. The name bar and the 3D labels read health 0.1 s back too: FLEX0R (100) at the kill, where the radar and his game show 88.
+  - Next step: Sujan decides on two display changes, neither touching a label: kill details' jumps pause 0.1 s later, so the paused 3D picture is the shot; the name bar and the 3D labels read health at the moment itself.
+  - Decided so far: nothing yet.
+- [ ] **Players' and the server's settings from the demo** (Sujan's question, 20 Nov 2026)
+  - Status: reported (the log, B): each player's userinfo (rate, cl_updaterate, cl_lw, cl_lc, cl_dlmax, model, colours, keys of their own), HLTV's own settings and its "ex_interp 0.15" line, the server cvar changes, the movement settings, pings and loss, the snapshot rate; cl_cmdrate, ex_interp, sensitivity and fps_max aren't in a demo.
+  - Next step: Sujan decides whether and where to show them (proposed: the Players tab per player, the load card's **Details** for the server).
+  - Decided so far: the demo doesn't set his ex_interp (Sujan, 20 Nov 2026; `DECISIONS.md`).
+- [ ] **Team names, the shared tag first**
+  - Status: Sujan's rule measured, not built (the log, C): 25 of 90 headers change, the four new demos' as he expects (A+e.gaming where he named ATE Gaming); the one file in `tests/expected/` with team names (the GP Tourney's BAJRANG and Guardians) stays.
+  - Next step: Sujan settles the open points (mymTw.com, fnaticMSI and fnaticRC, SKWEDEN and KOREA.eSTRO, the tags' capitals, the 12-letter cap, A+e.gaming or ATE Gaming); then Claude builds it, with `LIMITS.md`'s team-name line.
+  - Decided so far: the rule, the shared tag first, replacing two rules of 8 Nov 2026 (Sujan, 20 Nov 2026; `DECISIONS.md`).
+- [ ] **The four new demos**: Na`Vi vs WinFakt, Train, ESWC 2011; BIH vs SLOVENIA, Nuke, 18 Jan 2009 (probably ClanBase NationsCup XII); WeMadeFox vs ATE Gaming, Dust2, MSI Beat IT! 2010; Team Belgium vs France, Tuscan, ClanBase NationsCup XII. They stay in `~/Downloads/new-demos` until Sujan answers; then the ones the viewer gets wrong move to `test-demos` with their rows in `tests/DEMOS.md` and `tests/demos-manifest.md` (`AGENTS.md`, "A new demo in cstrike").
+
 **Sujan's answers of 12 Nov 2026 on 0.26.31: the game's light** (his three confirmations in `DECISIONS.md`)
 - [ ] **Other light styles in 3D** (for later; Sujan, 12 Nov 2026)
   - Status: since 0.26.31 the map and the light on models read each face's first light style only, at its normal value (`buildMesh` in `src/bsp.js` packs one lightmap a face, `lightAlong` reads the same one; `LIMITS.md`). The game adds every style a face has (up to 4), each at its light style's brightness (R_BuildLightMap and R_RecursiveLightPoint in Xash3D FWGS), so a spot that a switchable light (a style of 32 or more, its light entity named with a targetname) also lights is darker in the viewer than in the game.
@@ -114,10 +133,7 @@ Everything raised in conversation that isn't finished, in one place. Each item s
 
 **After wip/ui-simpler merges** (Sujan, 19 Nov 2026, judging the branch live; not built on it; `DECISIONS.md`)
 - Done, in the archive (0.27.2, 20 Nov 2026): **The 3D batch after wip/ui-simpler**; its by-eye checks are in the **By-eye round**.
-- [ ] **The Join batch after wip/ui-simpler**
-  - Status: items 1 and 3 built in 0.27.3 on `wip/join-batch` (20 Nov 2026), the 0:0 warning with the narrower rule after Sujan's answers of 20 Nov 2026 (`tests/logs/0.27.3.md`); item 2 not built, now **Parts ordered from inside the files** below. Its full text when items 1 and 3 were built is in the archive.
-  - Next step: Sujan merges the pull request from `wip/join-batch` (the nine release checks pass, `tests/logs/0.27.3.md`).
-  - Decided so far: both for after the merge (Sujan, 19 Nov 2026; `DECISIONS.md`). The 0:0 warning added, only a warning (Sujan, 20 Nov 2026; `DECISIONS.md`). Sujan's answers of 20 Nov 2026 on the report (`DECISIONS.md`): the narrower 0:0 warning, with its gap in `LIMITS.md`; item 2 not built; **Open .dem from elsewhere** stays, the card's **A file from elsewhere…** becomes **Demos from elsewhere…**; item 1's choices approved as built.
+- Done, in the archive (0.27.3, 20 Nov 2026): **The Join batch after wip/ui-simpler**; its by-eye checks are in the **By-eye round**.
 - [ ] **Parts ordered from inside the files** (for later, measured; Sujan, 20 Nov 2026): the spawn count and HLTV's clock on every split test map, and the rule proposed, in `tests/logs/join-order-from-files-2026-11-20.md`; not built, since every split test map has recording times in its names and a server restart can make counts look consecutive in the wrong order (`DECISIONS.md`).
 
 **Seen while building 0.27.3** (20 Nov 2026; for later)
