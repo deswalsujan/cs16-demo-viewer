@@ -653,7 +653,7 @@ function update3Now() {
     if (scoped) drawScope(lx, W, H);
     const xh = POV.on ? povXh(W, H) : XHAIR[$('xh3').value] || XHAIR.large;
     if (cam3.mode === 'eyes' && (!POV.on || POV.who != null)) drawHitMarker(lx, W / 2, H / 2, xh);
-    if (POV.on) { if (!scoped) { readCrosshairCfg(); drawPovCrosshair(XCFG.additive ? hx : lx, W, H); } if (POV.who === POV.v.rec && POV.mode === 0) { drawPovHud(hx, W, H); drawPovRadar(hx, W, H); } }
+    if (POV.on) { if (!scoped) { readCrosshairCfg(); drawPovCrosshair(XCFG.additive ? hx : lx, W, H); } if (POV.who === POV.v.rec && POV.mode === 0) { drawPovHud(hx, W, H); drawPovRadar(sx, hx, W, H); } }
     else if (cam3.mode === 'eyes' && !scoped) { lx.strokeStyle = 'rgba(90,255,90,.85)'; lx.lineWidth = xh.w; const cx = W / 2, cy = H / 2, g = xh.gap, e = xh.end; lx.beginPath(); lx.moveTo(cx - e, cy); lx.lineTo(cx - g, cy); lx.moveTo(cx + g, cy); lx.lineTo(cx + e, cy); lx.moveTo(cx, cy - e); lx.lineTo(cx, cy - g); lx.moveTo(cx, cy + g); lx.lineTo(cx, cy + e); lx.stroke(); }
   } else if (cam3.mode !== 'free' && selected) {
     const death = D.kills.filter((k) => k.victim === selected && k.t <= T + 0.05).pop();
@@ -1205,8 +1205,8 @@ async function loadHudSprites() {
     }
     // the hit arcs (valve/sprites/640_pain.spr, four frames)
     if (!HUDS.pain && files.hud.pain) HUDS.pain = sprCanvases(await readPicked(files.hud.pain, 'sprites/640_pain.spr'));
-    // the game's radar (cstrike/sprites/radar640.spr, 0.26.30)
-    if (!HUDS.radar && files.hud.radar) HUDS.radar = radarSprite(decodeSpr(await readPicked(files.hud.radar, 'sprites/radar640.spr') || new Uint8Array(0)));
+    // the game's solid radar (cstrike/sprites/radaropaque640.spr; the see-through radar640.spr up to 0.27.1)
+    if (!HUDS.radar && files.hud.radar) HUDS.radar = radarSprite(decodeSpr(await readPicked(files.hud.radar, 'sprites/radaropaque640.spr') || new Uint8Array(0)));
     // ammo icons, for the guns he used
     const ids = new Set(), own = (forD && forD.ownAmmo) || []; for (let i = 1; i < own.length; i += 3) ids.add(own[i]);
     for (const id of ids) {
@@ -1430,9 +1430,11 @@ function drawPovBar(bg, lx, W, H) {
 }
 
 // ---------------- POV mode: his radar (0.26.30) ----------------
-// The game's radar, top left, as cs16-client's radar.cpp draws its default see-through one (cl_radartype 0) for everyone,
-// whatever config.cfg says (Sujan, 11 Nov 2026, docs/pov-scoreboard-radar-flashbang-mock.jpg, section D): radar640.spr
-// tinted 25 75 25 and added onto the picture, sized like the rest of his HUD; 32 units of map a pixel of the sprite, out
+// The game's radar, top left, as cs16-client's radar.cpp draws the solid one (cl_radartype 1, lines 292 to 300) for
+// everyone, whatever config.cfg says (Sujan, 19 Nov 2026; the see-through one, radar640.spr tinted 25 75 25 and added onto
+// the picture, from 0.26.30 to 0.27.1): radaropaque640.spr (hud.txt's "radaropaque") tinted 200 200 200 and drawn with
+// holes (SPR_DrawHoles: palette colour 255 see-through), over a flashbang's white like the spectator bars (#spec3), the
+// dots added onto it (#hud3, kRenderTransAdd); sized like the rest of his HUD; 32 units of map a pixel of the sprite, out
 // to its edge, turning with his view. His living teammates as white dots, the bomb carrier's red (255 16 16); one more
 // than 128 units above him is a T, below him an upside-down T. Where each is: from his snapshots while his game received
 // him, else the last Radar message this round (ReGameDLL player.cpp sends one a second while he moved 64 units or more).
@@ -1442,7 +1444,7 @@ function radarSprite(sh) {
   if (!sh) return null;
   const cv = document.createElement('canvas'); cv.width = sh.w; cv.height = sh.h;
   const g = cv.getContext('2d'), img = g.createImageData(sh.w, sh.h);
-  for (let i = 0; i < sh.w * sh.h; i++) { const c = sh.px[i], o = i * 4; img.data[o] = sh.pal[c * 3] * 25 / 255; img.data[o + 1] = sh.pal[c * 3 + 1] * 75 / 255; img.data[o + 2] = sh.pal[c * 3 + 2] * 25 / 255; img.data[o + 3] = 255; }
+  for (let i = 0; i < sh.w * sh.h; i++) { const c = sh.px[i], o = i * 4; img.data[o] = sh.pal[c * 3] * 200 / 255; img.data[o + 1] = sh.pal[c * 3 + 1] * 200 / 255; img.data[o + 2] = sh.pal[c * 3 + 2] * 200 / 255; img.data[o + 3] = c === 255 ? 0 : 255; }
   g.putImageData(img, 0, 0);
   return { cv, w: sh.w, h: sh.h };
 }
@@ -1462,12 +1464,13 @@ function povHasBomb(e, t) {
   if (D.attribs && D.attribs.length) { const a = povByEnt('attrIdx', D.attribs, 3)[e], i = povLastOf('attrIdx', D.attribs, 3, e, t); return i >= 0 && (a[i + 2] & 2) !== 0; }
   return !!packAt(e, t);
 }
-function drawPovRadar(lx, W, H) {
+function drawPovRadar(bg, lx, W, H) {
   const sp = HUDS.radar; if (!sp) return;
   const t = POV.t, v = POV.v, rec = v.rec, me = playerState(rec, t); if (!me || me.state <= 0) return;
   const s = H / 768 * HUD_SCALE, R = sp.w / 2, side = Math.abs(me.state), r = roundAt(t), from = r ? r.start : -Infinity;
+  bg.save(); bg.globalCompositeOperation = 'source-over'; bg.globalAlpha = 1; bg.imageSmoothingEnabled = true;
+  bg.drawImage(sp.cv, 0, 0, sp.w * s, sp.h * s); bg.restore();
   lx.save(); lx.globalCompositeOperation = 'lighter'; lx.globalAlpha = 1;
-  lx.drawImage(sp.cv, 0, 0, sp.w * s, sp.h * s);
   const put = (px, py, pz, col, kind) => {
     const dx = px - v.pos[0], dy = py - v.pos[1], off = (v.yaw - Math.atan2(dy, dx) * 180 / Math.PI) * Math.PI / 180;
     const rad = Math.min(Math.hypot(dx, dy) / 32, R), X = (R + rad * Math.sin(off)) * s, Y = (R - rad * Math.cos(off)) * s, z = v.pos[2] - pz, u = s;
