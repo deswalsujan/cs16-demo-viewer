@@ -120,10 +120,12 @@ function entityLight(x, y, z) {
 // (through texgamma when it was loaded). The table is worked out in the shader the way CURVE builds it, so it needs no
 // texture in the vertex shader. Flat-shaded skins get 80% of the directional part (STUDIO_NF_FLATSHADE), full-bright
 // skins the light's colour alone (STUDIO_NF_FULLBRIGHT). even: Team colours keeps the even light it had up to 0.26.30
-// (ambient 0.75 and a sun of 0.5), so red and blue stay clear in the dark (it isn't in the game). emissive: the
-// selected player's highlight, added on top.
+// (ambient 0.75 and a sun of 0.5), so red and blue stay clear in the dark (it isn't in the game). fixedLight: the same
+// even light on every model, skins and all, while Fixed light is on in View settings (the 3D batch, item 5; Sujan, 20 Nov
+// 2026; off by default), one uniform shared by every model's material (FIXED_LIGHT). emissive: the selected player's
+// highlight, added on top.
 const STUDIO_VS = `uniform float amb; uniform float shade; uniform vec3 lcol; uniform vec3 ldir; uniform float flatShade;
-  uniform float fullBright; uniform float even;
+  uniform float fullBright; uniform float even; uniform float fixedLight;
   varying vec2 vUv; varying vec3 vCol;
   float curve(float illum) {
     float i = floor(min(illum, 255.0) * 4.0);
@@ -135,7 +137,7 @@ const STUDIO_VS = `uniform float amb; uniform float shade; uniform vec3 lcol; un
   void main() {
     vUv = uv;
     vec3 n = normalize(mat3(modelMatrix) * normal);
-    if (even > 0.5) vCol = vec3(0.75 + 0.5 * max(dot(n, normalize(vec3(0.4, 1.0, 0.3))), 0.0));
+    if (even > 0.5 || fixedLight > 0.5) vCol = vec3(0.75 + 0.5 * max(dot(n, normalize(vec3(0.4, 1.0, 0.3))), 0.0));
     else if (fullBright > 0.5) vCol = lcol;
     else {
       float illum = amb;
@@ -158,6 +160,8 @@ const STUDIO_FS = `uniform sampler2D map; uniform float hasMap; uniform float al
     if (t.a < alphaTest) discard;
     gl_FragColor = vec4(min(t.rgb * vCol, vec3(1.0)) + emissive, 1.0);
   }`;
+// Fixed light (View settings): 1 lights every model evenly, 0 as the game lights it; loop.js sets it
+const FIXED_LIGHT = { value: 0 };
 // flags: the skin's texture flags (1 flat-shaded, 4 full-bright, 64 masked)
 function studioMat(map, flags) {
   return new THREE.ShaderMaterial({
@@ -165,7 +169,7 @@ function studioMat(map, flags) {
       map: { value: map || null }, hasMap: { value: map ? 1 : 0 }, alphaTest: { value: flags & 64 ? 0.5 : 0 },
       color: { value: new THREE.Color(0xffffff) }, emissive: { value: new THREE.Color(0) },
       amb: { value: 192 }, shade: { value: 0 }, lcol: { value: new THREE.Vector3(1, 1, 1) }, ldir: { value: new THREE.Vector3(0, -1, 0) },
-      flatShade: { value: flags & 1 ? 1 : 0 }, fullBright: { value: flags & 4 ? 1 : 0 }, even: { value: 0 },
+      flatShade: { value: flags & 1 ? 1 : 0 }, fullBright: { value: flags & 4 ? 1 : 0 }, even: { value: 0 }, fixedLight: FIXED_LIGHT,
     },
     vertexShader: STUDIO_VS, fragmentShader: STUDIO_FS, side: THREE.DoubleSide,
   });

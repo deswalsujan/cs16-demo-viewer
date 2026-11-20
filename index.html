@@ -835,10 +835,10 @@ addEventListener('resize', () => { if (applyUiSize()) dispatchEvent(new Event('u
       <span class="xwrap"><button class="btn" id="tgXray" type="button" title="Show players behind walls, and their names, in 3D (H)">See through walls</button><button class="xmark" id="xrayMark" type="button" hidden title="This server seems to use an anti-wallhack plugin. Click the ! to read why." aria-label="Why few enemies show through walls">!</button></span>
       <button class="btn" id="tgFit" type="button" title="Back to the starting view: the whole radar in 2D, the overview camera in 3D">Reset view</button>
       <div class="vset">
-        <button class="btn" id="bVset" type="button" aria-expanded="false" aria-controls="vsetPanel" title="Hide all overlays, and in 3D team colours, damage numbers, the crosshair and quality; interface size; in a POV demo the flashbangs">View settings <svg viewBox="0 0 10 6" aria-hidden="true"><path d="M1 1l4 4 4-4"/></svg></button>
+        <button class="btn" id="bVset" type="button" aria-expanded="false" aria-controls="vsetPanel" title="Hide all overlays, and in 3D team colours, damage numbers, the crosshair, fixed light and quality; interface size; in a POV demo the flashbangs">View settings <svg viewBox="0 0 10 6" aria-hidden="true"><path d="M1 1l4 4 4-4"/></svg></button>
         <div class="vpanel" id="vsetPanel" role="group" aria-label="View settings" hidden>
           <div class="vhead">On the view</div>
-          <label class="vrow"><span>Hide all overlays<small>as in the game's own demo player</small></span><input type="checkbox" id="van3" title="Turns off what the game's own demo player doesn't show: damage numbers, kill markers, glow, See through walls, names and HP over the players, kill lines, grenade paths, the death cam's red wash and banner, and the C4 countdown. The buttons and settings still work one by one after"></label>
+          <label class="vrow"><span>Hide all overlays<small>as in the game's own demo player</small></span><input type="checkbox" id="van3" title="Turns off what the game's own demo player doesn't show: damage numbers, kill markers, glow, See through walls, Fixed light, names and HP over the players, kill lines, grenade paths, the death cam's red wash and banner, and the C4 countdown. The buttons and settings still work one by one after"></label>
           <label class="vrow v3"><span>Radar<small>the 2D map in a corner of the 3D view</small></span><input type="checkbox" id="radar3" title="Shows the 2D radar in the bottom right corner of the 3D view"></label>
           <div class="vrow v3"><span>Team colours</span><button class="btn" id="tgModels" type="button" title="Draw the players in flat team colours: red for Terrorists, blue for Counter-Terrorists">Off</button></div>
           <label class="vrow v3"><span>Damage numbers<small>which hits show their damage</small></span><select id="dn3" title="The damage each hit did, floating up beside the player hit. Wallbangs: hits through a wall, in orange. Direct hits: hits in the open, in white. Both: every hit. The killing bullet ends in a red skull">
@@ -860,6 +860,7 @@ addEventListener('resize', () => { if (applyUiSize()) dispatchEvent(new Event('u
             <option value="large">Large</option>
           </select></label>
           <div class="vhead">Picture</div>
+          <label class="vrow v3"><span>Fixed light<small>models lit the same everywhere</small></span><input type="checkbox" id="fixed3" title="Lights every player, gun and the C4 the same everywhere, so they stay easy to see in dark corners; the map keeps the game's light"></label>
           <label class="vrow v3"><span>Quality</span><select id="q3" title="How sharp the 3D view is drawn. Auto starts sharp and steps down if playback can't keep up">
             <option value="auto">Auto</option>
             <option value="high">High</option>
@@ -7802,10 +7803,12 @@ function entityLight(x, y, z) {
 // (through texgamma when it was loaded). The table is worked out in the shader the way CURVE builds it, so it needs no
 // texture in the vertex shader. Flat-shaded skins get 80% of the directional part (STUDIO_NF_FLATSHADE), full-bright
 // skins the light's colour alone (STUDIO_NF_FULLBRIGHT). even: Team colours keeps the even light it had up to 0.26.30
-// (ambient 0.75 and a sun of 0.5), so red and blue stay clear in the dark (it isn't in the game). emissive: the
-// selected player's highlight, added on top.
+// (ambient 0.75 and a sun of 0.5), so red and blue stay clear in the dark (it isn't in the game). fixedLight: the same
+// even light on every model, skins and all, while Fixed light is on in View settings (the 3D batch, item 5; Sujan, 20 Nov
+// 2026; off by default), one uniform shared by every model's material (FIXED_LIGHT). emissive: the selected player's
+// highlight, added on top.
 const STUDIO_VS = `uniform float amb; uniform float shade; uniform vec3 lcol; uniform vec3 ldir; uniform float flatShade;
-  uniform float fullBright; uniform float even;
+  uniform float fullBright; uniform float even; uniform float fixedLight;
   varying vec2 vUv; varying vec3 vCol;
   float curve(float illum) {
     float i = floor(min(illum, 255.0) * 4.0);
@@ -7817,7 +7820,7 @@ const STUDIO_VS = `uniform float amb; uniform float shade; uniform vec3 lcol; un
   void main() {
     vUv = uv;
     vec3 n = normalize(mat3(modelMatrix) * normal);
-    if (even > 0.5) vCol = vec3(0.75 + 0.5 * max(dot(n, normalize(vec3(0.4, 1.0, 0.3))), 0.0));
+    if (even > 0.5 || fixedLight > 0.5) vCol = vec3(0.75 + 0.5 * max(dot(n, normalize(vec3(0.4, 1.0, 0.3))), 0.0));
     else if (fullBright > 0.5) vCol = lcol;
     else {
       float illum = amb;
@@ -7840,6 +7843,8 @@ const STUDIO_FS = `uniform sampler2D map; uniform float hasMap; uniform float al
     if (t.a < alphaTest) discard;
     gl_FragColor = vec4(min(t.rgb * vCol, vec3(1.0)) + emissive, 1.0);
   }`;
+// Fixed light (View settings): 1 lights every model evenly, 0 as the game lights it; loop.js sets it
+const FIXED_LIGHT = { value: 0 };
 // flags: the skin's texture flags (1 flat-shaded, 4 full-bright, 64 masked)
 function studioMat(map, flags) {
   return new THREE.ShaderMaterial({
@@ -7847,7 +7852,7 @@ function studioMat(map, flags) {
       map: { value: map || null }, hasMap: { value: map ? 1 : 0 }, alphaTest: { value: flags & 64 ? 0.5 : 0 },
       color: { value: new THREE.Color(0xffffff) }, emissive: { value: new THREE.Color(0) },
       amb: { value: 192 }, shade: { value: 0 }, lcol: { value: new THREE.Vector3(1, 1, 1) }, ldir: { value: new THREE.Vector3(0, -1, 0) },
-      flatShade: { value: flags & 1 ? 1 : 0 }, fullBright: { value: flags & 4 ? 1 : 0 }, even: { value: 0 },
+      flatShade: { value: flags & 1 ? 1 : 0 }, fullBright: { value: flags & 4 ? 1 : 0 }, even: { value: 0 }, fixedLight: FIXED_LIGHT,
     },
     vertexShader: STUDIO_VS, fragmentShader: STUDIO_FS, side: THREE.DoubleSide,
   });
@@ -10336,6 +10341,12 @@ $('xh3').onchange = () => { ls.set('crosshair2', $('xh3').value); };
 $('ui3').value = uiSizeSetting();
 $('ui3').onchange = () => { ls.set('uiSize', $('ui3').value); if (applyUiSize()) dispatchEvent(new Event('uisize')); };
 addEventListener('uisize', () => { resize(); applyQuality(false); if (theatreActive()) measureTheatre(); });
+// Fixed light (the 3D batch, item 5; Sujan, 20 Nov 2026): every model lit the same everywhere, as up to 0.26.30 (ambient
+// 0.75 and a sun of 0.5 from above), the map keeping the game's light; off by default, kept in this browser like Glow on
+// hits. One uniform every model's material shares (FIXED_LIGHT, light.js)
+const fixedShow = () => { FIXED_LIGHT.value = $('fixed3').checked ? 1 : 0; };
+$('fixed3').checked = ls.get('fixedLight') === 'on'; fixedShow();
+$('fixed3').onchange = () => { ls.set('fixedLight', $('fixed3').checked ? 'on' : 'off'); fixedShow(); };
 $('glow3').checked = ls.get('hitGlow') !== 'off';
 $('glow3').onchange = () => { ls.set('hitGlow', $('glow3').checked ? 'on' : 'off'); };
 // Damage numbers (0.26.16; Sujan, 3 Nov 2026): Wallbangs, the default and the numbers as before, Direct hits, Both or Off,
@@ -10343,25 +10354,26 @@ $('glow3').onchange = () => { ls.set('hitGlow', $('glow3').checked ? 'on' : 'off
 $('dn3').value = ['wb', 'direct', 'both', 'off'].includes(ls.get('dmgNumbers')) ? ls.get('dmgNumbers') : 'wb';
 $('dn3').onchange = () => { ls.set('dmgNumbers', $('dn3').value); };
 // Vanilla (0.26.16; Sujan, 1 to 3 Nov 2026, docs/kill-details-damage-vanilla-mock.jpg): one switch for every overlay the
-// game's own demo player doesn't have. On, it turns off Names, Grenades, Kill lines, See through walls, Glow on hits and the
-// damage numbers, which still work one by one after, and hides what has no switch of its own: kill markers and the ring,
+// game's own demo player doesn't have. On, it turns off Names, Grenades, Kill lines, See through walls, Glow on hits, the
+// damage numbers and Fixed light (the 3D batch), which still work one by one after, and hides what has no switch of its own: kill markers and the ring,
 // the death cam's red wash and banner, and the C4 countdown (VAN.on). Off, it brings back the settings it turned off.
 // The kill feed, round timer, score, crosshair, Tab scoreboard, "Recording skips here" and the name bar stay.
 function setVanilla(on) {
   if (on === VAN.on) return;
   const ids = { names: 'tgNames', nades: 'tgNades', lines: 'tgLines', xray: 'tgXray' };
   if (on) {
-    VAN.saved = { names: opts.names, nades: opts.nades, lines: opts.lines, xray: opts.xray, glow: $('glow3').checked, dn: $('dn3').value };
+    VAN.saved = { names: opts.names, nades: opts.nades, lines: opts.lines, xray: opts.xray, glow: $('glow3').checked, dn: $('dn3').value, fixed: $('fixed3').checked };
     for (const k in ids) { opts[k] = false; $(ids[k]).classList.remove('on'); }
-    $('glow3').checked = false; $('dn3').value = 'off';
+    $('glow3').checked = false; $('dn3').value = 'off'; $('fixed3').checked = false;
   } else if (VAN.saved) {
     const o = VAN.saved;
     for (const k in ids) { opts[k] = !!o[k]; $(ids[k]).classList.toggle('on', opts[k]); }
     $('glow3').checked = o.glow !== false; $('dn3').value = ['wb', 'direct', 'both', 'off'].includes(o.dn) ? o.dn : 'wb';
+    $('fixed3').checked = o.fixed === true;
   }
   VAN.on = on; if (!on) VAN.saved = null; $('van3').checked = on;
   ls.set('vanilla', on ? { on: true, saved: VAN.saved } : null);
-  ls.set('hitGlow', $('glow3').checked ? 'on' : 'off'); ls.set('dmgNumbers', $('dn3').value); savePrefs();
+  ls.set('hitGlow', $('glow3').checked ? 'on' : 'off'); ls.set('dmgNumbers', $('dn3').value); ls.set('fixedLight', $('fixed3').checked ? 'on' : 'off'); fixedShow(); savePrefs();
   if (D) updateHud(true);
 }
 { const v = ls.get('vanilla'); if (v && v.on === true) { VAN.on = true; VAN.saved = v.saved && typeof v.saved === 'object' ? v.saved : null; } }
