@@ -80,7 +80,7 @@ Before starting any branch, run `git fetch` and branch from `origin/main`; if a 
 - `src/ui/common.js`: shared state (`D` the demo, `M` the match, `T` the time), colours, saved settings, small helpers (`weaponShort`).
 - `src/ui/folder.js`: the Half-Life folder, chosen with the browser's ordinary folder pick on every visit (`pickFolder`, `hlPicked`, `hlRender`; 0.26.11), the demo list and its check for demos deleted since the pick (`checkDemoList`), centre-screen messages, kill feed icons.
 - `src/ui/open.js`: opening a demo in the Web Worker (`loadDemoFile`), and joining a map recorded in parts (`joinDemos`, `openJoined`).
-- `src/ui/join.js`: finding a map's other parts and their order (`findOtherParts`, `suggestOrder`, `orderProblem`), what joining them in an order would count (`carryFacts`), and the Join card.
+- `src/ui/join.js`: finding a map's other parts and their order (`findOtherParts`, `suggestOrder`, `orderProblem`), what joining them in an order would count (`carryFacts`), the Join card, and several demos picked at once (`openPicked`).
 - `src/ui/map.js`: the overview image and the map geometry (`loadMap`).
 - `src/ui/wallbangs.js`: the wallbang finder (`computeWallbangs`, `tooMuchDamage`, each wall's material `wallKeeps`), wallbang damage and loose wallbangs from damage (`computeHits`, which also keeps every hit pinned on a shooter), kill details' bullets, body parts and earlier damage (`killHits`, `bodyPart`, `earlierDamage`), and the stretches the server announced as live (`liveWindows`).
 - `src/ui/match.js`: kills moved back to the real moment (`retimeKills`) and the match structure (`derive`): people across connections, rounds, live rounds (a half replayed from 0:0, a half carried on into a later file), score, teams (`groupTeams`).

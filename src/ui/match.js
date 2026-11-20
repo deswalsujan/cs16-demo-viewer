@@ -299,7 +299,7 @@ function derive() {
       // their new teams 5 seconds in (part 2 of WeMadeFox vs Ravens, Nuke, EM4 finals, 23:55).
       const laterPart = !!next && next.part !== rs[rs.length - 1].part, same = !!next && sameSides(rs[0], next);
       // A later recording that picks up on the same sides partway through a half carries the half on: what this one
-      // counted still counts (Sujan, 7 Nov 2026: WeMadeFox's 4-0 before the server crashed, "4-0 score stays", then 11
+      // counted still counts (Sujan, 7 Nov 2026: WeMadeFox's 4-0 before part 1 lost HLTV, the admin's crash rule "4-0 score stays", then 11
       // more rounds of the half in part 2). A stretch that ends at a half end is a whole half: the first overtime starts
       // on the second half's sides (Na`Vi vs SK, Inferno, ESWC 2011). Checked against the half's length further down.
       if (sameWin && laterPart && same && !atHalfEnd(total + rs.length)) { for (const r of rs) r.carry = true; total += rs.length; continue; }

@@ -4,6 +4,7 @@ What changed in the viewer, newest first. The version shows in the viewer's **He
 
 ## Versions
 
+- [0.27.3](#0273-2026-11-20) 2026-11-20: Several demos picked, 0:0 warning
 - [0.27.2](#0272-2026-11-20) 2026-11-20: POV radar, C4, sky, light
 - [0.27.1](#0271-2026-11-20) 2026-11-20: One person on one slot
 - [0.27.0](#0270-2026-11-20) 2026-11-20: The UI review's 14 items
@@ -89,6 +90,31 @@ What changed in the viewer, newest first. The version shows in the viewer's **He
 - [0.3.0](#030-2026-09-30) 2026-09-30: First-person weapons
 - [0.2.0](#020-2026-09-30) 2026-09-30: Real models and sound
 - [0.1.0](#010-before-2026-09-30) before 2026-09-30: First version: radar, 3D, kills
+
+## 0.27.3 (2026-11-20)
+
+The Join batch (IDEAS.md, **The Join batch after wip/ui-simpler**; Sujan's decisions of 19 and 20 Nov 2026 and his answers of 20 Nov 2026 on the report, `DECISIONS.md`), items 1 and 3, built on `wip/join-batch` from origin/main (0.27.2), with no mockup (Sujan, 20 Nov 2026). Item 2, the parts ordered from inside the files, measured and not built (`tests/logs/join-order-from-files-2026-11-20.md`).
+
+### Added
+- Item 1: up to 5 demos picked at once, in **Open .dem from elsewhere** and in the Join card's **Demos from elsewhere…**. One opens as before. Two to five open the Join card, in the order of the recording times in their names (then the card's own suggestion, as for any parts), each checked as a part added to the card is: another map, other players, the same recording twice. With several picked at once from **Open .dem from elsewhere**, the part the others are checked against is the one most of them match, so a stray demo among them is the one refused, and each refused part gets its card in turn. More than 5 open or add nothing, with one line: "Pick up to 5 demos at once. You picked 6." (the real number). Up to 0.27.2 both took one file.
+- Item 3: a warning on the Join card when a part starts from 0:0 after earlier parts played rounds that count: "Part 2 starts from 0:0, but part 1 already played 30 rounds.", and with more earlier parts "but parts 1 and 2 already played 36 rounds.". The number is each earlier part's own count, as its line says (WeMadeFox vs Ravens' part 1: 4, not its 13 replayed), with the rounds no file holds. Only a warning: **Join parts** stays on, and the verdict has no green tick beside it. Not on a part the card reads as carrying on the half (WeMadeFox vs Ravens, Nuke, EM4 finals), nor on one it already names as the same recording as an earlier part, nor on one that starts a new half or overtime from 0:0: at a half's end, the teams on other sides (either way at an overtime's start), changing sides only where the map's halves end, no stretch on one side across round 15, none over 6 rounds after round 30 (Sujan, 20 Nov 2026). It catches the first part of Na`Vi vs SK, Inferno, ESWC 2011 recorded twice in files that aren't byte for byte the same, which joined counts 47 rounds at 22:25, not 41 at 19:22.
+
+### Changed
+- The Join card's **A file from elsewhere…** reads **Demos from elsewhere…** (Sujan, 20 Nov 2026), its list of the folder's demos starting narrower so the button stays on its row.
+- The Join card tries every order of the parts only up to 8 parts; with more it suggests no order from the rounds. Two picks of 5 could reach 10 parts, 3.6 million orders, which would stop the page.
+
+### How it was tested
+- `demo_search_check.py`'s new steps (several picked at once, 6 picked, a stray demo, the warning on a copy of Na`Vi vs SK's first part without its last 4 KB in three places, none on WeMadeFox vs Ravens or on FX vs mTw, Nuke, Forge and Tuscan in their right order): 13 of 13. On 0.27.2 the first step fails (the pick takes one file).
+- A copy of Tuscan's part 2 right after it: no warning, as `LIMITS.md` says.
+- The nine release checks pass on the release commit.
+- Full log: `tests/logs/0.27.3.md`; screenshots on `screenshots/0.27.3`.
+
+### Discussed, not changed
+- The warning as first built showed on 3 of the 7 joined maps in their right order, where a new half or overtime restarted from 0:0 (FX vs mTw, Nuke, Xperia Play 2011; fnatic vs mousesports, Forge, IEM6 Guangzhou; mTw vs Na`Vi, Tuscan, ESWC 2010): the narrower rule above, Sujan's answer of 20 Nov 2026, drops it there.
+- Item 2: not built (Sujan, 20 Nov 2026), since every split test map has recording times in its names and a server restart can make spawn counts look consecutive in the wrong order; kept for later, measured.
+- **Open .dem from elsewhere** keeps its words (Sujan, 20 Nov 2026).
+- WeMadeFox vs Ravens' notes: part 1 ends with "Retrying HLTV connection ..." from 32:17, both files have spawn count 7, so the game server didn't load the map again, and the admin applied his crash rule ("4-0 score stays"); `tests/DEMOS.md` said "the server crashed" (Sujan, 20 Nov 2026).
+- Several .dem files dropped on the page: only the first opens, as before (IDEAS.md, **Seen while building 0.27.3**).
 
 ## 0.27.2 (2026-11-20)
 

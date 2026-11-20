@@ -2,7 +2,8 @@
 $('btnFolder').onclick = () => pickFolder();
 $('btnDemo').onclick = () => $('fDemo').click();
 $('btnOpen').onclick = () => { showLoad($('load').hidden); };
-$('fDemo').onchange = (e) => { const f = e.target.files[0]; if (f) loadDemoFile(f); e.target.value = ''; };
+// up to 5 demos at once (the Join batch, Sujan, 19 Nov 2026): one opens as before, two to five open the Join card (openPicked)
+$('fDemo').onchange = (e) => { const list = [...e.target.files]; e.target.value = ''; openPicked(list); };
 $('fFolder').onchange = (e) => { const list = [...e.target.files]; e.target.value = ''; if (list.length) hlPicked(list); };
 
 // The whole folder is read again each time, so files deleted since the last pick drop out
