@@ -399,6 +399,8 @@ kbd { font-family: var(--f-body); font-size: calc(11px * var(--ui)); background:
 .jpick { display: flex; flex-wrap: wrap; gap: calc(8px * var(--ui)); align-items: center; margin: 0 calc(24px * var(--ui)) calc(16px * var(--ui)); padding: calc(12px * var(--ui)); border: 1px dashed var(--line); border-radius: calc(6px * var(--ui)); font-size: calc(12px * var(--ui)); color: var(--muted); }
 .sum.join .sum-foot .btn, .sum.join .jbtns .btn { font-family: var(--f-body); }
 .jpick .jnone { flex: 1 1 calc(260px * var(--ui)); min-width: 0; }
+/* more than 5 demos picked at once: the line under the picker (the Join batch) */
+.jpick .jmsg { flex: 1 0 100%; margin: 0; color: var(--kill); }
 .jpick select { flex: 1 1 calc(260px * var(--ui)); min-width: 0; background: var(--panel-2); color: var(--fg); border: 1px solid var(--line); border-radius: calc(4px * var(--ui)); padding: calc(5px * var(--ui)) calc(6px * var(--ui)); font-size: calc(12px * var(--ui)); }
 .li-btn { margin-top: calc(6px * var(--ui)); }
 .pill { display: inline-block; font-size: calc(11px * var(--ui)); font-weight: 600; padding: 1px calc(6px * var(--ui)); border-radius: calc(3px * var(--ui)); margin-right: calc(6px * var(--ui)); letter-spacing: .04em; }
@@ -814,7 +816,7 @@ addEventListener('resize', () => { if (applyUiSize()) dispatchEvent(new Event('u
         </div>
         <h2 class="hpart">About</h2>
         <div class="habout">
-          <p>CS 1.6 Demo Viewer, version 0.27.2. It plays HLTV and POV demos in the browser, from your own Half-Life folder; nothing leaves your computer.</p>
+          <p>CS 1.6 Demo Viewer, version 0.27.3. It plays HLTV and POV demos in the browser, from your own Half-Life folder; nothing leaves your computer.</p>
           <p>A map with no radar picture: drop its overview, the .bmp and .txt pair from cstrike\overviews, anywhere on the page.</p>
           <p class="hlinks"><a href="https://github.com/deswalsujan/cs16-demo-viewer/blob/main/CHANGELOG.md" target="_blank" rel="noopener">What's new</a> · <a href="https://github.com/deswalsujan/cs16-demo-viewer" target="_blank" rel="noopener">Source on GitHub</a> · <a href="https://github.com/deswalsujan/cs16-demo-viewer/issues/new/choose" target="_blank" rel="noopener">Report a bug</a></p>
           <p class="hdbg"><button class="btn" id="bDebug" type="button" title="Copies details for a bug report: browser, demo name, what loaded, errors. No file contents.">Copy debug info</button><span>Paste it into your bug report: it says which browser, demo and files, and any errors, with no file contents.</span></p>
@@ -926,7 +928,7 @@ addEventListener('resize', () => { if (applyUiSize()) dispatchEvent(new Event('u
         <div class="drophint">Or drop a .dem file anywhere on this page</div>
         <div class="prog" id="prog" hidden><i id="progBar"></i></div>
         <div class="msg" id="msg"></div>
-        <div class="loadfoot"><span>Version 0.27.2 · <a href="https://github.com/deswalsujan/cs16-demo-viewer" target="_blank" rel="noopener">Source on GitHub</a> · <button class="lnk" id="bHelpStart" type="button" title="The keys, the colours and marks, and about the viewer (?)">Help</button></span><button class="btn" id="bClear" type="button" title="Deletes the copies of maps, models, sounds and radar overviews this browser saved from your Half-Life folder. The folder closes until you pick it again, as on a first visit">Delete saved files</button></div>
+        <div class="loadfoot"><span>Version 0.27.3 · <a href="https://github.com/deswalsujan/cs16-demo-viewer" target="_blank" rel="noopener">Source on GitHub</a> · <button class="lnk" id="bHelpStart" type="button" title="The keys, the colours and marks, and about the viewer (?)">Help</button></span><button class="btn" id="bClear" type="button" title="Deletes the copies of maps, models, sounds and radar overviews this browser saved from your Half-Life folder. The folder closes until you pick it again, as on a first visit">Delete saved files</button></div>
       </div>
     </div>
   </section>
@@ -962,7 +964,7 @@ addEventListener('resize', () => { if (applyUiSize()) dispatchEvent(new Event('u
     </div>
   </footer>
 </div>
-<input type="file" id="fDemo" accept=".dem" hidden>
+<input type="file" id="fDemo" accept=".dem" multiple hidden>
 <input type="file" id="fFolder" webkitdirectory multiple hidden>
 <input type="file" id="fAny" multiple hidden>
 
@@ -2611,7 +2613,8 @@ async function readPicked(blob, name) {
 $('btnFolder').onclick = () => pickFolder();
 $('btnDemo').onclick = () => $('fDemo').click();
 $('btnOpen').onclick = () => { showLoad($('load').hidden); };
-$('fDemo').onchange = (e) => { const f = e.target.files[0]; if (f) loadDemoFile(f); e.target.value = ''; };
+// up to 5 demos at once (the Join batch, Sujan, 19 Nov 2026): one opens as before, two to five open the Join card (openPicked)
+$('fDemo').onchange = (e) => { const list = [...e.target.files]; e.target.value = ''; openPicked(list); };
 $('fFolder').onchange = (e) => { const list = [...e.target.files]; e.target.value = ''; if (list.length) hlPicked(list); };
 
 // The whole folder is read again each time, so files deleted since the last pick drop out
@@ -3394,10 +3397,11 @@ function carryFacts(Ps, F) {
 }
 const perms = (a) => a.length <= 1 ? [a] : a.flatMap((x, i) => perms([...a.slice(0, i), ...a.slice(i + 1)]).map((p) => [x, ...p]));
 // The order to suggest, in this order of trust: the recording times in the file names when every part has
-// one, then the rounds when exactly one order makes a map, else none.
+// one, then the rounds when exactly one order makes a map, else none. Every order is tried only up to 8 parts (40,320
+// orders): two picks of 5 demos at once (the Join batch) could reach 10, 3.6 million, which would stop the page.
 function suggestOrder(F) {
   const idx = F.map((f, i) => i);
-  const valid = perms(idx).filter((p) => !orderProblem(p.map((i) => F[i])));
+  const valid = F.length <= 8 ? perms(idx).filter((p) => !orderProblem(p.map((i) => F[i]))) : [];
   if (F.every((f) => f.time != null)) {
     const o = idx.slice().sort((a, b) => F[a].time - F[b].time);
     return { order: o, by: 'times', agree: !orderProblem(o.map((i) => F[i])), roundsOrder: valid.length === 1 ? valid[0] : null };
@@ -3430,31 +3434,54 @@ function splitJoined() {
 }
 
 // ---- the Join card ----
-const JOIN = { list: [], P: new Map(), F: new Map(), keep: false, moved: false, sugg: null, err: null, picking: false, reading: null, carry: null, dup: null, checking: false };
+// errs: the parts refused, shown one card after another (several demos picked at once can refuse more than one); fresh: the
+// card opened with several demos picked at once, so no part is the open demo yet (see readJoinParts); note: the line under
+// the picker when more than 5 were picked
+const JOIN = { list: [], P: new Map(), F: new Map(), keep: false, moved: false, sugg: null, errs: [], picking: false, reading: null, carry: null, dup: null, checking: false, fresh: false, note: null };
 function joinEl() {
   let el = $('joinCard');
   if (!el) { el = document.createElement('div'); el.className = 'overlay sumwrap'; el.id = 'joinCard'; el.hidden = true; $('sumCard').after(el); }
   return el;
 }
-function closeJoinCard() { joinEl().hidden = true; JOIN.picking = false; JOIN.err = null; }
+function closeJoinCard() { joinEl().hidden = true; JOIN.picking = false; JOIN.errs = []; JOIN.note = null; }
+// Up to 5 demos picked at once, in Open .dem from elsewhere and the Join card's A file from elsewhere… (Sujan, 19 Nov 2026):
+// more than 5 open nothing, with one line saying how many were picked. The viewer's words say "pick", never "upload".
+const PICK_MAX = 5;
+const tooMany = (n) => n > PICK_MAX ? `Pick up to ${PICK_MAX} demos at once. You picked ${n}.` : null;
+// the recording times in the file names first, in time order, then the names without one, by name
+const byFileTime = (list) => list.slice().sort((a, b) => { const x = fileTime(a.name), y = fileTime(b.name); return x != null && y != null ? x - y : x != null ? -1 : y != null ? 1 : a.name.localeCompare(b.name, undefined, { numeric: true }); });
+// Open .dem from elsewhere: one demo opens as before; two to five open the Join card with them, in recording-time order (then
+// the card's own suggestion, as for any parts), each one checked as a part added to the card is
+function openPicked(list) {
+  if (!list.length) return;
+  const many = tooMany(list.length);
+  if (many) { setMsg(many, true); return; }
+  if (list.length === 1) { loadDemoFile(list[0]); return; }
+  setMsg('');
+  JOIN.P.clear(); JOIN.F.clear(); JOIN.carry = null;
+  openJoinCard(byFileTime(list), true);
+}
 // the Join card with the open demo's parts and its picker open, to add a part: the Rounds tab's Join parts…, and the load
 // card's when no other part is in the folder (Sujan, 19 Nov 2026)
 function openJoinPicker() {
   const cur = D.parts ? D.parts.map((x) => fileByName(x.fileName)).filter(Boolean) : [CUR_FILE || fileByName(D.fileName)].filter(Boolean);
   JOIN.picking = true; openJoinCard(cur).then(() => { JOIN.picking = true; renderJoinCard(); });
 }
-async function openJoinCard(list) {
+async function openJoinCard(list, fresh) {
   closeSummary();
-  Object.assign(JOIN, { list: list.slice(), keep: false, moved: false, sugg: null, err: null, picking: false, okOpen: false, dup: null, checking: false });
+  Object.assign(JOIN, { list: list.slice(), keep: false, moved: false, sugg: null, errs: [], picking: false, okOpen: false, dup: null, checking: false, fresh: !!fresh, note: null });
   await readJoinParts();
 }
-// Add a demo to the parts: refused when it's another map or has different players
-async function addJoinPart(f) {
-  JOIN.picking = false;
-  if (JOIN.list.some((x) => x.name === f.name)) { renderJoinCard(); return; }
-  JOIN.list.push(f);
-  await readJoinParts(f);
+// Add demos to the parts (one from the folder's list, up to 5 from elsewhere): each refused when it's another map or has
+// different players; a name already among the parts is left out
+async function addJoinParts(list) {
+  JOIN.picking = false; JOIN.note = null;
+  const add = list.filter((f, i) => !JOIN.list.some((x) => x.name === f.name) && list.findIndex((g) => g.name === f.name) === i);
+  if (!add.length) { renderJoinCard(); return; }
+  JOIN.list.push(...byFileTime(add));
+  await readJoinParts();
 }
+const addJoinPart = (f) => addJoinParts([f]); // one demo, as up to 0.27.2 (tests/page/split_wrong_map.js)
 // Whether two files are the same recording under two names (Sujan, 20 Nov 2026): the same size, then the same bytes, read 8 MB
 // at a time from each; remembered per pair
 const SAME = new Map();
@@ -3472,8 +3499,8 @@ async function sameFile(a, b) {
   SAME.set(key, same);
   return same;
 }
-async function readJoinParts(added) {
-  for (const f of JOIN.list) {
+async function readJoinParts() {
+  for (const f of JOIN.list.slice()) {
     if (JOIN.F.has(f.name)) continue;
     JOIN.reading = f.name; renderJoinCard();
     try {
@@ -3481,30 +3508,35 @@ async function readJoinParts(added) {
       JOIN.P.set(f.name, P); JOIN.F.set(f.name, partFacts(P));
     } catch (e) {
       JOIN.list = JOIN.list.filter((x) => x !== f);
-      JOIN.err = { kind: 'read', name: f.name, why: e.message || String(e) };
+      JOIN.errs.push({ kind: 'read', name: f.name, why: e.message || String(e) });
     }
   }
   JOIN.reading = null;
-  // checks that refuse a part outright: another map, or fewer than 8 of the same players
+  // checks that refuse a part outright: another map, or fewer than 8 of the same players than the part the others are checked
+  // against: the first part (the open demo, when the card opened from it), or, with several demos picked at once, the one most
+  // of the others pass against, the earliest on a tie, so one stray demo among them is the one refused
   const F = JOIN.list.map((f) => JOIN.F.get(f.name));
-  const bad = (f) => {
-    const base = F[0];
+  const bad = (f, base) => {
     if (f.map !== base.map) return { kind: 'map', name: f.fileName, map: f.map, base: base.map };
     let n = 0; for (const p of f.players) if (base.players.has(p)) n++;
     const of = Math.max(base.players.size, f.players.size);
     if (n < 8) return { kind: 'players', name: f.fileName, n, of, byName: base.byName || f.byName };
     return null;
   };
-  for (let i = 1; i < F.length; i++) {
-    const e = bad(F[i]);
-    if (e) { JOIN.err = e; JOIN.list.splice(i, 1); F.splice(i, 1); i--; }
+  let b = 0;
+  if (JOIN.fresh && F.length > 2) { let best = -1; F.forEach((f, i) => { const n = F.filter((g, j) => j !== i && !bad(g, f)).length; if (n > best) { best = n; b = i; } }); }
+  JOIN.fresh = false;
+  const base = F[b];
+  for (let i = 0; i < F.length; i++) {
+    const e = F[i] === base ? null : bad(F[i], base);
+    if (e) { JOIN.errs.push(e); JOIN.list.splice(i, 1); F.splice(i, 1); i--; }
   }
   // a part that is byte for byte an earlier one under another name: a warning, Join parts off until it's removed (Sujan, 20 Nov
   // 2026; joined, its rounds counted again, as overtime after a 15:15 part: Na`Vi vs SK, Inferno, ESWC 2011, the first file twice)
   JOIN.dup = null; JOIN.checking = true;
   for (let j = 1; j < JOIN.list.length && !JOIN.dup; j++) for (let i = 0; i < j; i++) if (await sameFile(JOIN.list[i], JOIN.list[j])) { JOIN.dup = [JOIN.list[i].name, JOIN.list[j].name]; break; }
   JOIN.checking = false;
-  if (!JOIN.moved) {
+  if (!JOIN.moved && F.length > 1) {
     JOIN.sugg = suggestOrder(F);
     if (JOIN.sugg) JOIN.list = JOIN.sugg.order.map((i) => JOIN.list[i]);
   }
@@ -3546,8 +3578,8 @@ function renderJoinCard() {
   const ic = { ok: '✓', warn: '!', info: 'i', fail: '✕' };
   const x = '<button class="sum-x" type="button" id="jX" title="Close (Esc)" aria-label="Close">×</button>';
   // a part that was refused: its own card first
-  if (JOIN.err) {
-    const e = JOIN.err;
+  if (JOIN.errs.length) {
+    const e = JOIN.errs[0];
     const txt = e.kind === 'map' ? `${esc(e.name)} is on ${esc(e.map)}. The parts so far are on ${esc(e.base)}. Only the parts of one map can be joined; each map of a match stays its own demo.`
       : e.kind === 'players' ? `${esc(e.name)} has only ${e.n} of the same ${e.of} players${e.byName ? ' (matched by name; these demos have no Steam IDs)' : ''}. It's probably another match on the same map, which stays its own demo.`
       : `${esc(e.name)} couldn't be read: ${esc(e.why)}`;
@@ -3556,8 +3588,9 @@ function renderJoinCard() {
       <div class="sum-foot"><span class="sp"></span><button class="btn" type="button" id="jPick">Pick another demo…</button><button class="btn" type="button" id="jOk">OK</button></div></div>`;
     el.hidden = false;
     $('jX').onclick = closeJoinCard;
-    $('jOk').onclick = () => { JOIN.err = null; if (JOIN.list.length > 1) renderJoinCard(); else closeJoinCard(); };
-    $('jPick').onclick = () => { JOIN.err = null; JOIN.picking = true; renderJoinCard(); };
+    // OK: the next part refused, if any, then the card, or nothing when no two parts are left to join
+    $('jOk').onclick = () => { JOIN.errs.shift(); if (JOIN.errs.length || JOIN.list.length > 1) renderJoinCard(); else closeJoinCard(); };
+    $('jPick').onclick = () => { JOIN.errs = []; JOIN.picking = true; renderJoinCard(); };
     return;
   }
   const problem = F.length === JOIN.list.length && F.length > 1 ? orderProblem(F) : null;
@@ -3578,6 +3611,23 @@ function renderJoinCard() {
   // the same recording twice under two names, named by where the two are now
   const dupAt = JOIN.dup ? JOIN.dup.map((n) => JOIN.list.findIndex((f) => f.name === n)).sort((a, b) => a - b) : null;
   const dupWarn = dupAt && dupAt[0] >= 0 ? { s: 'warn', t: `Part ${dupAt[1] + 1} is the same recording as part ${dupAt[0] + 1}, under another name`, btn: { id: 'jDrop', label: `Remove part ${dupAt[1] + 1}` } } : null;
+  // A part that starts from 0:0 after earlier parts already played rounds that count (Sujan, 20 Nov 2026): only a warning, Join
+  // parts stays on, since a match can restart from 0:0 after a server crash. It catches the same rounds recorded twice in files
+  // that aren't byte for byte the same (the first Na`Vi vs SK, Inferno, ESWC 2011 part twice joined as 47 rounds at 22:25, not
+  // 41 at 19:22). The rounds are each earlier part's own count, as its line says (WeMadeFox vs Ravens' part 1: 4, not its 13
+  // replayed), with the rounds no file holds; a part that starts partway into a round doesn't start from 0:0. Not on a part
+  // the card reads as carrying on the half: WeMadeFox vs Ravens, Nuke, EM4 finals in the right order has none.
+  const zeroWarns = [];
+  if (F.length === JOIN.list.length && F.length > 1 && JOIN.carry && JOIN.carry.key === key) {
+    for (let i = 1; i < F.length; i++) {
+      if (!F[i].live || F[i].startsLate || CF[i]) continue;
+      const by = F.slice(0, i).map((g, j) => ({ j, n: g.live + (j ? g.missT + g.missCT : 0) })).filter((x) => x.n);
+      if (!by.length) continue;
+      const nums = by.map((x) => x.j + 1), n = by.reduce((a, x) => a + x.n, 0);
+      const who = nums.length === 1 ? `part ${nums[0]}` : `parts ${nums.slice(0, -1).join(', ')} and ${nums[nums.length - 1]}`;
+      zeroWarns.push({ s: 'warn', t: `Part ${i + 1} starts from 0:0, but ${who} already played ${plural(n, 'round')}.` });
+    }
+  }
   let verdict = null, recWarn = null, recIdx = null;
   if (F.length === JOIN.list.length && F.length > 1) {
     const s = JOIN.sugg, t = F.map((f) => f.time), timed = t.every((x) => x != null);
@@ -3588,7 +3638,7 @@ function renderJoinCard() {
     else if (s && s.by === 'rounds') txt = 'In the only order the rounds allow: the first part starts from 0:0 and only the last one has a winner.';
     else txt = "The files don't say which order they go in. Put the parts in order with the arrows.";
     // no green tick on an order the rounds allow but the recording times don't: that tick misled Sujan (19 Nov 2026)
-    verdict = { s: problem || off || dupWarn ? 'warn' : txt.startsWith('In ') ? 'ok' : 'info', t: txt };
+    verdict = { s: problem || off || dupWarn || zeroWarns.length ? 'warn' : txt.startsWith('In ') ? 'ok' : 'info', t: txt };
     if (off) {
       recIdx = F.map((f, i) => i).sort((a, b) => t[a] - t[b]);
       // its button the primary (gold) one (Sujan, 20 Nov 2026); in the "doesn't add up" box below when that shows
@@ -3654,14 +3704,14 @@ function renderJoinCard() {
     const from = !noneHere ? `<label for="jSel">Add a part from your folder</label><select id="jSel"><option value="">Pick a demo…</option>${grp(map ? `${map} in the name` : 'Demos', opts.filter(onMap))}${grp('Other demos', opts.filter((f) => !onMap(f)))}</select>`
       : '<span class="jnone">There are no other demos in your Half-Life folder.</span>';
     picker = `<div class="jpick">${from}
-      <button class="btn sm" type="button" id="jFile">A file from elsewhere…</button><input type="file" id="jFileIn" accept=".dem" hidden></div>`;
+      <button class="btn sm" type="button" id="jFile">A file from elsewhere…</button><input type="file" id="jFileIn" accept=".dem" multiple hidden>${JOIN.note ? `<p class="jmsg" role="alert">${esc(JOIN.note)}</p>` : ''}</div>`;
   }
   const busy = !!JOIN.reading || !!JOIN.checking || F.length < JOIN.list.length;
   // the checks that pass and the notes fold behind the verdict, opening with the link at its right, "Show N checks" / "Hide
   // checks", styled like the load card's Details (Sujan, 20 Nov 2026; a ▸ after the verdict up to then, which nobody saw);
   // warnings always in full (Sujan, 19 Nov 2026; each part's own line stays as approved, 7 Nov 2026)
   const li = (c) => `<li><span class="sum-ic ${c.s}" aria-hidden="true">${ic[c.s]}</span><span>${esc(c.t)}${c.n ? `<small>${esc(c.n)}</small>` : ''}${c.btn ? `<div class="li-btn"><button class="btn sm${c.btn.primary ? ' primary' : ''}" type="button" id="${c.btn.id}">${esc(c.btn.label)}</button></div>` : ''}</span></li>`;
-  const folded = checks.filter((c) => c.s !== 'warn'), warns = (dupWarn ? [dupWarn] : []).concat(recWarn ? [recWarn] : [], checks.filter((c) => c.s === 'warn'));
+  const folded = checks.filter((c) => c.s !== 'warn'), warns = (dupWarn ? [dupWarn] : []).concat(recWarn ? [recWarn] : [], zeroWarns, checks.filter((c) => c.s === 'warn'));
   const vText = verdict ? `<span class="sum-ic ${verdict.s}" aria-hidden="true">${ic[verdict.s]}</span><span class="jvt">${esc(verdict.t)}</span>` : '';
   const vRow = !verdict ? '' : `<li class="jv${folded.length ? ' more' : ''}">${vText}${folded.length ? `<button class="lnk" type="button" id="jVerdict" aria-expanded="${JOIN.okOpen ? 'true' : 'false'}">${JOIN.okOpen ? 'Hide checks' : `Show ${plural(folded.length, 'check')}`}</button>` : ''}</li>`;
   const checkRows = vRow + (JOIN.okOpen ? folded.map(li).join('') : '') + warns.map(li).join('');
@@ -3683,8 +3733,9 @@ function renderJoinCard() {
   $('jAdd').onclick = () => { JOIN.picking = true; renderJoinCard(); };
   if ($('jKeep')) $('jKeep').onclick = () => { JOIN.keep = true; renderJoinCard(); };
   if ($('jSugg')) $('jSugg').onclick = useSuggested;
-  if ($('jSel')) $('jSel').onchange = (e) => { const f = (files.demos || []).find((x) => x.name === e.target.value); if (f) addJoinPart(f); };
-  if ($('jFile')) { $('jFile').onclick = () => $('jFileIn').click(); $('jFileIn').onchange = (e) => { const f = e.target.files[0]; if (f) addJoinPart(f); }; }
+  if ($('jSel')) $('jSel').onchange = (e) => { const f = (files.demos || []).find((x) => x.name === e.target.value); if (f) addJoinParts([f]); };
+  // up to 5 from elsewhere at once; more add nothing, and the line under the picker says how many were picked
+  if ($('jFile')) { $('jFile').onclick = () => $('jFileIn').click(); $('jFileIn').onchange = (e) => { const list = [...e.target.files]; e.target.value = ''; if (!list.length) return; JOIN.note = tooMany(list.length); if (JOIN.note) renderJoinCard(); else addJoinParts(list); }; }
   $('jGo').onclick = () => {
     rememberJoin(JOIN.list, JOIN.keep && !!problem, problem);
     const parsed = JOIN.list.map((f) => JOIN.P.get(f.name));
@@ -10889,7 +10940,7 @@ function frameError(e) {
 function debugInfo() {
   let gpu = '';
   try { const gl = document.createElement('canvas').getContext('webgl'); const x = gl && gl.getExtension('WEBGL_debug_renderer_info'); gpu = gl ? (x ? gl.getParameter(x.UNMASKED_RENDERER_WEBGL) : 'WebGL available') : 'no WebGL'; } catch (e) { gpu = 'unknown'; }
-  const L = [`CS 1.6 Demo Viewer 0.27.2`, `Browser: ${navigator.userAgent}`, `Screen: ${screen.width}x${screen.height} at ${devicePixelRatio}x, window ${innerWidth}x${innerHeight}`, `Graphics: ${gpu}`];
+  const L = [`CS 1.6 Demo Viewer 0.27.3`, `Browser: ${navigator.userAgent}`, `Screen: ${screen.width}x${screen.height} at ${devicePixelRatio}x, window ${innerWidth}x${innerHeight}`, `Graphics: ${gpu}`];
   L.push(`Folder: ${Object.keys(files.maps).length} maps, ${Object.keys(files.overviews).length} overviews, ${Object.keys(files.mdl).length} models, ${Object.keys(files.snd).length} sounds, ${files.demos.length} demos`);
   if (D) {
     L.push(`Demo: ${D.fileName}, protocol ${(D.header && D.header.netProtocol) || '?'}, ${D.pov ? 'POV (recorded by a player)' : 'HLTV'}, map ${D.mapName}, length ${fmt(D.end - D.start)}, ${M.liveR.length} live rounds, final ${M.liveR.length ? M.liveR[M.liveR.length - 1].scoreAfter.join(':') : '-'}`);

@@ -386,6 +386,8 @@ kbd { font-family: var(--f-body); font-size: calc(11px * var(--ui)); background:
 .jpick { display: flex; flex-wrap: wrap; gap: calc(8px * var(--ui)); align-items: center; margin: 0 calc(24px * var(--ui)) calc(16px * var(--ui)); padding: calc(12px * var(--ui)); border: 1px dashed var(--line); border-radius: calc(6px * var(--ui)); font-size: calc(12px * var(--ui)); color: var(--muted); }
 .sum.join .sum-foot .btn, .sum.join .jbtns .btn { font-family: var(--f-body); }
 .jpick .jnone { flex: 1 1 calc(260px * var(--ui)); min-width: 0; }
+/* more than 5 demos picked at once: the line under the picker (the Join batch) */
+.jpick .jmsg { flex: 1 0 100%; margin: 0; color: var(--kill); }
 .jpick select { flex: 1 1 calc(260px * var(--ui)); min-width: 0; background: var(--panel-2); color: var(--fg); border: 1px solid var(--line); border-radius: calc(4px * var(--ui)); padding: calc(5px * var(--ui)) calc(6px * var(--ui)); font-size: calc(12px * var(--ui)); }
 .li-btn { margin-top: calc(6px * var(--ui)); }
 .pill { display: inline-block; font-size: calc(11px * var(--ui)); font-weight: 600; padding: 1px calc(6px * var(--ui)); border-radius: calc(3px * var(--ui)); margin-right: calc(6px * var(--ui)); letter-spacing: .04em; }
