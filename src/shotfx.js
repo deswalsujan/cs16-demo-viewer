@@ -30,7 +30,7 @@ async function fxLoad() {
   FX.src = src; FX.ready = false;
   const spr = {};
   try {
-    for (const n of ['muzzleflash1', 'muzzleflash2', 'muzzleflash3', 'bloodspray', 'blood']) {
+    for (const n of ['muzzleflash1', 'muzzleflash2', 'muzzleflash3', 'bloodspray', 'blood', 'ledglow']) {
       const f = src[`sprites/${n}.spr`]; if (!f) continue;
       const s = sprFrames(await readPicked(f, `sprites/${n}.spr`) || new Uint8Array(0));
       if (s) spr[n] = s;
@@ -119,7 +119,7 @@ function fxSprite(kind, parent) {
   const P = FX.pools[kind] || (FX.pools[kind] = []), i = FX.n[kind] = (FX.n[kind] || 0) + 1;
   let s = P[i - 1];
   if (!s) {
-    const add = kind === 'flash' || kind === 'vflash';
+    const add = kind === 'flash' || kind === 'vflash' || kind === 'glow';
     s = new THREE.Sprite(new THREE.SpriteMaterial({ transparent: true, depthWrite: false, blending: add ? THREE.AdditiveBlending : THREE.NormalBlending }));
     s.renderOrder = add ? 21 : 19; s.frustumCulled = false; P.push(s);
   }
@@ -389,6 +389,34 @@ function fxBlood() {
   }
 }
 // the world's share of a 3D frame: the gun flash on everyone in third person, the shells, the blood
+// The planted bomb's blink (the 3D batch, item 2; Sujan, 20 Nov 2026; tests/logs/c4-blink-2026-11-20.md): every glow
+// sprite the server sent (TE_GLOWSPRITE, D.glows; every 2 s from 2 s after the plant), as the game draws one: its
+// sprite's first frame facing the camera, scale times its width (0.3 x 64 = 19.2 units for ledglow.spr) at any distance
+// (kRenderFxNoDissipation), added onto the picture at its brightness for its life (0.1 s), then fading in a straight
+// line to nothing over 2 s (FTENT_FADEOUT, fadeSpeed 0.5: cs16-client HUD_TempEntUpdate), so it's always faintly on;
+// with no depth test, so players never hide it, but left out when the line from the eye meets the map more than 8
+// units before it (Xash3D gl_sprite.c, R_SpriteGlowBlend). A free camera outside the map skips that first solid stretch,
+// as the names do. On the moment itself (tNow3), not 0.1 s behind with the players and the bomb: a temp entity is made
+// when its message arrives, as the damage numbers come with the kill feed. In every view, HLTV and POV; Hide all
+// overlays keeps it. Run after the camera is placed.
+const GLOW_FADE = 0.5;
+function fxGlows() {
+  const G = D && D.glows; if (!FX.ready || !G || !G.length || !MAP) return;
+  const cam = R3.camera, eye = [cam.position.x, -cam.position.z, cam.position.y];
+  const t = tNow3;
+  for (let i = idxAt(G, 8, t); i >= 0 && G[i * 8] > t - 30; i--) {
+    const o = i * 8, age = t - G[o], life = G[o + 5], br = G[o + 7];
+    const a = Math.min(1, age <= life ? br : br * (1 - (age - life) * GLOW_FADE)); if (a <= 0.004) continue;
+    const nm = /([^/\\]+)\.spr$/i.exec(D.models[G[o + 4]] || ''), S = nm && FX.spr[nm[1].toLowerCase()]; if (!S) continue;
+    const to = [G[o + 1], G[o + 2], G[o + 3]], tr = solidAlong(MAP.bsp, eye, to, 4, R3.broken, R3.poses);
+    const hit = tr.hit.find((h, k) => !(k === 0 && h.f0 * tr.len <= 8));
+    if (hit && (1 - hit.f0) * tr.len > 8) continue;
+    const s = fxSprite('glow', R3.dyn);
+    s.material.map = S.tex[0]; s.material.rotation = 0; s.material.color.setHex(0xffffff); s.material.opacity = a; s.material.depthTest = false;
+    s.renderOrder = 22; s.scale.set(S.w * G[o + 6], S.h * G[o + 6], 1); s.position.copy(g3(to[0], to[1], to[2]));
+    s.userData.fx = { kind: 'glow', sprite: nm[1].toLowerCase(), alpha: a };
+  }
+}
 function fxWorld() {
   if (!FX.ready || !D) return;
   fxThirdPerson();

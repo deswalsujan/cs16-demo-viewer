@@ -213,6 +213,7 @@ function resetForNewDemo() {
     R3.players = {};
     clearOverlays();
     clearRigs();
+    if (R3.c4) { disposeRig(R3.c4.rig); R3.c4 = null; }
   }
   ANIM = {}; stopSounds();
   $('pov').hidden = true;
@@ -221,6 +222,45 @@ function resetForNewDemo() {
   // so POV.on left set made povView throw (Sujan's two crashes of 3 Nov 2026; on 0.26.16 the frame loop stopped there)
   POV.on = false; POV.i = 0; POV.shotsBy = null; POV.hidden = null; { const n = $('povNote'); if (n) n.hidden = true; }
   if (view3.failed) { view3.failed = null; status3(''); } // a map that failed to build is tried again (see build3d)
+}
+// The planted bomb (the 3D batch, item 2; Sujan, 19 and 20 Nov 2026; tests/logs/c4-blink-2026-11-20.md): the game's
+// models/w_c4.mdl where the demo's bomb entity is (D.c4ents), at its angles, lit like the player models, from when it
+// appears (it falls about 20 units and lands 0.2 s after the plant) until a defuse removes it or the explosion hides it.
+// Without the model, the orange ball of up to 0.27.1 resting on the floor where the entity is. With no entity at that
+// moment, the ball at BombDrop's spot + 4, as up to 0.27.1, from the plant until the round's end message (the defuse or
+// the explosion): in a POV demo whenever the bomb is out of his view, in an HLTV demo only while no entity came (the
+// 256-object limit on de_tuscan). Hide all overlays keeps it, as the game's demo player shows it; its blink is fxGlows
+// (shotfx.js).
+function c4Rig() {
+  const M2 = getModel('models/w_c4.mdl'); if (!M2 || !M2.mdl) return null;
+  let c = R3.c4;
+  if (!c || c.dyn !== R3.dyn || c.M !== M2) {
+    if (c) disposeRig(c.rig);
+    const rig = makeRig(M2, R3.dyn);
+    mdlPose(M2.mdl, 0, 0, 0.5, 0.5, rig.p, rig.q); mdlBoneMats(M2.mdl, rig.p, rig.q, rig.mats); skinRig(rig);
+    c = R3.c4 = { dyn: R3.dyn, M: M2, rig };
+  }
+  return c.rig;
+}
+function plantedC4(r, ov) {
+  const bp = D.bomb.find((b) => b.type === 'plantpos' && b.t >= r.start && b.t <= T && b.t <= r.end);
+  const E = D.c4ents, i = E && E.length ? idxAt(E, 8, T) : -1, o = i * 8;
+  const ball = (x, y, z) => ov('c4', () => { const c4 = new THREE.Mesh(sphere(6), new THREE.MeshBasicMaterial({ color: 0xff9a3c })); c4.userData.shared = true; return c4; }).position.copy(g3(x, y, z));
+  if (i >= 0 && E[o] >= r.start && E[o + 7]) {
+    // between two rows while it falls, in a straight line, as players move between snapshots
+    const n = o + 8, u = n < E.length && E[n + 7] && E[n] - E[o] < 0.5 ? (T - E[o]) / (E[n] - E[o]) : 0;
+    const L = (k) => (u > 0 ? E[o + k] + (E[n + k] - E[o + k]) * u : E[o + k]);
+    const x = L(1), y = L(2), z = L(3), rig = c4Rig();
+    if (!rig) { ball(x, y, z + 6); return; }
+    placeRig(rig, x, y, z, 0, 0);
+    // GoldSrc pitch, yaw, roll -> three, as the shells turn (shotfx.js)
+    const d = Math.PI / 180; rig.g.rotation.set(E[o + 6] * d, E[o + 5] * d, -E[o + 4] * d, 'YZX');
+    return;
+  }
+  if (!bp || T >= (r.endT != null && r.endT >= bp.t ? r.endT : r.end)) return;
+  // an HLTV demo that had the entity since the plant: it's gone, not out of view
+  if (!D.pov && i >= 0 && E[o] >= bp.t - 0.5) return;
+  ball(bp.pos[0], bp.pos[1], bp.pos[2] + 4);
 }
 // remove the reused round overlays (a new round or a new demo starts a fresh set)
 function clearOverlays() {
@@ -451,10 +491,8 @@ function update3Now() {
       l.material.opacity = 1 - age / life;
     }
   }
-  if (r) {
-    const bp = D.bomb.find((b) => b.type === 'plantpos' && b.t >= r.start && b.t <= T && b.t <= r.end);
-    if (bp) ov('c4', () => { const c4 = new THREE.Mesh(sphere(6), new THREE.MeshBasicMaterial({ color: 0xff9a3c })); c4.userData.shared = true; return c4; }).position.copy(g3(bp.pos[0], bp.pos[1], bp.pos[2] + 4));
-  }
+  if (R3.c4) R3.c4.rig.g.visible = false;
+  if (r) plantedC4(r, ov);
   if (opts.nades) for (let gi = 0; gi < M.nades.length; gi++) {
     const g = M.nades[gi];
     if (T < g.t0 || T > g.t1 + 1) continue;
@@ -579,6 +617,7 @@ function update3Now() {
     }
   }
   camera.updateProjectionMatrix();
+  try { fxGlows(); } catch (e) { frameError(e); } // the planted bomb's blink, with this frame's camera (shotfx.js)
   renderer.render(R3.scene, camera);
   // the gun in hand isn't shown while looking through the scope, as in the game
   const scoped = POV.on ? (POV.who != null && povFov(POV.t) < 90 && (() => { const ss = playerState(POV.who, T); return ss && SNIPERS[weaponShort(ss.weapon)]; })())

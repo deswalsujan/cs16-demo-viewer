@@ -1309,6 +1309,14 @@ export function parseDemo(buffer, onProgress, opts = {}) {
   // changes, so a bomb lying still is kept from its last update until the object is removed (0.18.0).
   const bombEnts = {}; // ent index -> {t0, x, y, z}
   const c4drops = []; // time dropped, time gone, x, y, z
+  // The planted bomb (models/w_c4.mdl), as the game draws it (the 3D batch, item 2; tests/logs/c4-blink-2026-11-20.md):
+  // a row each time it changes, time, x, y, z, pitch, yaw, roll, on (1 drawn; 0 gone, as a defuse removes it, or hidden,
+  // as the explosion sets EF_NODRAW). It falls and lands about 0.2 s after the plant, 17 to 22 units below BombDrop's spot.
+  const c4Now = {}; // ent index -> its last row
+  const c4ents = [];
+  // The server's glow sprites (TE_GLOWSPRITE), the planted bomb's blink every 2 s: time, x, y, z, sprite (model index),
+  // life (s), scale, brightness (0 to 1)
+  const glows = [];
   // HLTV's slow motion: svc_timescale messages, the time each took effect and its value (0.5 = half speed).
   // Inside a slow stretch the demo's clock runs 1 / value times faster than the game's (0.18.0).
   const timescale = [];
@@ -1414,6 +1422,8 @@ export function parseDemo(buffer, onProgress, opts = {}) {
       if (!b) bombEnts[num] = { t0: time, x: st['origin[0]'], y: st['origin[1]'], z: st['origin[2]'] };
       else { b.x = st['origin[0]']; b.y = st['origin[1]']; b.z = st['origin[2]']; }
     } else if (bombEnts[num]) finishBomb(num);
+    if (m.includes('w_c4')) c4Row(num, [time, st['origin[0]'] || 0, st['origin[1]'] || 0, st['origin[2]'] || 0, st['angles[0]'] || 0, st['angles[1]'] || 0, st['angles[2]'] || 0, (st.effects || 0) & 128 ? 0 : 1]);
+    else if (c4Now[num]) c4Gone(num);
     let type = null;
     if (m.includes('w_hegrenade')) type = 'he';
     else if (m.includes('w_flashbang')) type = 'flash';
@@ -1423,6 +1433,17 @@ export function parseDemo(buffer, onProgress, opts = {}) {
       if (nadeEnts[num]) finishNade(num);
       nadeEnts[num] = { type, owner: st.owner || 0, pts: [time, st['origin[0]'], st['origin[1]'], st['origin[2]']] };
     }
+  }
+  function c4Row(num, row) {
+    const last = c4Now[num];
+    if (last && row.every((v, i) => i === 0 || v === last[i])) return;
+    c4Now[num] = row;
+    if (inPlayback) c4ents.push(...row);
+  }
+  function c4Gone(num) {
+    const last = c4Now[num];
+    delete c4Now[num];
+    if (last && last[7] && inPlayback) c4ents.push(time, ...last.slice(1, 7), 0);
   }
   function finishBomb(num) {
     const b = bombEnts[num];
@@ -1790,6 +1811,12 @@ export function parseDemo(buffer, onProgress, opts = {}) {
             if (t === 115) { r.skip(5); const size = r.ub(); if (inPlayback) hitPoints.push(time, x, y, z, size); }
             else { r.skip(13); if (inPlayback) hitPoints.push(time, x, y, z, -1); }
           }
+          // the planted bomb's blink (the 3D batch, item 2): TE_GLOWSPRITE, ReGameDLL ggrenade.cpp C4Think; drawn as Xash3D's
+          // cl_tent.c reads it (R_TempSprite, kRenderGlow, kRenderFxNoDissipation, FTENT_FADEOUT)
+          else if (t === 23) {
+            const x = r.s() / 8, y = r.s() / 8, z = r.s() / 8, spr = r.s(), life = r.ub() * 0.1, scale = r.ub() * 0.1, br = r.ub() / 255;
+            if (inPlayback) glows.push(time, x, y, z, spr, life, scale, br);
+          }
           else if (t === 13) { r.skip(8); if (r.s()) r.skip(2); }
           else if (t === 29) {
             r.skip(5);
@@ -1841,6 +1868,7 @@ export function parseDemo(buffer, onProgress, opts = {}) {
           for (let k = maxClients + 1; k < ents.length; k++) if (ents[k]) trackNade(k);
           for (const k in nadeEnts) if (!ents[k]) finishNade(k);
           for (const k in bombEnts) if (!ents[k]) finishBomb(k);
+          for (const k in c4Now) if (!ents[k]) c4Gone(k);
           break;
         }
         case 41: { // deltapacketentities
@@ -1852,7 +1880,7 @@ export function parseDemo(buffer, onProgress, opts = {}) {
             if (r.peekBits(16) === 0) { r.bits(16); break; }
             const remove = r.bits(1);
             if (r.bits(1)) num = r.bits(11); else num += r.bits(6);
-            if (remove) { ents[num] = undefined; if (nadeEnts[num]) finishNade(num); if (bombEnts[num]) finishBomb(num); continue; }
+            if (remove) { ents[num] = undefined; if (nadeEnts[num]) finishNade(num); if (bombEnts[num]) finishBomb(num); if (c4Now[num]) c4Gone(num); continue; }
             const custom = r.bits(1);
             let st = ents[num];
             if (!st) { st = Object.assign({}, baseline[num] || {}); ents[num] = st; }
@@ -2055,7 +2083,7 @@ export function parseDemo(buffer, onProgress, opts = {}) {
     times: new Float32Array(samples.t), slots,
     finalScore: { ...scores }, models: resources.models, stride: STRIDE,
     pmodels, sounds: resources.sounds, events: resources.events, snds: new Float32Array(snds), shots: new Float32Array(shots), booms: new Float32Array(booms), hitPoints: new Float32Array(hitPoints), brass: new Float32Array(brass), puffs: new Float32Array(puffs), radio, centre, corpses,
-    errors, errSamples, health, c4drops: new Float32Array(c4drops), slow, stops, pings: new Float32Array(pings),
+    errors, errSamples, health, c4drops: new Float32Array(c4drops), c4ents: new Float32Array(c4ents), glows: new Float32Array(glows), slow, stops, pings: new Float32Array(pings),
     ...(povData ? { povData } : {}),
   };
 }
@@ -2628,7 +2656,8 @@ function indexFolder(list) {
       const pn = /(?:^|\/)(cstrike|valve)\/sprites\/640_pain\.spr$/.exec(p);
       if (pn && (!files.hud.pain || pn[1] === 'cstrike')) files.hud.pain = f;
       // the gun flash's sprites, the blood puff's and the palette that colours it (0.26.27): cstrike's, else Half-Life's
-      const fx = /(?:^|\/)(cstrike|valve)\/(sprites\/(?:muzzleflash[1-3]|blood|bloodspray)\.spr|gfx\/palette\.lmp)$/.exec(p);
+      // and the planted bomb's blink (ledglow.spr, the 3D batch)
+      const fx = /(?:^|\/)(cstrike|valve)\/(sprites\/(?:muzzleflash[1-3]|blood|bloodspray|ledglow)\.spr|gfx\/palette\.lmp)$/.exec(p);
       if (fx && (!files.fx[fx[2]] || fx[1] === 'cstrike')) files.fx[fx[2]] = f;
     }
   }
@@ -2848,7 +2877,7 @@ document.querySelectorAll('.cpy').forEach((b) => b.onclick = () => {
 });
 { const os = hlOS(); $('hlWin').hidden = os === 'mac'; $('hlMac').hidden = $('hlTip').hidden = os === 'win'; }
 // the files the viewer reads, for telling what changed between two picks in one visit (hlApply)
-const HL_WANT = /(?:^|\/)(?:cstrike|cstrike_downloads|valve)\/(?:maps\/[^/]+\.bsp|overviews\/[^/]+\.(?:bmp|txt)|models\/.+\.mdl|sound\/.+\.wav|sound\/(?:sentences|materials)\.txt|resource\/cstrike_english\.txt|sprites\/hud\.txt|sprites\/640hud\d+\.spr|sprites\/radaropaque640\.spr|sprites\/(?:muzzleflash[1-3]|blood|bloodspray|640_pain)\.spr|gfx\/palette\.lmp|[^/]+\.wad)$|(?:^|\/)cstrike\/(?:config\.cfg|sprites\/weapon_\w+\.txt)$|\.dem$/;
+const HL_WANT = /(?:^|\/)(?:cstrike|cstrike_downloads|valve)\/(?:maps\/[^/]+\.bsp|overviews\/[^/]+\.(?:bmp|txt)|models\/.+\.mdl|sound\/.+\.wav|sound\/(?:sentences|materials)\.txt|resource\/cstrike_english\.txt|sprites\/hud\.txt|sprites\/640hud\d+\.spr|sprites\/radaropaque640\.spr|sprites\/(?:muzzleflash[1-3]|blood|bloodspray|640_pain|ledglow)\.spr|gfx\/palette\.lmp|[^/]+\.wad)$|(?:^|\/)cstrike\/(?:config\.cfg|sprites\/weapon_\w+\.txt)$|\.dem$/;
 // path inside the chosen folder, lower case, without the folder's own name
 const hlKey = (f) => (f.webkitRelativePath || f.name).replace(/\\/g, '/').toLowerCase().split('/').slice(1).join('/');
 function hlSnap(list, name, gameDirs) {
@@ -3055,7 +3084,7 @@ function joinDemos(parts) {
     for (const k in src) { const nm = src[k]; if (byName[nm] == null) { byName[nm] = next; dst[next++] = nm; } map[k] = byName[nm]; }
     return (i) => (map[i] != null ? map[i] : i);
   };
-  const timesL = [], slotsL = {}, hpL = [], packL = [], brushEvL = [], brushPoseL = [], sndsL = [], shotsL = [], boomsL = [], hitPointsL = [], brassL = [], puffsL = [], c4L = [], pingsL = [];
+  const timesL = [], slotsL = {}, hpL = [], packL = [], brushEvL = [], brushPoseL = [], sndsL = [], shotsL = [], boomsL = [], hitPointsL = [], brassL = [], puffsL = [], c4L = [], c4eL = [], glowsL = [], pingsL = [];
   // POV mode (0.25.0): the parts' POV data on the joined timeline, when every part is a POV demo. recs: for each part,
   // its first sample, its number of samples and the recording player's entity there
   const povL = parts.every((P) => P.povData) ? { view: [], ownPos: [], hpInfo: [], shotOrg: [], fovs: [], ownAmmo: [], wanims: [], vmodels: [], obs: [], dmg: [], bars: [], tabs: [], fades: [], fadeStops: [], radarPos: [], radarBomb: [], attribs: [], hud: { hp: [], ap: [], helmet: [], money: [], ammox: [] }, gunAmmo: {}, recs: [] } : null;
@@ -3106,6 +3135,8 @@ function joinDemos(parts) {
     flat(P.brass || [], 12, (a, i) => { a[i] = sh(a[i]); a[i + 8] = mM(a[i + 8]); }, brassL);
     flat(P.puffs, 5, (a, i) => { a[i] = sh(a[i]); }, puffsL);
     flat(P.c4drops || [], 5, (a, i) => { a[i] = sh(a[i]); a[i + 1] = sh(a[i + 1]); }, c4L);
+    flat(P.c4ents || [], 8, (a, i) => { a[i] = sh(a[i]); }, c4eL);
+    flat(P.glows || [], 8, (a, i) => { a[i] = sh(a[i]); a[i + 4] = mM(a[i + 4]); }, glowsL);
     flat(P.pings || [], 3, (a, i) => { a[i] = sh(a[i]); }, pingsL);
     for (const [a, b, v] of P.slow || []) out.slow.push([sh(a), sh(b), v]);
     for (const [a, b, g] of P.stops || []) out.stops.push([sh(a), sh(b), g]);
@@ -3148,7 +3179,7 @@ function joinDemos(parts) {
     fades: cat(povL.fades), fadeStops: cat(povL.fadeStops), radarPos: cat(povL.radarPos), radarBomb: cat(povL.radarBomb), attribs: cat(povL.attribs),
     hud: Object.assign(Object.fromEntries(Object.keys(povL.hud).map((k) => [k, cat(povL.hud[k])])), { gunAmmo: povL.gunAmmo }),
   } : null;
-  out.pack = cat(packL); out.hp = cat(hpL); out.brushEvents = cat(brushEvL); out.brushPose = cat(brushPoseL); out.snds = cat(sndsL); out.shots = cat(shotsL); out.booms = cat(boomsL); out.hitPoints = cat(hitPointsL); out.brass = cat(brassL); out.puffs = cat(puffsL); out.c4drops = cat(c4L); out.pings = cat(pingsL);
+  out.pack = cat(packL); out.hp = cat(hpL); out.brushEvents = cat(brushEvL); out.brushPose = cat(brushPoseL); out.snds = cat(sndsL); out.shots = cat(shotsL); out.booms = cat(boomsL); out.hitPoints = cat(hitPointsL); out.brass = cat(brassL); out.puffs = cat(puffsL); out.c4drops = cat(c4L); out.c4ents = cat(c4eL); out.glows = cat(glowsL); out.pings = cat(pingsL);
   out.bomb.sort((a, b) => a.t - b.t);
   out.start = parts[0].start;
   out.fileName = parts[0].fileName;
@@ -7108,6 +7139,7 @@ function resetForNewDemo() {
     R3.players = {};
     clearOverlays();
     clearRigs();
+    if (R3.c4) { disposeRig(R3.c4.rig); R3.c4 = null; }
   }
   ANIM = {}; stopSounds();
   $('pov').hidden = true;
@@ -7116,6 +7148,45 @@ function resetForNewDemo() {
   // so POV.on left set made povView throw (Sujan's two crashes of 3 Nov 2026; on 0.26.16 the frame loop stopped there)
   POV.on = false; POV.i = 0; POV.shotsBy = null; POV.hidden = null; { const n = $('povNote'); if (n) n.hidden = true; }
   if (view3.failed) { view3.failed = null; status3(''); } // a map that failed to build is tried again (see build3d)
+}
+// The planted bomb (the 3D batch, item 2; Sujan, 19 and 20 Nov 2026; tests/logs/c4-blink-2026-11-20.md): the game's
+// models/w_c4.mdl where the demo's bomb entity is (D.c4ents), at its angles, lit like the player models, from when it
+// appears (it falls about 20 units and lands 0.2 s after the plant) until a defuse removes it or the explosion hides it.
+// Without the model, the orange ball of up to 0.27.1 resting on the floor where the entity is. With no entity at that
+// moment, the ball at BombDrop's spot + 4, as up to 0.27.1, from the plant until the round's end message (the defuse or
+// the explosion): in a POV demo whenever the bomb is out of his view, in an HLTV demo only while no entity came (the
+// 256-object limit on de_tuscan). Hide all overlays keeps it, as the game's demo player shows it; its blink is fxGlows
+// (shotfx.js).
+function c4Rig() {
+  const M2 = getModel('models/w_c4.mdl'); if (!M2 || !M2.mdl) return null;
+  let c = R3.c4;
+  if (!c || c.dyn !== R3.dyn || c.M !== M2) {
+    if (c) disposeRig(c.rig);
+    const rig = makeRig(M2, R3.dyn);
+    mdlPose(M2.mdl, 0, 0, 0.5, 0.5, rig.p, rig.q); mdlBoneMats(M2.mdl, rig.p, rig.q, rig.mats); skinRig(rig);
+    c = R3.c4 = { dyn: R3.dyn, M: M2, rig };
+  }
+  return c.rig;
+}
+function plantedC4(r, ov) {
+  const bp = D.bomb.find((b) => b.type === 'plantpos' && b.t >= r.start && b.t <= T && b.t <= r.end);
+  const E = D.c4ents, i = E && E.length ? idxAt(E, 8, T) : -1, o = i * 8;
+  const ball = (x, y, z) => ov('c4', () => { const c4 = new THREE.Mesh(sphere(6), new THREE.MeshBasicMaterial({ color: 0xff9a3c })); c4.userData.shared = true; return c4; }).position.copy(g3(x, y, z));
+  if (i >= 0 && E[o] >= r.start && E[o + 7]) {
+    // between two rows while it falls, in a straight line, as players move between snapshots
+    const n = o + 8, u = n < E.length && E[n + 7] && E[n] - E[o] < 0.5 ? (T - E[o]) / (E[n] - E[o]) : 0;
+    const L = (k) => (u > 0 ? E[o + k] + (E[n + k] - E[o + k]) * u : E[o + k]);
+    const x = L(1), y = L(2), z = L(3), rig = c4Rig();
+    if (!rig) { ball(x, y, z + 6); return; }
+    placeRig(rig, x, y, z, 0, 0);
+    // GoldSrc pitch, yaw, roll -> three, as the shells turn (shotfx.js)
+    const d = Math.PI / 180; rig.g.rotation.set(E[o + 6] * d, E[o + 5] * d, -E[o + 4] * d, 'YZX');
+    return;
+  }
+  if (!bp || T >= (r.endT != null && r.endT >= bp.t ? r.endT : r.end)) return;
+  // an HLTV demo that had the entity since the plant: it's gone, not out of view
+  if (!D.pov && i >= 0 && E[o] >= bp.t - 0.5) return;
+  ball(bp.pos[0], bp.pos[1], bp.pos[2] + 4);
 }
 // remove the reused round overlays (a new round or a new demo starts a fresh set)
 function clearOverlays() {
@@ -8408,7 +8479,7 @@ async function fxLoad() {
   FX.src = src; FX.ready = false;
   const spr = {};
   try {
-    for (const n of ['muzzleflash1', 'muzzleflash2', 'muzzleflash3', 'bloodspray', 'blood']) {
+    for (const n of ['muzzleflash1', 'muzzleflash2', 'muzzleflash3', 'bloodspray', 'blood', 'ledglow']) {
       const f = src[`sprites/${n}.spr`]; if (!f) continue;
       const s = sprFrames(await readPicked(f, `sprites/${n}.spr`) || new Uint8Array(0));
       if (s) spr[n] = s;
@@ -8497,7 +8568,7 @@ function fxSprite(kind, parent) {
   const P = FX.pools[kind] || (FX.pools[kind] = []), i = FX.n[kind] = (FX.n[kind] || 0) + 1;
   let s = P[i - 1];
   if (!s) {
-    const add = kind === 'flash' || kind === 'vflash';
+    const add = kind === 'flash' || kind === 'vflash' || kind === 'glow';
     s = new THREE.Sprite(new THREE.SpriteMaterial({ transparent: true, depthWrite: false, blending: add ? THREE.AdditiveBlending : THREE.NormalBlending }));
     s.renderOrder = add ? 21 : 19; s.frustumCulled = false; P.push(s);
   }
@@ -8767,6 +8838,34 @@ function fxBlood() {
   }
 }
 // the world's share of a 3D frame: the gun flash on everyone in third person, the shells, the blood
+// The planted bomb's blink (the 3D batch, item 2; Sujan, 20 Nov 2026; tests/logs/c4-blink-2026-11-20.md): every glow
+// sprite the server sent (TE_GLOWSPRITE, D.glows; every 2 s from 2 s after the plant), as the game draws one: its
+// sprite's first frame facing the camera, scale times its width (0.3 x 64 = 19.2 units for ledglow.spr) at any distance
+// (kRenderFxNoDissipation), added onto the picture at its brightness for its life (0.1 s), then fading in a straight
+// line to nothing over 2 s (FTENT_FADEOUT, fadeSpeed 0.5: cs16-client HUD_TempEntUpdate), so it's always faintly on;
+// with no depth test, so players never hide it, but left out when the line from the eye meets the map more than 8
+// units before it (Xash3D gl_sprite.c, R_SpriteGlowBlend). A free camera outside the map skips that first solid stretch,
+// as the names do. On the moment itself (tNow3), not 0.1 s behind with the players and the bomb: a temp entity is made
+// when its message arrives, as the damage numbers come with the kill feed. In every view, HLTV and POV; Hide all
+// overlays keeps it. Run after the camera is placed.
+const GLOW_FADE = 0.5;
+function fxGlows() {
+  const G = D && D.glows; if (!FX.ready || !G || !G.length || !MAP) return;
+  const cam = R3.camera, eye = [cam.position.x, -cam.position.z, cam.position.y];
+  const t = tNow3;
+  for (let i = idxAt(G, 8, t); i >= 0 && G[i * 8] > t - 30; i--) {
+    const o = i * 8, age = t - G[o], life = G[o + 5], br = G[o + 7];
+    const a = Math.min(1, age <= life ? br : br * (1 - (age - life) * GLOW_FADE)); if (a <= 0.004) continue;
+    const nm = /([^/\\]+)\.spr$/i.exec(D.models[G[o + 4]] || ''), S = nm && FX.spr[nm[1].toLowerCase()]; if (!S) continue;
+    const to = [G[o + 1], G[o + 2], G[o + 3]], tr = solidAlong(MAP.bsp, eye, to, 4, R3.broken, R3.poses);
+    const hit = tr.hit.find((h, k) => !(k === 0 && h.f0 * tr.len <= 8));
+    if (hit && (1 - hit.f0) * tr.len > 8) continue;
+    const s = fxSprite('glow', R3.dyn);
+    s.material.map = S.tex[0]; s.material.rotation = 0; s.material.color.setHex(0xffffff); s.material.opacity = a; s.material.depthTest = false;
+    s.renderOrder = 22; s.scale.set(S.w * G[o + 6], S.h * G[o + 6], 1); s.position.copy(g3(to[0], to[1], to[2]));
+    s.userData.fx = { kind: 'glow', sprite: nm[1].toLowerCase(), alpha: a };
+  }
+}
 function fxWorld() {
   if (!FX.ready || !D) return;
   fxThirdPerson();
@@ -8893,10 +8992,8 @@ function update3Now() {
       l.material.opacity = 1 - age / life;
     }
   }
-  if (r) {
-    const bp = D.bomb.find((b) => b.type === 'plantpos' && b.t >= r.start && b.t <= T && b.t <= r.end);
-    if (bp) ov('c4', () => { const c4 = new THREE.Mesh(sphere(6), new THREE.MeshBasicMaterial({ color: 0xff9a3c })); c4.userData.shared = true; return c4; }).position.copy(g3(bp.pos[0], bp.pos[1], bp.pos[2] + 4));
-  }
+  if (R3.c4) R3.c4.rig.g.visible = false;
+  if (r) plantedC4(r, ov);
   if (opts.nades) for (let gi = 0; gi < M.nades.length; gi++) {
     const g = M.nades[gi];
     if (T < g.t0 || T > g.t1 + 1) continue;
@@ -9021,6 +9118,7 @@ function update3Now() {
     }
   }
   camera.updateProjectionMatrix();
+  try { fxGlows(); } catch (e) { frameError(e); } // the planted bomb's blink, with this frame's camera (shotfx.js)
   renderer.render(R3.scene, camera);
   // the gun in hand isn't shown while looking through the scope, as in the game
   const scoped = POV.on ? (POV.who != null && povFov(POV.t) < 90 && (() => { const ss = playerState(POV.who, T); return ss && SNIPERS[weaponShort(ss.weapon)]; })())

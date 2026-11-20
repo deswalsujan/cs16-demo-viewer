@@ -48,7 +48,8 @@ function indexFolder(list) {
       const pn = /(?:^|\/)(cstrike|valve)\/sprites\/640_pain\.spr$/.exec(p);
       if (pn && (!files.hud.pain || pn[1] === 'cstrike')) files.hud.pain = f;
       // the gun flash's sprites, the blood puff's and the palette that colours it (0.26.27): cstrike's, else Half-Life's
-      const fx = /(?:^|\/)(cstrike|valve)\/(sprites\/(?:muzzleflash[1-3]|blood|bloodspray)\.spr|gfx\/palette\.lmp)$/.exec(p);
+      // and the planted bomb's blink (ledglow.spr, the 3D batch)
+      const fx = /(?:^|\/)(cstrike|valve)\/(sprites\/(?:muzzleflash[1-3]|blood|bloodspray|ledglow)\.spr|gfx\/palette\.lmp)$/.exec(p);
       if (fx && (!files.fx[fx[2]] || fx[1] === 'cstrike')) files.fx[fx[2]] = f;
     }
   }
@@ -268,7 +269,7 @@ document.querySelectorAll('.cpy').forEach((b) => b.onclick = () => {
 });
 { const os = hlOS(); $('hlWin').hidden = os === 'mac'; $('hlMac').hidden = $('hlTip').hidden = os === 'win'; }
 // the files the viewer reads, for telling what changed between two picks in one visit (hlApply)
-const HL_WANT = /(?:^|\/)(?:cstrike|cstrike_downloads|valve)\/(?:maps\/[^/]+\.bsp|overviews\/[^/]+\.(?:bmp|txt)|models\/.+\.mdl|sound\/.+\.wav|sound\/(?:sentences|materials)\.txt|resource\/cstrike_english\.txt|sprites\/hud\.txt|sprites\/640hud\d+\.spr|sprites\/radaropaque640\.spr|sprites\/(?:muzzleflash[1-3]|blood|bloodspray|640_pain)\.spr|gfx\/palette\.lmp|[^/]+\.wad)$|(?:^|\/)cstrike\/(?:config\.cfg|sprites\/weapon_\w+\.txt)$|\.dem$/;
+const HL_WANT = /(?:^|\/)(?:cstrike|cstrike_downloads|valve)\/(?:maps\/[^/]+\.bsp|overviews\/[^/]+\.(?:bmp|txt)|models\/.+\.mdl|sound\/.+\.wav|sound\/(?:sentences|materials)\.txt|resource\/cstrike_english\.txt|sprites\/hud\.txt|sprites\/640hud\d+\.spr|sprites\/radaropaque640\.spr|sprites\/(?:muzzleflash[1-3]|blood|bloodspray|640_pain|ledglow)\.spr|gfx\/palette\.lmp|[^/]+\.wad)$|(?:^|\/)cstrike\/(?:config\.cfg|sprites\/weapon_\w+\.txt)$|\.dem$/;
 // path inside the chosen folder, lower case, without the folder's own name
 const hlKey = (f) => (f.webkitRelativePath || f.name).replace(/\\/g, '/').toLowerCase().split('/').slice(1).join('/');
 function hlSnap(list, name, gameDirs) {
