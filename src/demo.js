@@ -342,6 +342,14 @@ export function parseDemo(buffer, onProgress, opts = {}) {
   // changes, so a bomb lying still is kept from its last update until the object is removed (0.18.0).
   const bombEnts = {}; // ent index -> {t0, x, y, z}
   const c4drops = []; // time dropped, time gone, x, y, z
+  // The planted bomb (models/w_c4.mdl), as the game draws it (the 3D batch, item 2; tests/logs/c4-blink-2026-11-20.md):
+  // a row each time it changes, time, x, y, z, pitch, yaw, roll, on (1 drawn; 0 gone, as a defuse removes it, or hidden,
+  // as the explosion sets EF_NODRAW). It falls and lands about 0.2 s after the plant, 17 to 22 units below BombDrop's spot.
+  const c4Now = {}; // ent index -> its last row
+  const c4ents = [];
+  // The server's glow sprites (TE_GLOWSPRITE), the planted bomb's blink every 2 s: time, x, y, z, sprite (model index),
+  // life (s), scale, brightness (0 to 1)
+  const glows = [];
   // HLTV's slow motion: svc_timescale messages, the time each took effect and its value (0.5 = half speed).
   // Inside a slow stretch the demo's clock runs 1 / value times faster than the game's (0.18.0).
   const timescale = [];
@@ -447,6 +455,8 @@ export function parseDemo(buffer, onProgress, opts = {}) {
       if (!b) bombEnts[num] = { t0: time, x: st['origin[0]'], y: st['origin[1]'], z: st['origin[2]'] };
       else { b.x = st['origin[0]']; b.y = st['origin[1]']; b.z = st['origin[2]']; }
     } else if (bombEnts[num]) finishBomb(num);
+    if (m.includes('w_c4')) c4Row(num, [time, st['origin[0]'] || 0, st['origin[1]'] || 0, st['origin[2]'] || 0, st['angles[0]'] || 0, st['angles[1]'] || 0, st['angles[2]'] || 0, (st.effects || 0) & 128 ? 0 : 1]);
+    else if (c4Now[num]) c4Gone(num);
     let type = null;
     if (m.includes('w_hegrenade')) type = 'he';
     else if (m.includes('w_flashbang')) type = 'flash';
@@ -456,6 +466,17 @@ export function parseDemo(buffer, onProgress, opts = {}) {
       if (nadeEnts[num]) finishNade(num);
       nadeEnts[num] = { type, owner: st.owner || 0, pts: [time, st['origin[0]'], st['origin[1]'], st['origin[2]']] };
     }
+  }
+  function c4Row(num, row) {
+    const last = c4Now[num];
+    if (last && row.every((v, i) => i === 0 || v === last[i])) return;
+    c4Now[num] = row;
+    if (inPlayback) c4ents.push(...row);
+  }
+  function c4Gone(num) {
+    const last = c4Now[num];
+    delete c4Now[num];
+    if (last && last[7] && inPlayback) c4ents.push(time, ...last.slice(1, 7), 0);
   }
   function finishBomb(num) {
     const b = bombEnts[num];
@@ -823,6 +844,12 @@ export function parseDemo(buffer, onProgress, opts = {}) {
             if (t === 115) { r.skip(5); const size = r.ub(); if (inPlayback) hitPoints.push(time, x, y, z, size); }
             else { r.skip(13); if (inPlayback) hitPoints.push(time, x, y, z, -1); }
           }
+          // the planted bomb's blink (the 3D batch, item 2): TE_GLOWSPRITE, ReGameDLL ggrenade.cpp C4Think; drawn as Xash3D's
+          // cl_tent.c reads it (R_TempSprite, kRenderGlow, kRenderFxNoDissipation, FTENT_FADEOUT)
+          else if (t === 23) {
+            const x = r.s() / 8, y = r.s() / 8, z = r.s() / 8, spr = r.s(), life = r.ub() * 0.1, scale = r.ub() * 0.1, br = r.ub() / 255;
+            if (inPlayback) glows.push(time, x, y, z, spr, life, scale, br);
+          }
           else if (t === 13) { r.skip(8); if (r.s()) r.skip(2); }
           else if (t === 29) {
             r.skip(5);
@@ -874,6 +901,7 @@ export function parseDemo(buffer, onProgress, opts = {}) {
           for (let k = maxClients + 1; k < ents.length; k++) if (ents[k]) trackNade(k);
           for (const k in nadeEnts) if (!ents[k]) finishNade(k);
           for (const k in bombEnts) if (!ents[k]) finishBomb(k);
+          for (const k in c4Now) if (!ents[k]) c4Gone(k);
           break;
         }
         case 41: { // deltapacketentities
@@ -885,7 +913,7 @@ export function parseDemo(buffer, onProgress, opts = {}) {
             if (r.peekBits(16) === 0) { r.bits(16); break; }
             const remove = r.bits(1);
             if (r.bits(1)) num = r.bits(11); else num += r.bits(6);
-            if (remove) { ents[num] = undefined; if (nadeEnts[num]) finishNade(num); if (bombEnts[num]) finishBomb(num); continue; }
+            if (remove) { ents[num] = undefined; if (nadeEnts[num]) finishNade(num); if (bombEnts[num]) finishBomb(num); if (c4Now[num]) c4Gone(num); continue; }
             const custom = r.bits(1);
             let st = ents[num];
             if (!st) { st = Object.assign({}, baseline[num] || {}); ents[num] = st; }
@@ -1088,7 +1116,7 @@ export function parseDemo(buffer, onProgress, opts = {}) {
     times: new Float32Array(samples.t), slots,
     finalScore: { ...scores }, models: resources.models, stride: STRIDE,
     pmodels, sounds: resources.sounds, events: resources.events, snds: new Float32Array(snds), shots: new Float32Array(shots), booms: new Float32Array(booms), hitPoints: new Float32Array(hitPoints), brass: new Float32Array(brass), puffs: new Float32Array(puffs), radio, centre, corpses,
-    errors, errSamples, health, c4drops: new Float32Array(c4drops), slow, stops, pings: new Float32Array(pings),
+    errors, errSamples, health, c4drops: new Float32Array(c4drops), c4ents: new Float32Array(c4ents), glows: new Float32Array(glows), slow, stops, pings: new Float32Array(pings),
     ...(povData ? { povData } : {}),
   };
 }

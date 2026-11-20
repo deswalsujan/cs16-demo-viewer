@@ -1,7 +1,9 @@
 // ---------------- the game's light (0.26.31) ----------------
-// Sujan, 12 Nov 2026 (DECISIONS.md, "The 3D picture's contrast"): the 3D picture uses Valve's defaults as one fixed
-// curve for everyone, with no setting, and gl_overbright 1; player models are lit by the floor under them, as the
-// game does, even where that makes them hard to see. Built as Xash3D FWGS builds it (commit 707596f, 10 Nov 2026):
+// Sujan, 12 Nov 2026 (DECISIONS.md, "The 3D picture's contrast"): the 3D picture uses one fixed curve for everyone, with
+// no setting: Valve's defaults and gl_overbright 1 up to 0.27.1; since the 3D batch gamma 3, brightness 2 and no
+// overbright (Sujan, 20 Nov 2026: his own settings in the game, from his config.cfg on Windows, where both the
+// steam_legacy and the 25th Anniversary build have gl_overbright 0), so a fully lit surface is its texture's colour;
+// player models are lit by the floor under them, as the game does, even where that makes them hard to see. Built as Xash3D FWGS builds it (commit 707596f, 10 Nov 2026):
 // the tables in engine/client/gamma.c (BuildGammaTable), the world's lightmaps in ref/gl/gl_rsurf.c (R_BuildLightMap,
 // R_BlendLightmaps), the light on a model in ref/common/ref_light.c (R_EntityDynamicLight) and ref/gl/gl_studio.c
 // (R_StudioLighting). Up to 0.26.30 the map was each texture times min(lightmap x 2, 1.8), then to the power 0.85,
@@ -10,11 +12,15 @@
 // Valve's defaults (Valve Developer Community, list of Half-Life console variables): gamma 2.5, brightness 1,
 // texgamma 2, lightgamma 2.5 (Xash3D's own brightness default is 0). tex: a texture's colour through texgamma; light:
 // the light table (0 to 1023); lm: a lightmap byte at light style "m" (264 of 256) through it, as R_BuildLightMap
-// writes it with gl_overbright 1 (lightscale 256), to be drawn at 4/3 (R_BlendLightmaps: DST_COLOR, SRC_COLOR with
-// the colour 128/192). Math.fround where the engine works in single precision. Checked 12 Nov 2026 against Xash3D's
+// writes it. With gl_overbright 1 (overbright true, up to 0.27.1) lightscale is 256 and the map is drawn at 4/3
+// (R_BlendLightmaps: DST_COLOR, SRC_COLOR with the colour 128/192); with gl_overbright 0 lightscale is
+// pow(2, 1 / lightgamma) x 256 + 0.5 (338 at lightgamma 2.5), a brighter lightmap to make up for it, drawn at 1
+// (ZERO, SRC_COLOR). Overbright changes nothing on models: R_StudioLighting looks the light up in the same table
+// either way (LightToTexGamma), and the light under a model is read from the map's own samples (R_LightVec). Math.fround where the engine works in single precision. Checked 12 Nov 2026 against Xash3D's
 // own test tables for BuildGammaTable (gamma 2.5, brightness 0, texgamma 2, lightgamma 2.5; and 2.2, 1, 2.2, 2.4):
-// every entry the same (tests/logs/0.26.31.md).
-function buildCurve(gamma, brightness, texgamma, lightgamma) {
+// every entry the same (tests/logs/0.26.31.md). Brightness above 1 multiplies the light before the curve's knee, as
+// BuildGammaTable does (the engine allows gamma 1.8 to 3 and brightness 0 to 3, V_ValidateGammaCvars).
+function buildCurve(gamma, brightness, texgamma, lightgamma, overbright) {
   const f32 = Math.fround;
   const g1 = f32(1 / gamma), g2 = f32(g1 * texgamma);
   const g3 = f32(brightness <= 0 ? 0.125 : brightness <= 1 ? 0.125 - brightness * brightness * 0.075 : 0.05);
@@ -26,14 +32,16 @@ function buildCurve(gamma, brightness, texgamma, lightgamma) {
     f = f <= g3 ? f32((f / g3) * 0.125) : f32(((f - g3) / (1 - g3)) * 0.875 + 0.125);
     light[i] = Math.max(0, Math.min(1023, Math.trunc(Math.pow(f, g1) * 1023)));
   }
-  for (let i = 0; i < 256; i++) lm[i] = light[Math.min(1023, (i * 264 * 256) >> 14)] >> 2;
-  return { tex, light, lm, g1, g3, lightgamma };
+  const lightscale = overbright ? 256 : Math.trunc(Math.pow(2, f32(1 / lightgamma)) * 256 + 0.5);
+  for (let i = 0; i < 256; i++) lm[i] = light[Math.min(1023, (i * 264 * lightscale) >> 14)] >> 2;
+  return { tex, light, lm, g1, g3, lightgamma, bright: brightness > 1 ? brightness : 1, overbright: !!overbright, lightscale };
 }
-const CURVE = buildCurve(2.5, 1, 2, 2.5);
+const CURVE = buildCurve(3, 2, 2, 2.5, false); // up to 0.27.1 Valve's defaults with overbright, (2.5, 1, 2, 2.5, true)
 
 // A texture's colours through texgamma, as the game loads a Half-Life texture (LUMP_TEXGAMMA, Image_SetPalette in
 // Xash3D's imagelib): every world texture but the masked ones (names starting with {, fences and grates), water too,
-// and every model skin but the masked ones (STUDIO_NF_MASKED). The sky and the sprites keep their colours.
+// and every model skin but the masked ones (STUDIO_NF_MASKED), and the sky's pictures (the 3D batch: as Sujan's game
+// draws them, measured on his de_train screenshots). The sprites keep their colours.
 function texGamma(rgba) {
   const out = new Uint8Array(rgba.length), T = CURVE.tex;
   for (let i = 0; i < rgba.length; i += 4) { out[i] = T[rgba[i]]; out[i + 1] = T[rgba[i + 1]]; out[i + 2] = T[rgba[i + 2]]; out[i + 3] = rgba[i + 3]; }
@@ -120,22 +128,24 @@ function entityLight(x, y, z) {
 // (through texgamma when it was loaded). The table is worked out in the shader the way CURVE builds it, so it needs no
 // texture in the vertex shader. Flat-shaded skins get 80% of the directional part (STUDIO_NF_FLATSHADE), full-bright
 // skins the light's colour alone (STUDIO_NF_FULLBRIGHT). even: Team colours keeps the even light it had up to 0.26.30
-// (ambient 0.75 and a sun of 0.5), so red and blue stay clear in the dark (it isn't in the game). emissive: the
-// selected player's highlight, added on top.
+// (ambient 0.75 and a sun of 0.5), so red and blue stay clear in the dark (it isn't in the game). fixedLight: the same
+// even light on every model, skins and all, while Fixed light is on in View settings (the 3D batch, item 5; Sujan, 20 Nov
+// 2026; off by default), one uniform shared by every model's material (FIXED_LIGHT). emissive: the selected player's
+// highlight, added on top.
 const STUDIO_VS = `uniform float amb; uniform float shade; uniform vec3 lcol; uniform vec3 ldir; uniform float flatShade;
-  uniform float fullBright; uniform float even;
+  uniform float fullBright; uniform float even; uniform float fixedLight;
   varying vec2 vUv; varying vec3 vCol;
   float curve(float illum) {
     float i = floor(min(illum, 255.0) * 4.0);
     if (i < 1.0) return 0.0;
-    float f = pow(i / 1023.0, ${CURVE.lightgamma.toFixed(1)});
+    float f = pow(i / 1023.0, ${CURVE.lightgamma.toFixed(1)}) * ${CURVE.bright.toFixed(1)};
     f = f <= ${CURVE.g3.toFixed(9)} ? f / ${CURVE.g3.toFixed(9)} * 0.125 : (f - ${CURVE.g3.toFixed(9)}) / ${(1 - CURVE.g3).toFixed(9)} * 0.875 + 0.125;
     return min(floor(pow(f, ${CURVE.g1.toFixed(9)}) * 1023.0), 1023.0) / 1023.0;
   }
   void main() {
     vUv = uv;
     vec3 n = normalize(mat3(modelMatrix) * normal);
-    if (even > 0.5) vCol = vec3(0.75 + 0.5 * max(dot(n, normalize(vec3(0.4, 1.0, 0.3))), 0.0));
+    if (even > 0.5 || fixedLight > 0.5) vCol = vec3(0.75 + 0.5 * max(dot(n, normalize(vec3(0.4, 1.0, 0.3))), 0.0));
     else if (fullBright > 0.5) vCol = lcol;
     else {
       float illum = amb;
@@ -158,6 +168,8 @@ const STUDIO_FS = `uniform sampler2D map; uniform float hasMap; uniform float al
     if (t.a < alphaTest) discard;
     gl_FragColor = vec4(min(t.rgb * vCol, vec3(1.0)) + emissive, 1.0);
   }`;
+// Fixed light (View settings): 1 lights every model evenly, 0 as the game lights it; loop.js sets it
+const FIXED_LIGHT = { value: 0 };
 // flags: the skin's texture flags (1 flat-shaded, 4 full-bright, 64 masked)
 function studioMat(map, flags) {
   return new THREE.ShaderMaterial({
@@ -165,7 +177,7 @@ function studioMat(map, flags) {
       map: { value: map || null }, hasMap: { value: map ? 1 : 0 }, alphaTest: { value: flags & 64 ? 0.5 : 0 },
       color: { value: new THREE.Color(0xffffff) }, emissive: { value: new THREE.Color(0) },
       amb: { value: 192 }, shade: { value: 0 }, lcol: { value: new THREE.Vector3(1, 1, 1) }, ldir: { value: new THREE.Vector3(0, -1, 0) },
-      flatShade: { value: flags & 1 ? 1 : 0 }, fullBright: { value: flags & 4 ? 1 : 0 }, even: { value: 0 },
+      flatShade: { value: flags & 1 ? 1 : 0 }, fullBright: { value: flags & 4 ? 1 : 0 }, even: { value: 0 }, fixedLight: FIXED_LIGHT,
     },
     vertexShader: STUDIO_VS, fragmentShader: STUDIO_FS, side: THREE.DoubleSide,
   });

@@ -64,6 +64,12 @@ $('xh3').onchange = () => { ls.set('crosshair2', $('xh3').value); };
 $('ui3').value = uiSizeSetting();
 $('ui3').onchange = () => { ls.set('uiSize', $('ui3').value); if (applyUiSize()) dispatchEvent(new Event('uisize')); };
 addEventListener('uisize', () => { resize(); applyQuality(false); if (theatreActive()) measureTheatre(); });
+// Fixed light (the 3D batch, item 5; Sujan, 20 Nov 2026): every model lit the same everywhere, as up to 0.26.30 (ambient
+// 0.75 and a sun of 0.5 from above), the map keeping the game's light; off by default, kept in this browser like Glow on
+// hits. One uniform every model's material shares (FIXED_LIGHT, light.js)
+const fixedShow = () => { FIXED_LIGHT.value = $('fixed3').checked ? 1 : 0; };
+$('fixed3').checked = ls.get('fixedLight') === 'on'; fixedShow();
+$('fixed3').onchange = () => { ls.set('fixedLight', $('fixed3').checked ? 'on' : 'off'); fixedShow(); };
 $('glow3').checked = ls.get('hitGlow') !== 'off';
 $('glow3').onchange = () => { ls.set('hitGlow', $('glow3').checked ? 'on' : 'off'); };
 // Damage numbers (0.26.16; Sujan, 3 Nov 2026): Wallbangs, the default and the numbers as before, Direct hits, Both or Off,
@@ -71,25 +77,26 @@ $('glow3').onchange = () => { ls.set('hitGlow', $('glow3').checked ? 'on' : 'off
 $('dn3').value = ['wb', 'direct', 'both', 'off'].includes(ls.get('dmgNumbers')) ? ls.get('dmgNumbers') : 'wb';
 $('dn3').onchange = () => { ls.set('dmgNumbers', $('dn3').value); };
 // Vanilla (0.26.16; Sujan, 1 to 3 Nov 2026, docs/kill-details-damage-vanilla-mock.jpg): one switch for every overlay the
-// game's own demo player doesn't have. On, it turns off Names, Grenades, Kill lines, See through walls, Glow on hits and the
-// damage numbers, which still work one by one after, and hides what has no switch of its own: kill markers and the ring,
+// game's own demo player doesn't have. On, it turns off Names, Grenades, Kill lines, See through walls, Glow on hits, the
+// damage numbers and Fixed light (the 3D batch), which still work one by one after, and hides what has no switch of its own: kill markers and the ring,
 // the death cam's red wash and banner, and the C4 countdown (VAN.on). Off, it brings back the settings it turned off.
 // The kill feed, round timer, score, crosshair, Tab scoreboard, "Recording skips here" and the name bar stay.
 function setVanilla(on) {
   if (on === VAN.on) return;
   const ids = { names: 'tgNames', nades: 'tgNades', lines: 'tgLines', xray: 'tgXray' };
   if (on) {
-    VAN.saved = { names: opts.names, nades: opts.nades, lines: opts.lines, xray: opts.xray, glow: $('glow3').checked, dn: $('dn3').value };
+    VAN.saved = { names: opts.names, nades: opts.nades, lines: opts.lines, xray: opts.xray, glow: $('glow3').checked, dn: $('dn3').value, fixed: $('fixed3').checked };
     for (const k in ids) { opts[k] = false; $(ids[k]).classList.remove('on'); }
-    $('glow3').checked = false; $('dn3').value = 'off';
+    $('glow3').checked = false; $('dn3').value = 'off'; $('fixed3').checked = false;
   } else if (VAN.saved) {
     const o = VAN.saved;
     for (const k in ids) { opts[k] = !!o[k]; $(ids[k]).classList.toggle('on', opts[k]); }
     $('glow3').checked = o.glow !== false; $('dn3').value = ['wb', 'direct', 'both', 'off'].includes(o.dn) ? o.dn : 'wb';
+    $('fixed3').checked = o.fixed === true;
   }
   VAN.on = on; if (!on) VAN.saved = null; $('van3').checked = on;
   ls.set('vanilla', on ? { on: true, saved: VAN.saved } : null);
-  ls.set('hitGlow', $('glow3').checked ? 'on' : 'off'); ls.set('dmgNumbers', $('dn3').value); savePrefs();
+  ls.set('hitGlow', $('glow3').checked ? 'on' : 'off'); ls.set('dmgNumbers', $('dn3').value); ls.set('fixedLight', $('fixed3').checked ? 'on' : 'off'); fixedShow(); savePrefs();
   if (D) updateHud(true);
 }
 { const v = ls.get('vanilla'); if (v && v.on === true) { VAN.on = true; VAN.saved = v.saved && typeof v.saved === 'object' ? v.saved : null; } }

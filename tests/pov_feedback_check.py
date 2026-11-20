@@ -18,8 +18,9 @@ recorded by BAJRANG || forgotteN_), and on SK vs Na`Vi, Train, DreamHack Winter 
 - the Kills tab of the POV demo: round headings set apart with his side; at a new round during playback that round's
   heading at the top of the list; the list where it was at a round with no kill or death of his and after a click on
   a kill in another round; no kill details;
-- his HUD and radar on their own layer, added onto the picture (mix-blend-mode: plus-lighter), the radar top left with
-  the round pill under it.
+- his HUD on its own layer, added onto the picture (mix-blend-mode: plus-lighter); his radar top left, the solid one
+  drawn over the picture on the spectator bars' layer since the 3D batch (Sujan, 19 Nov 2026; added onto the picture up
+  to 0.27.1), with the round pill under it.
 
 Usage:  HALF_LIFE_DIR=~/code/cs16-data/Half-Life DEMO_DIRS=~/code/cs16-data/test-demos python3 pov_feedback_check.py [page.html]
 Also opens Match 2 T (public server, de_mirage_32, 27 Mar 2025) for a round with no kill or death of his (R11), which
@@ -73,8 +74,10 @@ KILLS = js(r'''(() => { const heads = [...$('pane').querySelectorAll('.sechead.r
 TOP = js(r'''(() => { const P = $('pane'), cur = P.querySelector('.sechead.rhead.cur'); return { round: roundAt(T) && roundAt(T).ln, scroll: Math.round(P.scrollTop), cur: cur ? cur.firstElementChild.textContent : null,
   off: cur ? Math.round(cur.getBoundingClientRect().top - P.getBoundingClientRect().top) : null }; })()''')
 LAYER = js(r'''(() => { const c = $('hud3'), x = c.getContext('2d'), d = (a, b, w, h) => { const p = x.getImageData(a, b, w, h).data; let n = 0; for (let i = 0; i < p.length; i += 4) if (p[i] + p[i + 1] + p[i + 2] > 0) n++; return n; };
+  const sc = $('spec3'), sp = sc.getContext('2d').getImageData(0, 0, Math.round(100 * sc.width / sc.getBoundingClientRect().width), Math.round(100 * sc.width / sc.getBoundingClientRect().width)).data;
+  let solid = 0; for (let i = 3; i < sp.length; i += 4) if (sp[i] === 255) solid++;
   const dpr = c.width / c.getBoundingClientRect().width, rr = $('radar').getBoundingClientRect(), rc = $('rclock').getBoundingClientRect();
-  return { blend: getComputedStyle(c).mixBlendMode, radarPx: d(0, 0, Math.round(100 * dpr), Math.round(100 * dpr)), hudPx: d(0, c.height - Math.round(140 * dpr), Math.round(300 * dpr), Math.round(140 * dpr)),
+  return { blend: getComputedStyle(c).mixBlendMode, specBlend: getComputedStyle(sc).mixBlendMode, radarPx: solid, hudPx: d(0, c.height - Math.round(140 * dpr), Math.round(300 * dpr), Math.round(140 * dpr)),
     room: parseFloat($('radar').style.getPropertyValue('--pov-radar')) || 0, pillTop: Math.round(rc.top - rr.top) }; })()''')
 
 checks, t0 = [], time.time()
@@ -173,11 +176,11 @@ try:
         e_, f_, o_ = pb.get('empty', [0, 0, 0]), pb.get('filled', [0, 0, 0]), pb.get('outside', [0, 0, 0])
         check(pb.get('white') and all(85 <= v <= 125 for v in e_) and f_[0] >= 240 and f_[2] <= 130 and all(v >= 245 for v in o_),
               "the plant bar at full white: its background grey (laid over), its fill orange added onto the grey", pb)
-        # his radar and HUD on the added layer, the round pill under the radar (R11 1:26, alive on T)
+        # his HUD on the added layer, his solid radar on #spec3, the round pill under the radar (R11 1:26, alive on T)
         at(1028.2, 900)
         ly = ev(LAYER)
-        check(ly.get('blend') == 'plus-lighter' and ly.get('radarPx', 0) > 1000 and ly.get('hudPx', 0) > 200 and ly.get('room', 0) > 100 and ly.get('pillTop', 0) > ly.get('room', 0),
-              'his HUD and radar added onto the picture, the round pill under the radar', ly)
+        check(ly.get('blend') == 'plus-lighter' and ly.get('specBlend') == 'normal' and ly.get('radarPx', 0) > 1000 and ly.get('hudPx', 0) > 200 and ly.get('room', 0) > 100 and ly.get('pillTop', 0) > ly.get('room', 0),
+              'his HUD added onto the picture, his solid radar drawn over it, the round pill under the radar', ly)
         # the Tab scoreboard while he held Tab, R9 0:56
         at(885.94, 700)
         sb = ev(SB)

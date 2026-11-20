@@ -8,7 +8,7 @@ $('fFolder').onchange = (e) => { const list = [...e.target.files]; e.target.valu
 // The whole folder is read again each time, so files deleted since the last pick drop out
 function indexFolder(list) {
   let nOv = 0;
-  files.demos = []; files.overviews = {}; files.maps = {}; files.wads = {}; files.mdl = {}; files.snd = {}; files.sentences = null; files.materials = null; files.lang = null; files.hud = { txt: null, spr: {} }; files.cfg = null; files.fx = {};
+  files.demos = []; files.overviews = {}; files.maps = {}; files.wads = {}; files.mdl = {}; files.snd = {}; files.sentences = null; files.materials = null; files.lang = null; files.hud = { txt: null, spr: {} }; files.cfg = null; files.fx = {}; files.sky = {};
   STALE.clear();
   for (const f of list) {
     const p = (f.webkitRelativePath || f.name).replace(/\\/g, '/').toLowerCase();
@@ -28,6 +28,9 @@ function indexFolder(list) {
       const rank = (g) => (g === 'cstrike' ? 3 : g === 'cstrike_downloads' ? 2 : 1);
       const mm2 = /(?:^|\/)(cstrike|cstrike_downloads|valve)\/(models\/.+\.mdl)$/.exec(p);
       if (mm2) { const o = files.mdl[mm2[2]]; if (!o || rank(mm2[1]) > o.rank) { f.rank = rank(mm2[1]); files.mdl[mm2[2]] = f; } continue; }
+      // the sky's six pictures (the 3D batch): cstrike's first, then cstrike_downloads', then Half-Life's, as the game looks
+      const sk = /(?:^|\/)(cstrike|cstrike_downloads|valve)\/gfx\/env\/([^/]+\.(?:tga|bmp))$/.exec(p);
+      if (sk) { const o = files.sky[sk[2]]; if (!o || rank(sk[1]) > o.rank) { f.rank = rank(sk[1]); files.sky[sk[2]] = f; } continue; }
       const sm = /(?:^|\/)(cstrike|cstrike_downloads|valve)\/sound\/(.+\.wav)$/.exec(p);
       if (sm) { const o = files.snd[sm[2]]; if (!o || rank(sm[1]) > o.rank) { f.rank = rank(sm[1]); files.snd[sm[2]] = f; } continue; }
       if (/(?:^|\/)cstrike\/sound\/sentences\.txt$/.test(p)) files.sentences = f;
@@ -41,14 +44,15 @@ function indexFolder(list) {
       if (/(?:^|\/)cstrike\/sprites\/hud\.txt$/.test(p)) files.hud.txt = f;
       const hm = /(?:^|\/)cstrike\/sprites\/(640hud\d+)\.spr$/.exec(p);
       if (hm) files.hud.spr[hm[1]] = f;
-      if (/(?:^|\/)cstrike\/sprites\/radar640\.spr$/.test(p)) files.hud.radar = f; // POV mode: the game's radar (0.26.30)
+      if (/(?:^|\/)cstrike\/sprites\/radaropaque640\.spr$/.test(p)) files.hud.radar = f; // POV mode: the game's solid radar (radar640.spr, see-through, 0.26.30 to 0.27.1)
       const wt = /(?:^|\/)cstrike\/sprites\/(weapon_\w+)\.txt$/.exec(p); // POV HUD: each gun's ammo icon
       if (wt) (files.hud.wtxt ||= {})[wt[1]] = f;
       // POV HUD: the red arcs round the crosshair that show where a hit came from (cstrike's, else Half-Life's)
       const pn = /(?:^|\/)(cstrike|valve)\/sprites\/640_pain\.spr$/.exec(p);
       if (pn && (!files.hud.pain || pn[1] === 'cstrike')) files.hud.pain = f;
       // the gun flash's sprites, the blood puff's and the palette that colours it (0.26.27): cstrike's, else Half-Life's
-      const fx = /(?:^|\/)(cstrike|valve)\/(sprites\/(?:muzzleflash[1-3]|blood|bloodspray)\.spr|gfx\/palette\.lmp)$/.exec(p);
+      // and the planted bomb's blink (ledglow.spr, the 3D batch)
+      const fx = /(?:^|\/)(cstrike|valve)\/(sprites\/(?:muzzleflash[1-3]|blood|bloodspray|ledglow)\.spr|gfx\/palette\.lmp)$/.exec(p);
       if (fx && (!files.fx[fx[2]] || fx[1] === 'cstrike')) files.fx[fx[2]] = f;
     }
   }
@@ -268,7 +272,7 @@ document.querySelectorAll('.cpy').forEach((b) => b.onclick = () => {
 });
 { const os = hlOS(); $('hlWin').hidden = os === 'mac'; $('hlMac').hidden = $('hlTip').hidden = os === 'win'; }
 // the files the viewer reads, for telling what changed between two picks in one visit (hlApply)
-const HL_WANT = /(?:^|\/)(?:cstrike|cstrike_downloads|valve)\/(?:maps\/[^/]+\.bsp|overviews\/[^/]+\.(?:bmp|txt)|models\/.+\.mdl|sound\/.+\.wav|sound\/(?:sentences|materials)\.txt|resource\/cstrike_english\.txt|sprites\/hud\.txt|sprites\/640hud\d+\.spr|sprites\/(?:muzzleflash[1-3]|blood|bloodspray|640_pain)\.spr|gfx\/palette\.lmp|[^/]+\.wad)$|(?:^|\/)cstrike\/(?:config\.cfg|sprites\/weapon_\w+\.txt)$|\.dem$/;
+const HL_WANT = /(?:^|\/)(?:cstrike|cstrike_downloads|valve)\/(?:maps\/[^/]+\.bsp|overviews\/[^/]+\.(?:bmp|txt)|models\/.+\.mdl|sound\/.+\.wav|sound\/(?:sentences|materials)\.txt|resource\/cstrike_english\.txt|sprites\/hud\.txt|sprites\/640hud\d+\.spr|sprites\/radaropaque640\.spr|sprites\/(?:muzzleflash[1-3]|blood|bloodspray|640_pain|ledglow)\.spr|gfx\/palette\.lmp|gfx\/env\/[^/]+\.(?:tga|bmp)|[^/]+\.wad)$|(?:^|\/)cstrike\/(?:config\.cfg|sprites\/weapon_\w+\.txt)$|\.dem$/;
 // path inside the chosen folder, lower case, without the folder's own name
 const hlKey = (f) => (f.webkitRelativePath || f.name).replace(/\\/g, '/').toLowerCase().split('/').slice(1).join('/');
 function hlSnap(list, name, gameDirs) {

@@ -814,7 +814,7 @@ addEventListener('resize', () => { if (applyUiSize()) dispatchEvent(new Event('u
         </div>
         <h2 class="hpart">About</h2>
         <div class="habout">
-          <p>CS 1.6 Demo Viewer, version 0.27.1. It plays HLTV and POV demos in the browser, from your own Half-Life folder; nothing leaves your computer.</p>
+          <p>CS 1.6 Demo Viewer, version 0.27.2. It plays HLTV and POV demos in the browser, from your own Half-Life folder; nothing leaves your computer.</p>
           <p>A map with no radar picture: drop its overview, the .bmp and .txt pair from cstrike\overviews, anywhere on the page.</p>
           <p class="hlinks"><a href="https://github.com/deswalsujan/cs16-demo-viewer/blob/main/CHANGELOG.md" target="_blank" rel="noopener">What's new</a> · <a href="https://github.com/deswalsujan/cs16-demo-viewer" target="_blank" rel="noopener">Source on GitHub</a> · <a href="https://github.com/deswalsujan/cs16-demo-viewer/issues/new/choose" target="_blank" rel="noopener">Report a bug</a></p>
           <p class="hdbg"><button class="btn" id="bDebug" type="button" title="Copies details for a bug report: browser, demo name, what loaded, errors. No file contents.">Copy debug info</button><span>Paste it into your bug report: it says which browser, demo and files, and any errors, with no file contents.</span></p>
@@ -835,10 +835,10 @@ addEventListener('resize', () => { if (applyUiSize()) dispatchEvent(new Event('u
       <span class="xwrap"><button class="btn" id="tgXray" type="button" title="Show players behind walls, and their names, in 3D (H)">See through walls</button><button class="xmark" id="xrayMark" type="button" hidden title="This server seems to use an anti-wallhack plugin. Click the ! to read why." aria-label="Why few enemies show through walls">!</button></span>
       <button class="btn" id="tgFit" type="button" title="Back to the starting view: the whole radar in 2D, the overview camera in 3D">Reset view</button>
       <div class="vset">
-        <button class="btn" id="bVset" type="button" aria-expanded="false" aria-controls="vsetPanel" title="Hide all overlays, and in 3D team colours, damage numbers, the crosshair and quality; interface size; in a POV demo the flashbangs">View settings <svg viewBox="0 0 10 6" aria-hidden="true"><path d="M1 1l4 4 4-4"/></svg></button>
+        <button class="btn" id="bVset" type="button" aria-expanded="false" aria-controls="vsetPanel" title="Hide all overlays, and in 3D team colours, damage numbers, the crosshair, fixed light and quality; interface size; in a POV demo the flashbangs">View settings <svg viewBox="0 0 10 6" aria-hidden="true"><path d="M1 1l4 4 4-4"/></svg></button>
         <div class="vpanel" id="vsetPanel" role="group" aria-label="View settings" hidden>
           <div class="vhead">On the view</div>
-          <label class="vrow"><span>Hide all overlays<small>as in the game's own demo player</small></span><input type="checkbox" id="van3" title="Turns off what the game's own demo player doesn't show: damage numbers, kill markers, glow, See through walls, names and HP over the players, kill lines, grenade paths, the death cam's red wash and banner, and the C4 countdown. The buttons and settings still work one by one after"></label>
+          <label class="vrow"><span>Hide all overlays<small>as in the game's own demo player</small></span><input type="checkbox" id="van3" title="Turns off what the game's own demo player doesn't show: damage numbers, kill markers, glow, See through walls, Fixed light, names and HP over the players, kill lines, grenade paths, the death cam's red wash and banner, and the C4 countdown. The buttons and settings still work one by one after"></label>
           <label class="vrow v3"><span>Radar<small>the 2D map in a corner of the 3D view</small></span><input type="checkbox" id="radar3" title="Shows the 2D radar in the bottom right corner of the 3D view"></label>
           <div class="vrow v3"><span>Team colours</span><button class="btn" id="tgModels" type="button" title="Draw the players in flat team colours: red for Terrorists, blue for Counter-Terrorists">Off</button></div>
           <label class="vrow v3"><span>Damage numbers<small>which hits show their damage</small></span><select id="dn3" title="The damage each hit did, floating up beside the player hit. Wallbangs: hits through a wall, in orange. Direct hits: hits in the open, in white. Both: every hit. The killing bullet ends in a red skull">
@@ -860,6 +860,7 @@ addEventListener('resize', () => { if (applyUiSize()) dispatchEvent(new Event('u
             <option value="large">Large</option>
           </select></label>
           <div class="vhead">Picture</div>
+          <label class="vrow v3"><span>Fixed light<small>models lit the same everywhere</small></span><input type="checkbox" id="fixed3" title="Lights every player, gun and the C4 the same everywhere, so they stay easy to see in dark corners; the map keeps the game's light"></label>
           <label class="vrow v3"><span>Quality</span><select id="q3" title="How sharp the 3D view is drawn. Auto starts sharp and steps down if playback can't keep up">
             <option value="auto">Auto</option>
             <option value="high">High</option>
@@ -925,7 +926,7 @@ addEventListener('resize', () => { if (applyUiSize()) dispatchEvent(new Event('u
         <div class="drophint">Or drop a .dem file anywhere on this page</div>
         <div class="prog" id="prog" hidden><i id="progBar"></i></div>
         <div class="msg" id="msg"></div>
-        <div class="loadfoot"><span>Version 0.27.1 · <a href="https://github.com/deswalsujan/cs16-demo-viewer" target="_blank" rel="noopener">Source on GitHub</a> · <button class="lnk" id="bHelpStart" type="button" title="The keys, the colours and marks, and about the viewer (?)">Help</button></span><button class="btn" id="bClear" type="button" title="Deletes the copies of maps, models, sounds and radar overviews this browser saved from your Half-Life folder. The folder closes until you pick it again, as on a first visit">Delete saved files</button></div>
+        <div class="loadfoot"><span>Version 0.27.2 · <a href="https://github.com/deswalsujan/cs16-demo-viewer" target="_blank" rel="noopener">Source on GitHub</a> · <button class="lnk" id="bHelpStart" type="button" title="The keys, the colours and marks, and about the viewer (?)">Help</button></span><button class="btn" id="bClear" type="button" title="Deletes the copies of maps, models, sounds and radar overviews this browser saved from your Half-Life folder. The folder closes until you pick it again, as on a first visit">Delete saved files</button></div>
       </div>
     </div>
   </section>
@@ -1309,6 +1310,14 @@ export function parseDemo(buffer, onProgress, opts = {}) {
   // changes, so a bomb lying still is kept from its last update until the object is removed (0.18.0).
   const bombEnts = {}; // ent index -> {t0, x, y, z}
   const c4drops = []; // time dropped, time gone, x, y, z
+  // The planted bomb (models/w_c4.mdl), as the game draws it (the 3D batch, item 2; tests/logs/c4-blink-2026-11-20.md):
+  // a row each time it changes, time, x, y, z, pitch, yaw, roll, on (1 drawn; 0 gone, as a defuse removes it, or hidden,
+  // as the explosion sets EF_NODRAW). It falls and lands about 0.2 s after the plant, 17 to 22 units below BombDrop's spot.
+  const c4Now = {}; // ent index -> its last row
+  const c4ents = [];
+  // The server's glow sprites (TE_GLOWSPRITE), the planted bomb's blink every 2 s: time, x, y, z, sprite (model index),
+  // life (s), scale, brightness (0 to 1)
+  const glows = [];
   // HLTV's slow motion: svc_timescale messages, the time each took effect and its value (0.5 = half speed).
   // Inside a slow stretch the demo's clock runs 1 / value times faster than the game's (0.18.0).
   const timescale = [];
@@ -1414,6 +1423,8 @@ export function parseDemo(buffer, onProgress, opts = {}) {
       if (!b) bombEnts[num] = { t0: time, x: st['origin[0]'], y: st['origin[1]'], z: st['origin[2]'] };
       else { b.x = st['origin[0]']; b.y = st['origin[1]']; b.z = st['origin[2]']; }
     } else if (bombEnts[num]) finishBomb(num);
+    if (m.includes('w_c4')) c4Row(num, [time, st['origin[0]'] || 0, st['origin[1]'] || 0, st['origin[2]'] || 0, st['angles[0]'] || 0, st['angles[1]'] || 0, st['angles[2]'] || 0, (st.effects || 0) & 128 ? 0 : 1]);
+    else if (c4Now[num]) c4Gone(num);
     let type = null;
     if (m.includes('w_hegrenade')) type = 'he';
     else if (m.includes('w_flashbang')) type = 'flash';
@@ -1423,6 +1434,17 @@ export function parseDemo(buffer, onProgress, opts = {}) {
       if (nadeEnts[num]) finishNade(num);
       nadeEnts[num] = { type, owner: st.owner || 0, pts: [time, st['origin[0]'], st['origin[1]'], st['origin[2]']] };
     }
+  }
+  function c4Row(num, row) {
+    const last = c4Now[num];
+    if (last && row.every((v, i) => i === 0 || v === last[i])) return;
+    c4Now[num] = row;
+    if (inPlayback) c4ents.push(...row);
+  }
+  function c4Gone(num) {
+    const last = c4Now[num];
+    delete c4Now[num];
+    if (last && last[7] && inPlayback) c4ents.push(time, ...last.slice(1, 7), 0);
   }
   function finishBomb(num) {
     const b = bombEnts[num];
@@ -1790,6 +1812,12 @@ export function parseDemo(buffer, onProgress, opts = {}) {
             if (t === 115) { r.skip(5); const size = r.ub(); if (inPlayback) hitPoints.push(time, x, y, z, size); }
             else { r.skip(13); if (inPlayback) hitPoints.push(time, x, y, z, -1); }
           }
+          // the planted bomb's blink (the 3D batch, item 2): TE_GLOWSPRITE, ReGameDLL ggrenade.cpp C4Think; drawn as Xash3D's
+          // cl_tent.c reads it (R_TempSprite, kRenderGlow, kRenderFxNoDissipation, FTENT_FADEOUT)
+          else if (t === 23) {
+            const x = r.s() / 8, y = r.s() / 8, z = r.s() / 8, spr = r.s(), life = r.ub() * 0.1, scale = r.ub() * 0.1, br = r.ub() / 255;
+            if (inPlayback) glows.push(time, x, y, z, spr, life, scale, br);
+          }
           else if (t === 13) { r.skip(8); if (r.s()) r.skip(2); }
           else if (t === 29) {
             r.skip(5);
@@ -1841,6 +1869,7 @@ export function parseDemo(buffer, onProgress, opts = {}) {
           for (let k = maxClients + 1; k < ents.length; k++) if (ents[k]) trackNade(k);
           for (const k in nadeEnts) if (!ents[k]) finishNade(k);
           for (const k in bombEnts) if (!ents[k]) finishBomb(k);
+          for (const k in c4Now) if (!ents[k]) c4Gone(k);
           break;
         }
         case 41: { // deltapacketentities
@@ -1852,7 +1881,7 @@ export function parseDemo(buffer, onProgress, opts = {}) {
             if (r.peekBits(16) === 0) { r.bits(16); break; }
             const remove = r.bits(1);
             if (r.bits(1)) num = r.bits(11); else num += r.bits(6);
-            if (remove) { ents[num] = undefined; if (nadeEnts[num]) finishNade(num); if (bombEnts[num]) finishBomb(num); continue; }
+            if (remove) { ents[num] = undefined; if (nadeEnts[num]) finishNade(num); if (bombEnts[num]) finishBomb(num); if (c4Now[num]) c4Gone(num); continue; }
             const custom = r.bits(1);
             let st = ents[num];
             if (!st) { st = Object.assign({}, baseline[num] || {}); ents[num] = st; }
@@ -2055,7 +2084,7 @@ export function parseDemo(buffer, onProgress, opts = {}) {
     times: new Float32Array(samples.t), slots,
     finalScore: { ...scores }, models: resources.models, stride: STRIDE,
     pmodels, sounds: resources.sounds, events: resources.events, snds: new Float32Array(snds), shots: new Float32Array(shots), booms: new Float32Array(booms), hitPoints: new Float32Array(hitPoints), brass: new Float32Array(brass), puffs: new Float32Array(puffs), radio, centre, corpses,
-    errors, errSamples, health, c4drops: new Float32Array(c4drops), slow, stops, pings: new Float32Array(pings),
+    errors, errSamples, health, c4drops: new Float32Array(c4drops), c4ents: new Float32Array(c4ents), glows: new Float32Array(glows), slow, stops, pings: new Float32Array(pings),
     ...(povData ? { povData } : {}),
   };
 }
@@ -2588,7 +2617,7 @@ $('fFolder').onchange = (e) => { const list = [...e.target.files]; e.target.valu
 // The whole folder is read again each time, so files deleted since the last pick drop out
 function indexFolder(list) {
   let nOv = 0;
-  files.demos = []; files.overviews = {}; files.maps = {}; files.wads = {}; files.mdl = {}; files.snd = {}; files.sentences = null; files.materials = null; files.lang = null; files.hud = { txt: null, spr: {} }; files.cfg = null; files.fx = {};
+  files.demos = []; files.overviews = {}; files.maps = {}; files.wads = {}; files.mdl = {}; files.snd = {}; files.sentences = null; files.materials = null; files.lang = null; files.hud = { txt: null, spr: {} }; files.cfg = null; files.fx = {}; files.sky = {};
   STALE.clear();
   for (const f of list) {
     const p = (f.webkitRelativePath || f.name).replace(/\\/g, '/').toLowerCase();
@@ -2608,6 +2637,9 @@ function indexFolder(list) {
       const rank = (g) => (g === 'cstrike' ? 3 : g === 'cstrike_downloads' ? 2 : 1);
       const mm2 = /(?:^|\/)(cstrike|cstrike_downloads|valve)\/(models\/.+\.mdl)$/.exec(p);
       if (mm2) { const o = files.mdl[mm2[2]]; if (!o || rank(mm2[1]) > o.rank) { f.rank = rank(mm2[1]); files.mdl[mm2[2]] = f; } continue; }
+      // the sky's six pictures (the 3D batch): cstrike's first, then cstrike_downloads', then Half-Life's, as the game looks
+      const sk = /(?:^|\/)(cstrike|cstrike_downloads|valve)\/gfx\/env\/([^/]+\.(?:tga|bmp))$/.exec(p);
+      if (sk) { const o = files.sky[sk[2]]; if (!o || rank(sk[1]) > o.rank) { f.rank = rank(sk[1]); files.sky[sk[2]] = f; } continue; }
       const sm = /(?:^|\/)(cstrike|cstrike_downloads|valve)\/sound\/(.+\.wav)$/.exec(p);
       if (sm) { const o = files.snd[sm[2]]; if (!o || rank(sm[1]) > o.rank) { f.rank = rank(sm[1]); files.snd[sm[2]] = f; } continue; }
       if (/(?:^|\/)cstrike\/sound\/sentences\.txt$/.test(p)) files.sentences = f;
@@ -2621,14 +2653,15 @@ function indexFolder(list) {
       if (/(?:^|\/)cstrike\/sprites\/hud\.txt$/.test(p)) files.hud.txt = f;
       const hm = /(?:^|\/)cstrike\/sprites\/(640hud\d+)\.spr$/.exec(p);
       if (hm) files.hud.spr[hm[1]] = f;
-      if (/(?:^|\/)cstrike\/sprites\/radar640\.spr$/.test(p)) files.hud.radar = f; // POV mode: the game's radar (0.26.30)
+      if (/(?:^|\/)cstrike\/sprites\/radaropaque640\.spr$/.test(p)) files.hud.radar = f; // POV mode: the game's solid radar (radar640.spr, see-through, 0.26.30 to 0.27.1)
       const wt = /(?:^|\/)cstrike\/sprites\/(weapon_\w+)\.txt$/.exec(p); // POV HUD: each gun's ammo icon
       if (wt) (files.hud.wtxt ||= {})[wt[1]] = f;
       // POV HUD: the red arcs round the crosshair that show where a hit came from (cstrike's, else Half-Life's)
       const pn = /(?:^|\/)(cstrike|valve)\/sprites\/640_pain\.spr$/.exec(p);
       if (pn && (!files.hud.pain || pn[1] === 'cstrike')) files.hud.pain = f;
       // the gun flash's sprites, the blood puff's and the palette that colours it (0.26.27): cstrike's, else Half-Life's
-      const fx = /(?:^|\/)(cstrike|valve)\/(sprites\/(?:muzzleflash[1-3]|blood|bloodspray)\.spr|gfx\/palette\.lmp)$/.exec(p);
+      // and the planted bomb's blink (ledglow.spr, the 3D batch)
+      const fx = /(?:^|\/)(cstrike|valve)\/(sprites\/(?:muzzleflash[1-3]|blood|bloodspray|ledglow)\.spr|gfx\/palette\.lmp)$/.exec(p);
       if (fx && (!files.fx[fx[2]] || fx[1] === 'cstrike')) files.fx[fx[2]] = f;
     }
   }
@@ -2848,7 +2881,7 @@ document.querySelectorAll('.cpy').forEach((b) => b.onclick = () => {
 });
 { const os = hlOS(); $('hlWin').hidden = os === 'mac'; $('hlMac').hidden = $('hlTip').hidden = os === 'win'; }
 // the files the viewer reads, for telling what changed between two picks in one visit (hlApply)
-const HL_WANT = /(?:^|\/)(?:cstrike|cstrike_downloads|valve)\/(?:maps\/[^/]+\.bsp|overviews\/[^/]+\.(?:bmp|txt)|models\/.+\.mdl|sound\/.+\.wav|sound\/(?:sentences|materials)\.txt|resource\/cstrike_english\.txt|sprites\/hud\.txt|sprites\/640hud\d+\.spr|sprites\/(?:muzzleflash[1-3]|blood|bloodspray|640_pain)\.spr|gfx\/palette\.lmp|[^/]+\.wad)$|(?:^|\/)cstrike\/(?:config\.cfg|sprites\/weapon_\w+\.txt)$|\.dem$/;
+const HL_WANT = /(?:^|\/)(?:cstrike|cstrike_downloads|valve)\/(?:maps\/[^/]+\.bsp|overviews\/[^/]+\.(?:bmp|txt)|models\/.+\.mdl|sound\/.+\.wav|sound\/(?:sentences|materials)\.txt|resource\/cstrike_english\.txt|sprites\/hud\.txt|sprites\/640hud\d+\.spr|sprites\/radaropaque640\.spr|sprites\/(?:muzzleflash[1-3]|blood|bloodspray|640_pain|ledglow)\.spr|gfx\/palette\.lmp|gfx\/env\/[^/]+\.(?:tga|bmp)|[^/]+\.wad)$|(?:^|\/)cstrike\/(?:config\.cfg|sprites\/weapon_\w+\.txt)$|\.dem$/;
 // path inside the chosen folder, lower case, without the folder's own name
 const hlKey = (f) => (f.webkitRelativePath || f.name).replace(/\\/g, '/').toLowerCase().split('/').slice(1).join('/');
 function hlSnap(list, name, gameDirs) {
@@ -3055,7 +3088,7 @@ function joinDemos(parts) {
     for (const k in src) { const nm = src[k]; if (byName[nm] == null) { byName[nm] = next; dst[next++] = nm; } map[k] = byName[nm]; }
     return (i) => (map[i] != null ? map[i] : i);
   };
-  const timesL = [], slotsL = {}, hpL = [], packL = [], brushEvL = [], brushPoseL = [], sndsL = [], shotsL = [], boomsL = [], hitPointsL = [], brassL = [], puffsL = [], c4L = [], pingsL = [];
+  const timesL = [], slotsL = {}, hpL = [], packL = [], brushEvL = [], brushPoseL = [], sndsL = [], shotsL = [], boomsL = [], hitPointsL = [], brassL = [], puffsL = [], c4L = [], c4eL = [], glowsL = [], pingsL = [];
   // POV mode (0.25.0): the parts' POV data on the joined timeline, when every part is a POV demo. recs: for each part,
   // its first sample, its number of samples and the recording player's entity there
   const povL = parts.every((P) => P.povData) ? { view: [], ownPos: [], hpInfo: [], shotOrg: [], fovs: [], ownAmmo: [], wanims: [], vmodels: [], obs: [], dmg: [], bars: [], tabs: [], fades: [], fadeStops: [], radarPos: [], radarBomb: [], attribs: [], hud: { hp: [], ap: [], helmet: [], money: [], ammox: [] }, gunAmmo: {}, recs: [] } : null;
@@ -3106,6 +3139,8 @@ function joinDemos(parts) {
     flat(P.brass || [], 12, (a, i) => { a[i] = sh(a[i]); a[i + 8] = mM(a[i + 8]); }, brassL);
     flat(P.puffs, 5, (a, i) => { a[i] = sh(a[i]); }, puffsL);
     flat(P.c4drops || [], 5, (a, i) => { a[i] = sh(a[i]); a[i + 1] = sh(a[i + 1]); }, c4L);
+    flat(P.c4ents || [], 8, (a, i) => { a[i] = sh(a[i]); }, c4eL);
+    flat(P.glows || [], 8, (a, i) => { a[i] = sh(a[i]); a[i + 4] = mM(a[i + 4]); }, glowsL);
     flat(P.pings || [], 3, (a, i) => { a[i] = sh(a[i]); }, pingsL);
     for (const [a, b, v] of P.slow || []) out.slow.push([sh(a), sh(b), v]);
     for (const [a, b, g] of P.stops || []) out.stops.push([sh(a), sh(b), g]);
@@ -3148,7 +3183,7 @@ function joinDemos(parts) {
     fades: cat(povL.fades), fadeStops: cat(povL.fadeStops), radarPos: cat(povL.radarPos), radarBomb: cat(povL.radarBomb), attribs: cat(povL.attribs),
     hud: Object.assign(Object.fromEntries(Object.keys(povL.hud).map((k) => [k, cat(povL.hud[k])])), { gunAmmo: povL.gunAmmo }),
   } : null;
-  out.pack = cat(packL); out.hp = cat(hpL); out.brushEvents = cat(brushEvL); out.brushPose = cat(brushPoseL); out.snds = cat(sndsL); out.shots = cat(shotsL); out.booms = cat(boomsL); out.hitPoints = cat(hitPointsL); out.brass = cat(brassL); out.puffs = cat(puffsL); out.c4drops = cat(c4L); out.pings = cat(pingsL);
+  out.pack = cat(packL); out.hp = cat(hpL); out.brushEvents = cat(brushEvL); out.brushPose = cat(brushPoseL); out.snds = cat(sndsL); out.shots = cat(shotsL); out.booms = cat(boomsL); out.hitPoints = cat(hitPointsL); out.brass = cat(brassL); out.puffs = cat(puffsL); out.c4drops = cat(c4L); out.c4ents = cat(c4eL); out.glows = cat(glowsL); out.pings = cat(pingsL);
   out.bomb.sort((a, b) => a.t - b.t);
   out.start = parts[0].start;
   out.fileName = parts[0].fileName;
@@ -7016,9 +7051,9 @@ function resize3() {
 }
 new ResizeObserver(() => resize3()).observe($('radar'));
 
-// The map as the game draws it with Valve's defaults (light.js, 0.26.31): the texture, through texgamma when it was
-// loaded (getTex), times the lightmap, through the light table when it was packed (lightmapCurve), drawn at 4/3
-// (gl_overbright 1), at most white. Water has no lightmap in the game: its texture alone (lit 0). The see-through
+// The map as the game draws it (light.js, 0.26.31): the texture, through texgamma when it was loaded (getTex), times the
+// lightmap, through the light table when it was packed (lightmapCurve), with no overbright since the 3D batch (Sujan,
+// 20 Nov 2026), so a fully lit surface is its texture's colour (4/3, gl_overbright 1, up to 0.27.1). Water has no lightmap in the game: its texture alone (lit 0). The see-through
 // texels (alpha under 0.5) are left out as before, which is all the wallbang picture check reads of the map.
 const SHADER = {
   vertexShader: `varying vec2 vUv; varying vec2 vUv2; attribute vec2 uv2;
@@ -7026,7 +7061,7 @@ const SHADER = {
   fragmentShader: `uniform sampler2D map; uniform sampler2D lm; uniform float opacity; uniform float lit;
     varying vec2 vUv; varying vec2 vUv2;
     void main(){ vec4 t = texture2D(map, vUv); if (t.a < 0.5) discard;
-      vec3 c = lit > 0.5 ? min(t.rgb * texture2D(lm, vUv2).rgb * (4.0 / 3.0), vec3(1.0)) : t.rgb;
+      vec3 c = lit > 0.5 ? t.rgb * texture2D(lm, vUv2).rgb : t.rgb;
       gl_FragColor = vec4(c, opacity); }`,
 };
 // A build that throws partway (0.26.18; Sujan, 7 Nov 2026): view3.map is set only at its end, so the frame loop, which
@@ -7094,6 +7129,104 @@ function build3dNow() {
   }
   for (const m in R3.mov) placeMover(R3.mov[m], brushPose(MAP.movers.get(+m), null));
   view3.ready = true; view3.map = MAP.name;
+  loadSky(MAP).catch(() => {}); // the grey-blue background until its pictures are in, and for good without them
+}
+
+// ---------------- the sky (the 3D batch, item 3) ----------------
+// The map's sky picture where its "sky" faces are (buildMesh leaves them out), as Xash3D draws it (ref/gl/gl_warp.c,
+// R_DrawSkyBox and MakeSkyVec; engine/client/dll_int/ref_common.c, R_SetupSky): worldspawn's skyname ("desert", the
+// engine's default, without one), six pictures gfx/env/<name>rt, bk, lf, ft, up, dn, .tga before .bmp, from cstrike,
+// cstrike_downloads or valve (folder.js, files.sky), unlit, through texgamma as Sujan's game draws it (steam_legacy,
+// Valve's engine: its clear sky over Train's T alley measured 140 163 208 against the pictures' 108 132 189, which is
+// texgamma at gamma 3; Xash3D leaves sky pictures out of texgamma, Image_SetPalette), on a box round the camera
+// behind everything. Side i is drawn with picture SKY_ORDER[i]
+// (r_skyTexOrder), each corner (s, t) placed by st_to_vec (SKY_ST), the picture's top row at t = 1. A sky without all
+// six falls back to desert, as R_SetupSky does (DEFAULT_SKYBOX_NAME; Sujan, 20 Nov 2026); the grey-blue background of
+// up to 0.27.1 only when desert is missing too. The wall tops seen from above stay black, as in the game: their
+// lightmaps are.
+// The wallbang picture check hides it, as it hides everything but the map and the victim.
+const SKY_SUF = ['rt', 'bk', 'lf', 'ft', 'up', 'dn'];
+const SKY_ORDER = [0, 2, 1, 3, 4, 5];
+const SKY_ST = [[3, -1, 2], [-3, 1, 2], [1, 3, 2], [-1, -3, 2], [-2, -1, 3], [2, -1, -3]];
+const SKY_R = 8000; // inside the camera's far plane (16000) at the corners
+function dropSky() {
+  if (!R3 || !R3.sky) return;
+  R3.scene.remove(R3.sky.g);
+  R3.sky.g.traverse((o) => { if (o.geometry) o.geometry.dispose(); if (o.material) { if (o.material.map) o.material.map.dispose(); o.material.dispose(); } });
+  R3.sky = null;
+}
+// a sky's six pictures, .tga before .bmp, with or without "_" before the side (CheckSkybox), or null
+function skyPicks(name) {
+  const S = files.sky || {};
+  for (const ext of ['tga', 'bmp']) {
+    const L = SKY_SUF.map((s) => S[`${name}${s}.${ext}`] || S[`${name}_${s}.${ext}`]);
+    if (L.every(Boolean)) return { name, picks: L.map((f) => [f, ext]) };
+  }
+  return null;
+}
+async function loadSky(map) {
+  dropSky();
+  const ent = map.bsp.entities[0] || {};
+  const want = String(ent.skyname || 'desert').replace(/\\/g, '/').split('/').pop().replace(/\.[a-z0-9]+$/i, '').replace(/_$/, '').toLowerCase();
+  const found = skyPicks(want) || skyPicks('desert'); if (!found) return;
+  const { name, picks } = found;
+  const imgs = await Promise.all(picks.map(async ([f, ext]) => { const u8 = await readPicked(f, 'gfx/env/' + f.name); return u8 ? (ext === 'tga' ? decodeTga(u8) : await decodeBmp(u8)) : null; }));
+  if (MAP !== map || !R3 || imgs.some((x) => !x)) return;
+  dropSky();
+  const g = new THREE.Group();
+  for (let i = 0; i < 6; i++) {
+    const im = imgs[SKY_ORDER[i]];
+    const tex = new THREE.DataTexture(texGamma(im.data), im.w, im.h, THREE.RGBAFormat);
+    tex.magFilter = THREE.LinearFilter; tex.minFilter = THREE.LinearFilter; tex.generateMipmaps = false;
+    tex.wrapS = tex.wrapT = THREE.ClampToEdgeWrapping; tex.needsUpdate = true;
+    const pos = [], uv = [];
+    // GoldSrc (x, y, z) -> three (x, z, -y); the picture's first row (its top) at v = 0, as GL takes it
+    const corner = (s, t) => { const b = [s * SKY_R, t * SKY_R, SKY_R], v = SKY_ST[i].map((k) => (k < 0 ? -b[-k - 1] : b[k - 1])); pos.push(v[0], v[2], -v[1]); uv.push((s + 1) / 2, 1 - (t + 1) / 2); };
+    for (const [s, t] of [[-1, -1], [-1, 1], [1, 1], [-1, -1], [1, 1], [1, -1]]) corner(s, t);
+    const geo = new THREE.BufferGeometry();
+    geo.setAttribute('position', new THREE.Float32BufferAttribute(pos, 3)); geo.setAttribute('uv', new THREE.Float32BufferAttribute(uv, 2));
+    const m = new THREE.Mesh(geo, new THREE.MeshBasicMaterial({ map: tex, side: THREE.DoubleSide, depthTest: false, depthWrite: false, fog: false }));
+    m.renderOrder = -1000; m.frustumCulled = false; m.userData.sky = SKY_SUF[SKY_ORDER[i]];
+    g.add(m);
+  }
+  R3.scene.add(g); R3.sky = { g, name, want, map: map.name, ext: picks[0][1] };
+}
+// a .tga picture as top-down RGBA: uncompressed or run-length, true colour (16, 24 or 32 bits), grey or colour-mapped
+function decodeTga(u8) {
+  if (u8.length < 18) return null;
+  const idLen = u8[0], cmType = u8[1], type = u8[2], cmLen = u8[5] | (u8[6] << 8), cmBits = u8[7];
+  const w = u8[12] | (u8[13] << 8), h = u8[14] | (u8[15] << 8), bpp = u8[16], desc = u8[17], kind = type & 7, px = (bpp + 7) >> 3;
+  if (!w || !h || w > 4096 || h > 4096 || ![1, 2, 3].includes(kind) || !px) return null;
+  let p = 18 + idLen;
+  const cb = (cmBits + 7) >> 3, pal = cmType === 1 ? u8.subarray(p, p + cmLen * cb) : null;
+  if (cmType === 1) p += cmLen * cb;
+  const out = new Uint8Array(w * h * 4), n = w * h;
+  const rgb = (src, o, d) => {
+    if (src.length < o + (src === pal ? cb : px)) return;
+    const k = src === pal ? cb : px;
+    if (k >= 3) { out[d] = src[o + 2]; out[d + 1] = src[o + 1]; out[d + 2] = src[o]; out[d + 3] = k === 4 ? src[o + 3] : 255; }
+    else if (k === 2) { const v = src[o] | (src[o + 1] << 8); out[d] = ((v >> 10) & 31) * 255 / 31; out[d + 1] = ((v >> 5) & 31) * 255 / 31; out[d + 2] = (v & 31) * 255 / 31; out[d + 3] = 255; }
+    else { out[d] = out[d + 1] = out[d + 2] = src[o]; out[d + 3] = 255; }
+  };
+  const put = (i, o) => {
+    const x = i % w, yf = (i / w) | 0, y = desc & 0x20 ? yf : h - 1 - yf, d = (y * w + (desc & 0x10 ? w - 1 - x : x)) * 4;
+    if (kind === 1) { if (pal) rgb(pal, u8[o] * cb, d); } else rgb(u8, o, d);
+  };
+  let i = 0;
+  if (type < 8) for (; i < n && p + px <= u8.length; i++, p += px) put(i, p);
+  else while (i < n && p < u8.length) {
+    const c = u8[p++], cnt = (c & 127) + 1;
+    if (c & 128) { for (let k = 0; k < cnt && i < n; k++) put(i++, p); p += px; }
+    else for (let k = 0; k < cnt && i < n; k++, p += px) put(i++, p);
+  }
+  return { w, h, data: out };
+}
+// a .bmp picture as top-down RGBA, decoded by the browser
+async function decodeBmp(u8) {
+  const bmp = await createImageBitmap(new Blob([u8], { type: 'image/bmp' }));
+  const c = document.createElement('canvas'); c.width = bmp.width; c.height = bmp.height;
+  const g = c.getContext('2d'); g.drawImage(bmp, 0, 0);
+  return { w: c.width, h: c.height, data: new Uint8Array(g.getImageData(0, 0, c.width, c.height).data.buffer) };
 }
 // Forget everything tied to the previous demo: who we follow, camera, markers, figures, and
 // (when the map changes) the 3D level itself, so nothing from the old demo lingers on screen.
@@ -7108,6 +7241,7 @@ function resetForNewDemo() {
     R3.players = {};
     clearOverlays();
     clearRigs();
+    if (R3.c4) { disposeRig(R3.c4.rig); R3.c4 = null; }
   }
   ANIM = {}; stopSounds();
   $('pov').hidden = true;
@@ -7117,6 +7251,75 @@ function resetForNewDemo() {
   POV.on = false; POV.i = 0; POV.shotsBy = null; POV.hidden = null; { const n = $('povNote'); if (n) n.hidden = true; }
   if (view3.failed) { view3.failed = null; status3(''); } // a map that failed to build is tried again (see build3d)
 }
+// The planted bomb (the 3D batch, item 2; Sujan, 19 and 20 Nov 2026; tests/logs/c4-blink-2026-11-20.md): the game's
+// models/w_c4.mdl where the demo's bomb entity is (D.c4ents), at its angles, lit like the player models, from when it
+// appears (it falls about 20 units and lands 0.2 s after the plant) until a defuse removes it or the explosion hides it.
+// Without the model, the orange ball of up to 0.27.1 resting on the floor where the bomb is. With no entity at that
+// moment (a POV demo, the bomb out of his view; HLTV's 256-object limit on de_tuscan), until the round's end message (the
+// defuse or the explosion): the bomb never moves once planted, so the model where the demo last had it in that round, or
+// before its first sighting, where the demo first has it later in the round; only a bomb the demo never has in that
+// round gets the ball, at BombDrop's spot moved down to the floor (Sujan, 20 Nov 2026).
+// Hide all overlays keeps it, as the game's demo player shows it; its blink is fxGlows (shotfx.js).
+function c4Rig() {
+  const M2 = getModel('models/w_c4.mdl'); if (!M2 || !M2.mdl) return null;
+  let c = R3.c4;
+  if (!c || c.dyn !== R3.dyn || c.M !== M2) {
+    if (c) disposeRig(c.rig);
+    const rig = makeRig(M2, R3.dyn);
+    mdlPose(M2.mdl, 0, 0, 0.5, 0.5, rig.p, rig.q); mdlBoneMats(M2.mdl, rig.p, rig.q, rig.mats); skinRig(rig);
+    c = R3.c4 = { dyn: R3.dyn, M: M2, rig };
+  }
+  return c.rig;
+}
+// BombDrop's spot (the planter's origin) moved down to the floor, as ReGameDLL's REGAMEDLL_FIXES places the bomb in
+// CGrenade::ShootSatchelCharge (ggrenade.cpp): a trace 8192 units straight down that players don't stop, its end, or the
+// spot itself when it meets nothing. Once per plant.
+function c4Floor(bp) {
+  if (bp.floorZ != null) return bp.floorZ;
+  const [x, y, z] = bp.pos;
+  if (!MAP) return z;
+  const tr = solidAlong(MAP.bsp, [x, y, z], [x, y, z - 8192], 1, null, null, 'bullet'), h = tr.hit[0];
+  if (!h) return (bp.floorZ = z);
+  // the samples are a unit apart: the floor again, to 1/32 of a unit, over the unit above the first solid one
+  const zh = z - h.f0 * tr.len, top = Math.min(z, zh + 1), fine = solidAlong(MAP.bsp, [x, y, top], [x, y, zh - 0.01], 1 / 32, null, null, 'bullet').hit[0];
+  return (bp.floorZ = fine ? top - fine.f0 * (top - zh + 0.01) : zh);
+}
+// where the planted bomb is drawn at t in round r: { kind: 'entity' (the demo has it), 'last' (where the demo last had
+// it this round), 'later' (where the demo first has it later this round, landed) or 'marker' (never in this round), x, y,
+// z, a: pitch, yaw, roll }, or null
+function c4State(r, t) {
+  const rEnd = r.end != null ? r.end : D.end;
+  const bp = D.bomb.find((b) => b.type === 'plantpos' && b.t >= r.start && b.t <= t && b.t <= rEnd);
+  const E = D.c4ents || [], i = E.length ? idxAt(E, 8, t) : -1, o = i * 8;
+  if (i >= 0 && E[o] >= r.start && E[o + 7]) {
+    // between two rows while it falls, in a straight line, as players move between snapshots
+    const n = o + 8, u = n < E.length && E[n + 7] && E[n] - E[o] < 0.5 ? (t - E[o]) / (E[n] - E[o]) : 0;
+    const L = (k) => (u > 0 ? E[o + k] + (E[n + k] - E[o + k]) * u : E[o + k]);
+    return { kind: 'entity', x: L(1), y: L(2), z: L(3), a: [E[o + 4], E[o + 5], E[o + 6]] };
+  }
+  const bEnd = r.endT != null && r.endT >= bp?.t ? r.endT : rEnd;
+  if (!bp || t >= bEnd) return null;
+  const from = Math.max(r.start, bp.t - 0.5), at = (kind, q) => ({ kind, x: E[q + 1], y: E[q + 2], z: E[q + 3], a: [E[q + 4], E[q + 5], E[q + 6]] });
+  for (let k = i; k >= 0 && E[k * 8] >= from; k--) if (E[k * 8 + 7]) return at('last', k * 8);
+  // its first sighting later in the round, to the last row of that stretch (it may still be falling when first seen)
+  for (let k = i + 1; k * 8 < E.length && E[k * 8] < bEnd; k++) {
+    if (E[k * 8] < from || !E[k * 8 + 7]) continue;
+    while ((k + 1) * 8 < E.length && E[(k + 1) * 8 + 7] && E[(k + 1) * 8] < bEnd) k++;
+    return at('later', k * 8);
+  }
+  return { kind: 'marker', x: bp.pos[0], y: bp.pos[1], z: c4Floor(bp), a: [0, 0, 0] };
+}
+function plantedC4(r, ov) {
+  const st = c4State(r, T); if (!st) return;
+  const rig = st.kind === 'marker' ? null : c4Rig();
+  if (!rig) {
+    ov('c4', () => { const c4 = new THREE.Mesh(sphere(6), new THREE.MeshBasicMaterial({ color: 0xff9a3c })); c4.userData.shared = true; return c4; }).position.copy(g3(st.x, st.y, st.z + 6));
+    return;
+  }
+  placeRig(rig, st.x, st.y, st.z, 0, 0);
+  // GoldSrc pitch, yaw, roll -> three, as the shells turn (shotfx.js)
+  const d = Math.PI / 180; rig.g.rotation.set(st.a[2] * d, st.a[1] * d, -st.a[0] * d, 'YZX');
+}
 // remove the reused round overlays (a new round or a new demo starts a fresh set)
 function clearOverlays() {
   if (!R3 || !R3.ov) return;
@@ -7125,6 +7328,7 @@ function clearOverlays() {
 }
 function clear3d() {
   if (!R3) return;
+  dropSky();
   while (R3.world.children.length) { const c = R3.world.children.pop(); c.geometry && c.geometry.dispose(); }
   R3.brk = {}; R3.mov = {};
   view3.ready = false; view3.map = null;
@@ -7516,9 +7720,11 @@ function mdlBoneMats(mdl, pos, quat, out, merge) {
 }
 
 // ---------------- the game's light (0.26.31) ----------------
-// Sujan, 12 Nov 2026 (DECISIONS.md, "The 3D picture's contrast"): the 3D picture uses Valve's defaults as one fixed
-// curve for everyone, with no setting, and gl_overbright 1; player models are lit by the floor under them, as the
-// game does, even where that makes them hard to see. Built as Xash3D FWGS builds it (commit 707596f, 10 Nov 2026):
+// Sujan, 12 Nov 2026 (DECISIONS.md, "The 3D picture's contrast"): the 3D picture uses one fixed curve for everyone, with
+// no setting: Valve's defaults and gl_overbright 1 up to 0.27.1; since the 3D batch gamma 3, brightness 2 and no
+// overbright (Sujan, 20 Nov 2026: his own settings in the game, from his config.cfg on Windows, where both the
+// steam_legacy and the 25th Anniversary build have gl_overbright 0), so a fully lit surface is its texture's colour;
+// player models are lit by the floor under them, as the game does, even where that makes them hard to see. Built as Xash3D FWGS builds it (commit 707596f, 10 Nov 2026):
 // the tables in engine/client/gamma.c (BuildGammaTable), the world's lightmaps in ref/gl/gl_rsurf.c (R_BuildLightMap,
 // R_BlendLightmaps), the light on a model in ref/common/ref_light.c (R_EntityDynamicLight) and ref/gl/gl_studio.c
 // (R_StudioLighting). Up to 0.26.30 the map was each texture times min(lightmap x 2, 1.8), then to the power 0.85,
@@ -7527,11 +7733,15 @@ function mdlBoneMats(mdl, pos, quat, out, merge) {
 // Valve's defaults (Valve Developer Community, list of Half-Life console variables): gamma 2.5, brightness 1,
 // texgamma 2, lightgamma 2.5 (Xash3D's own brightness default is 0). tex: a texture's colour through texgamma; light:
 // the light table (0 to 1023); lm: a lightmap byte at light style "m" (264 of 256) through it, as R_BuildLightMap
-// writes it with gl_overbright 1 (lightscale 256), to be drawn at 4/3 (R_BlendLightmaps: DST_COLOR, SRC_COLOR with
-// the colour 128/192). Math.fround where the engine works in single precision. Checked 12 Nov 2026 against Xash3D's
+// writes it. With gl_overbright 1 (overbright true, up to 0.27.1) lightscale is 256 and the map is drawn at 4/3
+// (R_BlendLightmaps: DST_COLOR, SRC_COLOR with the colour 128/192); with gl_overbright 0 lightscale is
+// pow(2, 1 / lightgamma) x 256 + 0.5 (338 at lightgamma 2.5), a brighter lightmap to make up for it, drawn at 1
+// (ZERO, SRC_COLOR). Overbright changes nothing on models: R_StudioLighting looks the light up in the same table
+// either way (LightToTexGamma), and the light under a model is read from the map's own samples (R_LightVec). Math.fround where the engine works in single precision. Checked 12 Nov 2026 against Xash3D's
 // own test tables for BuildGammaTable (gamma 2.5, brightness 0, texgamma 2, lightgamma 2.5; and 2.2, 1, 2.2, 2.4):
-// every entry the same (tests/logs/0.26.31.md).
-function buildCurve(gamma, brightness, texgamma, lightgamma) {
+// every entry the same (tests/logs/0.26.31.md). Brightness above 1 multiplies the light before the curve's knee, as
+// BuildGammaTable does (the engine allows gamma 1.8 to 3 and brightness 0 to 3, V_ValidateGammaCvars).
+function buildCurve(gamma, brightness, texgamma, lightgamma, overbright) {
   const f32 = Math.fround;
   const g1 = f32(1 / gamma), g2 = f32(g1 * texgamma);
   const g3 = f32(brightness <= 0 ? 0.125 : brightness <= 1 ? 0.125 - brightness * brightness * 0.075 : 0.05);
@@ -7543,14 +7753,16 @@ function buildCurve(gamma, brightness, texgamma, lightgamma) {
     f = f <= g3 ? f32((f / g3) * 0.125) : f32(((f - g3) / (1 - g3)) * 0.875 + 0.125);
     light[i] = Math.max(0, Math.min(1023, Math.trunc(Math.pow(f, g1) * 1023)));
   }
-  for (let i = 0; i < 256; i++) lm[i] = light[Math.min(1023, (i * 264 * 256) >> 14)] >> 2;
-  return { tex, light, lm, g1, g3, lightgamma };
+  const lightscale = overbright ? 256 : Math.trunc(Math.pow(2, f32(1 / lightgamma)) * 256 + 0.5);
+  for (let i = 0; i < 256; i++) lm[i] = light[Math.min(1023, (i * 264 * lightscale) >> 14)] >> 2;
+  return { tex, light, lm, g1, g3, lightgamma, bright: brightness > 1 ? brightness : 1, overbright: !!overbright, lightscale };
 }
-const CURVE = buildCurve(2.5, 1, 2, 2.5);
+const CURVE = buildCurve(3, 2, 2, 2.5, false); // up to 0.27.1 Valve's defaults with overbright, (2.5, 1, 2, 2.5, true)
 
 // A texture's colours through texgamma, as the game loads a Half-Life texture (LUMP_TEXGAMMA, Image_SetPalette in
 // Xash3D's imagelib): every world texture but the masked ones (names starting with {, fences and grates), water too,
-// and every model skin but the masked ones (STUDIO_NF_MASKED). The sky and the sprites keep their colours.
+// and every model skin but the masked ones (STUDIO_NF_MASKED), and the sky's pictures (the 3D batch: as Sujan's game
+// draws them, measured on his de_train screenshots). The sprites keep their colours.
 function texGamma(rgba) {
   const out = new Uint8Array(rgba.length), T = CURVE.tex;
   for (let i = 0; i < rgba.length; i += 4) { out[i] = T[rgba[i]]; out[i + 1] = T[rgba[i + 1]]; out[i + 2] = T[rgba[i + 2]]; out[i + 3] = rgba[i + 3]; }
@@ -7637,22 +7849,24 @@ function entityLight(x, y, z) {
 // (through texgamma when it was loaded). The table is worked out in the shader the way CURVE builds it, so it needs no
 // texture in the vertex shader. Flat-shaded skins get 80% of the directional part (STUDIO_NF_FLATSHADE), full-bright
 // skins the light's colour alone (STUDIO_NF_FULLBRIGHT). even: Team colours keeps the even light it had up to 0.26.30
-// (ambient 0.75 and a sun of 0.5), so red and blue stay clear in the dark (it isn't in the game). emissive: the
-// selected player's highlight, added on top.
+// (ambient 0.75 and a sun of 0.5), so red and blue stay clear in the dark (it isn't in the game). fixedLight: the same
+// even light on every model, skins and all, while Fixed light is on in View settings (the 3D batch, item 5; Sujan, 20 Nov
+// 2026; off by default), one uniform shared by every model's material (FIXED_LIGHT). emissive: the selected player's
+// highlight, added on top.
 const STUDIO_VS = `uniform float amb; uniform float shade; uniform vec3 lcol; uniform vec3 ldir; uniform float flatShade;
-  uniform float fullBright; uniform float even;
+  uniform float fullBright; uniform float even; uniform float fixedLight;
   varying vec2 vUv; varying vec3 vCol;
   float curve(float illum) {
     float i = floor(min(illum, 255.0) * 4.0);
     if (i < 1.0) return 0.0;
-    float f = pow(i / 1023.0, ${CURVE.lightgamma.toFixed(1)});
+    float f = pow(i / 1023.0, ${CURVE.lightgamma.toFixed(1)}) * ${CURVE.bright.toFixed(1)};
     f = f <= ${CURVE.g3.toFixed(9)} ? f / ${CURVE.g3.toFixed(9)} * 0.125 : (f - ${CURVE.g3.toFixed(9)}) / ${(1 - CURVE.g3).toFixed(9)} * 0.875 + 0.125;
     return min(floor(pow(f, ${CURVE.g1.toFixed(9)}) * 1023.0), 1023.0) / 1023.0;
   }
   void main() {
     vUv = uv;
     vec3 n = normalize(mat3(modelMatrix) * normal);
-    if (even > 0.5) vCol = vec3(0.75 + 0.5 * max(dot(n, normalize(vec3(0.4, 1.0, 0.3))), 0.0));
+    if (even > 0.5 || fixedLight > 0.5) vCol = vec3(0.75 + 0.5 * max(dot(n, normalize(vec3(0.4, 1.0, 0.3))), 0.0));
     else if (fullBright > 0.5) vCol = lcol;
     else {
       float illum = amb;
@@ -7675,6 +7889,8 @@ const STUDIO_FS = `uniform sampler2D map; uniform float hasMap; uniform float al
     if (t.a < alphaTest) discard;
     gl_FragColor = vec4(min(t.rgb * vCol, vec3(1.0)) + emissive, 1.0);
   }`;
+// Fixed light (View settings): 1 lights every model evenly, 0 as the game lights it; loop.js sets it
+const FIXED_LIGHT = { value: 0 };
 // flags: the skin's texture flags (1 flat-shaded, 4 full-bright, 64 masked)
 function studioMat(map, flags) {
   return new THREE.ShaderMaterial({
@@ -7682,7 +7898,7 @@ function studioMat(map, flags) {
       map: { value: map || null }, hasMap: { value: map ? 1 : 0 }, alphaTest: { value: flags & 64 ? 0.5 : 0 },
       color: { value: new THREE.Color(0xffffff) }, emissive: { value: new THREE.Color(0) },
       amb: { value: 192 }, shade: { value: 0 }, lcol: { value: new THREE.Vector3(1, 1, 1) }, ldir: { value: new THREE.Vector3(0, -1, 0) },
-      flatShade: { value: flags & 1 ? 1 : 0 }, fullBright: { value: flags & 4 ? 1 : 0 }, even: { value: 0 },
+      flatShade: { value: flags & 1 ? 1 : 0 }, fullBright: { value: flags & 4 ? 1 : 0 }, even: { value: 0 }, fixedLight: FIXED_LIGHT,
     },
     vertexShader: STUDIO_VS, fragmentShader: STUDIO_FS, side: THREE.DoubleSide,
   });
@@ -8408,7 +8624,7 @@ async function fxLoad() {
   FX.src = src; FX.ready = false;
   const spr = {};
   try {
-    for (const n of ['muzzleflash1', 'muzzleflash2', 'muzzleflash3', 'bloodspray', 'blood']) {
+    for (const n of ['muzzleflash1', 'muzzleflash2', 'muzzleflash3', 'bloodspray', 'blood', 'ledglow']) {
       const f = src[`sprites/${n}.spr`]; if (!f) continue;
       const s = sprFrames(await readPicked(f, `sprites/${n}.spr`) || new Uint8Array(0));
       if (s) spr[n] = s;
@@ -8497,7 +8713,7 @@ function fxSprite(kind, parent) {
   const P = FX.pools[kind] || (FX.pools[kind] = []), i = FX.n[kind] = (FX.n[kind] || 0) + 1;
   let s = P[i - 1];
   if (!s) {
-    const add = kind === 'flash' || kind === 'vflash';
+    const add = kind === 'flash' || kind === 'vflash' || kind === 'glow';
     s = new THREE.Sprite(new THREE.SpriteMaterial({ transparent: true, depthWrite: false, blending: add ? THREE.AdditiveBlending : THREE.NormalBlending }));
     s.renderOrder = add ? 21 : 19; s.frustumCulled = false; P.push(s);
   }
@@ -8767,6 +8983,34 @@ function fxBlood() {
   }
 }
 // the world's share of a 3D frame: the gun flash on everyone in third person, the shells, the blood
+// The planted bomb's blink (the 3D batch, item 2; Sujan, 20 Nov 2026; tests/logs/c4-blink-2026-11-20.md): every glow
+// sprite the server sent (TE_GLOWSPRITE, D.glows; every 2 s from 2 s after the plant), as the game draws one: its
+// sprite's first frame facing the camera, scale times its width (0.3 x 64 = 19.2 units for ledglow.spr) at any distance
+// (kRenderFxNoDissipation), added onto the picture at its brightness for its life (0.1 s), then fading in a straight
+// line to nothing over 2 s (FTENT_FADEOUT, fadeSpeed 0.5: cs16-client HUD_TempEntUpdate), so it's always faintly on;
+// with no depth test, so players never hide it, but left out when the line from the eye meets the map more than 8
+// units before it (Xash3D gl_sprite.c, R_SpriteGlowBlend). A free camera outside the map skips that first solid stretch,
+// as the names do. On the moment itself (tNow3), not 0.1 s behind with the players and the bomb: a temp entity is made
+// when its message arrives, as the damage numbers come with the kill feed. In every view, HLTV and POV; Hide all
+// overlays keeps it. Run after the camera is placed.
+const GLOW_FADE = 0.5;
+function fxGlows() {
+  const G = D && D.glows; if (!FX.ready || !G || !G.length || !MAP) return;
+  const cam = R3.camera, eye = [cam.position.x, -cam.position.z, cam.position.y];
+  const t = tNow3;
+  for (let i = idxAt(G, 8, t); i >= 0 && G[i * 8] > t - 30; i--) {
+    const o = i * 8, age = t - G[o], life = G[o + 5], br = G[o + 7];
+    const a = Math.min(1, age <= life ? br : br * (1 - (age - life) * GLOW_FADE)); if (a <= 0.004) continue;
+    const nm = /([^/\\]+)\.spr$/i.exec(D.models[G[o + 4]] || ''), S = nm && FX.spr[nm[1].toLowerCase()]; if (!S) continue;
+    const to = [G[o + 1], G[o + 2], G[o + 3]], tr = solidAlong(MAP.bsp, eye, to, 4, R3.broken, R3.poses);
+    const hit = tr.hit.find((h, k) => !(k === 0 && h.f0 * tr.len <= 8));
+    if (hit && (1 - hit.f0) * tr.len > 8) continue;
+    const s = fxSprite('glow', R3.dyn);
+    s.material.map = S.tex[0]; s.material.rotation = 0; s.material.color.setHex(0xffffff); s.material.opacity = a; s.material.depthTest = false;
+    s.renderOrder = 22; s.scale.set(S.w * G[o + 6], S.h * G[o + 6], 1); s.position.copy(g3(to[0], to[1], to[2]));
+    s.userData.fx = { kind: 'glow', sprite: nm[1].toLowerCase(), alpha: a };
+  }
+}
 function fxWorld() {
   if (!FX.ready || !D) return;
   fxThirdPerson();
@@ -8893,10 +9137,8 @@ function update3Now() {
       l.material.opacity = 1 - age / life;
     }
   }
-  if (r) {
-    const bp = D.bomb.find((b) => b.type === 'plantpos' && b.t >= r.start && b.t <= T && b.t <= r.end);
-    if (bp) ov('c4', () => { const c4 = new THREE.Mesh(sphere(6), new THREE.MeshBasicMaterial({ color: 0xff9a3c })); c4.userData.shared = true; return c4; }).position.copy(g3(bp.pos[0], bp.pos[1], bp.pos[2] + 4));
-  }
+  if (R3.c4) R3.c4.rig.g.visible = false;
+  if (r) plantedC4(r, ov);
   if (opts.nades) for (let gi = 0; gi < M.nades.length; gi++) {
     const g = M.nades[gi];
     if (T < g.t0 || T > g.t1 + 1) continue;
@@ -9021,6 +9263,8 @@ function update3Now() {
     }
   }
   camera.updateProjectionMatrix();
+  try { fxGlows(); } catch (e) { frameError(e); } // the planted bomb's blink, with this frame's camera (shotfx.js)
+  if (R3.sky) R3.sky.g.position.copy(camera.position); // the sky box moves with the camera
   renderer.render(R3.scene, camera);
   // the gun in hand isn't shown while looking through the scope, as in the game
   const scoped = POV.on ? (POV.who != null && povFov(POV.t) < 90 && (() => { const ss = playerState(POV.who, T); return ss && SNIPERS[weaponShort(ss.weapon)]; })())
@@ -9095,7 +9339,7 @@ function update3Now() {
     if (scoped) drawScope(lx, W, H);
     const xh = POV.on ? povXh(W, H) : XHAIR[$('xh3').value] || XHAIR.large;
     if (cam3.mode === 'eyes' && (!POV.on || POV.who != null)) drawHitMarker(lx, W / 2, H / 2, xh);
-    if (POV.on) { if (!scoped) { readCrosshairCfg(); drawPovCrosshair(XCFG.additive ? hx : lx, W, H); } if (POV.who === POV.v.rec && POV.mode === 0) { drawPovHud(hx, W, H); drawPovRadar(hx, W, H); } }
+    if (POV.on) { if (!scoped) { readCrosshairCfg(); drawPovCrosshair(XCFG.additive ? hx : lx, W, H); } if (POV.who === POV.v.rec && POV.mode === 0) { drawPovHud(hx, W, H); drawPovRadar(sx, hx, W, H); } }
     else if (cam3.mode === 'eyes' && !scoped) { lx.strokeStyle = 'rgba(90,255,90,.85)'; lx.lineWidth = xh.w; const cx = W / 2, cy = H / 2, g = xh.gap, e = xh.end; lx.beginPath(); lx.moveTo(cx - e, cy); lx.lineTo(cx - g, cy); lx.moveTo(cx + g, cy); lx.lineTo(cx + e, cy); lx.moveTo(cx, cy - e); lx.lineTo(cx, cy - g); lx.moveTo(cx, cy + g); lx.lineTo(cx, cy + e); lx.stroke(); }
   } else if (cam3.mode !== 'free' && selected) {
     const death = D.kills.filter((k) => k.victim === selected && k.t <= T + 0.05).pop();
@@ -9647,8 +9891,8 @@ async function loadHudSprites() {
     }
     // the hit arcs (valve/sprites/640_pain.spr, four frames)
     if (!HUDS.pain && files.hud.pain) HUDS.pain = sprCanvases(await readPicked(files.hud.pain, 'sprites/640_pain.spr'));
-    // the game's radar (cstrike/sprites/radar640.spr, 0.26.30)
-    if (!HUDS.radar && files.hud.radar) HUDS.radar = radarSprite(decodeSpr(await readPicked(files.hud.radar, 'sprites/radar640.spr') || new Uint8Array(0)));
+    // the game's solid radar (cstrike/sprites/radaropaque640.spr; the see-through radar640.spr up to 0.27.1)
+    if (!HUDS.radar && files.hud.radar) HUDS.radar = radarSprite(decodeSpr(await readPicked(files.hud.radar, 'sprites/radaropaque640.spr') || new Uint8Array(0)));
     // ammo icons, for the guns he used
     const ids = new Set(), own = (forD && forD.ownAmmo) || []; for (let i = 1; i < own.length; i += 3) ids.add(own[i]);
     for (const id of ids) {
@@ -9872,9 +10116,11 @@ function drawPovBar(bg, lx, W, H) {
 }
 
 // ---------------- POV mode: his radar (0.26.30) ----------------
-// The game's radar, top left, as cs16-client's radar.cpp draws its default see-through one (cl_radartype 0) for everyone,
-// whatever config.cfg says (Sujan, 11 Nov 2026, docs/pov-scoreboard-radar-flashbang-mock.jpg, section D): radar640.spr
-// tinted 25 75 25 and added onto the picture, sized like the rest of his HUD; 32 units of map a pixel of the sprite, out
+// The game's radar, top left, as cs16-client's radar.cpp draws the solid one (cl_radartype 1, lines 292 to 300) for
+// everyone, whatever config.cfg says (Sujan, 19 Nov 2026; the see-through one, radar640.spr tinted 25 75 25 and added onto
+// the picture, from 0.26.30 to 0.27.1): radaropaque640.spr (hud.txt's "radaropaque") tinted 200 200 200 and drawn with
+// holes (SPR_DrawHoles: palette colour 255 see-through), over a flashbang's white like the spectator bars (#spec3), the
+// dots added onto it (#hud3, kRenderTransAdd); sized like the rest of his HUD; 32 units of map a pixel of the sprite, out
 // to its edge, turning with his view. His living teammates as white dots, the bomb carrier's red (255 16 16); one more
 // than 128 units above him is a T, below him an upside-down T. Where each is: from his snapshots while his game received
 // him, else the last Radar message this round (ReGameDLL player.cpp sends one a second while he moved 64 units or more).
@@ -9884,7 +10130,7 @@ function radarSprite(sh) {
   if (!sh) return null;
   const cv = document.createElement('canvas'); cv.width = sh.w; cv.height = sh.h;
   const g = cv.getContext('2d'), img = g.createImageData(sh.w, sh.h);
-  for (let i = 0; i < sh.w * sh.h; i++) { const c = sh.px[i], o = i * 4; img.data[o] = sh.pal[c * 3] * 25 / 255; img.data[o + 1] = sh.pal[c * 3 + 1] * 75 / 255; img.data[o + 2] = sh.pal[c * 3 + 2] * 25 / 255; img.data[o + 3] = 255; }
+  for (let i = 0; i < sh.w * sh.h; i++) { const c = sh.px[i], o = i * 4; img.data[o] = sh.pal[c * 3] * 200 / 255; img.data[o + 1] = sh.pal[c * 3 + 1] * 200 / 255; img.data[o + 2] = sh.pal[c * 3 + 2] * 200 / 255; img.data[o + 3] = c === 255 ? 0 : 255; }
   g.putImageData(img, 0, 0);
   return { cv, w: sh.w, h: sh.h };
 }
@@ -9904,12 +10150,13 @@ function povHasBomb(e, t) {
   if (D.attribs && D.attribs.length) { const a = povByEnt('attrIdx', D.attribs, 3)[e], i = povLastOf('attrIdx', D.attribs, 3, e, t); return i >= 0 && (a[i + 2] & 2) !== 0; }
   return !!packAt(e, t);
 }
-function drawPovRadar(lx, W, H) {
+function drawPovRadar(bg, lx, W, H) {
   const sp = HUDS.radar; if (!sp) return;
   const t = POV.t, v = POV.v, rec = v.rec, me = playerState(rec, t); if (!me || me.state <= 0) return;
   const s = H / 768 * HUD_SCALE, R = sp.w / 2, side = Math.abs(me.state), r = roundAt(t), from = r ? r.start : -Infinity;
+  bg.save(); bg.globalCompositeOperation = 'source-over'; bg.globalAlpha = 1; bg.imageSmoothingEnabled = true;
+  bg.drawImage(sp.cv, 0, 0, sp.w * s, sp.h * s); bg.restore();
   lx.save(); lx.globalCompositeOperation = 'lighter'; lx.globalAlpha = 1;
-  lx.drawImage(sp.cv, 0, 0, sp.w * s, sp.h * s);
   const put = (px, py, pz, col, kind) => {
     const dx = px - v.pos[0], dy = py - v.pos[1], off = (v.yaw - Math.atan2(dy, dx) * 180 / Math.PI) * Math.PI / 180;
     const rad = Math.min(Math.hypot(dx, dy) / 32, R), X = (R + rad * Math.sin(off)) * s, Y = (R - rad * Math.cos(off)) * s, z = v.pos[2] - pz, u = s;
@@ -10140,6 +10387,12 @@ $('xh3').onchange = () => { ls.set('crosshair2', $('xh3').value); };
 $('ui3').value = uiSizeSetting();
 $('ui3').onchange = () => { ls.set('uiSize', $('ui3').value); if (applyUiSize()) dispatchEvent(new Event('uisize')); };
 addEventListener('uisize', () => { resize(); applyQuality(false); if (theatreActive()) measureTheatre(); });
+// Fixed light (the 3D batch, item 5; Sujan, 20 Nov 2026): every model lit the same everywhere, as up to 0.26.30 (ambient
+// 0.75 and a sun of 0.5 from above), the map keeping the game's light; off by default, kept in this browser like Glow on
+// hits. One uniform every model's material shares (FIXED_LIGHT, light.js)
+const fixedShow = () => { FIXED_LIGHT.value = $('fixed3').checked ? 1 : 0; };
+$('fixed3').checked = ls.get('fixedLight') === 'on'; fixedShow();
+$('fixed3').onchange = () => { ls.set('fixedLight', $('fixed3').checked ? 'on' : 'off'); fixedShow(); };
 $('glow3').checked = ls.get('hitGlow') !== 'off';
 $('glow3').onchange = () => { ls.set('hitGlow', $('glow3').checked ? 'on' : 'off'); };
 // Damage numbers (0.26.16; Sujan, 3 Nov 2026): Wallbangs, the default and the numbers as before, Direct hits, Both or Off,
@@ -10147,25 +10400,26 @@ $('glow3').onchange = () => { ls.set('hitGlow', $('glow3').checked ? 'on' : 'off
 $('dn3').value = ['wb', 'direct', 'both', 'off'].includes(ls.get('dmgNumbers')) ? ls.get('dmgNumbers') : 'wb';
 $('dn3').onchange = () => { ls.set('dmgNumbers', $('dn3').value); };
 // Vanilla (0.26.16; Sujan, 1 to 3 Nov 2026, docs/kill-details-damage-vanilla-mock.jpg): one switch for every overlay the
-// game's own demo player doesn't have. On, it turns off Names, Grenades, Kill lines, See through walls, Glow on hits and the
-// damage numbers, which still work one by one after, and hides what has no switch of its own: kill markers and the ring,
+// game's own demo player doesn't have. On, it turns off Names, Grenades, Kill lines, See through walls, Glow on hits, the
+// damage numbers and Fixed light (the 3D batch), which still work one by one after, and hides what has no switch of its own: kill markers and the ring,
 // the death cam's red wash and banner, and the C4 countdown (VAN.on). Off, it brings back the settings it turned off.
 // The kill feed, round timer, score, crosshair, Tab scoreboard, "Recording skips here" and the name bar stay.
 function setVanilla(on) {
   if (on === VAN.on) return;
   const ids = { names: 'tgNames', nades: 'tgNades', lines: 'tgLines', xray: 'tgXray' };
   if (on) {
-    VAN.saved = { names: opts.names, nades: opts.nades, lines: opts.lines, xray: opts.xray, glow: $('glow3').checked, dn: $('dn3').value };
+    VAN.saved = { names: opts.names, nades: opts.nades, lines: opts.lines, xray: opts.xray, glow: $('glow3').checked, dn: $('dn3').value, fixed: $('fixed3').checked };
     for (const k in ids) { opts[k] = false; $(ids[k]).classList.remove('on'); }
-    $('glow3').checked = false; $('dn3').value = 'off';
+    $('glow3').checked = false; $('dn3').value = 'off'; $('fixed3').checked = false;
   } else if (VAN.saved) {
     const o = VAN.saved;
     for (const k in ids) { opts[k] = !!o[k]; $(ids[k]).classList.toggle('on', opts[k]); }
     $('glow3').checked = o.glow !== false; $('dn3').value = ['wb', 'direct', 'both', 'off'].includes(o.dn) ? o.dn : 'wb';
+    $('fixed3').checked = o.fixed === true;
   }
   VAN.on = on; if (!on) VAN.saved = null; $('van3').checked = on;
   ls.set('vanilla', on ? { on: true, saved: VAN.saved } : null);
-  ls.set('hitGlow', $('glow3').checked ? 'on' : 'off'); ls.set('dmgNumbers', $('dn3').value); savePrefs();
+  ls.set('hitGlow', $('glow3').checked ? 'on' : 'off'); ls.set('dmgNumbers', $('dn3').value); ls.set('fixedLight', $('fixed3').checked ? 'on' : 'off'); fixedShow(); savePrefs();
   if (D) updateHud(true);
 }
 { const v = ls.get('vanilla'); if (v && v.on === true) { VAN.on = true; VAN.saved = v.saved && typeof v.saved === 'object' ? v.saved : null; } }
@@ -10635,7 +10889,7 @@ function frameError(e) {
 function debugInfo() {
   let gpu = '';
   try { const gl = document.createElement('canvas').getContext('webgl'); const x = gl && gl.getExtension('WEBGL_debug_renderer_info'); gpu = gl ? (x ? gl.getParameter(x.UNMASKED_RENDERER_WEBGL) : 'WebGL available') : 'no WebGL'; } catch (e) { gpu = 'unknown'; }
-  const L = [`CS 1.6 Demo Viewer 0.27.1`, `Browser: ${navigator.userAgent}`, `Screen: ${screen.width}x${screen.height} at ${devicePixelRatio}x, window ${innerWidth}x${innerHeight}`, `Graphics: ${gpu}`];
+  const L = [`CS 1.6 Demo Viewer 0.27.2`, `Browser: ${navigator.userAgent}`, `Screen: ${screen.width}x${screen.height} at ${devicePixelRatio}x, window ${innerWidth}x${innerHeight}`, `Graphics: ${gpu}`];
   L.push(`Folder: ${Object.keys(files.maps).length} maps, ${Object.keys(files.overviews).length} overviews, ${Object.keys(files.mdl).length} models, ${Object.keys(files.snd).length} sounds, ${files.demos.length} demos`);
   if (D) {
     L.push(`Demo: ${D.fileName}, protocol ${(D.header && D.header.netProtocol) || '?'}, ${D.pov ? 'POV (recorded by a player)' : 'HLTV'}, map ${D.mapName}, length ${fmt(D.end - D.start)}, ${M.liveR.length} live rounds, final ${M.liveR.length ? M.liveR[M.liveR.length - 1].scoreAfter.join(':') : '-'}`);

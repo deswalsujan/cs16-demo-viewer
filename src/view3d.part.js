@@ -121,9 +121,9 @@ function resize3() {
 }
 new ResizeObserver(() => resize3()).observe($('radar'));
 
-// The map as the game draws it with Valve's defaults (light.js, 0.26.31): the texture, through texgamma when it was
-// loaded (getTex), times the lightmap, through the light table when it was packed (lightmapCurve), drawn at 4/3
-// (gl_overbright 1), at most white. Water has no lightmap in the game: its texture alone (lit 0). The see-through
+// The map as the game draws it (light.js, 0.26.31): the texture, through texgamma when it was loaded (getTex), times the
+// lightmap, through the light table when it was packed (lightmapCurve), with no overbright since the 3D batch (Sujan,
+// 20 Nov 2026), so a fully lit surface is its texture's colour (4/3, gl_overbright 1, up to 0.27.1). Water has no lightmap in the game: its texture alone (lit 0). The see-through
 // texels (alpha under 0.5) are left out as before, which is all the wallbang picture check reads of the map.
 const SHADER = {
   vertexShader: `varying vec2 vUv; varying vec2 vUv2; attribute vec2 uv2;
@@ -131,7 +131,7 @@ const SHADER = {
   fragmentShader: `uniform sampler2D map; uniform sampler2D lm; uniform float opacity; uniform float lit;
     varying vec2 vUv; varying vec2 vUv2;
     void main(){ vec4 t = texture2D(map, vUv); if (t.a < 0.5) discard;
-      vec3 c = lit > 0.5 ? min(t.rgb * texture2D(lm, vUv2).rgb * (4.0 / 3.0), vec3(1.0)) : t.rgb;
+      vec3 c = lit > 0.5 ? t.rgb * texture2D(lm, vUv2).rgb : t.rgb;
       gl_FragColor = vec4(c, opacity); }`,
 };
 // A build that throws partway (0.26.18; Sujan, 7 Nov 2026): view3.map is set only at its end, so the frame loop, which
@@ -199,6 +199,104 @@ function build3dNow() {
   }
   for (const m in R3.mov) placeMover(R3.mov[m], brushPose(MAP.movers.get(+m), null));
   view3.ready = true; view3.map = MAP.name;
+  loadSky(MAP).catch(() => {}); // the grey-blue background until its pictures are in, and for good without them
+}
+
+// ---------------- the sky (the 3D batch, item 3) ----------------
+// The map's sky picture where its "sky" faces are (buildMesh leaves them out), as Xash3D draws it (ref/gl/gl_warp.c,
+// R_DrawSkyBox and MakeSkyVec; engine/client/dll_int/ref_common.c, R_SetupSky): worldspawn's skyname ("desert", the
+// engine's default, without one), six pictures gfx/env/<name>rt, bk, lf, ft, up, dn, .tga before .bmp, from cstrike,
+// cstrike_downloads or valve (folder.js, files.sky), unlit, through texgamma as Sujan's game draws it (steam_legacy,
+// Valve's engine: its clear sky over Train's T alley measured 140 163 208 against the pictures' 108 132 189, which is
+// texgamma at gamma 3; Xash3D leaves sky pictures out of texgamma, Image_SetPalette), on a box round the camera
+// behind everything. Side i is drawn with picture SKY_ORDER[i]
+// (r_skyTexOrder), each corner (s, t) placed by st_to_vec (SKY_ST), the picture's top row at t = 1. A sky without all
+// six falls back to desert, as R_SetupSky does (DEFAULT_SKYBOX_NAME; Sujan, 20 Nov 2026); the grey-blue background of
+// up to 0.27.1 only when desert is missing too. The wall tops seen from above stay black, as in the game: their
+// lightmaps are.
+// The wallbang picture check hides it, as it hides everything but the map and the victim.
+const SKY_SUF = ['rt', 'bk', 'lf', 'ft', 'up', 'dn'];
+const SKY_ORDER = [0, 2, 1, 3, 4, 5];
+const SKY_ST = [[3, -1, 2], [-3, 1, 2], [1, 3, 2], [-1, -3, 2], [-2, -1, 3], [2, -1, -3]];
+const SKY_R = 8000; // inside the camera's far plane (16000) at the corners
+function dropSky() {
+  if (!R3 || !R3.sky) return;
+  R3.scene.remove(R3.sky.g);
+  R3.sky.g.traverse((o) => { if (o.geometry) o.geometry.dispose(); if (o.material) { if (o.material.map) o.material.map.dispose(); o.material.dispose(); } });
+  R3.sky = null;
+}
+// a sky's six pictures, .tga before .bmp, with or without "_" before the side (CheckSkybox), or null
+function skyPicks(name) {
+  const S = files.sky || {};
+  for (const ext of ['tga', 'bmp']) {
+    const L = SKY_SUF.map((s) => S[`${name}${s}.${ext}`] || S[`${name}_${s}.${ext}`]);
+    if (L.every(Boolean)) return { name, picks: L.map((f) => [f, ext]) };
+  }
+  return null;
+}
+async function loadSky(map) {
+  dropSky();
+  const ent = map.bsp.entities[0] || {};
+  const want = String(ent.skyname || 'desert').replace(/\\/g, '/').split('/').pop().replace(/\.[a-z0-9]+$/i, '').replace(/_$/, '').toLowerCase();
+  const found = skyPicks(want) || skyPicks('desert'); if (!found) return;
+  const { name, picks } = found;
+  const imgs = await Promise.all(picks.map(async ([f, ext]) => { const u8 = await readPicked(f, 'gfx/env/' + f.name); return u8 ? (ext === 'tga' ? decodeTga(u8) : await decodeBmp(u8)) : null; }));
+  if (MAP !== map || !R3 || imgs.some((x) => !x)) return;
+  dropSky();
+  const g = new THREE.Group();
+  for (let i = 0; i < 6; i++) {
+    const im = imgs[SKY_ORDER[i]];
+    const tex = new THREE.DataTexture(texGamma(im.data), im.w, im.h, THREE.RGBAFormat);
+    tex.magFilter = THREE.LinearFilter; tex.minFilter = THREE.LinearFilter; tex.generateMipmaps = false;
+    tex.wrapS = tex.wrapT = THREE.ClampToEdgeWrapping; tex.needsUpdate = true;
+    const pos = [], uv = [];
+    // GoldSrc (x, y, z) -> three (x, z, -y); the picture's first row (its top) at v = 0, as GL takes it
+    const corner = (s, t) => { const b = [s * SKY_R, t * SKY_R, SKY_R], v = SKY_ST[i].map((k) => (k < 0 ? -b[-k - 1] : b[k - 1])); pos.push(v[0], v[2], -v[1]); uv.push((s + 1) / 2, 1 - (t + 1) / 2); };
+    for (const [s, t] of [[-1, -1], [-1, 1], [1, 1], [-1, -1], [1, 1], [1, -1]]) corner(s, t);
+    const geo = new THREE.BufferGeometry();
+    geo.setAttribute('position', new THREE.Float32BufferAttribute(pos, 3)); geo.setAttribute('uv', new THREE.Float32BufferAttribute(uv, 2));
+    const m = new THREE.Mesh(geo, new THREE.MeshBasicMaterial({ map: tex, side: THREE.DoubleSide, depthTest: false, depthWrite: false, fog: false }));
+    m.renderOrder = -1000; m.frustumCulled = false; m.userData.sky = SKY_SUF[SKY_ORDER[i]];
+    g.add(m);
+  }
+  R3.scene.add(g); R3.sky = { g, name, want, map: map.name, ext: picks[0][1] };
+}
+// a .tga picture as top-down RGBA: uncompressed or run-length, true colour (16, 24 or 32 bits), grey or colour-mapped
+function decodeTga(u8) {
+  if (u8.length < 18) return null;
+  const idLen = u8[0], cmType = u8[1], type = u8[2], cmLen = u8[5] | (u8[6] << 8), cmBits = u8[7];
+  const w = u8[12] | (u8[13] << 8), h = u8[14] | (u8[15] << 8), bpp = u8[16], desc = u8[17], kind = type & 7, px = (bpp + 7) >> 3;
+  if (!w || !h || w > 4096 || h > 4096 || ![1, 2, 3].includes(kind) || !px) return null;
+  let p = 18 + idLen;
+  const cb = (cmBits + 7) >> 3, pal = cmType === 1 ? u8.subarray(p, p + cmLen * cb) : null;
+  if (cmType === 1) p += cmLen * cb;
+  const out = new Uint8Array(w * h * 4), n = w * h;
+  const rgb = (src, o, d) => {
+    if (src.length < o + (src === pal ? cb : px)) return;
+    const k = src === pal ? cb : px;
+    if (k >= 3) { out[d] = src[o + 2]; out[d + 1] = src[o + 1]; out[d + 2] = src[o]; out[d + 3] = k === 4 ? src[o + 3] : 255; }
+    else if (k === 2) { const v = src[o] | (src[o + 1] << 8); out[d] = ((v >> 10) & 31) * 255 / 31; out[d + 1] = ((v >> 5) & 31) * 255 / 31; out[d + 2] = (v & 31) * 255 / 31; out[d + 3] = 255; }
+    else { out[d] = out[d + 1] = out[d + 2] = src[o]; out[d + 3] = 255; }
+  };
+  const put = (i, o) => {
+    const x = i % w, yf = (i / w) | 0, y = desc & 0x20 ? yf : h - 1 - yf, d = (y * w + (desc & 0x10 ? w - 1 - x : x)) * 4;
+    if (kind === 1) { if (pal) rgb(pal, u8[o] * cb, d); } else rgb(u8, o, d);
+  };
+  let i = 0;
+  if (type < 8) for (; i < n && p + px <= u8.length; i++, p += px) put(i, p);
+  else while (i < n && p < u8.length) {
+    const c = u8[p++], cnt = (c & 127) + 1;
+    if (c & 128) { for (let k = 0; k < cnt && i < n; k++) put(i++, p); p += px; }
+    else for (let k = 0; k < cnt && i < n; k++, p += px) put(i++, p);
+  }
+  return { w, h, data: out };
+}
+// a .bmp picture as top-down RGBA, decoded by the browser
+async function decodeBmp(u8) {
+  const bmp = await createImageBitmap(new Blob([u8], { type: 'image/bmp' }));
+  const c = document.createElement('canvas'); c.width = bmp.width; c.height = bmp.height;
+  const g = c.getContext('2d'); g.drawImage(bmp, 0, 0);
+  return { w: c.width, h: c.height, data: new Uint8Array(g.getImageData(0, 0, c.width, c.height).data.buffer) };
 }
 // Forget everything tied to the previous demo: who we follow, camera, markers, figures, and
 // (when the map changes) the 3D level itself, so nothing from the old demo lingers on screen.
@@ -213,6 +311,7 @@ function resetForNewDemo() {
     R3.players = {};
     clearOverlays();
     clearRigs();
+    if (R3.c4) { disposeRig(R3.c4.rig); R3.c4 = null; }
   }
   ANIM = {}; stopSounds();
   $('pov').hidden = true;
@@ -222,6 +321,75 @@ function resetForNewDemo() {
   POV.on = false; POV.i = 0; POV.shotsBy = null; POV.hidden = null; { const n = $('povNote'); if (n) n.hidden = true; }
   if (view3.failed) { view3.failed = null; status3(''); } // a map that failed to build is tried again (see build3d)
 }
+// The planted bomb (the 3D batch, item 2; Sujan, 19 and 20 Nov 2026; tests/logs/c4-blink-2026-11-20.md): the game's
+// models/w_c4.mdl where the demo's bomb entity is (D.c4ents), at its angles, lit like the player models, from when it
+// appears (it falls about 20 units and lands 0.2 s after the plant) until a defuse removes it or the explosion hides it.
+// Without the model, the orange ball of up to 0.27.1 resting on the floor where the bomb is. With no entity at that
+// moment (a POV demo, the bomb out of his view; HLTV's 256-object limit on de_tuscan), until the round's end message (the
+// defuse or the explosion): the bomb never moves once planted, so the model where the demo last had it in that round, or
+// before its first sighting, where the demo first has it later in the round; only a bomb the demo never has in that
+// round gets the ball, at BombDrop's spot moved down to the floor (Sujan, 20 Nov 2026).
+// Hide all overlays keeps it, as the game's demo player shows it; its blink is fxGlows (shotfx.js).
+function c4Rig() {
+  const M2 = getModel('models/w_c4.mdl'); if (!M2 || !M2.mdl) return null;
+  let c = R3.c4;
+  if (!c || c.dyn !== R3.dyn || c.M !== M2) {
+    if (c) disposeRig(c.rig);
+    const rig = makeRig(M2, R3.dyn);
+    mdlPose(M2.mdl, 0, 0, 0.5, 0.5, rig.p, rig.q); mdlBoneMats(M2.mdl, rig.p, rig.q, rig.mats); skinRig(rig);
+    c = R3.c4 = { dyn: R3.dyn, M: M2, rig };
+  }
+  return c.rig;
+}
+// BombDrop's spot (the planter's origin) moved down to the floor, as ReGameDLL's REGAMEDLL_FIXES places the bomb in
+// CGrenade::ShootSatchelCharge (ggrenade.cpp): a trace 8192 units straight down that players don't stop, its end, or the
+// spot itself when it meets nothing. Once per plant.
+function c4Floor(bp) {
+  if (bp.floorZ != null) return bp.floorZ;
+  const [x, y, z] = bp.pos;
+  if (!MAP) return z;
+  const tr = solidAlong(MAP.bsp, [x, y, z], [x, y, z - 8192], 1, null, null, 'bullet'), h = tr.hit[0];
+  if (!h) return (bp.floorZ = z);
+  // the samples are a unit apart: the floor again, to 1/32 of a unit, over the unit above the first solid one
+  const zh = z - h.f0 * tr.len, top = Math.min(z, zh + 1), fine = solidAlong(MAP.bsp, [x, y, top], [x, y, zh - 0.01], 1 / 32, null, null, 'bullet').hit[0];
+  return (bp.floorZ = fine ? top - fine.f0 * (top - zh + 0.01) : zh);
+}
+// where the planted bomb is drawn at t in round r: { kind: 'entity' (the demo has it), 'last' (where the demo last had
+// it this round), 'later' (where the demo first has it later this round, landed) or 'marker' (never in this round), x, y,
+// z, a: pitch, yaw, roll }, or null
+function c4State(r, t) {
+  const rEnd = r.end != null ? r.end : D.end;
+  const bp = D.bomb.find((b) => b.type === 'plantpos' && b.t >= r.start && b.t <= t && b.t <= rEnd);
+  const E = D.c4ents || [], i = E.length ? idxAt(E, 8, t) : -1, o = i * 8;
+  if (i >= 0 && E[o] >= r.start && E[o + 7]) {
+    // between two rows while it falls, in a straight line, as players move between snapshots
+    const n = o + 8, u = n < E.length && E[n + 7] && E[n] - E[o] < 0.5 ? (t - E[o]) / (E[n] - E[o]) : 0;
+    const L = (k) => (u > 0 ? E[o + k] + (E[n + k] - E[o + k]) * u : E[o + k]);
+    return { kind: 'entity', x: L(1), y: L(2), z: L(3), a: [E[o + 4], E[o + 5], E[o + 6]] };
+  }
+  const bEnd = r.endT != null && r.endT >= bp?.t ? r.endT : rEnd;
+  if (!bp || t >= bEnd) return null;
+  const from = Math.max(r.start, bp.t - 0.5), at = (kind, q) => ({ kind, x: E[q + 1], y: E[q + 2], z: E[q + 3], a: [E[q + 4], E[q + 5], E[q + 6]] });
+  for (let k = i; k >= 0 && E[k * 8] >= from; k--) if (E[k * 8 + 7]) return at('last', k * 8);
+  // its first sighting later in the round, to the last row of that stretch (it may still be falling when first seen)
+  for (let k = i + 1; k * 8 < E.length && E[k * 8] < bEnd; k++) {
+    if (E[k * 8] < from || !E[k * 8 + 7]) continue;
+    while ((k + 1) * 8 < E.length && E[(k + 1) * 8 + 7] && E[(k + 1) * 8] < bEnd) k++;
+    return at('later', k * 8);
+  }
+  return { kind: 'marker', x: bp.pos[0], y: bp.pos[1], z: c4Floor(bp), a: [0, 0, 0] };
+}
+function plantedC4(r, ov) {
+  const st = c4State(r, T); if (!st) return;
+  const rig = st.kind === 'marker' ? null : c4Rig();
+  if (!rig) {
+    ov('c4', () => { const c4 = new THREE.Mesh(sphere(6), new THREE.MeshBasicMaterial({ color: 0xff9a3c })); c4.userData.shared = true; return c4; }).position.copy(g3(st.x, st.y, st.z + 6));
+    return;
+  }
+  placeRig(rig, st.x, st.y, st.z, 0, 0);
+  // GoldSrc pitch, yaw, roll -> three, as the shells turn (shotfx.js)
+  const d = Math.PI / 180; rig.g.rotation.set(st.a[2] * d, st.a[1] * d, -st.a[0] * d, 'YZX');
+}
 // remove the reused round overlays (a new round or a new demo starts a fresh set)
 function clearOverlays() {
   if (!R3 || !R3.ov) return;
@@ -230,6 +398,7 @@ function clearOverlays() {
 }
 function clear3d() {
   if (!R3) return;
+  dropSky();
   while (R3.world.children.length) { const c = R3.world.children.pop(); c.geometry && c.geometry.dispose(); }
   R3.brk = {}; R3.mov = {};
   view3.ready = false; view3.map = null;
@@ -451,10 +620,8 @@ function update3Now() {
       l.material.opacity = 1 - age / life;
     }
   }
-  if (r) {
-    const bp = D.bomb.find((b) => b.type === 'plantpos' && b.t >= r.start && b.t <= T && b.t <= r.end);
-    if (bp) ov('c4', () => { const c4 = new THREE.Mesh(sphere(6), new THREE.MeshBasicMaterial({ color: 0xff9a3c })); c4.userData.shared = true; return c4; }).position.copy(g3(bp.pos[0], bp.pos[1], bp.pos[2] + 4));
-  }
+  if (R3.c4) R3.c4.rig.g.visible = false;
+  if (r) plantedC4(r, ov);
   if (opts.nades) for (let gi = 0; gi < M.nades.length; gi++) {
     const g = M.nades[gi];
     if (T < g.t0 || T > g.t1 + 1) continue;
@@ -579,6 +746,8 @@ function update3Now() {
     }
   }
   camera.updateProjectionMatrix();
+  try { fxGlows(); } catch (e) { frameError(e); } // the planted bomb's blink, with this frame's camera (shotfx.js)
+  if (R3.sky) R3.sky.g.position.copy(camera.position); // the sky box moves with the camera
   renderer.render(R3.scene, camera);
   // the gun in hand isn't shown while looking through the scope, as in the game
   const scoped = POV.on ? (POV.who != null && povFov(POV.t) < 90 && (() => { const ss = playerState(POV.who, T); return ss && SNIPERS[weaponShort(ss.weapon)]; })())
@@ -653,7 +822,7 @@ function update3Now() {
     if (scoped) drawScope(lx, W, H);
     const xh = POV.on ? povXh(W, H) : XHAIR[$('xh3').value] || XHAIR.large;
     if (cam3.mode === 'eyes' && (!POV.on || POV.who != null)) drawHitMarker(lx, W / 2, H / 2, xh);
-    if (POV.on) { if (!scoped) { readCrosshairCfg(); drawPovCrosshair(XCFG.additive ? hx : lx, W, H); } if (POV.who === POV.v.rec && POV.mode === 0) { drawPovHud(hx, W, H); drawPovRadar(hx, W, H); } }
+    if (POV.on) { if (!scoped) { readCrosshairCfg(); drawPovCrosshair(XCFG.additive ? hx : lx, W, H); } if (POV.who === POV.v.rec && POV.mode === 0) { drawPovHud(hx, W, H); drawPovRadar(sx, hx, W, H); } }
     else if (cam3.mode === 'eyes' && !scoped) { lx.strokeStyle = 'rgba(90,255,90,.85)'; lx.lineWidth = xh.w; const cx = W / 2, cy = H / 2, g = xh.gap, e = xh.end; lx.beginPath(); lx.moveTo(cx - e, cy); lx.lineTo(cx - g, cy); lx.moveTo(cx + g, cy); lx.lineTo(cx + e, cy); lx.moveTo(cx, cy - e); lx.lineTo(cx, cy - g); lx.moveTo(cx, cy + g); lx.lineTo(cx, cy + e); lx.stroke(); }
   } else if (cam3.mode !== 'free' && selected) {
     const death = D.kills.filter((k) => k.victim === selected && k.t <= T + 0.05).pop();
@@ -1205,8 +1374,8 @@ async function loadHudSprites() {
     }
     // the hit arcs (valve/sprites/640_pain.spr, four frames)
     if (!HUDS.pain && files.hud.pain) HUDS.pain = sprCanvases(await readPicked(files.hud.pain, 'sprites/640_pain.spr'));
-    // the game's radar (cstrike/sprites/radar640.spr, 0.26.30)
-    if (!HUDS.radar && files.hud.radar) HUDS.radar = radarSprite(decodeSpr(await readPicked(files.hud.radar, 'sprites/radar640.spr') || new Uint8Array(0)));
+    // the game's solid radar (cstrike/sprites/radaropaque640.spr; the see-through radar640.spr up to 0.27.1)
+    if (!HUDS.radar && files.hud.radar) HUDS.radar = radarSprite(decodeSpr(await readPicked(files.hud.radar, 'sprites/radaropaque640.spr') || new Uint8Array(0)));
     // ammo icons, for the guns he used
     const ids = new Set(), own = (forD && forD.ownAmmo) || []; for (let i = 1; i < own.length; i += 3) ids.add(own[i]);
     for (const id of ids) {
@@ -1430,9 +1599,11 @@ function drawPovBar(bg, lx, W, H) {
 }
 
 // ---------------- POV mode: his radar (0.26.30) ----------------
-// The game's radar, top left, as cs16-client's radar.cpp draws its default see-through one (cl_radartype 0) for everyone,
-// whatever config.cfg says (Sujan, 11 Nov 2026, docs/pov-scoreboard-radar-flashbang-mock.jpg, section D): radar640.spr
-// tinted 25 75 25 and added onto the picture, sized like the rest of his HUD; 32 units of map a pixel of the sprite, out
+// The game's radar, top left, as cs16-client's radar.cpp draws the solid one (cl_radartype 1, lines 292 to 300) for
+// everyone, whatever config.cfg says (Sujan, 19 Nov 2026; the see-through one, radar640.spr tinted 25 75 25 and added onto
+// the picture, from 0.26.30 to 0.27.1): radaropaque640.spr (hud.txt's "radaropaque") tinted 200 200 200 and drawn with
+// holes (SPR_DrawHoles: palette colour 255 see-through), over a flashbang's white like the spectator bars (#spec3), the
+// dots added onto it (#hud3, kRenderTransAdd); sized like the rest of his HUD; 32 units of map a pixel of the sprite, out
 // to its edge, turning with his view. His living teammates as white dots, the bomb carrier's red (255 16 16); one more
 // than 128 units above him is a T, below him an upside-down T. Where each is: from his snapshots while his game received
 // him, else the last Radar message this round (ReGameDLL player.cpp sends one a second while he moved 64 units or more).
@@ -1442,7 +1613,7 @@ function radarSprite(sh) {
   if (!sh) return null;
   const cv = document.createElement('canvas'); cv.width = sh.w; cv.height = sh.h;
   const g = cv.getContext('2d'), img = g.createImageData(sh.w, sh.h);
-  for (let i = 0; i < sh.w * sh.h; i++) { const c = sh.px[i], o = i * 4; img.data[o] = sh.pal[c * 3] * 25 / 255; img.data[o + 1] = sh.pal[c * 3 + 1] * 75 / 255; img.data[o + 2] = sh.pal[c * 3 + 2] * 25 / 255; img.data[o + 3] = 255; }
+  for (let i = 0; i < sh.w * sh.h; i++) { const c = sh.px[i], o = i * 4; img.data[o] = sh.pal[c * 3] * 200 / 255; img.data[o + 1] = sh.pal[c * 3 + 1] * 200 / 255; img.data[o + 2] = sh.pal[c * 3 + 2] * 200 / 255; img.data[o + 3] = c === 255 ? 0 : 255; }
   g.putImageData(img, 0, 0);
   return { cv, w: sh.w, h: sh.h };
 }
@@ -1462,12 +1633,13 @@ function povHasBomb(e, t) {
   if (D.attribs && D.attribs.length) { const a = povByEnt('attrIdx', D.attribs, 3)[e], i = povLastOf('attrIdx', D.attribs, 3, e, t); return i >= 0 && (a[i + 2] & 2) !== 0; }
   return !!packAt(e, t);
 }
-function drawPovRadar(lx, W, H) {
+function drawPovRadar(bg, lx, W, H) {
   const sp = HUDS.radar; if (!sp) return;
   const t = POV.t, v = POV.v, rec = v.rec, me = playerState(rec, t); if (!me || me.state <= 0) return;
   const s = H / 768 * HUD_SCALE, R = sp.w / 2, side = Math.abs(me.state), r = roundAt(t), from = r ? r.start : -Infinity;
+  bg.save(); bg.globalCompositeOperation = 'source-over'; bg.globalAlpha = 1; bg.imageSmoothingEnabled = true;
+  bg.drawImage(sp.cv, 0, 0, sp.w * s, sp.h * s); bg.restore();
   lx.save(); lx.globalCompositeOperation = 'lighter'; lx.globalAlpha = 1;
-  lx.drawImage(sp.cv, 0, 0, sp.w * s, sp.h * s);
   const put = (px, py, pz, col, kind) => {
     const dx = px - v.pos[0], dy = py - v.pos[1], off = (v.yaw - Math.atan2(dy, dx) * 180 / Math.PI) * Math.PI / 180;
     const rad = Math.min(Math.hypot(dx, dy) / 32, R), X = (R + rad * Math.sin(off)) * s, Y = (R - rad * Math.cos(off)) * s, z = v.pos[2] - pz, u = s;

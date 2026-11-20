@@ -85,7 +85,7 @@ function joinDemos(parts) {
     for (const k in src) { const nm = src[k]; if (byName[nm] == null) { byName[nm] = next; dst[next++] = nm; } map[k] = byName[nm]; }
     return (i) => (map[i] != null ? map[i] : i);
   };
-  const timesL = [], slotsL = {}, hpL = [], packL = [], brushEvL = [], brushPoseL = [], sndsL = [], shotsL = [], boomsL = [], hitPointsL = [], brassL = [], puffsL = [], c4L = [], pingsL = [];
+  const timesL = [], slotsL = {}, hpL = [], packL = [], brushEvL = [], brushPoseL = [], sndsL = [], shotsL = [], boomsL = [], hitPointsL = [], brassL = [], puffsL = [], c4L = [], c4eL = [], glowsL = [], pingsL = [];
   // POV mode (0.25.0): the parts' POV data on the joined timeline, when every part is a POV demo. recs: for each part,
   // its first sample, its number of samples and the recording player's entity there
   const povL = parts.every((P) => P.povData) ? { view: [], ownPos: [], hpInfo: [], shotOrg: [], fovs: [], ownAmmo: [], wanims: [], vmodels: [], obs: [], dmg: [], bars: [], tabs: [], fades: [], fadeStops: [], radarPos: [], radarBomb: [], attribs: [], hud: { hp: [], ap: [], helmet: [], money: [], ammox: [] }, gunAmmo: {}, recs: [] } : null;
@@ -136,6 +136,8 @@ function joinDemos(parts) {
     flat(P.brass || [], 12, (a, i) => { a[i] = sh(a[i]); a[i + 8] = mM(a[i + 8]); }, brassL);
     flat(P.puffs, 5, (a, i) => { a[i] = sh(a[i]); }, puffsL);
     flat(P.c4drops || [], 5, (a, i) => { a[i] = sh(a[i]); a[i + 1] = sh(a[i + 1]); }, c4L);
+    flat(P.c4ents || [], 8, (a, i) => { a[i] = sh(a[i]); }, c4eL);
+    flat(P.glows || [], 8, (a, i) => { a[i] = sh(a[i]); a[i + 4] = mM(a[i + 4]); }, glowsL);
     flat(P.pings || [], 3, (a, i) => { a[i] = sh(a[i]); }, pingsL);
     for (const [a, b, v] of P.slow || []) out.slow.push([sh(a), sh(b), v]);
     for (const [a, b, g] of P.stops || []) out.stops.push([sh(a), sh(b), g]);
@@ -178,7 +180,7 @@ function joinDemos(parts) {
     fades: cat(povL.fades), fadeStops: cat(povL.fadeStops), radarPos: cat(povL.radarPos), radarBomb: cat(povL.radarBomb), attribs: cat(povL.attribs),
     hud: Object.assign(Object.fromEntries(Object.keys(povL.hud).map((k) => [k, cat(povL.hud[k])])), { gunAmmo: povL.gunAmmo }),
   } : null;
-  out.pack = cat(packL); out.hp = cat(hpL); out.brushEvents = cat(brushEvL); out.brushPose = cat(brushPoseL); out.snds = cat(sndsL); out.shots = cat(shotsL); out.booms = cat(boomsL); out.hitPoints = cat(hitPointsL); out.brass = cat(brassL); out.puffs = cat(puffsL); out.c4drops = cat(c4L); out.pings = cat(pingsL);
+  out.pack = cat(packL); out.hp = cat(hpL); out.brushEvents = cat(brushEvL); out.brushPose = cat(brushPoseL); out.snds = cat(sndsL); out.shots = cat(shotsL); out.booms = cat(boomsL); out.hitPoints = cat(hitPointsL); out.brass = cat(brassL); out.puffs = cat(puffsL); out.c4drops = cat(c4L); out.c4ents = cat(c4eL); out.glows = cat(glowsL); out.pings = cat(pingsL);
   out.bomb.sort((a, b) => a.t - b.t);
   out.start = parts[0].start;
   out.fileName = parts[0].fileName;
