@@ -14,29 +14,29 @@
   {
    "round": 3,
    "timer": "1:03",
-   "killer": "BURNING! Rara Qpad.se",
+   "killer": "BURNING! MAJ3R",
    "victim": "FAiRFRAG|CosMo/M/",
    "gun": null,
    "expected": "none",
-   "source": "docs/review-answers.md, \"Loose wallbang check\" (27 and 28 Oct 2026), k00000: loose; not listed since 0.24.0, by the same-spray rule: the killer's last bullet that only a surface explains came 0.71 s before the kill, and a loose wallbang from damage needs one 0.5 s or less before it (STATE.md Decisions, Sujan, 28 Oct 2026). Changed to none as Sujan asked (30 Oct 2026), from the finder's own numbers"
+   "source": "docs/review-answers.md, \"Loose wallbang check\" (27 and 28 Oct 2026), k00000: loose; not listed since 0.24.0, by the same-spray rule: the killer's last bullet that only a surface explains came 0.71 s before the kill, and a loose wallbang from damage needs one 0.5 s or less before it (STATE.md Decisions, Sujan, 28 Oct 2026). Changed to none as Sujan asked (30 Oct 2026), from the finder's own numbers; killer corrected 20 Nov 2026 (0.27.1): the kill came from slot 8 (MAJ3R), joined into Rara until one person couldn't hold two slots"
   },
   {
    "round": 5,
    "timer": "0:14",
-   "killer": "BURNING! Rara Qpad.se",
+   "killer": "BURNING! NTEP redcore.fr",
    "victim": "FAiRFRAG|CosMo/M/",
    "gun": null,
    "expected": "loose-damage",
-   "source": "docs/review-answers.md, \"Loose wallbang check\" (27 and 28 Oct 2026), k00002: loose"
+   "source": "docs/review-answers.md, \"Loose wallbang check\" (27 and 28 Oct 2026), k00002: loose; killer corrected 20 Nov 2026 (0.27.1): the kill came from slot 11 (NTEP), joined into Rara until one person couldn't hold two slots"
   },
   {
    "round": 10,
    "timer": "1:20",
-   "killer": "BURNING! Rara Qpad.se",
+   "killer": "BURNING! NTEP redcore.fr",
    "victim": "FAiRFRAG|CosMo/M/",
    "gun": null,
    "expected": "loose-damage",
-   "source": "docs/review-answers.md, \"Loose wallbang check\" (27 and 28 Oct 2026), k00005: loose"
+   "source": "docs/review-answers.md, \"Loose wallbang check\" (27 and 28 Oct 2026), k00005: loose; killer corrected 20 Nov 2026 (0.27.1): the kill came from slot 11 (NTEP), joined into Rara until one person couldn't hold two slots"
   },
   {
    "round": 12,
@@ -50,11 +50,11 @@
   {
    "round": 13,
    "timer": "0:59",
-   "killer": "BURNING! Rara Qpad.se",
+   "killer": "BURNING! MAJ3R",
    "victim": "FAiRFRAG|drizzerEstachE!",
    "gun": null,
    "expected": "loose-damage",
-   "source": "docs/review-answers.md, \"Loose wallbang check\" (27 and 28 Oct 2026), k00011: loose"
+   "source": "docs/review-answers.md, \"Loose wallbang check\" (27 and 28 Oct 2026), k00011: loose; killer corrected 20 Nov 2026 (0.27.1): the kill came from slot 8 (MAJ3R), joined into Rara until one person couldn't hold two slots"
   }
  ]
 }
