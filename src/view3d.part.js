@@ -322,11 +322,11 @@ function resetForNewDemo() {
 // The planted bomb (the 3D batch, item 2; Sujan, 19 and 20 Nov 2026; tests/logs/c4-blink-2026-11-20.md): the game's
 // models/w_c4.mdl where the demo's bomb entity is (D.c4ents), at its angles, lit like the player models, from when it
 // appears (it falls about 20 units and lands 0.2 s after the plant) until a defuse removes it or the explosion hides it.
-// Without the model, the orange ball of up to 0.27.1 resting on the floor where the entity is. With no entity at that
-// moment, the ball at BombDrop's spot + 4, as up to 0.27.1, from the plant until the round's end message (the defuse or
-// the explosion): in a POV demo whenever the bomb is out of his view, in an HLTV demo only while no entity came (the
-// 256-object limit on de_tuscan). Hide all overlays keeps it, as the game's demo player shows it; its blink is fxGlows
-// (shotfx.js).
+// Without the model, the orange ball of up to 0.27.1 resting on the floor where the bomb is. With no entity at that
+// moment (a POV demo, the bomb out of his view; HLTV's 256-object limit on de_tuscan), until the round's end message (the
+// defuse or the explosion): the bomb never moves once planted, so the model where the demo last had it in that round;
+// only a bomb never seen in that round gets the ball, at BombDrop's spot moved down to the floor (Sujan, 20 Nov 2026).
+// Hide all overlays keeps it, as the game's demo player shows it; its blink is fxGlows (shotfx.js).
 function c4Rig() {
   const M2 = getModel('models/w_c4.mdl'); if (!M2 || !M2.mdl) return null;
   let c = R3.c4;
@@ -338,25 +338,46 @@ function c4Rig() {
   }
   return c.rig;
 }
-function plantedC4(r, ov) {
-  const bp = D.bomb.find((b) => b.type === 'plantpos' && b.t >= r.start && b.t <= T && b.t <= r.end);
-  const E = D.c4ents, i = E && E.length ? idxAt(E, 8, T) : -1, o = i * 8;
-  const ball = (x, y, z) => ov('c4', () => { const c4 = new THREE.Mesh(sphere(6), new THREE.MeshBasicMaterial({ color: 0xff9a3c })); c4.userData.shared = true; return c4; }).position.copy(g3(x, y, z));
+// BombDrop's spot (the planter's origin) moved down to the floor, as ReGameDLL's REGAMEDLL_FIXES places the bomb in
+// CGrenade::ShootSatchelCharge (ggrenade.cpp): a trace 8192 units straight down that players don't stop, its end, or the
+// spot itself when it meets nothing. Once per plant.
+function c4Floor(bp) {
+  if (bp.floorZ != null) return bp.floorZ;
+  const [x, y, z] = bp.pos;
+  if (!MAP) return z;
+  const tr = solidAlong(MAP.bsp, [x, y, z], [x, y, z - 8192], 1, null, null, 'bullet'), h = tr.hit[0];
+  if (!h) return (bp.floorZ = z);
+  // the samples are a unit apart: the floor again, to 1/32 of a unit, over the unit above the first solid one
+  const zh = z - h.f0 * tr.len, top = Math.min(z, zh + 1), fine = solidAlong(MAP.bsp, [x, y, top], [x, y, zh - 0.01], 1 / 32, null, null, 'bullet').hit[0];
+  return (bp.floorZ = fine ? top - fine.f0 * (top - zh + 0.01) : zh);
+}
+// where the planted bomb is drawn at t in round r: { kind: 'entity' (the demo has it), 'last' (where the demo last had
+// it this round) or 'marker' (never seen this round), x, y, z, a: pitch, yaw, roll }, or null
+function c4State(r, t) {
+  const rEnd = r.end != null ? r.end : D.end;
+  const bp = D.bomb.find((b) => b.type === 'plantpos' && b.t >= r.start && b.t <= t && b.t <= rEnd);
+  const E = D.c4ents || [], i = E.length ? idxAt(E, 8, t) : -1, o = i * 8;
   if (i >= 0 && E[o] >= r.start && E[o + 7]) {
     // between two rows while it falls, in a straight line, as players move between snapshots
-    const n = o + 8, u = n < E.length && E[n + 7] && E[n] - E[o] < 0.5 ? (T - E[o]) / (E[n] - E[o]) : 0;
+    const n = o + 8, u = n < E.length && E[n + 7] && E[n] - E[o] < 0.5 ? (t - E[o]) / (E[n] - E[o]) : 0;
     const L = (k) => (u > 0 ? E[o + k] + (E[n + k] - E[o + k]) * u : E[o + k]);
-    const x = L(1), y = L(2), z = L(3), rig = c4Rig();
-    if (!rig) { ball(x, y, z + 6); return; }
-    placeRig(rig, x, y, z, 0, 0);
-    // GoldSrc pitch, yaw, roll -> three, as the shells turn (shotfx.js)
-    const d = Math.PI / 180; rig.g.rotation.set(E[o + 6] * d, E[o + 5] * d, -E[o + 4] * d, 'YZX');
+    return { kind: 'entity', x: L(1), y: L(2), z: L(3), a: [E[o + 4], E[o + 5], E[o + 6]] };
+  }
+  if (!bp || t >= (r.endT != null && r.endT >= bp.t ? r.endT : rEnd)) return null;
+  const from = Math.max(r.start, bp.t - 0.5);
+  for (let k = i; k >= 0 && E[k * 8] >= from; k--) if (E[k * 8 + 7]) { const q = k * 8; return { kind: 'last', x: E[q + 1], y: E[q + 2], z: E[q + 3], a: [E[q + 4], E[q + 5], E[q + 6]] }; }
+  return { kind: 'marker', x: bp.pos[0], y: bp.pos[1], z: c4Floor(bp), a: [0, 0, 0] };
+}
+function plantedC4(r, ov) {
+  const st = c4State(r, T); if (!st) return;
+  const rig = st.kind === 'marker' ? null : c4Rig();
+  if (!rig) {
+    ov('c4', () => { const c4 = new THREE.Mesh(sphere(6), new THREE.MeshBasicMaterial({ color: 0xff9a3c })); c4.userData.shared = true; return c4; }).position.copy(g3(st.x, st.y, st.z + 6));
     return;
   }
-  if (!bp || T >= (r.endT != null && r.endT >= bp.t ? r.endT : r.end)) return;
-  // an HLTV demo that had the entity since the plant: it's gone, not out of view
-  if (!D.pov && i >= 0 && E[o] >= bp.t - 0.5) return;
-  ball(bp.pos[0], bp.pos[1], bp.pos[2] + 4);
+  placeRig(rig, st.x, st.y, st.z, 0, 0);
+  // GoldSrc pitch, yaw, roll -> three, as the shells turn (shotfx.js)
+  const d = Math.PI / 180; rig.g.rotation.set(st.a[2] * d, st.a[1] * d, -st.a[0] * d, 'YZX');
 }
 // remove the reused round overlays (a new round or a new demo starts a fresh set)
 function clearOverlays() {
