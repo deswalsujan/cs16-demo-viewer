@@ -199,6 +199,96 @@ function build3dNow() {
   }
   for (const m in R3.mov) placeMover(R3.mov[m], brushPose(MAP.movers.get(+m), null));
   view3.ready = true; view3.map = MAP.name;
+  loadSky(MAP).catch(() => {}); // the grey-blue background until its pictures are in, and for good without them
+}
+
+// ---------------- the sky (the 3D batch, item 3) ----------------
+// The map's sky picture where its "sky" faces are (buildMesh leaves them out), as Xash3D draws it (ref/gl/gl_warp.c,
+// R_DrawSkyBox and MakeSkyVec; engine/client/dll_int/ref_common.c, R_SetupSky): worldspawn's skyname ("desert", the
+// engine's default, without one), six pictures gfx/env/<name>rt, bk, lf, ft, up, dn, .tga before .bmp, from cstrike,
+// cstrike_downloads or valve (folder.js, files.sky), unlit and with no texgamma (only Half-Life's own textures get it,
+// Image_SetPalette), on a box round the camera behind everything. Side i is drawn with picture SKY_ORDER[i]
+// (r_skyTexOrder), each corner (s, t) placed by st_to_vec (SKY_ST), the picture's top row at t = 1. Without all six, the
+// grey-blue background of up to 0.27.1. The wall tops seen from above stay black, as in the game: their lightmaps are.
+// The wallbang picture check hides it, as it hides everything but the map and the victim.
+const SKY_SUF = ['rt', 'bk', 'lf', 'ft', 'up', 'dn'];
+const SKY_ORDER = [0, 2, 1, 3, 4, 5];
+const SKY_ST = [[3, -1, 2], [-3, 1, 2], [1, 3, 2], [-1, -3, 2], [-2, -1, 3], [2, -1, -3]];
+const SKY_R = 8000; // inside the camera's far plane (16000) at the corners
+function dropSky() {
+  if (!R3 || !R3.sky) return;
+  R3.scene.remove(R3.sky.g);
+  R3.sky.g.traverse((o) => { if (o.geometry) o.geometry.dispose(); if (o.material) { if (o.material.map) o.material.map.dispose(); o.material.dispose(); } });
+  R3.sky = null;
+}
+async function loadSky(map) {
+  dropSky();
+  const ent = map.bsp.entities[0] || {};
+  const name = String(ent.skyname || 'desert').replace(/\\/g, '/').split('/').pop().replace(/\.[a-z0-9]+$/i, '').replace(/_$/, '').toLowerCase();
+  const S = files.sky || {};
+  let picks = null;
+  for (const ext of ['tga', 'bmp']) {
+    const L = SKY_SUF.map((s) => S[`${name}${s}.${ext}`] || S[`${name}_${s}.${ext}`]);
+    if (L.every(Boolean)) { picks = L.map((f) => [f, ext]); break; }
+  }
+  if (!picks) return;
+  const imgs = await Promise.all(picks.map(async ([f, ext]) => { const u8 = await readPicked(f, 'gfx/env/' + f.name); return u8 ? (ext === 'tga' ? decodeTga(u8) : await decodeBmp(u8)) : null; }));
+  if (MAP !== map || !R3 || imgs.some((x) => !x)) return;
+  dropSky();
+  const g = new THREE.Group();
+  for (let i = 0; i < 6; i++) {
+    const im = imgs[SKY_ORDER[i]];
+    const tex = new THREE.DataTexture(im.data, im.w, im.h, THREE.RGBAFormat);
+    tex.magFilter = THREE.LinearFilter; tex.minFilter = THREE.LinearFilter; tex.generateMipmaps = false;
+    tex.wrapS = tex.wrapT = THREE.ClampToEdgeWrapping; tex.needsUpdate = true;
+    const pos = [], uv = [];
+    // GoldSrc (x, y, z) -> three (x, z, -y); the picture's first row (its top) at v = 0, as GL takes it
+    const corner = (s, t) => { const b = [s * SKY_R, t * SKY_R, SKY_R], v = SKY_ST[i].map((k) => (k < 0 ? -b[-k - 1] : b[k - 1])); pos.push(v[0], v[2], -v[1]); uv.push((s + 1) / 2, 1 - (t + 1) / 2); };
+    for (const [s, t] of [[-1, -1], [-1, 1], [1, 1], [-1, -1], [1, 1], [1, -1]]) corner(s, t);
+    const geo = new THREE.BufferGeometry();
+    geo.setAttribute('position', new THREE.Float32BufferAttribute(pos, 3)); geo.setAttribute('uv', new THREE.Float32BufferAttribute(uv, 2));
+    const m = new THREE.Mesh(geo, new THREE.MeshBasicMaterial({ map: tex, side: THREE.DoubleSide, depthTest: false, depthWrite: false, fog: false }));
+    m.renderOrder = -1000; m.frustumCulled = false; m.userData.sky = SKY_SUF[SKY_ORDER[i]];
+    g.add(m);
+  }
+  R3.scene.add(g); R3.sky = { g, name, map: map.name, ext: picks[0][1] };
+}
+// a .tga picture as top-down RGBA: uncompressed or run-length, true colour (16, 24 or 32 bits), grey or colour-mapped
+function decodeTga(u8) {
+  if (u8.length < 18) return null;
+  const idLen = u8[0], cmType = u8[1], type = u8[2], cmLen = u8[5] | (u8[6] << 8), cmBits = u8[7];
+  const w = u8[12] | (u8[13] << 8), h = u8[14] | (u8[15] << 8), bpp = u8[16], desc = u8[17], kind = type & 7, px = (bpp + 7) >> 3;
+  if (!w || !h || w > 4096 || h > 4096 || ![1, 2, 3].includes(kind) || !px) return null;
+  let p = 18 + idLen;
+  const cb = (cmBits + 7) >> 3, pal = cmType === 1 ? u8.subarray(p, p + cmLen * cb) : null;
+  if (cmType === 1) p += cmLen * cb;
+  const out = new Uint8Array(w * h * 4), n = w * h;
+  const rgb = (src, o, d) => {
+    if (src.length < o + (src === pal ? cb : px)) return;
+    const k = src === pal ? cb : px;
+    if (k >= 3) { out[d] = src[o + 2]; out[d + 1] = src[o + 1]; out[d + 2] = src[o]; out[d + 3] = k === 4 ? src[o + 3] : 255; }
+    else if (k === 2) { const v = src[o] | (src[o + 1] << 8); out[d] = ((v >> 10) & 31) * 255 / 31; out[d + 1] = ((v >> 5) & 31) * 255 / 31; out[d + 2] = (v & 31) * 255 / 31; out[d + 3] = 255; }
+    else { out[d] = out[d + 1] = out[d + 2] = src[o]; out[d + 3] = 255; }
+  };
+  const put = (i, o) => {
+    const x = i % w, yf = (i / w) | 0, y = desc & 0x20 ? yf : h - 1 - yf, d = (y * w + (desc & 0x10 ? w - 1 - x : x)) * 4;
+    if (kind === 1) { if (pal) rgb(pal, u8[o] * cb, d); } else rgb(u8, o, d);
+  };
+  let i = 0;
+  if (type < 8) for (; i < n && p + px <= u8.length; i++, p += px) put(i, p);
+  else while (i < n && p < u8.length) {
+    const c = u8[p++], cnt = (c & 127) + 1;
+    if (c & 128) { for (let k = 0; k < cnt && i < n; k++) put(i++, p); p += px; }
+    else for (let k = 0; k < cnt && i < n; k++, p += px) put(i++, p);
+  }
+  return { w, h, data: out };
+}
+// a .bmp picture as top-down RGBA, decoded by the browser
+async function decodeBmp(u8) {
+  const bmp = await createImageBitmap(new Blob([u8], { type: 'image/bmp' }));
+  const c = document.createElement('canvas'); c.width = bmp.width; c.height = bmp.height;
+  const g = c.getContext('2d'); g.drawImage(bmp, 0, 0);
+  return { w: c.width, h: c.height, data: new Uint8Array(g.getImageData(0, 0, c.width, c.height).data.buffer) };
 }
 // Forget everything tied to the previous demo: who we follow, camera, markers, figures, and
 // (when the map changes) the 3D level itself, so nothing from the old demo lingers on screen.
@@ -270,6 +360,7 @@ function clearOverlays() {
 }
 function clear3d() {
   if (!R3) return;
+  dropSky();
   while (R3.world.children.length) { const c = R3.world.children.pop(); c.geometry && c.geometry.dispose(); }
   R3.brk = {}; R3.mov = {};
   view3.ready = false; view3.map = null;
@@ -618,6 +709,7 @@ function update3Now() {
   }
   camera.updateProjectionMatrix();
   try { fxGlows(); } catch (e) { frameError(e); } // the planted bomb's blink, with this frame's camera (shotfx.js)
+  if (R3.sky) R3.sky.g.position.copy(camera.position); // the sky box moves with the camera
   renderer.render(R3.scene, camera);
   // the gun in hand isn't shown while looking through the scope, as in the game
   const scoped = POV.on ? (POV.who != null && povFov(POV.t) < 90 && (() => { const ss = playerState(POV.who, T); return ss && SNIPERS[weaponShort(ss.weapon)]; })())
