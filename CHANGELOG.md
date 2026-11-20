@@ -89,6 +89,14 @@ What changed in the viewer, newest first. The version shows in the viewer's **He
 - [0.2.0](#020-2026-09-30) 2026-09-30: Real models and sound
 - [0.1.0](#010-before-2026-09-30) before 2026-09-30: First version: radar, 3D, kills
 
+## In progress: the 3D batch (branch `wip/3d-batch`, from 20 Nov 2026)
+
+IDEAS.md, **The 3D batch after wip/ui-simpler**; Sujan's decisions of 19 and 20 Nov 2026 (`DECISIONS.md`). One commit per item, so any item can be dropped; no mockup, Sujan judges the items live on the branch.
+
+Built: none yet.
+
+Left: (1) the POV radar solid for everyone; (2) the planted C4 as the game's model with its blink (`tests/logs/c4-blink-2026-11-20.md`); (3) the sky; (4) the light at gamma 3 and brightness 2, with screenshots for Sujan's look first; (5) **Fixed light** for models; then the version, the release entry, `LIMITS.md`, the By-eye round lines and the nine release checks.
+
 ## 0.27.1 (2026-11-20)
 
 One person never holds two slots at once: Sujan's rule of 17 Nov 2026 (`DECISIONS.md`, **One person never holds two slots at once**), for the bug found on wip/ui-simpler (IDEAS-ARCHIVE.md, **Bug: walle and GeT_RiGhT joined into one person, mousesports vs SK, Nuke, Extreme Masters II**). On `wip/one-person-one-slot`, from origin/main (0.27.0).
