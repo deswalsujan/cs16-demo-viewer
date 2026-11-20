@@ -4,6 +4,7 @@ What changed in the viewer, newest first. The version shows in the viewer's **He
 
 ## Versions
 
+- [0.27.2](#0272-2026-11-20) 2026-11-20: POV radar, C4, sky, light
 - [0.27.1](#0271-2026-11-20) 2026-11-20: One person on one slot
 - [0.27.0](#0270-2026-11-20) 2026-11-20: The UI review's 14 items
 - [0.26.31](#02631-2026-11-12) 2026-11-12: The game's light and contrast
@@ -89,13 +90,32 @@ What changed in the viewer, newest first. The version shows in the viewer's **He
 - [0.2.0](#020-2026-09-30) 2026-09-30: Real models and sound
 - [0.1.0](#010-before-2026-09-30) before 2026-09-30: First version: radar, 3D, kills
 
-## In progress: the 3D batch (branch `wip/3d-batch`, from 20 Nov 2026)
+## 0.27.2 (2026-11-20)
 
-IDEAS.md, **The 3D batch after wip/ui-simpler**; Sujan's decisions of 19 and 20 Nov 2026 (`DECISIONS.md`). One commit per item, so any item can be dropped; no mockup, Sujan judges the items live on the branch.
+The 3D batch (IDEAS-ARCHIVE.md, **The 3D batch after wip/ui-simpler**; Sujan's decisions of 19 and 20 Nov 2026, `DECISIONS.md`), built on `wip/3d-batch` from origin/main (0.27.1), one commit per item (`3d: item N, …`), each followed by its changes after Sujan's answers, judged by Sujan live on the branch with no mockup.
 
-Built: (1) the POV radar solid for everyone; (2) the planted C4 as the game's model with its blink; (3) the sky; (5) **Fixed light** for models; each its own commit (`tests/logs/0.27.2.md`).
+### Changed
+- Item 1: **POV mode**'s radar is the game's solid one for everyone (cl_radartype 1, cs16-client's radar.cpp): `radaropaque640.spr` tinted 200 200 200, drawn with holes, staying over a flashbang's white like the spectator bars; its dots as before. Up to 0.27.1 the see-through `radar640.spr`, added onto the picture.
+- Item 2: the planted C4 is the game's `models/w_c4.mdl` where the demo's bomb entity is, lit like the players, falling to the floor about 0.2 s after the plant and gone at the defuse or the explosion. With no entity at that moment (a POV demo, the bomb out of his view), the model where the demo last had it in that round, or where it first has it later in the round; the orange ball only for a bomb the demo never has in that round, at BombDrop's spot moved down to the floor (ReGameDLL's REGAMEDLL_FIXES trace), and without the model file. Up to 0.27.1 an orange ball 4 units over the planter's origin, about 20 units in the air, until the round ended.
+- Item 3: where the map's sky is, its own sky pictures (worldspawn's skyname, `gfx/env`, the box as Xash3D draws it) in place of the flat grey-blue, through texgamma as Sujan's game (steam_legacy) draws them; a missing sky falls back to desert, as the game does, and the grey-blue shows only without desert.
+- Item 4: the light at gamma 3, brightness 2 and no overbright, Sujan's own settings (his game has `gl_overbright` 0), still one curve for everyone: the lightmap built at the game's scale for no overbright (338) and drawn times the texture, so a fully lit surface is its texture's colour. Up to 0.27.1 Valve's defaults with `gl_overbright` 1: the Korfez sand read 255 255 170, flat; now 248 230 186 with its texture, within the game's.
 
-Left: (4) the light at gamma 3, brightness 2 and no overbright (Sujan, 20 Nov 2026): built, not committed, its screenshots against main on `screenshots/0.27.2` for Sujan's look; Sujan's in-game screenshot of de_train from above, to compare the sky, and his six 25th Anniversary Korfez screenshots; then the version, the release entry, `LIMITS.md`, the By-eye round lines and the nine release checks.
+### Added
+- Item 2: the planted C4's blink, the server's TE_GLOWSPRITE every 2 s drawn as the game draws it (`ledglow.spr`, 19.2 units, full for 0.1 s then fading over 2 s, seen through players, left out when the map is more than 8 units in front of it), in every view; **Hide all overlays** keeps the C4 and its blink, as the game's demo player shows them.
+- Item 5: **Fixed light** in **View settings**, off by default: every model (players, their guns, the gun in first person, the C4) lit the same everywhere, as up to 0.26.30, the map keeping the game's light; **Hide all overlays** turns it off and gives it back.
+- The reader keeps the server's glow sprites (`glows`) and the planted bomb's entity (`c4ents`); joined maps carry both.
+
+### How it was tested
+- Train's first plant, SK vs Na`Vi, DreamHack Winter 2011: the bomb on the floor, the first blink 2.02 s after the plant, the bomb gone at the defuse; the 9 POV test demos: the model 1,521.8 s of the 1,575.3 s planted, the marker 53.5 s.
+- Against Sujan's game: his five steam_legacy de_train screenshots (the same moments and camera, the sky facing the same way, its colour within 6 levels) and his Korfez sand (`gl_overbright` 0 numbers).
+- The nine release checks pass; `pov_feedback_check.py` looks for the solid radar on its new layer and passes.
+- Full log: `tests/logs/0.27.2.md`; screenshots on `screenshots/0.27.2`.
+
+### Discussed, not changed
+- A **Solid** choice in **POV mode**'s **Crosshair** row, since the game's translucent crosshair almost disappears on bright sand: for later (IDEAS.md, **POV demos**).
+- In Sujan's train-2 screenshot the game's spectator timer read 0:00 where the viewer's freeze clock reads 0:03 or earlier: for later (IDEAS.md, **Seen while building 0.27.2**).
+- The blink's wall test skips a free camera's first solid stretch when it's outside the map, as the name labels do (Sujan, 20 Nov 2026).
+- The planted C4's code guards a round with no end time, which the reader never leaves (it sets the last round's end when the file ends, `src/demo.js`), so a match's last round draws its bomb as before; claimed as a fix on the branch by mistake, not one.
 
 ## 0.27.1 (2026-11-20)
 
