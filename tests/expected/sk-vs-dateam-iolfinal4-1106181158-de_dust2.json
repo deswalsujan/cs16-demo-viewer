@@ -4,6 +4,11 @@
  "match": "SK vs Dateam, Dust2, IOL Final4 2011",
  "event": "IOL Final4 (18 Jun 2011)",
  "map": "de_dust2",
+ "teams": [
+  "SK Gaming",
+  "Dateam"
+ ],
+ "teams_source": "Sujan, 20 Nov 2026: a tag holding a web address (dAT team's players' \"dt.REASPEL.se\") isn't a team's name, so the file name's team, Dateam, as up to 0.27.3 (DECISIONS.md)",
  "score": {
   "value": "16:4",
   "live": 20,

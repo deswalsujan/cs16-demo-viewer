@@ -216,6 +216,9 @@ const KNOWN_TEAMS = {
   mymtw: 'mTw', skweden: 'SK Gaming', aegaming: 'ATE Gaming',
 };
 const norm = (x) => (x || '').toLowerCase().replace(/[^a-z0-9]/g, '');
+// a web address in a clan tag: a part ending in a dot and a top-level domain ("dt.REASPEL.se", "mymTw.com"); such a tag isn't
+// taken as a team's name unless it's a known team's (Sujan, 20 Nov 2026; tagName in src/ui/match.js)
+const WEB_ADDRESS = /[A-Za-z0-9-]\.(com|net|org|info|biz|eu|tv|gg|de|dk|se|no|fi|is|ru|ua|by|kz|pl|cz|sk|hu|ro|bg|lt|lv|ee|nl|be|fr|uk|ie|it|es|pt|at|ch|gr|tr|il|cn|kr|jp|us|ca|au|nz|br|ar)(?![A-Za-z0-9])/i;
 // A shared clan tag looked up in the known teams: the whole tag first, then each of its parts, the first part first, so
 // "SK.SWE.AMD" and "SK Gaming |" read as SK Gaming, "fnatic.MSI" as fnatic and "KOREA.eSTRO" as eSTRO (any part since 0.27.4,
 // the first only up to 0.27.3); then a known team's name of 4 letters or more that the tag starts with, the longest, so

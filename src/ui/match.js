@@ -528,7 +528,11 @@ function derive() {
       return top ? cleanTag(top) : null;
     };
     const a = tryAffix(true) || tryAffix(false);
-    return a && a.length >= 2 ? knownTeam(a) || a : null;
+    if (!a || a.length < 2) return null;
+    // a tag holding a web address (a part ending in .se, .com, .net and the like) isn't a team's name: after the known teams
+    // ("@mymTw.com" reads mTw), the file name's team takes its place (Sujan, 20 Nov 2026: dAT team's "dt.REASPEL.se", IOL
+    // Final4 2011, reads Dateam, as up to 0.27.3)
+    return knownTeam(a) || (WEB_ADDRESS.test(a) ? null : a);
   };
   const saved = ls.get('names:' + demoKey()) || [];
   const fromFile = teamsFromFileName(D.fileName, teams.map((g) => g.map((pid) => pl[pid].name)));

@@ -240,7 +240,9 @@ with sync_playwright() as p:
                 'Estimated from the damage: the demo says only head or body', '−12 HS: the health the victim had left.']
         check('kill details: the picked kill in the Kills list opens to one line per bullet, the "Earlier:" line and the order of the demo', kd['kills'] == want, ' | '.join(kd['kills'] or ['no box']))
         check('kill details: the same in the Wallbangs list', kd['wb'] == want, ' | '.join(kd['wb'] or ['no box']))
-        check("kill details: a bullet's line jumps playback to it, paused, through the killer's eyes", kd['jump'] == {'t': 2790.07, 'paused': True, 'eyes': True}, str(kd['jump']))
+        # in 3D the jump lands the 3D view's 0.1 s later than the bullet plus 0.03 s, so the paused picture is the bullet's own
+        # moment (0.27.4; Sujan, 20 Nov 2026): 2790.07 up to 0.27.3
+        check("kill details: a bullet's line jumps playback to it, paused, through the killer's eyes, the 3D picture on the bullet itself", kd['jump'] == {'t': 2790.17, 'paused': True, 'eyes': True}, str(kd['jump']))
         # a crossfire (Sujan, 3 Nov 2026, before merging #47): R23 1:18, edzie kills face with the FAMAS; face had lost 33 HP to
         # three grenades, and after edzie's −19 starix hit him for −21 and a −21 came the hit finder can't pin on anyone, before
         # edzie's last bullet took the 6 he had left. "Earlier:" counts every drop of his in the round that isn't one of edzie's

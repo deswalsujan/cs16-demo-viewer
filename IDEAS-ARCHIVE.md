@@ -33,7 +33,7 @@ Lines and parts of lines from IDEAS.md's **By-eye round** that Sujan passed, wor
       - Status: the 3D view runs 0.1 s behind the kill feed (`LIMITS.md`), so at a kill row's moment it draws the victim 0.1 s before the shot: R!Go- in the open between the crates where the label says hidden; on the 83 demos, 56 of 534 **Wallbang** kills show 50 pixels or more of the victim there. The name bar and the 3D labels read health 0.1 s back too: FLEX0R (100) at the kill, where the radar and his game show 88.
       - Next step: Claude builds both on `wip/new-demos-fixes` (0.27.4).
       - Decided so far: kill details' jumps pause 0.1 s later, on the shot itself; the name bar and the 3D labels read health at the moment itself (Sujan, 20 Nov 2026; `DECISIONS.md`).
-- [x] **Team names, the shared tag first**: built in 0.27.4 (20 Nov 2026) on `wip/new-demos-fixes`: the shared tag first, with the open points as Sujan settled them; 9 of 90 headers change (`tests/logs/0.27.4.md`).
+- [x] **Team names, the shared tag first**: built in 0.27.4 (20 Nov 2026) on `wip/new-demos-fixes`: the shared tag first, with the open points as Sujan settled them; 8 of 90 headers change, a tag holding a web address left out after the known teams (Sujan's fix of 20 Nov 2026; `tests/logs/0.27.4.md`).
   - Its text in IDEAS.md when built:
     - [ ] **Team names, the shared tag first**
       - Status: Sujan's rule measured, not built (the log, C): 25 of 90 headers change, the four new demos' as he expects (A+e.gaming where he named ATE Gaming); the one file in `tests/expected/` with team names (the GP Tourney's BAJRANG and Guardians) stays.
