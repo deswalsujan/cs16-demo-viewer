@@ -4,6 +4,7 @@ What changed in the viewer, newest first. The version shows in the viewer's **He
 
 ## Versions
 
+- [0.27.1](#0271-2026-11-20) 2026-11-20: One person on one slot
 - [0.27.0](#0270-2026-11-20) 2026-11-20: The UI review's 14 items
 - [0.26.31](#02631-2026-11-12) 2026-11-12: The game's light and contrast
 - [0.26.30](#02630-2026-11-11) 2026-11-11: POV signed off, radar, flashbangs
@@ -88,13 +89,28 @@ What changed in the viewer, newest first. The version shows in the viewer's **He
 - [0.2.0](#020-2026-09-30) 2026-09-30: Real models and sound
 - [0.1.0](#010-before-2026-09-30) before 2026-09-30: First version: radar, 3D, kills
 
-## In progress: one person never holds two slots at once (branch `wip/one-person-one-slot`, from 20 Nov 2026)
+## 0.27.1 (2026-11-20)
 
-Sujan's rule of 17 Nov 2026 (`DECISIONS.md`, **One person never holds two slots at once**; IDEAS.md, **Bug: walle and GeT_RiGhT joined into one person, mousesports vs SK, Nuke, Extreme Masters II**).
+One person never holds two slots at once: Sujan's rule of 17 Nov 2026 (`DECISIONS.md`, **One person never holds two slots at once**), for the bug found on wip/ui-simpler (IDEAS-ARCHIVE.md, **Bug: walle and GeT_RiGhT joined into one person, mousesports vs SK, Nuke, Extreme Masters II**). On `wip/one-person-one-slot`, from origin/main (0.27.0).
 
-Built: `tests/people_check.py` (fails on 0.27.0 on exactly mousesports vs SK, Nuke, Extreme Masters II and Burning vs FairFrag, Inferno, ESWC 2010); the rule in `join` (`src/ui/match.js`), after which it passes on every demo; the K-D table and the refused joins (`tests/logs/0.27.1.md`).
+### Fixed
+- Two connections on the server at the same time are never one person, whatever name they shared, and by Steam ID too; it's checked on every connection already joined to each side. Up to 0.27.0 a name used only before the live rounds, such as the ESL server's "ESL Pro Series Player" or the game's "Player", could join two players who played the match side by side. mousesports vs SK, Nuke, Extreme Masters II: walle and GeT_RiGhT are two players again (12-18 and 21-21, where GeT_RiGhT read 33-39 and SK had 4 players), each with his own name in the view (both read GeT_RiGhT, at T spawn in R4 among other moments). Burning vs FairFrag, Inferno, ESWC 2010: Rara, MAJ3R and NTEP are three players (24-10, 27-9 and 28-8, where Rara read 79-27 and Burning had 3 players), which also fixes Burning's two players in no team (IDEAS-ARCHIVE.md).
 
-Left: Sujan's go on 4 rows of `tests/expected/` for Burning vs FairFrag, whose killer is now MAJ3R or NTEP; then VERSION 0.27.1, the release entry, IDEAS.md, the By-eye round line, the screenshots, the eight checks and `people_check.py`, the pull request.
+### Changed
+- In mousesports vs SK, Nuke, Extreme Masters II, the header, the Players tab and the score list SK first and mousesports second ("SK Gaming 14 : 16 mousesports" at the end of the match; "mousesports 16 : 14 SK Gaming" up to 0.27.0). The team with more players is listed first; with 5 players each now, the tie goes to the team whose player comes first among the demo's connections, SK's. No other test demo's order changed.
+
+### Added
+- `tests/people_check.py`: every demo in `DEMO_DIRS` and every joined map of `tests/expected/` fails on a player with more deaths than the match has live rounds, or on two slots on a team with the same name at the same moment; it prints the joins the viewer refused (`tests/README.md`).
+
+### How it was tested
+- `people_check.py` (79 demos, 6 joined maps): on 0.27.0, 83 of 85 passed, failing on exactly these two demos; on 0.27.1, 85 of 85; the 4 refused joins are all in them. K-D the same on every other demo and joined map.
+- `ground_truth_check.py`: 233 kills and 46 scores and K-D on 56 demos, 0 mismatches, the same 9 known gaps, after Sujan's go to credit 4 of Burning vs FairFrag's kills to MAJ3R and NTEP (`tests/expected/`). Its file for mousesports vs SK holds 3 kills and no score or K-D, so nothing there checks the team order.
+- The eight release checks and `people_check.py` on the release commit.
+- Full log: `tests/logs/0.27.1.md`; screenshots on `screenshots/0.27.1`.
+
+### Discussed, not changed
+- In Burning vs FairFrag a connection on slot 6 from 3:48 to 7:03, under "Player" alone and before the match, now goes with Rara: the demo's "Player" connections are joined to the first of them, and Rara's is the first the rule lets it join. Nothing in the demo says whose it was; it holds no live round, so no K-D moves.
+- Whether `people_check.py` is a ninth release check: Sujan decides (`STATE.md`).
 
 ## 0.27.0 (2026-11-20)
 
