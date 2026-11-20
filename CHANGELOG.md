@@ -114,7 +114,7 @@ Sujan's answers of 20 Nov 2026 on the new-demos report (`tests/logs/new-demos-fe
 ### How it was tested
 - `ground_truth_check.py` on the 7 changed expected files: all pass; on 0.27.3, 6 fail (the kills, bAiL's row, three headers). `demo_search_check.py`'s 18 new steps (the dates, the search by date, the jump, the name bar): all pass, 13 failing on 0.27.3.
 - Every team header worked out by the built code from the measurement's rosters, and `fileTime` on all 83 demo names, before and after.
-- The nine release checks: on Sujan's go.
+- The nine release checks pass on the release commit (`ground_truth_check.py`: 240 kills and 51 scores and K-D on 60 demos, 0 mismatches; `people_check.py` 89 of 89).
 - Full log: `tests/logs/0.27.4.md`; screenshots on `screenshots/0.27.4`.
 
 ### Discussed, not changed
