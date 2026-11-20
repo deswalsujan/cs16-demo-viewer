@@ -88,6 +88,14 @@ What changed in the viewer, newest first. The version shows in the viewer's **He
 - [0.2.0](#020-2026-09-30) 2026-09-30: Real models and sound
 - [0.1.0](#010-before-2026-09-30) before 2026-09-30: First version: radar, 3D, kills
 
+## In progress: one person never holds two slots at once (branch `wip/one-person-one-slot`, from 20 Nov 2026)
+
+Sujan's rule of 17 Nov 2026 (`DECISIONS.md`, **One person never holds two slots at once**; IDEAS.md, **Bug: walle and GeT_RiGhT joined into one person, mousesports vs SK, Nuke, Extreme Masters II**).
+
+Built: `tests/people_check.py` (fails on 0.27.0 on exactly mousesports vs SK, Nuke, Extreme Masters II and Burning vs FairFrag, Inferno, ESWC 2010); the rule in `join` (`src/ui/match.js`), after which it passes on every demo; the K-D table and the refused joins (`tests/logs/0.27.1.md`).
+
+Left: Sujan's go on 4 rows of `tests/expected/` for Burning vs FairFrag, whose killer is now MAJ3R or NTEP; then VERSION 0.27.1, the release entry, IDEAS.md, the By-eye round line, the screenshots, the eight checks and `people_check.py`, the pull request.
+
 ## 0.27.0 (2026-11-20)
 
 The UI made simpler: the UI review's final list (`docs/reviews/ui-review-final-2026-11-12.md`), 14 items merged from three reviews of 0.26.30 and checked in the review chat, built on `wip/ui-simpler` for Sujan to judge live in the browser instead of mockup rounds (Sujan, 12 Nov 2026; his go, 17 Nov 2026). He kept all 14 (19 Nov 2026); his fixups of 19 and 20 Nov 2026, and the fixes found while judging them, are built with them. Each item is its own commit (`ui: item N, …`) with its fixups after it, merged with a merge commit, so any item can still be reverted on its own.

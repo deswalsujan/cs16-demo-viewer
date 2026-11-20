@@ -4461,16 +4461,29 @@ function derive() {
   const account = (o) => (o.sid && !sidBad.has(o.sid) && /^7656119\d{10}$/.test(o.sid) ? o.sid : null);
   const placeholder = (nm) => /^(\(\d+\))?\s*player$/i.test(String(nm).trim());
   const accOf = {}; // a group's root: the Steam account its connections hold, if any
+  // One person never holds two slots at once (Sujan, 17 Nov 2026): two people are never joined when any connection of
+  // one was on the server while any connection of the other was, by name or by Steam ID. Checked on the whole people,
+  // every connection already joined under each root: in mousesports vs SK, Nuke, Extreme Masters II, walle's first
+  // connection and GeT_RiGhT's both started as the ESL server's "ESL Pro Series Player", which joined them, with
+  // walle's reconnection, into one person on two slots for the whole match; in Burning vs FairFrag, Inferno, ESWC 2010,
+  // NTEP's connection doesn't overlap Rara's first one, but it overlaps Rara's reconnection, already joined to it.
+  const memOf = {}; // a group's root: its connections
+  const refused = []; // [x, y, nm] for every join this rule stopped, for the tests (M.refusedJoins)
+  const endOf = (o) => (o.to != null ? o.to : D.end);
+  const onServerTogether = (A, B) => A.some((p) => B.some((q) => p.from < endOf(q) && q.from < endOf(p)));
   // the earliest connection stays the root, so a person keeps the same id however they were joined. nm: the name that
   // joins them (none for a Steam ID); live: both connections used it during the live rounds
   const join = (x, y, nm, live) => {
     const a = ofind(x), b = ofind(y); if (a === b) return;
     if (nm != null && accOf[a] && accOf[b] && accOf[a] !== accOf[b] && (!live || placeholder(nm))) return;
-    const r = Math.min(a, b); opar[Math.max(a, b)] = r; accOf[r] = accOf[a] || accOf[b];
+    if (onServerTogether(memOf[a], memOf[b])) { refused.push([x, y, nm]); return; }
+    const r = Math.min(a, b), q = Math.max(a, b); opar[q] = r; accOf[r] = accOf[a] || accOf[b];
+    memOf[r] = memOf[r].concat(memOf[q]); delete memOf[q];
   };
   const group = (nameOK) => {
     for (let i = 0; i < opar.length; i++) opar[i] = i;
-    for (const o of occ) accOf[o.id] = account(o);
+    for (const o of occ) { accOf[o.id] = account(o); memOf[o.id] = [o]; }
+    refused.length = 0;
     const bySid = {};
     for (const o of occ) if (o.sid && !sidBad.has(o.sid)) { if (bySid[o.sid] != null) join(o.id, bySid[o.sid]); else bySid[o.sid] = o.id; }
     if (nameOK) {
@@ -4931,7 +4944,7 @@ function derive() {
   const k = Math.min(960 / (x1 - x0 || 1), 700 / (y1 - y0 || 1));
   const bounds = { x0, y1, k, px: (1024 - (x1 - x0) * k) / 2, py: (768 - (y1 - y0) * k) / 2 };
 
-  M = { idxAt, pl, rounds, liveR, teams, teamOf, tnames, joins, nades, bounds, reg, hasOT: liveR.some((r) => r.ot), personAt, slotOf, specs, wbs: [], after16: after16 && after16.extra ? after16 : null, count30, auto30, wonAt: wonAt || (after16 && after16.at) || null };
+  M = { idxAt, pl, rounds, liveR, teams, teamOf, tnames, joins, refusedJoins: refused, nades, bounds, reg, hasOT: liveR.some((r) => r.ot), personAt, slotOf, specs, wbs: [], after16: after16 && after16.extra ? after16 : null, count30, auto30, wonAt: wonAt || (after16 && after16.at) || null };
   buildShort();
   findSkips();
 }
