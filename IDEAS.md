@@ -116,7 +116,7 @@ Everything raised in conversation that isn't finished, in one place. Each item s
 - Done, in the archive (0.27.2, 20 Nov 2026): **The 3D batch after wip/ui-simpler**; its by-eye checks are in the **By-eye round**.
 - [ ] **The Join batch after wip/ui-simpler**
   - Status: items 1 and 3 built in 0.27.3 on `wip/join-batch` (20 Nov 2026), the 0:0 warning with the narrower rule after Sujan's answers of 20 Nov 2026 (`tests/logs/0.27.3.md`); item 2 not built, now **Parts ordered from inside the files** below. Its full text when items 1 and 3 were built is in the archive.
-  - Next step: Claude: the nine release checks and the pull request (Sujan's go, 20 Nov 2026); Sujan merges.
+  - Next step: Sujan merges the pull request from `wip/join-batch` (the nine release checks pass, `tests/logs/0.27.3.md`).
   - Decided so far: both for after the merge (Sujan, 19 Nov 2026; `DECISIONS.md`). The 0:0 warning added, only a warning (Sujan, 20 Nov 2026; `DECISIONS.md`). Sujan's answers of 20 Nov 2026 on the report (`DECISIONS.md`): the narrower 0:0 warning, with its gap in `LIMITS.md`; item 2 not built; **Open .dem from elsewhere** stays, the card's **A file from elsewhere…** becomes **Demos from elsewhere…**; item 1's choices approved as built.
 - [ ] **Parts ordered from inside the files** (for later, measured; Sujan, 20 Nov 2026): the spawn count and HLTV's clock on every split test map, and the rule proposed, in `tests/logs/join-order-from-files-2026-11-20.md`; not built, since every split test map has recording times in its names and a server restart can make counts look consecutive in the wrong order (`DECISIONS.md`).
 
