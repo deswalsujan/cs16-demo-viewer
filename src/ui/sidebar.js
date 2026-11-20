@@ -335,7 +335,11 @@ function renderPane() {
   p.querySelectorAll('[data-bt]').forEach((el) => el.onclick = () => {
     const k = D.kills[+el.closest('.kdet').dataset.kd]; if (!k) return;
     selected = k.killer; playing = false; setPlayIcon();
-    seek(+el.dataset.bt + 0.03); // just past it, so its damage number and the kill feed show
+    // just past it, so its damage number and the kill feed show; in 3D a further LAG3 (0.1 s), since the 3D view draws the
+    // players that far back, so the paused picture is the bullet's own moment (0.27.4; Sujan, 20 Nov 2026: at FLEX0R's kill on
+    // R!Go-, Team Belgium vs France, Tuscan, R21 0:39, the jump showed R!Go- in the open 0.07 s before the shot, where he was
+    // hidden at it). The 2D map draws the moment itself.
+    seek(+el.dataset.bt + 0.03 + (viewMode !== '2d' ? LAG3 : 0));
     if (viewMode !== '2d') setCam('eyes', true);
   });
   p.querySelectorAll('[data-p]').forEach((el) => el.onclick = () => {

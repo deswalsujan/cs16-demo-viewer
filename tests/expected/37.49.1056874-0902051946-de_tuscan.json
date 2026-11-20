@@ -1,0 +1,23 @@
+{
+ "demo": "37.49.1056874-0902051946-de_tuscan.dem",
+ "sha256": "15dacd490a27e51e9245167599848bdf559bcdf7b03f982319c7b8fce849e019",
+ "match": "Team Belgium vs France, Tuscan, ClanBase NationsCup XII",
+ "event": "ClanBase NationsCup XII: demo text \"- CounterStrike Nations Cup 12 server settings loaded -\"; recorded 5 Feb 2009 at 19:46 by the file name",
+ "map": "de_tuscan",
+ "teams": [
+  "TEAM BELGIUM",
+  "FRANCE"
+ ],
+ "teams_source": "Sujan's team-name rule of 20 Nov 2026 (the tag the players share first, through the known teams; DECISIONS.md), his names for this demo",
+ "kills": [
+  {
+   "round": 21,
+   "timer": "0:39",
+   "killer": "TEAM BELGIUM - FLEX0R",
+   "victim": "FRANCE! R!Go-",
+   "gun": "awp",
+   "expected": "strict",
+   "source": "Sujan, 20 Nov 2026, spectating R!Go- in his game: FLEX0R isn't in his view when he dies, a full wallbang; the labels judge the moment of the shot only (DECISIONS.md; tests/logs/new-demos-feedback-2026-11-20.md, A4)"
+  }
+ ]
+}

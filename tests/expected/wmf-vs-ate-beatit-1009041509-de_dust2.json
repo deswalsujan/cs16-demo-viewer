@@ -1,0 +1,21 @@
+{
+ "demo": "wmf-vs-ate-beatit-1009041509-de_dust2.dem",
+ "sha256": "233787ca86712c50d1ebf31c3d3ab14dbb24926ce951c9e790fbcc8812fd27dc",
+ "match": "WeMadeFox vs ATE Gaming, Dust2, MSI Beat IT! 2010",
+ "event": "MSI Beat IT! 2010 (4 to 6 Sep 2010, Liquipedia; Sujan); recorded 4 Sep 2010 at 15:09 by the file name",
+ "map": "de_dust2",
+ "teams": [
+  "WeMadeFox",
+  "ATE Gaming"
+ ],
+ "teams_source": "Sujan's team-name rule of 20 Nov 2026 (the tag the players share first, through the known teams; DECISIONS.md), his names for this demo",
+ "kills": [],
+ "rows": [
+  {
+   "round": 20,
+   "victim": "WemadeFOX : bAiL:))",
+   "expected": "none",
+   "source": "Sujan, 20 Nov 2026, in his game: nobody hit bAiL through a wall at 1:14; WUZZ's USP killed him at 1:13 (tests/logs/new-demos-feedback-2026-11-20.md, A3). Up to 0.27.3 a Wall damage row of 46 HP (1 HS, 1 hit) by Rshkhn^'s Deagle; none since 0.27.4 (F3b: the six hits go to WUZZ's USP, in the open)"
+  }
+ ]
+}

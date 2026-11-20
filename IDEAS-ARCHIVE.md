@@ -20,6 +20,35 @@ Lines and parts of lines from IDEAS.md's **By-eye round** that Sujan passed, wor
 
 ## Open follow-ups (checklist, updated 28 Oct 2026, 0.24.0)
 
+**Sujan's feedback of 20 Nov 2026 on four new demos** (moved here as each item is done; open ones in IDEAS.md under the same name)
+- [x] **Wallbang labels on four kills in the new demos**: built in 0.27.4 (20 Nov 2026) on `wip/new-demos-fixes`: F1b, F2 and F3b, with Sujan's answers on the four kills and three of F1b's in `tests/expected/`.
+  - Its text in IDEAS.md when built:
+    - [ ] **Wallbang labels on four kills in the new demos**
+      - Status: on 0.27.3, bartZi on Edward (Na`Vi vs WinFakt, Train, ESWC 2011, R8 1:29) has no tag, his recorded aim at the kill clear beside the wheel end after seven bullets through it; shad on prophe7 (BIH vs SLOVENIA, Nuke, 18 Jan 2009, R9 1:24) reads **Partial wallbang** from snaroGOD's hit in the open 0.09 s before; bAiL's **Wall damage** 46 (WeMadeFox vs ATE Gaming, Dust2, MSI Beat IT! 2010, R20 1:14) is WUZZ's USP, which the aim fallback can't pick; FLEX0R on R!Go- (Team Belgium vs France, Tuscan, ClanBase NationsCup XII, R21 0:39) reads **Wallbang**, as Sujan says.
+      - Next step: Claude builds F1b, F2 and F3b on `wip/new-demos-fixes` (0.27.4), with Sujan's answers on the four kills and three of F1b's in `tests/expected/`.
+      - Decided so far: Sujan's checks in his game, and the labels judge the moment of the shot only (Sujan, 20 Nov 2026; `DECISIONS.md`). F1b, F2 and F3b approved; F1b after Sujan checked three of its kills in his game, all partial wallbangs (Sujan, 20 Nov 2026; `DECISIONS.md`).
+- [x] **The 3D view at a kill row's moment, and the name bar's health**: built in 0.27.4 (20 Nov 2026) on `wip/new-demos-fixes`: kill details' jumps 0.1 s later in 3D, the health in the name bar and the 3D labels at the moment itself.
+  - Its text in IDEAS.md when built:
+    - [ ] **The 3D view at a kill row's moment, and the name bar's health** (Sujan, 20 Nov 2026, on FLEX0R's kill on R!Go-)
+      - Status: the 3D view runs 0.1 s behind the kill feed (`LIMITS.md`), so at a kill row's moment it draws the victim 0.1 s before the shot: R!Go- in the open between the crates where the label says hidden; on the 83 demos, 56 of 534 **Wallbang** kills show 50 pixels or more of the victim there. The name bar and the 3D labels read health 0.1 s back too: FLEX0R (100) at the kill, where the radar and his game show 88.
+      - Next step: Claude builds both on `wip/new-demos-fixes` (0.27.4).
+      - Decided so far: kill details' jumps pause 0.1 s later, on the shot itself; the name bar and the 3D labels read health at the moment itself (Sujan, 20 Nov 2026; `DECISIONS.md`).
+- [x] **Team names, the shared tag first**: built in 0.27.4 (20 Nov 2026) on `wip/new-demos-fixes`: the shared tag first, with the open points as Sujan settled them; 9 of 90 headers change (`tests/logs/0.27.4.md`).
+  - Its text in IDEAS.md when built:
+    - [ ] **Team names, the shared tag first**
+      - Status: Sujan's rule measured, not built (the log, C): 25 of 90 headers change, the four new demos' as he expects (A+e.gaming where he named ATE Gaming); the one file in `tests/expected/` with team names (the GP Tourney's BAJRANG and Guardians) stays.
+      - Next step: Claude builds it on `wip/new-demos-fixes` (0.27.4), with `LIMITS.md`'s team-name line, and re-lists every header that changes.
+      - Decided so far: the rule, the shared tag first, replacing two rules of 8 Nov 2026 (Sujan, 20 Nov 2026; `DECISIONS.md`). The open points settled: a cap of 20; a known team anywhere in the tag; a tag starting with a known team of 4 letters or more reads as that team; mymtw, skweden and aegaming added to the known teams; otherwise the players' own capitals (Sujan, 20 Nov 2026; `DECISIONS.md`).
+- [x] **The four new demos**: built in 0.27.4 (20 Nov 2026) on `wip/new-demos-fixes`: moved to `~/code/cs16-data/test-demos` with their rows in `tests/DEMOS.md` and `tests/demos-manifest.md`, their kills in `tests/expected/`.
+  - Its text in IDEAS.md when built:
+    - [ ] **The four new demos**: Na`Vi vs WinFakt, Train, ESWC 2011; BIH vs SLOVENIA, Nuke, 18 Jan 2009 (probably ClanBase NationsCup XII); WeMadeFox vs ATE Gaming, Dust2, MSI Beat IT! 2010; Team Belgium vs France, Tuscan, ClanBase NationsCup XII. Sujan, 20 Nov 2026: all four move to `~/code/cs16-data/test-demos` with their rows in `tests/DEMOS.md` and `tests/demos-manifest.md`, and his answers on their four kills go to `tests/expected/` (`DECISIONS.md`); Claude, on `wip/new-demos-fixes`.
+- [x] **The demo list's dates**: built in 0.27.4 (20 Nov 2026) on `wip/new-demos-fixes`: `fileTime` reads the POV demos' auto-record names; each row's date, the heading, the search by date (`tests/logs/0.27.4.md`).
+  - Its text in IDEAS.md when built:
+    - [ ] **The demo list's dates** (Sujan, 20 Nov 2026; `DECISIONS.md`)
+      - Status: not started. The demo list shows no date; the search matches file names only (`LIMITS.md`).
+      - Next step: Claude checks `fileTime` (`src/ui/join.js`) on every demo name first and fixes its reading; then each row shows the date from the name, or the file's date in grey with the tooltip "The file's date: its name has no recording time"; the heading "YOUR DEMOS · newest added first"; the search matches the date. On `wip/new-demos-fixes` (0.27.4), screenshots instead of a mockup.
+      - Decided so far: as above (Sujan, 20 Nov 2026; `DECISIONS.md`).
+
 **Seen while moving the decisions out of STATE.md** (12 Nov 2026; moved here as each item is done)
 - [x] **AGENTS.md still says POV mode is behind a setting**: fixed 12 Nov 2026 on notes/ui-review (Sujan asked for it that day): "Facts" now says every POV demo opens in **POV mode** since 0.26.30, with no setting.
   - Its text in IDEAS.md when done:

@@ -592,11 +592,15 @@ kbd { font-family: var(--f-body); font-size: calc(11px * var(--ui)); background:
 .dsearch .x:hover { color: var(--fg); border-color: var(--faint); }
 .dhead { display: flex; justify-content: space-between; font-size: calc(11px * var(--ui)); text-transform: uppercase; letter-spacing: .08em; color: var(--muted); padding: 0 calc(2px * var(--ui)); }
 .dhead b { color: var(--sand); font-weight: 600; }
+/* "YOUR DEMOS · newest added first": the order in small letters after the heading (Sujan, 20 Nov 2026) */
+.dhead .dord { text-transform: none; letter-spacing: normal; }
 .demos mark { background: none; color: var(--sand); font-weight: 600; }
 .demos-none { color: var(--muted); font-size: calc(12px * var(--ui)); font-family: var(--f-body); padding: calc(8px * var(--ui)) calc(2px * var(--ui)); }
 .demos button { text-align: left; background: var(--panel); border: 1px solid var(--line); border-radius: calc(4px * var(--ui)); padding: calc(8px * var(--ui)) calc(10px * var(--ui)); font-family: var(--f-body); font-size: calc(12px * var(--ui)); display: flex; justify-content: space-between; gap: calc(10px * var(--ui)); }
 .demos button:hover { border-color: var(--sand); }
 .demos button span { color: var(--muted); flex-shrink: 0; }
+/* the date the demo was recorded, from its name; the file's own date stays grey (Sujan, 20 Nov 2026) */
+.demos button span.ndate { color: var(--fg); }
 .demos button em { font-style: normal; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 .prog { height: calc(4px * var(--ui)); background: var(--panel-2); border-radius: calc(2px * var(--ui)); overflow: hidden; }
 .prog i { display: block; height: 100%; width: 0; background: var(--sand); transition: width .15s; }

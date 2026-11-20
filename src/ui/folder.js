@@ -182,10 +182,25 @@ async function loadKillIcons() {
 // the kill feed icon for a weapon, or '' when the player's files don't have it
 const kicon = (w, cls = '') => (KICONS[w] ? `<span class="kico ki-${w}${cls ? ' ' + cls : ''}" aria-hidden="true"></span>` : '');
 
-// The demo list, narrowed by the search box: a demo stays when its file name contains every word typed
-// (upper or lower case), and the typed letters are highlighted. Only the file name is searched, so a demo
-// whose name doesn't say the map or the teams can only be found by scrolling.
-const demoDate = (ms) => { try { return new Date(ms).toLocaleDateString('en-GB', { day: 'numeric', month: 'short', year: 'numeric' }); } catch (e) { return ''; } };
+// The demo list, newest added first (by the file's date), narrowed by the search box: a demo stays when every word typed
+// (upper or lower case) is in its file name or its date, and the typed letters are highlighted. Each row shows the date the
+// demo was recorded, from its name (fileTime, src/ui/join.js), or when the name has none the file's own date, in grey (Sujan,
+// 20 Nov 2026; the file's date for every row up to 0.27.3). A date word matches the row's date: a day number ("23"), a month
+// from its first 3 letters ("oct", "october"), a year ("2011"), so "23 oct 2011" finds that day. A demo whose name says
+// neither the map nor the teams nor a date is found by its file's date or by scrolling.
+const MONTHS = ['january', 'february', 'march', 'april', 'may', 'june', 'july', 'august', 'september', 'october', 'november', 'december'];
+function demoDay(f) {
+  const t = fileTime(f.name), named = t != null, d = new Date(named ? t : f.lastModified);
+  if (isNaN(d.getTime())) return null;
+  return named ? { named, day: d.getUTCDate(), mo: d.getUTCMonth(), year: d.getUTCFullYear() } : { named, day: d.getDate(), mo: d.getMonth(), year: d.getFullYear() };
+}
+// which part of the date a typed word matches: 'day', 'mo', 'year' or null
+function dateWord(w, dd) {
+  if (!dd) return null;
+  if (/^\d{1,2}$/.test(w)) return +w === dd.day ? 'day' : null;
+  if (/^\d{4}$/.test(w)) return +w === dd.year ? 'year' : null;
+  return w.length >= 3 && MONTHS[dd.mo].startsWith(w) ? 'mo' : null;
+}
 function renderDemoList() {
   const el = $('demoList');
   el.innerHTML = '';
@@ -199,18 +214,23 @@ function renderDemoList() {
   };
   let shown = 0;
   for (const f of files.demos) {
-    const low = f.name.toLowerCase();
-    if (!words.every((w) => low.includes(w))) continue;
+    const low = f.name.toLowerCase(), dd = demoDay(f);
+    if (!words.every((w) => low.includes(w) || dateWord(w, dd))) continue;
     shown++;
     const b = document.createElement('button');
     b.type = 'button';
-    // the name and the file's date, newest first; the size on hover (UI review, item 12; the size in the row up to then)
-    b.innerHTML = `<em>${words.length ? mark(f.name) : esc(f.name)}</em><span>${demoDate(f.lastModified)}</span>`;
+    // the name and its date; the size on hover (UI review, item 12; the size in the row up to then)
+    let date = '';
+    if (dd) {
+      const hit = new Set(words.map((w) => dateWord(w, dd)).filter(Boolean)), part = (k, s) => (hit.has(k) ? `<mark>${s}</mark>` : s);
+      date = `${part('day', dd.day)} ${part('mo', MON[dd.mo])} ${part('year', dd.year)}`;
+    }
+    b.innerHTML = `<em>${words.length ? mark(f.name) : esc(f.name)}</em>` + (dd && dd.named ? `<span class="ndate">${date}</span>` : `<span class="fdate" title="The file's date: its name has no recording time">${date}</span>`);
     b.title = `${f.name} · ${(f.size / 1048576).toFixed(0)} MB`;
     b.onclick = () => loadDemoFile(f);
     el.appendChild(b);
   }
-  if (words.length && !shown) el.innerHTML = `<div class="demos-none">No demo names contain ${esc(words.map((w) => '"' + w + '"').join(' and '))}.</div>`;
+  if (words.length && !shown) el.innerHTML = `<div class="demos-none">No demo names or dates contain ${esc(words.map((w) => '"' + w + '"').join(' and '))}.</div>`;
   $('demoFind').hidden = !files.demos.length;
   $('demoN').innerHTML = words.length ? `<b>${shown}</b> of ${files.demos.length}` : String(files.demos.length);
   $('demoQx').hidden = !words.length;

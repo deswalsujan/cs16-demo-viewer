@@ -2,7 +2,7 @@
 // it, the timer as the Kills list shows it, killer, victim and gun, and its tag in the Wallbangs list (strict, loose by
 // pixels, loose by damage, or none when it isn't listed; a sliver kill reads strict or loose by its pixels). Run after
 // regress_summary.js, which waits for the map and the picture check; without them (MAP_NEEDED=0 on its own) the tags
-// are null, which is enough for names and rounds.
+// are null, which is enough for names and rounds. Also the Wall damage rows (0.27.4).
 (() => {
   const nm = (e) => (M.pl[e] ? M.pl[e].name : '?');
   const listed = M.wbs ? new Set(M.wbs) : null;
@@ -13,6 +13,11 @@
     kills: D.kills.map((k) => {
       const r = M.rounds.find((x) => x.n === k.round);
       return { round: r && r.live ? r.ln : null, timer: killClock(k.t), killer: nm(k.kp), victim: nm(k.vp), gun: k.weapon, tag: tag(k) };
+    }),
+    // the Wallbangs tab's Wall damage rows (bursts with no kill), by round and victim (0.27.4)
+    rows: !listed ? [] : (M.bursts || []).filter((b) => !b.kill).map((b) => {
+      const r = M.rounds.find((x) => x.n === b.round);
+      return { round: r && r.live ? r.ln : null, timer: killClock(b.start), victim: nm(M.personAt(b.v, b.start)), total: b.total, shooter: nm(M.personAt(b.main, b.start)) };
     }),
   };
 })()

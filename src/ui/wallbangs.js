@@ -149,6 +149,24 @@ function aimLine(k) {
 // 2026: glow on his teammate solo, compLexity vs WeMadeFox, Nuke, IEM4)
 function teamKill(k) { return k.killer !== k.victim && !!k.kp && !!k.kteam && k.kteam === k.vteam; }
 function listedWbs() { return D.kills.filter((k) => k.wb && !teamKill(k) && M.liveR.some((r) => r.n === k.round)); }
+// The killer's recorded aim one snapshot before the shot (0.16 s or less) went through what a bullet hits, its end 24 units
+// or less from the victim's middle then (0.27.4, F1b). For a kill whose aim line at the shot is clear: the aim is recorded ten
+// to twenty times a second, so it can swing off the cover only at the kill's own snapshot (bartZi's M4A1 on Edward, Na`Vi vs
+// WinFakt, Train, ESWC 2011, R8 1:29: seven bullets through the wheel end by their damage, the aim through it 0.05 s before
+// the kill, 17.7 units beside him at it; Sujan, 20 Nov 2026: a partial wallbang; tests/logs/new-demos-feedback-2026-11-20.md).
+function aimInCoverBefore(k, tP) {
+  const S = D.stride, times = D.times, j = M.idxAt(tP + 1e-4) - 1, a = D.slots[k.killer], v = D.slots[k.victim];
+  if (j < 0 || !a || !v || isNaN(a[j * S]) || isNaN(v[j * S]) || tP - times[j] > 0.16) return false;
+  const eye = [a[j * S], a[j * S + 1], a[j * S + 2] + (a[j * S + 7] ? 12 : 17)];
+  let raw = a[j * S + 4]; if (raw > 180) raw -= 360;
+  const pitch = -raw * 3 * Math.PI / 180, yaw = a[j * S + 3] * Math.PI / 180;
+  const vp = [v[j * S], v[j * S + 1], v[j * S + 2]], dist = Math.hypot(vp[0] - eye[0], vp[1] - eye[1], vp[2] - eye[2]);
+  const end = [eye[0] + Math.cos(pitch) * Math.cos(yaw) * dist, eye[1] + Math.cos(pitch) * Math.sin(yaw) * dist, eye[2] - Math.sin(pitch) * dist];
+  const mid = [vp[0], vp[1], vp[2] + (v[j * S + 7] ? 4 : 10)];
+  if (Math.hypot(end[0] - mid[0], end[1] - mid[1], end[2] - mid[2]) > 24) return false;
+  const skip = brokenSet(times[j] - 0.05); for (const s of MAP.bsp.solids) if (s.shootable) skip.add(s.model);
+  return solidAlong(MAP.bsp, eye, end, 2, skip, posesAt(times[j] - 0.05), 'bullet').solid > 0;
+}
 function computeWallbangs() {
   if (!MAP || !D) return;
   const bsp = MAP.bsp;
@@ -167,7 +185,7 @@ function computeWallbangs() {
   // one reads LOOSE (Sujan, 2 Nov 2026). Invisible brushes are never cover (solidAlong in bsp.js).
   const notCover = bsp.solids.filter((s) => s.shootable).map((s) => s.model);
   for (const k of D.kills) {
-    k.wb = null; k.seenPx = null; k.seenAim = null; k.keep = null;
+    k.wb = null; k.seenPx = null; k.seenAim = null; k.keep = null; k.aimBefore = null;
     if (!k.kpos || !k.vpos || k.killer === k.victim || NO_WB.has(k.weapon) || ONE_SURFACE.has(k.weapon)) continue;
     const kNow = [...k.kpos, k.kduck], vNow = [...k.vpos, k.vduck];
     const tP = k.tPos != null ? k.tPos : k.t;
@@ -179,7 +197,16 @@ function computeWallbangs() {
     // the crosshair line goes through what a bullet hits (the 15 points above are sight lines)
     const aim = solidAlong(bsp, eye, end, 2, skip, poses, 'bullet');
     const mid = solidAlong(bsp, eye, [k.vpos[0], k.vpos[1], k.vpos[2] + (k.vduck ? 4 : 6)], 2, skip, poses, 'bullet');
-    if (aim.solid === 0) continue; // crosshair had a clear line: the victim was hit in the open
+    // crosshair had a clear line: the victim was hit in the open, unless part of him was seen, the line to his middle goes
+    // through cover and the aim one snapshot before went through it (aimInCoverBefore): then the damage rule in computeHits
+    // decides, as for the seen kills with the crosshair through cover (0.27.4, F1b; Sujan, 20 Nov 2026, after checking three
+    // of the 18 kills it adds on the 83 test demos in his game: AGAiN vs Na`Vi, Train, 24 Oct 2011, R21 1:23, NEO on Edward;
+    // fnatic vs EG, Dust2, EM3 Global Finals 2009, R22 1:44, Gux on Warden; Burning vs FairFrag, Inferno, ESWC 2010, R14 C4
+    // 0:29, NTEP on DIODE). Never the picture check: the aim at the shot doesn't go through cover.
+    if (aim.solid === 0) {
+      if (seen && mid.solid > 0 && aimInCoverBefore(k, tP)) k.aimBefore = { thick: Math.round(mid.solid), aim: 0, what: mid.hit.some((h) => h.model !== 0) ? 'object' : 'wall', eye };
+      continue;
+    }
     const hit = aim.hit;
     // part of him in view to the 15 points, but the crosshair line goes through cover: computeHits makes it a loose
     // wallbang when the demo's damage shows one of the killer's bullets went through a surface in the same spray
@@ -191,7 +218,7 @@ function computeWallbangs() {
   }
   // a kill that lands on a skip across a round restart was judged from the next round's spawns, thousands of units
   // apart (4,000 units of "wall" for Orwall's AWP kill on coNTE, roccat vs fnatic, Inferno, R21): nothing to judge
-  for (const k of D.kills) if ((k.wb || k.seenAim) && (M.skipRestart || []).some((st) => Math.abs(st - k.t) <= 0.3)) { k.wb = null; k.seenAim = null; }
+  for (const k of D.kills) if ((k.wb || k.seenAim || k.aimBefore) && (M.skipRestart || []).some((st) => Math.abs(st - k.t) <= 0.3)) { k.wb = null; k.seenAim = null; k.aimBefore = null; }
   M.wbs = listedWbs();
   renderPane(); drawTimeline();
   // then the picture check (checkSeen, view3d.part.js), once the 3D map is built: loadMap builds it right after this
@@ -312,10 +339,16 @@ function computeHits() {
     }
     // enemies whose fire events the demo left out still count when they aim at him (26 Oct 2026: Go's spray on zonic,
     // tyloo vs mTw, Nuke, R15, has one fire event in two seconds, so GoodRifle, 76 units off, got his headshot)
+    // Since 0.27.4 (F3b) an enemy holding a pistol, SMG or shotgun competes here too; a hit pinned on him is in the open, since
+    // his bullet stops at the first surface (below). WUZZ's USP on bAiL (WeMadeFox vs ATE Gaming, Dust2, MSI Beat IT! 2010, R20
+    // 1:14), aimed 4 to 17 units from him at all six hits, lost them to Rshkhn^'s Deagle 15 units off through 899 units of map, a
+    // Wall damage row of 46 (Sujan, 20 Nov 2026: nobody hit him through a wall; he died to the USP). Only in demos that lose
+    // fire events: letting these guns' fire events compete as well broke two of Sujan's loose-by-damage answers.
     for (const e in D.slots) {
       const se = +e; if (se === d.e || seen.has(se)) continue;
       const a = D.slots[se]; if (!a || isNaN(a[i * S]) || !(a[i * S + 5] > 0) || team(se, i) === vt || team(se, i) == null) continue;
-      const gun = weaponShort(D.models[a[i * S + 6]]); if (!MAX_DMG[gun]) continue;
+      // the held gun's model, p_mp5.mdl for the MP5, whose fire event is mp5n (evGun above): ONE_SURFACE names it mp5navy
+      const gun = weaponShort(D.models[a[i * S + 6]]).replace(/^mp5$/, 'mp5navy'); if (!MAX_DMG[gun] && !ONE_SURFACE.has(gun)) continue;
       if (firesKept) continue;
       const c = aimAt(a, i, vp, head, vduck); if (c.along > 0 && c.off <= 32) cands.push(Object.assign(c, { e: se, gun, shot: false }));
     }
@@ -328,6 +361,7 @@ function computeHits() {
     // readings; wall turns true below when the hit goes into cover, so the wallbang results don't change
     const hr = d.hit = { t: th, tHp: d.t, v: d.e, s: c.e, dmg: d.dmg, head, gun: c.gun, snd: hs.map((h) => h[2]), dist: Math.hypot(c.tgt[0] - c.eye[0], c.tgt[1] - c.eye[1], c.tgt[2] - c.eye[2]), wall: false };
     d.from = c.e; all.push(hr);
+    if (ONE_SURFACE.has(c.gun)) { note(d, `open, one-surface gun ${c.gun} by ${c.e}`); continue; } // can't have gone through a wall (F3b)
     // less damage than his gun does in the open at that distance, for that hit sound: only a surface explains it
     // (level 2 by damage, Sujan 28 Oct 2026). Not when a teammate of the victim fired and aimed near him (team damage
     // is cut), and not when another player stood on the line (a bullet through a player keeps 0.75: cArNaGe on
@@ -368,14 +402,16 @@ function computeHits() {
   // killer's that only a surface explains landed 0.5 s or less before the kill (Sujan, 28 Oct 2026: the same spray
   // only; a hit matched by his aim alone counts here, since the kill confirms he was shooting at him then). Their
   // hits through a surface join the burst, so the kill shows its numbers.
+  // since 0.27.4 also the kills whose aim at the shot is clear but went through cover a snapshot before (k.aimBefore, F1b)
   for (const k of D.kills) {
-    if (!k.seenAim || (k.wb && k.wb.loose !== 'dmg') || !M.liveR.some((r) => r.n === k.round)) continue;
+    const base = k.seenAim || k.aimBefore;
+    if (!base || (k.wb && k.wb.loose !== 'dmg') || !M.liveR.some((r) => r.n === k.round)) continue;
     const mine = proven.filter((p) => p.v === k.victim && p.s === k.killer && p.t <= k.t + 0.01 && k.t - p.t <= 2);
     // a millisecond more for rounding: the demo's times are 32-bit floats, so Darky's hit on n0rx (k1ck vs eq, Nuke,
     // DreamHack Winter 2011, R15 C4 0:10) reads 0.500244 s before the kill (Sujan, 30 Oct 2026: it counts)
     const near = mine.filter((p) => k.t - p.t <= 0.501);
     if (!near.length) continue;
-    k.wb = Object.assign({}, k.seenAim, { loose: 'dmg', dmg: near[near.length - 1] }); k.seenPx = -2;
+    k.wb = Object.assign({}, base, { loose: 'dmg', dmg: near[near.length - 1] }); k.seenPx = -2;
     for (const p of mine) if (!cover.some((x) => x.t === p.t && x.v === p.v)) { cover.push(p); p.hit.wall = true; }
   }
   // A strict wallbang reads LOOSE when the killer's bullet on him just before the kill did the full damage of a hit in the
@@ -383,11 +419,13 @@ function computeHits() {
   // 0.2 s before it, at least what his gun does in the open at that distance for that hit sound. Edward-FoCuS on Gux
   // (SK vs Na`Vi, Dust2, IEM4, R11 0:52): 21 on Gux's armour 0.04 s before the kill, as in the open (through the wall's top
   // about half), while the recorded positions have him crouched behind it from 0.1 s before: the game hit him where the
-  // killer saw him, a moment back.
+  // killer saw him, a moment back. Since 0.27.4 (F2) a drop the hit finder pinned on another shooter doesn't count: shad's M4A1
+  // on prophe7 (BIH vs SLOVENIA, Nuke, 18 Jan 2009, R9 1:24) read LOOSE from a −30 0.09 s before that was his teammate
+  // snaroGOD's, in the open; Sujan, 20 Nov 2026: a full wallbang, none of prophe7 in view.
   for (const k of D.kills) {
     if (!k.wb || k.wb.loose || !k.kpos || !k.vpos || !M.liveR.some((r) => r.n === k.round)) continue;
     const tk = k.tMsg != null ? k.tMsg : k.t;
-    const d = drops.filter((x) => x.e === k.victim && !x.dead && x.snd && x.snd[0][0] < tk - 0.001 && tk - x.snd[0][0] <= 0.15).pop();
+    const d = drops.filter((x) => x.e === k.victim && !x.dead && x.snd && x.snd[0][0] < tk - 0.001 && tk - x.snd[0][0] <= 0.15 && !(typeof x.from === 'number' && x.from !== k.killer)).pop();
     if (!d) continue;
     const th = d.snd[0][0];
     if (!(shots[k.killer] || []).some((t) => t >= th - 0.2 && t <= th + 0.001)) continue;

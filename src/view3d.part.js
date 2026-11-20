@@ -806,7 +806,9 @@ function update3Now() {
     lx.font = `500 ${(dist < 1500 ? 12 : 10) * UI}px ${mono}`; lx.textAlign = 'center';
     lx.lineWidth = 3 * UI; lx.strokeStyle = 'rgba(8,10,12,.85)';
     lx.strokeText(nm, sx, sy); lx.fillStyle = L.e === selected ? COL.sand : sideCol(L.s.state); lx.fillText(nm, sx, sy);
-    const w = weaponShort(L.s.weapon), hpv = hpAt(L.e, T);
+    // health at the moment itself (tNow3), with the kill feed and the radar, not 0.1 s back with the bodies (0.27.4; Sujan,
+    // 20 Nov 2026: FLEX0R showed 100 at his kill on R!Go-, Team Belgium vs France, Tuscan, R21 0:39, where his game shows 88)
+    const w = weaponShort(L.s.weapon), hpv = hpAt(L.e, tNow3);
     const sub = [hpv != null ? hpv + ' hp' : '', w].filter(Boolean).join(' · ');
     if (sub) { // at any distance, scoped or not (the 2500-unit limit was dropped in 0.16.0, Sujan)
       lx.font = `400 ${10 * UI}px ${mono}`; lx.strokeText(sub, sx, sy + 12 * UI); lx.fillStyle = '#d8d3c8'; lx.fillText(sub, sx, sy + 12 * UI); }
@@ -817,7 +819,7 @@ function update3Now() {
   const s = selected && playerState(selected, T);
   if (cam3.mode !== 'free' && s && s.state > 0) {
     pov.hidden = false; pov.classList.remove("dead");
-    const hpv = hpAt(selected, T);
+    const hpv = hpAt(selected, tNow3); // the moment itself, as the labels above (0.27.4)
     pov.innerHTML = `<span class="${s.state === 1 ? 'kt' : 'kct'}">${esc(nameAt(selected, T))}</span>${hpv != null ? ` <b>(${hpv})</b>` : ''}<span class="kw">${esc(weaponShort(s.weapon))}</span>`;
     if (scoped) drawScope(lx, W, H);
     const xh = POV.on ? povXh(W, H) : XHAIR[$('xh3').value] || XHAIR.large;
@@ -1716,7 +1718,7 @@ function drawSpecBars(lx, W, H) {
   // whose view, and the camera mode
   const [, tg] = povObs(POV.t), who = POV.who != null ? POV.who : tg;
   if (who) {
-    const s = playerState(who, T), hp = hpAt(who, T);
+    const s = playerState(who, T), hp = hpAt(who, tNow3); // health at the moment itself, as the name bar's (0.27.4)
     lx.textAlign = 'center'; lx.font = `600 ${16 * u}px ${mono}`;
     const nm = nameAt(who, T), txt = nm + (hp != null ? ` (${hp})` : '');
     lx.fillStyle = s && s.state === 1 || s && s.state === -1 ? '#e8574d' : '#5ea3e8'; lx.fillText(txt, W / 2, H - bh / 2);

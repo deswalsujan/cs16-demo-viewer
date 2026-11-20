@@ -605,11 +605,15 @@ kbd { font-family: var(--f-body); font-size: calc(11px * var(--ui)); background:
 .dsearch .x:hover { color: var(--fg); border-color: var(--faint); }
 .dhead { display: flex; justify-content: space-between; font-size: calc(11px * var(--ui)); text-transform: uppercase; letter-spacing: .08em; color: var(--muted); padding: 0 calc(2px * var(--ui)); }
 .dhead b { color: var(--sand); font-weight: 600; }
+/* "YOUR DEMOS · newest added first": the order in small letters after the heading (Sujan, 20 Nov 2026) */
+.dhead .dord { text-transform: none; letter-spacing: normal; }
 .demos mark { background: none; color: var(--sand); font-weight: 600; }
 .demos-none { color: var(--muted); font-size: calc(12px * var(--ui)); font-family: var(--f-body); padding: calc(8px * var(--ui)) calc(2px * var(--ui)); }
 .demos button { text-align: left; background: var(--panel); border: 1px solid var(--line); border-radius: calc(4px * var(--ui)); padding: calc(8px * var(--ui)) calc(10px * var(--ui)); font-family: var(--f-body); font-size: calc(12px * var(--ui)); display: flex; justify-content: space-between; gap: calc(10px * var(--ui)); }
 .demos button:hover { border-color: var(--sand); }
 .demos button span { color: var(--muted); flex-shrink: 0; }
+/* the date the demo was recorded, from its name; the file's own date stays grey (Sujan, 20 Nov 2026) */
+.demos button span.ndate { color: var(--fg); }
 .demos button em { font-style: normal; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 .prog { height: calc(4px * var(--ui)); background: var(--panel-2); border-radius: calc(2px * var(--ui)); overflow: hidden; }
 .prog i { display: block; height: 100%; width: 0; background: var(--sand); transition: width .15s; }
@@ -817,7 +821,7 @@ addEventListener('resize', () => { if (applyUiSize()) dispatchEvent(new Event('u
         </div>
         <h2 class="hpart">About</h2>
         <div class="habout">
-          <p>CS 1.6 Demo Viewer, version 0.27.3. It plays HLTV and POV demos in the browser, from your own Half-Life folder; nothing leaves your computer.</p>
+          <p>CS 1.6 Demo Viewer, version 0.27.4. It plays HLTV and POV demos in the browser, from your own Half-Life folder; nothing leaves your computer.</p>
           <p>A map with no radar picture: drop its overview, the .bmp and .txt pair from cstrike\overviews, anywhere on the page.</p>
           <p class="hlinks"><a href="https://github.com/deswalsujan/cs16-demo-viewer/blob/main/CHANGELOG.md" target="_blank" rel="noopener">What's new</a> · <a href="https://github.com/deswalsujan/cs16-demo-viewer" target="_blank" rel="noopener">Source on GitHub</a> · <a href="https://github.com/deswalsujan/cs16-demo-viewer/issues/new/choose" target="_blank" rel="noopener">Report a bug</a></p>
           <p class="hdbg"><button class="btn" id="bDebug" type="button" title="Copies details for a bug report: browser, demo name, what loaded, errors. No file contents.">Copy debug info</button><span>Paste it into your bug report: it says which browser, demo and files, and any errors, with no file contents.</span></p>
@@ -919,8 +923,8 @@ addEventListener('resize', () => { if (applyUiSize()) dispatchEvent(new Event('u
             <button class="btn" id="btnDemo" type="button" disabled title="Choose your Half-Life folder first">Open .dem</button>
             <div class="stepin">
               <div class="dfind" id="demoFind" hidden>
-                <label class="dsearch"><svg viewBox="0 0 16 16" aria-hidden="true"><circle cx="7" cy="7" r="4.5"/><path d="M10.5 10.5L14 14"/></svg><input id="demoQ" type="text" placeholder="Search your demos: tuscan, sk, dhwinter…" spellcheck="false" autocomplete="off" aria-label="Search your demos by file name"><button class="x" id="demoQx" type="button" title="Clear (Esc)" hidden>Clear</button></label>
-                <div class="dhead"><span>Your demos</span><span id="demoN"></span></div>
+                <label class="dsearch"><svg viewBox="0 0 16 16" aria-hidden="true"><circle cx="7" cy="7" r="4.5"/><path d="M10.5 10.5L14 14"/></svg><input id="demoQ" type="text" placeholder="Search your demos: tuscan, sk, oct 2011…" spellcheck="false" autocomplete="off" aria-label="Search your demos by file name or date"><button class="x" id="demoQx" type="button" title="Clear (Esc)" hidden>Clear</button></label>
+                <div class="dhead"><span>Your demos <span class="dord">· newest added first</span></span><span id="demoN"></span></div>
               </div>
               <div class="demos" id="demoList"></div>
             </div>
@@ -929,7 +933,7 @@ addEventListener('resize', () => { if (applyUiSize()) dispatchEvent(new Event('u
         <div class="drophint">Or drop a .dem file anywhere on this page</div>
         <div class="prog" id="prog" hidden><i id="progBar"></i></div>
         <div class="msg" id="msg"></div>
-        <div class="loadfoot"><span>Version 0.27.3 · <a href="https://github.com/deswalsujan/cs16-demo-viewer" target="_blank" rel="noopener">Source on GitHub</a> · <button class="lnk" id="bHelpStart" type="button" title="The keys, the colours and marks, and about the viewer (?)">Help</button></span><button class="btn" id="bClear" type="button" title="Deletes the copies of maps, models, sounds and radar overviews this browser saved from your Half-Life folder. The folder closes until you pick it again, as on a first visit">Delete saved files</button></div>
+        <div class="loadfoot"><span>Version 0.27.4 · <a href="https://github.com/deswalsujan/cs16-demo-viewer" target="_blank" rel="noopener">Source on GitHub</a> · <button class="lnk" id="bHelpStart" type="button" title="The keys, the colours and marks, and about the viewer (?)">Help</button></span><button class="btn" id="bClear" type="button" title="Deletes the copies of maps, models, sounds and radar overviews this browser saved from your Half-Life folder. The folder closes until you pick it again, as on a first visit">Delete saved files</button></div>
       </div>
     </div>
   </section>
@@ -2794,10 +2798,25 @@ async function loadKillIcons() {
 // the kill feed icon for a weapon, or '' when the player's files don't have it
 const kicon = (w, cls = '') => (KICONS[w] ? `<span class="kico ki-${w}${cls ? ' ' + cls : ''}" aria-hidden="true"></span>` : '');
 
-// The demo list, narrowed by the search box: a demo stays when its file name contains every word typed
-// (upper or lower case), and the typed letters are highlighted. Only the file name is searched, so a demo
-// whose name doesn't say the map or the teams can only be found by scrolling.
-const demoDate = (ms) => { try { return new Date(ms).toLocaleDateString('en-GB', { day: 'numeric', month: 'short', year: 'numeric' }); } catch (e) { return ''; } };
+// The demo list, newest added first (by the file's date), narrowed by the search box: a demo stays when every word typed
+// (upper or lower case) is in its file name or its date, and the typed letters are highlighted. Each row shows the date the
+// demo was recorded, from its name (fileTime, src/ui/join.js), or when the name has none the file's own date, in grey (Sujan,
+// 20 Nov 2026; the file's date for every row up to 0.27.3). A date word matches the row's date: a day number ("23"), a month
+// from its first 3 letters ("oct", "october"), a year ("2011"), so "23 oct 2011" finds that day. A demo whose name says
+// neither the map nor the teams nor a date is found by its file's date or by scrolling.
+const MONTHS = ['january', 'february', 'march', 'april', 'may', 'june', 'july', 'august', 'september', 'october', 'november', 'december'];
+function demoDay(f) {
+  const t = fileTime(f.name), named = t != null, d = new Date(named ? t : f.lastModified);
+  if (isNaN(d.getTime())) return null;
+  return named ? { named, day: d.getUTCDate(), mo: d.getUTCMonth(), year: d.getUTCFullYear() } : { named, day: d.getDate(), mo: d.getMonth(), year: d.getFullYear() };
+}
+// which part of the date a typed word matches: 'day', 'mo', 'year' or null
+function dateWord(w, dd) {
+  if (!dd) return null;
+  if (/^\d{1,2}$/.test(w)) return +w === dd.day ? 'day' : null;
+  if (/^\d{4}$/.test(w)) return +w === dd.year ? 'year' : null;
+  return w.length >= 3 && MONTHS[dd.mo].startsWith(w) ? 'mo' : null;
+}
 function renderDemoList() {
   const el = $('demoList');
   el.innerHTML = '';
@@ -2811,18 +2830,23 @@ function renderDemoList() {
   };
   let shown = 0;
   for (const f of files.demos) {
-    const low = f.name.toLowerCase();
-    if (!words.every((w) => low.includes(w))) continue;
+    const low = f.name.toLowerCase(), dd = demoDay(f);
+    if (!words.every((w) => low.includes(w) || dateWord(w, dd))) continue;
     shown++;
     const b = document.createElement('button');
     b.type = 'button';
-    // the name and the file's date, newest first; the size on hover (UI review, item 12; the size in the row up to then)
-    b.innerHTML = `<em>${words.length ? mark(f.name) : esc(f.name)}</em><span>${demoDate(f.lastModified)}</span>`;
+    // the name and its date; the size on hover (UI review, item 12; the size in the row up to then)
+    let date = '';
+    if (dd) {
+      const hit = new Set(words.map((w) => dateWord(w, dd)).filter(Boolean)), part = (k, s) => (hit.has(k) ? `<mark>${s}</mark>` : s);
+      date = `${part('day', dd.day)} ${part('mo', MON[dd.mo])} ${part('year', dd.year)}`;
+    }
+    b.innerHTML = `<em>${words.length ? mark(f.name) : esc(f.name)}</em>` + (dd && dd.named ? `<span class="ndate">${date}</span>` : `<span class="fdate" title="The file's date: its name has no recording time">${date}</span>`);
     b.title = `${f.name} · ${(f.size / 1048576).toFixed(0)} MB`;
     b.onclick = () => loadDemoFile(f);
     el.appendChild(b);
   }
-  if (words.length && !shown) el.innerHTML = `<div class="demos-none">No demo names contain ${esc(words.map((w) => '"' + w + '"').join(' and '))}.</div>`;
+  if (words.length && !shown) el.innerHTML = `<div class="demos-none">No demo names or dates contain ${esc(words.map((w) => '"' + w + '"').join(' and '))}.</div>`;
   $('demoFind').hidden = !files.demos.length;
   $('demoN').innerHTML = words.length ? `<b>${shown}</b> of ${files.demos.length}` : String(files.demos.length);
   $('demoQx').hidden = !words.length;
@@ -3240,12 +3264,20 @@ const MON = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct
 // "1110231216--auto_..." the same form, "2006-07-02_15h00_..." another. HLTV's comes first: the three parts of Na`Vi vs SK,
 // Inferno, ESWC 2011 all start "2011-10-24_16h08_NaVi_SK-", and only their 1609, 1724 and 1740 put them in order (Sujan,
 // 7 Nov 2026; the Join card suggested 1609, 1740, 1724 up to 0.26.18). Names like FX-vs-sk-iem5-inf.dem have none.
+// Since 0.27.4 also the names the game's auto-record plugins give POV demos on public servers (all 83 test demo names checked,
+// tests/logs/0.27.4.md): "…_27-03-2025_15.10.23" (day, month, year, then the time), "…_00-23-35_28-07-2022" (the time, then
+// the day), "…_D-[08_24_2021]_T-[00_44]" (month, day and year, then the time), read as 0.27.3 read none of them.
 function fileTime(name) {
+  const at = (y, mo, d, h, mi) => (mo >= 1 && mo <= 12 && d >= 1 && d <= 31 && h < 24 && mi < 60 ? Date.UTC(y, mo - 1, d, h, mi) : null);
   for (const m of name.matchAll(/(?:^|\D)(\d\d)(\d\d)(\d\d)(\d\d)(\d\d)(?=\D|$)/g)) {
-    if (+m[2] >= 1 && +m[2] <= 12 && +m[3] >= 1 && +m[3] <= 31 && +m[4] < 24 && +m[5] < 60) return Date.UTC(2000 + +m[1], +m[2] - 1, +m[3], +m[4], +m[5]);
+    const t = at(2000 + +m[1], +m[2], +m[3], +m[4], +m[5]); if (t != null) return t;
   }
-  const m = /(\d{4})-(\d\d)-(\d\d)_(\d\d)h(\d\d)/.exec(name);
-  return m ? Date.UTC(+m[1], +m[2] - 1, +m[3], +m[4], +m[5]) : null;
+  let m = /(\d{4})-(\d\d)-(\d\d)_(\d\d)h(\d\d)/.exec(name);
+  if (m) return at(+m[1], +m[2], +m[3], +m[4], +m[5]);
+  if ((m = /(?:^|\D)(\d\d)-(\d\d)-(\d{4})_(\d\d)\.(\d\d)/.exec(name))) return at(+m[3], +m[2], +m[1], +m[4], +m[5]);
+  if ((m = /(?:^|\D)(\d\d)-(\d\d)-\d\d_(\d\d)-(\d\d)-(\d{4})(?=\D|$)/.exec(name))) return at(+m[5], +m[4], +m[3], +m[1], +m[2]);
+  if ((m = /D-\[(\d\d)_(\d\d)_(\d{4})\]_T-\[(\d\d)_(\d\d)\]/.exec(name))) return at(+m[3], +m[1], +m[2], +m[4], +m[5]);
+  return null;
 }
 const hhmm = (d) => String(d.getUTCHours()).padStart(2, '0') + ':' + String(d.getUTCMinutes()).padStart(2, '0');
 const dayOf = (d) => `${d.getUTCDate()} ${MON[d.getUTCMonth()]} ${d.getUTCFullYear()}`;
@@ -4031,6 +4063,24 @@ function aimLine(k) {
 // 2026: glow on his teammate solo, compLexity vs WeMadeFox, Nuke, IEM4)
 function teamKill(k) { return k.killer !== k.victim && !!k.kp && !!k.kteam && k.kteam === k.vteam; }
 function listedWbs() { return D.kills.filter((k) => k.wb && !teamKill(k) && M.liveR.some((r) => r.n === k.round)); }
+// The killer's recorded aim one snapshot before the shot (0.16 s or less) went through what a bullet hits, its end 24 units
+// or less from the victim's middle then (0.27.4, F1b). For a kill whose aim line at the shot is clear: the aim is recorded ten
+// to twenty times a second, so it can swing off the cover only at the kill's own snapshot (bartZi's M4A1 on Edward, Na`Vi vs
+// WinFakt, Train, ESWC 2011, R8 1:29: seven bullets through the wheel end by their damage, the aim through it 0.05 s before
+// the kill, 17.7 units beside him at it; Sujan, 20 Nov 2026: a partial wallbang; tests/logs/new-demos-feedback-2026-11-20.md).
+function aimInCoverBefore(k, tP) {
+  const S = D.stride, times = D.times, j = M.idxAt(tP + 1e-4) - 1, a = D.slots[k.killer], v = D.slots[k.victim];
+  if (j < 0 || !a || !v || isNaN(a[j * S]) || isNaN(v[j * S]) || tP - times[j] > 0.16) return false;
+  const eye = [a[j * S], a[j * S + 1], a[j * S + 2] + (a[j * S + 7] ? 12 : 17)];
+  let raw = a[j * S + 4]; if (raw > 180) raw -= 360;
+  const pitch = -raw * 3 * Math.PI / 180, yaw = a[j * S + 3] * Math.PI / 180;
+  const vp = [v[j * S], v[j * S + 1], v[j * S + 2]], dist = Math.hypot(vp[0] - eye[0], vp[1] - eye[1], vp[2] - eye[2]);
+  const end = [eye[0] + Math.cos(pitch) * Math.cos(yaw) * dist, eye[1] + Math.cos(pitch) * Math.sin(yaw) * dist, eye[2] - Math.sin(pitch) * dist];
+  const mid = [vp[0], vp[1], vp[2] + (v[j * S + 7] ? 4 : 10)];
+  if (Math.hypot(end[0] - mid[0], end[1] - mid[1], end[2] - mid[2]) > 24) return false;
+  const skip = brokenSet(times[j] - 0.05); for (const s of MAP.bsp.solids) if (s.shootable) skip.add(s.model);
+  return solidAlong(MAP.bsp, eye, end, 2, skip, posesAt(times[j] - 0.05), 'bullet').solid > 0;
+}
 function computeWallbangs() {
   if (!MAP || !D) return;
   const bsp = MAP.bsp;
@@ -4049,7 +4099,7 @@ function computeWallbangs() {
   // one reads LOOSE (Sujan, 2 Nov 2026). Invisible brushes are never cover (solidAlong in bsp.js).
   const notCover = bsp.solids.filter((s) => s.shootable).map((s) => s.model);
   for (const k of D.kills) {
-    k.wb = null; k.seenPx = null; k.seenAim = null; k.keep = null;
+    k.wb = null; k.seenPx = null; k.seenAim = null; k.keep = null; k.aimBefore = null;
     if (!k.kpos || !k.vpos || k.killer === k.victim || NO_WB.has(k.weapon) || ONE_SURFACE.has(k.weapon)) continue;
     const kNow = [...k.kpos, k.kduck], vNow = [...k.vpos, k.vduck];
     const tP = k.tPos != null ? k.tPos : k.t;
@@ -4061,7 +4111,16 @@ function computeWallbangs() {
     // the crosshair line goes through what a bullet hits (the 15 points above are sight lines)
     const aim = solidAlong(bsp, eye, end, 2, skip, poses, 'bullet');
     const mid = solidAlong(bsp, eye, [k.vpos[0], k.vpos[1], k.vpos[2] + (k.vduck ? 4 : 6)], 2, skip, poses, 'bullet');
-    if (aim.solid === 0) continue; // crosshair had a clear line: the victim was hit in the open
+    // crosshair had a clear line: the victim was hit in the open, unless part of him was seen, the line to his middle goes
+    // through cover and the aim one snapshot before went through it (aimInCoverBefore): then the damage rule in computeHits
+    // decides, as for the seen kills with the crosshair through cover (0.27.4, F1b; Sujan, 20 Nov 2026, after checking three
+    // of the 18 kills it adds on the 83 test demos in his game: AGAiN vs Na`Vi, Train, 24 Oct 2011, R21 1:23, NEO on Edward;
+    // fnatic vs EG, Dust2, EM3 Global Finals 2009, R22 1:44, Gux on Warden; Burning vs FairFrag, Inferno, ESWC 2010, R14 C4
+    // 0:29, NTEP on DIODE). Never the picture check: the aim at the shot doesn't go through cover.
+    if (aim.solid === 0) {
+      if (seen && mid.solid > 0 && aimInCoverBefore(k, tP)) k.aimBefore = { thick: Math.round(mid.solid), aim: 0, what: mid.hit.some((h) => h.model !== 0) ? 'object' : 'wall', eye };
+      continue;
+    }
     const hit = aim.hit;
     // part of him in view to the 15 points, but the crosshair line goes through cover: computeHits makes it a loose
     // wallbang when the demo's damage shows one of the killer's bullets went through a surface in the same spray
@@ -4073,7 +4132,7 @@ function computeWallbangs() {
   }
   // a kill that lands on a skip across a round restart was judged from the next round's spawns, thousands of units
   // apart (4,000 units of "wall" for Orwall's AWP kill on coNTE, roccat vs fnatic, Inferno, R21): nothing to judge
-  for (const k of D.kills) if ((k.wb || k.seenAim) && (M.skipRestart || []).some((st) => Math.abs(st - k.t) <= 0.3)) { k.wb = null; k.seenAim = null; }
+  for (const k of D.kills) if ((k.wb || k.seenAim || k.aimBefore) && (M.skipRestart || []).some((st) => Math.abs(st - k.t) <= 0.3)) { k.wb = null; k.seenAim = null; k.aimBefore = null; }
   M.wbs = listedWbs();
   renderPane(); drawTimeline();
   // then the picture check (checkSeen, view3d.part.js), once the 3D map is built: loadMap builds it right after this
@@ -4194,10 +4253,16 @@ function computeHits() {
     }
     // enemies whose fire events the demo left out still count when they aim at him (26 Oct 2026: Go's spray on zonic,
     // tyloo vs mTw, Nuke, R15, has one fire event in two seconds, so GoodRifle, 76 units off, got his headshot)
+    // Since 0.27.4 (F3b) an enemy holding a pistol, SMG or shotgun competes here too; a hit pinned on him is in the open, since
+    // his bullet stops at the first surface (below). WUZZ's USP on bAiL (WeMadeFox vs ATE Gaming, Dust2, MSI Beat IT! 2010, R20
+    // 1:14), aimed 4 to 17 units from him at all six hits, lost them to Rshkhn^'s Deagle 15 units off through 899 units of map, a
+    // Wall damage row of 46 (Sujan, 20 Nov 2026: nobody hit him through a wall; he died to the USP). Only in demos that lose
+    // fire events: letting these guns' fire events compete as well broke two of Sujan's loose-by-damage answers.
     for (const e in D.slots) {
       const se = +e; if (se === d.e || seen.has(se)) continue;
       const a = D.slots[se]; if (!a || isNaN(a[i * S]) || !(a[i * S + 5] > 0) || team(se, i) === vt || team(se, i) == null) continue;
-      const gun = weaponShort(D.models[a[i * S + 6]]); if (!MAX_DMG[gun]) continue;
+      // the held gun's model, p_mp5.mdl for the MP5, whose fire event is mp5n (evGun above): ONE_SURFACE names it mp5navy
+      const gun = weaponShort(D.models[a[i * S + 6]]).replace(/^mp5$/, 'mp5navy'); if (!MAX_DMG[gun] && !ONE_SURFACE.has(gun)) continue;
       if (firesKept) continue;
       const c = aimAt(a, i, vp, head, vduck); if (c.along > 0 && c.off <= 32) cands.push(Object.assign(c, { e: se, gun, shot: false }));
     }
@@ -4210,6 +4275,7 @@ function computeHits() {
     // readings; wall turns true below when the hit goes into cover, so the wallbang results don't change
     const hr = d.hit = { t: th, tHp: d.t, v: d.e, s: c.e, dmg: d.dmg, head, gun: c.gun, snd: hs.map((h) => h[2]), dist: Math.hypot(c.tgt[0] - c.eye[0], c.tgt[1] - c.eye[1], c.tgt[2] - c.eye[2]), wall: false };
     d.from = c.e; all.push(hr);
+    if (ONE_SURFACE.has(c.gun)) { note(d, `open, one-surface gun ${c.gun} by ${c.e}`); continue; } // can't have gone through a wall (F3b)
     // less damage than his gun does in the open at that distance, for that hit sound: only a surface explains it
     // (level 2 by damage, Sujan 28 Oct 2026). Not when a teammate of the victim fired and aimed near him (team damage
     // is cut), and not when another player stood on the line (a bullet through a player keeps 0.75: cArNaGe on
@@ -4250,14 +4316,16 @@ function computeHits() {
   // killer's that only a surface explains landed 0.5 s or less before the kill (Sujan, 28 Oct 2026: the same spray
   // only; a hit matched by his aim alone counts here, since the kill confirms he was shooting at him then). Their
   // hits through a surface join the burst, so the kill shows its numbers.
+  // since 0.27.4 also the kills whose aim at the shot is clear but went through cover a snapshot before (k.aimBefore, F1b)
   for (const k of D.kills) {
-    if (!k.seenAim || (k.wb && k.wb.loose !== 'dmg') || !M.liveR.some((r) => r.n === k.round)) continue;
+    const base = k.seenAim || k.aimBefore;
+    if (!base || (k.wb && k.wb.loose !== 'dmg') || !M.liveR.some((r) => r.n === k.round)) continue;
     const mine = proven.filter((p) => p.v === k.victim && p.s === k.killer && p.t <= k.t + 0.01 && k.t - p.t <= 2);
     // a millisecond more for rounding: the demo's times are 32-bit floats, so Darky's hit on n0rx (k1ck vs eq, Nuke,
     // DreamHack Winter 2011, R15 C4 0:10) reads 0.500244 s before the kill (Sujan, 30 Oct 2026: it counts)
     const near = mine.filter((p) => k.t - p.t <= 0.501);
     if (!near.length) continue;
-    k.wb = Object.assign({}, k.seenAim, { loose: 'dmg', dmg: near[near.length - 1] }); k.seenPx = -2;
+    k.wb = Object.assign({}, base, { loose: 'dmg', dmg: near[near.length - 1] }); k.seenPx = -2;
     for (const p of mine) if (!cover.some((x) => x.t === p.t && x.v === p.v)) { cover.push(p); p.hit.wall = true; }
   }
   // A strict wallbang reads LOOSE when the killer's bullet on him just before the kill did the full damage of a hit in the
@@ -4265,11 +4333,13 @@ function computeHits() {
   // 0.2 s before it, at least what his gun does in the open at that distance for that hit sound. Edward-FoCuS on Gux
   // (SK vs Na`Vi, Dust2, IEM4, R11 0:52): 21 on Gux's armour 0.04 s before the kill, as in the open (through the wall's top
   // about half), while the recorded positions have him crouched behind it from 0.1 s before: the game hit him where the
-  // killer saw him, a moment back.
+  // killer saw him, a moment back. Since 0.27.4 (F2) a drop the hit finder pinned on another shooter doesn't count: shad's M4A1
+  // on prophe7 (BIH vs SLOVENIA, Nuke, 18 Jan 2009, R9 1:24) read LOOSE from a −30 0.09 s before that was his teammate
+  // snaroGOD's, in the open; Sujan, 20 Nov 2026: a full wallbang, none of prophe7 in view.
   for (const k of D.kills) {
     if (!k.wb || k.wb.loose || !k.kpos || !k.vpos || !M.liveR.some((r) => r.n === k.round)) continue;
     const tk = k.tMsg != null ? k.tMsg : k.t;
-    const d = drops.filter((x) => x.e === k.victim && !x.dead && x.snd && x.snd[0][0] < tk - 0.001 && tk - x.snd[0][0] <= 0.15).pop();
+    const d = drops.filter((x) => x.e === k.victim && !x.dead && x.snd && x.snd[0][0] < tk - 0.001 && tk - x.snd[0][0] <= 0.15 && !(typeof x.from === 'number' && x.from !== k.killer)).pop();
     if (!d) continue;
     const th = d.snd[0][0];
     if (!(shots[k.killer] || []).some((t) => t >= th - 0.2 && t <= th + 0.001)) continue;
@@ -4939,24 +5009,40 @@ function derive() {
   // spectators: admins, casters and HLTV relays who never played a live round
   const specs = Object.keys(pl).filter((pid) => teamOf[pid] == null && pl[pid].occs.length);
 
-  const autoName = (g, i) => {
+  // The tag a team's players share, through the known teams, or null. Up to 20 letters since 0.27.4 (12 before, which cut
+  // "Frag eXecutors" to "Frag eXecuto"). It loses a short bracketed bit at its end and never keeps an unpaired bracket
+  // (Sujan, 20 Nov 2026): "SLOVENIA [o] shad" and "SLOVENIA [o] janFP~" share "SLOVENIA [o]", which read "SLOVENIA [o" up to
+  // 0.27.3 (the separators at the ends went, the "]" with them) and reads SLOVENIA. Only ( ) [ ] { } are brackets, so
+  // "roccat > Niko K. <NASU>" keeps roccat.
+  const cleanTag = (raw) => {
+    let s = raw.trim();
+    const cut = s.replace(/\s*[[({][^[\](){}]{0,4}[\])}][\s\W]*$/, ''); // a bracketed bit of 4 letters or fewer at its end
+    if (/[A-Za-z0-9]/.test(cut)) s = cut;
+    const open = [], close = [];
+    for (let i = 0; i < s.length; i++) { if ('[({'.includes(s[i])) open.push(i); else if (')]}'.includes(s[i])) { if (open.length) open.pop(); else close.push(i); } }
+    if (open.length) s = s.slice(0, open[0]); // an opening bracket with no closing one after it: cut there
+    const inner = close.filter((i) => i < s.length && /[A-Za-z0-9]/.test(s.slice(i + 1)));
+    if (inner.length) s = s.slice(inner[inner.length - 1] + 1); // a closing one with none before it and text after it: cut up to it
+    return s.replace(/^[\s\W]+|[\s\W]+$/g, '').trim();
+  };
+  const tagName = (g) => {
     const names = g.map((pid) => pl[pid].name);
     const tryAffix = (pre) => {
       const best = {};
-      for (const nm of names) for (let L = 3; L <= Math.min(12, nm.length - 1); L++) {
+      for (const nm of names) for (let L = 3; L <= Math.min(20, nm.length - 1); L++) {
         const a = pre ? nm.slice(0, L) : nm.slice(-L);
         best[a] = (best[a] || 0) + 1;
       }
       let top = null;
       for (const a in best) if (best[a] >= Math.max(3, Math.ceil(names.length * 0.6)) && (!top || a.length > top.length)) top = a;
-      return top ? top.replace(/^[\s\W]+|[\s\W]+$/g, '').trim() : null;
+      return top ? cleanTag(top) : null;
     };
     const a = tryAffix(true) || tryAffix(false);
-    return a && a.length >= 2 ? knownTeam(a) || a : 'Team ' + (i + 1);
+    return a && a.length >= 2 ? knownTeam(a) || a : null;
   };
   const saved = ls.get('names:' + demoKey()) || [];
   const fromFile = teamsFromFileName(D.fileName, teams.map((g) => g.map((pid) => pl[pid].name)));
-  // the admin's text, after the file name and before the clan tags (Sujan, 8 Nov 2026): ESWC's AdminBot names both teams
+  // the admin's text (Sujan, 8 Nov 2026; after the tags and the file name since 0.27.4): ESWC's AdminBot names both teams
   // with their sides, "1st Warmup - Fnatic(CT) vs mousesports(T)", so the team with most players on CT then is the one
   // it names CT. Its names go through the known teams ("Navi" reads Natus Vincere, "mTw.dk" mTw).
   const fromAdmin = (() => {
@@ -4972,8 +5058,10 @@ function derive() {
     }
     return [null, null];
   })();
-  const named = fromFile[0] && fromFile[1] ? fromFile : fromAdmin[0] && fromAdmin[1] ? fromAdmin : [null, null];
-  const tnames = [saved[0] || named[0] || autoName(teams[0], 0), saved[1] || named[1] || autoName(teams[1], 1)];
+  // Each team's name (Sujan, 20 Nov 2026; up to 0.27.3 the file name came first, then the admin's text, then the tags): the
+  // tag its players share, through the known teams; else the file name's team; else the admin's text; else Team 1 or Team 2.
+  // A name typed in the header (saved) comes before them all.
+  const tnames = [0, 1].map((i) => saved[i] || tagName(teams[i]) || fromFile[i] || fromAdmin[i] || 'Team ' + (i + 1));
 
   // per round: which team was T; winner team; running score
   let sc, played, after16, wonAt;
@@ -5507,15 +5595,22 @@ const KNOWN_TEAMS = {
   // (the spelling of Wikipedia's page; Liquipedia writes Meet Your Makers); Sweden's tag at ASUS ENC 2010 (Liquipedia's
   // ENC 2010 page: Sweden); eSahara as EsportsEarnings and GosuGamers write it
   meet: 'MeetYourMakers', swiiiiideeeen: 'Sweden', esahara: 'eSahara',
+  // Sujan, 20 Nov 2026, with the shared tag first: mTw's players wrote "@mymTw.com" (FX vs mTw, Xperia Play 2011), SK's
+  // "SKWEDEN" at WCG 2008 (SK vs eSTRO), ATE Gaming's "A+e.gaming |" (WeMadeFox vs ATE Gaming, Dust2, MSI Beat IT! 2010)
+  mymtw: 'mTw', skweden: 'SK Gaming', aegaming: 'ATE Gaming',
 };
 const norm = (x) => (x || '').toLowerCase().replace(/[^a-z0-9]/g, '');
-// A shared clan tag looked up in the known teams: the whole tag first, then its first part,
-// so "SK.SWE.AMD" and "SK Gaming |" read as SK Gaming and "fnatic.MSI" as fnatic. Unknown tags stay as written.
+// A shared clan tag looked up in the known teams: the whole tag first, then each of its parts, the first part first, so
+// "SK.SWE.AMD" and "SK Gaming |" read as SK Gaming, "fnatic.MSI" as fnatic and "KOREA.eSTRO" as eSTRO (any part since 0.27.4,
+// the first only up to 0.27.3); then a known team's name of 4 letters or more that the tag starts with, the longest, so
+// "fnaticMSI" and "fnaticRC" read as fnatic and "mymTw.com" as mTw (Sujan, 20 Nov 2026). Unknown tags stay as written.
 function knownTeam(tag) {
   const whole = norm(tag);
   if (KNOWN_TEAMS[whole]) return KNOWN_TEAMS[whole];
-  const first = norm((tag || '').split(/[^A-Za-z0-9]+/).find((w) => w) || '');
-  return first && KNOWN_TEAMS[first] || null;
+  for (const w of (tag || '').split(/[^A-Za-z0-9]+/)) { const n = norm(w); if (n && KNOWN_TEAMS[n]) return KNOWN_TEAMS[n]; }
+  let best = null;
+  for (const k in KNOWN_TEAMS) if (KNOWN_TEAMS[k] && k.length >= 4 && whole.startsWith(k) && (!best || k.length > best.length)) best = k;
+  return best ? KNOWN_TEAMS[best] : null;
 }
 const EVENT_WORDS = /^(final|finals|grand|semi|semifinal|quarter|group|bo\d|map\d?|match|part\d?|half\d?|de|cs|auto|hltv|demo|lan|online|playoff|playoffs|upper|lower|round|day\d?)$/i;
 function teamsFromFileName(file, rosters) {
@@ -6154,7 +6249,11 @@ function renderPane() {
   p.querySelectorAll('[data-bt]').forEach((el) => el.onclick = () => {
     const k = D.kills[+el.closest('.kdet').dataset.kd]; if (!k) return;
     selected = k.killer; playing = false; setPlayIcon();
-    seek(+el.dataset.bt + 0.03); // just past it, so its damage number and the kill feed show
+    // just past it, so its damage number and the kill feed show; in 3D a further LAG3 (0.1 s), since the 3D view draws the
+    // players that far back, so the paused picture is the bullet's own moment (0.27.4; Sujan, 20 Nov 2026: at FLEX0R's kill on
+    // R!Go-, Team Belgium vs France, Tuscan, R21 0:39, the jump showed R!Go- in the open 0.07 s before the shot, where he was
+    // hidden at it). The 2D map draws the moment itself.
+    seek(+el.dataset.bt + 0.03 + (viewMode !== '2d' ? LAG3 : 0));
     if (viewMode !== '2d') setCam('eyes', true);
   });
   p.querySelectorAll('[data-p]').forEach((el) => el.onclick = () => {
@@ -9400,7 +9499,9 @@ function update3Now() {
     lx.font = `500 ${(dist < 1500 ? 12 : 10) * UI}px ${mono}`; lx.textAlign = 'center';
     lx.lineWidth = 3 * UI; lx.strokeStyle = 'rgba(8,10,12,.85)';
     lx.strokeText(nm, sx, sy); lx.fillStyle = L.e === selected ? COL.sand : sideCol(L.s.state); lx.fillText(nm, sx, sy);
-    const w = weaponShort(L.s.weapon), hpv = hpAt(L.e, T);
+    // health at the moment itself (tNow3), with the kill feed and the radar, not 0.1 s back with the bodies (0.27.4; Sujan,
+    // 20 Nov 2026: FLEX0R showed 100 at his kill on R!Go-, Team Belgium vs France, Tuscan, R21 0:39, where his game shows 88)
+    const w = weaponShort(L.s.weapon), hpv = hpAt(L.e, tNow3);
     const sub = [hpv != null ? hpv + ' hp' : '', w].filter(Boolean).join(' · ');
     if (sub) { // at any distance, scoped or not (the 2500-unit limit was dropped in 0.16.0, Sujan)
       lx.font = `400 ${10 * UI}px ${mono}`; lx.strokeText(sub, sx, sy + 12 * UI); lx.fillStyle = '#d8d3c8'; lx.fillText(sub, sx, sy + 12 * UI); }
@@ -9411,7 +9512,7 @@ function update3Now() {
   const s = selected && playerState(selected, T);
   if (cam3.mode !== 'free' && s && s.state > 0) {
     pov.hidden = false; pov.classList.remove("dead");
-    const hpv = hpAt(selected, T);
+    const hpv = hpAt(selected, tNow3); // the moment itself, as the labels above (0.27.4)
     pov.innerHTML = `<span class="${s.state === 1 ? 'kt' : 'kct'}">${esc(nameAt(selected, T))}</span>${hpv != null ? ` <b>(${hpv})</b>` : ''}<span class="kw">${esc(weaponShort(s.weapon))}</span>`;
     if (scoped) drawScope(lx, W, H);
     const xh = POV.on ? povXh(W, H) : XHAIR[$('xh3').value] || XHAIR.large;
@@ -10310,7 +10411,7 @@ function drawSpecBars(lx, W, H) {
   // whose view, and the camera mode
   const [, tg] = povObs(POV.t), who = POV.who != null ? POV.who : tg;
   if (who) {
-    const s = playerState(who, T), hp = hpAt(who, T);
+    const s = playerState(who, T), hp = hpAt(who, tNow3); // health at the moment itself, as the name bar's (0.27.4)
     lx.textAlign = 'center'; lx.font = `600 ${16 * u}px ${mono}`;
     const nm = nameAt(who, T), txt = nm + (hp != null ? ` (${hp})` : '');
     lx.fillStyle = s && s.state === 1 || s && s.state === -1 ? '#e8574d' : '#5ea3e8'; lx.fillText(txt, W / 2, H - bh / 2);
@@ -10966,7 +11067,7 @@ function frameError(e) {
 function debugInfo() {
   let gpu = '';
   try { const gl = document.createElement('canvas').getContext('webgl'); const x = gl && gl.getExtension('WEBGL_debug_renderer_info'); gpu = gl ? (x ? gl.getParameter(x.UNMASKED_RENDERER_WEBGL) : 'WebGL available') : 'no WebGL'; } catch (e) { gpu = 'unknown'; }
-  const L = [`CS 1.6 Demo Viewer 0.27.3`, `Browser: ${navigator.userAgent}`, `Screen: ${screen.width}x${screen.height} at ${devicePixelRatio}x, window ${innerWidth}x${innerHeight}`, `Graphics: ${gpu}`];
+  const L = [`CS 1.6 Demo Viewer 0.27.4`, `Browser: ${navigator.userAgent}`, `Screen: ${screen.width}x${screen.height} at ${devicePixelRatio}x, window ${innerWidth}x${innerHeight}`, `Graphics: ${gpu}`];
   L.push(`Folder: ${Object.keys(files.maps).length} maps, ${Object.keys(files.overviews).length} overviews, ${Object.keys(files.mdl).length} models, ${Object.keys(files.snd).length} sounds, ${files.demos.length} demos`);
   if (D) {
     L.push(`Demo: ${D.fileName}, protocol ${(D.header && D.header.netProtocol) || '?'}, ${D.pov ? 'POV (recorded by a player)' : 'HLTV'}, map ${D.mapName}, length ${fmt(D.end - D.start)}, ${M.liveR.length} live rounds, final ${M.liveR.length ? M.liveR[M.liveR.length - 1].scoreAfter.join(':') : '-'}`);
