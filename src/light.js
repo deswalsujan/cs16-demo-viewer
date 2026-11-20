@@ -40,7 +40,8 @@ const CURVE = buildCurve(3, 2, 2, 2.5, false); // up to 0.27.1 Valve's defaults 
 
 // A texture's colours through texgamma, as the game loads a Half-Life texture (LUMP_TEXGAMMA, Image_SetPalette in
 // Xash3D's imagelib): every world texture but the masked ones (names starting with {, fences and grates), water too,
-// and every model skin but the masked ones (STUDIO_NF_MASKED). The sky and the sprites keep their colours.
+// and every model skin but the masked ones (STUDIO_NF_MASKED), and the sky's pictures (the 3D batch: as Sujan's game
+// draws them, measured on his de_train screenshots). The sprites keep their colours.
 function texGamma(rgba) {
   const out = new Uint8Array(rgba.length), T = CURVE.tex;
   for (let i = 0; i < rgba.length; i += 4) { out[i] = T[rgba[i]]; out[i + 1] = T[rgba[i + 1]]; out[i + 2] = T[rgba[i + 2]]; out[i + 3] = rgba[i + 3]; }

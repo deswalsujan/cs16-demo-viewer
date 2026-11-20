@@ -206,8 +206,10 @@ function build3dNow() {
 // The map's sky picture where its "sky" faces are (buildMesh leaves them out), as Xash3D draws it (ref/gl/gl_warp.c,
 // R_DrawSkyBox and MakeSkyVec; engine/client/dll_int/ref_common.c, R_SetupSky): worldspawn's skyname ("desert", the
 // engine's default, without one), six pictures gfx/env/<name>rt, bk, lf, ft, up, dn, .tga before .bmp, from cstrike,
-// cstrike_downloads or valve (folder.js, files.sky), unlit and with no texgamma (only Half-Life's own textures get it,
-// Image_SetPalette), on a box round the camera behind everything. Side i is drawn with picture SKY_ORDER[i]
+// cstrike_downloads or valve (folder.js, files.sky), unlit, through texgamma as Sujan's game draws it (steam_legacy,
+// Valve's engine: its clear sky over Train's T alley measured 140 163 208 against the pictures' 108 132 189, which is
+// texgamma at gamma 3; Xash3D leaves sky pictures out of texgamma, Image_SetPalette), on a box round the camera
+// behind everything. Side i is drawn with picture SKY_ORDER[i]
 // (r_skyTexOrder), each corner (s, t) placed by st_to_vec (SKY_ST), the picture's top row at t = 1. A sky without all
 // six falls back to desert, as R_SetupSky does (DEFAULT_SKYBOX_NAME; Sujan, 20 Nov 2026); the grey-blue background of
 // up to 0.27.1 only when desert is missing too. The wall tops seen from above stay black, as in the game: their
@@ -244,7 +246,7 @@ async function loadSky(map) {
   const g = new THREE.Group();
   for (let i = 0; i < 6; i++) {
     const im = imgs[SKY_ORDER[i]];
-    const tex = new THREE.DataTexture(im.data, im.w, im.h, THREE.RGBAFormat);
+    const tex = new THREE.DataTexture(texGamma(im.data), im.w, im.h, THREE.RGBAFormat);
     tex.magFilter = THREE.LinearFilter; tex.minFilter = THREE.LinearFilter; tex.generateMipmaps = false;
     tex.wrapS = tex.wrapT = THREE.ClampToEdgeWrapping; tex.needsUpdate = true;
     const pos = [], uv = [];
