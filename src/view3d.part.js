@@ -121,9 +121,9 @@ function resize3() {
 }
 new ResizeObserver(() => resize3()).observe($('radar'));
 
-// The map as the game draws it with Valve's defaults (light.js, 0.26.31): the texture, through texgamma when it was
-// loaded (getTex), times the lightmap, through the light table when it was packed (lightmapCurve), drawn at 4/3
-// (gl_overbright 1), at most white. Water has no lightmap in the game: its texture alone (lit 0). The see-through
+// The map as the game draws it (light.js, 0.26.31): the texture, through texgamma when it was loaded (getTex), times the
+// lightmap, through the light table when it was packed (lightmapCurve), with no overbright since the 3D batch (Sujan,
+// 20 Nov 2026), so a fully lit surface is its texture's colour (4/3, gl_overbright 1, up to 0.27.1). Water has no lightmap in the game: its texture alone (lit 0). The see-through
 // texels (alpha under 0.5) are left out as before, which is all the wallbang picture check reads of the map.
 const SHADER = {
   vertexShader: `varying vec2 vUv; varying vec2 vUv2; attribute vec2 uv2;
@@ -131,7 +131,7 @@ const SHADER = {
   fragmentShader: `uniform sampler2D map; uniform sampler2D lm; uniform float opacity; uniform float lit;
     varying vec2 vUv; varying vec2 vUv2;
     void main(){ vec4 t = texture2D(map, vUv); if (t.a < 0.5) discard;
-      vec3 c = lit > 0.5 ? min(t.rgb * texture2D(lm, vUv2).rgb * (4.0 / 3.0), vec3(1.0)) : t.rgb;
+      vec3 c = lit > 0.5 ? t.rgb * texture2D(lm, vUv2).rgb : t.rgb;
       gl_FragColor = vec4(c, opacity); }`,
 };
 // A build that throws partway (0.26.18; Sujan, 7 Nov 2026): view3.map is set only at its end, so the frame loop, which

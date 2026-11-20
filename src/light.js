@@ -1,7 +1,9 @@
 // ---------------- the game's light (0.26.31) ----------------
-// Sujan, 12 Nov 2026 (DECISIONS.md, "The 3D picture's contrast"): the 3D picture uses Valve's defaults as one fixed
-// curve for everyone, with no setting, and gl_overbright 1; player models are lit by the floor under them, as the
-// game does, even where that makes them hard to see. Built as Xash3D FWGS builds it (commit 707596f, 10 Nov 2026):
+// Sujan, 12 Nov 2026 (DECISIONS.md, "The 3D picture's contrast"): the 3D picture uses one fixed curve for everyone, with
+// no setting: Valve's defaults and gl_overbright 1 up to 0.27.1; since the 3D batch gamma 3, brightness 2 and no
+// overbright (Sujan, 20 Nov 2026: his own settings in the game, from his config.cfg on Windows, where both the
+// steam_legacy and the 25th Anniversary build have gl_overbright 0), so a fully lit surface is its texture's colour;
+// player models are lit by the floor under them, as the game does, even where that makes them hard to see. Built as Xash3D FWGS builds it (commit 707596f, 10 Nov 2026):
 // the tables in engine/client/gamma.c (BuildGammaTable), the world's lightmaps in ref/gl/gl_rsurf.c (R_BuildLightMap,
 // R_BlendLightmaps), the light on a model in ref/common/ref_light.c (R_EntityDynamicLight) and ref/gl/gl_studio.c
 // (R_StudioLighting). Up to 0.26.30 the map was each texture times min(lightmap x 2, 1.8), then to the power 0.85,
@@ -10,11 +12,15 @@
 // Valve's defaults (Valve Developer Community, list of Half-Life console variables): gamma 2.5, brightness 1,
 // texgamma 2, lightgamma 2.5 (Xash3D's own brightness default is 0). tex: a texture's colour through texgamma; light:
 // the light table (0 to 1023); lm: a lightmap byte at light style "m" (264 of 256) through it, as R_BuildLightMap
-// writes it with gl_overbright 1 (lightscale 256), to be drawn at 4/3 (R_BlendLightmaps: DST_COLOR, SRC_COLOR with
-// the colour 128/192). Math.fround where the engine works in single precision. Checked 12 Nov 2026 against Xash3D's
+// writes it. With gl_overbright 1 (overbright true, up to 0.27.1) lightscale is 256 and the map is drawn at 4/3
+// (R_BlendLightmaps: DST_COLOR, SRC_COLOR with the colour 128/192); with gl_overbright 0 lightscale is
+// pow(2, 1 / lightgamma) x 256 + 0.5 (338 at lightgamma 2.5), a brighter lightmap to make up for it, drawn at 1
+// (ZERO, SRC_COLOR). Overbright changes nothing on models: R_StudioLighting looks the light up in the same table
+// either way (LightToTexGamma), and the light under a model is read from the map's own samples (R_LightVec). Math.fround where the engine works in single precision. Checked 12 Nov 2026 against Xash3D's
 // own test tables for BuildGammaTable (gamma 2.5, brightness 0, texgamma 2, lightgamma 2.5; and 2.2, 1, 2.2, 2.4):
-// every entry the same (tests/logs/0.26.31.md).
-function buildCurve(gamma, brightness, texgamma, lightgamma) {
+// every entry the same (tests/logs/0.26.31.md). Brightness above 1 multiplies the light before the curve's knee, as
+// BuildGammaTable does (the engine allows gamma 1.8 to 3 and brightness 0 to 3, V_ValidateGammaCvars).
+function buildCurve(gamma, brightness, texgamma, lightgamma, overbright) {
   const f32 = Math.fround;
   const g1 = f32(1 / gamma), g2 = f32(g1 * texgamma);
   const g3 = f32(brightness <= 0 ? 0.125 : brightness <= 1 ? 0.125 - brightness * brightness * 0.075 : 0.05);
@@ -26,10 +32,11 @@ function buildCurve(gamma, brightness, texgamma, lightgamma) {
     f = f <= g3 ? f32((f / g3) * 0.125) : f32(((f - g3) / (1 - g3)) * 0.875 + 0.125);
     light[i] = Math.max(0, Math.min(1023, Math.trunc(Math.pow(f, g1) * 1023)));
   }
-  for (let i = 0; i < 256; i++) lm[i] = light[Math.min(1023, (i * 264 * 256) >> 14)] >> 2;
-  return { tex, light, lm, g1, g3, lightgamma };
+  const lightscale = overbright ? 256 : Math.trunc(Math.pow(2, f32(1 / lightgamma)) * 256 + 0.5);
+  for (let i = 0; i < 256; i++) lm[i] = light[Math.min(1023, (i * 264 * lightscale) >> 14)] >> 2;
+  return { tex, light, lm, g1, g3, lightgamma, bright: brightness > 1 ? brightness : 1, overbright: !!overbright, lightscale };
 }
-const CURVE = buildCurve(2.5, 1, 2, 2.5);
+const CURVE = buildCurve(3, 2, 2, 2.5, false); // up to 0.27.1 Valve's defaults with overbright, (2.5, 1, 2, 2.5, true)
 
 // A texture's colours through texgamma, as the game loads a Half-Life texture (LUMP_TEXGAMMA, Image_SetPalette in
 // Xash3D's imagelib): every world texture but the masked ones (names starting with {, fences and grates), water too,
@@ -130,7 +137,7 @@ const STUDIO_VS = `uniform float amb; uniform float shade; uniform vec3 lcol; un
   float curve(float illum) {
     float i = floor(min(illum, 255.0) * 4.0);
     if (i < 1.0) return 0.0;
-    float f = pow(i / 1023.0, ${CURVE.lightgamma.toFixed(1)});
+    float f = pow(i / 1023.0, ${CURVE.lightgamma.toFixed(1)}) * ${CURVE.bright.toFixed(1)};
     f = f <= ${CURVE.g3.toFixed(9)} ? f / ${CURVE.g3.toFixed(9)} * 0.125 : (f - ${CURVE.g3.toFixed(9)}) / ${(1 - CURVE.g3).toFixed(9)} * 0.875 + 0.125;
     return min(floor(pow(f, ${CURVE.g1.toFixed(9)}) * 1023.0), 1023.0) / 1023.0;
   }
