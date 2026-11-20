@@ -499,24 +499,44 @@ function derive() {
   // spectators: admins, casters and HLTV relays who never played a live round
   const specs = Object.keys(pl).filter((pid) => teamOf[pid] == null && pl[pid].occs.length);
 
-  const autoName = (g, i) => {
+  // The tag a team's players share, through the known teams, or null. Up to 20 letters since 0.27.4 (12 before, which cut
+  // "Frag eXecutors" to "Frag eXecuto"). It loses a short bracketed bit at its end and never keeps an unpaired bracket
+  // (Sujan, 20 Nov 2026): "SLOVENIA [o] shad" and "SLOVENIA [o] janFP~" share "SLOVENIA [o]", which read "SLOVENIA [o" up to
+  // 0.27.3 (the separators at the ends went, the "]" with them) and reads SLOVENIA. Only ( ) [ ] { } are brackets, so
+  // "roccat > Niko K. <NASU>" keeps roccat.
+  const cleanTag = (raw) => {
+    let s = raw.trim();
+    const cut = s.replace(/\s*[[({][^[\](){}]{0,4}[\])}][\s\W]*$/, ''); // a bracketed bit of 4 letters or fewer at its end
+    if (/[A-Za-z0-9]/.test(cut)) s = cut;
+    const open = [], close = [];
+    for (let i = 0; i < s.length; i++) { if ('[({'.includes(s[i])) open.push(i); else if (')]}'.includes(s[i])) { if (open.length) open.pop(); else close.push(i); } }
+    if (open.length) s = s.slice(0, open[0]); // an opening bracket with no closing one after it: cut there
+    const inner = close.filter((i) => i < s.length && /[A-Za-z0-9]/.test(s.slice(i + 1)));
+    if (inner.length) s = s.slice(inner[inner.length - 1] + 1); // a closing one with none before it and text after it: cut up to it
+    return s.replace(/^[\s\W]+|[\s\W]+$/g, '').trim();
+  };
+  const tagName = (g) => {
     const names = g.map((pid) => pl[pid].name);
     const tryAffix = (pre) => {
       const best = {};
-      for (const nm of names) for (let L = 3; L <= Math.min(12, nm.length - 1); L++) {
+      for (const nm of names) for (let L = 3; L <= Math.min(20, nm.length - 1); L++) {
         const a = pre ? nm.slice(0, L) : nm.slice(-L);
         best[a] = (best[a] || 0) + 1;
       }
       let top = null;
       for (const a in best) if (best[a] >= Math.max(3, Math.ceil(names.length * 0.6)) && (!top || a.length > top.length)) top = a;
-      return top ? top.replace(/^[\s\W]+|[\s\W]+$/g, '').trim() : null;
+      return top ? cleanTag(top) : null;
     };
     const a = tryAffix(true) || tryAffix(false);
-    return a && a.length >= 2 ? knownTeam(a) || a : 'Team ' + (i + 1);
+    if (!a || a.length < 2) return null;
+    // a tag holding a web address (a part ending in .se, .com, .net and the like) isn't a team's name: after the known teams
+    // ("@mymTw.com" reads mTw), the file name's team takes its place (Sujan, 20 Nov 2026: dAT team's "dt.REASPEL.se", IOL
+    // Final4 2011, reads Dateam, as up to 0.27.3)
+    return knownTeam(a) || (WEB_ADDRESS.test(a) ? null : a);
   };
   const saved = ls.get('names:' + demoKey()) || [];
   const fromFile = teamsFromFileName(D.fileName, teams.map((g) => g.map((pid) => pl[pid].name)));
-  // the admin's text, after the file name and before the clan tags (Sujan, 8 Nov 2026): ESWC's AdminBot names both teams
+  // the admin's text (Sujan, 8 Nov 2026; after the tags and the file name since 0.27.4): ESWC's AdminBot names both teams
   // with their sides, "1st Warmup - Fnatic(CT) vs mousesports(T)", so the team with most players on CT then is the one
   // it names CT. Its names go through the known teams ("Navi" reads Natus Vincere, "mTw.dk" mTw).
   const fromAdmin = (() => {
@@ -532,8 +552,10 @@ function derive() {
     }
     return [null, null];
   })();
-  const named = fromFile[0] && fromFile[1] ? fromFile : fromAdmin[0] && fromAdmin[1] ? fromAdmin : [null, null];
-  const tnames = [saved[0] || named[0] || autoName(teams[0], 0), saved[1] || named[1] || autoName(teams[1], 1)];
+  // Each team's name (Sujan, 20 Nov 2026; up to 0.27.3 the file name came first, then the admin's text, then the tags): the
+  // tag its players share, through the known teams; else the file name's team; else the admin's text; else Team 1 or Team 2.
+  // A name typed in the header (saved) comes before them all.
+  const tnames = [0, 1].map((i) => saved[i] || tagName(teams[i]) || fromFile[i] || fromAdmin[i] || 'Team ' + (i + 1));
 
   // per round: which team was T; winner team; running score
   let sc, played, after16, wonAt;

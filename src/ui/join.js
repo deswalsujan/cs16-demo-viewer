@@ -6,12 +6,20 @@ const MON = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct
 // "1110231216--auto_..." the same form, "2006-07-02_15h00_..." another. HLTV's comes first: the three parts of Na`Vi vs SK,
 // Inferno, ESWC 2011 all start "2011-10-24_16h08_NaVi_SK-", and only their 1609, 1724 and 1740 put them in order (Sujan,
 // 7 Nov 2026; the Join card suggested 1609, 1740, 1724 up to 0.26.18). Names like FX-vs-sk-iem5-inf.dem have none.
+// Since 0.27.4 also the names the game's auto-record plugins give POV demos on public servers (all 83 test demo names checked,
+// tests/logs/0.27.4.md): "…_27-03-2025_15.10.23" (day, month, year, then the time), "…_00-23-35_28-07-2022" (the time, then
+// the day), "…_D-[08_24_2021]_T-[00_44]" (month, day and year, then the time), read as 0.27.3 read none of them.
 function fileTime(name) {
+  const at = (y, mo, d, h, mi) => (mo >= 1 && mo <= 12 && d >= 1 && d <= 31 && h < 24 && mi < 60 ? Date.UTC(y, mo - 1, d, h, mi) : null);
   for (const m of name.matchAll(/(?:^|\D)(\d\d)(\d\d)(\d\d)(\d\d)(\d\d)(?=\D|$)/g)) {
-    if (+m[2] >= 1 && +m[2] <= 12 && +m[3] >= 1 && +m[3] <= 31 && +m[4] < 24 && +m[5] < 60) return Date.UTC(2000 + +m[1], +m[2] - 1, +m[3], +m[4], +m[5]);
+    const t = at(2000 + +m[1], +m[2], +m[3], +m[4], +m[5]); if (t != null) return t;
   }
-  const m = /(\d{4})-(\d\d)-(\d\d)_(\d\d)h(\d\d)/.exec(name);
-  return m ? Date.UTC(+m[1], +m[2] - 1, +m[3], +m[4], +m[5]) : null;
+  let m = /(\d{4})-(\d\d)-(\d\d)_(\d\d)h(\d\d)/.exec(name);
+  if (m) return at(+m[1], +m[2], +m[3], +m[4], +m[5]);
+  if ((m = /(?:^|\D)(\d\d)-(\d\d)-(\d{4})_(\d\d)\.(\d\d)/.exec(name))) return at(+m[3], +m[2], +m[1], +m[4], +m[5]);
+  if ((m = /(?:^|\D)(\d\d)-(\d\d)-\d\d_(\d\d)-(\d\d)-(\d{4})(?=\D|$)/.exec(name))) return at(+m[5], +m[4], +m[3], +m[1], +m[2]);
+  if ((m = /D-\[(\d\d)_(\d\d)_(\d{4})\]_T-\[(\d\d)_(\d\d)\]/.exec(name))) return at(+m[3], +m[1], +m[2], +m[4], +m[5]);
+  return null;
 }
 const hhmm = (d) => String(d.getUTCHours()).padStart(2, '0') + ':' + String(d.getUTCMinutes()).padStart(2, '0');
 const dayOf = (d) => `${d.getUTCDate()} ${MON[d.getUTCMonth()]} ${d.getUTCFullYear()}`;

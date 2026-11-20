@@ -2,7 +2,9 @@
 
 tests/expected/ holds one file per demo, named by the demo's file name without .dem: its SHA-256, event, map, the
 expected score and live rounds, the K-D numbers Sujan confirmed, and kills with round, timer, killer, victim, gun and
-expected (strict, loose, loose-damage, none, or wallbang: strict or loose of either kind), each with its source. A
+expected (strict, loose, loose-damage, none, wallbang: strict or loose of either kind, or partial: loose of either kind,
+since 0.27.4), each with its source; and "rows", the Wallbangs tab's Wall damage rows by round and victim, "none" for
+no such row (0.27.4; WeMadeFox vs ATE Gaming, Dust2, MSI Beat IT! 2010, R20, bAiL). A
 joined map's numbers sit under "joined" in its first part's file; numbers with Count them on, under "count_them" (a
 joined map's under "joined", "count_them"; 7 Nov 2026). A score can name its halves ("halves": ["9:6", "8:7"]; a half
 cut short by the end of the match counts up to its last round) and the file the team names ("teams": ["BAJRANG",
@@ -26,7 +28,8 @@ from concurrent.futures import ThreadPoolExecutor
 import demo_dirs
 
 here = os.path.dirname(os.path.abspath(__file__))
-LEVELS = {'strict', 'loose', 'loose-damage', 'none', 'wallbang'}
+LEVELS = {'strict', 'loose', 'loose-damage', 'none', 'wallbang', 'partial'}
+ROW_LEVELS = {'none', 'row'}
 MAX_SKIPPED = 3  # more skipped expected files than this fails the run (Sujan, 1 Nov 2026)
 
 
@@ -131,6 +134,9 @@ def main():
         bad = [k for k in w['kills'] if k['expected'] not in LEVELS or not k.get('source')]
         if bad:
             sys.exit(f"{w['demo']}: a kill with an unknown expected value or no source: {bad[0]}")
+        bad = [r for r in w.get('rows', []) if r['expected'] not in ROW_LEVELS or not r.get('source')]
+        if bad:
+            sys.exit(f"{w['demo']}: a Wall damage row with an unknown expected value or no source: {bad[0]}")
 
     found = {}
     for p in inside + outside:
@@ -205,11 +211,18 @@ def main():
                 diff.append(f"timer: expected {e['timer']}, got {k['timer']}")
             if e.get('gun') and e['gun'] != k['gun']:
                 diff.append(f"gun: expected {e['gun']}, got {k['gun']}")
-            ok = k['tag'] in ('strict', 'loose', 'loose-damage') if e['expected'] == 'wallbang' else k['tag'] == e['expected']
+            ok = (k['tag'] in ('strict', 'loose', 'loose-damage') if e['expected'] == 'wallbang'
+                  else k['tag'] in ('loose', 'loose-damage') if e['expected'] == 'partial' else k['tag'] == e['expected'])
             if not ok:
                 diff.append(f"expected {e['expected']}, got {k['tag']}")
             if diff:
                 (gaps if e.get('known_gap') and ok is False and len(diff) == 1 else fails).append(f"{at}: {'; '.join(diff)}")
+        for e in w.get('rows', []):
+            count['kills'] += 1
+            c = [r for r in got.get('rows', []) if r['round'] == e['round'] and r['victim'] == e['victim']]
+            if (e['expected'] == 'none') != (not c):
+                fails.append(f"{label}, R{e['round']}, a Wall damage row on {e['victim']}: expected {e['expected']}, got "
+                             + (', '.join(f"{r['timer']} {r['total']} HP by {r['shooter']}" for r in c) or 'none'))
 
     for n in notes:
         print('NOTE', n)

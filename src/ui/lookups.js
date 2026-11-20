@@ -211,15 +211,25 @@ const KNOWN_TEAMS = {
   // (the spelling of Wikipedia's page; Liquipedia writes Meet Your Makers); Sweden's tag at ASUS ENC 2010 (Liquipedia's
   // ENC 2010 page: Sweden); eSahara as EsportsEarnings and GosuGamers write it
   meet: 'MeetYourMakers', swiiiiideeeen: 'Sweden', esahara: 'eSahara',
+  // Sujan, 20 Nov 2026, with the shared tag first: mTw's players wrote "@mymTw.com" (FX vs mTw, Xperia Play 2011), SK's
+  // "SKWEDEN" at WCG 2008 (SK vs eSTRO), ATE Gaming's "A+e.gaming |" (WeMadeFox vs ATE Gaming, Dust2, MSI Beat IT! 2010)
+  mymtw: 'mTw', skweden: 'SK Gaming', aegaming: 'ATE Gaming',
 };
 const norm = (x) => (x || '').toLowerCase().replace(/[^a-z0-9]/g, '');
-// A shared clan tag looked up in the known teams: the whole tag first, then its first part,
-// so "SK.SWE.AMD" and "SK Gaming |" read as SK Gaming and "fnatic.MSI" as fnatic. Unknown tags stay as written.
+// a web address in a clan tag: a part ending in a dot and a top-level domain ("dt.REASPEL.se", "mymTw.com"); such a tag isn't
+// taken as a team's name unless it's a known team's (Sujan, 20 Nov 2026; tagName in src/ui/match.js)
+const WEB_ADDRESS = /[A-Za-z0-9-]\.(com|net|org|info|biz|eu|tv|gg|de|dk|se|no|fi|is|ru|ua|by|kz|pl|cz|sk|hu|ro|bg|lt|lv|ee|nl|be|fr|uk|ie|it|es|pt|at|ch|gr|tr|il|cn|kr|jp|us|ca|au|nz|br|ar)(?![A-Za-z0-9])/i;
+// A shared clan tag looked up in the known teams: the whole tag first, then each of its parts, the first part first, so
+// "SK.SWE.AMD" and "SK Gaming |" read as SK Gaming, "fnatic.MSI" as fnatic and "KOREA.eSTRO" as eSTRO (any part since 0.27.4,
+// the first only up to 0.27.3); then a known team's name of 4 letters or more that the tag starts with, the longest, so
+// "fnaticMSI" and "fnaticRC" read as fnatic and "mymTw.com" as mTw (Sujan, 20 Nov 2026). Unknown tags stay as written.
 function knownTeam(tag) {
   const whole = norm(tag);
   if (KNOWN_TEAMS[whole]) return KNOWN_TEAMS[whole];
-  const first = norm((tag || '').split(/[^A-Za-z0-9]+/).find((w) => w) || '');
-  return first && KNOWN_TEAMS[first] || null;
+  for (const w of (tag || '').split(/[^A-Za-z0-9]+/)) { const n = norm(w); if (n && KNOWN_TEAMS[n]) return KNOWN_TEAMS[n]; }
+  let best = null;
+  for (const k in KNOWN_TEAMS) if (KNOWN_TEAMS[k] && k.length >= 4 && whole.startsWith(k) && (!best || k.length > best.length)) best = k;
+  return best ? KNOWN_TEAMS[best] : null;
 }
 const EVENT_WORDS = /^(final|finals|grand|semi|semifinal|quarter|group|bo\d|map\d?|match|part\d?|half\d?|de|cs|auto|hltv|demo|lan|online|playoff|playoffs|upper|lower|round|day\d?)$/i;
 function teamsFromFileName(file, rosters) {

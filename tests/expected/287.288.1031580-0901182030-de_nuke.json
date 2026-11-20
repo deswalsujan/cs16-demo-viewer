@@ -1,0 +1,23 @@
+{
+ "demo": "287.288.1031580-0901182030-de_nuke.dem",
+ "sha256": "9714db32359fc9feed92455019caa4509683a4f5eb72e53a188408bc2a57d73a",
+ "match": "BIH vs SLOVENIA, Nuke, 18 Jan 2009",
+ "event": "probably ClanBase NationsCup XII (a \"[NC] MasterC\" spectator, ClanBase's file name layout; Sujan, 20 Nov 2026); 18 Jan 2009 at 20:30 by the file name",
+ "map": "de_nuke",
+ "teams": [
+  "BIH",
+  "SLOVENIA"
+ ],
+ "teams_source": "Sujan's team-name rule of 20 Nov 2026 (the tag the players share first, through the known teams; DECISIONS.md), his names for this demo",
+ "kills": [
+  {
+   "round": 9,
+   "timer": "1:24",
+   "killer": "SLOVENIA [o] shad",
+   "victim": "BIH ' prophe7",
+   "gun": "m4a1",
+   "expected": "strict",
+   "source": "Sujan, 20 Nov 2026, by eye: a full wallbang, none of prophe7 in view (tests/logs/new-demos-feedback-2026-11-20.md, A2); LOOSE up to 0.27.3 from snaroGOD's hit in the open 0.09 s before (fixed in 0.27.4, F2)"
+  }
+ ]
+}

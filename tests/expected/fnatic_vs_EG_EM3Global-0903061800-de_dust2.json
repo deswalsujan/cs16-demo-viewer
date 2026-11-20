@@ -23,5 +23,15 @@
    }
   ]
  },
- "kills": []
+ "kills": [
+  {
+   "round": 22,
+   "timer": "1:44",
+   "killer": "fnatic.MSI Gux^turtlepower",
+   "victim": "EG.Warden[A]",
+   "gun": "ak47",
+   "expected": "partial",
+   "source": "Sujan, 20 Nov 2026, in his game: a partial wallbang, one of three of the kills F1b adds that he checked (tests/logs/new-demos-feedback-2026-11-20.md, A); none up to 0.27.3, loose by damage since 0.27.4"
+  }
+ ]
 }

@@ -4,6 +4,7 @@ What changed in the viewer, newest first. The version shows in the viewer's **He
 
 ## Versions
 
+- [0.27.4](#0274-2026-11-20) 2026-11-20: New demos' fixes, team names, dates
 - [0.27.3](#0273-2026-11-20) 2026-11-20: Several demos picked, 0:0 warning
 - [0.27.2](#0272-2026-11-20) 2026-11-20: POV radar, C4, sky, light
 - [0.27.1](#0271-2026-11-20) 2026-11-20: One person on one slot
@@ -90,6 +91,36 @@ What changed in the viewer, newest first. The version shows in the viewer's **He
 - [0.3.0](#030-2026-09-30) 2026-09-30: First-person weapons
 - [0.2.0](#020-2026-09-30) 2026-09-30: Real models and sound
 - [0.1.0](#010-before-2026-09-30) before 2026-09-30: First version: radar, 3D, kills
+
+## 0.27.4 (2026-11-20)
+
+Sujan's answers of 20 Nov 2026 on the new-demos report (`tests/logs/new-demos-feedback-2026-11-20.md`; `DECISIONS.md`; IDEAS-ARCHIVE.md, **Sujan's feedback of 20 Nov 2026 on four new demos**), built on `wip/new-demos-fixes` from origin/main (0.27.3) with `notes/new-demos-feedback` folded in, with screenshots instead of a mockup.
+
+### Fixed
+- F1b: a kill whose recorded aim at the shot is clear, with part of the victim in view and the line to his middle through cover, goes to the damage rule when the aim one snapshot before (0.16 s or less) went through cover with its end within 24 units of his middle; a bullet of the killer's that only a surface explains, 0.5 s or less before, makes it **Partial wallbang**. bartZi on Edward (Na`Vi vs WinFakt, Train, ESWC 2011, R8 1:29) and 17 more kills on the test demos, three of which Sujan checked in his game, all partial.
+- F2: the full-damage-in-the-open rule of 0.26.22 leaves out a hit the hit finder pinned on another shooter. shad on prophe7 (BIH vs SLOVENIA, Nuke, 18 Jan 2009, R9 1:24) reads **Wallbang**, where his teammate snaroGOD's hit 0.09 s before made it partial; so does zonic on dennis (mTw vs Lions, Nuke, DreamHack Summer 2011, R8 1:07).
+- F3b: in a demo that loses fire events, an enemy aiming at the victim with a pistol, SMG or shotgun competes for a hit, and a hit pinned on him is in the open. bAiL's **Wall damage** row of 46 (WeMadeFox vs ATE Gaming, Dust2, MSI Beat IT! 2010, R20 1:14) goes, its six hits WUZZ's USP's. On the test demos 3 Wall damage rows go and two wallbang kills lose earlier hits, as measured; the MP5, which the measured version left out by its model's name (p_mp5), competes too, measured on its own on the 83 demos at Sujan's request: no label and no Wall damage row changes, and one kill's details gain the killer's own two MP5 hits (Storm on cArn, fnatic vs EG, Dust2, EM3 Global Finals 2009, R17 1:33: 20, 20, then the killing 10, where the killing bullet stood alone).
+- Kill details' **Jump to this kill** and each bullet's jump pause 0.1 s later in 3D, so the paused picture is the shot itself (the 3D view runs 0.1 s behind the kill feed): at FLEX0R's kill on R!Go- (Team Belgium vs France, Tuscan, ClanBase NationsCup XII, R21 0:39) R!Go- is behind the crate's edge, where up to 0.27.3 the jump showed him in the open 0.07 s before the shot. In 2D, 0.03 s after it as before.
+- The name bar, the 3D labels and **POV mode**'s spectator bar read health at the moment itself, with the kill feed and the radar: FLEX0R (88) at that kill, as in Sujan's game (100 up to 0.27.3, the 3D view's time).
+- The recording time in the POV demos' auto-record names (`fileTime`): "…_27-03-2025_15.10.23", "…_00-23-35_28-07-2022" and "…_D-[08_24_2021]_T-[00_44]" read, none up to 0.27.3; every HLTV name reads as before, so no HLTV map's Join card order changes. The Join card's order from the names and its 6-hour window for other parts now apply to those POV demos.
+
+### Changed
+- Team names (Sujan's rule of 20 Nov 2026): the tag a team's players share first, through the known teams (the whole tag, any part of it, or a known team's name of 4 letters or more it starts with), then the file name's team, the admin's text, Team 1 and Team 2; a tag up to 20 letters (12 before), losing a short bracketed bit at its end and never keeping an unpaired bracket; mymtw, skweden and aegaming added to the known teams; a tag holding a web address (a part ending in .se, .com, .net and the like) isn't a team's name unless it's a known team's, the file name's team taking its place. 8 of the 90 headers of the test demos and joined maps change: Na`Vi vs WinFakt's Winfast reads WinFakt, BIH vs SLOVENIA's "SLOVENIA [o" SLOVENIA, WeMadeFox vs ATE Gaming's ATE Beatit ATE Gaming, fnatic vs mousesports, Forge, IEM6 Guangzhou's fnaticMSI fnatic (both files and the joined map), Burning vs FairFrag's FAIRFRAG and Burning FAiRFRAG and BURNING, k1ck vs eq's K1ck and EQ (the file name's) K1CK and Eq (the players' "K1CK" and "-Eq-"). SK vs dAT team keeps Dateam, its tag "dt.REASPEL.se" being a web address.
+- The demo list: each row shows the date from its name, or the file's date in grey with the tooltip "The file's date: its name has no recording time" (the file's date on every row up to 0.27.3); the heading reads "YOUR DEMOS · newest added first"; the search matches the date too ("2011", "oct 2011", "23 oct 2011"), its box's example "oct 2011", and its no-match line says "names or dates".
+
+### Added
+- The four new demos are test demos (Sujan, 20 Nov 2026): Na`Vi vs WinFakt, Train, ESWC 2011; BIH vs SLOVENIA, Nuke, probably ClanBase NationsCup XII; WeMadeFox vs ATE Gaming, Dust2, MSI Beat IT! 2010; Team Belgium vs France, Tuscan, ClanBase NationsCup XII. Their four kills and the three F1b kills Sujan checked are in `tests/expected/`, with the four headers; `ground_truth_check.py` takes `partial` (either loose) and **Wall damage** rows (`rows`).
+
+### How it was tested
+- `ground_truth_check.py` on the 7 changed expected files: all pass; on 0.27.3, 6 fail (the kills, bAiL's row, three headers). `demo_search_check.py`'s 18 new steps (the dates, the search by date, the jump, the name bar): all pass, 13 failing on 0.27.3.
+- Every team header worked out by the built code from the measurement's rosters, and `fileTime` on all 83 demo names, before and after.
+- The nine release checks pass on the release commit (`ground_truth_check.py`: 240 kills and 51 scores and K-D on 60 demos, 0 mismatches; `people_check.py` 89 of 89).
+- Full log: `tests/logs/0.27.4.md`; screenshots on `screenshots/0.27.4`.
+
+### Discussed, not changed
+- F1 without the snapshot before (74 kills added) and F3 in demos that keep fire events (two of Sujan's confirmed answers changed): not built (`tests/logs/new-demos-feedback-2026-11-20.md`).
+- The 3D view still runs 0.1 s behind the kill feed while playing, and the labels judge the moment of the shot only (Sujan, 20 Nov 2026).
+- A spreadsheet of the players' settings, made on Sujan's go (`tests/logs/player-settings-2026-11-20.md`; the file outside the repo): nothing in the viewer until he decides.
 
 ## 0.27.3 (2026-11-20)
 

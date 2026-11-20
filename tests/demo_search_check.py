@@ -19,7 +19,7 @@ the Rounds tab's replayed rounds; the order the card suggests for Na`Vi vs SK, I
 Na`Vi: ↑ and ↓ for the next and previous player, Z and X for rounds, in 2D, 3D and split, a focused side panel left where it
 was, the shortcuts list and tooltips; the Join card's line when the folder holds no other demo (0.26.20). The match rules: the rounds before both teams were
 full on compLexity vs WeMadeFox, Nuke, IEM4; the rounds after 16 counted by themselves on SK vs Na`Vi, Dust2, IEM4, Stop at
-16 kept, Count them; the admin's team names on Burning vs FairFrag, Inferno, ESWC 2010 (0.26.21). The wallbang finder on SK vs Na`Vi,
+16 kept, Count them; the team names on Burning vs FairFrag, Inferno, ESWC 2010 (0.26.21; the players' tags since 0.27.4). The wallbang finder on SK vs Na`Vi,
 Dust2, IEM4: Edward-FoCuS on Gux LOOSE, RobbaN's AWP leg hit on Zeus no damage row, a teamkill out of the Wallbangs list
 with the TK tag (0.26.22). The dialogs: the can't-play card's buttons, the shortcuts list's ×, the Join card's footer,
 View settings at the largest Interface size (0.26.23). dsn's AWP leg hit on Edward-FoCuS under the train car, Na`Vi vs fnatic,
@@ -35,8 +35,11 @@ speed button's "Speed 1×" (item 8); the Wallbangs tab's one dropdown with the c
 shown, and the picture check's line under it (item 3). The Join batch (0.27.3): up to 5 demos picked at once in Open .dem from
 elsewhere and in the Join card, 6 refused with one line, a stray demo among them refused, and the warning for a part that
 starts from 0:0 on a cut-short copy of Na`Vi vs SK, Inferno, ESWC 2011's first part, made in a temporary folder, and none on
-three maps where a new half or overtime restarted from 0:0. About two and a
-half minutes (7 under heavy load, 17 Nov 2026), plus about a minute for the Join batch.
+three maps where a new half or overtime restarted from 0:0. The demo list's dates (0.27.4): each row's date from its name or the
+file's date in grey with its tooltip, the heading's order, the search by date ("2011", "oct 2011", "23 oct 2011"), checked against
+a Python reading of the names and the files' dates; Team Belgium vs France, Tuscan, ClanBase NationsCup XII, R21 0:39: kill
+details' Jump to this kill on the shot itself in 3D, and the name bar's FLEX0R (88). About two and a half minutes (7 under heavy
+load, 17 Nov 2026), plus about a minute for the Join batch and one for 0.27.4's checks.
 """
 import os, re, sys, http.server, functools, threading, tempfile, shutil, subprocess, atexit
 from playwright.sync_api import sync_playwright
@@ -84,12 +87,64 @@ with sync_playwright() as p:
     pg.fill('#demoQ', 'sk train')
     if shot: pg.locator('.load-card').screenshot(path=shot)
     pg.fill('#demoQ', 'zzzz')
-    check('no match: the list says so', 'No demo names contain "zzzz"' in pg.inner_text('#demoList'))
+    check('no match: the list says so', 'No demo names or dates contain "zzzz"' in pg.inner_text('#demoList'))
     pg.press('#demoQ', 'Escape')
     check('Esc clears the search and brings back the full list', pg.input_value('#demoQ') == '' and len(rows()) == len(names))
     check('Esc in the box does not open the shortcuts list', pg.locator('#keys').is_hidden())
     pg.fill('#demoQ', 'tu'); pg.click('#demoQx')
     check('Clear empties the box and brings back the full list', pg.input_value('#demoQ') == '' and len(rows()) == len(names) and pg.locator('#demoQx').is_hidden())
+    # The dates (0.27.4; Sujan, 20 Nov 2026): each row shows the date from its name, or the file's date in grey with a
+    # tooltip; the heading says the order; the search matches the date. The expected rows come from a Python reading of the
+    # names (the formats fileTime reads, src/ui/join.js) and the files' own dates, not from the page's code.
+    import datetime
+    MON = ['jan', 'feb', 'mar', 'apr', 'may', 'jun', 'jul', 'aug', 'sep', 'oct', 'nov', 'dec']
+    MONTHS = ['january', 'february', 'march', 'april', 'may', 'june', 'july', 'august', 'september', 'october', 'november', 'december']
+    def name_date(n):
+        ok = lambda y, mo, d, h, mi: (y, mo, d) if 1 <= mo <= 12 and 1 <= d <= 31 and h < 24 and mi < 60 else None
+        for m in re.finditer(r'(?:^|\D)(\d\d)(\d\d)(\d\d)(\d\d)(\d\d)(?=\D|$)', n):
+            r = ok(2000 + int(m[1]), int(m[2]), int(m[3]), int(m[4]), int(m[5]))
+            if r: return r
+        for rx, order in [(r'(\d{4})-(\d\d)-(\d\d)_(\d\d)h(\d\d)', (1, 2, 3, 4, 5)), (r'(?:^|\D)(\d\d)-(\d\d)-(\d{4})_(\d\d)\.(\d\d)', (3, 2, 1, 4, 5)),
+                          (r'(?:^|\D)(\d\d)-(\d\d)-\d\d_(\d\d)-(\d\d)-(\d{4})(?=\D|$)', (5, 4, 3, 1, 2)), (r'D-\[(\d\d)_(\d\d)_(\d{4})\]_T-\[(\d\d)_(\d\d)\]', (3, 1, 2, 4, 5))]:
+            m = re.search(rx, n)
+            if m: return ok(*(int(m[i]) for i in order))
+        return None
+    paths = {os.path.basename(p): p for p in demo_dirs.dems(HL)}
+    def row_date(n):
+        nd = name_date(n)
+        if nd: return nd + (True,)
+        t = datetime.datetime.fromtimestamp(os.stat(paths[n]).st_mtime)
+        return (t.year, t.month, t.day, False)
+    def date_hit(w, dd):
+        if re.fullmatch(r'\d{1,2}', w): return int(w) == dd[2]
+        if re.fullmatch(r'\d{4}', w): return int(w) == dd[0]
+        return len(w) >= 3 and MONTHS[dd[1] - 1].startswith(w)
+    pg.fill('#demoQ', '')
+    check('the heading reads "YOUR DEMOS · newest added first"', pg.inner_text('#demoFind .dhead span').replace('\n', ' ').strip() == 'YOUR DEMOS · newest added first', pg.inner_text('#demoFind .dhead span'))
+    shown = pg.eval_on_selector_all('#demoList button', 'els => els.map((b) => { const s = b.querySelector("span"); return [b.querySelector("em").textContent, s.className, s.textContent, s.title]; })')
+    bad = [r for r in shown if (lambda dd: r[1] != ('ndate' if dd[3] else 'fdate') or r[2] != f"{dd[2]} {MON[dd[1] - 1].title()} {dd[0]}"
+                                 or r[3] != ('' if dd[3] else "The file's date: its name has no recording time"))(row_date(r[0]))]
+    check(f'every row shows the date from its name, or the file\'s date in grey with the tooltip ({sum(1 for r in shown if r[1] == "ndate")} from names, {sum(1 for r in shown if r[1] == "fdate")} files\' dates)', not bad and len(shown) == len(names), '; '.join(' '.join(x for x in r[:3]) for r in bad[:4]))
+    want_named = {'1110231221--auto_de_train.dem_navi-vs-winfast.dem': '23 Oct 2011', 'match-3_css_cache_00-23-35_28-07-2022.dem': '28 Jul 2022',
+                  'match-4-[PuB]_M-[de_nuke32]_D-[08_24_2021]_T-[00_44].dem': '24 Aug 2021', 'match-1_de_barcelona-Cts_27-03-2025_15.10.23.dem': '27 Mar 2025'}
+    got_named = {r[0]: r[2] for r in shown if r[1] == 'ndate'}
+    check('names read: 23 Oct 2011 (HLTV), 28 Jul 2022, 24 Aug 2021 and 27 Mar 2025 (POV demos, read since 0.27.4)', all(got_named.get(n) == d for n, d in want_named.items() if n in names), str({n: got_named.get(n) for n in want_named}))
+    check('FX vs SK, Inferno, IEM5 (no time in its name): the file\'s date, grey', any(r[0] == 'FX-vs-sk-iem5-inf.dem' and r[1] == 'fdate' for r in shown) or 'FX-vs-sk-iem5-inf.dem' not in names)
+    order = pg.eval_on_selector_all('#demoList button em', 'els => els.map((e) => e.textContent)')
+    mt = [os.stat(paths[n]).st_mtime for n in order]
+    check('the list keeps its order, newest added first (by the file\'s date, whatever date a row shows)', len(order) == len(names) and all(mt[i] >= mt[i + 1] - 1 for i in range(len(mt) - 1)))
+    for q in ['2011', 'oct 2011', '23 oct 2011', 'october', 'navi 2010', 'jul 2022']:
+        pg.fill('#demoQ', q)
+        words = q.lower().split()
+        want = [n for n in names if all(w in n.lower() or date_hit(w, row_date(n)) for w in words)]
+        got = rows()
+        check(f'"{q}": the demos whose name or date has every word', sorted(got) == sorted(want) and len(want) > 0, f'{len(got)} shown, {len(want)} expected')
+        if q == '23 oct 2011':
+            check('"23 oct 2011": both ESWC 2011 demos of 23 Oct 2011 (fnatic vs mousesports, Tuscan; Na`Vi vs WinFakt, Train)',
+                  {'1110231216--auto_de_tuscan.dem_Fnatic-vs-mousesports.dem', '1110231221--auto_de_train.dem_navi-vs-winfast.dem'} <= set(got), ', '.join(got))
+            mk = dict(pg.eval_on_selector_all('#demoList button', 'els => els.map((b) => [b.querySelector("em").textContent, [...b.querySelector("span").querySelectorAll("mark")].map((m) => m.textContent)])'))
+            check('"23 oct 2011": the day, month and year highlighted in those rows\' dates', mk.get('1110231221--auto_de_train.dem_navi-vs-winfast.dem') == ['23', 'Oct', '2011'], str(mk.get('1110231221--auto_de_train.dem_navi-vs-winfast.dem')))
+    pg.fill('#demoQ', '')
     # one row only: "sk train" also matches SK vs eSTRO's 13-second warmup files (WCG 2008) since the test demos joined
     pg.fill('#demoQ', 'sk navi train')
     check('"sk navi train": one row, SK vs Na`Vi, Train, DreamHack Winter 2011', rows() == ['sk-vs-navi-dhwinter2011-1111261019-de_train.dem'], ', '.join(rows()))
@@ -185,7 +240,9 @@ with sync_playwright() as p:
                 'Estimated from the damage: the demo says only head or body', '−12 HS: the health the victim had left.']
         check('kill details: the picked kill in the Kills list opens to one line per bullet, the "Earlier:" line and the order of the demo', kd['kills'] == want, ' | '.join(kd['kills'] or ['no box']))
         check('kill details: the same in the Wallbangs list', kd['wb'] == want, ' | '.join(kd['wb'] or ['no box']))
-        check("kill details: a bullet's line jumps playback to it, paused, through the killer's eyes", kd['jump'] == {'t': 2790.07, 'paused': True, 'eyes': True}, str(kd['jump']))
+        # in 3D the jump lands the 3D view's 0.1 s later than the bullet plus 0.03 s, so the paused picture is the bullet's own
+        # moment (0.27.4; Sujan, 20 Nov 2026): 2790.07 up to 0.27.3
+        check("kill details: a bullet's line jumps playback to it, paused, through the killer's eyes, the 3D picture on the bullet itself", kd['jump'] == {'t': 2790.17, 'paused': True, 'eyes': True}, str(kd['jump']))
         # a crossfire (Sujan, 3 Nov 2026, before merging #47): R23 1:18, edzie kills face with the FAMAS; face had lost 33 HP to
         # three grenades, and after edzie's −19 starix hit him for −21 and a −21 came the hit finder can't pin on anyone, before
         # edzie's last bullet took the 6 he had left. "Earlier:" counts every drop of his in the round that isn't one of edzie's
@@ -718,7 +775,8 @@ with sync_playwright() as p:
     # teams were first full read "teams not full yet" with Show warmup, restarts and idle rounds; SK vs Na`Vi, Dust2,
     # IEM4: the 6 rounds after SK reached 16 count by themselves (the teams played on to round 30), the Rounds tab and the
     # load summary say so, Stop at 16 holds after the demo is opened again, and Count them brings them back; Burning vs
-    # FairFrag, Inferno, ESWC 2010: the team names from the admin's "1st Warmup - FAIRFRAG(CT) vs Burning!(T)".
+    # FairFrag, Inferno, ESWC 2010: the team names, the players' shared tags FAiRFRAG and BURNING since 0.27.4 (Sujan's rule of
+    # 20 Nov 2026, the tag first; up to 0.27.3 the admin's "1st Warmup - FAIRFRAG(CT) vs Burning!(T)", read before the tags).
     # Scores are in tests/expected/ (ground_truth_check.py).
     CW, SN, BF = 'auto-1003030847-de_nuke.dem', 'auto-1003031508-de_dust2.dem', '2010-07-01_15h58_-1007021005-de_inferno Burning vs FairFrag.dem'
     ctx6 = b.new_context(viewport={'width': 1512, 'height': 982}); pg6 = ctx6.new_page()
@@ -756,7 +814,7 @@ with sync_playwright() as p:
         JS6("ls.set('count30:' + demoKey(), null)")
         open6(BF)
         t = JS6('M.tnames.slice()')
-        check('Burning vs FairFrag, ESWC 2010: the team names from the admin\'s text, FAIRFRAG on CT at the warmup (the tags read FAiRFRAG and BURNING)', t == ['FAIRFRAG', 'Burning'], str(t))
+        check('Burning vs FairFrag, ESWC 2010: the team names from the players\' tags, FAiRFRAG and BURNING, in their own capitals (the admin\'s FAIRFRAG and Burning up to 0.27.3)', t == ['FAiRFRAG', 'BURNING'], str(t))
         check('no page error on the match rules checks', not errs6, '; '.join(errs6[:3]))
     except Exception as e:
         check('the match rules: rounds before both teams were full, rounds after 16, the admin\'s team names', False, str(e).split('\n')[0])
@@ -1151,6 +1209,41 @@ with sync_playwright() as p:
     except Exception as e:
         check("the shot feedback: the gun flash, shells and blood puffs", False, str(e).split('\n')[0])
     ctx12.close()
+
+    # Team Belgium vs France, Tuscan, ClanBase NationsCup XII, R21 0:39, FLEX0R's AWP on R!Go- (0.27.4; Sujan, 20 Nov 2026), with
+    # its map: kill details' Jump to this kill pauses on the shot itself in 3D (the kill plus the 0.03 s, plus LAG3), where R!Go-
+    # is behind the crate (up to 0.27.3 0.03 s after the kill only, the 3D view 0.07 s before the shot, R!Go- in the open);
+    # in 2D the 0.03 s alone; the name bar reads FLEX0R (88), his health at the moment itself (100 up to 0.27.3, the 3D
+    # view's time). R!Go-'s AK-47 hit him through the crate in the kill's own snapshot.
+    BF = '37.49.1056874-0902051946-de_tuscan.dem'
+    ctx14 = b.new_context(viewport={'width': 1512, 'height': 982}); pg14 = ctx14.new_page()
+    pg14.route('**/three.min.js', lambda r: r.fulfill(path=os.environ.get('THREE_JS', os.path.join(here, '..', 'src', 'vendor', 'three.min.js')), content_type='application/javascript'))
+    errs14 = []; pg14.on('pageerror', lambda e: errs14.append(str(e).split('\n')[0]))
+    try:
+        if BF not in names: raise Exception(f'{BF} not found in HALF_LIFE_DIR or DEMO_DIRS')
+        pg14.goto(f'http://127.0.0.1:{srv.server_port}/{os.path.basename(hooked)}')
+        pg14.set_input_files('#fFolder', HL)
+        pg14.wait_for_function('__v("files.demos.length > 0")', timeout=30000)
+        JS14 = lambda c: pg14.evaluate('(c) => __v(c)', c)
+        JS14(f"loadDemoFile(files.demos.find((f) => f.name === {BF!r}))")
+        pg14.wait_for_function('__v("!!(D && M && MAP && R3 && view3.map === MAP.name && M.bursts)")', timeout=120000)
+        pg14.wait_for_function('__v("!M.seenPending && !D.kills.some((k) => k.wb && k.seenPx == null)")', timeout=120000); pg14.wait_for_timeout(500)
+        jump = lambda view: JS14(r"""(async () => { closeSummary(); setView('%s', false); const w = (ms) => new Promise((r) => setTimeout(r, ms));
+          const k = D.kills.find((x) => { const r = M.rounds.find((y) => y.n === x.round); return r && r.ln === 21 && killClock(x.t) === '0:39' && /FLEX0R/.test(nameAt(x.killer, x.t)); });
+          T = k.t - 2; playing = false; pickedKill = k; tab = 'kills'; renderPane(); await w(300);
+          const bs = [...document.querySelectorAll('.kdet .kb')], kb = bs[bs.length - 1]; kb.click(); await w(700);
+          return { title: kb.title, dt: +(T - k.t).toFixed(3), lag: LAG3, bar: $('pov').hidden ? null : $('pov').innerText.replace(/\s+/g, ' ').trim(), wb: k.wb ? (k.wb.loose ? 'loose' : 'strict') : null }; })()""" % view)
+        j3 = jump('3d')
+        check('Team Belgium vs France, Tuscan, R21 0:39: FLEX0R on R!Go- reads Wallbang, as Sujan saw it', j3['wb'] == 'strict', str(j3))
+        check("Jump to this kill in 3D: paused 0.03 s plus the 3D view's 0.1 s after the kill, so the 3D picture is the shot itself (0.03 s after only, up to 0.27.3)",
+              j3['title'] == 'Jump to this kill' and abs(j3['dt'] - 0.03 - j3['lag']) < 0.002, str(j3))
+        check('the name bar reads FLEX0R (88), his health at the moment itself (100 up to 0.27.3)', j3['bar'] is not None and 'FLEX0R (88)' in j3['bar'], str(j3['bar']))
+        j2 = jump('2d')
+        check('Jump to this kill in 2D: 0.03 s after the kill, the 2D map drawing the moment itself', abs(j2['dt'] - 0.03) < 0.002, str(j2))
+        check('no page error on the Team Belgium vs France checks', not errs14, '; '.join(errs14[:3]))
+    except Exception as e:
+        check('Team Belgium vs France: Jump to this kill and the name bar', False, str(e).split('\n')[0])
+    ctx14.close()
     b.close()
 print(f'{len(fails)} failed' if fails else 'all passed')
 sys.exit(1 if fails else 0)

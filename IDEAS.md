@@ -78,9 +78,13 @@ Sujan's checks by eye of merged builds, kept for one sitting that he runs when h
 - [ ] **Fixed light** (0.27.2): SK vs Na`Vi, Train, R4 1:30, **Behind player** on starix in the dark corner: off, he's dark; on, he's lit evenly and the walls stay as they were; **Hide all overlays** turns it off and gives it back.
 
 - [ ] Several demos picked at once (0.27.3), in Chrome, in the Mac's own file dialog: **Open .dem from elsewhere**, Cmd-click WeMadeFox vs Ravens' two files in `~/code/cs16-data/test-demos`: the Join card with 09:51 before 10:26 and no warning; Cmd-click six demos: nothing opens, and "Pick up to 5 demos at once. You picked 6." in orange under the demo list; with part 1 open, Rounds tab, **Join parts…**, **Demos from elsewhere…**: the same in the card, the line under the picker.
+- [ ] The demo list's dates (0.27.4), in Chrome: the Half-Life folder with a few demos in `cstrike` (clones of test demos, `tests/DEMOS.md` says how), one an HLTV name with a time (`1110231221--auto_de_train.dem_navi-vs-winfast.dem`: 23 Oct 2011), one a POV auto-record name (`match-3_css_cache_00-23-35_28-07-2022.dem`: 28 Jul 2022), one with none (`FX-vs-sk-iem5-inf.dem`): the first two dates in the normal text colour, the third the file's date in grey with "The file's date: its name has no recording time" on hover; the heading "YOUR DEMOS · newest added first"; searching "oct 2011" and "23 oct 2011" leaves the demos of that month and day, the date's parts highlighted.
+- [ ] The new demos' labels and headers (0.27.4), in Chrome, each with **Open .dem from elsewhere**: Na`Vi vs WinFakt, Train, ESWC 2011, Wallbangs tab: bartZi on Edward at R8 1:29 **Partial wallbang**, the header WinFakt; BIH vs SLOVENIA, Nuke (`287.288.1031580-0901182030-de_nuke.dem`), R9 1:24: shad on prophe7 **Wallbang**, the header SLOVENIA; WeMadeFox vs ATE Gaming, Dust2, MSI Beat IT! 2010, **Wall damage**: no row at R20 1:14 on bAiL, the header ATE Gaming; fnatic vs mousesports, Forge, IEM6 Guangzhou (`auto_ifng-1110042145-de_forge.dem`): the header fnatic, not fnaticMSI.
+- [ ] **Jump to this kill** and the name bar's health (0.27.4), in Chrome: Team Belgium vs France, Tuscan, ClanBase NationsCup XII (`37.49.1056874-0902051946-de_tuscan.dem`), 3D, Kills tab, FLEX0R's kill on R!Go- at R21 0:39, kill details' **Jump to this kill**: R!Go- behind the crate's right edge, the name bar under the view "FLEX0R (88)", as in the game.
 
 **Windows**
 - [ ] Several demos picked at once (0.27.3), in Chrome or Edge, in Windows' own file dialog: as on the Mac above, with Ctrl-click.
+- [ ] The demo list's dates (0.27.4), in Chrome or Edge on Windows: as on the Mac above, the dates in the same "23 Oct 2011" form and the grey date's tooltip.
 - [ ] The start screen on Windows (0.27.0), in Chrome or Edge: the "Windows:" path in a code-style box, its copy icon copying `C:\Program Files (x86)\Steam\steamapps\common\Half-Life`, no Cmd+Shift+G line; step 1's text lined up with step 2's; any demo: the bottom bar's group centred, **Help** at the right edge.
 - [ ] **POV mode** after Sujan's feedback of 11 Nov 2026 (0.26.30), in Chrome or Edge: the GP Tourney POV: his HUD and radar added onto the picture (R15 0:43, R11 1:26) and the flashbang whiteout at R10 1:33 (**Flashbang whiteout** ticked), as on the Mac.
 - [ ] **POV mode** after the POV mockup round (0.26.29), in Chrome or Edge: the GP Tourney POV of Team Guardians vs Lanka Dahan, Mirage, 25 Oct 2026: the HUD faint at rest and lighting up on a change, the hit arcs at R7 1:31, the plant bar at R11 0:29, the Tab scoreboard at R3 1:10, the ! on **See through walls**.
@@ -93,6 +97,17 @@ Sujan's checks by eye of merged builds, kept for one sitting that he runs when h
 ## Open follow-ups (checklist, updated 11 Nov 2026, 0.26.29)
 
 Everything raised in conversation that isn't finished, in one place. Each item says who does it. Ideas for new features are further down; this list is for loose ends.
+
+**Sujan's feedback of 20 Nov 2026 on four new demos** (Claude's report: `tests/logs/new-demos-feedback-2026-11-20.md`; pictures on `screenshots/new-demos-feedback`; Sujan's answers the same day, `DECISIONS.md`: built as 0.27.4 on `wip/new-demos-fixes`)
+- [ ] **Players' and the server's settings from the demo** (Sujan's question, 20 Nov 2026)
+  - Status: reported (the log, B): each player's userinfo (rate, cl_updaterate, cl_lw, cl_lc, cl_dlmax, model, colours, keys of their own), HLTV's own settings and its "ex_interp 0.15" line, the server cvar changes, the movement settings, pings and loss, the snapshot rate; cl_cmdrate, ex_interp, sensitivity and fps_max aren't in a demo.
+  - Next step: Sujan decides, after seeing the spreadsheet, whether and where the viewer shows them. Made on his go of 20 Nov 2026: `~/code/cs16-data/reports/player-settings-2026-11-20.xlsx` (outside the repo; sheets Players, Demos, Summary; 1,076 players in 83 demos; no password value anywhere), the findings in `tests/logs/player-settings-2026-11-20.md`: on LAN and in the online tournaments the same network settings (`rate` 25000 or 30000, `cl_updaterate` 101, `cl_lw` and `cl_lc` 1); LAN or online by each player's median ping alone (Sujan, 20 Nov 2026), with no disagreement with the events in `tests/DEMOS.md`.
+  - Decided so far: the demo doesn't set his ex_interp (Sujan, 20 Nov 2026; `DECISIONS.md`). A spreadsheet first, a report only, nothing in the viewer yet (Sujan, 20 Nov 2026; `DECISIONS.md`).
+- Done, in the archive (0.27.4, 20 Nov 2026): **Wallbang labels on four kills in the new demos**; its by-eye checks are in the **By-eye round**.
+- Done, in the archive (0.27.4, 20 Nov 2026): **The 3D view at a kill row's moment, and the name bar's health**; its by-eye checks are in the **By-eye round**.
+- Done, in the archive (0.27.4, 20 Nov 2026): **Team names, the shared tag first**; its by-eye checks are in the **By-eye round**.
+- Done, in the archive (0.27.4, 20 Nov 2026): **The four new demos**.
+- Done, in the archive (0.27.4, 20 Nov 2026): **The demo list's dates**; its by-eye checks are in the **By-eye round**.
 
 **Sujan's answers of 12 Nov 2026 on 0.26.31: the game's light** (his three confirmations in `DECISIONS.md`)
 - [ ] **Other light styles in 3D** (for later; Sujan, 12 Nov 2026)
@@ -114,10 +129,7 @@ Everything raised in conversation that isn't finished, in one place. Each item s
 
 **After wip/ui-simpler merges** (Sujan, 19 Nov 2026, judging the branch live; not built on it; `DECISIONS.md`)
 - Done, in the archive (0.27.2, 20 Nov 2026): **The 3D batch after wip/ui-simpler**; its by-eye checks are in the **By-eye round**.
-- [ ] **The Join batch after wip/ui-simpler**
-  - Status: items 1 and 3 built in 0.27.3 on `wip/join-batch` (20 Nov 2026), the 0:0 warning with the narrower rule after Sujan's answers of 20 Nov 2026 (`tests/logs/0.27.3.md`); item 2 not built, now **Parts ordered from inside the files** below. Its full text when items 1 and 3 were built is in the archive.
-  - Next step: Sujan merges the pull request from `wip/join-batch` (the nine release checks pass, `tests/logs/0.27.3.md`).
-  - Decided so far: both for after the merge (Sujan, 19 Nov 2026; `DECISIONS.md`). The 0:0 warning added, only a warning (Sujan, 20 Nov 2026; `DECISIONS.md`). Sujan's answers of 20 Nov 2026 on the report (`DECISIONS.md`): the narrower 0:0 warning, with its gap in `LIMITS.md`; item 2 not built; **Open .dem from elsewhere** stays, the card's **A file from elsewhere…** becomes **Demos from elsewhere…**; item 1's choices approved as built.
+- Done, in the archive (0.27.3, 20 Nov 2026): **The Join batch after wip/ui-simpler**; its by-eye checks are in the **By-eye round**.
 - [ ] **Parts ordered from inside the files** (for later, measured; Sujan, 20 Nov 2026): the spawn count and HLTV's clock on every split test map, and the rule proposed, in `tests/logs/join-order-from-files-2026-11-20.md`; not built, since every split test map has recording times in its names and a server restart can make counts look consecutive in the wrong order (`DECISIONS.md`).
 
 **Seen while building 0.27.3** (20 Nov 2026; for later)
