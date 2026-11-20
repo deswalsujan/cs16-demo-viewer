@@ -388,7 +388,8 @@ kbd { font-family: var(--f-body); font-size: calc(11px * var(--ui)); background:
 .jpick .jnone { flex: 1 1 calc(260px * var(--ui)); min-width: 0; }
 /* more than 5 demos picked at once: the line under the picker (the Join batch) */
 .jpick .jmsg { flex: 1 0 100%; margin: 0; color: var(--kill); }
-.jpick select { flex: 1 1 calc(260px * var(--ui)); min-width: 0; background: var(--panel-2); color: var(--fg); border: 1px solid var(--line); border-radius: calc(4px * var(--ui)); padding: calc(5px * var(--ui)) calc(6px * var(--ui)); font-size: calc(12px * var(--ui)); }
+/* the list starts at 200 px so Demos from elsewhere… stays on its row (0.27.3; at 260 px it wrapped under the list at 1512 px) */
+.jpick select { flex: 1 1 calc(200px * var(--ui)); min-width: 0; background: var(--panel-2); color: var(--fg); border: 1px solid var(--line); border-radius: calc(4px * var(--ui)); padding: calc(5px * var(--ui)) calc(6px * var(--ui)); font-size: calc(12px * var(--ui)); }
 .li-btn { margin-top: calc(6px * var(--ui)); }
 .pill { display: inline-block; font-size: calc(11px * var(--ui)); font-weight: 600; padding: 1px calc(6px * var(--ui)); border-radius: calc(3px * var(--ui)); margin-right: calc(6px * var(--ui)); letter-spacing: .04em; }
 .pill.t { background: color-mix(in srgb, var(--t) 22%, transparent); color: var(--t); }

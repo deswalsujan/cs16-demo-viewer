@@ -34,7 +34,8 @@ shells in Player's eyes only, thrown left; a blood puff at every blood point of 
 speed button's "Speed 1×" (item 8); the Wallbangs tab's one dropdown with the counts, Copy list on its row copying the rows
 shown, and the picture check's line under it (item 3). The Join batch (0.27.3): up to 5 demos picked at once in Open .dem from
 elsewhere and in the Join card, 6 refused with one line, a stray demo among them refused, and the warning for a part that
-starts from 0:0 on a cut-short copy of Na`Vi vs SK, Inferno, ESWC 2011's first part, made in a temporary folder. About two and a
+starts from 0:0 on a cut-short copy of Na`Vi vs SK, Inferno, ESWC 2011's first part, made in a temporary folder, and none on
+three maps where a new half or overtime restarted from 0:0. About two and a
 half minutes (7 under heavy load, 17 Nov 2026), plus about a minute for the Join batch.
 """
 import os, re, sys, http.server, functools, threading, tempfile, shutil, subprocess, atexit
@@ -302,7 +303,8 @@ with sync_playwright() as p:
     except Exception: pass
     check('a demo deleted while a demo was open: back on the start screen, its note still shows and the count says 1',
           msg(pg2).startswith('deleted-later.dem is no longer in your folder') and pg2.inner_text('#hlStatus') == '1 demo found.', f'{msg(pg2)!r}, {pg2.inner_text("#hlStatus")!r}')
-    # the Join card with no other demo in the folder (Sujan, 8 Nov 2026): one line beside "A file from elsewhere…", no empty
+    # the Join card with no other demo in the folder (Sujan, 8 Nov 2026): one line beside "Demos from elsewhere…" ("A file from
+    # elsewhere…" up to 0.27.2), no empty
     # list. Up to 0.26.19 the card showed a list holding only "Pick a demo…"
     try:
         pg2.click(f'#demoList button:has-text("{SK}")')
@@ -310,8 +312,8 @@ with sync_playwright() as p:
         pg2.evaluate("__v(\"closeSummary(); tab = 'rounds'; renderPane(); $('bJoinWith').click()\")")
         pg2.wait_for_function("() => !!document.querySelector('#joinCard .jpick')", timeout=30000)
         jp = pg2.evaluate(r"""(() => { const p = document.querySelector('#joinCard .jpick'); return { text: p.innerText.replace(/\s+/g, ' ').trim(), sel: !!p.querySelector('select'), file: !!p.querySelector('#jFile'), tip: document.getElementById('jAdd').title }; })()""")
-        check('Join card, no other demo in the folder: one line beside "A file from elsewhere…", no list',
-              jp['text'] == 'There are no other demos in your Half-Life folder. A file from elsewhere…' and not jp['sel'] and jp['file'] and jp['tip'] == 'Pick a file from elsewhere above', str(jp))
+        check('Join card, no other demo in the folder: one line beside "Demos from elsewhere…", no list',
+              jp['text'] == 'There are no other demos in your Half-Life folder. Demos from elsewhere…' and not jp['sel'] and jp['file'] and jp['tip'] == 'Pick demos from elsewhere above', str(jp))
     except Exception as e:
         check('Join card, no other demo in the folder', False, str(e).split('\n')[0])
     ctx2.close()
@@ -446,9 +448,10 @@ with sync_playwright() as p:
         check('a kill with no death spot, EG vs eXecutors, Train, EM4 finals', False, str(e).split('\n')[0])
     ctx4.close()
 
-    # A half replayed from 0:0 and a half carried on across a crash (0.26.19; Sujan, 7 Nov 2026, docs/join-replay-carry-mock.png):
+    # A half replayed from 0:0 and a half carried on into the next file (0.26.19; Sujan, 7 Nov 2026, docs/join-replay-carry-mock.png):
     # WeMadeFox vs Ravens, Nuke, EM4 finals, in 2 files. Part 1's 12 rounds to 6:6 were replayed from 0:0 after a player
-    # rebooted, WeMadeFox won 4 on CT and the server crashed; part 2 carries the half on from 0:0 ("4-0 score stays"). The
+    # rebooted, WeMadeFox won 4 on CT and part 1 ends retrying HLTV's connection; part 2 carries the half on from 0:0 (the
+    # admin's crash rule, "4-0 score stays"; the same spawn count, so the map wasn't loaded again: tests/DEMOS.md). The
     # Join card in the suggested order, with part 2 put first (checks A and B, the recording times), the joined map's score
     # and the Rounds tab; then the order the card suggests for Na`Vi vs SK, Inferno, ESWC 2011, whose three names all start
     # "2011-10-24_16h08". Up to 0.26.18 the joined map read Ravens 16-9, the wrong order passed with a green tick, and the
@@ -616,15 +619,20 @@ with sync_playwright() as p:
     ctx5.close()
 
     # The Join batch (0.27.3; Sujan, 19 and 20 Nov 2026), no map needed, in a context of its own so no join is remembered: up to
-    # 5 demos picked at once in Open .dem from elsewhere and in the Join card's A file from elsewhere…. WeMadeFox vs Ravens' two
+    # 5 demos picked at once in Open .dem from elsewhere and in the Join card's Demos from elsewhere… (A file from elsewhere… up to 0.27.2). WeMadeFox vs Ravens' two
     # parts picked part 2 first open the Join card in recording-time order, with no 0:0 warning (part 2 carries on part 1's
     # half); 6 picked open nothing, with one line, on the start screen and in the card; a stray demo picked with them (Virtus.pro
     # vs aTTaX, Inferno, Extreme Masters II, recorded before both) is the one refused. A part that starts from 0:0 after earlier
     # parts played rounds that count: a cut-short copy of Na`Vi vs SK, Inferno, ESWC 2011's first part, made in a temporary
     # folder of its own (outside test-demos, DEMO_DIRS and cstrike), with the parts' own counts in the warning; in the order
     # 16:09, copy, 17:24, 17:40 the joined map counts 47 rounds at 22:25 (41 at 19:22 without the copy: tests/logs/0.27.0.md).
-    # Up to 0.27.2 the pick took one file and the card had no such warning.
+    # No warning on a part that starts a new half or overtime from 0:0 (the narrower rule, Sujan, 20 Nov 2026): FX vs mTw, Nuke,
+    # Xperia Play 2011, fnatic vs mousesports, Forge, IEM6 Guangzhou, and mTw vs Na`Vi, Tuscan, ESWC 2010 in their right order
+    # (as first built on the branch, all three warned). Up to 0.27.2 the pick took one file and the card had no such warning.
     STRAY = 'virtus.attax.EMII-0803071948-de_inferno.dem'
+    RIGHT = [('FX vs mTw, Nuke, Xperia Play 2011 (a second half from 0:0 after 15 rounds)', ['fx-vs-mtw-xperia2011-1104240212-de_nuke.dem', 'fx-vs-mtw-xperia2011-1104240242-de_nuke.dem']),
+             ('fnatic vs mousesports, Forge, IEM6 Guangzhou (a second half from 0:0 after 15 rounds)', ['auto_ifng-1110042145-de_forge.dem', 'auto_ifng-1110042211-de_forge.dem']),
+             ('mTw vs Na`Vi, Tuscan, ESWC 2010 (overtimes from 0:0 after 30 and 42 rounds)', [f'mtw-vs-navi-eswc2010semi-real-{t}-de_tuscan.dem' for t in ('1007031530', '1007031625', '1007031645', '1007031655')])]
     N1609, N1724, N1740 = NS[0], NS[2], NS[1]
     cutdir = tempfile.mkdtemp(prefix='join_cut_'); atexit.register(shutil.rmtree, cutdir, True)
     CUT = 'navi-sk-inferno-part1-cut.dem'
@@ -632,7 +640,7 @@ with sync_playwright() as p:
     pg13.route('**/three.min.js', lambda r: r.fulfill(path=os.environ.get('THREE_JS', os.path.join(here, '..', 'src', 'vendor', 'three.min.js')), content_type='application/javascript'))
     errs13 = []; pg13.on('pageerror', lambda e: errs13.append(str(e).split('\n')[0]))
     try:
-        for n in [W1, W2, STRAY] + NS:
+        for n in [W1, W2, STRAY] + NS + [x for _, S in RIGHT for x in S]:
             if n not in names: raise Exception(f'{n} not found in HALF_LIFE_DIR or DEMO_DIRS')
         at = {os.path.basename(q): q for q in demo_dirs.dems(HL)}
         # the first part without its last 4 KB (its index and its last few frames, about 0.3 s; without its last 1% it loses its
@@ -653,6 +661,12 @@ with sync_playwright() as p:
         settled(2); c = card13()
         check('Open .dem from elsewhere, WeMadeFox vs Ravens\' 2 parts picked at once, part 2 first: the Join card with them in recording-time order, Join parts on, no 0:0 warning (part 2 carries on part 1\'s half)',
               c and c['names'] == [W1, W2] and c['order'] == 'In the order they were recorded: 09:51, 10:26. The rounds agree.' and c['go'] and c['warns'] == [] and 'ok' in c['vs'], str(c))
+        # the three maps where a new half or overtime restarted from 0:0, picked in the wrong order: the card in their right order,
+        # no warning
+        for label, S in RIGHT:
+            JS13('closeJoinCard()'); pg13.set_input_files('#fDemo', [at[n] for n in reversed(S)]); settled(len(S)); c = card13()
+            check(f'{label}, picked at once: the Join card in the right order, "The rounds agree.", no 0:0 warning',
+                  c and c['names'] == S and c['order'].startswith('In the order they were recorded: ') and c['order'].endswith('The rounds agree.') and c['warns'] == [] and 'ok' in c['vs'] and c['go'], str(c))
         # 6 picked: nothing opens, one line on the start screen
         JS13('closeJoinCard()')
         pg13.set_input_files('#fDemo', [at[n] for n in [W1, W2, STRAY] + NS])
@@ -666,11 +680,11 @@ with sync_playwright() as p:
         s1 = card13(); JS13("$('jOk').click()"); s2 = card13()
         check('3 picked at once, one from another map recorded before both parts (Virtus.pro vs aTTaX, Inferno): that one refused, "This demo is from another map", then OK shows the Join card with WeMadeFox vs Ravens\' 2 parts',
               s1 and s1['title'] == 'This demo is from another map' and (s1['err'] or '').startswith(f'{STRAY} is on de_inferno. The parts so far are on de_nuke.') and s2 and s2['names'] == [W1, W2] and s2['go'], f'{s1}; then {s2}')
-        # 6 picked in the card's A file from elsewhere…: nothing added, the line under the picker
+        # 6 picked in the card's Demos from elsewhere…: nothing added, the line under the picker
         JS13('JOIN.picking = true; renderJoinCard()')
         pg13.set_input_files('#jFileIn', [at[n] for n in [W1, W2, STRAY] + NS])
         pg13.wait_for_timeout(300); c = card13()
-        check('the Join card\'s A file from elsewhere…, 6 picked: nothing added, and the line under it "Pick up to 5 demos at once. You picked 6."',
+        check('the Join card\'s Demos from elsewhere…, 6 picked: nothing added, and the line under it "Pick up to 5 demos at once. You picked 6."',
               c and c['jmsg'] == 'Pick up to 5 demos at once. You picked 6.' and c['names'] == [W1, W2], str(c))
         # the cut-short copy picked with the first part: the warning, Join parts on
         JS13('closeJoinCard()')
@@ -683,7 +697,7 @@ with sync_playwright() as p:
         pg13.set_input_files('#jFileIn', [at[N1740], at[N1724]])
         settled(4); c = card13()
         added = [n for n in c['names'] if n in (N1724, N1740)] if c else None
-        check('the Join card\'s A file from elsewhere…, the parts at 17:40 and 17:24 picked at once: both added, 17:24 before 17:40', added == [N1724, N1740], str(c))
+        check('the Join card\'s Demos from elsewhere…, the parts at 17:40 and 17:24 picked at once: both added, 17:24 before 17:40', added == [N1724, N1740], str(c))
         put = lambda order: JS13("(() => { const by = (n) => JOIN.list.find((f) => f.name === n); JOIN.list = %s.map(by); JOIN.moved = true; JOIN.keep = false; renderJoinCard(); })()" % repr(order))
         put([N1609, N1724, CUT, N1740]); c3 = card13()
         check('in the order 16:09, 17:24, copy, 17:40: "Part 3 starts from 0:0, but parts 1 and 2 already played 36 rounds." (30 and 6, as their lines count)',
