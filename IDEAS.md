@@ -94,24 +94,28 @@ Sujan's checks by eye of merged builds, kept for one sitting that he runs when h
 
 Everything raised in conversation that isn't finished, in one place. Each item says who does it. Ideas for new features are further down; this list is for loose ends.
 
-**Sujan's feedback of 20 Nov 2026 on four new demos** (in `~/Downloads/new-demos`, not moved yet; Claude's report, nothing built: `tests/logs/new-demos-feedback-2026-11-20.md`; pictures on `screenshots/new-demos-feedback`)
+**Sujan's feedback of 20 Nov 2026 on four new demos** (Claude's report: `tests/logs/new-demos-feedback-2026-11-20.md`; pictures on `screenshots/new-demos-feedback`; Sujan's answers the same day, `DECISIONS.md`: built as 0.27.4 on `wip/new-demos-fixes`)
 - [ ] **Wallbang labels on four kills in the new demos**
   - Status: on 0.27.3, bartZi on Edward (Na`Vi vs WinFakt, Train, ESWC 2011, R8 1:29) has no tag, his recorded aim at the kill clear beside the wheel end after seven bullets through it; shad on prophe7 (BIH vs SLOVENIA, Nuke, 18 Jan 2009, R9 1:24) reads **Partial wallbang** from snaroGOD's hit in the open 0.09 s before; bAiL's **Wall damage** 46 (WeMadeFox vs ATE Gaming, Dust2, MSI Beat IT! 2010, R20 1:14) is WUZZ's USP, which the aim fallback can't pick; FLEX0R on R!Go- (Team Belgium vs France, Tuscan, ClanBase NationsCup XII, R21 0:39) reads **Wallbang**, as Sujan says.
-  - Next step: Sujan decides on F1b, F2 and F3b (measured on the 83 demos; `ground_truth_check.py` passes with all three) and whether to check some of F1b's 18 new **Partial wallbang** kills by eye first; then Claude builds them on a `wip/` branch.
-  - Decided so far: Sujan's checks in his game, and the labels judge the moment of the shot only (Sujan, 20 Nov 2026; `DECISIONS.md`).
+  - Next step: Claude builds F1b, F2 and F3b on `wip/new-demos-fixes` (0.27.4), with Sujan's answers on the four kills and three of F1b's in `tests/expected/`.
+  - Decided so far: Sujan's checks in his game, and the labels judge the moment of the shot only (Sujan, 20 Nov 2026; `DECISIONS.md`). F1b, F2 and F3b approved; F1b after Sujan checked three of its kills in his game, all partial wallbangs (Sujan, 20 Nov 2026; `DECISIONS.md`).
 - [ ] **The 3D view at a kill row's moment, and the name bar's health** (Sujan, 20 Nov 2026, on FLEX0R's kill on R!Go-)
   - Status: the 3D view runs 0.1 s behind the kill feed (`LIMITS.md`), so at a kill row's moment it draws the victim 0.1 s before the shot: R!Go- in the open between the crates where the label says hidden; on the 83 demos, 56 of 534 **Wallbang** kills show 50 pixels or more of the victim there. The name bar and the 3D labels read health 0.1 s back too: FLEX0R (100) at the kill, where the radar and his game show 88.
-  - Next step: Sujan decides on two display changes, neither touching a label: kill details' jumps pause 0.1 s later, so the paused 3D picture is the shot; the name bar and the 3D labels read health at the moment itself.
-  - Decided so far: nothing yet.
+  - Next step: Claude builds both on `wip/new-demos-fixes` (0.27.4).
+  - Decided so far: kill details' jumps pause 0.1 s later, on the shot itself; the name bar and the 3D labels read health at the moment itself (Sujan, 20 Nov 2026; `DECISIONS.md`).
 - [ ] **Players' and the server's settings from the demo** (Sujan's question, 20 Nov 2026)
   - Status: reported (the log, B): each player's userinfo (rate, cl_updaterate, cl_lw, cl_lc, cl_dlmax, model, colours, keys of their own), HLTV's own settings and its "ex_interp 0.15" line, the server cvar changes, the movement settings, pings and loss, the snapshot rate; cl_cmdrate, ex_interp, sensitivity and fps_max aren't in a demo.
-  - Next step: Sujan decides whether and where to show them (proposed: the Players tab per player, the load card's **Details** for the server).
-  - Decided so far: the demo doesn't set his ex_interp (Sujan, 20 Nov 2026; `DECISIONS.md`).
+  - Next step: Claude says how long reading every demo takes and, on Sujan's go, makes the spreadsheet `~/code/cs16-data/reports/player-settings-2026-11-20.xlsx` (outside the repo; sheets Players, Demos, Summary; LAN or online from the pings; no password value anywhere) and its summary in tests/logs/player-settings-2026-11-20.md (to come); Sujan decides on the viewer after seeing it.
+  - Decided so far: the demo doesn't set his ex_interp (Sujan, 20 Nov 2026; `DECISIONS.md`). A spreadsheet first, a report only, nothing in the viewer yet (Sujan, 20 Nov 2026; `DECISIONS.md`).
 - [ ] **Team names, the shared tag first**
   - Status: Sujan's rule measured, not built (the log, C): 25 of 90 headers change, the four new demos' as he expects (A+e.gaming where he named ATE Gaming); the one file in `tests/expected/` with team names (the GP Tourney's BAJRANG and Guardians) stays.
-  - Next step: Sujan settles the open points (mymTw.com, fnaticMSI and fnaticRC, SKWEDEN and KOREA.eSTRO, the tags' capitals, the 12-letter cap, A+e.gaming or ATE Gaming); then Claude builds it, with `LIMITS.md`'s team-name line.
-  - Decided so far: the rule, the shared tag first, replacing two rules of 8 Nov 2026 (Sujan, 20 Nov 2026; `DECISIONS.md`).
-- [ ] **The four new demos**: Na`Vi vs WinFakt, Train, ESWC 2011; BIH vs SLOVENIA, Nuke, 18 Jan 2009 (probably ClanBase NationsCup XII); WeMadeFox vs ATE Gaming, Dust2, MSI Beat IT! 2010; Team Belgium vs France, Tuscan, ClanBase NationsCup XII. They stay in `~/Downloads/new-demos` until Sujan answers; then the ones the viewer gets wrong move to `test-demos` with their rows in `tests/DEMOS.md` and `tests/demos-manifest.md` (`AGENTS.md`, "A new demo in cstrike").
+  - Next step: Claude builds it on `wip/new-demos-fixes` (0.27.4), with `LIMITS.md`'s team-name line, and re-lists every header that changes.
+  - Decided so far: the rule, the shared tag first, replacing two rules of 8 Nov 2026 (Sujan, 20 Nov 2026; `DECISIONS.md`). The open points settled: a cap of 20; a known team anywhere in the tag; a tag starting with a known team of 4 letters or more reads as that team; mymtw, skweden and aegaming added to the known teams; otherwise the players' own capitals (Sujan, 20 Nov 2026; `DECISIONS.md`).
+- [ ] **The four new demos**: Na`Vi vs WinFakt, Train, ESWC 2011; BIH vs SLOVENIA, Nuke, 18 Jan 2009 (probably ClanBase NationsCup XII); WeMadeFox vs ATE Gaming, Dust2, MSI Beat IT! 2010; Team Belgium vs France, Tuscan, ClanBase NationsCup XII. Sujan, 20 Nov 2026: all four move to `~/code/cs16-data/test-demos` with their rows in `tests/DEMOS.md` and `tests/demos-manifest.md`, and his answers on their four kills go to `tests/expected/` (`DECISIONS.md`); Claude, on `wip/new-demos-fixes`.
+- [ ] **The demo list's dates** (Sujan, 20 Nov 2026; `DECISIONS.md`)
+  - Status: not started. The demo list shows no date; the search matches file names only (`LIMITS.md`).
+  - Next step: Claude checks `fileTime` (`src/ui/join.js`) on every demo name first and fixes its reading; then each row shows the date from the name, or the file's date in grey with the tooltip "The file's date: its name has no recording time"; the heading "YOUR DEMOS · newest added first"; the search matches the date. On `wip/new-demos-fixes` (0.27.4), screenshots instead of a mockup.
+  - Decided so far: as above (Sujan, 20 Nov 2026; `DECISIONS.md`).
 
 **Sujan's answers of 12 Nov 2026 on 0.26.31: the game's light** (his three confirmations in `DECISIONS.md`)
 - [ ] **Other light styles in 3D** (for later; Sujan, 12 Nov 2026)
