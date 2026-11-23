@@ -394,3 +394,155 @@ What C1 changes, measured on the 79 HLTV test demos (the 9 POV demos left out: t
 - Each kill and the round and AWP tables: page scripts run with `tests/harness.py` on main's build and the scratch builds (about 10 s a demo); the fire events' fields, delays and the recoil statistics: node scripts on reader copies (`src/demo.js` plus the fields it skips), 3 to 8 s a demo.
 - The first all-demo run (F4's parts on and off, B's rule, C's counts; 88 demos): 6.2 minutes on Sujan's go, then `ground_truth_check.py` on that build, 2.0 minutes, 35 mismatches. The second (F4′, three settings): 5.1 minutes on his second go, then `ground_truth_check.py`, 2.1 minutes, 2 mismatches, the three new kills passing.
 - On main: `ground_truth_check.py` on the three new expected files, PASS with three known gaps; `notes_check.py` PASS; the test demo folder checked with `demo_dirs.py check`, 88 demos.
+
+## D. Follow-up, 23 Nov 2026: the unlag moment, a 1-pixel line for hidden kills, the recoil's size
+
+Sujan's go of 23 Nov 2026: F5 approved; F4′ and C1 wait for his checks in his game (`~/Downloads/cs16-review-2026-11-23.zip`, checks a to e; `DECISIONS.md`). This section measures three more questions on the scratch build, each behind a switch, nothing built.
+
+### D1. The victim where the server traced the bullet
+
+ReHLDS (`engine/sv_user.cpp`, SV_GetUnlagTargetTime) traces a shot against the other players where they were at the server's time minus the shooter's latency minus his interpolation (`lerp_msec`, at most 0.1 s, or one message interval if that's longer), plus `sv_unlagpush`, the latency capped at `sv_maxunlag`. The setting measured draws the victim in the picture check at the shot minus the shooter's ping from svc_pings at that moment plus 0.1 s, from the shooter's eye at the shot, the map (doors, broken glass) as at the shot; which kills get a picture, and the 50-pixel and 1-pixel lines, stay as today.
+
+Measured on the 79 HLTV test demos and with `ground_truth_check.py` on a build with the setting on, against today (the victim at the shot). The shooters' pings at the confirmed kills: 3 to 6 ms on LAN (so 0.103 to 0.106 s back), 21 to 75 ms online (ClanBase, ENC); 201 of 232 are 10 ms or less, and 10 kills come before the demo's first ping message (taken as 0).
+
+**FLEX0R on R!Go-** (Team Belgium vs France, Tuscan, ClanBase NationsCup XII, R21 0:39; confirmed **Wallbang**): FLEX0R's ping is 21 ms, so R!Go- is drawn 0.121 s before the shot: 2,181 pixels of him show, against 0 at the shot. Since the 15 points see part of him and the aim goes through cover, it's a sliver kill, and a sliver with 50 pixels or more isn't listed: the kill reads no tag. **PeRRy on REAL**: PeRRy's ping is 35 ms, so 0.135 s back: 830 pixels of REAL (453 at 0.1 s back, 0 at the shot); the kill still reads no tag, since its aim is clear and the picture check never runs on it.
+
+The confirmed answers that change (9 break, 2 known gaps come right, and 2 known gaps read otherwise but stay wrong):
+
+| Match | Kill | Confirmed | Today | At the unlag moment | Pixels: shot, unlag moment (ping) |
+|---|---|---|---|---|---|
+| Team Belgium vs France, Tuscan, ClanBase NationsCup XII | R21 0:39 FLEX0R on R!Go- | **Wallbang** | **Wallbang** | no tag | 0, 2,181 (21 ms) |
+| Sweden vs Norway, Dust2, ASUS ENC 2010 | R7 1:12 GeT_RiGhT on KORN | **Partial** | **Partial** | **Wallbang** | 15, 0 (22 ms) |
+| fnatic vs mousesports, Forge, IEM6 Guangzhou final, file 1 | R15 1:28 Friis on KARRiGAN | **Partial** | **Partial** | no tag | 26, 974 (5 ms) |
+| fnatic vs Na`Vi, Dust2, GameGune 2012 final | R20 0:36 markeloff on Xizt | **Partial** | **Partial** | **Wallbang** | 410, 0 (3 ms) |
+| FX vs eSahara, Dust2, DreamHack Winter 2010 | R18 0:21 KUBEN on RARA | **Partial** | **Partial** | no tag | 41, 336 (3 ms) |
+| FX vs mTw, Nuke, Xperia Play 2011, part 2 | R21 C4 0:13 ave on PASHA | **Partial** | **Partial** | no tag | 15, 50 (3 ms) |
+| mTw vs Na`Vi, Tuscan, ESWC 2010 semi-final, `-1655-` | R6 C4 0:25 minet on ceh9 | **Partial** | **Partial** | **Wallbang** | 69, 0 (3 ms) |
+| MYM vs mTw, Dust2, EM3 2009 consolation final | R29 C4 0:13 ave on taz | **Partial** | **Partial** | **Wallbang** | 210, 16 (3 ms) |
+| Na`Vi vs FX, Dust2, SEC 2011 final | R4 1:05 Edward on 742 | **Partial** | **Partial** | **Wallbang** | 98, 0 (3 ms) |
+| FX vs Lions, Nuke, DreamHack Winter 2010 | R22 0:47 THREAT on LoordB | **Partial** | **Wallbang** (known gap) | **Partial**, right | 38, 64 (4 ms) |
+| SK vs eSTRO, Dust2, WCG 2008, the 5-minute file | R1 1:35 Tentpole on zet | **Partial** | **Wallbang** (known gap) | **Partial**, right | 0, 7 (3 ms) |
+| Sweden vs Ukraine, Train, ClanBase NationsCup XI | R22 1:26 LMBT on RobbaN | **Partial** by damage | no tag (known gap) | **Partial** by its pixels | 316, 49 (45 ms) |
+| Sweden vs Norway, Dust2, ASUS ENC 2010 | R25 0:46 REAL on alleN | **Partial** | **Wallbang** (known gap) | no tag | 0, 1,718 (21 ms) |
+
+On the 79 demos, 64 kills change their label on 38 demos (28 **Wallbang** to **Partial**, 8 **Partial** to **Wallbang**, 6 of each to no tag, 13 no tag to **Wallbang** and 3 to **Partial**), and 32 more **Partial** kills only their pixel count. Of the 1,409 pictures drawn both ways, 544 show more of the victim at the unlag moment and 375 less; 40 go from 0 pixels to some, 27 from some to 0.
+
+So the unlag moment doesn't fit Sujan's answers better than the shot: it breaks 9 and puts 2 right. 4 of the 9 are slivers that show 50 pixels or more there (FLEX0R's 2,181), which the sliver rule then takes out of the list; 5 of the 9 lose their pixels at the unlag moment, 4 gain them. 7 of the 9 are LAN kills (3 to 5 ms), where the two moments are 0.1 s apart.
+
+### D2. Hidden kills **Partial** from 1 pixel, with the top row at 24
+
+The parked question **One line for strict: 0 pixels for hidden kills too?**: a kill none of the sight points sees is strict up to 49 pixels today, where a sliver kill (seen by a point, the aim through cover) is strict only at 0. Measured with hidden kills **Partial** from 1 pixel and F4′'s top row at 24, nothing else of F4′.
+
+Measured the same way (`ground_truth_check.py` on a build with both on).
+
+**GeT_RiGhT on KORN** (Sweden vs Norway, Dust2, ASUS ENC 2010, R7 1:12; confirmed **Partial**): 15 pixels at the shot. With the top row at 24 alone (F4′) none of the points sees KORN, and as a hidden kill under 50 pixels it read **Wallbang**; with the 1-pixel line it reads **Partial**, as confirmed.
+
+The confirmed answers that change (1 breaks, 1 keeps its label for another reason, 2 known gaps come right):
+
+| Match | Kill | Confirmed | Today | Top row at 24, 1-pixel line | Pixels at the shot |
+|---|---|---|---|---|---|
+| mousesports vs AGAiN, Inferno, ESWC 2011 final | R4 1:13 742 on gob b | **Wallbang** | **Wallbang** | **Partial** | 49 |
+| SK vs WinFakt, Mirage, IEM6 New York | R14 1:09 face on nsutOtO | **Partial** by damage | **Partial** by damage | **Partial** by its 69 pixels (the top row) | 69 |
+| FX vs Lions, Nuke, DreamHack Winter 2010 | R22 0:47 THREAT on LoordB | **Partial** | **Wallbang** (known gap) | **Partial**, right | 38 |
+| Sweden vs Poland, Dust2, 8 Apr 2009 | R15 1:09 pasha on Tentpole | **Wallbang** | **Partial** (known gap) | **Wallbang**, right (the top row) | 0 |
+
+On the 79 demos, 24 kills change their label on 18 demos: 18 hidden kills with 1 to 49 pixels go from **Wallbang** to **Partial**, and the top row's own 4 **Partial** to **Wallbang** and 2 no tag to **Partial**.
+
+742 on gob b is the one 1-pixel case Sujan answered the other way: 49 pixels, hidden to the points. With F4′'s top row the 1-pixel line keeps GeT_RiGhT on KORN and puts THREAT on LoordB right; on its own it would turn 18 **Wallbang** kills on the test demos into **Partial**.
+
+### D3. The recoil's size on F4′'s 44 rescued kills and F4's 33 broken answers
+
+From the same run, for each kill: the recoil at the killing shot (from its fire event) and how far into cover the recorded line and the recoil line (the recorded aim plus the recoil) go, to the victim's distance.
+
+On F4′'s 44 rescued kills the recorded line is clear on every one, by definition. The recoil is 0.51° to 5.63° (median 2.58°), and the recoil line goes 2 to 321 units into cover (median 12). The rule "1° or more and 8 units or more into cover" keeps 26 of the 44, RobbaN on whiMp among them (4.43°, 20 units of the crate). It drops 18: 5 under 1°, 16 under 8 units, 3 both. It breaks none of the 243 confirmed answers. F4′'s rescue as measured changed none of them (both mismatches of its check came from the top row), and the rule rescues fewer of the same kills.
+
+On the 33 confirmed answers the recoil broke in F4, the recoil line goes 0 units into cover on every one (it's clear), where the recorded line goes 2 to 327 units into it (27 of them 8 or more). 31 of the 33 have a recoil of 1° or more (0.16° to 5.63°). So the recoil's size doesn't tell them apart from the 44: only the direction does (a recorded line through cover that the recoil clears, against a clear line the recoil puts into cover). That direction is what F4′ already uses: it never lets the recoil clear a line.
+
+The 44 rescued kills, the ones the rule keeps first:
+
+| Demo | Kill | Recoil (pitch, yaw) | Recoil line into cover | Kept by 1° and 8 units | With F4′ |
+|---|---|---|---|---|---|
+| `1110231216--auto_de_tuscan.dem_Fnatic-vs-mousesports.dem` | R15 1:30 mousesports \| ninja -> fnaticMSI cArn m4a1 | 2.87° (-2.55, -1.32) | 16 units | yes | Wallbang |
+| `1110241407--auto_de_inferno.dem_mousesports-vs-AGAIN.dem` | R13 0:49 mousesports \| ninja -> AGAiN  742 m4a1 | 2.52° (-2.30, -1.03) | 16 units | yes | Partial (damage) |
+| `53.52.1646548-1005272144-de_dust2.dem` | R28 0:59 SWIIIIIDEEEN  Delpan -> NORWAY KORN m4a1 | 2.37° (-2.26, +0.71) | 32 units | yes | Partial (damage) |
+| `53.52.1646548-1005272144-de_dust2.dem` | R3 C4 0:09 SWIIIIIDEEEN  FoReSt -> NORWAY RashiE ak47 | 3.31° (-3.17, -0.95) | 18 units | yes | Partial (damage) |
+| `FX-vs-sk-iem5-inf.dem` | R12 1:04 Frag eXecutors  taz -> SK.RobbaN ak47 | 1.28° (-1.23, +0.37) | 12 units | yes | Partial (damage) |
+| `SK_vs_e-STRO_WCG2008-0811081950-de_dust2.dem` | R8 1:25 SKWEDEN zet -> KOREA.eSTRO : termi m4a1 | 2.59° (-2.49, +0.71) | 14 units | yes | Partial (damage) |
+| `SK_vs_e-STRO_WCG2008-0811082043-de_nuke.dem` | R19 1:26 KOREA.eSTRO : hee -> SKWEDEN Tentpole <3 Tezz m4a1 | 2.47° (-2.46, -0.27) | 16 units | yes | Partial (124px) |
+| `SK_vs_e-STRO_WCG2008-0811082043-de_nuke.dem` | R9 1:25 SKWEDEN RobbaN[alitdg] -> KOREA.eSTRO : hee m4a1 | 2.84° (-2.55, +1.24) | 12 units | yes | Partial (damage) |
+| `auto-1003032023-de_inferno.dem` | R19 0:36 SK\|Gux -> coL.thomz ak47 | 4.73° (-4.53, +1.37) | 28 units | yes | Partial (damage) |
+| `auto-1003051236-de_inferno.dem` | R6 C4 0:05 dsn -> face m4a1 | 2.49° (-2.28, -1.01) | 22 units | yes | Partial (damage) |
+| `auto-1003051236-de_inferno.dem` | R9 C4 0:21 RobbaN -> GeT_RiGhT4J ak47 | 5.63° (-5.26, +2.02) | 321 units | yes | Partial (damage) |
+| `auto-1003051321-de_train.dem` | R20 1:07 cArn -> Gux ak47 | 4.36° (-4.00, +1.73) | 32 units | yes | Partial (damage) |
+| `auto_ifng-1110042211-de_forge.dem` | R12 1:26 fnaticMSI CARN -> mousesports \| KARRiGAN m4a1 | 2.39° (-2.27, +0.76) | 40 units | yes | Partial (damage) |
+| `final-tusca-0811091552-de_tuscan.dem` | R27 0:55 Sunde -> walle m4a1 | 2.50° (-2.39, +0.72) | 8 units | yes | Partial (damage) |
+| `final-tusca-0811091552-de_tuscan.dem` | R30 1:22 RobbaN -> whiMp ak47 | 4.43° (-4.28, -1.16) | 20 units | yes | Partial (130px) |
+| `fx-vs-esahara-dhw2010-1011271131-de_nuke.dem` | R19 C4 0:20 Frag eXecutors  742 -> ESAHARA.net sadliGENO ak47 | 2.40° (-2.40, -0.13) | 8 units | yes | Partial (damage) |
+| `fx.eg.em4finals-1003021929-de_train.dem` | R28 1:22 EG.n0thing -> eXecutors  neo m4a1 | 2.76° (-2.71, -0.52) | 24 units | yes | Partial (damage) |
+| `k1ck-vs-eq-dhwinter2011-1111260056-de_nuke.dem` | R20 C4 0:12 K1CK mUtcb -> -Eq- SeDaN m4a1 | 2.46° (-2.46, +0.09) | 8 units | yes | Partial (230px) |
+| `mtw-vs-navi-eswc2010semi-real-1007031645-de_tuscan.dem` | R5 0:38 mTw.Mindfactory \| ave -> Na`Vi markeloff /A/ m4a1 | 2.41° (-2.27, +0.80) | 10 units | yes | Partial (damage) |
+| `navi-vs-m5-dhwinter2011-1111250937-de_inferno.dem` | R14 1:14 Na`Vi edzie -> M5 ED1K m4a1 | 2.43° (-2.34, +0.67) | 22 units | yes | Partial (damage) |
+| `noa.penta-0610211800-de_train.dem` | R23 C4 0:25 NoA.ave -> PENTAGRAM G-Shock \| neo[t] m4a1 | 2.22° (-2.22, +0.08) | 20 units | yes | Partial (damage) |
+| `noa.penta-0610211800-de_train.dem` | R24 0:58 NoA.ave -> PENTAGRAM G-Shock \| neo[t] m4a1 | 2.30° (-2.24, +0.54) | 36 units | yes | Partial (damage) |
+| `roccat.fnatic.EMII-0803071948-de_inferno.dem` | R5 C4 0:06 fnatic Torgersen -> roccat > Samu A. <plastE> ak47 | 4.73° (-4.53, -1.37) | 20 units | yes | Partial (damage) |
+| `sk-vs-navi-dhwinter2011-1111261019-de_train.dem` | R7 C4 0:03 Na`Vi starix -> SK.face ak47 | 3.31° (-3.19, -0.87) | 34 units | yes | Partial (79px) |
+| `sk-vs-winfakt-iem6newyork-1110161608-de_mirage.dem` | R12 1:17 SK.RobbaN -> WinFakt SIppRuL^:-) <3NY  [p] m4a1 | 2.59° (-2.49, -0.71) | 8 units | yes | Partial (damage) |
+| `virtus.attax.EMII-0803072033-de_inferno.dem` | R26 1:35 Virtus.pro > Ioann S. <Edward> -> ALTERNATE aTTaX \| CHEF-KOCH ak47 | 4.73° (-4.53, +1.37) | 18 units | yes | Partial (damage) |
+| `1110231216--auto_de_tuscan.dem_Fnatic-vs-mousesports.dem` | R20 0:45 fnaticMSI Gux <3 pingu -> mousesports \| zonixx m4a1 | 2.62° (-2.50, -0.78) | 2 units | no | Partial (damage) |
+| `1110231221--auto_de_train.dem_navi-vs-winfast.dem` | R13 C4 0:08 Na`Vi Zeus /A/ -> WinFakt aslak [M] ^^yoso *A ak47 | 5.21° (-5.03, -1.36) | 6 units | no | Partial (damage) |
+| `2011-10-24_16h08_NaVi_SK-1110241724-de_inferno.dem` | R4 C4 0:19 SK.RobbaN -> Na`Vi starix /A/ m4a1 | 1.78° (-1.69, -0.55) | 2 units | no | Partial (418px) |
+| `53.52.1646548-1005272144-de_dust2.dem` | R20 1:18 SWIIIIIDEEEN  alleN -> NORWAY tacky m4a1 | 2.62° (-2.50, +0.78) | 4 units | no | Partial (171px) |
+| `SK_vs_AGAiN_ArbaletEU-0912051316-de_train.dem` | R21 1:18 AGAiN  Neo  ZOWiE -> SK\|RobbaN[ios] ak47 | 0.51° (-0.49, +0.14) | 140 units | no | Partial (damage) |
+| `SK_vs_e-STRO_WCG2008-0811081900-de_train.dem` | R18 1:32 SKWEDEN zet -> KOREA.eSTRO : bail ak47 | 4.52° (-4.49, +0.52) | 6 units | no | Partial (damage) |
+| `auto-1003051321-de_train.dem` | R10 C4 0:01 GeT_RiGhT4J -> RobbaN m4a1 | 0.69° (-0.65, -0.22) | 14 units | no | Wallbang |
+| `auto_ifng-1110042211-de_forge.dem` | R4 1:26 fnaticMSI CARN -> mousesports \| ninja m4a1 | 0.77° (-0.74, -0.21) | 2 units | no | Partial (26px) |
+| `de_nuke.dem_Fnatic-vs-ALTERNATE.dem` | R21 0:53 fnaticMSI Xizt -> ALTERNATE aTTaX \| ROMAN R m4a1 | 1.04° (-1.01, +0.26) | 2 units | no | Partial (damage) |
+| `de_nuke.dem_Fnatic-vs-ALTERNATE.dem` | R9 0:57 fnaticMSI Xizt -> ALTERNATE aTTaX \| hool ak47 | 3.45° (-3.31, +0.97) | 2 units | no | Partial (damage) |
+| `mtw-vs-lions-dhs11-1106191044-de_nuke.dem` | R3 1:16 LIONS kHRYSTAL ' KASPERSKY -> mTw \| ArcadioN ak47 | 3.43° (-3.20, -1.23) | 2 units | no | Partial (damage) |
+| `mtw-vs-navi-eswc2010semi-real-1007031645-de_tuscan.dem` | R4 0:45 mTw.Mindfactory \| traceFFFFFFFF -> Na`Vi Zeus /A/ m4a1 | 2.37° (-2.26, +0.71) | 4 units | no | Partial (damage) |
+| `mtw.mym.consfinal.EM3-0903081339-de_dust2.dem` | R29 C4 0:07 mTw \| whimp -> MEET KUBENB, YOUR MAKER m4a1 | 0.85° (-0.80, +0.28) | 4 units | no | Partial (damage) |
+| `mym.fnatic.final-0612201357-de_train.dem` | R22 1:22 MYM\|juve www.bet24.com -> fnatic.TeNt[Q.o-12] ak47 | 2.59° (-2.48, -0.76) | 2 units | no | Partial (damage) |
+| `navi-vs-m5-dhwinter2011-1111250937-de_inferno.dem` | R13 1:01 M5 Dosia[v] -> Na`Vi edzie ak47 | 0.70° (-0.67, -0.21) | 2 units | no | Partial (damage) |
+| `ravens.wmf.em4finals-1003031026-de_nuke.dem` | R15 1:24 Ravens.Friis * Dansk Metal -> WemadeFOX : solo m4a1 | 2.58° (-2.31, -1.16) | 6 units | no | Partial (damage) |
+| `sk-vs-dateam-iolfinal4-1106181158-de_dust2.dem` | R11 0:49 SK.RobbaN -> dt.REASPEL.se STRIKER m4a1 | 1.04° (-1.01, +0.26) | 6 units | no | Partial (damage) |
+| `sk-vs-dateam-iolfinal4-1106181158-de_dust2.dem` | R8 0:59 SK.RobbaN -> dt.REASPEL.se rape m4a1 | 2.81° (-2.55, -1.19) | 4 units | no | Wallbang |
+
+The 33 confirmed answers the recoil broke in F4:
+
+| Match | Kill | Confirmed | Recoil (pitch, yaw) | Recorded line into cover | Recoil line into cover |
+|---|---|---|---|---|---|
+| FX vs eSahara, Nuke, DreamHack Winter 2010 | R9 1:11 ESAHARA.net MAHE -> Frag eXecutors  NEO[t] | loose-damage | 5.63° (-5.26, -2.02) | 2 units | 0 units |
+| k1ck vs eq, Nuke, DreamHack Winter 2011 | R10 1:29 K1CK n0rx     <pacheco> -> -Eq- DECE[A] * | loose-damage | 5.21° (-5.03, -1.36) | 4 units | 0 units |
+| Na`Vi vs fnatic, Tuscan, Adepto BH Open 2011 | R2 0:55 Na`Vi iOANN4[a] <3 BiH -> fnatic.MSi Gux /PiNGU/ | loose-damage | 4.73° (-4.53, -1.37) | 14 units | 0 units |
+| FX vs Lions, Nuke, DreamHack Winter 2010 | R13 1:19 LIONS NIKO DA PANDA * QPAD -> Frag eXecutors  LoordB | loose | 4.73° (-4.53, -1.37) | 78 units | 0 units |
+| FX vs eSahara, Dust2, DreamHack Winter 2010 | R18 0:21 Frag eXecutors  KUBEN[t] -> ESAHARA.net RARA | loose | 4.64° (-4.51, -1.09) | 24 units | 0 units |
+| Virtus.pro vs aTTaX, Inferno, Extreme Masters II (-0803072033-) | R10 1:02 ALTERNATE aTTaX \| paN -> Virtus.pro > Ioann S. <Edward> | loose | 4.52° (-4.49, +0.49) | 16 units | 0 units |
+| Sweden vs Norway, Dust2, ASUS ENC 2010 | R14 0:59 SWIIIIIDEEEN  Gux -> NORWAY REAL | loose-damage | 4.43° (-4.28, +1.16) | 16 units | 0 units |
+| FX vs mTw, Inferno, Xperia Play 2011, part 1 | R15 1:19 ArcadioN@mymTw.com -> Frag eXecutors  KUBEN[t] | loose-damage | 4.43° (-4.28, +1.16) | 84 units | 0 units |
+| k1ck vs eq, Nuke, DreamHack Winter 2011 | R2 1:18 K1CK spekz -> -Eq- DECE[A] * | loose-damage | 4.43° (-4.28, +1.16) | 54 units | 0 units |
+| Virtus.pro vs aTTaX, Inferno, Extreme Masters II (-0803072033-) | R25 1:40 Virtus.pro > Aleksey K. <LeX> -> ALTERNATE aTTaX \| approx | loose-damage | 4.43° (-4.28, -1.16) | 84 units | 0 units |
+| Na`Vi vs FX, Dust2, SEC 2011 final | R3 0:40 Na`Vi markeloff /A/ -> Loord | loose-damage | 4.26° (-4.25, +0.24) | 327 units | 0 units |
+| FX vs eSahara, Nuke, DreamHack Winter 2010 | R10 1:20 ESAHARA.net RARA -> Frag eXecutors  PASHA[t] | loose-damage | 3.79° (-3.66, -1.00) | 28 units | 0 units |
+| MYM vs mTw, Dust2, EM3 2009 consolation final | R29 C4 0:13 mTw \| ave -> MEET TAZ, YOUR MAKER | loose | 3.79° (-3.66, -1.00) | 40 units | 0 units |
+| k1ck vs eq, Nuke, DreamHack Winter 2011 | R2 1:11 K1CK mUtcb -> -Eq- Darky | loose-damage | 3.62° (-3.62, +0.02) | 16 units | 0 units |
+| Burning vs FairFrag, Inferno, ESWC 2010 | R13 0:59 BURNING! MAJ3R -> FAiRFRAG\|drizzerEstachE! | loose-damage | 3.31° (-3.19, -0.89) | 4 units | 0 units |
+| SK vs eSTRO, Dust2, WCG 2008 | R8 1:18 SKWEDEN Tentpole <3 Tezz -> KOREA.eSTRO : hee | loose-damage | 3.11° (-2.99, +0.87) | 18 units | 0 units |
+| mTw vs Na`Vi, Tuscan, ESWC 2010 semi-final, file 1 | R24 1:31 Na`Vi f0cuswOw~ -> mTw.Mindfactory \| ave | loose | 3.11° (-2.99, -0.87) | 186 units | 0 units |
+| Sweden vs Norway, Dust2, ASUS ENC 2010 | R22 C4 0:09 SWIIIIIDEEEN  Gux -> NORWAY KORN | loose-damage | 2.98° (-2.76, +1.13) | 10 units | 0 units |
+| FX vs SK, Inferno, IEM5 | R17 0:58 Frag eXecutors  PASHA[t] -> SK.face | loose-damage | 2.94° (-2.57, +1.43) | 48 units | 0 units |
+| FX vs eSahara, Nuke, DreamHack Winter 2010 | R6 1:05 Frag eXecutors  KUBEN[t] -> ESAHARA.net MAJ3R | loose-damage | 2.81° (-2.54, -1.20) | 12 units | 0 units |
+| Sweden vs Norway, Dust2, ASUS ENC 2010 | R23 1:05 NORWAY REAL -> SWIIIIIDEEEN  Delpan | loose-damage | 2.77° (-2.66, +0.76) | 14 units | 0 units |
+| FX vs SK, Inferno, IEM5 | R10 0:55 SK.GeT_RiGhT -> Frag eXecutors  Loord | loose-damage | 2.72° (-2.70, -0.33) | 28 units | 0 units |
+| fnatic vs Na`Vi, Dust2, GameGune 2012 final | R12 C4 0:04 Na`Vi starix -> fnaticRC f0restBambiJQgarN^ | loose | 2.68° (-2.51, -0.94) | 46 units | 0 units |
+| Na`Vi vs Moscow 5, Inferno, DreamHack Winter 2011 | R28 C4 0:22 M5 Fox -> Na`Vi edzie | loose-damage | 2.63° (-2.50, +0.81) | 52 units | 0 units |
+| SK vs Na`Vi, Dust2, IEM4 | R11 0:52 Edward-FoCuS -> Gux | loose | 2.46° (-2.46, -0.05) | 18 units | 0 units |
+| Na`Vi vs FX, Dust2, SEC 2011 final | R10 1:04 742 -> Na`Vi starix /A/ | loose-damage | 2.43° (-2.43, +0.00) | 32 units | 0 units |
+| MYM vs mTw, Dust2, EM3 2009 consolation final | R28 1:21 MEET LOORDB, YOUR MAKER -> mTw \| MJE | loose | 2.40° (-2.40, -0.13) | 18 units | 0 units |
+| MYM vs fnatic, Train, CPL Winter 2006 (probably) | R19 1:09 MYM\|XioNe www.icemat.com -> fnatic.dsn[tw] | loose-damage | 2.34° (-2.28, +0.54) | 2 units | 0 units |
+| Virtus.pro vs aTTaX, Inferno, Extreme Masters II (-0803072033-) | R20 0:59 ALTERNATE aTTaX \| CHEF-KOCH -> Virtus.pro > Roman M. <ROMJkE^> | loose-damage | 2.22° (-2.22, -0.08) | 16 units | 0 units |
+| k1ck vs eq, Nuke, DreamHack Winter 2011 | R6 1:25 -Eq- DECE[A] * -> K1CK n0rx     <pacheco> | loose-damage | 1.73° (-1.66, +0.50) | 26 units | 0 units |
+| SK vs Na`Vi, Train, DreamHack Winter 2011 | R23 1:15 Na`Vi starix -> SK.RobbaN | loose-damage | 1.23° (-1.19, -0.30) | 20 units | 0 units |
+| Na`Vi vs Moscow 5, Inferno, DreamHack Winter 2011 | R25 1:13 Na`Vi ceh9 /A/ -> M5 ED1K | loose-damage | 0.87° (-0.83, +0.25) | 4 units | 0 units |
+| FX vs mTw, Nuke, Xperia Play 2011, part 2 | R21 C4 0:13 ave@mymTw.com -> Frag eXecutors  PASHA[t] | loose | 0.16° (-0.15, +0.06) | 2 units | 0 units |
+
+How it was measured: one run over the 88 demos on a scratch build with the three settings as switches (5.8 minutes, on Sujan's go of 23 Nov 2026), then `ground_truth_check.py` on a build with the unlag moment on (2.0 minutes, 9 mismatches, 10 known gaps) and one with the 1-pixel line and the top row at 24 (2.0 minutes, 2 mismatches, 10 known gaps).
