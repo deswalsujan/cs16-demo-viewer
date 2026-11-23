@@ -21,6 +21,12 @@ Lines and parts of lines from IDEAS.md's **By-eye round** that Sujan passed, wor
 ## Open follow-ups (checklist, updated 28 Oct 2026, 0.24.0)
 
 **Sujan's feedback of 20 Nov 2026 on four new demos** (moved here as each item is done; open ones in IDEAS.md under the same name)
+- [x] **Players' and the server's settings from the demo**: dropped 23 Nov 2026 (Sujan: not useful): `~/code/cs16-data/reports/player-settings-2026-11-20.xlsx` deleted, and the `reports` folder with it; `tests/logs/player-settings-2026-11-20.md` kept as history; nothing in the viewer.
+  - Its text in IDEAS.md when closed:
+    - [ ] **Players' and the server's settings from the demo** (Sujan's question, 20 Nov 2026)
+      - Status: reported (the log, B): each player's userinfo (rate, cl_updaterate, cl_lw, cl_lc, cl_dlmax, model, colours, keys of their own), HLTV's own settings and its "ex_interp 0.15" line, the server cvar changes, the movement settings, pings and loss, the snapshot rate; cl_cmdrate, ex_interp, sensitivity and fps_max aren't in a demo.
+      - Next step: Sujan decides, after seeing the spreadsheet, whether and where the viewer shows them. Made on his go of 20 Nov 2026: `~/code/cs16-data/reports/player-settings-2026-11-20.xlsx` (outside the repo; sheets Players, Demos, Summary; 1,076 players in 83 demos; no password value anywhere), the findings in `tests/logs/player-settings-2026-11-20.md`: on LAN and in the online tournaments the same network settings (`rate` 25000 or 30000, `cl_updaterate` 101, `cl_lw` and `cl_lc` 1); LAN or online by each player's median ping alone (Sujan, 20 Nov 2026), with no disagreement with the events in `tests/DEMOS.md`.
+      - Decided so far: the demo doesn't set his ex_interp (Sujan, 20 Nov 2026; `DECISIONS.md`). A spreadsheet first, a report only, nothing in the viewer yet (Sujan, 20 Nov 2026; `DECISIONS.md`).
 - [x] **Wallbang labels on four kills in the new demos**: built in 0.27.4 (20 Nov 2026) on `wip/new-demos-fixes`: F1b, F2 and F3b, with Sujan's answers on the four kills and three of F1b's in `tests/expected/`.
   - Its text in IDEAS.md when built:
     - [ ] **Wallbang labels on four kills in the new demos**
