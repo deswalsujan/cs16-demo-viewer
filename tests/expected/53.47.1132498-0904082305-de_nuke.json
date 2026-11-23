@@ -1,0 +1,13 @@
+{
+ "demo": "53.47.1132498-0904082305-de_nuke.dem",
+ "sha256": "b8f79c63a04449c7223ca24cc7bcc17936d799560b68871c846eea7443533f7d",
+ "match": "Sweden vs Poland, Nuke, 8 Apr 2009",
+ "event": "unknown: a ClanBase match by the file name's layout and a \"[CB]Nicky\" spectator, on MYM's server (\"<Game-Hosting.com: MYM> LIVE!!!\"), the second map after `53.47.1132498-0904082227-de_dust2.dem`, not settled by the demo's text or a web source; recorded 8 Apr 2009 at 23:05 by the file name",
+ "map": "de_nuke",
+ "score": {
+  "value": "7:16",
+  "live": 23,
+  "source": "Sujan, 23 Nov 2026: Sweden 16 : 7 Poland (DECISIONS.md), written in the header's order, POLSKA then SWEDEN; the first half's 15 rounds count since 0.27.5 (F5), 8 rounds and 1:7 up to 0.27.4 (tests/logs/new-demos-feedback-2026-11-23.md, B)"
+ },
+ "kills": []
+}
