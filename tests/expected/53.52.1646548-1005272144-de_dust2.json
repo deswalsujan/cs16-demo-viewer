@@ -129,6 +129,26 @@
    "gun": "awp",
    "expected": "none",
    "source": "IDEAS-ARCHIVE.md, \"Wallbangs and kill timing\": the five kills 0.15.5 no longer lists as wallbangs really aren't wallbangs (Sujan, 2 Oct 2026); CHANGELOG.md 0.15.5"
+  },
+  {
+   "round": 20,
+   "timer": "1:18",
+   "killer": "SWIIIIIDEEEN  alleN",
+   "victim": "NORWAY tacky",
+   "gun": "m4a1",
+   "expected": "partial",
+   "source": "Sujan, 23 Nov 2026, spectating alleN in first person in his game (the review zip's check a): a partial wallbang, through cover, tacky's arm visible (DECISIONS.md; tests/logs/new-demos-feedback-2026-11-23.md)",
+   "known_gap": "reads no tag on 0.27.4: kept with this known gap until F4′ (tests/logs/new-demos-feedback-2026-11-23.md, A) is built"
+  },
+  {
+   "round": 28,
+   "timer": "0:59",
+   "killer": "SWIIIIIDEEEN  Delpan",
+   "victim": "NORWAY KORN",
+   "gun": "m4a1",
+   "expected": "partial",
+   "source": "Sujan, 23 Nov 2026, spectating Delpan in first person in his game (the review zip's check b): a partial wallbang, a headshot through cover, most of KORN visible (DECISIONS.md; tests/logs/new-demos-feedback-2026-11-23.md)",
+   "known_gap": "reads no tag on 0.27.4: kept with this known gap until F4′ (tests/logs/new-demos-feedback-2026-11-23.md, A) is built"
   }
  ]
 }
