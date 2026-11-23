@@ -6019,7 +6019,8 @@ async function buildBodyShots() {
   const all = []; for (let i = 0; i < sh.length; i += 4) all.push([sh[i], sh[i + 1], sh[i + 2], sh[i + 3]]);
   all.push(...add); all.sort((x, y) => x[0] - y[0]);
   d.shotsFx = new Float32Array(all.flat()); d.bodyShots = add.length;
-  prepAnim(); buildZoom(); preloadSounds();
+  // not preloadSounds() again: it would stop the one the load card waits for, and the AWP's and Scout's sounds are on its list
+  prepAnim(); buildZoom();
 }
 
 // ---------------- sidebar ----------------
