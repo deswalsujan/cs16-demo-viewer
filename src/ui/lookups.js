@@ -24,7 +24,7 @@ function buildZoom() {
   // order at the same moment: reset (0), weapon change (1), click (2), shot (3)
   const sn = D.snds || [];
   for (let i = 0; i < sn.length; i += 10) if (zids.has(sn[i + 1])) ev.push([sn[i], sn[i + 2], 2]);
-  const sh = D.shots || [];
+  const sh = fxShots(); // the fire events, and the AWP and Scout shots of the body animation in a demo that lost them (0.27.5)
   for (let i = 0; i < sh.length; i += 4) { const n = eventName(sh[i + 2]); if (SNIPERS[n]) ev.push([sh[i], sh[i + 1], 3, n]); }
   for (const e in D.slots) {
     const a = D.slots[e]; let w = -1, alive = false;

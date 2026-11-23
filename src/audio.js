@@ -25,13 +25,17 @@ const sndName = (idx) => (D.sounds && D.sounds[idx] ? D.sounds[idx].replace(/^\*
 // every sound this demo can play, so they can be loaded before they're needed
 function demoSoundList() {
   const need = new Set();
-  const s = D.snds || [];
-  for (let i = 0; i < s.length; i += 10) { const n = sndName(s[i + 1]); if (n) need.add(n); }
-  const sh = D.shots || [];
+  // the gunshots first (0.27.5; Sujan, 23 Nov 2026): the list loads one sound after another, and a shot whose sound hasn't loaded
+  // yet isn't played (playSound), so with the footsteps first the first shots of a visit were silent. The AWP's and Scout's always,
+  // for their shots from the body animation (buildBodyShots), which come in after this list is made.
+  const sh = fxShots();
   const seen = new Set();
   for (let i = 0; i < sh.length; i += 4) seen.add(eventName(sh[i + 2]));
+  for (const k in D.events || {}) { const n = eventName(+k); if (n === 'awp' || n === 'scout') seen.add(n); }
   for (let i = 1; i < (D.ownAmmo || []).length; i += 3) seen.add(WEAPON_EVENT[D.ownAmmo[i]]); // POV mode: his own guns
   for (const ev of seen) { const f = FIRE[ev]; if (!f) continue; for (const x of Array.isArray(f) ? f : [...f.on, ...f.off]) need.add('weapons/' + x + '.wav'); }
+  const s = D.snds || [];
+  for (let i = 0; i < s.length; i += 10) { const n = sndName(s[i + 1]); if (n) need.add(n); }
   if (D.booms && D.booms.length) for (const x of ['explode3', 'explode4', 'explode5']) need.add('weapons/' + x + '.wav');
   // shells landing in Player's eyes (0.26.27)
   if (sh.length || (D.ownShots && D.ownShots.length)) for (let k = 1; k <= 3; k++) { need.add(`player/pl_shell${k}.wav`); need.add(`weapons/sshell${k}.wav`); }
@@ -180,7 +184,7 @@ function soundTick(t0, t1) {
     const pos = !isNaN(s[o + 7]) ? [s[o + 7], s[o + 8], s[o + 9]] : entPos(e, s[o]);
     playSound(name, pos, s[o + 3], s[o + 4], s[o + 5], s[o + 6] ? e + ':' + s[o + 6] : null, L);
   }
-  const sh = D.shots || [], so = D.shotOrg; // shotOrg: POV mode only
+  const sh = fxShots(), so = D.shotOrg; // shotOrg: POV mode only (no body-animation shots there, so its indices match)
   for (let i = firstAfter(sh, 4, t0); i * 4 < sh.length && sh[i * 4] <= t1; i++) {
     const o = i * 4, name = fireSound(eventName(sh[o + 2]), sh[o + 3], i); if (!name) continue;
     // POV mode: where it was fired, the message's own position when it has one (the shooter wasn't in the snapshot,

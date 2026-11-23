@@ -3,6 +3,10 @@ const SPEEDS = [0.25, 0.5, 1, 2, 4, 8];
 
 // ---------------- state ----------------
 let D = null;            // parsed demo
+// The shots the sound, the gun's animation, the gun flash, the shells and the sniper scope follow: the demo's fire events plus, in a
+// demo that lost them, the AWP and Scout shots its body animation shows (D.shotsFx, buildBodyShots, 0.27.5). The wallbang finder
+// reads the fire events alone (D.shots).
+const fxShots = () => (D && (D.shotsFx || D.shots)) || [];
 let OV = null;           // overview {img, zoom, ox, oy, rotated, w, h}
 let T = 0;               // current demo time
 let playing = false, speed = 1;

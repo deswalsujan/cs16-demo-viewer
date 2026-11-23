@@ -84,8 +84,7 @@
    "victim": "mousesports | ninja",
    "gun": "ak47",
    "expected": "partial",
-   "source": "Sujan, 23 Nov 2026, spectating pita in first person in his game (the review zip's check d): a partial wallbang, part of ninja's head visible, and since the kill wasn't a headshot the bullet went through cover (DECISIONS.md; tests/logs/new-demos-feedback-2026-11-23.md)",
-   "known_gap": "reads no tag on 0.27.4: kept with this known gap until F4′ (tests/logs/new-demos-feedback-2026-11-23.md, A) is built"
+   "source": "Sujan, 23 Nov 2026, spectating pita in first person in his game (the review zip's check d): a partial wallbang, part of ninja's head visible, and since the kill wasn't a headshot the bullet went through cover (DECISIONS.md; tests/logs/new-demos-feedback-2026-11-23.md)"
   }
  ]
 }

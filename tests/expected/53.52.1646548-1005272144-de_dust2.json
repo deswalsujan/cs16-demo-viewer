@@ -28,7 +28,8 @@
    "victim": "NORWAY KORN",
    "gun": "ak47",
    "expected": "loose",
-   "source": "docs/review-answers.md, \"Wallbang sliver check\" (30 Oct 2026), g07: loose"
+   "source": "docs/review-answers.md, \"Wallbang sliver check\" (30 Oct 2026), g07: loose",
+   "known_gap": "reads Wallbang since 0.27.5: F4′'s top row of sight points at 24 leaves KORN hidden to them, and a hidden kill reads Partial only from 50 pixels (15 of him here). No pixel line keeps both him and 742 on gob b (mousesports vs AGAiN, Inferno, ESWC 2011 final, R4 1:13; 49 pixels, a wallbang), so 50 stays (Sujan, 23 Nov 2026; tests/logs/0.27.5.md)"
   },
   {
    "round": 9,
@@ -137,8 +138,7 @@
    "victim": "NORWAY tacky",
    "gun": "m4a1",
    "expected": "partial",
-   "source": "Sujan, 23 Nov 2026, spectating alleN in first person in his game (the review zip's check a): a partial wallbang, through cover, tacky's arm visible (DECISIONS.md; tests/logs/new-demos-feedback-2026-11-23.md)",
-   "known_gap": "reads no tag on 0.27.4: kept with this known gap until F4′ (tests/logs/new-demos-feedback-2026-11-23.md, A) is built"
+   "source": "Sujan, 23 Nov 2026, spectating alleN in first person in his game (the review zip's check a): a partial wallbang, through cover, tacky's arm visible (DECISIONS.md; tests/logs/new-demos-feedback-2026-11-23.md)"
   },
   {
    "round": 28,
@@ -147,8 +147,7 @@
    "victim": "NORWAY KORN",
    "gun": "m4a1",
    "expected": "partial",
-   "source": "Sujan, 23 Nov 2026, spectating Delpan in first person in his game (the review zip's check b): a partial wallbang, a headshot through cover, most of KORN visible (DECISIONS.md; tests/logs/new-demos-feedback-2026-11-23.md)",
-   "known_gap": "reads no tag on 0.27.4: kept with this known gap until F4′ (tests/logs/new-demos-feedback-2026-11-23.md, A) is built"
+   "source": "Sujan, 23 Nov 2026, spectating Delpan in first person in his game (the review zip's check b): a partial wallbang, a headshot through cover, most of KORN visible (DECISIONS.md; tests/logs/new-demos-feedback-2026-11-23.md)"
   }
  ]
 }

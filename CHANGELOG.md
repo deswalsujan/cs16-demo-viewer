@@ -4,6 +4,7 @@ What changed in the viewer, newest first. The version shows in the viewer's **He
 
 ## Versions
 
+- [0.27.5](#0275-2026-11-23) 2026-11-23: Recoil, first half, AWP shots
 - [0.27.4](#0274-2026-11-20) 2026-11-20: New demos' fixes, team names, dates
 - [0.27.3](#0273-2026-11-20) 2026-11-20: Several demos picked, 0:0 warning
 - [0.27.2](#0272-2026-11-20) 2026-11-20: POV radar, C4, sky, light
@@ -91,6 +92,29 @@ What changed in the viewer, newest first. The version shows in the viewer's **He
 - [0.3.0](#030-2026-09-30) 2026-09-30: First-person weapons
 - [0.2.0](#020-2026-09-30) 2026-09-30: Real models and sound
 - [0.1.0](#010-before-2026-09-30) before 2026-09-30: First version: radar, 3D, kills
+
+## 0.27.5 (2026-11-23)
+
+Sujan's go of 23 Nov 2026 on the report of his feedback on five new demos (`tests/logs/new-demos-feedback-2026-11-23.md`; `DECISIONS.md`; IDEAS-ARCHIVE.md, **Sujan's feedback of 23 Nov 2026 on five new demos**): F4′, F5 and C1 built together on `wip/recoil-halves-awp` from origin/main (0.27.4) with `notes/after-0.27.4` merged in. Nothing new on screen.
+
+### Fixed
+- F4′, the wallbang finder (part 1): a clear recorded aim at the shot is checked again on the bullet's line, the killing shot's recoil from its fire event added (the demo records the view with the recoil in it once, and the gun fires with it twice: ReHLDS SV_FinishPMove, ReGameDLL's `v_angle + punchangle`); through cover there, that line is the aim. RobbaN on whiMp (SK Gaming vs mTw, Tuscan, WCG 2008 final, R30 1:22) reads **Partial wallbang**, no tag up to 0.27.4. A recorded aim through cover stays as it is, and there's no limit on the recoil's size (1° and 8 units would drop alleN on tacky, Sujan's check a).
+- F4′ (part 2): the top row of sight points at 24 units over a standing victim's origin (30 up to 0.27.4), under the posed model's head top (24.5 to 26.6), so lines that passed over his head no longer count him in view. pasha on Tentpole (Sweden vs Poland, Dust2, 8 Apr 2009, R15 1:09) reads **Wallbang**, **Partial wallbang** up to 0.27.4.
+- F4′ (part 3): a kill whose aim, the recoil added, ends more than 24 units from the part the kill hit, with part of the victim in view and the line to that part through cover, goes to the damage rule as F1b's kills do. PeRRy on REAL (Norway vs Romania, Tuscan, 12 Feb 2009, R14 1:31) reads **Partial wallbang**, no tag up to 0.27.4.
+- F5, the rounds: a file whose first announced start comes after its first round, on a server whose plugin never announces a half's end, counts the stretch before that start as a half when it begins at 0:0, has 15 rounds played (12 for MR12) and the teams swap sides after it. Sweden vs Poland, Nuke, 8 Apr 2009: 23 rounds, Sweden 16 : 7 (8 rounds, POLSKA 1 : 7 SWEDEN up to 0.27.4); no other test demo changes.
+- C1: the AWP and Scout shots a demo has no fire event for come from the shooter's body animation (`ref_shoot_rifle`), with their gunshot, rechamber, the scope's drop and return, gun flash and shell; the wallbang finder still reads fire events only. emuLate vs Amazing Gaming, Dust2, WCG 2007: 120 shots added to its 18 AWP fire events. In the game's demo player these shots are silent (Sujan's check e).
+- The gunshot sounds load first when a demo opens, so the first shots of a visit play (the footsteps came first in the list, and a sound not loaded yet isn't played).
+
+### Changed
+- `tests/expected/`: Sujan's answers of 23 Nov 2026 (PeRRy on REAL, RobbaN on whiMp, pasha on Tentpole, and checks a, b and d) without their known gaps; GeT_RiGhT on KORN (Sweden vs Norway, Dust2, ASUS ENC 2010, R7 1:12; 15 pixels) a known gap, hidden to the sight points with the top row at 24, since no pixel line for hidden kills keeps both him and 742 on gob b (49 pixels, a wallbang), so 50 stays (Sujan, 23 Nov 2026); face on nsutOtO's answer "partial", which keeps Sujan's "loose" now that the top row finds it by its pixels.
+
+### How it was tested
+⟪TESTED⟫
+
+### Discussed, not changed
+- The victim drawn at the unlag moment (the shooter's ping plus 0.1 s before the shot): rejected, the labels keep judging the moment of the shot (Sujan, 23 Nov 2026; the report, D1: 9 of his answers broken).
+- Hidden kills **Partial** from 1 pixel: measured (the report, D2), no line between his answers fits them all; 50 stays.
+- The recoil added to every aim (F4): 33 of Sujan's confirmed answers broken; the recoil's size doesn't separate them (the report, D3).
 
 ## 0.27.4 (2026-11-20)
 

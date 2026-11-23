@@ -12,8 +12,7 @@
    "victim": "whiMp",
    "gun": "ak47",
    "expected": "partial",
-   "source": "Sujan, 23 Nov 2026, spectating RobbaN in first person in his game: a partial wallbang, the same pattern as PeRRy's (his R30 1:23 is the Wall damage row's start, the viewer's kill row reads 1:22; DECISIONS.md; tests/logs/new-demos-feedback-2026-11-23.md, A2)",
-   "known_gap": "reads no tag on 0.27.4: none of the 15 sight points sees whiMp, but the recorded aim at the shot is clear, 36 units off his middle beside the crate, so the finder takes the kill as in the open; the earlier bullets are listed as Wall damage. Kept with this known gap until the fix proposed in tests/logs/new-demos-feedback-2026-11-23.md, A, is built or dropped"
+   "source": "Sujan, 23 Nov 2026, spectating RobbaN in first person in his game: a partial wallbang, the same pattern as PeRRy's (his R30 1:23 is the Wall damage row's start, the viewer's kill row reads 1:22; DECISIONS.md; tests/logs/new-demos-feedback-2026-11-23.md, A2)"
   }
  ]
 }

@@ -273,6 +273,17 @@ function derive() {
   // set canceled" when a start is thrown away. When the demo has these, a round counts only if it
   // started while the match was announced live; otherwise the guess from restarts below decides.
   const windows = liveWindows(D.notes || [], (D.parts || []).slice(1).map((p) => p.start));
+  // F5 (0.27.5; Sujan, 23 Nov 2026): a file whose first announced start comes after its first round, on a server whose plugin never
+  // announces a half's end, counts the stretch before that start as a half when it begins at 0:0, has 15 rounds played to a winner
+  // (12 for MR12) and the teams swap sides after it. Sweden vs Poland, Nuke, 8 Apr 2009 (MYM's "LIVE!!!" only): the recording starts
+  // after the first half's "LIVE!!!", so that half (Sweden 9:6 on CT) fell outside every window, 8 rounds counted of 39; on the other
+  // 87 test demos the rule adds none (tests/logs/new-demos-feedback-2026-11-23.md, B).
+  if (windows.length && rounds.length && !D.pov && windows[0][0] > rounds[0].start + 1) {
+    const first = rounds.filter((r) => r.seg === rounds[0].seg && !r.missing);
+    const played = first.filter((r) => r.winner && r.kills.some((k) => k.killer !== k.victim));
+    const next = rounds.find((r) => r.start >= windows[0][0] - 10 && r.winner);
+    if (first.length && first[0].scoreT === 0 && first[0].scoreCT === 0 && (played.length === 15 || played.length === 12) && next && !sameSides(first[0], next)) windows.unshift([first[0].start - 1, first[first.length - 1].end, 'end']);
+  }
   if (windows.length) {
     for (const r of rounds) r.live = counts(r) && windows.some(([a, b]) => r.start >= a - 10 && r.start < b - 1);
     startWhenFull();

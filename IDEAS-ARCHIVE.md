@@ -20,6 +20,29 @@ Lines and parts of lines from IDEAS.md's **By-eye round** that Sujan passed, wor
 
 ## Open follow-ups (checklist, updated 28 Oct 2026, 0.24.0)
 
+**Sujan's feedback of 23 Nov 2026 on five new demos** (moved here as each item is done; open ones in IDEAS.md under the same name)
+- [x] **Wallbang labels on three kills in the new demos**: built in 0.27.5 (23 Nov 2026) on `wip/recoil-halves-awp`: F4′, its recoil rescue with no size limit (it would drop check a), the top row at 24 and the miss rule; the three kills and checks a, b and d read as Sujan answered; GeT_RiGhT on KORN a known gap (`tests/logs/0.27.5.md`).
+  - Its text in IDEAS.md when built:
+    - [ ] **Wallbang labels on three kills in the new demos** (Sujan, 23 Nov 2026, in his game)
+      - Status: measured, not built (the report, A): PeRRy on REAL (Norway vs Romania, Tuscan, R14 1:31) and RobbaN on whiMp (SK Gaming vs mTw, Tuscan, WCG 2008 final, R30 1:22) read no tag, their recorded aim clear beside the cover; pasha on Tentpole (Sweden vs Poland, Dust2, R15 1:09) reads **Partial wallbang** from two sight points 30 units up, over his head (0 pixels of him). F4′ (the punch from the fire event added only to rescue a clear aim, the top sight points at 24 units, a clear aim missing the part hit by over 24 units sent to the damage rule) gets all three right; on the 88 demos it changes 72 kills on 43 demos and 2 of the 243 confirmed answers (GeT_RiGhT on KORN, and face on nsutOtO's reason). The punch on every aim broke 33.
+      - Next step: Claude builds F4′ with F5 and C1 (one branch, one pull request); the recoil's size limit only if it keeps checks a, b and c; the hidden kills' pixel line as the decision says.
+      - Decided so far: his three answers, in `tests/expected/` with known gaps (Sujan, 23 Nov 2026; `DECISIONS.md`). His answers on the review zip: a, b and d partial (in `tests/expected/`), c a wallbang but not sure (Sujan, 23 Nov 2026; `DECISIONS.md`). The unlag moment rejected; build F4′ (Sujan, 23 Nov 2026; `DECISIONS.md`).
+- [x] **Sweden vs Poland, Nuke: the first half isn't counted**: built in 0.27.5 (23 Nov 2026) on `wip/recoil-halves-awp`: F5; Sweden vs Poland, Nuke reads 23 rounds, Sweden 16 : 7; no other test demo changes (`tests/logs/0.27.5.md`).
+  - Its text in IDEAS.md when built:
+    - [ ] **Sweden vs Poland, Nuke: the first half isn't counted** (Sujan, 23 Nov 2026)
+      - Status: measured, not built (the report, B): the file starts in the first half, after MYM's first "LIVE!!!", and the plugin never says when a half ends, so its 15 first-half rounds fall outside every announced window: 8 counted of 39 (POLSKA 1 : 7 SWEDEN), where the match was Sweden 16 : 7 Poland. The idle-server rule changes nothing there; no kills are missing. F5 (the stretch before the first announced start counts as a half when it starts at 0:0, has 15 rounds played, and the teams swap sides after it) adds these 15 rounds and none on the other 87 demos.
+      - Next step: Claude builds F5 with F4′ and C1 (one branch, one pull request); Sweden 16 : 7 Poland goes into the By-eye round for Sujan to confirm.
+      - Decided so far: F5 approved; built with F4′ and C1 (Sujan, 23 Nov 2026; `DECISIONS.md`).
+- [x] **AWP shots with no fire event**: built in 0.27.5 (23 Nov 2026) on `wip/recoil-halves-awp`: C1, the AWP and Scout shots from the body animation for the gunshot, rechamber, scope, gun flash and shell (120 in this demo; `tests/logs/0.27.5.md`).
+  - Its text in IDEAS.md when built:
+    - [ ] **AWP shots with no fire event** (Sujan, 23 Nov 2026; emuLate vs Amazing Gaming, Dust2, WCG 2007 semi-final, protocol 47)
+      - Status: measured, not built (the report, C): the demo kept 18 AWP fire events, for 138 AWP and Scout shots its body animation shows (`ref_shoot_rifle`); the viewer, and the game, play a shot's sound and rechamber only from a fire event; the zoom comes from the 552 zoom clicks, so the scope opens but doesn't drop for the bolt. Not the protocol's: Sweden vs Ukraine (protocol 47) keeps 9 of 10 AWP kills' events. C1, the shots from the body animation for the sound, rechamber, scope drop, gun flash and shell, adds 807 shots on the 79 HLTV test demos and changes no label.
+      - Next step: Claude builds C1 with F4′ and F5 (one branch, one pull request), with the gunshot sounds loaded when a demo opens.
+      - Decided so far: check e, no AWP shot sound in his game for that shot, the rechamber not to judge (he switched weapons); starix's moment dropped, the demo shows no shot there; build C1 (Sujan, 23 Nov 2026; `DECISIONS.md`).
+- [x] **The first time each sound is needed, it isn't played**: the gunshots load first when a demo opens, built in 0.27.5 (23 Nov 2026) with C1; the first play of any other sound not loaded yet is still skipped.
+  - Its text in IDEAS.md when built:
+    - [ ] **The first time each sound is needed, it isn't played** (found 23 Nov 2026 measuring C; older than this work): `playSound` (`src/audio.js`) starts loading a .wav the first time it's needed and skips that play, so the first AWP shot of a visit, and the first of every other sound, is silent. The gunshot sounds load when a demo opens, built with C1 (Sujan, 23 Nov 2026; `DECISIONS.md`).
+
 **Sujan's feedback of 20 Nov 2026 on four new demos** (moved here as each item is done; open ones in IDEAS.md under the same name)
 - [x] **Players' and the server's settings from the demo**: dropped 23 Nov 2026 (Sujan: not useful): `~/code/cs16-data/reports/player-settings-2026-11-20.xlsx` deleted, and the `reports` folder with it; `tests/logs/player-settings-2026-11-20.md` kept as history; nothing in the viewer.
   - Its text in IDEAS.md when closed:
@@ -512,6 +535,12 @@ Lines and parts of lines from IDEAS.md's **By-eye round** that Sujan passed, wor
   - Decided so far: how the expected files are filled and judged, and the quick and full runs (Sujan, 30 Oct 2026, `STATE.md`).
 
 **Sliver kills** (30 Oct 2026; built in 0.26.0)
+- [x] **One line for strict: 0 pixels for hidden kills too?**: measured 23 Nov 2026 (`tests/logs/new-demos-feedback-2026-11-23.md`, D2): the hidden kills Sujan answered at 1 to 100 pixels put GeT_RiGhT on KORN (15, partial) below 742 on gob b (49, a wallbang), so no line fits them all; 50 stays and GeT_RiGhT on KORN is a known gap (Sujan, 23 Nov 2026).
+  - Its text in IDEAS.md when closed:
+    - [ ] **One line for strict: 0 pixels for hidden kills too?** (for later, Sujan, 30 Oct 2026)
+      - Status: kills the finder's sight points call hidden read strict under 50 pixels of the victim in the picture (0.23.0), but sliver kills need 0 pixels for strict (0.26.0), so two kills with the same picture can get different tags.
+      - Next step: Claude, later: check whether 0 pixels should be the strict line for both, against Sujan's answers in `tests/expected/` (which hidden kills at 1 to 49 pixels he answered, and whether he called them strict or loose); then Sujan decides.
+      - Decided so far: hidden kills strict under 50 pixels, LOOSE from 50 (Sujan, 25 Oct 2026); sliver kills strict at 0, LOOSE from 1 to 49 (Sujan, 30 Oct 2026).
 - [x] **Sliver kills, by eye (0.26.0)**: confirmed by Sujan by eye in the viewer, 31 Oct 2026 (0.26.2): KUBEN on RARA loose, MJE on kubenB strict, GeT_RiGhT on markeloff not listed (`STATE.md` Decisions; the three kills' sources in `tests/expected/` say so).
   - Status: built in 0.26.0; not yet checked by Sujan in the viewer (the 10 kills were answered on the review page).
   - Next step: Sujan opens FX vs eSahara, Dust2, DreamHack Winter 2010: R18 0:21 KUBEN on RARA reads LOOSE, its tag's hover saying the sight lines reach him; NoA vs Pentagram, Train 2006: R18 1:22 MJE on kubenB reads strict; SK vs Na`Vi, Train, DreamHack Winter 2011: R31 C4 0:09 GeT_RiGhT on markeloff isn't listed (the railing).
