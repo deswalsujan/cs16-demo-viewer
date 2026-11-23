@@ -546,3 +546,9 @@ The 33 confirmed answers the recoil broke in F4:
 | FX vs mTw, Nuke, Xperia Play 2011, part 2 | R21 C4 0:13 ave@mymTw.com -> Frag eXecutors  PASHA[t] | loose | 0.16° (-0.15, +0.06) | 2 units | 0 units |
 
 How it was measured: one run over the 88 demos on a scratch build with the three settings as switches (5.8 minutes, on Sujan's go of 23 Nov 2026), then `ground_truth_check.py` on a build with the unlag moment on (2.0 minutes, 9 mismatches, 10 known gaps) and one with the 1-pixel line and the top row at 24 (2.0 minutes, 2 mismatches, 10 known gaps).
+
+## E. Sujan's answers on the review zip (23 Nov 2026)
+
+Spectating the shooter in first person in his game (`DECISIONS.md`): a, alleN on tacky (Sweden vs Norway, Dust2, ASUS ENC 2010, R20 1:18), a partial wallbang, through cover with tacky's arm in view; b, Delpan on KORN (R28 0:59, a headshot), partial, through cover with most of KORN in view; c, ninja on cArn (Fnatic vs mousesports, Tuscan, ESWC 2011, R15 1:30), a wallbang with cArn not in view, **Sujan not sure** (bullet decals and sparks made it hard to see), so in the notes only; d, pita on ninja (R6 0:33), partial, part of ninja's head in view, and since the kill wasn't a headshot the bullet went through cover; e, HaRtsSSsSsSsSSS's AWP on B1ad3 (emuLate vs Amazing Gaming, Dust2, WCG 2007, warm-up round 1, 2:53), no shot sound in his game, the rechamber not to judge since he switched weapons. a, b and d are in `tests/expected/`, each with a known gap until F4′ is built. With F4′ (A), a reads **Partial** (171 pixels, the recoil's rescue), b **Partial** by damage (the rescue), c **Wallbang** (the rescue) and d **Partial** (112 pixels, the top row). The recoil's size limit of D3 would drop a (2.62°, but only 4 units into cover).
+
+His decisions the same day: the unlag moment rejected, the labels keep judging the moment of the shot; starix's moment dropped; F4′, F5 and C1 built together.
