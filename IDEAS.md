@@ -105,6 +105,9 @@ Everything raised in conversation that isn't finished, in one place. Each item s
 **Sujan's feedback of 23 Nov 2026 on five new demos** (Claude's report: `tests/logs/new-demos-feedback-2026-11-23.md`; the five are test demos, `tests/DEMOS.md`; recorded on `notes/after-0.27.4`, nothing built)
 - Done, in the archive (0.27.5, 23 Nov 2026): **Wallbang labels on three kills in the new demos** (F4′), **Sweden vs Poland, Nuke: the first half isn't counted** (F5), **AWP shots with no fire event** (C1) and **The first time each sound is needed, it isn't played** (the gunshots load first); their by-eye checks are in the **By-eye round**.
 
+**Seen in the review of #69** (0.27.5, 23 Nov 2026; for later)
+- [ ] **The head point at 28 units over a standing victim's origin**: the hit finder (`computeHits`) and F4′'s miss rule (`computeWallbangs`, `src/ui/wallbangs.js`) aim at a headshot victim's head 28 units over his origin standing (16 ducking), but the posed model's top is 24.5 to 26.6 units over it (`tests/logs/new-demos-feedback-2026-11-23.md`, A3), so the point may sit at or over the top of his head. Later, Claude measures where the game's head hitbox sits (the player models' hitboxes, ReGameDLL's hit groups) before changing it; nothing built (Sujan, 23 Nov 2026).
+
 **Sujan's feedback of 20 Nov 2026 on four new demos** (Claude's report: `tests/logs/new-demos-feedback-2026-11-20.md`; pictures on `screenshots/new-demos-feedback`; Sujan's answers the same day, `DECISIONS.md`: built as 0.27.4 on `wip/new-demos-fixes`)
 - Done, in the archive (23 Nov 2026): **Players' and the server's settings from the demo**, dropped (Sujan, 23 Nov 2026: not useful; the spreadsheet deleted, `tests/logs/player-settings-2026-11-20.md` kept; `DECISIONS.md`).
 - Done, in the archive (0.27.4, 20 Nov 2026): **Wallbang labels on four kills in the new demos**; its by-eye checks are in the **By-eye round**.
