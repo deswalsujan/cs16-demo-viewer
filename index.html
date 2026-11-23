@@ -821,7 +821,7 @@ addEventListener('resize', () => { if (applyUiSize()) dispatchEvent(new Event('u
         </div>
         <h2 class="hpart">About</h2>
         <div class="habout">
-          <p>CS 1.6 Demo Viewer, version 0.27.4. It plays HLTV and POV demos in the browser, from your own Half-Life folder; nothing leaves your computer.</p>
+          <p>CS 1.6 Demo Viewer, version 0.27.5. It plays HLTV and POV demos in the browser, from your own Half-Life folder; nothing leaves your computer.</p>
           <p>A map with no radar picture: drop its overview, the .bmp and .txt pair from cstrike\overviews, anywhere on the page.</p>
           <p class="hlinks"><a href="https://github.com/deswalsujan/cs16-demo-viewer/blob/main/CHANGELOG.md" target="_blank" rel="noopener">What's new</a> · <a href="https://github.com/deswalsujan/cs16-demo-viewer" target="_blank" rel="noopener">Source on GitHub</a> · <a href="https://github.com/deswalsujan/cs16-demo-viewer/issues/new/choose" target="_blank" rel="noopener">Report a bug</a></p>
           <p class="hdbg"><button class="btn" id="bDebug" type="button" title="Copies details for a bug report: browser, demo name, what loaded, errors. No file contents.">Copy debug info</button><span>Paste it into your bug report: it says which browser, demo and files, and any errors, with no file contents.</span></p>
@@ -933,7 +933,7 @@ addEventListener('resize', () => { if (applyUiSize()) dispatchEvent(new Event('u
         <div class="drophint">Or drop a .dem file anywhere on this page</div>
         <div class="prog" id="prog" hidden><i id="progBar"></i></div>
         <div class="msg" id="msg"></div>
-        <div class="loadfoot"><span>Version 0.27.4 · <a href="https://github.com/deswalsujan/cs16-demo-viewer" target="_blank" rel="noopener">Source on GitHub</a> · <button class="lnk" id="bHelpStart" type="button" title="The keys, the colours and marks, and about the viewer (?)">Help</button></span><button class="btn" id="bClear" type="button" title="Deletes the copies of maps, models, sounds and radar overviews this browser saved from your Half-Life folder. The folder closes until you pick it again, as on a first visit">Delete saved files</button></div>
+        <div class="loadfoot"><span>Version 0.27.5 · <a href="https://github.com/deswalsujan/cs16-demo-viewer" target="_blank" rel="noopener">Source on GitHub</a> · <button class="lnk" id="bHelpStart" type="button" title="The keys, the colours and marks, and about the viewer (?)">Help</button></span><button class="btn" id="bClear" type="button" title="Deletes the copies of maps, models, sounds and radar overviews this browser saved from your Half-Life folder. The folder closes until you pick it again, as on a first visit">Delete saved files</button></div>
       </div>
     </div>
   </section>
@@ -1255,6 +1255,7 @@ export function parseDemo(buffer, onProgress, opts = {}) {
   // sounds heard in the demo: server sounds, weapon fire events, explosions, radio lines and corpses
   const snds = [];      // time, sound resource index, entity, volume, attenuation, pitch, channel, x, y, z (NaN when not sent)
   const shots = [];     // time, entity, event resource index, bparam1
+  const shotPunch = []; // each shot's iparam1 and iparam2: the gun's punchangle x100 for most guns (F4′, 0.27.5; wallbangs.js, killPunch)
   // where each shot was fired, when the message says (x, y, z, else NaN; one per shot, POV demos only). The server
   // adds it when the shooter isn't in the receiving game's snapshot: in a POV demo that's most shots (2,579 of 3,440
   // in Match 1 T), and without it those played at full volume with no distance (Sujan, 3 Oct 2026: far CTs sounded close).
@@ -2001,6 +2002,7 @@ export function parseDemo(buffer, onProgress, opts = {}) {
               const ev = pendingEv[k + 2]; let e = ev && ev.entindex ? ev.entindex : 0;
               if (!e && pendingEv[k + 1] >= 0) { if (!order) { order = []; for (let n = 0; n < ents.length; n++) if (ents[n]) order.push(n); } e = order[pendingEv[k + 1]] || 0; }
               shots.push(time, e, pendingEv[k], ev && ev.bparam1 ? 1 : 0);
+              shotPunch.push(ev && ev.iparam1 || 0, ev && ev.iparam2 || 0);
               if (opts.povRounds) { if (ev && ev['origin[0]'] != null) shotOrg.push(ev['origin[0]'], ev['origin[1]'] || 0, ev['origin[2]'] || 0); else shotOrg.push(NaN, NaN, NaN); }
               // the smoke itself: the game sends createsmoke when a smoke pops (with the cloud's centre as origin)
               // and then once a second while it smokes (with the centre in angles), from ReGameDLL's
@@ -2090,7 +2092,7 @@ export function parseDemo(buffer, onProgress, opts = {}) {
     occupants, brushEvents: new Float32Array(brushEvents), brushPose: new Float32Array(brushPose), viewers: hltvStatus, notes,
     times: new Float32Array(samples.t), slots,
     finalScore: { ...scores }, models: resources.models, stride: STRIDE,
-    pmodels, sounds: resources.sounds, events: resources.events, snds: new Float32Array(snds), shots: new Float32Array(shots), booms: new Float32Array(booms), hitPoints: new Float32Array(hitPoints), brass: new Float32Array(brass), puffs: new Float32Array(puffs), radio, centre, corpses,
+    pmodels, sounds: resources.sounds, events: resources.events, snds: new Float32Array(snds), shots: new Float32Array(shots), shotPunch: new Float32Array(shotPunch), booms: new Float32Array(booms), hitPoints: new Float32Array(hitPoints), brass: new Float32Array(brass), puffs: new Float32Array(puffs), radio, centre, corpses,
     errors, errSamples, health, c4drops: new Float32Array(c4drops), c4ents: new Float32Array(c4ents), glows: new Float32Array(glows), slow, stops, pings: new Float32Array(pings),
     ...(povData ? { povData } : {}),
   };
@@ -2547,6 +2549,10 @@ const SPEEDS = [0.25, 0.5, 1, 2, 4, 8];
 
 // ---------------- state ----------------
 let D = null;            // parsed demo
+// The shots the sound, the gun's animation, the gun flash, the shells and the sniper scope follow: the demo's fire events plus, in a
+// demo that lost them, the AWP and Scout shots its body animation shows (D.shotsFx, buildBodyShots, 0.27.5). The wallbang finder
+// reads the fire events alone (D.shots).
+const fxShots = () => (D && (D.shotsFx || D.shots)) || [];
 let OV = null;           // overview {img, zoom, ox, oy, rotated, w, h}
 let T = 0;               // current demo time
 let playing = false, speed = 1;
@@ -3116,7 +3122,7 @@ function joinDemos(parts) {
     for (const k in src) { const nm = src[k]; if (byName[nm] == null) { byName[nm] = next; dst[next++] = nm; } map[k] = byName[nm]; }
     return (i) => (map[i] != null ? map[i] : i);
   };
-  const timesL = [], slotsL = {}, hpL = [], packL = [], brushEvL = [], brushPoseL = [], sndsL = [], shotsL = [], boomsL = [], hitPointsL = [], brassL = [], puffsL = [], c4L = [], c4eL = [], glowsL = [], pingsL = [];
+  const timesL = [], slotsL = {}, hpL = [], packL = [], brushEvL = [], brushPoseL = [], sndsL = [], shotsL = [], shotPunchL = [], boomsL = [], hitPointsL = [], brassL = [], puffsL = [], c4L = [], c4eL = [], glowsL = [], pingsL = [];
   // POV mode (0.25.0): the parts' POV data on the joined timeline, when every part is a POV demo. recs: for each part,
   // its first sample, its number of samples and the recording player's entity there
   const povL = parts.every((P) => P.povData) ? { view: [], ownPos: [], hpInfo: [], shotOrg: [], fovs: [], ownAmmo: [], wanims: [], vmodels: [], obs: [], dmg: [], bars: [], tabs: [], fades: [], fadeStops: [], radarPos: [], radarBomb: [], attribs: [], hud: { hp: [], ap: [], helmet: [], money: [], ammox: [] }, gunAmmo: {}, recs: [] } : null;
@@ -3162,6 +3168,7 @@ function joinDemos(parts) {
     flat(P.brushPose, 8, (a, i) => { a[i] = sh(a[i]); }, brushPoseL);
     flat(P.snds, 10, (a, i) => { a[i] = sh(a[i]); a[i + 1] = mS(a[i + 1]); }, sndsL);
     flat(P.shots, 4, (a, i) => { a[i] = sh(a[i]); a[i + 2] = mE(a[i + 2]); }, shotsL);
+    flat(P.shotPunch || new Float32Array(P.shots.length / 2), 2, () => {}, shotPunchL);
     flat(P.booms, 4, (a, i) => { a[i] = sh(a[i]); }, boomsL);
     flat(P.hitPoints || [], 5, (a, i) => { a[i] = sh(a[i]); }, hitPointsL);
     flat(P.brass || [], 12, (a, i) => { a[i] = sh(a[i]); a[i + 8] = mM(a[i + 8]); }, brassL);
@@ -3211,7 +3218,7 @@ function joinDemos(parts) {
     fades: cat(povL.fades), fadeStops: cat(povL.fadeStops), radarPos: cat(povL.radarPos), radarBomb: cat(povL.radarBomb), attribs: cat(povL.attribs),
     hud: Object.assign(Object.fromEntries(Object.keys(povL.hud).map((k) => [k, cat(povL.hud[k])])), { gunAmmo: povL.gunAmmo }),
   } : null;
-  out.pack = cat(packL); out.hp = cat(hpL); out.brushEvents = cat(brushEvL); out.brushPose = cat(brushPoseL); out.snds = cat(sndsL); out.shots = cat(shotsL); out.booms = cat(boomsL); out.hitPoints = cat(hitPointsL); out.brass = cat(brassL); out.puffs = cat(puffsL); out.c4drops = cat(c4L); out.c4ents = cat(c4eL); out.glows = cat(glowsL); out.pings = cat(pingsL);
+  out.pack = cat(packL); out.hp = cat(hpL); out.brushEvents = cat(brushEvL); out.brushPose = cat(brushPoseL); out.snds = cat(sndsL); out.shots = cat(shotsL); out.shotPunch = cat(shotPunchL); out.booms = cat(boomsL); out.hitPoints = cat(hitPointsL); out.brass = cat(brassL); out.puffs = cat(puffsL); out.c4drops = cat(c4L); out.c4ents = cat(c4eL); out.glows = cat(glowsL); out.pings = cat(pingsL);
   out.bomb.sort((a, b) => a.t - b.t);
   out.start = parts[0].start;
   out.fileName = parts[0].fileName;
@@ -4050,11 +4057,35 @@ function wallKeeps(k) {
   }
   return (k.keep = keep);
 }
-// the killer's crosshair line at the shot, from his eye to the victim's distance: [eye, end]
-function aimLine(k) {
+// The killer's punchangle at the killing shot, from his fire event in the kill's frame: [pitch, yaw] in degrees, or null (F4′,
+// 0.27.5; Sujan, 23 Nov 2026). After each move the engine stores the view angles with the punch added once (ReHLDS sv_user.cpp,
+// SV_FinishPMove), and the demo records those; the gun then fires along v_angle + punchangle (wpn_ak47.cpp, AK47Fire), the punch
+// a second time, so the bullet's line is the recorded aim plus this punch (and the spread, which the event cuts to 0.01). The
+// event sends int(punchangle x 100) in iparam1 and iparam2 for most guns, the pitch twice for the AWP, Scout, G3SG1, SG550 and
+// USP; the Galil and FAMAS send it x 10,000,000, which overflows the field (only its sign survives), and the Elites none. On 275
+// rifle headshot kills of 8 demos the line's end lies a median 19 units from the head with the recorded aim, 13 with the punch
+// (tests/logs/new-demos-feedback-2026-11-23.md, A).
+const PUNCH_XY = new Set(['ak47', 'aug', 'deagle', 'fiveseven', 'glock18', 'm249', 'm4a1', 'mac10', 'mp5n', 'p228', 'p90', 'sg552', 'tmp', 'ump45']);
+const PUNCH_X = new Set(['awp', 'scout', 'g3sg1', 'sg550', 'usp']);
+function killPunch(k) {
+  if (!D.shotPunch || !k.kang) return null;
+  const tP = k.tPos != null ? k.tPos : k.t, sh = D.shots;
+  for (let i = 0; i < sh.length; i += 4) {
+    if (sh[i + 1] !== k.killer || Math.abs(sh[i] - tP) > 0.001) continue;
+    const n = String(D.events[sh[i + 2]] || '').replace(/^.*\//, '').replace(/\.sc$/, '');
+    const x = D.shotPunch[i / 2], y = D.shotPunch[i / 2 + 1];
+    if (PUNCH_XY.has(n)) return [x / 100, y / 100];
+    if (PUNCH_X.has(n)) return [x / 100, 0];
+  }
+  return null;
+}
+// the killer's crosshair line at the shot, from his eye to the victim's distance: [eye, end]; withPunch: the bullet's line,
+// the killing shot's punch added (killPunch), when his fire event has it
+function aimLine(k, withPunch) {
   const eye = [k.kpos[0], k.kpos[1], k.kpos[2] + (k.kduck ? 12 : 17)];
   let raw = k.kang ? k.kang[0] : 0; if (raw > 180) raw -= 360;
-  const pitch = -raw * 3 * Math.PI / 180, yaw = (k.kang ? k.kang[1] : 0) * Math.PI / 180;
+  const pu = withPunch ? killPunch(k) : null;
+  const pitch = (-raw * 3 + (pu ? pu[0] : 0)) * Math.PI / 180, yaw = ((k.kang ? k.kang[1] : 0) + (pu ? pu[1] : 0)) * Math.PI / 180;
   const dist = Math.hypot(k.vpos[0] - eye[0], k.vpos[1] - eye[1], k.vpos[2] - eye[2]);
   return [eye, [eye[0] + Math.cos(pitch) * Math.cos(yaw) * dist, eye[1] + Math.cos(pitch) * Math.sin(yaw) * dist, eye[2] - Math.sin(pitch) * dist]];
 }
@@ -4088,7 +4119,10 @@ function computeWallbangs() {
   let poses = null; // doors where they were when this kill happened (open either way, or closed)
   const bodyVisible = (eye, v) => {
     const dx = v[0] - eye[0], dy = v[1] - eye[1]; const hl = Math.hypot(dx, dy) || 1; const px = -dy / hl, py = dx / hl;
-    const zs = v[3] ? [-12, 0, 10, 16] : [-30, -12, 6, 22, 30];
+    // the top row at 24 over a standing victim's origin since 0.27.5 (F4′; 30 up to 0.27.4): the posed model's top is 24.5 to 26.6
+    // over it, so a clear line at 30 passed over his head (pasha on Tentpole, Sweden vs Poland, Dust2, 8 Apr 2009, R15 1:09:
+    // two points at 30 over the wall's top, 0 pixels of him; Sujan, 23 Nov 2026: a wallbang)
+    const zs = v[3] ? [-12, 0, 10, 16] : [-30, -12, 6, 22, 24];
     for (const z of zs) for (const sd of [-12, 0, 12]) if (solidAlong(bsp, eye, [v[0] + px * sd, v[1] + py * sd, v[2] + z], 2, skip, poses).solid === 0) return true;
     return false;
   };
@@ -4107,9 +4141,17 @@ function computeWallbangs() {
     poses = posesAt(tP - 0.05);
     const seen = bodyVisible(eyeOf(kNow), vNow);
     if (!seen && tooMuchDamage(k)) continue;
-    const [eye, end] = aimLine(k);
+    let [eye, end] = aimLine(k);
     // the crosshair line goes through what a bullet hits (the 15 points above are sight lines)
-    const aim = solidAlong(bsp, eye, end, 2, skip, poses, 'bullet');
+    let aim = solidAlong(bsp, eye, end, 2, skip, poses, 'bullet');
+    // F4′ (0.27.5; Sujan, 23 Nov 2026): a clear recorded aim is checked again on the bullet's line, the killing shot's punch
+    // added (killPunch); through cover there, that line is the aim. A recorded aim through cover stays as it is: letting the punch
+    // clear it broke 33 of Sujan's 243 confirmed answers. RobbaN's AK-47 on whiMp (SK Gaming vs mTw, Tuscan, WCG 2008 final, R30
+    // 1:22): the recorded aim 36 units off him beside the crate, the punch 4.3° up, the bullet's line through 20 units of the
+    // crate, 8 from his head (Sujan: a partial wallbang). No limit on the punch's size: 1° and 8 units would drop alleN on tacky
+    // (Sweden vs Norway, Dust2, ASUS ENC 2010, R20 1:18; 2.6°, 4 units; Sujan: partial).
+    const endP = killPunch(k) ? aimLine(k, true)[1] : null;
+    if (aim.solid === 0 && endP) { const aP = solidAlong(bsp, eye, endP, 2, skip, poses, 'bullet'); if (aP.solid > 0) { end = endP; aim = aP; } }
     const mid = solidAlong(bsp, eye, [k.vpos[0], k.vpos[1], k.vpos[2] + (k.vduck ? 4 : 6)], 2, skip, poses, 'bullet');
     // crosshair had a clear line: the victim was hit in the open, unless part of him was seen, the line to his middle goes
     // through cover and the aim one snapshot before went through it (aimInCoverBefore): then the damage rule in computeHits
@@ -4118,7 +4160,16 @@ function computeWallbangs() {
     // fnatic vs EG, Dust2, EM3 Global Finals 2009, R22 1:44, Gux on Warden; Burning vs FairFrag, Inferno, ESWC 2010, R14 C4
     // 0:29, NTEP on DIODE). Never the picture check: the aim at the shot doesn't go through cover.
     if (aim.solid === 0) {
-      if (seen && mid.solid > 0 && aimInCoverBefore(k, tP)) k.aimBefore = { thick: Math.round(mid.solid), aim: 0, what: mid.hit.some((h) => h.model !== 0) ? 'object' : 'wall', eye };
+      // F4′ (0.27.5): or the aim, the punch added when there is one, ends more than 24 units from the part the kill hit (his head for
+      // a headshot, his middle otherwise) with the line to that part through cover: the bullet didn't fly where the aim was
+      // recorded. As for F1b, only the damage rule can then make it a partial wallbang. PeRRy's AK-47 on REAL (Norway vs Romania,
+      // Tuscan, 12 Feb 2009, R14 1:31): the aim with the punch 26 units from his head, the line to it through 18 units of wood,
+      // PeRRy's −12 0.44 s before through it (Sujan, 23 Nov 2026: a partial wallbang)
+      const part = [k.vpos[0], k.vpos[1], k.vpos[2] + (k.hs ? (k.vduck ? 16 : 28) : (k.vduck ? 4 : 10))], endM = endP || end;
+      let miss = null;
+      if (seen && Math.hypot(endM[0] - part[0], endM[1] - part[1], endM[2] - part[2]) > 24) { const ps = solidAlong(bsp, eye, part, 2, skip, poses, 'bullet'); if (ps.solid > 0) miss = ps; }
+      if (miss) k.aimBefore = { thick: Math.round(miss.solid), aim: 0, what: miss.hit.some((h) => h.model !== 0) ? 'object' : 'wall', eye };
+      else if (seen && mid.solid > 0 && aimInCoverBefore(k, tP)) k.aimBefore = { thick: Math.round(mid.solid), aim: 0, what: mid.hit.some((h) => h.model !== 0) ? 'object' : 'wall', eye };
       continue;
     }
     const hit = aim.hit;
@@ -4783,6 +4834,17 @@ function derive() {
   // set canceled" when a start is thrown away. When the demo has these, a round counts only if it
   // started while the match was announced live; otherwise the guess from restarts below decides.
   const windows = liveWindows(D.notes || [], (D.parts || []).slice(1).map((p) => p.start));
+  // F5 (0.27.5; Sujan, 23 Nov 2026): a file whose first announced start comes after its first round, on a server whose plugin never
+  // announces a half's end, counts the stretch before that start as a half when it begins at 0:0, has 15 rounds played to a winner
+  // (12 for MR12) and the teams swap sides after it. Sweden vs Poland, Nuke, 8 Apr 2009 (MYM's "LIVE!!!" only): the recording starts
+  // after the first half's "LIVE!!!", so that half (Sweden 9:6 on CT) fell outside every window, 8 rounds counted of 39; on the other
+  // 87 test demos the rule adds none (tests/logs/new-demos-feedback-2026-11-23.md, B).
+  if (windows.length && rounds.length && !D.pov && windows[0][0] > rounds[0].start + 1) {
+    const first = rounds.filter((r) => r.seg === rounds[0].seg && !r.missing);
+    const played = first.filter((r) => r.winner && r.kills.some((k) => k.killer !== k.victim));
+    const next = rounds.find((r) => r.start >= windows[0][0] - 10 && r.winner);
+    if (first.length && first[0].scoreT === 0 && first[0].scoreCT === 0 && (played.length === 15 || played.length === 12) && next && !sameSides(first[0], next)) windows.unshift([first[0].start - 1, first[first.length - 1].end, 'end']);
+  }
   if (windows.length) {
     for (const r of rounds) r.live = counts(r) && windows.some(([a, b]) => r.start >= a - 10 && r.start < b - 1);
     startWhenFull();
@@ -5412,7 +5474,7 @@ function buildZoom() {
   // order at the same moment: reset (0), weapon change (1), click (2), shot (3)
   const sn = D.snds || [];
   for (let i = 0; i < sn.length; i += 10) if (zids.has(sn[i + 1])) ev.push([sn[i], sn[i + 2], 2]);
-  const sh = D.shots || [];
+  const sh = fxShots(); // the fire events, and the AWP and Scout shots of the body animation in a demo that lost them (0.27.5)
   for (let i = 0; i < sh.length; i += 4) { const n = eventName(sh[i + 2]); if (SNIPERS[n]) ev.push([sh[i], sh[i + 1], 3, n]); }
   for (const e in D.slots) {
     const a = D.slots[e]; let w = -1, alive = false;
@@ -5847,6 +5909,7 @@ async function onDemo() {
   afterOverview(ok, true);
   M.wbs = [];
   buildHp(); buildPack(); buildPings(); buildBrk(); buildPose(); prepAnim(); buildZoom();
+  buildBodyShots();
   const sndDone = preloadSounds();
   renderPane(); fitView(); drawTimeline(); updateHud(true);
   if (MAP && MAP.name === D.mapName.toLowerCase()) computeWallbangs();
@@ -5917,6 +5980,47 @@ function setControls(on) {
   $('btnOpen').hidden = !D; // nothing to go "back" to until a demo has been opened once
   if (D && !on) $('btnOpen').textContent = 'Back to the demo';
   else $('btnOpen').textContent = 'Open another demo';
+}
+
+// C1 (0.27.5; Sujan, 23 Nov 2026): the AWP and Scout shots a demo has no fire event for, from the player's body animation. At every
+// shot the shooter's sequence turns into ref_shoot_rifle (crouch_shoot_rifle crouched: the AWP and Scout use the rifle's), which the
+// snapshots record, for two or three of them. Demos that lose fire events lose most of these: emuLate vs Amazing Gaming, Dust2,
+// WCG 2007 has 18 AWP fire events for 138 such shots, so the viewer played no gunshot, rechamber or scope drop for 120 of them. Each
+// shot with no AWP or Scout fire event of the same player within 0.15 s goes into D.shotsFx with the fire events (fxShots), for the
+// gunshot, the rechamber, the scope's drop and return, the gun flash and the shell; the wallbang finder reads D.shots alone. The
+// other guns' shoot animation runs on through a spray, so it can't count their shots. Not in POV demos: the recorder's own shots
+// come from his gun's round count (povShots). On the 79 HLTV test demos, 807 shots (tests/logs/new-demos-feedback-2026-11-23.md, C).
+let bodyShotsGen = 0;
+async function buildBodyShots() {
+  const d = D, gen = ++bodyShotsGen;
+  if (!d || d.pov || d.stride < 11 || !d.events) return;
+  const ev = {}; for (const k in d.events) { const n = eventName(+k); if (n === 'awp' || n === 'scout') ev[n] = +k; }
+  if (ev.awp == null && ev.scout == null) return;
+  const S = d.stride, times = d.times, pm = new Set();
+  for (const e in d.slots) { const a = d.slots[e]; for (let i = 0; i < times.length; i++) if (!isNaN(a[i * S])) pm.add(a[i * S + 8]); }
+  const names = {};
+  for (const ix of pm) { const n = playerModelName(ix); if (/\.mdl$/i.test(n)) names[ix] = modelEntry(n); }
+  await Promise.all(Object.values(names).map((m) => m.done));
+  if (gen !== bodyShotsGen || D !== d) return; // another demo opened meanwhile
+  const fires = {}; const sh = d.shots || [];
+  for (let i = 0; i < sh.length; i += 4) { const n = eventName(sh[i + 2]); if (n === 'awp' || n === 'scout') (fires[sh[i + 1]] || (fires[sh[i + 1]] = [])).push(sh[i]); }
+  const add = [];
+  for (const e in d.slots) {
+    const a = d.slots[e]; let prev = '';
+    for (let i = 0; i < times.length; i++) {
+      const o = i * S; if (isNaN(a[o])) { prev = ''; continue; }
+      const m = names[a[o + 8]], q = m && m.mdl && m.mdl.seqs[a[o + 9]], seq = q ? q.name : '';
+      const w = weaponShort(d.models[a[o + 6]]);
+      if ((w === 'awp' || w === 'scout') && ev[w] != null && /_shoot_rifle$/.test(seq) && seq !== prev && !(fires[e] || []).some((t) => Math.abs(t - times[i]) <= 0.15)) add.push([times[i], +e, ev[w], 0]);
+      prev = seq;
+    }
+  }
+  if (!add.length) return;
+  const all = []; for (let i = 0; i < sh.length; i += 4) all.push([sh[i], sh[i + 1], sh[i + 2], sh[i + 3]]);
+  all.push(...add); all.sort((x, y) => x[0] - y[0]);
+  d.shotsFx = new Float32Array(all.flat()); d.bodyShots = add.length;
+  // not preloadSounds() again: it would stop the one the load card waits for, and the AWP's and Scout's sounds are on its list
+  prepAnim(); buildZoom();
 }
 
 // ---------------- sidebar ----------------
@@ -8236,8 +8340,8 @@ function prepAnim() {
   const S = D.stride, times = D.times, n = times.length;
   if (S < 11) return;
   const shotT = {};
-  const sh = D.shots || [];
-  const shotK = {}; // index of each shot in D.shots, to know the weapon event and silencer state
+  const sh = fxShots();
+  const shotK = {}; // index of each shot in fxShots(), to know the weapon event and silencer state
   for (let i = 0; i < sh.length; i += 4) { const e = sh[i + 1]; if (e >= 1 && e <= 64) { (shotT[e] || (shotT[e] = [])).push(sh[i]); (shotK[e] || (shotK[e] = [])).push(i / 4); } }
   for (const e in D.slots) {
     const a = D.slots[e];
@@ -8427,7 +8531,7 @@ function vmAnim(mdl, e, t) {
   let unsil = false;
   if (w === 'usp' || w === 'm4a1') {
     let b = null;
-    for (let k = A.shotK.length - 1; k >= 0; k--) { const j = A.shotK[k]; if (eventName(D.shots[j * 4 + 2]) !== w) continue; b = D.shots[j * 4 + 3]; if (D.shots[j * 4] <= t) break; }
+    for (let k = A.shotK.length - 1; k >= 0; k--) { const j = A.shotK[k]; if (eventName(fxShots()[j * 4 + 2]) !== w) continue; b = fxShots()[j * 4 + 3]; if (fxShots()[j * 4] <= t) break; }
     unsil = b === 0;
   }
   const pick = (...names) => { for (const n of names) { let k = unsil ? vmSeq(mdl, n + '_unsil') : -1; if (k < 0) k = vmSeq(mdl, n); if (k >= 0) return k; } return -1; };
@@ -8438,11 +8542,11 @@ function vmAnim(mdl, e, t) {
   if (draw >= 0) cands.push({ t: drawT, seq: draw });
   // the last shot since the weapon came out
   let lastK = -1;
-  for (let k = A.shotK.length - 1; k >= 0; k--) { const j = A.shotK[k]; if (D.shots[j * 4] <= t) { lastK = k; break; } }
+  for (let k = A.shotK.length - 1; k >= 0; k--) { const j = A.shotK[k]; if (fxShots()[j * 4] <= t) { lastK = k; break; } }
   if (lastK >= 0) {
-    const j = A.shotK[lastK], st = D.shots[j * 4];
+    const j = A.shotK[lastK], st = fxShots()[j * 4];
     if (st >= drawT - 0.05) {
-      const ev = eventName(D.shots[j * 4 + 2]);
+      const ev = eventName(fxShots()[j * 4 + 2]);
       let seq = -1;
       if (w === 'knife') seq = pick(lastK % 2 ? 'midslash2' : 'midslash1');
       else if (ev === 'elite_left' || ev === 'elite_right') seq = pick(ev === 'elite_left' ? 'shoot_left1' : 'shoot_right1');
@@ -8576,13 +8680,17 @@ const sndName = (idx) => (D.sounds && D.sounds[idx] ? D.sounds[idx].replace(/^\*
 // every sound this demo can play, so they can be loaded before they're needed
 function demoSoundList() {
   const need = new Set();
-  const s = D.snds || [];
-  for (let i = 0; i < s.length; i += 10) { const n = sndName(s[i + 1]); if (n) need.add(n); }
-  const sh = D.shots || [];
+  // the gunshots first (0.27.5; Sujan, 23 Nov 2026): the list loads one sound after another, and a shot whose sound hasn't loaded
+  // yet isn't played (playSound), so with the footsteps first the first shots of a visit were silent. The AWP's and Scout's always,
+  // for their shots from the body animation (buildBodyShots), which come in after this list is made.
+  const sh = fxShots();
   const seen = new Set();
   for (let i = 0; i < sh.length; i += 4) seen.add(eventName(sh[i + 2]));
+  for (const k in D.events || {}) { const n = eventName(+k); if (n === 'awp' || n === 'scout') seen.add(n); }
   for (let i = 1; i < (D.ownAmmo || []).length; i += 3) seen.add(WEAPON_EVENT[D.ownAmmo[i]]); // POV mode: his own guns
   for (const ev of seen) { const f = FIRE[ev]; if (!f) continue; for (const x of Array.isArray(f) ? f : [...f.on, ...f.off]) need.add('weapons/' + x + '.wav'); }
+  const s = D.snds || [];
+  for (let i = 0; i < s.length; i += 10) { const n = sndName(s[i + 1]); if (n) need.add(n); }
   if (D.booms && D.booms.length) for (const x of ['explode3', 'explode4', 'explode5']) need.add('weapons/' + x + '.wav');
   // shells landing in Player's eyes (0.26.27)
   if (sh.length || (D.ownShots && D.ownShots.length)) for (let k = 1; k <= 3; k++) { need.add(`player/pl_shell${k}.wav`); need.add(`weapons/sshell${k}.wav`); }
@@ -8731,7 +8839,7 @@ function soundTick(t0, t1) {
     const pos = !isNaN(s[o + 7]) ? [s[o + 7], s[o + 8], s[o + 9]] : entPos(e, s[o]);
     playSound(name, pos, s[o + 3], s[o + 4], s[o + 5], s[o + 6] ? e + ':' + s[o + 6] : null, L);
   }
-  const sh = D.shots || [], so = D.shotOrg; // shotOrg: POV mode only
+  const sh = fxShots(), so = D.shotOrg; // shotOrg: POV mode only (no body-animation shots there, so its indices match)
   for (let i = firstAfter(sh, 4, t0); i * 4 < sh.length && sh[i * 4] <= t1; i++) {
     const o = i * 4, name = fireSound(eventName(sh[o + 2]), sh[o + 3], i); if (!name) continue;
     // POV mode: where it was fired, the message's own position when it has one (the shooter wasn't in the snapshot,
@@ -8968,7 +9076,7 @@ function fxThirdPerson() {
     if (!r || !r.used || !r.g.visible || !A || !A.shots.length) continue;
     let k = Math.max(0, firstAfter(A.shots, 1, w[0]));
     for (; k < A.shots.length && A.shots[k] <= w[1]; k++) {
-      const j = A.shotK[k], ev = eventName(D.shots[j * 4 + 2]);
+      const j = A.shotK[k], ev = eventName(fxShots()[j * 4 + 2]);
       if (!FIRE[ev]) continue; // guns only
       const s = playerState(+e, T); if (!s || s.state <= 0) continue;
       const ext = P_EXT[weaponShort(s.weapon)]; if (!ext) continue;
@@ -9045,7 +9153,7 @@ function fxShellsOf(E, from, to) {
     out.push({ key: 'c' + seed, t, o, v, model: SHELL_MDL[S[3]], slow: false, sound: 1, seed, yaw: at.yaw });
   };
   if (E.own) { const S = D.ownShots || []; for (let k = Math.max(0, firstAfter(S, 3, from)); k * 3 < S.length && S[k * 3] <= to; k++) add(S[k * 3], WEAPON_EVENT[S[k * 3 + 1]], S[k * 3] * 1000 + k); }
-  else { const A = ANIM[E.e]; if (A) for (let k = Math.max(0, firstAfter(A.shots, 1, from)); k < A.shots.length && A.shots[k] <= to; k++) add(A.shots[k], eventName(D.shots[A.shotK[k] * 4 + 2]), A.shots[k] * 1000 + k); }
+  else { const A = ANIM[E.e]; if (A) for (let k = Math.max(0, firstAfter(A.shots, 1, from)); k < A.shots.length && A.shots[k] <= to; k++) add(A.shots[k], eventName(fxShots()[A.shotK[k] * 4 + 2]), A.shots[k] * 1000 + k); }
   // the server's shells (AWP, Scout, M3), with the client's own offset for the player whose eyes these are: 9 units to
   // his right, thrown left at 120 (cs16-client ammo.cpp, MsgFunc_Brass, its sin and cos of the yaw)
   const B = D.brass || [];
@@ -11074,7 +11182,7 @@ function frameError(e) {
 function debugInfo() {
   let gpu = '';
   try { const gl = document.createElement('canvas').getContext('webgl'); const x = gl && gl.getExtension('WEBGL_debug_renderer_info'); gpu = gl ? (x ? gl.getParameter(x.UNMASKED_RENDERER_WEBGL) : 'WebGL available') : 'no WebGL'; } catch (e) { gpu = 'unknown'; }
-  const L = [`CS 1.6 Demo Viewer 0.27.4`, `Browser: ${navigator.userAgent}`, `Screen: ${screen.width}x${screen.height} at ${devicePixelRatio}x, window ${innerWidth}x${innerHeight}`, `Graphics: ${gpu}`];
+  const L = [`CS 1.6 Demo Viewer 0.27.5`, `Browser: ${navigator.userAgent}`, `Screen: ${screen.width}x${screen.height} at ${devicePixelRatio}x, window ${innerWidth}x${innerHeight}`, `Graphics: ${gpu}`];
   L.push(`Folder: ${Object.keys(files.maps).length} maps, ${Object.keys(files.overviews).length} overviews, ${Object.keys(files.mdl).length} models, ${Object.keys(files.snd).length} sounds, ${files.demos.length} demos`);
   if (D) {
     L.push(`Demo: ${D.fileName}, protocol ${(D.header && D.header.netProtocol) || '?'}, ${D.pov ? 'POV (recorded by a player)' : 'HLTV'}, map ${D.mapName}, length ${fmt(D.end - D.start)}, ${M.liveR.length} live rounds, final ${M.liveR.length ? M.liveR[M.liveR.length - 1].scoreAfter.join(':') : '-'}`);

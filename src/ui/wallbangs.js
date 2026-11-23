@@ -136,11 +136,35 @@ function wallKeeps(k) {
   }
   return (k.keep = keep);
 }
-// the killer's crosshair line at the shot, from his eye to the victim's distance: [eye, end]
-function aimLine(k) {
+// The killer's punchangle at the killing shot, from his fire event in the kill's frame: [pitch, yaw] in degrees, or null (F4′,
+// 0.27.5; Sujan, 23 Nov 2026). After each move the engine stores the view angles with the punch added once (ReHLDS sv_user.cpp,
+// SV_FinishPMove), and the demo records those; the gun then fires along v_angle + punchangle (wpn_ak47.cpp, AK47Fire), the punch
+// a second time, so the bullet's line is the recorded aim plus this punch (and the spread, which the event cuts to 0.01). The
+// event sends int(punchangle x 100) in iparam1 and iparam2 for most guns, the pitch twice for the AWP, Scout, G3SG1, SG550 and
+// USP; the Galil and FAMAS send it x 10,000,000, which overflows the field (only its sign survives), and the Elites none. On 275
+// rifle headshot kills of 8 demos the line's end lies a median 19 units from the head with the recorded aim, 13 with the punch
+// (tests/logs/new-demos-feedback-2026-11-23.md, A).
+const PUNCH_XY = new Set(['ak47', 'aug', 'deagle', 'fiveseven', 'glock18', 'm249', 'm4a1', 'mac10', 'mp5n', 'p228', 'p90', 'sg552', 'tmp', 'ump45']);
+const PUNCH_X = new Set(['awp', 'scout', 'g3sg1', 'sg550', 'usp']);
+function killPunch(k) {
+  if (!D.shotPunch || !k.kang) return null;
+  const tP = k.tPos != null ? k.tPos : k.t, sh = D.shots;
+  for (let i = 0; i < sh.length; i += 4) {
+    if (sh[i + 1] !== k.killer || Math.abs(sh[i] - tP) > 0.001) continue;
+    const n = String(D.events[sh[i + 2]] || '').replace(/^.*\//, '').replace(/\.sc$/, '');
+    const x = D.shotPunch[i / 2], y = D.shotPunch[i / 2 + 1];
+    if (PUNCH_XY.has(n)) return [x / 100, y / 100];
+    if (PUNCH_X.has(n)) return [x / 100, 0];
+  }
+  return null;
+}
+// the killer's crosshair line at the shot, from his eye to the victim's distance: [eye, end]; withPunch: the bullet's line,
+// the killing shot's punch added (killPunch), when his fire event has it
+function aimLine(k, withPunch) {
   const eye = [k.kpos[0], k.kpos[1], k.kpos[2] + (k.kduck ? 12 : 17)];
   let raw = k.kang ? k.kang[0] : 0; if (raw > 180) raw -= 360;
-  const pitch = -raw * 3 * Math.PI / 180, yaw = (k.kang ? k.kang[1] : 0) * Math.PI / 180;
+  const pu = withPunch ? killPunch(k) : null;
+  const pitch = (-raw * 3 + (pu ? pu[0] : 0)) * Math.PI / 180, yaw = ((k.kang ? k.kang[1] : 0) + (pu ? pu[1] : 0)) * Math.PI / 180;
   const dist = Math.hypot(k.vpos[0] - eye[0], k.vpos[1] - eye[1], k.vpos[2] - eye[2]);
   return [eye, [eye[0] + Math.cos(pitch) * Math.cos(yaw) * dist, eye[1] + Math.cos(pitch) * Math.sin(yaw) * dist, eye[2] - Math.sin(pitch) * dist]];
 }
@@ -174,7 +198,10 @@ function computeWallbangs() {
   let poses = null; // doors where they were when this kill happened (open either way, or closed)
   const bodyVisible = (eye, v) => {
     const dx = v[0] - eye[0], dy = v[1] - eye[1]; const hl = Math.hypot(dx, dy) || 1; const px = -dy / hl, py = dx / hl;
-    const zs = v[3] ? [-12, 0, 10, 16] : [-30, -12, 6, 22, 30];
+    // the top row at 24 over a standing victim's origin since 0.27.5 (F4′; 30 up to 0.27.4): the posed model's top is 24.5 to 26.6
+    // over it, so a clear line at 30 passed over his head (pasha on Tentpole, Sweden vs Poland, Dust2, 8 Apr 2009, R15 1:09:
+    // two points at 30 over the wall's top, 0 pixels of him; Sujan, 23 Nov 2026: a wallbang)
+    const zs = v[3] ? [-12, 0, 10, 16] : [-30, -12, 6, 22, 24];
     for (const z of zs) for (const sd of [-12, 0, 12]) if (solidAlong(bsp, eye, [v[0] + px * sd, v[1] + py * sd, v[2] + z], 2, skip, poses).solid === 0) return true;
     return false;
   };
@@ -193,9 +220,17 @@ function computeWallbangs() {
     poses = posesAt(tP - 0.05);
     const seen = bodyVisible(eyeOf(kNow), vNow);
     if (!seen && tooMuchDamage(k)) continue;
-    const [eye, end] = aimLine(k);
+    let [eye, end] = aimLine(k);
     // the crosshair line goes through what a bullet hits (the 15 points above are sight lines)
-    const aim = solidAlong(bsp, eye, end, 2, skip, poses, 'bullet');
+    let aim = solidAlong(bsp, eye, end, 2, skip, poses, 'bullet');
+    // F4′ (0.27.5; Sujan, 23 Nov 2026): a clear recorded aim is checked again on the bullet's line, the killing shot's punch
+    // added (killPunch); through cover there, that line is the aim. A recorded aim through cover stays as it is: letting the punch
+    // clear it broke 33 of Sujan's 243 confirmed answers. RobbaN's AK-47 on whiMp (SK Gaming vs mTw, Tuscan, WCG 2008 final, R30
+    // 1:22): the recorded aim 36 units off him beside the crate, the punch 4.3° up, the bullet's line through 20 units of the
+    // crate, 8 from his head (Sujan: a partial wallbang). No limit on the punch's size: 1° and 8 units would drop alleN on tacky
+    // (Sweden vs Norway, Dust2, ASUS ENC 2010, R20 1:18; 2.6°, 4 units; Sujan: partial).
+    const endP = killPunch(k) ? aimLine(k, true)[1] : null;
+    if (aim.solid === 0 && endP) { const aP = solidAlong(bsp, eye, endP, 2, skip, poses, 'bullet'); if (aP.solid > 0) { end = endP; aim = aP; } }
     const mid = solidAlong(bsp, eye, [k.vpos[0], k.vpos[1], k.vpos[2] + (k.vduck ? 4 : 6)], 2, skip, poses, 'bullet');
     // crosshair had a clear line: the victim was hit in the open, unless part of him was seen, the line to his middle goes
     // through cover and the aim one snapshot before went through it (aimInCoverBefore): then the damage rule in computeHits
@@ -204,7 +239,16 @@ function computeWallbangs() {
     // fnatic vs EG, Dust2, EM3 Global Finals 2009, R22 1:44, Gux on Warden; Burning vs FairFrag, Inferno, ESWC 2010, R14 C4
     // 0:29, NTEP on DIODE). Never the picture check: the aim at the shot doesn't go through cover.
     if (aim.solid === 0) {
-      if (seen && mid.solid > 0 && aimInCoverBefore(k, tP)) k.aimBefore = { thick: Math.round(mid.solid), aim: 0, what: mid.hit.some((h) => h.model !== 0) ? 'object' : 'wall', eye };
+      // F4′ (0.27.5): or the aim, the punch added when there is one, ends more than 24 units from the part the kill hit (his head for
+      // a headshot, his middle otherwise) with the line to that part through cover: the bullet didn't fly where the aim was
+      // recorded. As for F1b, only the damage rule can then make it a partial wallbang. PeRRy's AK-47 on REAL (Norway vs Romania,
+      // Tuscan, 12 Feb 2009, R14 1:31): the aim with the punch 26 units from his head, the line to it through 18 units of wood,
+      // PeRRy's −12 0.44 s before through it (Sujan, 23 Nov 2026: a partial wallbang)
+      const part = [k.vpos[0], k.vpos[1], k.vpos[2] + (k.hs ? (k.vduck ? 16 : 28) : (k.vduck ? 4 : 10))], endM = endP || end;
+      let miss = null;
+      if (seen && Math.hypot(endM[0] - part[0], endM[1] - part[1], endM[2] - part[2]) > 24) { const ps = solidAlong(bsp, eye, part, 2, skip, poses, 'bullet'); if (ps.solid > 0) miss = ps; }
+      if (miss) k.aimBefore = { thick: Math.round(miss.solid), aim: 0, what: miss.hit.some((h) => h.model !== 0) ? 'object' : 'wall', eye };
+      else if (seen && mid.solid > 0 && aimInCoverBefore(k, tP)) k.aimBefore = { thick: Math.round(mid.solid), aim: 0, what: mid.hit.some((h) => h.model !== 0) ? 'object' : 'wall', eye };
       continue;
     }
     const hit = aim.hit;

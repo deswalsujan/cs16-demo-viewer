@@ -1,0 +1,18 @@
+{
+ "demo": "53.47.1132498-0904082227-de_dust2.dem",
+ "sha256": "4dac897314d28b316881d15b5b1d1f58bccc418f4f7f709311844b632cfa1c0d",
+ "match": "Sweden vs Poland, Dust2, 8 Apr 2009",
+ "event": "unknown: a ClanBase match by the file name's layout and a \"[CB]Nicky\" spectator, on MYM's server (\"<Game-Hosting.com: MYM> LIVE!!!\"), not settled by the demo's text or a web source; recorded 8 Apr 2009 at 22:27 by the file name",
+ "map": "de_dust2",
+ "kills": [
+  {
+   "round": 15,
+   "timer": "1:09",
+   "killer": "POLSKA pasha",
+   "victim": "SWEDEN Tentpole <3 Tezz",
+   "gun": "galil",
+   "expected": "strict",
+   "source": "Sujan, 23 Nov 2026, spectating pasha in first person in his game: a wallbang, no part of Tentpole in view (DECISIONS.md; tests/logs/new-demos-feedback-2026-11-23.md, A3)"
+  }
+ ]
+}

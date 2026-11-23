@@ -43,8 +43,8 @@
    "killer": "SK.face",
    "victim": "WinFakt nsutOtO~",
    "gun": null,
-   "expected": "loose-damage",
-   "source": "docs/review-answers.md, \"Loose wallbang check\" (27 and 28 Oct 2026), k20013: loose"
+   "expected": "partial",
+   "source": "docs/review-answers.md, \"Loose wallbang check\" (27 and 28 Oct 2026), k20013: loose; loose-damage up to 0.27.4, the rule that found it then; partial (loose of either kind) since 0.27.5, keeping Sujan's answer: F4′'s top row makes it loose by its 69 pixels"
   },
   {
    "round": 17,

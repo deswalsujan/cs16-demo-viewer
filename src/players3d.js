@@ -135,8 +135,8 @@ function prepAnim() {
   const S = D.stride, times = D.times, n = times.length;
   if (S < 11) return;
   const shotT = {};
-  const sh = D.shots || [];
-  const shotK = {}; // index of each shot in D.shots, to know the weapon event and silencer state
+  const sh = fxShots();
+  const shotK = {}; // index of each shot in fxShots(), to know the weapon event and silencer state
   for (let i = 0; i < sh.length; i += 4) { const e = sh[i + 1]; if (e >= 1 && e <= 64) { (shotT[e] || (shotT[e] = [])).push(sh[i]); (shotK[e] || (shotK[e] = [])).push(i / 4); } }
   for (const e in D.slots) {
     const a = D.slots[e];
@@ -326,7 +326,7 @@ function vmAnim(mdl, e, t) {
   let unsil = false;
   if (w === 'usp' || w === 'm4a1') {
     let b = null;
-    for (let k = A.shotK.length - 1; k >= 0; k--) { const j = A.shotK[k]; if (eventName(D.shots[j * 4 + 2]) !== w) continue; b = D.shots[j * 4 + 3]; if (D.shots[j * 4] <= t) break; }
+    for (let k = A.shotK.length - 1; k >= 0; k--) { const j = A.shotK[k]; if (eventName(fxShots()[j * 4 + 2]) !== w) continue; b = fxShots()[j * 4 + 3]; if (fxShots()[j * 4] <= t) break; }
     unsil = b === 0;
   }
   const pick = (...names) => { for (const n of names) { let k = unsil ? vmSeq(mdl, n + '_unsil') : -1; if (k < 0) k = vmSeq(mdl, n); if (k >= 0) return k; } return -1; };
@@ -337,11 +337,11 @@ function vmAnim(mdl, e, t) {
   if (draw >= 0) cands.push({ t: drawT, seq: draw });
   // the last shot since the weapon came out
   let lastK = -1;
-  for (let k = A.shotK.length - 1; k >= 0; k--) { const j = A.shotK[k]; if (D.shots[j * 4] <= t) { lastK = k; break; } }
+  for (let k = A.shotK.length - 1; k >= 0; k--) { const j = A.shotK[k]; if (fxShots()[j * 4] <= t) { lastK = k; break; } }
   if (lastK >= 0) {
-    const j = A.shotK[lastK], st = D.shots[j * 4];
+    const j = A.shotK[lastK], st = fxShots()[j * 4];
     if (st >= drawT - 0.05) {
-      const ev = eventName(D.shots[j * 4 + 2]);
+      const ev = eventName(fxShots()[j * 4 + 2]);
       let seq = -1;
       if (w === 'knife') seq = pick(lastK % 2 ? 'midslash2' : 'midslash1');
       else if (ev === 'elite_left' || ev === 'elite_right') seq = pick(ev === 'elite_left' ? 'shoot_left1' : 'shoot_right1');

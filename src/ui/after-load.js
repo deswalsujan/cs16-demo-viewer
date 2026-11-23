@@ -82,6 +82,7 @@ async function onDemo() {
   afterOverview(ok, true);
   M.wbs = [];
   buildHp(); buildPack(); buildPings(); buildBrk(); buildPose(); prepAnim(); buildZoom();
+  buildBodyShots();
   const sndDone = preloadSounds();
   renderPane(); fitView(); drawTimeline(); updateHud(true);
   if (MAP && MAP.name === D.mapName.toLowerCase()) computeWallbangs();
@@ -152,4 +153,45 @@ function setControls(on) {
   $('btnOpen').hidden = !D; // nothing to go "back" to until a demo has been opened once
   if (D && !on) $('btnOpen').textContent = 'Back to the demo';
   else $('btnOpen').textContent = 'Open another demo';
+}
+
+// C1 (0.27.5; Sujan, 23 Nov 2026): the AWP and Scout shots a demo has no fire event for, from the player's body animation. At every
+// shot the shooter's sequence turns into ref_shoot_rifle (crouch_shoot_rifle crouched: the AWP and Scout use the rifle's), which the
+// snapshots record, for two or three of them. Demos that lose fire events lose most of these: emuLate vs Amazing Gaming, Dust2,
+// WCG 2007 has 18 AWP fire events for 138 such shots, so the viewer played no gunshot, rechamber or scope drop for 120 of them. Each
+// shot with no AWP or Scout fire event of the same player within 0.15 s goes into D.shotsFx with the fire events (fxShots), for the
+// gunshot, the rechamber, the scope's drop and return, the gun flash and the shell; the wallbang finder reads D.shots alone. The
+// other guns' shoot animation runs on through a spray, so it can't count their shots. Not in POV demos: the recorder's own shots
+// come from his gun's round count (povShots). On the 79 HLTV test demos, 807 shots (tests/logs/new-demos-feedback-2026-11-23.md, C).
+let bodyShotsGen = 0;
+async function buildBodyShots() {
+  const d = D, gen = ++bodyShotsGen;
+  if (!d || d.pov || d.stride < 11 || !d.events) return;
+  const ev = {}; for (const k in d.events) { const n = eventName(+k); if (n === 'awp' || n === 'scout') ev[n] = +k; }
+  if (ev.awp == null && ev.scout == null) return;
+  const S = d.stride, times = d.times, pm = new Set();
+  for (const e in d.slots) { const a = d.slots[e]; for (let i = 0; i < times.length; i++) if (!isNaN(a[i * S])) pm.add(a[i * S + 8]); }
+  const names = {};
+  for (const ix of pm) { const n = playerModelName(ix); if (/\.mdl$/i.test(n)) names[ix] = modelEntry(n); }
+  await Promise.all(Object.values(names).map((m) => m.done));
+  if (gen !== bodyShotsGen || D !== d) return; // another demo opened meanwhile
+  const fires = {}; const sh = d.shots || [];
+  for (let i = 0; i < sh.length; i += 4) { const n = eventName(sh[i + 2]); if (n === 'awp' || n === 'scout') (fires[sh[i + 1]] || (fires[sh[i + 1]] = [])).push(sh[i]); }
+  const add = [];
+  for (const e in d.slots) {
+    const a = d.slots[e]; let prev = '';
+    for (let i = 0; i < times.length; i++) {
+      const o = i * S; if (isNaN(a[o])) { prev = ''; continue; }
+      const m = names[a[o + 8]], q = m && m.mdl && m.mdl.seqs[a[o + 9]], seq = q ? q.name : '';
+      const w = weaponShort(d.models[a[o + 6]]);
+      if ((w === 'awp' || w === 'scout') && ev[w] != null && /_shoot_rifle$/.test(seq) && seq !== prev && !(fires[e] || []).some((t) => Math.abs(t - times[i]) <= 0.15)) add.push([times[i], +e, ev[w], 0]);
+      prev = seq;
+    }
+  }
+  if (!add.length) return;
+  const all = []; for (let i = 0; i < sh.length; i += 4) all.push([sh[i], sh[i + 1], sh[i + 2], sh[i + 3]]);
+  all.push(...add); all.sort((x, y) => x[0] - y[0]);
+  d.shotsFx = new Float32Array(all.flat()); d.bodyShots = add.length;
+  // not preloadSounds() again: it would stop the one the load card waits for, and the AWP's and Scout's sounds are on its list
+  prepAnim(); buildZoom();
 }

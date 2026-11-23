@@ -191,7 +191,7 @@ function fxThirdPerson() {
     if (!r || !r.used || !r.g.visible || !A || !A.shots.length) continue;
     let k = Math.max(0, firstAfter(A.shots, 1, w[0]));
     for (; k < A.shots.length && A.shots[k] <= w[1]; k++) {
-      const j = A.shotK[k], ev = eventName(D.shots[j * 4 + 2]);
+      const j = A.shotK[k], ev = eventName(fxShots()[j * 4 + 2]);
       if (!FIRE[ev]) continue; // guns only
       const s = playerState(+e, T); if (!s || s.state <= 0) continue;
       const ext = P_EXT[weaponShort(s.weapon)]; if (!ext) continue;
@@ -268,7 +268,7 @@ function fxShellsOf(E, from, to) {
     out.push({ key: 'c' + seed, t, o, v, model: SHELL_MDL[S[3]], slow: false, sound: 1, seed, yaw: at.yaw });
   };
   if (E.own) { const S = D.ownShots || []; for (let k = Math.max(0, firstAfter(S, 3, from)); k * 3 < S.length && S[k * 3] <= to; k++) add(S[k * 3], WEAPON_EVENT[S[k * 3 + 1]], S[k * 3] * 1000 + k); }
-  else { const A = ANIM[E.e]; if (A) for (let k = Math.max(0, firstAfter(A.shots, 1, from)); k < A.shots.length && A.shots[k] <= to; k++) add(A.shots[k], eventName(D.shots[A.shotK[k] * 4 + 2]), A.shots[k] * 1000 + k); }
+  else { const A = ANIM[E.e]; if (A) for (let k = Math.max(0, firstAfter(A.shots, 1, from)); k < A.shots.length && A.shots[k] <= to; k++) add(A.shots[k], eventName(fxShots()[A.shotK[k] * 4 + 2]), A.shots[k] * 1000 + k); }
   // the server's shells (AWP, Scout, M3), with the client's own offset for the player whose eyes these are: 9 units to
   // his right, thrown left at 120 (cs16-client ammo.cpp, MsgFunc_Brass, its sin and cos of the yaw)
   const B = D.brass || [];

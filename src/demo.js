@@ -280,6 +280,7 @@ export function parseDemo(buffer, onProgress, opts = {}) {
   // sounds heard in the demo: server sounds, weapon fire events, explosions, radio lines and corpses
   const snds = [];      // time, sound resource index, entity, volume, attenuation, pitch, channel, x, y, z (NaN when not sent)
   const shots = [];     // time, entity, event resource index, bparam1
+  const shotPunch = []; // each shot's iparam1 and iparam2: the gun's punchangle x100 for most guns (F4′, 0.27.5; wallbangs.js, killPunch)
   // where each shot was fired, when the message says (x, y, z, else NaN; one per shot, POV demos only). The server
   // adds it when the shooter isn't in the receiving game's snapshot: in a POV demo that's most shots (2,579 of 3,440
   // in Match 1 T), and without it those played at full volume with no distance (Sujan, 3 Oct 2026: far CTs sounded close).
@@ -1026,6 +1027,7 @@ export function parseDemo(buffer, onProgress, opts = {}) {
               const ev = pendingEv[k + 2]; let e = ev && ev.entindex ? ev.entindex : 0;
               if (!e && pendingEv[k + 1] >= 0) { if (!order) { order = []; for (let n = 0; n < ents.length; n++) if (ents[n]) order.push(n); } e = order[pendingEv[k + 1]] || 0; }
               shots.push(time, e, pendingEv[k], ev && ev.bparam1 ? 1 : 0);
+              shotPunch.push(ev && ev.iparam1 || 0, ev && ev.iparam2 || 0);
               if (opts.povRounds) { if (ev && ev['origin[0]'] != null) shotOrg.push(ev['origin[0]'], ev['origin[1]'] || 0, ev['origin[2]'] || 0); else shotOrg.push(NaN, NaN, NaN); }
               // the smoke itself: the game sends createsmoke when a smoke pops (with the cloud's centre as origin)
               // and then once a second while it smokes (with the centre in angles), from ReGameDLL's
@@ -1115,7 +1117,7 @@ export function parseDemo(buffer, onProgress, opts = {}) {
     occupants, brushEvents: new Float32Array(brushEvents), brushPose: new Float32Array(brushPose), viewers: hltvStatus, notes,
     times: new Float32Array(samples.t), slots,
     finalScore: { ...scores }, models: resources.models, stride: STRIDE,
-    pmodels, sounds: resources.sounds, events: resources.events, snds: new Float32Array(snds), shots: new Float32Array(shots), booms: new Float32Array(booms), hitPoints: new Float32Array(hitPoints), brass: new Float32Array(brass), puffs: new Float32Array(puffs), radio, centre, corpses,
+    pmodels, sounds: resources.sounds, events: resources.events, snds: new Float32Array(snds), shots: new Float32Array(shots), shotPunch: new Float32Array(shotPunch), booms: new Float32Array(booms), hitPoints: new Float32Array(hitPoints), brass: new Float32Array(brass), puffs: new Float32Array(puffs), radio, centre, corpses,
     errors, errSamples, health, c4drops: new Float32Array(c4drops), c4ents: new Float32Array(c4ents), glows: new Float32Array(glows), slow, stops, pings: new Float32Array(pings),
     ...(povData ? { povData } : {}),
   };

@@ -76,6 +76,15 @@
    "gun": null,
    "expected": "loose-damage",
    "source": "docs/review-answers.md, \"Loose wallbang check\" (27 and 28 Oct 2026), k12019: loose"
+  },
+  {
+   "round": 6,
+   "timer": "0:33",
+   "killer": "fnaticMSI pita /iBRA/",
+   "victim": "mousesports | ninja",
+   "gun": "ak47",
+   "expected": "partial",
+   "source": "Sujan, 23 Nov 2026, spectating pita in first person in his game (the review zip's check d): a partial wallbang, part of ninja's head visible, and since the kill wasn't a headshot the bullet went through cover (DECISIONS.md; tests/logs/new-demos-feedback-2026-11-23.md)"
   }
  ]
 }

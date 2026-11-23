@@ -1,0 +1,18 @@
+{
+ "demo": "52.386.1065131-0902121944-de_tuscan.dem",
+ "sha256": "96e83d854666c91d6cba55266dc8bf6d44f4cc6db37e43165c4e94d72da11fee",
+ "match": "Norway vs Romania, Tuscan, 12 Feb 2009",
+ "event": "unknown: a ClanBase match by the file name's layout and a \"[CB]LoSaH\" spectator, not settled by the demo's text or a web source; recorded 12 Feb 2009 at 19:44 by the file name",
+ "map": "de_tuscan",
+ "kills": [
+  {
+   "round": 14,
+   "timer": "1:31",
+   "killer": "Romania.PeRRy",
+   "victim": "NORWAY | REAL",
+   "gun": "ak47",
+   "expected": "partial",
+   "source": "Sujan, 23 Nov 2026, spectating PeRRy in first person in his game: a partial wallbang (his R14 1:32 is the Wall damage row's start, the viewer's kill row reads 1:31; DECISIONS.md; tests/logs/new-demos-feedback-2026-11-23.md, A1)"
+  }
+ ]
+}
