@@ -109,7 +109,9 @@ Sujan's go of 23 Nov 2026 on the report of his feedback on five new demos (`test
 - `tests/expected/`: Sujan's answers of 23 Nov 2026 (PeRRy on REAL, RobbaN on whiMp, pasha on Tentpole, and checks a, b and d) without their known gaps; GeT_RiGhT on KORN (Sweden vs Norway, Dust2, ASUS ENC 2010, R7 1:12; 15 pixels) a known gap, hidden to the sight points with the top row at 24, since no pixel line for hidden kills keeps both him and 742 on gob b (49 pixels, a wallbang), so 50 stays (Sujan, 23 Nov 2026); face on nsutOtO's answer "partial", which keeps Sujan's "loose" now that the top row finds it by its pixels.
 
 ### How it was tested
-⟪TESTED⟫
+- The nine release checks pass on `2cacaeb` (`ground_truth_check.py`: 246 kills and 51 scores and K-D on 63 demos, 0 mismatches, 10 known gaps; `people_check.py` 94 of 94). The first run stopped on the load card, which this build's sound preload had broken; fixed in the same pull request.
+- Against main on the 88 test demos: 82 kills change label on 44 demos (F4′'s 67, Sweden vs Poland, Nuke's 15), 13 **Wall damage** rows join their kills; only Sweden vs Poland, Nuke changes rounds and score.
+- Full log: `tests/logs/0.27.5.md`; each fix's measurement before the build: `tests/logs/new-demos-feedback-2026-11-23.md`.
 
 ### Discussed, not changed
 - The victim drawn at the unlag moment (the shooter's ping plus 0.1 s before the shot): rejected, the labels keep judging the moment of the shot (Sujan, 23 Nov 2026; the report, D1: 9 of his answers broken).
