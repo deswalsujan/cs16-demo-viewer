@@ -4,10 +4,12 @@
 // quieter with distance, panned left/right. The listener is the 3D camera, or in 2D the player you
 // follow (or the middle of the radar).
 const SND = { ctx: null, out: null, bufs: {}, loading: {}, on: ls.get('snd-on') !== false, vol: ls.get('snd-level') ?? 0.6, sentences: null, chans: {}, iSnd: 0, iShot: 0, iBoom: 0, iRad: 0 };
-// weapon fire events -> the sounds the CS client plays for them
+// weapon fire events -> the sounds the CS client plays for them. The Glock: glock18-2 only (0.27.6). The game plays
+// glock18-1 only while the listener's own Glock is in burst mode, whoever fired (cs16-client's event_glock18.cpp reads
+// the local player's weapon flags), and someone watching a demo has no Glock; up to 0.27.5 the two took turns.
 const FIRE = {
   ak47: ['ak47-1', 'ak47-2'], aug: ['aug-1'], awp: ['awp1'], deagle: ['deagle-1', 'deagle-2'], elite_left: ['elite_fire'], elite_right: ['elite_fire'],
-  famas: ['famas-1', 'famas-2'], fiveseven: ['fiveseven-1'], g3sg1: ['g3sg1-1'], galil: ['galil-1', 'galil-2'], glock18: ['glock18-1', 'glock18-2'],
+  famas: ['famas-1', 'famas-2'], fiveseven: ['fiveseven-1'], g3sg1: ['g3sg1-1'], galil: ['galil-1', 'galil-2'], glock18: ['glock18-2'],
   m249: ['m249-1', 'm249-2'], m3: ['m3-1'], mac10: ['mac10-1'], mp5n: ['mp5-1', 'mp5-2'], p228: ['p228-1'], p90: ['p90-1'], scout: ['scout_fire-1'],
   sg550: ['sg550-1'], sg552: ['sg552-1', 'sg552-2'], tmp: ['tmp-1', 'tmp-2'], ump45: ['ump45-1'], xm1014: ['xm1014-1'],
   m4a1: { on: ['m4a1-1'], off: ['m4a1_unsil-1', 'm4a1_unsil-2'] }, usp: { on: ['usp1', 'usp2'], off: ['usp_unsil-1'] },

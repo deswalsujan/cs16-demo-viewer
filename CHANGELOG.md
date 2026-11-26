@@ -4,6 +4,7 @@ What changed in the viewer, newest first. The version shows in the viewer's **He
 
 ## Versions
 
+- [0.27.6](#0276-2026-11-26) 2026-11-26: The Glock's sound, the legs
 - [0.27.5](#0275-2026-11-23) 2026-11-23: Recoil, first half, AWP shots
 - [0.27.4](#0274-2026-11-20) 2026-11-20: New demos' fixes, team names, dates
 - [0.27.3](#0273-2026-11-20) 2026-11-20: Several demos picked, 0:0 warning
@@ -92,6 +93,24 @@ What changed in the viewer, newest first. The version shows in the viewer's **He
 - [0.3.0](#030-2026-09-30) 2026-09-30: First-person weapons
 - [0.2.0](#020-2026-09-30) 2026-09-30: Real models and sound
 - [0.1.0](#010-before-2026-09-30) before 2026-09-30: First version: radar, 3D, kills
+
+## 0.27.6 (2026-11-26)
+
+Sujan's go of 26 Nov 2026 on his brief of the same day (`tests/logs/refinements-2026-11-26.md`; `DECISIONS.md`; IDEAS-ARCHIVE.md, **Sujan's refinements of 26 Nov 2026**), built on `wip/glock-legs` from origin/main (0.27.5), with `notes/after-0.27.5` and `notes/load-limits-on-demand` merged in.
+
+### Fixed
+- The Glock's sound: every Glock shot plays glock18-2, as the game plays it for someone watching a demo (cs16-client picks glock18-1 only while the listener's own Glock is in burst mode). Up to 0.27.5 the two sounds took turns. The shots' timing was right and stays: a burst's three shots come within a few milliseconds of each other, in one frame of the demo, and each cuts the one before, as in the game.
+- The legs: as cs16-client moves them (`StudioEstimateGait`, `CalculateYawBlend`): straight along the move from 5 units/s, turned around with the run in reverse only past 120° from the view, so moving sideways keeps the legs forward with the upper body turned; standing, turning toward the view at the game's rate; a flip in one step. Up to 0.27.5 the flip was at 90°, so moving sideways swapped the run's direction back and forth (Na`Vi ceh9, SK vs Na`Vi, Train, DreamHack Winter 2011, R1 1:14 to 1:11: 9 swaps in 2.4 s, none now).
+
+### How it was tested
+- The nine release checks pass (`ground_truth_check.py`: 246 kills and 52 scores and K-D on 64 demos, 0 mismatches, 10 known gaps; `people_check.py` 94 of 94); 951 s with the comparison.
+- Against main on the 88 test demos: 87 identical; one kill no longer a wallbang, in the GP Tourney POV of Team Guardians vs Lanka Dahan, Mirage (R14 0:33, malaiiiiiiiiiiii on gussioN., in no list in **POV mode**), from the victim's new legs.
+- The Glock and the legs on SK vs Na`Vi, Train, DreamHack Winter 2011, main against this build; full log: `tests/logs/0.27.6.md`.
+
+### Discussed, not changed
+- glock18-1 for bursts, which the demo can tell by three shots in one frame: the game plays glock18-2 for a spectator either way. Whether it plays glock18-1 for the recorder's own bursts in a POV demo isn't checked (IDEAS.md, **The Glock's sound for his own bursts in a POV demo**).
+- The other guns' two sounds still take turns where the game picks at random.
+- The kill feed and the spectating screen in the game's look: after 0.27.6, one mockup first (IDEAS.md, **The kill feed and the spectating screen in the game's look**).
 
 ## 0.27.5 (2026-11-23)
 
