@@ -821,7 +821,7 @@ addEventListener('resize', () => { if (applyUiSize()) dispatchEvent(new Event('u
         </div>
         <h2 class="hpart">About</h2>
         <div class="habout">
-          <p>CS 1.6 Demo Viewer, version 0.27.5. It plays HLTV and POV demos in the browser, from your own Half-Life folder; nothing leaves your computer.</p>
+          <p>CS 1.6 Demo Viewer, version 0.27.6. It plays HLTV and POV demos in the browser, from your own Half-Life folder; nothing leaves your computer.</p>
           <p>A map with no radar picture: drop its overview, the .bmp and .txt pair from cstrike\overviews, anywhere on the page.</p>
           <p class="hlinks"><a href="https://github.com/deswalsujan/cs16-demo-viewer/blob/main/CHANGELOG.md" target="_blank" rel="noopener">What's new</a> · <a href="https://github.com/deswalsujan/cs16-demo-viewer" target="_blank" rel="noopener">Source on GitHub</a> · <a href="https://github.com/deswalsujan/cs16-demo-viewer/issues/new/choose" target="_blank" rel="noopener">Report a bug</a></p>
           <p class="hdbg"><button class="btn" id="bDebug" type="button" title="Copies details for a bug report: browser, demo name, what loaded, errors. No file contents.">Copy debug info</button><span>Paste it into your bug report: it says which browser, demo and files, and any errors, with no file contents.</span></p>
@@ -933,7 +933,7 @@ addEventListener('resize', () => { if (applyUiSize()) dispatchEvent(new Event('u
         <div class="drophint">Or drop a .dem file anywhere on this page</div>
         <div class="prog" id="prog" hidden><i id="progBar"></i></div>
         <div class="msg" id="msg"></div>
-        <div class="loadfoot"><span>Version 0.27.5 · <a href="https://github.com/deswalsujan/cs16-demo-viewer" target="_blank" rel="noopener">Source on GitHub</a> · <button class="lnk" id="bHelpStart" type="button" title="The keys, the colours and marks, and about the viewer (?)">Help</button></span><button class="btn" id="bClear" type="button" title="Deletes the copies of maps, models, sounds and radar overviews this browser saved from your Half-Life folder. The folder closes until you pick it again, as on a first visit">Delete saved files</button></div>
+        <div class="loadfoot"><span>Version 0.27.6 · <a href="https://github.com/deswalsujan/cs16-demo-viewer" target="_blank" rel="noopener">Source on GitHub</a> · <button class="lnk" id="bHelpStart" type="button" title="The keys, the colours and marks, and about the viewer (?)">Help</button></span><button class="btn" id="bClear" type="button" title="Deletes the copies of maps, models, sounds and radar overviews this browser saved from your Half-Life folder. The folder closes until you pick it again, as on a first visit">Delete saved files</button></div>
       </div>
     </div>
   </section>
@@ -8345,7 +8345,7 @@ function prepAnim() {
   for (let i = 0; i < sh.length; i += 4) { const e = sh[i + 1]; if (e >= 1 && e <= 64) { (shotT[e] || (shotT[e] = [])).push(sh[i]); (shotK[e] || (shotK[e] = [])).push(i / 4); } }
   for (const e in D.slots) {
     const a = D.slots[e];
-    const rs = new Float32Array(n), gs = new Float32Array(n), gy = new Float32Array(n), gd = new Float32Array(n), ws = new Float32Array(n);
+    const rs = new Float32Array(n), gs = new Float32Array(n), gy = new Float32Array(n), gd = new Float32Array(n), ws = new Float32Array(n), mv = new Uint8Array(n);
     let cw = -1, w0 = 0;
     let cs = -1, cg = -1, s0 = 0, g0 = 0, yaw = null, dist = 0, px = NaN, py = NaN;
     for (let i = 0; i < n; i++) {
@@ -8360,16 +8360,22 @@ function prepAnim() {
       const dt = i ? t - times[i - 1] : 0;
       let spd = 0, dir = 0;
       if (!isNaN(px) && dt > 0 && dt < 0.25) { const d = Math.hypot(x - px, y - py); if (d < 80) { spd = d / dt; dir = Math.atan2(y - py, x - px) * 180 / Math.PI; } }
-      if (spd > 20) {
-        // legs point along the movement; moving backwards turns them around and plays the run in reverse
-        let sign = 1, tgt = dir; const diff = angDiff(vy, dir);
-        if (diff > 90) { tgt = dir + 180; sign = -1; } else if (diff < -90) { tgt = dir - 180; sign = -1; }
-        yaw += angDiff(tgt, yaw) * 0.5;
-        dist += spd * dt * sign;
-      } else yaw += angDiff(vy, yaw) * 0.12; // standing: legs catch up with where the player looks
+      // The legs as the game moves them (0.27.6; cs16-client's GameStudioModelRenderer.cpp, StudioEstimateGait and
+      // CalculateYawBlend). Moving at 5 units/s or more: the legs point straight along the movement; more than 120°
+      // from where he looks, they turn around and the run plays in reverse, so moving sideways (90°) keeps them
+      // forward with the upper body turned. Slower: the legs turn toward his view by the difference times dt * 4 each
+      // frame (times dt for a frame of 0.25 s or more), which adds up to 1 - e^(-4 dt) over a sample. Up to 0.27.5:
+      // 20 units/s, the flip at 90° (sideways moves flipped back and forth), halfway toward the movement and 0.12
+      // toward the view at each sample (Sujan, 26 Nov 2026: odd legs backing up and strafing).
+      if (spd >= 5) {
+        let sign = 1; const diff = angDiff(vy, dir);
+        yaw = dir;
+        if (diff > 120) { yaw = dir - 180; sign = -1; } else if (diff < -120) { yaw = dir + 180; sign = -1; }
+        dist += spd * dt * sign; mv[i] = 1;
+      } else yaw += angDiff(vy, yaw) * (dt < 0.25 ? 1 - Math.exp(-4 * dt) : Math.min(1, dt));
       gy[i] = yaw; gd[i] = dist; px = x; py = y;
     }
-    ANIM[e] = { rs, gs, gy, gd, ws, shots: shotT[e] || [], shotK: shotK[e] || [] };
+    ANIM[e] = { rs, gs, gy, gd, ws, mv, shots: shotT[e] || [], shotK: shotK[e] || [] };
   }
 }
 function lastBefore(arr, t) { let lo = 0, hi = arr.length - 1, r = -1; while (lo <= hi) { const m = (lo + hi) >> 1; if (arr[m] <= t) { r = m; lo = m + 1; } else hi = m - 1; } return r >= 0 ? arr[r] : -1e9; }
@@ -8385,7 +8391,9 @@ function posePlayer(r, e, s, t) {
   let start = A.rs[i];
   if (/shoot/.test(q.name)) start = Math.max(start, lastBefore(A.shots, t)); // every shot restarts the recoil
   const upFrame = (t - start) * q.fps;
-  const gyaw = s.state > 0 && gait ? A.gy[i] + angDiff(A.gy[j], A.gy[i]) * f : s.yaw;
+  // moving between these two samples: the legs along that move, as the game's estimate from the drawn position, and a
+  // flip in one go (0.27.6); standing: turning from one sample's angle to the next
+  const gyaw = !(s.state > 0 && gait) ? s.yaw : A.mv[j] && j > i ? A.gy[j] : A.gy[i] + angDiff(A.gy[j], A.gy[i]) * f;
   const bs = 0.5 - Math.max(-90, Math.min(90, angDiff(s.yaw, gyaw))) / 180;
   const bt = (Math.max(-90, Math.min(90, s.pitch)) + 90) / 180;
   mdlPose(mdl, seq, upFrame, bs, bt, r.p, r.q);
@@ -8659,10 +8667,12 @@ function drawViewModel(renderer, camera, e, s) {
 // quieter with distance, panned left/right. The listener is the 3D camera, or in 2D the player you
 // follow (or the middle of the radar).
 const SND = { ctx: null, out: null, bufs: {}, loading: {}, on: ls.get('snd-on') !== false, vol: ls.get('snd-level') ?? 0.6, sentences: null, chans: {}, iSnd: 0, iShot: 0, iBoom: 0, iRad: 0 };
-// weapon fire events -> the sounds the CS client plays for them
+// weapon fire events -> the sounds the CS client plays for them. The Glock: glock18-2 only (0.27.6). The game plays
+// glock18-1 only while the listener's own Glock is in burst mode, whoever fired (cs16-client's event_glock18.cpp reads
+// the local player's weapon flags), and someone watching a demo has no Glock; up to 0.27.5 the two took turns.
 const FIRE = {
   ak47: ['ak47-1', 'ak47-2'], aug: ['aug-1'], awp: ['awp1'], deagle: ['deagle-1', 'deagle-2'], elite_left: ['elite_fire'], elite_right: ['elite_fire'],
-  famas: ['famas-1', 'famas-2'], fiveseven: ['fiveseven-1'], g3sg1: ['g3sg1-1'], galil: ['galil-1', 'galil-2'], glock18: ['glock18-1', 'glock18-2'],
+  famas: ['famas-1', 'famas-2'], fiveseven: ['fiveseven-1'], g3sg1: ['g3sg1-1'], galil: ['galil-1', 'galil-2'], glock18: ['glock18-2'],
   m249: ['m249-1', 'm249-2'], m3: ['m3-1'], mac10: ['mac10-1'], mp5n: ['mp5-1', 'mp5-2'], p228: ['p228-1'], p90: ['p90-1'], scout: ['scout_fire-1'],
   sg550: ['sg550-1'], sg552: ['sg552-1', 'sg552-2'], tmp: ['tmp-1', 'tmp-2'], ump45: ['ump45-1'], xm1014: ['xm1014-1'],
   m4a1: { on: ['m4a1-1'], off: ['m4a1_unsil-1', 'm4a1_unsil-2'] }, usp: { on: ['usp1', 'usp2'], off: ['usp_unsil-1'] },
@@ -11182,7 +11192,7 @@ function frameError(e) {
 function debugInfo() {
   let gpu = '';
   try { const gl = document.createElement('canvas').getContext('webgl'); const x = gl && gl.getExtension('WEBGL_debug_renderer_info'); gpu = gl ? (x ? gl.getParameter(x.UNMASKED_RENDERER_WEBGL) : 'WebGL available') : 'no WebGL'; } catch (e) { gpu = 'unknown'; }
-  const L = [`CS 1.6 Demo Viewer 0.27.5`, `Browser: ${navigator.userAgent}`, `Screen: ${screen.width}x${screen.height} at ${devicePixelRatio}x, window ${innerWidth}x${innerHeight}`, `Graphics: ${gpu}`];
+  const L = [`CS 1.6 Demo Viewer 0.27.6`, `Browser: ${navigator.userAgent}`, `Screen: ${screen.width}x${screen.height} at ${devicePixelRatio}x, window ${innerWidth}x${innerHeight}`, `Graphics: ${gpu}`];
   L.push(`Folder: ${Object.keys(files.maps).length} maps, ${Object.keys(files.overviews).length} overviews, ${Object.keys(files.mdl).length} models, ${Object.keys(files.snd).length} sounds, ${files.demos.length} demos`);
   if (D) {
     L.push(`Demo: ${D.fileName}, protocol ${(D.header && D.header.netProtocol) || '?'}, ${D.pov ? 'POV (recorded by a player)' : 'HLTV'}, map ${D.mapName}, length ${fmt(D.end - D.start)}, ${M.liveR.length} live rounds, final ${M.liveR.length ? M.liveR[M.liveR.length - 1].scoreAfter.join(':') : '-'}`);

@@ -140,7 +140,7 @@ function prepAnim() {
   for (let i = 0; i < sh.length; i += 4) { const e = sh[i + 1]; if (e >= 1 && e <= 64) { (shotT[e] || (shotT[e] = [])).push(sh[i]); (shotK[e] || (shotK[e] = [])).push(i / 4); } }
   for (const e in D.slots) {
     const a = D.slots[e];
-    const rs = new Float32Array(n), gs = new Float32Array(n), gy = new Float32Array(n), gd = new Float32Array(n), ws = new Float32Array(n);
+    const rs = new Float32Array(n), gs = new Float32Array(n), gy = new Float32Array(n), gd = new Float32Array(n), ws = new Float32Array(n), mv = new Uint8Array(n);
     let cw = -1, w0 = 0;
     let cs = -1, cg = -1, s0 = 0, g0 = 0, yaw = null, dist = 0, px = NaN, py = NaN;
     for (let i = 0; i < n; i++) {
@@ -155,16 +155,22 @@ function prepAnim() {
       const dt = i ? t - times[i - 1] : 0;
       let spd = 0, dir = 0;
       if (!isNaN(px) && dt > 0 && dt < 0.25) { const d = Math.hypot(x - px, y - py); if (d < 80) { spd = d / dt; dir = Math.atan2(y - py, x - px) * 180 / Math.PI; } }
-      if (spd > 20) {
-        // legs point along the movement; moving backwards turns them around and plays the run in reverse
-        let sign = 1, tgt = dir; const diff = angDiff(vy, dir);
-        if (diff > 90) { tgt = dir + 180; sign = -1; } else if (diff < -90) { tgt = dir - 180; sign = -1; }
-        yaw += angDiff(tgt, yaw) * 0.5;
-        dist += spd * dt * sign;
-      } else yaw += angDiff(vy, yaw) * 0.12; // standing: legs catch up with where the player looks
+      // The legs as the game moves them (0.27.6; cs16-client's GameStudioModelRenderer.cpp, StudioEstimateGait and
+      // CalculateYawBlend). Moving at 5 units/s or more: the legs point straight along the movement; more than 120°
+      // from where he looks, they turn around and the run plays in reverse, so moving sideways (90°) keeps them
+      // forward with the upper body turned. Slower: the legs turn toward his view by the difference times dt * 4 each
+      // frame (times dt for a frame of 0.25 s or more), which adds up to 1 - e^(-4 dt) over a sample. Up to 0.27.5:
+      // 20 units/s, the flip at 90° (sideways moves flipped back and forth), halfway toward the movement and 0.12
+      // toward the view at each sample (Sujan, 26 Nov 2026: odd legs backing up and strafing).
+      if (spd >= 5) {
+        let sign = 1; const diff = angDiff(vy, dir);
+        yaw = dir;
+        if (diff > 120) { yaw = dir - 180; sign = -1; } else if (diff < -120) { yaw = dir + 180; sign = -1; }
+        dist += spd * dt * sign; mv[i] = 1;
+      } else yaw += angDiff(vy, yaw) * (dt < 0.25 ? 1 - Math.exp(-4 * dt) : Math.min(1, dt));
       gy[i] = yaw; gd[i] = dist; px = x; py = y;
     }
-    ANIM[e] = { rs, gs, gy, gd, ws, shots: shotT[e] || [], shotK: shotK[e] || [] };
+    ANIM[e] = { rs, gs, gy, gd, ws, mv, shots: shotT[e] || [], shotK: shotK[e] || [] };
   }
 }
 function lastBefore(arr, t) { let lo = 0, hi = arr.length - 1, r = -1; while (lo <= hi) { const m = (lo + hi) >> 1; if (arr[m] <= t) { r = m; lo = m + 1; } else hi = m - 1; } return r >= 0 ? arr[r] : -1e9; }
@@ -180,7 +186,9 @@ function posePlayer(r, e, s, t) {
   let start = A.rs[i];
   if (/shoot/.test(q.name)) start = Math.max(start, lastBefore(A.shots, t)); // every shot restarts the recoil
   const upFrame = (t - start) * q.fps;
-  const gyaw = s.state > 0 && gait ? A.gy[i] + angDiff(A.gy[j], A.gy[i]) * f : s.yaw;
+  // moving between these two samples: the legs along that move, as the game's estimate from the drawn position, and a
+  // flip in one go (0.27.6); standing: turning from one sample's angle to the next
+  const gyaw = !(s.state > 0 && gait) ? s.yaw : A.mv[j] && j > i ? A.gy[j] : A.gy[i] + angDiff(A.gy[j], A.gy[i]) * f;
   const bs = 0.5 - Math.max(-90, Math.min(90, angDiff(s.yaw, gyaw))) / 180;
   const bt = (Math.max(-90, Math.min(90, s.pitch)) + 90) / 180;
   mdlPose(mdl, seq, upFrame, bs, bt, r.p, r.q);
