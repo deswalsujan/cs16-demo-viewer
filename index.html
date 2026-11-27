@@ -296,12 +296,13 @@ button { cursor: pointer; }
 .gsb .gr.th { padding-block: calc(3px * var(--ui)); }
 .gsb .gr.me { background: rgba(255,255,255,.13); }
 .gsb .tline { height: 1px; margin: 0 calc(8px * var(--ui)) calc(3px * var(--ui)); }
-.gsb .tline.t { background: rgb(255,64,64); } .gsb .tline.ct { background: rgb(153,204,255); }
+.gsb .tline.t { background: rgb(255,64,64); } .gsb .tline.ct { background: rgb(153,204,255); } .gsb .tline.spec { background: rgb(255,140,0); }
 .gsb .gsep { margin-inline: calc(7px * var(--ui)); opacity: .8; }
 .gsb .ggap { height: calc(10px * var(--ui)); }
 .gsb.dense .ggap { height: calc(6px * var(--ui)); }
 .gsb .spech { color: rgb(255,140,0); font-weight: 700; padding: calc(2px * var(--ui)) calc(14px * var(--ui)); }
 .gsb .specs { color: #ccc; padding: 0 calc(14px * var(--ui)); }
+.gsb .specs > div { white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
 .gsb .gfoot { display: flex; justify-content: space-between; gap: calc(12px * var(--ui)); padding: calc(6px * var(--ui)) calc(14px * var(--ui)) 0; font-size: calc(11px * var(--ui)); color: #ccc; }
 .gsb .sbheld { color: rgb(255,140,0); } /* POV mode: the scoreboard opened because he held Tab (Sujan, 11 Nov 2026) */
 .sbtag { font-family: var(--f-body); font-size: calc(10px * var(--ui)); color: var(--muted); border: 1px solid var(--line); border-radius: calc(3px * var(--ui)); padding: 0 calc(4px * var(--ui)); }
@@ -821,7 +822,7 @@ addEventListener('resize', () => { if (applyUiSize()) dispatchEvent(new Event('u
         </div>
         <h2 class="hpart">About</h2>
         <div class="habout">
-          <p>CS 1.6 Demo Viewer, version 0.27.6. It plays HLTV and POV demos in the browser, from your own Half-Life folder; nothing leaves your computer.</p>
+          <p>CS 1.6 Demo Viewer, version 0.27.7. It plays HLTV and POV demos in the browser, from your own Half-Life folder; nothing leaves your computer.</p>
           <p>A map with no radar picture: drop its overview, the .bmp and .txt pair from cstrike\overviews, anywhere on the page.</p>
           <p class="hlinks"><a href="https://github.com/deswalsujan/cs16-demo-viewer/blob/main/CHANGELOG.md" target="_blank" rel="noopener">What's new</a> · <a href="https://github.com/deswalsujan/cs16-demo-viewer" target="_blank" rel="noopener">Source on GitHub</a> · <a href="https://github.com/deswalsujan/cs16-demo-viewer/issues/new/choose" target="_blank" rel="noopener">Report a bug</a></p>
           <p class="hdbg"><button class="btn" id="bDebug" type="button" title="Copies details for a bug report: browser, demo name, what loaded, errors. No file contents.">Copy debug info</button><span>Paste it into your bug report: it says which browser, demo and files, and any errors, with no file contents.</span></p>
@@ -933,7 +934,7 @@ addEventListener('resize', () => { if (applyUiSize()) dispatchEvent(new Event('u
         <div class="drophint">Or drop a .dem file anywhere on this page</div>
         <div class="prog" id="prog" hidden><i id="progBar"></i></div>
         <div class="msg" id="msg"></div>
-        <div class="loadfoot"><span>Version 0.27.6 · <a href="https://github.com/deswalsujan/cs16-demo-viewer" target="_blank" rel="noopener">Source on GitHub</a> · <button class="lnk" id="bHelpStart" type="button" title="The keys, the colours and marks, and about the viewer (?)">Help</button></span><button class="btn" id="bClear" type="button" title="Deletes the copies of maps, models, sounds and radar overviews this browser saved from your Half-Life folder. The folder closes until you pick it again, as on a first visit">Delete saved files</button></div>
+        <div class="loadfoot"><span>Version 0.27.7 · <a href="https://github.com/deswalsujan/cs16-demo-viewer" target="_blank" rel="noopener">Source on GitHub</a> · <button class="lnk" id="bHelpStart" type="button" title="The keys, the colours and marks, and about the viewer (?)">Help</button></span><button class="btn" id="bClear" type="button" title="Deletes the copies of maps, models, sounds and radar overviews this browser saved from your Half-Life folder. The folder closes until you pick it again, as on a first visit">Delete saved files</button></div>
       </div>
     </div>
   </section>
@@ -6586,7 +6587,8 @@ function showScoreboard(v, auto = false) {
     // and everyone else on the server now: people on neither side who were never on a team
     const specNow = now.filter((x) => !x.side).sort((a, b) => (M.teamOf[a.pid] != null) - (M.teamOf[b.pid] != null) || (a.pid < b.pid ? -1 : 1)).map((x) => esc(M.pl[x.pid].name) + (M.pl[x.pid].hltv ? ' <span class="sbtag">HLTV</span>' : ''));
     const v = viewersAt(T);
-    h += `<div class="spech">Spectators</div><div class="specs">${specNow.length ? specNow.join('<span class="gsep">·</span>') : 'none on the server'}</div>`;
+    // one per line under a line, as the game lists them (0.27.7; Sujan, 27 Nov 2026, from his YouTube POV's scoreboard)
+    h += `<div class="spech">Spectators</div><div class="tline spec"></div><div class="specs">${specNow.length ? specNow.map((n) => `<div>${n}</div>`).join('') : 'none on the server'}</div>`;
     if (v != null || SB.auto) h += `<div class="gfoot"><span>${v != null ? `${v.toLocaleString('en-US')} watching on HLTV` : ''}</span>${SB.auto ? '<span class="sbheld">The player held Tab here</span>' : ''}</div>`;
     el.innerHTML = h + '</div>';
   };
@@ -8332,6 +8334,26 @@ function placeRig(r, x, y, z, yaw, tint) {
   r.g.visible = true; r.used = true;
 }
 
+// The Glock's gun in Player's eyes (0.27.7; Sujan, 27 and 28 Nov 2026; tests/logs/kill-feed-spectating-2026-11-27.md):
+// the burst animation ('shoot', what the shooter's own game plays in burst mode, cs16-client's event_glock18.cpp) only
+// where the demo proves a burst, three rounds of one player's Glock within GLOCK_BURST seconds, played from the burst's
+// first shot; 'shoot3', the one the game's demo player shows for every Glock shot, everywhere else. Single fire is 0.15 s
+// apart at the fastest (ReGameDLL's GLOCK18Fire: the 0.2 s cycle less 0.05, one shot a trigger press), so three single
+// shots need 0.30 s; a burst's three come on the shooter's next frames, in one demo frame or two neighbouring ones
+// (1,415 of the 1,460 bursts in the test demos within 0.12 s). Up to 0.27.6 the Glock took 'shoot2' (also a burst) and
+// 'shoot3' by turns, so every burst flipped the next one's look.
+const GLOCK_BURST = 0.12;
+// for each shot (times, with the rounds it fired), the time the burst it belongs to began, or NaN
+function glockBursts(times, rounds) {
+  const out = new Float32Array(times.length).fill(NaN);
+  for (let a = 0; a < times.length; a++) {
+    let n = 0, b = a;
+    for (; b < times.length && times[b] - times[a] <= GLOCK_BURST; b++) { n += rounds[b]; if (n >= 3) break; }
+    if (n >= 3 && b < times.length) for (let k = a; k <= b; k++) if (Number.isNaN(out[k])) out[k] = times[a];
+  }
+  return out;
+}
+
 // per-player animation bookkeeping, worked out once per demo so any moment can be drawn directly
 let ANIM = {};
 const angDiff = (a, b) => { let d = (a - b) % 360; if (d > 180) d -= 360; if (d < -180) d += 360; return d; };
@@ -8375,7 +8397,11 @@ function prepAnim() {
       } else yaw += angDiff(vy, yaw) * (dt < 0.25 ? 1 - Math.exp(-4 * dt) : Math.min(1, dt));
       gy[i] = yaw; gd[i] = dist; px = x; py = y;
     }
-    ANIM[e] = { rs, gs, gy, gd, ws, mv, shots: shotT[e] || [], shotK: shotK[e] || [] };
+    // the Glock's bursts (GLOCK_BURST above), for each of his shots: the burst's start, or NaN (and NaN for other guns)
+    const K = shotK[e] || [], gk = K.filter((j) => eventName(sh[j * 4 + 2]) === 'glock18');
+    const gb = glockBursts(gk.map((j) => sh[j * 4]), gk.map(() => 1)), burst = new Float32Array(K.length).fill(NaN);
+    for (let q = 0, g = 0; q < K.length; q++) if (g < gk.length && K[q] === gk[g]) burst[q] = gb[g++];
+    ANIM[e] = { rs, gs, gy, gd, ws, mv, shots: shotT[e] || [], shotK: K, burst };
   }
 }
 function lastBefore(arr, t) { let lo = 0, hi = arr.length - 1, r = -1; while (lo <= hi) { const m = (lo + hi) >> 1; if (arr[m] <= t) { r = m; lo = m + 1; } else hi = m - 1; } return r >= 0 ? arr[r] : -1e9; }
@@ -8555,11 +8581,14 @@ function vmAnim(mdl, e, t) {
     const j = A.shotK[lastK], st = fxShots()[j * 4];
     if (st >= drawT - 0.05) {
       const ev = eventName(fxShots()[j * 4 + 2]);
-      let seq = -1;
+      let seq = -1, from = st;
+      const bs = A.burst ? A.burst[lastK] : NaN;
       if (w === 'knife') seq = pick(lastK % 2 ? 'midslash2' : 'midslash1');
       else if (ev === 'elite_left' || ev === 'elite_right') seq = pick(ev === 'elite_left' ? 'shoot_left1' : 'shoot_right1');
-      else { const opts = [1, 2, 3].map((n) => pick('shoot' + n)).filter((k) => k >= 0); seq = opts.length ? opts[lastK % opts.length] : pick('shoot'); }
-      if (seq >= 0) cands.push({ t: st, seq });
+      else if (ev === 'glock18' && vmSeq(mdl, 'shoot3') >= 0) { // the Glock: a proven burst, else a single shot (GLOCK_BURST)
+        if (!Number.isNaN(bs)) { seq = pick('shoot'); from = bs; } else seq = pick('shoot3');
+      } else { const opts = [1, 2, 3].map((n) => pick('shoot' + n)).filter((k) => k >= 0); seq = opts.length ? opts[lastK % opts.length] : pick('shoot'); }
+      if (seq >= 0) cands.push({ t: from, seq });
     }
   }
   // reloads, grenade throws and bomb plants show in the player's body animation
@@ -8610,8 +8639,10 @@ function povVmAnim(mdl, name, t) {
     const unsil = (id === 22 || id === 16) && !S[k * 3 + 2];
     const pick = (n) => { let j = unsil ? vmSeq(mdl, n + '_unsil') : -1; if (j < 0) j = vmSeq(mdl, n); return j; };
     const opts = [1, 2, 3].map((n) => pick('shoot' + n)).filter((j) => j >= 0);
-    const seq = id === 29 ? pick(k % 2 ? 'midslash2' : 'midslash1') : opts.length ? opts[k % opts.length] : pick('shoot');
-    if (seq >= 0) cands.push({ t: S[k * 3], seq });
+    // his Glock: a burst where his clip lost 3 rounds within GLOCK_BURST (D.ownBurst, povShots), else a single shot
+    const bs = id === 17 && D.ownBurst ? D.ownBurst[k] : NaN, glock = id === 17 && vmSeq(mdl, 'shoot3') >= 0;
+    const seq = id === 29 ? pick(k % 2 ? 'midslash2' : 'midslash1') : glock ? pick(Number.isNaN(bs) ? 'shoot3' : 'shoot') : opts.length ? opts[k % opts.length] : pick('shoot');
+    if (seq >= 0) cands.push({ t: glock && !Number.isNaN(bs) ? bs : S[k * 3], seq });
   }
   let cur = null;
   for (const c of cands) if (!cur || c.t >= cur.t) cur = c;
@@ -9964,7 +9995,7 @@ const POV = { on: false, i: 0, t: 0, lag: LAG3 };
 // game hands them out.
 const SIL_SEQ = { v_m4a1: { id: 22, on: [0, 1, 2, 3, 4, 5, 6], off: [7, 8, 9, 10, 11, 12, 13] }, v_usp: { id: 16, on: [0, 1, 2, 3, 4, 5, 6, 7], off: [8, 9, 10, 11, 12, 13, 14, 15] } };
 function povShots() {
-  const A = D.ownAmmo || [], W = D.wanims || [], VM = D.vmodels || [], out = [];
+  const A = D.ownAmmo || [], W = D.wanims || [], VM = D.vmodels || [], out = [], rounds = [];
   const vmName = (t) => { let lo = 0, hi = VM.length / 2 - 1, r = -1; while (lo <= hi) { const m = (lo + hi) >> 1; if (VM[m * 2] <= t) { r = m; lo = m + 1; } else hi = m - 1; } return r < 0 ? '' : (D.models[VM[r * 2 + 1]] || '').replace(/^models\//, '').replace(/\.mdl$/, ''); };
   const sil = {}; let w = 0;
   for (let i = 0; i < A.length; i += 3) {
@@ -9973,16 +10004,20 @@ function povShots() {
       const sq = SIL_SEQ[vmName(W[w] + 0.05)];
       if (sq) { if (sq.on.includes(W[w + 1])) sil[sq.id] = 1; else if (sq.off.includes(W[w + 1])) sil[sq.id] = 0; }
     }
-    if (i && A[i - 2] === id && clip < A[i - 1] && A[i - 1] - clip <= 3) out.push(t, id, sil[id] || 0);
+    if (i && A[i - 2] === id && clip < A[i - 1] && A[i - 1] - clip <= 3) { out.push(t, id, sil[id] || 0); rounds.push(A[i - 1] - clip); }
   }
-  return new Float32Array(out);
+  // his Glock's bursts (players3d.js, GLOCK_BURST): one update can take 1 to 3 rounds, so bursts count rounds, not shots
+  const gi = []; for (let k = 0; k < rounds.length; k++) if (out[k * 3 + 1] === 17) gi.push(k);
+  const gb = glockBursts(gi.map((k) => out[k * 3]), gi.map((k) => rounds[k])), burst = new Float32Array(rounds.length).fill(NaN);
+  gi.forEach((k, g) => { burst[k] = gb[g]; });
+  return { shots: new Float32Array(out), burst };
 }
 function povInit() {
   POV.shotsBy = null; POV.hidden = null; { const n = $('povNote'); if (n) n.hidden = true; } $('feed').style.top = '';
   $('flash3').hidden = true; $('fbdot').hidden = true; POV.radarRoom = null; POV.attrIdx = null; POV.radIdx = null; $('radar').style.removeProperty('--pov-radar');
   POV.on = !!(D && D.povOn && D.view);
   POV.i = 0; POV.t = T;
-  D.ownShots = POV.on ? povShots() : null;
+  { const ps = POV.on ? povShots() : null; D.ownShots = ps && ps.shots; D.ownBurst = ps && ps.burst; }
   // the camera buttons that pick another view or player go (and with them the camera bar, setView); View settings, in the
   // strip at the bottom left, has his own crosshair's size in place of the viewer's (From config.cfg, Small, Medium, Large; Sujan, 11 Nov 2026), without Glow on hits (no wallbang damage in
   // POV mode, so nothing to glow; Sujan, 29 Oct 2026) and Damage numbers (Sujan, 3 Nov 2026), and with the flashbang rows
@@ -10460,9 +10495,11 @@ function drawPovRadar(bg, lx, W, H) {
   bg.save(); bg.globalCompositeOperation = 'source-over'; bg.globalAlpha = 1; bg.imageSmoothingEnabled = true;
   bg.drawImage(sp.cv, 0, 0, sp.w * s, sp.h * s); bg.restore();
   lx.save(); lx.globalCompositeOperation = 'lighter'; lx.globalAlpha = 1;
+  // the dots 2 of the radar sprite's 128 units across, 1/64 of it (0.27.7; Sujan, 27 Nov 2026, from his YouTube POV, about
+  // 1/68), and the other marks halved with them; 4 units up to 0.27.6 (cs16-client's size)
   const put = (px, py, pz, col, kind) => {
     const dx = px - v.pos[0], dy = py - v.pos[1], off = (v.yaw - Math.atan2(dy, dx) * 180 / Math.PI) * Math.PI / 180;
-    const rad = Math.min(Math.hypot(dx, dy) / 32, R), X = (R + rad * Math.sin(off)) * s, Y = (R - rad * Math.cos(off)) * s, z = v.pos[2] - pz, u = s;
+    const rad = Math.min(Math.hypot(dx, dy) / 32, R), X = (R + rad * Math.sin(off)) * s, Y = (R - rad * Math.cos(off)) * s, z = v.pos[2] - pz, u = s / 2;
     lx.fillStyle = `rgb(${col})`;
     if (kind === 'cross') { for (const [a, b] of [[0, 0], [-2, -2], [-2, 2], [2, -2], [2, 2]]) lx.fillRect(X + a * u, Y + b * u, 2 * u, 2 * u); return; }
     if (z > -128 && z < 128) lx.fillRect(X - 2 * u, Y - 2 * u, 4 * u, 4 * u);
@@ -11192,7 +11229,7 @@ function frameError(e) {
 function debugInfo() {
   let gpu = '';
   try { const gl = document.createElement('canvas').getContext('webgl'); const x = gl && gl.getExtension('WEBGL_debug_renderer_info'); gpu = gl ? (x ? gl.getParameter(x.UNMASKED_RENDERER_WEBGL) : 'WebGL available') : 'no WebGL'; } catch (e) { gpu = 'unknown'; }
-  const L = [`CS 1.6 Demo Viewer 0.27.6`, `Browser: ${navigator.userAgent}`, `Screen: ${screen.width}x${screen.height} at ${devicePixelRatio}x, window ${innerWidth}x${innerHeight}`, `Graphics: ${gpu}`];
+  const L = [`CS 1.6 Demo Viewer 0.27.7`, `Browser: ${navigator.userAgent}`, `Screen: ${screen.width}x${screen.height} at ${devicePixelRatio}x, window ${innerWidth}x${innerHeight}`, `Graphics: ${gpu}`];
   L.push(`Folder: ${Object.keys(files.maps).length} maps, ${Object.keys(files.overviews).length} overviews, ${Object.keys(files.mdl).length} models, ${Object.keys(files.snd).length} sounds, ${files.demos.length} demos`);
   if (D) {
     L.push(`Demo: ${D.fileName}, protocol ${(D.header && D.header.netProtocol) || '?'}, ${D.pov ? 'POV (recorded by a player)' : 'HLTV'}, map ${D.mapName}, length ${fmt(D.end - D.start)}, ${M.liveR.length} live rounds, final ${M.liveR.length ? M.liveR[M.liveR.length - 1].scoreAfter.join(':') : '-'}`);

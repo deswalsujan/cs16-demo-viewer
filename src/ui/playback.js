@@ -197,7 +197,8 @@ function showScoreboard(v, auto = false) {
     // and everyone else on the server now: people on neither side who were never on a team
     const specNow = now.filter((x) => !x.side).sort((a, b) => (M.teamOf[a.pid] != null) - (M.teamOf[b.pid] != null) || (a.pid < b.pid ? -1 : 1)).map((x) => esc(M.pl[x.pid].name) + (M.pl[x.pid].hltv ? ' <span class="sbtag">HLTV</span>' : ''));
     const v = viewersAt(T);
-    h += `<div class="spech">Spectators</div><div class="specs">${specNow.length ? specNow.join('<span class="gsep">·</span>') : 'none on the server'}</div>`;
+    // one per line under a line, as the game lists them (0.27.7; Sujan, 27 Nov 2026, from his YouTube POV's scoreboard)
+    h += `<div class="spech">Spectators</div><div class="tline spec"></div><div class="specs">${specNow.length ? specNow.map((n) => `<div>${n}</div>`).join('') : 'none on the server'}</div>`;
     if (v != null || SB.auto) h += `<div class="gfoot"><span>${v != null ? `${v.toLocaleString('en-US')} watching on HLTV` : ''}</span>${SB.auto ? '<span class="sbheld">The player held Tab here</span>' : ''}</div>`;
     el.innerHTML = h + '</div>';
   };

@@ -1146,7 +1146,7 @@ const POV = { on: false, i: 0, t: 0, lag: LAG3 };
 // game hands them out.
 const SIL_SEQ = { v_m4a1: { id: 22, on: [0, 1, 2, 3, 4, 5, 6], off: [7, 8, 9, 10, 11, 12, 13] }, v_usp: { id: 16, on: [0, 1, 2, 3, 4, 5, 6, 7], off: [8, 9, 10, 11, 12, 13, 14, 15] } };
 function povShots() {
-  const A = D.ownAmmo || [], W = D.wanims || [], VM = D.vmodels || [], out = [];
+  const A = D.ownAmmo || [], W = D.wanims || [], VM = D.vmodels || [], out = [], rounds = [];
   const vmName = (t) => { let lo = 0, hi = VM.length / 2 - 1, r = -1; while (lo <= hi) { const m = (lo + hi) >> 1; if (VM[m * 2] <= t) { r = m; lo = m + 1; } else hi = m - 1; } return r < 0 ? '' : (D.models[VM[r * 2 + 1]] || '').replace(/^models\//, '').replace(/\.mdl$/, ''); };
   const sil = {}; let w = 0;
   for (let i = 0; i < A.length; i += 3) {
@@ -1155,16 +1155,20 @@ function povShots() {
       const sq = SIL_SEQ[vmName(W[w] + 0.05)];
       if (sq) { if (sq.on.includes(W[w + 1])) sil[sq.id] = 1; else if (sq.off.includes(W[w + 1])) sil[sq.id] = 0; }
     }
-    if (i && A[i - 2] === id && clip < A[i - 1] && A[i - 1] - clip <= 3) out.push(t, id, sil[id] || 0);
+    if (i && A[i - 2] === id && clip < A[i - 1] && A[i - 1] - clip <= 3) { out.push(t, id, sil[id] || 0); rounds.push(A[i - 1] - clip); }
   }
-  return new Float32Array(out);
+  // his Glock's bursts (players3d.js, GLOCK_BURST): one update can take 1 to 3 rounds, so bursts count rounds, not shots
+  const gi = []; for (let k = 0; k < rounds.length; k++) if (out[k * 3 + 1] === 17) gi.push(k);
+  const gb = glockBursts(gi.map((k) => out[k * 3]), gi.map((k) => rounds[k])), burst = new Float32Array(rounds.length).fill(NaN);
+  gi.forEach((k, g) => { burst[k] = gb[g]; });
+  return { shots: new Float32Array(out), burst };
 }
 function povInit() {
   POV.shotsBy = null; POV.hidden = null; { const n = $('povNote'); if (n) n.hidden = true; } $('feed').style.top = '';
   $('flash3').hidden = true; $('fbdot').hidden = true; POV.radarRoom = null; POV.attrIdx = null; POV.radIdx = null; $('radar').style.removeProperty('--pov-radar');
   POV.on = !!(D && D.povOn && D.view);
   POV.i = 0; POV.t = T;
-  D.ownShots = POV.on ? povShots() : null;
+  { const ps = POV.on ? povShots() : null; D.ownShots = ps && ps.shots; D.ownBurst = ps && ps.burst; }
   // the camera buttons that pick another view or player go (and with them the camera bar, setView); View settings, in the
   // strip at the bottom left, has his own crosshair's size in place of the viewer's (From config.cfg, Small, Medium, Large; Sujan, 11 Nov 2026), without Glow on hits (no wallbang damage in
   // POV mode, so nothing to glow; Sujan, 29 Oct 2026) and Damage numbers (Sujan, 3 Nov 2026), and with the flashbang rows
@@ -1642,9 +1646,11 @@ function drawPovRadar(bg, lx, W, H) {
   bg.save(); bg.globalCompositeOperation = 'source-over'; bg.globalAlpha = 1; bg.imageSmoothingEnabled = true;
   bg.drawImage(sp.cv, 0, 0, sp.w * s, sp.h * s); bg.restore();
   lx.save(); lx.globalCompositeOperation = 'lighter'; lx.globalAlpha = 1;
+  // the dots 2 of the radar sprite's 128 units across, 1/64 of it (0.27.7; Sujan, 27 Nov 2026, from his YouTube POV, about
+  // 1/68), and the other marks halved with them; 4 units up to 0.27.6 (cs16-client's size)
   const put = (px, py, pz, col, kind) => {
     const dx = px - v.pos[0], dy = py - v.pos[1], off = (v.yaw - Math.atan2(dy, dx) * 180 / Math.PI) * Math.PI / 180;
-    const rad = Math.min(Math.hypot(dx, dy) / 32, R), X = (R + rad * Math.sin(off)) * s, Y = (R - rad * Math.cos(off)) * s, z = v.pos[2] - pz, u = s;
+    const rad = Math.min(Math.hypot(dx, dy) / 32, R), X = (R + rad * Math.sin(off)) * s, Y = (R - rad * Math.cos(off)) * s, z = v.pos[2] - pz, u = s / 2;
     lx.fillStyle = `rgb(${col})`;
     if (kind === 'cross') { for (const [a, b] of [[0, 0], [-2, -2], [-2, 2], [2, -2], [2, 2]]) lx.fillRect(X + a * u, Y + b * u, 2 * u, 2 * u); return; }
     if (z > -128 && z < 128) lx.fillRect(X - 2 * u, Y - 2 * u, 4 * u, 4 * u);

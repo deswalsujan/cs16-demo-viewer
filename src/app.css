@@ -283,12 +283,13 @@ button { cursor: pointer; }
 .gsb .gr.th { padding-block: calc(3px * var(--ui)); }
 .gsb .gr.me { background: rgba(255,255,255,.13); }
 .gsb .tline { height: 1px; margin: 0 calc(8px * var(--ui)) calc(3px * var(--ui)); }
-.gsb .tline.t { background: rgb(255,64,64); } .gsb .tline.ct { background: rgb(153,204,255); }
+.gsb .tline.t { background: rgb(255,64,64); } .gsb .tline.ct { background: rgb(153,204,255); } .gsb .tline.spec { background: rgb(255,140,0); }
 .gsb .gsep { margin-inline: calc(7px * var(--ui)); opacity: .8; }
 .gsb .ggap { height: calc(10px * var(--ui)); }
 .gsb.dense .ggap { height: calc(6px * var(--ui)); }
 .gsb .spech { color: rgb(255,140,0); font-weight: 700; padding: calc(2px * var(--ui)) calc(14px * var(--ui)); }
 .gsb .specs { color: #ccc; padding: 0 calc(14px * var(--ui)); }
+.gsb .specs > div { white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
 .gsb .gfoot { display: flex; justify-content: space-between; gap: calc(12px * var(--ui)); padding: calc(6px * var(--ui)) calc(14px * var(--ui)) 0; font-size: calc(11px * var(--ui)); color: #ccc; }
 .gsb .sbheld { color: rgb(255,140,0); } /* POV mode: the scoreboard opened because he held Tab (Sujan, 11 Nov 2026) */
 .sbtag { font-family: var(--f-body); font-size: calc(10px * var(--ui)); color: var(--muted); border: 1px solid var(--line); border-radius: calc(3px * var(--ui)); padding: 0 calc(4px * var(--ui)); }
