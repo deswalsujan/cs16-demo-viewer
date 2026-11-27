@@ -10,7 +10,8 @@ recorded by BAJRANG || forgotteN_), and on SK vs Na`Vi, Train, DreamHack Winter 
   messages (7,150, the first one's values);
 - the flashbang: 255 at R10 1:33, about 136 at 1:28, nothing at demo 3:15 where the server's clear ended a white fade;
   the dot and the whiteout off by default, shown only when ticked, with that opacity; their rows only in POV mode; while
-  he watches a teammate at full white, the spectator bars grey over the whiteout (60% black laid over it), and the plant
+  he watches a teammate at full white, the spectator bars grey over the whiteout (black at 196 of 255 laid over it since
+  0.28.0, so about 59; 60% black, about 102, up to 0.27.7), and the plant
   bar's background grey over it with its orange fill added (his screen held at full white at R11 0:28);
 - his Crosshair row in POV mode (From config.cfg by default, Small, Medium, Large set the size), the viewer's in HLTV;
 - the Tab scoreboard in the game's look in both demos: the server's name, latency, his row lit in the POV demo; the
@@ -155,7 +156,7 @@ try:
             sp['bar'] = lum({'x': g[0] + 200, 'y': g[1] + 6, 'width': 300, 'height': 20})
             sp['view'] = lum({'x': g[0] + 200, 'y': g[1] + g[3] * 0.45, 'width': 300, 'height': 40})
         pg.evaluate("__v(\"if ($('fbWhite3')) $('fbWhite3').checked = false; 0\")")
-        check(sp.get('a') == 255 and sp.get('mode') == 4 and sp.get('bars') and sp.get('white') and 85 <= sp.get('bar', 0) <= 125 and sp.get('view', 0) >= 245,
+        check(sp.get('a') == 255 and sp.get('mode') == 4 and sp.get('bars') and sp.get('white') and 45 <= sp.get('bar', 0) <= 75 and sp.get('view', 0) >= 245,
               'spectating a teammate at full white: the spectator bars grey over the whiteout, the view white', sp)
         # the plant bar over a full whiteout (Sujan, 12 Nov 2026): its background laid over the white at 60% black, grey, its
         # orange frame and fill added onto the picture (cs16-client: FillRGBABlend, then FillRGBA). No flashbang of this demo
@@ -168,7 +169,8 @@ try:
         at(1086.5, 900)
         pb = ev(js(r'''({ f: povBarAt(POV.t), white: !$('flash3').hidden })'''))
         if isinstance(g, list) and pb.get('f'):
-            s_ = g[3] / 768; bx, by, bw, bh = g[0] + g[2] / 4, g[1] + g[3] * 2 / 3, g[2] / 2, 10 * s_
+            # the HUD's units: 600 lines since 0.28.0 (768 up to 0.27.7; hud.js)
+            s_ = g[3] / 600; bx, by, bw, bh = g[0] + g[2] / 4, g[1] + g[3] * 2 / 3, g[2] / 2, 10 * s_
             pb['empty'] = rgb({'x': bx + bw * 0.85, 'y': by + 3 * s_, 'width': bw * 0.1, 'height': max(2, bh - 6 * s_)})
             pb['filled'] = rgb({'x': bx + bw * 0.2, 'y': by + 3 * s_, 'width': bw * 0.2, 'height': max(2, bh - 6 * s_)})
             pb['outside'] = rgb({'x': bx + bw * 0.2, 'y': by - 30, 'width': bw * 0.2, 'height': 20})

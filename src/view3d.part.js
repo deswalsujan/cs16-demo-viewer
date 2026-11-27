@@ -25,6 +25,7 @@ function setView(v, save = true) {
   if (save) { viewPref = v; savePrefs(); }
   if (v === '3d' && radar3 && !POV.on) v = 'split';
   viewMode = v;
+  if (v === '2d') hudBarsClass(false, 0); // the spectator bars are the 3D view's (hud.js)
   $('radar3').checked = radar3;
   document.querySelectorAll('#viewSeg button').forEach((x) => x.classList.toggle('on', x.dataset.v === (v === 'split' ? '3d' : v)));
   const r = $('radar');
@@ -314,7 +315,7 @@ function resetForNewDemo() {
     if (R3.c4) { disposeRig(R3.c4.rig); R3.c4 = null; }
   }
   ANIM = {}; stopSounds();
-  $('pov').hidden = true;
+  $('pov').hidden = true; hudBarsClass(false, 0); HUDF.rows = [];
   // POV mode's state goes with the old demo: onDemo() sets it for the new one only after the overview loads, and the
   // frames drawn in between read the new demo, which may have no view of his (an HLTV demo, or POV mode turned off),
   // so POV.on left set made povView throw (Sujan's two crashes of 3 Nov 2026; on 0.26.16 the frame loop stopped there)
@@ -761,7 +762,7 @@ function update3Now() {
   const W = lc.width / dpr, H = lc.height / dpr;
   lx.clearRect(0, 0, W, H);
   // what an error partway through last frame's drawing can leave behind, now that the loop runs on after one (0.26.18;
-  // Sujan, 7 Nov 2026): drawHitNumbers' fade, and drawPovHud's and drawSpecBars' settings inside save and restore
+  // Sujan, 7 Nov 2026): drawHitNumbers' fade, and the HUD layer's settings inside save and restore (hud.js, hudOn)
   lx.globalAlpha = 1; lx.textAlign = 'center'; lx.textBaseline = 'alphabetic'; lx.globalCompositeOperation = 'source-over';
   // POV mode's HUD layer, added onto the picture (#hud3, 0.26.30): his HUD, crosshair, hit arcs and radar
   const hc = $('hud3'), hx = hc.getContext('2d');
@@ -854,11 +855,16 @@ function update3Now() {
       if (pick) { selected = pick; renderPane(); }
     }
   } else pov.hidden = true;
-  // POV mode: the game's spectator bars while he watches someone else; they name the player, so the box goes
-  if (POV.on && drawSpecBars(sx, W, H)) pov.hidden = true;
+  // the game's spectator bars (hud.js, 0.28.0): while he watches someone else in a POV demo, and while following a player
+  // in an HLTV demo; they name the player, so the name box goes, except the banner of a followed player who died, which
+  // says who killed him (not with Vanilla, where it holds only the name)
+  const barsUp = drawGameBars(sx, W, H);
+  if (barsUp) { if (POV.on || VAN.on || !pov.classList.contains('dead')) pov.hidden = true; }
   // ...and while he's playing the game shows no name box, his HUD sits there
   else if (POV.on && POV.mode === 0 && POV.who === POV.v.rec) pov.hidden = true;
   if (POV.on) drawPovBar(sx, hx, W, H);
+  // the kill feed in the game's look, in every camera (hud.js, 0.28.0), on the moment itself as the viewer's own feed
+  drawGameFeed(sx, hx, tNow3, POV.on && POV.mode === 0);
   povFlash();
 }
 // Hit marker on the crosshair when the player you're watching gets a kill:
@@ -1341,9 +1347,9 @@ function povFov(t) {
 // HL SDK's RGB_YELLOWISH), additive like the game. Health 25 or less turns red, as in CS. The values are what
 // the server told his game: Health, Battery, ArmorType, Money, CurWeapon and AmmoX (D.hud). Only while he's
 // playing (the game shows the spectator bars instead when he spectates). Without the sprites, plain text.
-// HUD_SCALE: sprite pixels per 768 pixels of view height (the game draws its 640 sprites unscaled, so their size
-// on screen depends on the resolution he played at, which the demo doesn't say).
-const HUD_SCALE = 1;
+// The size basis (0.28.0; Sujan, 27 Nov 2026): the game's 640 sprites at their own size in 800x600 screen units, the
+// units scaled to the view (hud.js, hudScale and hudImg), so a sprite pixel is 1/600 of the view's height, unsmoothed;
+// up to 0.27.7 1/768 of it, smoothed (HUD_SCALE), 28% smaller. The demo doesn't say what resolution he played at.
 const HUD_COL = [255, 160, 0], HUD_RED = [250, 0, 0];
 const W_NAME = { 1: 'p228', 3: 'scout', 4: 'hegrenade', 5: 'xm1014', 6: 'c4', 7: 'mac10', 8: 'aug', 9: 'smokegrenade', 10: 'elite', 11: 'fiveseven', 12: 'ump45', 13: 'sg550', 14: 'galil', 15: 'famas', 16: 'usp', 17: 'glock18', 18: 'awp', 19: 'mp5navy', 20: 'm249', 21: 'm3', 22: 'm4a1', 23: 'tmp', 24: 'g3sg1', 25: 'flashbang', 26: 'deagle', 27: 'sg552', 28: 'ak47', 29: 'knife', 30: 'p90' };
 const HUDS = { from: null, spr: {}, ammo: {}, loading: false, forD: null };
@@ -1516,19 +1522,22 @@ function sprCanvases(u8) {
   }
   return out;
 }
+// In 800x600 units (hud.js): W and H come in as the view's CSS pixels and are taken over by the units, 600 high.
 function drawPovHud(lx, W, H) {
   loadHudSprites();
   const t = POV.t, v = povHudValues(t); if (!v) return;
-  const s = H / 768 * HUD_SCALE, haveSpr = !!HUDS.spr.number_0;
+  const cssH = H, PU = hudScale(lx.canvas); W = PU.Wu; H = HUD_H;
+  const s = 1, haveSpr = !!HUDS.spr.number_0;
   const dh = haveSpr ? HUDS.spr.number_0.h * s : 25 * s, dw = haveSpr ? HUDS.spr.number_0.w * s : 20 * s;
-  const base = H - 46 * UI - dh; // the bottom buttons sit below (they grow with the Interface size; the HUD follows the view as the game's does)
+  // the bottom buttons sit below (they grow with the Interface size; the HUD follows the view as the game's does)
+  const base = Math.round(H - 46 * UI * HUD_H / cssH - dh);
   const Hd = D.hud, MIN = 100 / 255;
-  lx.save(); lx.globalCompositeOperation = 'lighter';
+  hudOn(lx, () => { lx.globalCompositeOperation = 'lighter';
   const alpha = (a) => { lx.globalAlpha = Math.max(0, Math.min(1, a)); };
-  const spr = (nm, x, y, col, a) => { const p = HUDS.spr[nm] || HUDS.ammo[nm]; if (!p) return 0; alpha(a); lx.drawImage(hudTint(p, col), x, y, p.w * s, p.h * s); return p.w * s; };
+  const spr = (nm, x, y, col, a) => { const p = HUDS.spr[nm] || HUDS.ammo[nm]; if (!p) return 0; alpha(a); hudImg(lx, hudTint(p, col), x, y, p.w * s, p.h * s); return p.w * s; };
   const num = (n, x, y, col, a, rightAlign) => {
     const str = String(Math.max(0, Math.round(n)));
-    if (!haveSpr) { alpha(a); lx.font = `700 ${Math.round(dh)}px ${textFont()}`; lx.fillStyle = `rgb(${col.map(Math.round).join(',')})`; lx.textBaseline = 'top'; lx.textAlign = rightAlign ? 'right' : 'left'; lx.fillText(str, x, y); return lx.measureText(str).width; }
+    if (!haveSpr) { alpha(a); lx.font = `700 ${Math.round(dh * PU.k)}px ${textFont()}`; lx.fillStyle = `rgb(${col.map(Math.round).join(',')})`; lx.textBaseline = 'top'; lx.textAlign = rightAlign ? 'right' : 'left'; lx.fillText(str, x * PU.k, y * PU.k); return lx.measureText(str).width / PU.k; }
     let w = str.length * dw, x0 = rightAlign ? x - w : x;
     for (const ch of str) { spr('number_' + ch, x0, y, col, a); x0 += dw; }
     return w;
@@ -1536,7 +1545,7 @@ function drawPovHud(lx, W, H) {
   const icon = (nm, x, y, col, a) => { const p = HUDS.spr[nm]; if (!p) return 0; return spr(nm, x, y + (dh - p.h * s) / 2, col, a); };
   const fadeA = (at) => { const age = at == null ? 99 : t - at; return MIN + Math.max(0, 100 - 20 * age) / 100 * 128 / 255; };
   // health and armour
-  let x = W * 0.02;
+  let x = Math.round(W * 0.02);
   if (v.hp != null) { const col = v.hp <= 25 ? HUD_RED : HUD_COL, a = v.hp <= 15 ? 1 : fadeA(changedAt(Hd.hp, t)); x += icon('cross', x, base, col, a) + 6 * s; x += num(v.hp, x, base, col, a) + 24 * s; }
   if (v.ap != null) { const a = fadeA(changedAt(Hd.ap, t)); x += icon(v.helmet ? (v.ap > 0 ? 'suithelmet_full' : 'suithelmet_empty') : v.ap > 0 ? 'suit_full' : 'suit_empty', x, base, HUD_COL, a) + 6 * s; num(v.ap, x, base, HUD_COL, a); }
   // round timer
@@ -1544,11 +1553,11 @@ function drawPovHud(lx, W, H) {
     const col = povTimerRed(t) ? HUD_REDISH : HUD_COL;
     const tw = dw * v.clock.length; let cx = W / 2 - tw / 2; icon('stopwatch', cx - 30 * s, base, col, MIN);
     const [m, sec] = v.clock.split(':'); let xx = W / 2 - tw / 2; xx += num(+m, xx, base, col, MIN);
-    if (haveSpr) { alpha(MIN); lx.fillStyle = `rgb(${col.join(',')})`; lx.fillRect(xx + dw * 0.3, base + dh * 0.3, 3 * s, 3 * s); lx.fillRect(xx + dw * 0.3, base + dh * 0.65, 3 * s, 3 * s); }
+    if (haveSpr) { alpha(MIN); lx.fillStyle = `rgb(${col.join(',')})`; hudRect(lx, Math.round(xx + dw * 0.3), Math.round(base + dh * 0.3), 3 * s, 3 * s); hudRect(lx, Math.round(xx + dw * 0.3), Math.round(base + dh * 0.65), 3 * s, 3 * s); }
     xx += dw * 0.8; num(+sec < 10 ? 0 : Math.floor(+sec / 10), xx, base, col, MIN); num(+sec % 10, xx + dw, base, col, MIN);
   }
   // money, above the ammo
-  const R = W * 0.98;
+  const R = Math.round(W * 0.98);
   if (v.money != null) {
     const r = idxAt(Hd.money, 2, t), age = r >= 0 ? t - Hd.money[r * 2] : 99, it = Math.min(1, age / 5);
     const delta = age < 5 && r > 0 ? Hd.money[r * 2 + 1] - Hd.money[r * 2 - 1] : 0;
@@ -1573,9 +1582,9 @@ function drawPovHud(lx, W, H) {
   if (P && P.length >= 4) {
     const att = povPainAt(t), cx = W / 2, cy = H / 2;
     const pos = [[cx - P[0].w * s / 2, cy - P[0].h * s * 3], [cx + P[1].w * s * 2, cy - P[1].h * s / 2], [cx - P[2].w * s / 2, cy + P[2].h * s * 2], [cx - P[3].w * s * 3, cy - P[3].h * s / 2]];
-    for (let k = 0; k < 4; k++) if (att[k] > 0.4) { alpha(Math.max(att[k], 0.5)); lx.drawImage(P[k].cv, pos[k][0], pos[k][1], P[k].w * s, P[k].h * s); }
+    for (let k = 0; k < 4; k++) if (att[k] > 0.4) { alpha(Math.max(att[k], 0.5)); hudImg(lx, P[k].cv, Math.round(pos[k][0]), Math.round(pos[k][1]), P[k].w * s, P[k].h * s); }
   }
-  lx.restore();
+  });
 }
 // The plant and defuse bar (cs16-client timer.cpp, CHudProgressBar): a quarter of the width in, two thirds down, half
 // the width across, 10 px tall: 60% black with an orange (255 140 0) line round it, filling in orange. BarTime starts
@@ -1593,15 +1602,16 @@ function povBarAt(t) {
   const f = f0 + (t - tb) / dur;
   return f >= 0 && f < 1 ? f : null;
 }
+// In 800x600 units since 0.28.0 (hud.js): 10 units tall, its frame 1 unit.
 function drawPovBar(bg, lx, W, H) {
   const f = povBarAt(POV.t); if (f == null) return;
-  const s = H / 768 * HUD_SCALE, bx = W / 4, by = H * 2 / 3, bw = W / 2, bh = 10 * s;
-  bg.save(); bg.globalAlpha = 153 / 255; bg.fillStyle = '#000'; bg.fillRect(bx, by, bw, bh); bg.restore();
-  lx.save();
-  lx.globalAlpha = 1; lx.fillStyle = 'rgb(255,140,0)';
-  lx.fillRect(bx, by, bw, 1); lx.fillRect(bx, by + bh - 1, bw, 1); lx.fillRect(bx, by, 1, bh); lx.fillRect(bx + bw - 1, by, 1, bh);
-  lx.fillRect(bx + 2 * s, by + 2 * s, f * (bw - 4 * s), bh - 4 * s);
-  lx.restore();
+  const PU = hudScale(lx.canvas), bx = Math.round(PU.Wu / 4), by = HUD_H * 2 / 3, bw = Math.round(PU.Wu / 2), bh = 10;
+  hudOn(bg, () => { bg.globalAlpha = 153 / 255; bg.fillStyle = '#000'; hudRect(bg, bx, by, bw, bh); });
+  hudOn(lx, () => {
+    lx.fillStyle = 'rgb(255,140,0)';
+    hudRect(lx, bx, by, bw, 1); hudRect(lx, bx, by + bh - 1, bw, 1); hudRect(lx, bx, by, 1, bh); hudRect(lx, bx + bw - 1, by, 1, bh);
+    hudRect(lx, bx + 2, by + 2, f * (bw - 4), bh - 4);
+  });
 }
 
 // ---------------- POV mode: his radar (0.26.30) ----------------
@@ -1625,7 +1635,7 @@ function radarSprite(sh) {
 }
 // the round pill and View settings sit under the radar in POV mode (app.css, --pov-radar)
 function povRadarRoom(H) {
-  const px = HUDS.radar ? Math.round(HUDS.radar.h * H / 768 * HUD_SCALE) : 0;
+  const px = HUDS.radar ? Math.round(HUDS.radar.h * H / HUD_H) : 0;
   if (POV.radarRoom !== px) { POV.radarRoom = px; $('radar').style.setProperty('--pov-radar', px + 'px'); }
 }
 // the last value of a flat (time, entity, ...) array of stride n for one entity at or before t, per entity once
@@ -1642,20 +1652,21 @@ function povHasBomb(e, t) {
 function drawPovRadar(bg, lx, W, H) {
   const sp = HUDS.radar; if (!sp) return;
   const t = POV.t, v = POV.v, rec = v.rec, me = playerState(rec, t); if (!me || me.state <= 0) return;
-  const s = H / 768 * HUD_SCALE, R = sp.w / 2, side = Math.abs(me.state), r = roundAt(t), from = r ? r.start : -Infinity;
-  bg.save(); bg.globalCompositeOperation = 'source-over'; bg.globalAlpha = 1; bg.imageSmoothingEnabled = true;
-  bg.drawImage(sp.cv, 0, 0, sp.w * s, sp.h * s); bg.restore();
-  lx.save(); lx.globalCompositeOperation = 'lighter'; lx.globalAlpha = 1;
+  hudScale(lx.canvas);
+  const s = 1, R = sp.w / 2, side = Math.abs(me.state), r = roundAt(t), from = r ? r.start : -Infinity;
+  hudOn(bg, () => hudImg(bg, sp.cv, 0, 0, sp.w * s, sp.h * s)); // in 800x600 units, unsmoothed (0.28.0)
+  hudOn(lx, () => { lx.globalCompositeOperation = 'lighter';
   // the dots 2 of the radar sprite's 128 units across, 1/64 of it (0.27.7; Sujan, 27 Nov 2026, from his YouTube POV, about
   // 1/68), and the other marks halved with them; 4 units up to 0.27.6 (cs16-client's size)
   const put = (px, py, pz, col, kind) => {
     const dx = px - v.pos[0], dy = py - v.pos[1], off = (v.yaw - Math.atan2(dy, dx) * 180 / Math.PI) * Math.PI / 180;
-    const rad = Math.min(Math.hypot(dx, dy) / 32, R), X = (R + rad * Math.sin(off)) * s, Y = (R - rad * Math.cos(off)) * s, z = v.pos[2] - pz, u = s / 2;
+    // on whole units, as the game puts them on whole screen pixels (0.28.0)
+    const rad = Math.min(Math.hypot(dx, dy) / 32, R), X = Math.round((R + rad * Math.sin(off)) * s), Y = Math.round((R - rad * Math.cos(off)) * s), z = v.pos[2] - pz, u = s / 2;
     lx.fillStyle = `rgb(${col})`;
-    if (kind === 'cross') { for (const [a, b] of [[0, 0], [-2, -2], [-2, 2], [2, -2], [2, 2]]) lx.fillRect(X + a * u, Y + b * u, 2 * u, 2 * u); return; }
-    if (z > -128 && z < 128) lx.fillRect(X - 2 * u, Y - 2 * u, 4 * u, 4 * u);
-    else if (z <= -128) { lx.fillRect(X - 2 * u, Y - 2 * u, 6 * u, 2 * u); lx.fillRect(X, Y, 2 * u, 4 * u); } // above him
-    else { lx.fillRect(X, Y - 2 * u, 2 * u, 4 * u); lx.fillRect(X - 2 * u, Y + 2 * u, 6 * u, 2 * u); } // below him
+    if (kind === 'cross') { for (const [a, b] of [[0, 0], [-2, -2], [-2, 2], [2, -2], [2, 2]]) hudRect(lx, X + a * u, Y + b * u, 2 * u, 2 * u); return; }
+    if (z > -128 && z < 128) hudRect(lx, X - 2 * u, Y - 2 * u, 4 * u, 4 * u);
+    else if (z <= -128) { hudRect(lx, X - 2 * u, Y - 2 * u, 6 * u, 2 * u); hudRect(lx, X, Y, 2 * u, 4 * u); } // above him
+    else { hudRect(lx, X, Y - 2 * u, 2 * u, 4 * u); hudRect(lx, X - 2 * u, Y + 2 * u, 6 * u, 2 * u); } // below him
   };
   const si = M.idxAt(t) * D.stride;
   for (const k in D.slots) {
@@ -1668,7 +1679,7 @@ function drawPovRadar(bg, lx, W, H) {
   }
   const B = D.radarBomb, bi = side === 1 && B ? idxAt(B, 5, t) : -1;
   if (bi >= 0 && B[bi * 5 + 1] !== 2 && B[bi * 5] >= from && Math.floor((t - B[bi * 5]) / 0.5) % 2 === 0) put(B[bi * 5 + 2], B[bi * 5 + 3], B[bi * 5 + 4], '255,0,0', B[bi * 5 + 1] === 1 ? 'cross' : 'dot');
-  lx.restore();
+  });
 }
 
 // ---------------- POV mode: flashbangs (0.26.30) ----------------
@@ -1694,44 +1705,9 @@ function povFlash() {
 }
 
 // ---------------- POV mode: spectator bars ----------------
-// As the game's spectator view (cstrike/resource/UI/Spectator.res): a translucent black bar at the top and at the
-// bottom (see SPEC_BAR), while he watches someone else after dying (not during the death camera behind
-// his own body). Top right: the score and the round clock; bottom: whose view it is, with his HP when the server
-// sends it (no camera mode label: Sujan, 4 Oct 2026). The kill feed moves below the top bar; the name box goes.
-// Approved design: docs/pov-spectator-bars-mock.png. The bars' darkness (60% black) is a guess: the file doesn't say.
-// Each bar is 40/480 of the view: the game's are 66/480 (they hold its camera and player menus, which the viewer
-// doesn't have), trimmed to what they show (Sujan, 4 Oct 2026).
-const SPEC_BAR = 40 / 480;
-function povBarsOn() { if (!POV.on || POV.mode === 0) return false; const [, tg] = povObs(POV.t); return !(tg === POV.v.rec && POV.mode !== 4) || false; }
-function drawSpecBars(lx, W, H) {
-  const on = povBarsOn();
-  $('feed').style.top = on ? Math.round(H * SPEC_BAR + 8 * UI) + 'px' : '';
-  if (!on) return false;
-  const bh = Math.round(H * SPEC_BAR), mono = textFont();
-  lx.save();
-  lx.fillStyle = 'rgba(0,0,0,.6)'; lx.fillRect(0, 0, W, bh); lx.fillRect(0, H - bh, W, bh);
-  // score and clock
-  const done = M.liveR.filter((r) => r.end != null && r.end <= POV.t), sc = done.length ? done[done.length - 1].scoreAfter : [0, 0];
-  // the clock as above the view, the C4 countdown included (0.21.0)
-  const c = clockAt(POV.t, true), clock = c ? c.text.replace(/^freeze /, '') : '';
-  // the bars follow the view's height, as the game's do; their text is at the Interface size (UI, 0.26.13)
-  const u = UI, xr = W - W * 80 / 640 - 14 * u, y1 = bh / 2 - 9 * u, y2 = bh / 2 + 9 * u;
-  lx.font = `600 ${14 * u}px ${mono}`; lx.textAlign = 'right'; lx.textBaseline = 'middle';
-  lx.fillStyle = '#e8e6e1'; lx.fillText('Counter-Terrorists : ', xr - 14 * u, y1); lx.fillText('Terrorists : ', xr - 14 * u, y2);
-  lx.fillStyle = '#5ea3e8'; lx.fillText(String(sc[1]), xr, y1); lx.fillStyle = '#e8574d'; lx.fillText(String(sc[0]), xr, y2);
-  lx.fillStyle = 'rgba(232,230,225,.6)'; lx.fillRect(W - W * 64 / 640, bh * 0.2, 1, bh * 0.6);
-  lx.textAlign = 'left'; lx.fillStyle = '#e8e6e1'; lx.font = `600 ${15 * u}px ${mono}`; lx.fillText('◷ ' + clock, W - W * 56 / 640, (y1 + y2) / 2);
-  // whose view, and the camera mode
-  const [, tg] = povObs(POV.t), who = POV.who != null ? POV.who : tg;
-  if (who) {
-    const s = playerState(who, T), hp = hpAt(who, tNow3); // health at the moment itself, as the name bar's (0.27.4)
-    lx.textAlign = 'center'; lx.font = `600 ${16 * u}px ${mono}`;
-    const nm = nameAt(who, T), txt = nm + (hp != null ? ` (${hp})` : '');
-    lx.fillStyle = s && s.state === 1 || s && s.state === -1 ? '#e8574d' : '#5ea3e8'; lx.fillText(txt, W / 2, H - bh / 2);
-  }
-  lx.restore();
-  return true;
-}
+// Since 0.28.0 the spectator bars are the game's, in hud.js (drawGameBars), for POV and HLTV demos. Up to 0.27.7 they were
+// POV mode's own (docs/pov-spectator-bars-mock.png; Sujan, 4 Oct 2026): 40 of 480 lines each, 60% black, their text at
+// the Interface size, the kill feed moved below the top bar.
 
 // ---------------- POV mode: "this server held back enemies" ----------------
 // Some servers only send an enemy when he's about to come into view (an anti-wallhack plugin), so See through
@@ -1785,7 +1761,7 @@ function showHiddenEnemiesNote(on) {
 // POV mode: the notices' column (a notice, the anti-wallhack note; the shortcuts line is hidden there) sits at the top middle, and steps
 // down below the kill feed while one of its rows reaches into the column (a long kill row reaches past the middle of a
 // 1280x720 window: the GP Tourney POV's widest, at R3, from 436 px of 940). Run every frame in POV mode, since rows
-// come and go and the spectator bars move the feed down.
+// come and go and the feed starts lower while he spectates.
 function placePovNotices() {
   const rad = $('radar'); if (!rad.classList.contains('povm')) return;
   const rr = rad.getBoundingClientRect(), u = UI;
@@ -1796,8 +1772,10 @@ function placePovNotices() {
     colL = Math.min(colL, r.left); colR = Math.max(colR, r.right); has = true;
   }
   let top = 12 * u;
-  if (has) for (const row of $('feed').children) {
-    const r = row.getBoundingClientRect();
+  // the kill feed's rows: in 3D the game's, drawn on the view (hud.js, HUDF.rows, in the view's CSS pixels); in 2D the viewer's own
+  const rows = viewMode !== '2d' ? HUDF.rows.map((r) => ({ width: 1, left: rr.left + r.left, right: rr.left + r.right, bottom: rr.top + r.bottom }))
+    : [...$('feed').children].map((row) => row.getBoundingClientRect());
+  if (has) for (const r of rows) {
     if (r.width && r.left < colR + 8 * u && r.right > colL - 8 * u) top = Math.max(top, r.bottom - rr.top + 8 * u);
   }
   const v = Math.round(top) + 'px';
