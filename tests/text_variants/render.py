@@ -41,7 +41,9 @@ def extra():
 
 def extra3():
     # the viewer's own drawing as it ships (src/hud.js), R6 with its parts, gap rows and no bumps (28 Nov 2026)
-    yield {'id': 'build_e12.34_ls1', 'mode': 'build', 'cut': 0, 'smear': True, 'ls': 1, 'weight': 400, 'grid': True, 'efSize': 12.34}
+    # since R6 was dropped (28 Nov 2026) 'build' is the plain smoothed text #73 ships; 'r6' is R6 as it was (r6.js)
+    yield {'id': 'build_e12.34_ls1', 'mode': 'build', 'cut': 0, 'smear': True, 'ls': 1, 'weight': 400, 'grid': False, 'efSize': 12.34}
+    yield {'id': 'r6built_e12.34_ls1', 'mode': 'r6', 'cut': 0, 'smear': True, 'ls': 1, 'weight': 400, 'grid': True, 'efSize': 12.34}
     # plain smoothed browser text (no edge cutting, the line drawn at once), the feed at 12.34 px as built, with no smear,
     # a half-pixel smear or the full one: Sujan's fallback of 28 Nov 2026 takes whichever comes closest to his game's weight
     for amt in (0, 0.25, 0.5, 0.75, 1):

@@ -11,7 +11,7 @@ Chromium and calls window.renderVariant(spec) for each variant; analyse.py measu
 A spec: { id, weight (400 or 700), ls (px between letters), mode: 'cut' (drawn at 1x, every pixel's edge cut at `cut` of
 255) | 'smooth' (drawn at 1x, the browser's smoothing kept) | 'area' (each letter drawn on its own at 1x, its `area`
 times its smoothed coverage in pixels kept, its most covered pixels first, so no letter or thin part vanishes whatever the
-browser's smoothing; letters on whole pixels) | 'build' (the viewer's own drawing, src/hud.js, as it ships; efSize 12.34) | 'ss4' (drawn at 4x, cut at `cut` there, shrunk to 1x by
+browser's smoothing; letters on whole pixels) | 'build' (the viewer's own drawing, src/hud.js, as it ships; efSize 12.34) | 'r6' (R6 as it was at commit 778510a, r6.js) | 'ss4' (drawn at 4x, cut at `cut` there, shrunk to 1x by
 averaging each 4x4 block), smear (each pixel also takes its left neighbour's ink, Windows' made-up bold), grid (each
 letter drawn on its own at a whole pixel, its advance rounded to whole pixels, `bias` added before rounding), efSize
 (the kill feed's size, 12 px by default) }.
@@ -20,8 +20,10 @@ kill feed, Default Verdana 11 px for the bars.
 -->
 <body style="margin:0;background:#222">
 <canvas id="out" width="800" height="600"></canvas>
-<!-- 'build' mode: the viewer's own text drawing, src/hud.js's hudMask, as it ships -->
+<!-- 'build' mode: the viewer's own text drawing, src/hud.js's hudMask, as it ships; 'r6' mode: R6 as it was in #73 at
+     commit 778510a (dropped 28 Nov 2026), kept in r6.js -->
 <script src="../../src/hud.js"></script>
+<script src="r6.js"></script>
 <script>
 const FACE = 'Verdana, "DejaVu Sans", sans-serif';
 const T = [255, 64, 64], CT = [153, 204, 255], BASE = [255, 176, 0];
@@ -33,8 +35,8 @@ const ROWS = [
 ];
 // the mask of a text as an alpha array at 1x: { w, h, a (0..255), ox, oy, adv }
 function mask(str, size, V) {
-  if (V.mode === 'build') {
-    const m = hudMask(str, size === 11 ? HUD_DF : HUD_EF), c = m.cv, d = c.getContext('2d').getImageData(0, 0, c.width, c.height).data;
+  if (V.mode === 'build' || V.mode === 'r6') {
+    const m = V.mode === 'r6' ? r6Mask(str, size === 11 ? R6_DF : R6_EF) : hudMask(str, size === 11 ? HUD_DF : HUD_EF), c = m.cv, d = c.getContext('2d').getImageData(0, 0, c.width, c.height).data;
     const a = new Float32Array(c.width * c.height); for (let i = 0; i < a.length; i++) a[i] = d[i * 4 + 3];
     return { w: c.width, h: c.height, a, ox: m.ox, oy: m.oy, adv: m.adv };
   }

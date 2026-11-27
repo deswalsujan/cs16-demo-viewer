@@ -46,163 +46,42 @@ function hudOn(g, f) { g.save(); g.setTransform(1, 0, 0, 1, 0, 0); g.globalAlpha
 // The kill feed (and the chat, 0.28.1) are TrackerScheme's EngineFont, the spectator bars ClientScheme's Default: Verdana
 // at weight 600 with no antialias line in any band, EngineFont with a drop shadow (docs/reference/game-schemes). At
 // 800x600, Windows draws weight 600 as Verdana Regular made bold, each letter 1 px wider and smeared 1 px to the right
-// (tests/logs/kill-feed-spectating-2026-11-27.md, 5). The browser's own Verdana, drawn as R6 (Sujan, 28 Nov 2026, on #73;
-// tests/logs/hud-text-variants-2026-11-28.md): each letter drawn on its own at a whole pixel, its advance rounded to whole
-// pixels, 1 px between letters; of each letter the pixels the browser's smoothing covers most are kept, as many as 0.8
-// times its smoothed coverage adds up to, so every pixel is fully on or off and no letter or thin part vanishes however
-// the browser smooths; then the 1-px smear, and for EngineFont the 1-px black shadow right and down. The feed at 12.34 px,
-// the em the scheme's height gives (15 / 1.2153), the bars at 11 px. Against his 800x600 shot: the bars within 0.2 px of
-// the game's widths, the feed 1.8% narrower; strokes 2.26 and 2.39 px against the game's 2.15. Up to the first build of
-// 0.28.0 (#73 before 28 Nov 2026): the whole line drawn at once at 12 px with 1 px between letters, every pixel cut at half
-// and smeared, which left strokes 2 or 3 px wide by where each letter fell and letters touching, 20% heavier.
+// (tests/logs/kill-feed-spectating-2026-11-27.md, 5). The viewer draws the browser's own smoothed Verdana (Sujan, 28 Nov
+// 2026, on #73; tests/logs/hud-text-variants-2026-11-28.md): the line drawn at once, 1 px between letters, no edge
+// cutting, then a 0.75 smear (each pixel takes three quarters of its left neighbour's ink), the setting that comes
+// closest to the game's weight (ink 0.91 and 1.14 of his 800x600 shot's in the feed and the bars), and for EngineFont
+// the 1-px black shadow right and down. The feed at 12.34 px, the em the scheme's height gives (15 / 1.2153), the bars at
+// 11 px. Its edges are soft where the game's are hard. Before, in #73: every pixel cut fully on or off at half (the first
+// build), then R6, each letter on a whole pixel keeping 0.8 of its coverage; Sujan dropped R6 the same day, since its I
+// and J merged into a box, the $ lost its bar, the # and the ! broke (its code: tests/text_variants/r6.js).
 const HUD_FACE = 'Verdana, "DejaVu Sans", "Liberation Sans", sans-serif';
 const HUD_EF = { css: `400 12.34px ${HUD_FACE}`, shadow: true, name: 'EF' };
 const HUD_DF = { css: `400 11px ${HUD_FACE}`, shadow: false, name: 'DF' };
-const HUD_KEEP = 0.8; // of each letter's smoothed coverage
-const HUD_TXT = new Map(), HUD_GLYPH = new Map();
+const HUD_SMEAR = 0.75;
+const HUD_TXT = new Map();
 const hudMeasure = document.createElement('canvas').getContext('2d');
-// Which pixels of one letter's smoothed drawing (S, w by h) it keeps (Sujan, 28 Nov 2026, on #73: the i read as an f, its
-// dot 3 px wide and its stem with a bump under it). (0) A gap row the browser's smoothing half fills: a row of the letter
-// whose strongest pixel is under 200 and fainter by 64 or more than the pixels both above and below it (within 2 rows)
-// keeps nothing; the 12.34 px ! reads 255, 190, 157, 255 down its stem and dot, where the game's hinted letter has an
-// empty row. A row with a strong pixel anywhere (the a's right stem beside its curl) isn't a gap row. (1) The letter's parts: the pieces of its drawing at
-// HUD_PART or more, 4-connected, those gaps left out (an i's dot and stem, an accent and its letter, the dots of : ; ! ?),
-// each fainter pixel going to the nearest piece. (2) Each part keeps its most covered pixels, as many as HUD_KEEP times its own coverage (at least one); where the
-// count falls inside a run of equally covered pixels (a stem's half-covered column), all of them or none, whichever comes
-// nearer, so a stroke never gets a one-pixel bump. (3) A small part (4 pixels of coverage or less) wholly above or below a
-// bigger one it overlaps (the i's dot, an accent) keeps runs no wider than the bigger part's usual run, so the dot is no
-// wider than the stem. (4) Such stacked
-// parts keep at least one empty row between them: a mark touching its stroke moves away from it, a row at a time.
-const HUD_PART = 96;
-function hudKeep(S, w, h) {
-  const n = w * h, lab = new Int32Array(n).fill(-1), parts = [], gap = new Uint8Array(n);
-  for (let y = 1; y < h - 1; y++) {
-    let top = -1; for (let x = 0; x < w; x++) { const k = y * w + x; if (S[k] && (top < 0 || S[k] > S[top])) top = k; }
-    if (top < 0 || S[top] >= 200) continue;
-    const up = Math.max(S[top - w], y > 1 ? S[top - 2 * w] : 0), dn = Math.max(S[top + w], y < h - 2 ? S[top + 2 * w] : 0);
-    if (up >= 160 && dn >= 160 && up >= S[top] + 64 && dn >= S[top] + 64) for (let x = 0; x < w; x++) gap[y * w + x] = 1;
-  }
-  for (let k = 0; k < n; k++) {
-    if (S[k] < HUD_PART || gap[k] || lab[k] >= 0) continue;
-    const id = parts.length, st = [k]; lab[k] = id; parts.push({ id, px: [] });
-    while (st.length) {
-      const q = st.pop(), x = q % w, y = (q / w) | 0;
-      for (const [dx, dy] of [[1, 0], [-1, 0], [0, 1], [0, -1]]) {
-        const X = x + dx, Y = y + dy, r = Y * w + X;
-        if (X >= 0 && Y >= 0 && X < w && Y < h && lab[r] < 0 && S[r] >= HUD_PART && !gap[r]) { lab[r] = id; st.push(r); }
-      }
-    }
-  }
-  // the fainter pixels go to the nearest part, breadth first over the pixels with any ink
-  let front = []; for (let k = 0; k < n; k++) if (lab[k] >= 0) front.push(k);
-  while (front.length) {
-    const next = [];
-    for (const q of front) {
-      const x = q % w, y = (q / w) | 0;
-      for (let dy = -1; dy <= 1; dy++) for (let dx = -1; dx <= 1; dx++) {
-        const X = x + dx, Y = y + dy, r = Y * w + X;
-        if ((dx || dy) && X >= 0 && Y >= 0 && X < w && Y < h && lab[r] < 0 && S[r] > 0 && !gap[r]) { lab[r] = lab[q]; next.push(r); }
-      }
-    }
-    front = next;
-  }
-  for (let k = 0; k < n; k++) if (lab[k] >= 0) parts[lab[k]].px.push(k);
-  const keep = new Uint8Array(n);
-  for (const P of parts) {
-    const px = P.px.slice().sort((a, b) => S[b] - S[a] || a - b);
-    let cov = 0; for (const k of px) cov += S[k];
-    const N = Math.max(1, Math.round(cov / 255 * HUD_KEEP)), t = S[px[Math.min(N, px.length) - 1]];
-    let above = 0, eq = 0; for (const k of px) { if (S[k] > t) above++; else if (S[k] === t) eq++; }
-    const withEq = above === 0 || Math.abs(above + eq - N) < Math.abs(above - N);
-    for (const k of px) if (S[k] > t || (withEq && S[k] === t)) keep[k] = 1;
-  }
-  // each part's kept extent and its usual run (the most common width of its kept runs across a row)
-  const info = () => parts.map((P) => {
-    let x0 = w, x1 = -1, y0 = h, y1 = -1, cov = 0; const runs = {};
-    for (const k of P.px) { cov += S[k]; if (!keep[k]) continue; const x = k % w, y = (k / w) | 0; x0 = Math.min(x0, x); x1 = Math.max(x1, x); y0 = Math.min(y0, y); y1 = Math.max(y1, y); }
-    for (let y = y0; y <= y1; y++) { let r = 0; for (let x = x0; x <= x1 + 1; x++) { const k = y * w + x; if (x <= x1 && keep[k] && lab[k] === P.id) r++; else if (r) { runs[r] = (runs[r] || 0) + 1; r = 0; } } }
-    let run = 1, best = 0; for (const r in runs) if (runs[r] > best || (runs[r] === best && +r < run)) { best = runs[r]; run = +r; }
-    return { id: P.id, x0, x1, y0, y1, cov, run };
-  });
-  const stacked = (A, B) => A.cov < B.cov && A.x1 >= B.x0 && A.x0 <= B.x1 && (A.y1 < B.y0 || A.y0 > B.y1);
-  let I = info();
-  for (const A of I) for (const B of I) {
-    if (A.x1 < 0 || B.x1 < 0 || !stacked(A, B) || A.cov > 4 * 255) continue;
-    // (3) A's runs no wider than B's usual run: of a longer run, its most covered pixels
-    for (let y = A.y0; y <= A.y1; y++) {
-      let x = A.x0;
-      while (x <= A.x1) {
-        const k = y * w + x;
-        if (!(keep[k] && lab[k] === A.id)) { x++; continue; }
-        let e = x; const run = [];
-        while (e <= A.x1 && keep[y * w + e] && lab[y * w + e] === A.id) { run.push(y * w + e); e++; }
-        if (run.length > B.run) run.sort((a, b) => S[b] - S[a] || a - b).slice(B.run).forEach((r) => { keep[r] = 0; });
-        x = e;
-      }
-    }
-  }
-  I = info();
-  for (const A of I) for (const B of I) {
-    if (A.x1 < 0 || B.x1 < 0 || !stacked(A, B)) continue;
-    // (4) an empty row between them: move A away from B while a kept pixel of A is next to one of B (8 neighbours)
-    const up = A.y1 < B.y0;
-    for (let step = 0; step < 3; step++) {
-      let touch = false;
-      for (let k = 0; k < n && !touch; k++) {
-        if (!(keep[k] && lab[k] === A.id)) continue;
-        const x = k % w, y = (k / w) | 0;
-        for (let dy = -1; dy <= 1 && !touch; dy++) for (let dx = -1; dx <= 1; dx++) { const X = x + dx, Y = y + dy, r = Y * w + X; if (X >= 0 && Y >= 0 && X < w && Y < h && keep[r] && lab[r] === B.id) { touch = true; break; } }
-        if (!touch && keep[k] && lab[k] === A.id) {
-          // a row between: the rows next to A toward B must hold none of B's kept pixels
-          const Y = y + (up ? 2 : -2);
-          for (let dx = -1; dx <= 1 && !touch; dx++) { const X = x + dx, r = Y * w + X; if (X >= 0 && Y >= 0 && X < w && Y < h && keep[r] && lab[r] === B.id) touch = false; }
-        }
-      }
-      if (!touch) break;
-      const moved = [];
-      for (let k = 0; k < n; k++) if (keep[k] && lab[k] === A.id) { keep[k] = 0; moved.push(k); }
-      for (const k of moved) { const r = k + (up ? -w : w); if (r >= 0 && r < n) { keep[r] = 1; lab[r] = A.id; } }
-    }
-  }
-  return keep;
+const HUD_LS = 'letterSpacing' in hudMeasure;
+function hudAdvance(str, f) {
+  const g = hudMeasure; g.font = f.css;
+  if (HUD_LS) { g.letterSpacing = '1px'; return g.measureText(str).width; }
+  let w = 0; for (const ch of str) w += g.measureText(ch).width + 1; return w;
 }
-// one letter: its advance (rounded) and the pixels it keeps, as offsets in a canvas 40 high with the letter at x 4,
-// its baseline at 20
-function hudGlyph(ch, f) {
-  const key = f.name + '|' + ch;
-  let G = HUD_GLYPH.get(key);
-  if (G) return G;
-  hudMeasure.font = f.css;
-  const aw = hudMeasure.measureText(ch).width, gw = Math.ceil(aw) + 8, h = 40;
-  const c = document.createElement('canvas'); c.width = gw; c.height = h;
-  const g = c.getContext('2d'); g.font = f.css; g.fillStyle = '#fff'; g.textBaseline = 'alphabetic'; g.fillText(ch, 4, 20);
-  const d = g.getImageData(0, 0, gw, h).data, S = new Uint8Array(gw * h);
-  for (let k = 0; k < gw * h; k++) S[k] = d[k * 4 + 3];
-  const K = hudKeep(S, gw, h), keep = [];
-  for (let k = 0; k < gw * h; k++) if (K[k]) keep.push([k % gw - 4, Math.floor(k / gw)]);
-  G = { adv: Math.round(aw) + 1, keep };
-  if (HUD_GLYPH.size > 2000) HUD_GLYPH.clear();
-  HUD_GLYPH.set(key, G);
-  return G;
-}
-function hudAdvance(str, f) { let w = 0; for (const ch of str) w += hudGlyph(ch, f).adv; return w; }
-// the white mask of a text: { cv, ox, oy (where the text's origin sits in it), adv, inkL, inkR (ink columns from the origin) }
+// the white mask of a text: { cv, ox, oy (where the text's origin sits in it), adv, inkL, inkR (columns at least half
+// covered, from the origin) }
 function hudMask(str, f) {
   const adv = hudAdvance(str, f), w = Math.ceil(adv) + 8, h = 40, ox = 3, oy = 6;
-  const A = new Uint8Array(w * h);
-  let x = 0;
-  for (const ch of str) {
-    const G = hudGlyph(ch, f);
-    for (const [dx, y] of G.keep) { const X = ox + x + dx, Y = y - 20 + oy + 14; if (X >= 0 && X < w && Y >= 0 && Y < h) A[Y * w + X] = 1; }
-    x += G.adv;
-  }
   const cv = document.createElement('canvas'); cv.width = w; cv.height = h;
-  const g = cv.getContext('2d'), id = g.createImageData(w, h), d = id.data;
+  const g = cv.getContext('2d'); g.font = f.css; g.fillStyle = '#fff'; g.textBaseline = 'alphabetic';
+  if (HUD_LS) { g.letterSpacing = '1px'; g.fillText(str, ox, oy + 14); }
+  else { let x = ox; for (const ch of str) { g.fillText(ch, x, oy + 14); x += g.measureText(ch).width + 1; } }
+  const id = g.getImageData(0, 0, w, h), d = id.data;
   let inkL = w, inkR = -1;
-  // the 1-px smear: each pixel also takes its left neighbour's ink
-  for (let j = 0; j < h; j++) for (let i = 0; i < w; i++) {
-    if (!(A[j * w + i] || (i > 0 && A[j * w + i - 1]))) continue;
-    const o = (j * w + i) * 4; d[o] = d[o + 1] = d[o + 2] = d[o + 3] = 255; inkL = Math.min(inkL, i); inkR = Math.max(inkR, i);
+  for (let j = 0; j < h; j++) for (let i = w - 1; i >= 0; i--) {
+    const o = (j * w + i) * 4;
+    // the smear, right to left so each pixel reads its left neighbour before that one is smeared
+    if (i > 0) d[o + 3] = Math.max(d[o + 3], Math.round(d[o - 1] * HUD_SMEAR));
+    d[o] = d[o + 1] = d[o + 2] = 255;
+    if (d[o + 3] >= 128) { inkL = Math.min(inkL, i); inkR = Math.max(inkR, i); }
   }
   g.putImageData(id, 0, 0);
   return { cv, ox, oy, adv, inkL: inkL - ox, inkR: inkR - ox };
@@ -224,12 +103,12 @@ function hudText(str, f, rgb) {
   }
   return t;
 }
-// how far below the drawing origin's top a capital's ink starts (the same for every text in a font)
+// how far below the drawing origin's top a capital's ink (at least half covered) starts (the same for every text in a font)
 const HUD_CAP = {};
 function hudCapTop(f) {
   if (HUD_CAP[f.name] != null) return HUD_CAP[f.name];
   const m = hudMask('H', f), d = m.cv.getContext('2d').getImageData(0, 0, m.cv.width, m.cv.height).data;
-  for (let j = 0; j < m.cv.height; j++) for (let i = 0; i < m.cv.width; i++) if (d[(j * m.cv.width + i) * 4 + 3]) return (HUD_CAP[f.name] = j - m.oy);
+  for (let j = 0; j < m.cv.height; j++) for (let i = 0; i < m.cv.width; i++) if (d[(j * m.cv.width + i) * 4 + 3] >= 128) return (HUD_CAP[f.name] = j - m.oy);
   return (HUD_CAP[f.name] = 0);
 }
 // draws a text with its origin at x0 and its capitals' top at capTop (units); returns the text's measures in units

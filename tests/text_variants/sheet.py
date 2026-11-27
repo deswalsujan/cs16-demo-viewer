@@ -1,5 +1,5 @@
 """The character sheet (Sujan, 28 Nov 2026, on #73): every printable character and the pairs that matter in player names,
-each line in the viewer's text as built (R6, src/hud.js) and in plain smoothed browser Verdana (no edge cutting, the smear
+each line in R6 (as it was in #73 at commit 778510a, kept in r6.js; dropped the same day) and in plain smoothed browser Verdana, which #73 ships since (no edge cutting, the smear
 setting closest to his game's weight: 0.75), in the feed's T red and CT blue (12.34 px, with their black shadow, on a
 wall-coloured background) and the bars' orange (11 px, on the bar's dark), at actual size and at 3x nearest pixel.
 
@@ -12,7 +12,7 @@ import base64, io, json, os, sys
 LINES = [('A to Z', 'ABCDEFGHIJKLMNOPQRSTUVWXYZ'), ('a to z', 'abcdefghijklmnopqrstuvwxyz'), ('digits', '0123456789'),
          ('punctuation and symbols', ''.join(chr(c) for c in range(33, 127) if not chr(c).isalnum())), ('pairs in player names', 'Vi Vf il li rn m 1l O0 fi fl ff tt'),
          ('accented letters (extra)', 'éèêëàâäçïîôöüûñ ÉÀÖÜÅ')]
-R6 = {'mode': 'build', 'efSize': 12.34}
+R6 = {'mode': 'r6', 'efSize': 12.34}  # R6 as it was at commit 778510a (r6.js), dropped 28 Nov 2026
 PLAIN = {'mode': 'smooth', 'cut': 0, 'smear': True, 'smearAmt': 0.75, 'ls': 1, 'weight': 400, 'grid': False, 'efSize': 12.34}
 WALL, BAR = (120, 116, 96), (30, 29, 25)
 ROWS = [('R6', R6, 12.34, (255, 64, 64), True, WALL, 'T red, feed'), ('plain', PLAIN, 12.34, (255, 64, 64), True, WALL, 'T red, feed'),
