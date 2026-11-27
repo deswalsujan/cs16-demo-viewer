@@ -9595,9 +9595,19 @@ function hudFeedRows(t) {
   const r = roundAt(t), from = r ? r.start - 1e-4 : -Infinity;
   return D.kills.filter((k) => k.t <= t && k.t > t - 6 && k.t >= from).slice(-4);
 }
+// Theatre mode: the side panel, while it's out, covers the view's right part, and the feed keeps to the edge left of it,
+// as the game holds the feed to the visible screen's right edge and as 0.27.7's feed did (Sujan, 28 Nov 2026: the panel
+// mustn't hide kills); read from where the panel is, so the feed moves with it as it slides. In units.
+function hudVisibleRight(P) {
+  const app = $('app'); if (!app || !app.classList.contains('theatre')) return P.Wu;
+  const side = document.querySelector('.side'), rad = $('radar'); if (!side || !rad) return P.Wu;
+  const s = side.getBoundingClientRect(), r = rad.getBoundingClientRect();
+  if (!s.width || s.left >= r.right) return P.Wu;
+  return Math.max(0, Math.min(P.Wu, (s.left - r.left) * dpr / P.k));
+}
 function drawGameFeed(tg, ag, t, playingPov) {
   hudLoadIcons();
-  const rows = hudFeedRows(t), P = hudScale(tg.canvas), RIGHT = P.Wu - 17, top0 = playingPov ? 42 : 80;
+  const rows = hudFeedRows(t), P = hudScale(tg.canvas), VR = hudVisibleRight(P), RIGHT = VR - 17, top0 = playingPov ? 42 : 80;
   HUDF.rows = [];
   hudOn(tg, () => hudOn(ag, () => {
     ag.globalCompositeOperation = 'lighter';
@@ -9623,7 +9633,7 @@ function drawGameFeed(tg, ag, t, playingPov) {
       }
       hudDrawText(tg, vName, HUD_EF, vx, cap, hudSideRgb(k.vteam));
       const s = P.k / dpr;
-      HUDF.rows.push({ left: left * s, right: (P.Wu - 15) * s, top: top * s, bottom: (top + 18) * s });
+      HUDF.rows.push({ left: left * s, right: (VR - 15) * s, top: top * s, bottom: (top + 18) * s });
     });
   }));
 }
@@ -9850,7 +9860,7 @@ function drawGameBars(tg, W, H) {
 // beside it; else just above the bar, 0.28.0's place, where it can lie over the chat's 4th and 5th lines but not the name.
 // W and H in the view's CSS pixels; worked out again only when the view, the name's width, Interface size or the
 // strip's buttons change.
-const HUDSTRIP = { key: '', mode: '', tips: [] };
+const HUDSTRIP = { key: '', mode: '' };
 function hudStrip(on, W, H) {
   const lg = $('legend'), rad = $('radar'); if (!lg) return;
   if (!on || lg.hidden) {
@@ -9879,14 +9889,22 @@ function hudStrip(on, W, H) {
   HUDSTRIP.mode = icons ? 'icons' : 'full';
   rad.style.setProperty('--strip-b', Math.round(Math.max(0, bottom)) + 'px');
 }
-// icons only, each button's name as its tooltip where it has none
+// icons only: each button's tooltip starts with its name, then its own explanation; on See through walls, while the ! of
+// the anti-wallhack warning shows (#xrayMark), the warning's too (Sujan, 28 Nov 2026); the name is the button's
+// accessible name, its words being hidden. Back to the button's own tooltip in full.
 function hudStripIcons(lg, on) {
-  if (lg.classList.contains('icons') === on) return;
   lg.classList.toggle('icons', on);
-  if (on) {
-    HUDSTRIP.tips = [];
-    for (const b of lg.querySelectorAll('.btn')) { const l = b.querySelector('.lbl'); if (l && !b.title) { b.title = l.textContent.trim(); HUDSTRIP.tips.push(b); } }
-  } else { for (const b of HUDSTRIP.tips) b.removeAttribute('title'); HUDSTRIP.tips = []; }
+  const mk = $('xrayMark');
+  for (const b of lg.querySelectorAll('.btn')) {
+    const l = b.querySelector('.lbl'); if (!l) continue;
+    if (b.dataset.tip0 == null) b.dataset.tip0 = b.getAttribute('title') || '';
+    const name = l.textContent.trim(), t0 = b.dataset.tip0;
+    if (on) {
+      let tip = t0 ? `${name}: ${t0}` : name;
+      if (b.id === 'tgXray' && mk && !mk.hidden && mk.title) tip += '. ' + mk.title;
+      b.title = tip; b.setAttribute('aria-label', name);
+    } else if (b.hasAttribute('aria-label')) { if (t0) b.title = t0; else b.removeAttribute('title'); b.removeAttribute('aria-label'); }
+  }
 }
 
 // simple player figures (used when the model files aren't available): body, head and a gun pointing where they look

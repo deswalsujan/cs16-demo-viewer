@@ -106,17 +106,19 @@ PR 3 of 3 of the plan Sujan approved on 28 Nov 2026 (`tests/logs/kill-feed-spect
 - What the demos carry: an HLTV demo only dead players' all-chat (the HLTV hears no living player and no team chat) and no radio words; a POV demo what the recorder's game got, his team's chat and radio among it.
 
 ### Changed
-- While the spectator bars are up, the strip at the bottom left (**Names** to **View settings**) sits inside the bottom bar, above the followed player's name (Sujan, 28 Nov 2026); 0.28.0 had it just above the bar, where it now would cover the chat's 4th and 5th lines. It never covers the name: where the whole strip can't fit, it goes icons only, each with its name as a tooltip, beside the name if need be.
+- While the spectator bars are up, the strip at the bottom left (**Names** to **View settings**) sits inside the bottom bar, above the followed player's name (Sujan, 28 Nov 2026); 0.28.0 had it just above the bar, where it now would cover the chat's 4th and 5th lines. It never covers the name: where the whole strip can't fit, it goes icons only, beside the name if need be, each tooltip starting with the button's name; **See through walls**' keeps the anti-wallhack warning while its ! shows (Sujan, 28 Nov 2026).
+- In Theatre mode the kill feed keeps left of the side panel while it's out, as 0.27.7's did, moving with it as it slides (Sujan, 28 Nov 2026: the game holds the feed to the visible right edge, and the panel mustn't hide kills); 0.28.0 left it under the panel.
 - The reader keeps the radio's words (TextMsg to the radio) and each chat line's sender name and team at that moment.
 
 ### How it was tested
-- `tests/chat_check.py` (new) on SK vs Na`Vi, Train, DreamHack Winter 2011, the GP Tourney POV (Team Guardians vs Lanka Dahan, Mirage, 25 Oct 2026) and Sujan's Korfez POV: 24 of 24 pass, fails on 0.28.0; the strip measured clear of the name at 800x600, 1000x700 and 900x560.
-- `reader_compare.mjs` on 13 demos (9 POV, 4 HLTV): identical but for the new radio list and the chat lines' name and team. `hud_check.py` (its strip line updated) and `pov_mockup_round_check.py` pass.
-- The nine release checks: after Sujan's look at the screenshots (`screenshots/0.28.1`) and his go. Full log: `tests/logs/0.28.1.md`.
+- `tests/chat_check.py` (new) on SK vs Na`Vi, Train, DreamHack Winter 2011, the GP Tourney POV (Team Guardians vs Lanka Dahan, Mirage, 25 Oct 2026) and Sujan's Korfez POV: 26 of 26 pass, fails on 0.28.0; the strip measured clear of the name at 800x600, 1000x700 and 900x560.
+- `reader_compare.mjs` on 13 demos (9 POV, 4 HLTV): identical but for the new radio list and the chat lines' name and team. `hud_check.py` (the strip line updated, Theatre mode's side panel added; 27 of 27) and `pov_mockup_round_check.py` pass.
+- The nine release checks: see `tests/logs/0.28.1.md` (full log).
 
 ### Discussed, not changed
 - Server and plugin lines, and the game's own "changed name to" line, stay out (Sujan's answer (d) of 27 Nov 2026).
 - The 2D view shows no chat: the game's look is the 3D view's (Sujan, 28 Nov 2026, for the kill feed).
+- The chat's height while he plays (430 of 600) and its line spacing (16), from his YouTube POV of an older build, stay (Sujan, 28 Nov 2026); his Korfez POV in a review zip will check them later (IDEAS.md).
 - As Valve's code places them, the lines start where they were when the newest one came in, so lines that came in while he was alive stay at 430 after he dies, until the next one.
 
 ## 0.28.0 (2026-11-28)

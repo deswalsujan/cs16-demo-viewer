@@ -23,7 +23,8 @@ player's cstrike/resource/cstrike_english.txt. Exit code 0 = pass. Fails on 0.28
 7. The bottom-left strip while the bars are up (Sujan, 28 Nov 2026): inside the bottom bar, never over the followed
    player's centred name: SK vs Na`Vi in a view of 800x600 (an 800-wide window), the whole strip above the name and
    below the chat's 5th line; the GP Tourney POV watching BAJRANG || Yedzavni Shizuka in a 1000x700 window (the whole
-   strip above the name) and a 900x560 one (icons only, beside it); back in full in 2D.
+   strip above the name) and a 900x560 one (icons only, beside it, each tooltip starting with the button's name, See
+   through walls' with the anti-wallhack warning while its ! shows); back in full in 2D, with the buttons' own tooltips.
 8. Sujan's Korfez POV (s-deswal-korfez-knd): a living player's all-chat line, the name in the team colour and the rest
    yellow (Valve's HLSDK; Sujan, 28 Nov 2026); no page errors.
 """
@@ -227,7 +228,14 @@ with sync_playwright() as p:
     G4 = narrow(900, 560)
     shot(pg, 'chat-pov-strip-900x560.png')
     check('the strip, 900x560, a long name: icons only, inside the bottom bar, not over the name', not G4.get('none') and G4['bars'] and G4['icons'] and G4['over'] is False and G4['strip'][1] >= G4['barTop'], G4)
+    # icons only: each tooltip starts with the button's name; See through walls' carries the anti-wallhack warning while its ! shows
+    TT = ev(pg, r"""(() => { const mk = $('xrayMark'), x = $('tgXray');
+      return { mark: !mk.hidden, markTitle: mk.title, xray: x.title, xrayName: x.getAttribute('aria-label'), names: $('tgNames').title, fit: $('tgFit').title }; })()""")
+    check('icons only: tooltips start with the name; See through walls\' keeps the anti-wallhack warning (its ! showing on this server)',
+          TT['mark'] and TT['xray'].startswith('See through walls: ') and TT['markTitle'] in TT['xray'] and TT['xrayName'] == 'See through walls' and TT['names'] == 'Names', TT)
     pg.set_viewport_size({'width': 800, 'height': 600})
+    BK = ev(pg, r"""(async () => { setView('2d'); await __frames(); const r = { icons: $('legend').classList.contains('icons'), xray: $('tgXray').title, label: $('tgXray').getAttribute('aria-label'), names: $('tgNames').getAttribute('title') }; setView('3d'); await __frames(); return r; })()""")
+    check('back in full in 2D: See through walls\' own tooltip, no added names', not BK['icons'] and BK['xray'] == 'Show players behind walls, and their names, in 3D (H)' and BK['label'] is None and BK['names'] is None, BK)
     W2 = ev(pg, r"""(() => { const out = { wrapped: 0, over: 0, badStart: 0 };
       for (const st of hudChatStates(800)) st.lines.forEach((l) => { const s = l.toks.map((k) => k.ch || '').join(''); if (l.cont) { out.wrapped++; if (s[0] !== ' ') out.badStart++; }
         if (22 + [...s].reduce((w, ch) => w + hudCharW(ch), 0) > 760 + hudCharW(' ')) out.over++; });
