@@ -127,6 +127,26 @@ function placeRig(r, x, y, z, yaw, tint) {
   r.g.visible = true; r.used = true;
 }
 
+// The Glock's gun in Player's eyes (0.27.7; Sujan, 27 and 28 Nov 2026; tests/logs/kill-feed-spectating-2026-11-27.md):
+// the burst animation ('shoot', what the shooter's own game plays in burst mode, cs16-client's event_glock18.cpp) only
+// where the demo proves a burst, three rounds of one player's Glock within GLOCK_BURST seconds, played from the burst's
+// first shot; 'shoot3', the one the game's demo player shows for every Glock shot, everywhere else. Single fire is 0.15 s
+// apart at the fastest (ReGameDLL's GLOCK18Fire: the 0.2 s cycle less 0.05, one shot a trigger press), so three single
+// shots need 0.30 s; a burst's three come on the shooter's next frames, in one demo frame or two neighbouring ones
+// (1,415 of the 1,460 bursts in the test demos within 0.12 s). Up to 0.27.6 the Glock took 'shoot2' (also a burst) and
+// 'shoot3' by turns, so every burst flipped the next one's look.
+const GLOCK_BURST = 0.12;
+// for each shot (times, with the rounds it fired), the time the burst it belongs to began, or NaN
+function glockBursts(times, rounds) {
+  const out = new Float32Array(times.length).fill(NaN);
+  for (let a = 0; a < times.length; a++) {
+    let n = 0, b = a;
+    for (; b < times.length && times[b] - times[a] <= GLOCK_BURST; b++) { n += rounds[b]; if (n >= 3) break; }
+    if (n >= 3 && b < times.length) for (let k = a; k <= b; k++) if (Number.isNaN(out[k])) out[k] = times[a];
+  }
+  return out;
+}
+
 // per-player animation bookkeeping, worked out once per demo so any moment can be drawn directly
 let ANIM = {};
 const angDiff = (a, b) => { let d = (a - b) % 360; if (d > 180) d -= 360; if (d < -180) d += 360; return d; };
@@ -170,7 +190,11 @@ function prepAnim() {
       } else yaw += angDiff(vy, yaw) * (dt < 0.25 ? 1 - Math.exp(-4 * dt) : Math.min(1, dt));
       gy[i] = yaw; gd[i] = dist; px = x; py = y;
     }
-    ANIM[e] = { rs, gs, gy, gd, ws, mv, shots: shotT[e] || [], shotK: shotK[e] || [] };
+    // the Glock's bursts (GLOCK_BURST above), for each of his shots: the burst's start, or NaN (and NaN for other guns)
+    const K = shotK[e] || [], gk = K.filter((j) => eventName(sh[j * 4 + 2]) === 'glock18');
+    const gb = glockBursts(gk.map((j) => sh[j * 4]), gk.map(() => 1)), burst = new Float32Array(K.length).fill(NaN);
+    for (let q = 0, g = 0; q < K.length; q++) if (g < gk.length && K[q] === gk[g]) burst[q] = gb[g++];
+    ANIM[e] = { rs, gs, gy, gd, ws, mv, shots: shotT[e] || [], shotK: K, burst };
   }
 }
 function lastBefore(arr, t) { let lo = 0, hi = arr.length - 1, r = -1; while (lo <= hi) { const m = (lo + hi) >> 1; if (arr[m] <= t) { r = m; lo = m + 1; } else hi = m - 1; } return r >= 0 ? arr[r] : -1e9; }
@@ -350,11 +374,14 @@ function vmAnim(mdl, e, t) {
     const j = A.shotK[lastK], st = fxShots()[j * 4];
     if (st >= drawT - 0.05) {
       const ev = eventName(fxShots()[j * 4 + 2]);
-      let seq = -1;
+      let seq = -1, from = st;
+      const bs = A.burst ? A.burst[lastK] : NaN;
       if (w === 'knife') seq = pick(lastK % 2 ? 'midslash2' : 'midslash1');
       else if (ev === 'elite_left' || ev === 'elite_right') seq = pick(ev === 'elite_left' ? 'shoot_left1' : 'shoot_right1');
-      else { const opts = [1, 2, 3].map((n) => pick('shoot' + n)).filter((k) => k >= 0); seq = opts.length ? opts[lastK % opts.length] : pick('shoot'); }
-      if (seq >= 0) cands.push({ t: st, seq });
+      else if (ev === 'glock18' && vmSeq(mdl, 'shoot3') >= 0) { // the Glock: a proven burst, else a single shot (GLOCK_BURST)
+        if (!Number.isNaN(bs)) { seq = pick('shoot'); from = bs; } else seq = pick('shoot3');
+      } else { const opts = [1, 2, 3].map((n) => pick('shoot' + n)).filter((k) => k >= 0); seq = opts.length ? opts[lastK % opts.length] : pick('shoot'); }
+      if (seq >= 0) cands.push({ t: from, seq });
     }
   }
   // reloads, grenade throws and bomb plants show in the player's body animation
@@ -405,8 +432,10 @@ function povVmAnim(mdl, name, t) {
     const unsil = (id === 22 || id === 16) && !S[k * 3 + 2];
     const pick = (n) => { let j = unsil ? vmSeq(mdl, n + '_unsil') : -1; if (j < 0) j = vmSeq(mdl, n); return j; };
     const opts = [1, 2, 3].map((n) => pick('shoot' + n)).filter((j) => j >= 0);
-    const seq = id === 29 ? pick(k % 2 ? 'midslash2' : 'midslash1') : opts.length ? opts[k % opts.length] : pick('shoot');
-    if (seq >= 0) cands.push({ t: S[k * 3], seq });
+    // his Glock: a burst where his clip lost 3 rounds within GLOCK_BURST (D.ownBurst, povShots), else a single shot
+    const bs = id === 17 && D.ownBurst ? D.ownBurst[k] : NaN, glock = id === 17 && vmSeq(mdl, 'shoot3') >= 0;
+    const seq = id === 29 ? pick(k % 2 ? 'midslash2' : 'midslash1') : glock ? pick(Number.isNaN(bs) ? 'shoot3' : 'shoot') : opts.length ? opts[k % opts.length] : pick('shoot');
+    if (seq >= 0) cands.push({ t: glock && !Number.isNaN(bs) ? bs : S[k * 3], seq });
   }
   let cur = null;
   for (const c of cands) if (!cur || c.t >= cur.t) cur = c;

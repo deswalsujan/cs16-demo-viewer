@@ -238,3 +238,7 @@ Three pull requests, each from origin/main (the third stacked on the second), ea
 - (3) The kill feed in the free camera in the game's look, without the bars (the bars only while following, decided 27 Nov 2026). Recommended: yes.
 
 When Batch B adds blood marks and scorch marks on walls, they're drawn from the moment, as everything else, so seeking keeps rebuilding them.
+
+## Sujan's answers on the plan (28 Nov 2026)
+
+The plan approved as three pull requests. (1) The Glock's window: 0.12 s. Where the rule's figure comes from: a code value, not a measurement. ReGameDLL's `GLOCK18Fire` (`wpn_glock18.cpp`) takes 0.05 s off the 0.2 s cycle for single fire (`flCycleTime -= 0.05f`) and fires once a trigger press (`++m_iShotsFired > 1` returns), so single shots are at least 0.15 s apart and three need at least 0.30 s; a burst's second and third shots come on the next player frames (`FireRemaining`, no time test), and bursts are at least 0.5 s apart (the burst cycle has no 0.05 taken off). ReGameDLL is a reverse-engineered copy, so his checks in the game outrank it. Only R1 0:29 to 0:26 of SK vs Na`Vi, Train, DreamHack Winter 2011 was confirmed against markeloff's POV video; the other stretches the check script expects (0:59 to 0:55 single, 0:37 to 0:33 bursts, 0:32 single) come from the rule itself. (2) The 2D view keeps today's kill feed. (3) The free camera: the game-look kill feed, no bars.

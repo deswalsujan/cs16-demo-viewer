@@ -4,6 +4,7 @@ What changed in the viewer, newest first. The version shows in the viewer's **He
 
 ## Versions
 
+- [0.27.7](#0277-2026-11-28) 2026-11-28: Glock bursts, radar dots, spectators
 - [0.27.6](#0276-2026-11-26) 2026-11-26: The Glock's sound, the legs
 - [0.27.5](#0275-2026-11-23) 2026-11-23: Recoil, first half, AWP shots
 - [0.27.4](#0274-2026-11-20) 2026-11-20: New demos' fixes, team names, dates
@@ -93,6 +94,25 @@ What changed in the viewer, newest first. The version shows in the viewer's **He
 - [0.3.0](#030-2026-09-30) 2026-09-30: First-person weapons
 - [0.2.0](#020-2026-09-30) 2026-09-30: Real models and sound
 - [0.1.0](#010-before-2026-09-30) before 2026-09-30: First version: radar, 3D, kills
+
+## 0.27.7 (2026-11-28)
+
+PR 1 of 3 of the plan Sujan approved on 28 Nov 2026 (`tests/logs/kill-feed-spectating-2026-11-27.md`, "The build plan"; `DECISIONS.md`), built on `wip/glock-radar-spectators` from origin/main (0.27.6, with #71).
+
+### Fixed
+- The Glock's gun in **Player's eyes**: the burst animation (`shoot`, what the shooter's own game plays in burst mode) only where three of one player's Glock rounds come within 0.12 s, played from the burst's first shot; the single-shot animation (`shoot3`, what the game's demo player shows) for every other Glock shot. Up to 0.27.6 the Glock took a burst look and a single look by turns, so every burst flipped the next (starix, R1 0:29, 0:27, 0:26 of SK vs Na`Vi, Train, DreamHack Winter 2011). Single fire is 0.15 s apart at the fastest (ReGameDLL's `GLOCK18Fire`), so three single shots can't pass. In **POV mode** his own bursts are told by his clip losing 3 rounds within 0.12 s. The sound is unchanged.
+
+### Changed
+- **POV mode**'s radar: the dots half the size, 2 of the radar's 128 units (1/64; about 1/68 in Sujan's YouTube POV), and the marks above and below him and the bomb's cross halved with them.
+- The Tab scoreboard: the spectators one per line under an orange line, as the game lists them; up to 0.27.6 on one line with dots between.
+
+### How it was tested
+- `tests/page/glock_radar_specs.js` on SK vs Na`Vi, Train and the GP Tourney POV (Team Guardians vs Lanka Dahan, Mirage, 25 Oct 2026), failing on 0.27.6: 67 Glock frames in three-shot groups all show the burst, the 213 others the single shot; starix's 29 R1 frames as expected (only 0:29 to 0:26 confirmed against markeloff's POV, the rest from the rule); dots 2x2 at 768 lines (4x4 before); 4 spectators on 4 lines.
+- The nine release checks pass (`ground_truth_check.py`: 246 kills and 52 scores and K-D on 64 demos, 0 mismatches, 10 known gaps; `people_check.py` 94 of 94); 515 s. Full log: `tests/logs/0.27.7.md`.
+
+### Discussed, not changed
+- The gun's empty animation on a clip's last shot, which the game plays: for later (IDEAS.md, **The last shot of a clip in Player's eyes**).
+- The other guns' shot animations still take turns where the game picks them in its own way.
 
 ## 0.27.6 (2026-11-26)
 
