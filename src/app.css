@@ -658,3 +658,20 @@ body:has(.app.theatre) { overflow: hidden; }
   .kbd { display: none; }
 }
 @media (prefers-reduced-motion: reduce) { .prog i { transition: none; } }
+/* The kill feed and the spectator bars in the game's look (0.28.0; Sujan, 27 and 28 Nov 2026): drawn on the 3D view
+   (hud.js), so the viewer's own kill feed is the 2D view's only. While the bars are up (.bars; --bar-h, their height): the
+   header's score goes, as the bars show it; the round pill stays in the top bar, the camera buttons go under it; the
+   bottom-left strip, the help line, the name bar, the notices and the corner radar sit above the bottom bar */
+.radar.m3d .feed, .radar.msplit .feed { display: none; }
+/* in Theatre mode the header slides in over the top bar, covering its score, so it keeps its own there */
+.app:not(.theatre) .score.bars .num, .app:not(.theatre) .score.bars .sep { display: none; }
+.radar.bars .cam3 { top: calc(var(--bar-h) + 6px * var(--ui)); }
+.app.theatre.show-t .radar.bars .cam3 { top: calc(max(var(--head-h) + 44px * var(--ui), var(--bar-h) + 6px * var(--ui))); }
+.radar.bars .legend, .radar.bars .hint3 { bottom: calc(var(--bar-h) + 12px * var(--ui)); }
+.app.theatre.show-b .radar.bars .legend { bottom: calc(max(var(--tr-h), var(--bar-h)) + 12px * var(--ui)); }
+.radar.bars .pov { bottom: calc(var(--bar-h) + 56px * var(--ui)); }
+.app.theatre.show-b .radar.bars .pov { bottom: calc(max(var(--tr-h), var(--bar-h)) + 56px * var(--ui)); }
+.radar.bars:not(.povm) #toast { bottom: calc(var(--bar-h) + 56px * var(--ui)) !important; }
+.radar.msplit.bars #cv { bottom: calc(var(--bar-h) + 56px * var(--ui)); }
+.radar.povm.bars #rclock { top: calc(12px * var(--ui)); }
+.app.theatre.show-t .radar.povm.bars #rclock { top: calc(var(--head-h) + 12px * var(--ui)); }

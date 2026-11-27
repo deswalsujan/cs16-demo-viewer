@@ -243,7 +243,9 @@ function updateHud(force) {
   // Theatre mode hides the header, so the round pill also carries the score (hidden otherwise)
   const scSide = (i) => side(i) === 'side-t' ? 'kt' : side(i) === 'side-ct' ? 'kct' : '';
   const thsc = `<span class="thsc"><span class="${scSide(0)}">${esc(M.tnames[0])}</span> <b>${sc[0]} : ${sc[1]}</b> <span class="${scSide(1)}">${esc(M.tnames[1])}</span> · </span>`;
-  $('rclock').innerHTML = thsc + (r ? `${r.live ? 'Round <b>' + r.ln + (r.ot ? ' (OT)' : '') + '</b>' : '<b>Not counted</b>'} · <b>${pillClock(r)}</b>`: '') + (paused ? ' · <b>match paused</b>' : '');
+  // while the game's spectator bars are up (hud.js, 0.28.0), which show the score and the clock: the round alone (Sujan, 27 Nov 2026)
+  const barsUp = HUDB.on;
+  $('rclock').innerHTML = (barsUp ? '' : thsc) + (r ? `${r.live ? 'Round <b>' + r.ln + (r.ot ? ' (OT)' : '') + '</b>' : '<b>Not counted</b>'}${barsUp ? '' : ` · <b>${pillClock(r)}</b>`}` : '') + (paused ? ' · <b>match paused</b>' : '');
   updateFeed();
   // the players list greys out whoever is dead right now, so redraw it when someone dies or respawns
   let aliveKey = '';

@@ -45,6 +45,9 @@ function indexFolder(list) {
       if (/(?:^|\/)cstrike\/sprites\/hud\.txt$/.test(p)) files.hud.txt = f;
       const hm = /(?:^|\/)cstrike\/sprites\/(640hud\d+)\.spr$/.exec(p);
       if (hm) files.hud.spr[hm[1]] = f;
+      // the spectator bars' clock icon (0.28.0): cstrike's, else Half-Life's, as the game looks for gfx/vgui/800_timer.tga
+      const tm = /(?:^|\/)(cstrike|valve)\/gfx\/vgui\/800_timer\.tga$/.exec(p);
+      if (tm && (!files.hud.timer || tm[1] === 'cstrike')) files.hud.timer = f;
       if (/(?:^|\/)cstrike\/sprites\/radaropaque640\.spr$/.test(p)) files.hud.radar = f; // POV mode: the game's solid radar (radar640.spr, see-through, 0.26.30 to 0.27.1)
       const wt = /(?:^|\/)cstrike\/sprites\/(weapon_\w+)\.txt$/.exec(p); // POV HUD: each gun's ammo icon
       if (wt) (files.hud.wtxt ||= {})[wt[1]] = f;
@@ -293,7 +296,7 @@ document.querySelectorAll('.cpy').forEach((b) => b.onclick = () => {
 });
 { const os = hlOS(); $('hlWin').hidden = os === 'mac'; $('hlMac').hidden = $('hlTip').hidden = os === 'win'; }
 // the files the viewer reads, for telling what changed between two picks in one visit (hlApply)
-const HL_WANT = /(?:^|\/)(?:cstrike|cstrike_downloads|valve)\/(?:maps\/[^/]+\.bsp|overviews\/[^/]+\.(?:bmp|txt)|models\/.+\.mdl|sound\/.+\.wav|sound\/(?:sentences|materials)\.txt|resource\/cstrike_english\.txt|sprites\/hud\.txt|sprites\/640hud\d+\.spr|sprites\/radaropaque640\.spr|sprites\/(?:muzzleflash[1-3]|blood|bloodspray|640_pain|ledglow)\.spr|gfx\/palette\.lmp|gfx\/env\/[^/]+\.(?:tga|bmp)|[^/]+\.wad)$|(?:^|\/)cstrike\/(?:config\.cfg|sprites\/weapon_\w+\.txt)$|\.dem$/;
+const HL_WANT = /(?:^|\/)(?:cstrike|cstrike_downloads|valve)\/(?:maps\/[^/]+\.bsp|overviews\/[^/]+\.(?:bmp|txt)|models\/.+\.mdl|sound\/.+\.wav|sound\/(?:sentences|materials)\.txt|resource\/cstrike_english\.txt|sprites\/hud\.txt|sprites\/640hud\d+\.spr|sprites\/radaropaque640\.spr|sprites\/(?:muzzleflash[1-3]|blood|bloodspray|640_pain|ledglow)\.spr|gfx\/palette\.lmp|gfx\/env\/[^/]+\.(?:tga|bmp)|gfx\/vgui\/800_timer\.tga|[^/]+\.wad)$|(?:^|\/)cstrike\/(?:config\.cfg|sprites\/weapon_\w+\.txt)$|\.dem$/;
 // path inside the chosen folder, lower case, without the folder's own name
 const hlKey = (f) => (f.webkitRelativePath || f.name).replace(/\\/g, '/').toLowerCase().split('/').slice(1).join('/');
 function hlSnap(list, name, gameDirs) {

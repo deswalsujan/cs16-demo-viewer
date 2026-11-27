@@ -86,10 +86,12 @@ OVERLAP = js(r'''(() => {
   const R = (e) => { if (!e || e.hidden || !e.offsetParent) return null; const r = e.getBoundingClientRect(); return r.width ? { l: r.left - rr.left, t: r.top - rr.top, r: r.right - rr.left, b: r.bottom - rr.top } : null; };
   const hit = (a, b) => a && b && a.l < b.r && b.l < a.r && a.t < b.b && b.t < a.b;
   const notes = { hint: R($('hint3')), toast: R($('toast')), note: R($('povNote')) }, others = { pill: R($('rclock')), strip: R($('legend')) };
-  [...$('feed').children].forEach((e, i) => { others['feed' + i] = R(e); });
+  // the kill feed's rows: in 3D the game's, drawn on the view since 0.28.0 (hud.js, HUDF.rows), else the viewer's own
+  const game = typeof HUDF !== 'undefined' && viewMode !== '2d', feedRows = game ? HUDF.rows.map((r) => ({ l: r.left, t: r.top, r: r.right, b: r.bottom })) : [...$('feed').children].map(R);
+  feedRows.forEach((r, i) => { others['feed' + i] = r; });
   const over = []; for (const n in notes) for (const o in others) if (hit(notes[n], others[o])) over.push(n + '/' + o);
   for (const [a, b] of [['hint', 'toast'], ['toast', 'note'], ['hint', 'note']]) if (hit(notes[a], notes[b])) over.push(a + '/' + b);
-  return { UI, rows: $('feed').children.length, shown: Object.keys(notes).filter((k) => notes[k]), over };
+  return { UI, rows: feedRows.length, shown: Object.keys(notes).filter((k) => notes[k]), over };
 })()''')
 HINT = js(r'''({ pos: (() => { const e = $('hint3'); if (!e || !e.offsetParent) return null; const r = e.getBoundingClientRect(); return [Math.round(r.left), Math.round(r.top)]; })(), rows: $('feed').children.length, T: +T.toFixed(2) })''')
 KILLS = js(r'''(() => {
