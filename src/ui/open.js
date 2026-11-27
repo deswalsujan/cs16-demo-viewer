@@ -73,7 +73,7 @@ const JOIN_GAP = 3; // seconds of nothing between two parts on the joined timeli
 function joinDemos(parts) {
   const S = parts[0].stride;
   const out = Object.assign({}, parts[0], {
-    kills: [], rounds: [], bomb: [], chat: [], nades: [], roundTimes: [], pauses: [], occupants: [], notes: [], radio: [], centre: [], corpses: [], viewers: [],
+    kills: [], rounds: [], bomb: [], chat: [], nades: [], roundTimes: [], pauses: [], occupants: [], notes: [], radio: [], radioText: [], centre: [], corpses: [], viewers: [],
     models: Object.assign({}, parts[0].models), sounds: Object.assign({}, parts[0].sounds), events: Object.assign({}, parts[0].events), pmodels: parts[0].pmodels.slice(),
     players: {}, errors: 0, errSamples: [], parts: [], maps: parts[0].maps, health: null, slow: [], stops: [],
   });
@@ -120,7 +120,7 @@ function joinDemos(parts) {
     // a new file is a new stretch: mark a restart just before it starts
     if (pi) out.bomb.push({ t: sh(P.start) - 0.5, type: 'restart', partStart: pi });
     const tl = (a) => a.map((x) => Object.assign({}, x, { t: sh(x.t) }));
-    out.chat.push(...tl(P.chat)); out.roundTimes.push(...tl(P.roundTimes)); out.pauses.push(...tl(P.pauses)); out.notes.push(...tl(P.notes)); out.radio.push(...tl(P.radio)); out.centre.push(...tl(P.centre || []));
+    out.chat.push(...tl(P.chat)); out.roundTimes.push(...tl(P.roundTimes)); out.pauses.push(...tl(P.pauses)); out.notes.push(...tl(P.notes)); out.radio.push(...tl(P.radio)); out.radioText.push(...tl(P.radioText || [])); out.centre.push(...tl(P.centre || []));
     out.corpses.push(...P.corpses.map((c) => Object.assign({}, c, { t: sh(c.t), start: sh(c.start) })));
     out.nades.push(...P.nades.map((g) => { const pts = g.pts.slice(); for (let i = 0; i < pts.length; i += 4) pts[i] = sh(pts[i]); return Object.assign({}, g, { pts }); }));
     for (let i = 0; i < (P.viewers || []).length; i += 2) out.viewers.push(sh(P.viewers[i]), P.viewers[i + 1]);

@@ -18,7 +18,8 @@ Exit code 0 = pass. Fails on 0.27.7 (no bars while following, 5 rows in 3D, the 
 2. The same at 1440x900 (1.5 device pixels a unit) and 2560x1440 (2.4): the bars and rows where the scale puts them, and
    even strokes: each run of a name's ink across a row weighs the scale times its weight at 800x600 (within a third of
    a pixel), where the nearest pixel would make 1-unit strokes 1 or 2 pixels.
-3. The free camera: the game's kill feed, no bars, the header's score back.
+3. The free camera: the game's kill feed, no bars, the header's score back. Theatre mode with the side panel out (0.28.1):
+   the feed's rows end left of the panel, none of the feed under it.
 4. The GP Tourney POV: alive at R20 1:22, the radar 128 units (128 px at 600 lines; 100 up to 0.27.7) and the feed's
    first row at 42; dead at R5 with the bomb down, the bars with his money; R3 1:17 at full flashbang white with the
    whiteout ticked, the names drawn over the white, the icons added onto it.
@@ -190,6 +191,20 @@ with sync_playwright() as p:
     check('800x600: the bottom name centred and at his height (his ink 330 to 469)', bn['top'] is not None and abs(bn['top'] - hisb['top']) <= 1 and abs((bn['left'] + bn['right']) / 2 - (hisb['left'] + hisb['right']) / 2) <= 1.5, (bn, hisb))
     check('800x600: no name box, the round pill "Round 9" alone; in Theatre mode the header keeps its score (it slides in over the top bar)', not L['povBox'] and L['scoreShown'] and L['pill'].strip() == 'Round 9', (L['povBox'], L['scoreShown'], L['pill']))
 
+    # Theatre mode with the side panel out (0.28.1; Sujan, 28 Nov 2026: the feed keeps left of the panel, as in 0.27.7):
+    # the rows end 15 units left of the panel's edge, no feed ink under the panel; back at the view's edge when it goes
+    TH = ev(pg, r"""(async () => { thShow('r', true); await __frames(); await new Promise((r) => setTimeout(r, 600)); await __frames();
+      const g = $('radar').getBoundingClientRect(), sd = $('side').getBoundingClientRect(), edge = sd.left - g.left, k = g.height / 600;
+      const S = __px('spec3'), A = __px('hud3'), dp = S.w / g.width; let ink = 0;
+      for (let y = Math.round(82 * k * dp); y < Math.round(160 * k * dp); y++) for (let x = Math.ceil(edge * dp); x < S.w; x++) if (S.d[(y * S.w + x) * 4 + 3] > 40 || A.d[(y * A.w + x) * 4 + 3] > 40) ink++;
+      const out = { edge: Math.round(edge), want: Math.round(edge - 15 * k), rows: HUDF.rows.map((r) => Math.round(r.right)), inkUnderPanel: ink };
+      thShow('r', false); await __frames(); await new Promise((r) => setTimeout(r, 600)); await __frames();
+      out.full = Math.round(g.width - 15 * k); out.after = HUDF.rows.map((r) => Math.round(r.right));
+      return out; })()""")
+    if shots: pg.screenshot(path=os.path.join(shots, 'sk-800x600-theatre-panel.png'))
+    check('Theatre mode, the side panel out: the feed\'s rows end 15 units left of it, none of the feed under it; back at the edge when it goes',
+          TH['edge'] < 800 and TH['rows'] and all(abs(r - TH['want']) <= 1 for r in TH['rows']) and TH['inkUnderPanel'] == 0 and TH['after'] and all(abs(r - TH['full']) <= 1 for r in TH['after']), TH)
+
     # 2. the scale at 1440x900 and 2560x1440: the bars, the rows, even strokes
     def run_profile(row_unit):
         return ev(pg, f"""(() => {{ const S = __px('spec3'), k = S.h / 600, y = Math.floor(({row_unit} + 0.5) * k);
@@ -222,8 +237,9 @@ with sync_playwright() as p:
     # outside Theatre mode, following: the header's score hidden, the camera buttons under the top bar
     F0 = ev(pg, r"""(async () => { setTheatre(false); await __frames(); await new Promise((r) => setTimeout(r, 400)); await __frames();
       const g = $('gl').getBoundingClientRect(), c = $('cam3').getBoundingClientRect(), l = $('legend').getBoundingClientRect(), bh = parseFloat($('radar').style.getPropertyValue('--bar-h'));
-      return { scoreShown: getComputedStyle($('scA')).display !== 'none', barH: bh, camTop: c.top - g.top, legendBottom: g.bottom - l.bottom, viewH: g.height }; })()""")
-    check('outside Theatre mode, following: no header score, the camera buttons under the top bar, the strip above the bottom bar', not F0['scoreShown'] and abs(F0['barH'] - F0['viewH'] * 80 / 600) <= 1 and F0['camTop'] >= F0['barH'] and F0['legendBottom'] >= F0['barH'], F0)
+      return { scoreShown: getComputedStyle($('scA')).display !== 'none', barH: bh, camTop: c.top - g.top, legendBottom: g.bottom - l.bottom, legendTop: l.top - g.top, viewH: g.height, nameTop: 560 * g.height / 600 }; })()""")
+    # the strip inside the bottom bar, above the followed player's name, since 0.28.1 (Sujan, 28 Nov 2026; above the bar in 0.28.0)
+    check('outside Theatre mode, following: no header score, the camera buttons under the top bar, the strip inside the bottom bar above the name', not F0['scoreShown'] and abs(F0['barH'] - F0['viewH'] * 80 / 600) <= 1 and F0['camTop'] >= F0['barH'] and F0['legendTop'] >= F0['viewH'] - F0['barH'] and F0['viewH'] - F0['legendBottom'] <= F0['nameTop'], F0)
     # 3. the free camera: the game's feed, no bars, the header's score back
     moment('free')
     F = ev(pg, r"""(async () => { setTheatre(false); await __frames(); await new Promise((r) => setTimeout(r, 300)); updateHud(true); await __frames();

@@ -194,9 +194,19 @@ function hudFeedRows(t) {
   const r = roundAt(t), from = r ? r.start - 1e-4 : -Infinity;
   return D.kills.filter((k) => k.t <= t && k.t > t - 6 && k.t >= from).slice(-4);
 }
+// Theatre mode: the side panel, while it's out, covers the view's right part, and the feed keeps to the edge left of it,
+// as the game holds the feed to the visible screen's right edge and as 0.27.7's feed did (Sujan, 28 Nov 2026: the panel
+// mustn't hide kills); read from where the panel is, so the feed moves with it as it slides. In units.
+function hudVisibleRight(P) {
+  const app = $('app'); if (!app || !app.classList.contains('theatre')) return P.Wu;
+  const side = document.querySelector('.side'), rad = $('radar'); if (!side || !rad) return P.Wu;
+  const s = side.getBoundingClientRect(), r = rad.getBoundingClientRect();
+  if (!s.width || s.left >= r.right) return P.Wu;
+  return Math.max(0, Math.min(P.Wu, (s.left - r.left) * dpr / P.k));
+}
 function drawGameFeed(tg, ag, t, playingPov) {
   hudLoadIcons();
-  const rows = hudFeedRows(t), P = hudScale(tg.canvas), RIGHT = P.Wu - 17, top0 = playingPov ? 42 : 80;
+  const rows = hudFeedRows(t), P = hudScale(tg.canvas), VR = hudVisibleRight(P), RIGHT = VR - 17, top0 = playingPov ? 42 : 80;
   HUDF.rows = [];
   hudOn(tg, () => hudOn(ag, () => {
     ag.globalCompositeOperation = 'lighter';
@@ -222,8 +232,160 @@ function drawGameFeed(tg, ag, t, playingPov) {
       }
       hudDrawText(tg, vName, HUD_EF, vx, cap, hudSideRgb(k.vteam));
       const s = P.k / dpr;
-      HUDF.rows.push({ left: left * s, right: (P.Wu - 15) * s, top: top * s, bottom: (top + 18) * s });
+      HUDF.rows.push({ left: left * s, right: (VR - 15) * s, top: top * s, bottom: (top + 18) * s });
     });
+  }));
+}
+
+// ---------------- chat and radio lines (0.28.1) ----------------
+// Sujan's plan of 27 Nov 2026, part 4, approved 28 Nov 2026 (tests/logs/kill-feed-spectating-2026-11-27.md, "The build
+// plan", PR 3): the players' chat and radio lines only, no server or plugin lines (his answer (d) of 27 Nov 2026), in
+// HLTV and POV demos, in 3D, every camera. What the demos carry: an HLTV demo dead players' all-chat (the HLTV hears no
+// living player and no team chat); a POV demo what the recorder's game got: his own lines, his team's, the dead and
+// spectators' while he was dead, and his team's radio words (ReGameDLL's SendSayMessage and CBasePlayer::Radio).
+// Kept as Valve's saytext.cpp keeps them (HLSDK, and cs16-client's copy): at most 5 lines (MAX_LINES), the newest at
+// the bottom; once the top line has been up 5 seconds of game time (hud_saytext_time 5) it leaves and the rest move up,
+// the next one 5 seconds after that; a new line when 5 are up pushes the top one out; a line wider than the screen less
+// 40 wraps at its last space, the rest a line of its own that leaves with it. The words are the player's own
+// cstrike_english.txt (Cstrike_Chat_*, Game_radio; the radio's phrase as Cstrike_TitlesTXT_<name>), the same English
+// without it. The game's colour bytes in them: \x01 the chat's yellow (255 179 0, cs16-client's g_ColorYellow), \x03 the
+// sender's team colour, \x04 green (0 255 0). A chat line that starts with \x02, a living player's all-chat, has
+// everything up to the end of the sender's name in his team colour, as Valve's HLSDK draws it (Sujan, 28 Nov 2026); a
+// radio line, which starts with \x02 too, is yellow from end to end, as his YouTube POV shows it. Laid out on his 800x600 shot: EngineFont with its shadow, the ink from 24 units in,
+// the top line's capitals at 437 while spectating (every HLTV demo, and a POV demo while he's dead) and at 430 while he
+// plays in POV mode (his YouTube POV: 71.6% of the height), the lines 16 apart (2.7%). The game places the lines when
+// one comes in (Y_START, set in SayTextPrint), so the state at the newest line decides. On #spec3, over a flashbang's
+// whiteout (Sujan, 27 Nov 2026: the radio lines stay readable at full white).
+const HUD_YEL = [255, 179, 0], HUD_GREEN = [0, 255, 0];
+const HUD_CHAT_EN = {
+  Game_radio: '\x02%s1 (RADIO): %s2', Cstrike_Chat_CT: '\x01(Counter-Terrorist) \x03%s1\x01 :  %s2', Cstrike_Chat_T: '\x01(Terrorist) \x03%s1\x01 :  %s2',
+  Cstrike_Chat_CT_Dead: '\x01*DEAD*(Counter-Terrorist) \x03%s1\x01 :  %s2', Cstrike_Chat_T_Dead: '\x01*DEAD*(Terrorist) \x03%s1\x01 :  %s2',
+  Cstrike_Chat_Spec: '\x01(Spectator) \x03%s1\x01 :  %s2', Cstrike_Chat_All: '\x02%s1 :  %s2', Cstrike_Chat_AllDead: '\x01*DEAD* \x03%s1\x01 :  %s2',
+  Cstrike_Chat_AllSpec: '\x01*SPEC* \x03%s1\x01 :  %s2',
+  // a place in the line, which only servers with ReGameDLL's location_area_info send: ReGameDLL's own words for them
+  Game_radio_location: '\x03%s1\x01 @ \x04%s2\x01 (RADIO): %s3', Cstrike_Chat_CT_Loc: '\x01(Counter-Terrorist) \x03%s1\x01 @ \x04%s3\x01 :  %s2',
+  Cstrike_Chat_T_Loc: '\x01(Terrorist) \x03%s1\x01 @ \x04%s3\x01 :  %s2',
+};
+// the lines' origin 22 units in: the "<" his shot's line starts with has its ink 2 units after its origin in the browser's
+// Verdana, so at 24, as in his shot; the game draws every line from one origin (LINE_START), whatever its first letter
+const HUD_CHAT_X = 22, HUD_CHAT_STEP = 16, HUD_CHAT_SPEC = 437, HUD_CHAT_PLAY = 430, HUD_CHAT_SECS = 5, HUD_CHAT_MAX = 5;
+// a format by its name ("#Cstrike_Chat_T"), from the player's file or the same English; a format the server wrote out
+// itself (ReGameDLL's chat_loc_fallback) as it is
+function hudChatFmt(f) {
+  if (!f || f[0] !== '#') return f || '';
+  const k = f.slice(1);
+  return (LANG.fmt && LANG.fmt[k]) || HUD_CHAT_EN[k] || '';
+}
+// a radio phrase ("#Fire_in_the_hole") in the player's words, as the centre messages are found (folder.js, LANG)
+const hudPhrase = (s) => (s && s[0] === '#' ? (LANG.map && LANG.map[s.slice(1)]) || s.slice(1).replace(/_/g, ' ') : s || '');
+// a line as the game draws it: its tokens, a letter { ch } or a colour change { rgb }, the line starting in yellow; with
+// the sender's name (chat, not radio), a line starting with \x02 is in his team colour up to the end of the name
+// (HLSDK's saytext.cpp: g_iNameLengths, the name's first place in the line plus its length)
+function hudChatTokens(fmt, args, team, name) {
+  const text = fmt.replace(/%s([1-4])/g, (_, n) => (args[+n - 1] != null ? args[+n - 1] : '')).replace(/[\r\n]+$/, '');
+  const at = name && text[0] === '\x02' ? text.indexOf(name) : -1, cut = at >= 0 ? at + name.length : -1;
+  const out = cut >= 0 ? [{ rgb: hudSideRgb(team) }] : [];
+  let i = 0;
+  for (const ch of text) {
+    if (i === cut) out.push({ rgb: HUD_YEL });
+    i += ch.length;
+    if (ch === '\x01') out.push({ rgb: HUD_YEL });
+    else if (ch === '\x03') out.push({ rgb: hudSideRgb(team) });
+    else if (ch === '\x04') out.push({ rgb: HUD_GREEN });
+    else if (ch >= ' ') out.push({ ch });
+  }
+  return out;
+}
+// the players' lines of the demo, each with its tokens and the moment in game time
+function hudChatSource() {
+  const L = [];
+  for (const c of D.chat || []) {
+    if (!/^#Cstrike_Chat_/.test(c.fmt) || !c.id) continue; // players' chat only (Sujan, 27 Nov 2026, (d))
+    const f = hudChatFmt(c.fmt); if (!f) continue;
+    L.push({ t: c.t, toks: hudChatTokens(f, [c.name || '', c.text || '', ''], c.team, c.name), kind: 'chat' });
+  }
+  for (const r of D.radioText || []) {
+    const f = hudChatFmt(r.fmt); if (!f) continue;
+    const a = r.args || [];
+    // the name as sent, the place and the phrase in the player's words (cs16-client's MsgFunc_TextMsg)
+    L.push({ t: r.t, toks: hudChatTokens(f, [a[0] || '', hudPhrase(a[1]), hudPhrase(a[2])], r.team), kind: 'radio' });
+  }
+  L.sort((a, b) => a.t - b.t);
+  for (const l of L) l.g = gameTime(l.t);
+  return L;
+}
+const HUD_CW = new Map(); // a letter's advance in EngineFont, 1 px of spacing with it
+const hudCharW = (ch) => { let w = HUD_CW.get(ch); if (w == null) { w = hudAdvance(ch, HUD_EF); HUD_CW.set(ch, w); } return w; };
+// a line too wide for the screen, broken as EnsureTextFitsInOneLineAndWrapIfHaveTo breaks it: at the last space before
+// the width from the origin runs over (or the letter before), the rest starting with a space
+function hudWrap(toks, maxW) {
+  const out = [];
+  for (;;) {
+    let len = HUD_CHAT_X, brk = -1, cut = -1;
+    for (let i = 0; i < toks.length; i++) {
+      const t = toks[i]; if (!t.ch) continue;
+      if (t.ch === ' ' && i > 0) brk = i;
+      len += hudCharW(t.ch);
+      if (len > maxW) { cut = brk >= 0 ? brk : Math.max(1, i - 1); break; }
+    }
+    if (cut < 0) { out.push(toks); return out; }
+    out.push(toks.slice(0, cut));
+    const rest = toks.slice(cut);
+    toks = rest.length && rest[0].ch === ' ' ? rest : [{ ch: ' ' }, ...rest];
+    if (out.length > 20) return out;
+  }
+}
+// what's on screen from each moment on: the lines' states, in game time, made again when the demo, its words or the
+// width change
+const HUDC = { D: null, pov: false, fmt: null, map: null, wu: 0, states: [] };
+function hudChatStates(Wu) {
+  const wu = Math.round(Wu);
+  if (HUDC.D === D && HUDC.pov === POV.on && HUDC.fmt === LANG.fmt && HUDC.map === LANG.map && HUDC.wu === wu) return HUDC.states;
+  const states = [], lines = [];
+  let scrollAt = Infinity, spec = true;
+  const snap = (g) => states.push({ g, lines: lines.slice(), spec });
+  const scrollUp = () => { lines.shift(); while (lines.length && lines[0].cont) lines.shift(); };
+  const flow = (until) => { while (lines.length && scrollAt <= until) { scrollUp(); snap(scrollAt); scrollAt += HUD_CHAT_SECS; } };
+  for (const l of hudChatSource()) {
+    flow(l.g);
+    // where the game starts the lines: spectating (every HLTV demo, a POV demo while he's dead or watching) or playing
+    spec = !(POV.on && povObs(l.t)[0] === 0);
+    hudWrap(l.toks, wu - 40).forEach((toks, i) => {
+      if (lines.length >= HUD_CHAT_MAX) scrollUp();
+      if (!lines.length) scrollAt = l.g + HUD_CHAT_SECS;
+      lines.push({ toks, cont: i > 0, kind: l.kind });
+    });
+    snap(l.g);
+  }
+  flow(Infinity);
+  Object.assign(HUDC, { D, pov: POV.on, fmt: LANG.fmt, map: LANG.map, wu, states });
+  return states;
+}
+// the lines up at game time g
+function hudChatAt(Wu, t) {
+  const S = hudChatStates(Wu), g = gameTime(t);
+  let lo = 0, hi = S.length - 1, r = -1;
+  while (lo <= hi) { const m = (lo + hi) >> 1; if (S[m].g <= g) { r = m; lo = m + 1; } else hi = m - 1; }
+  return r < 0 ? null : S[r];
+}
+const HUDCH = { lines: [] }; // the lines drawn last, as text, for the checks
+function drawGameChat(tg, t) {
+  const P = hudScale(tg.canvas), st = D && hudChatAt(P.Wu, t);
+  HUDCH.lines = [];
+  if (!st || !st.lines.length) return;
+  const top0 = st.spec ? HUD_CHAT_SPEC : HUD_CHAT_PLAY;
+  hudOn(tg, () => st.lines.forEach((ln, i) => {
+    const cap = top0 + HUD_CHAT_STEP * i;
+    // the pieces of one colour, their shadows first, so a piece's shadow never lies over the letters before it
+    const parts = []; let rgb = HUD_YEL, s = '';
+    for (const k of ln.toks) { if (k.rgb) { if (s) parts.push([s, rgb]); s = ''; rgb = k.rgb; } else s += k.ch; }
+    if (s) parts.push([s, rgb]);
+    let x = HUD_CHAT_X;
+    const at = parts.map(([str, c]) => { const t0 = hudText(str, HUD_EF, c), p = { str, c, x }; x += t0.adv; return p; });
+    const top = cap - hudCapTop(HUD_EF);
+    for (const p of at) { const t0 = hudText(p.str, HUD_EF, p.c); hudImg(tg, t0.sh, Math.round(p.x) - t0.ox + 1, top - t0.oy + 1); }
+    for (const p of at) { const t0 = hudText(p.str, HUD_EF, p.c); hudImg(tg, t0.fg, Math.round(p.x) - t0.ox, top - t0.oy); }
+    HUDCH.lines.push({ text: parts.map((p) => p[0]).join(''), cap, kind: ln.kind, colours: parts.map((p) => p[1].join(' ')) });
   }));
 }
 
@@ -238,7 +400,7 @@ function drawGameFeed(tg, ag, t, playingPov) {
 // While following a player in an HLTV demo (Player's eyes and Behind player; not the free camera, Sujan, 28 Nov 2026)
 // and while he spectates in a POV demo (0.26.30). The score is the match's, as the header's, which the bars replace.
 const HUD_BAR = 80;
-const HUDB = { on: false, px: -1, clock: '', bottom: '' }; // clock and bottom: the texts the bars show now
+const HUDB = { on: false, px: -1, clock: '', bottom: '', nameW: 0 }; // clock and bottom: the texts the bars show now; nameW: the bottom name's width in units
 function povBarsOn() { if (!POV.on || POV.mode === 0) return false; const [, tg] = povObs(POV.t); return !(tg === POV.v.rec && POV.mode !== 4) || false; }
 function hudBarsWanted() {
   if (!D || viewMode === '2d') return false;
@@ -251,11 +413,12 @@ function hudBarsClass(on, H) {
   const px = on ? Math.round(H * HUD_BAR / HUD_H) : 0, rad = $('radar');
   if (on !== HUDB.on) { HUDB.on = on; rad.classList.toggle('bars', on); $('score').classList.toggle('bars', on); }
   if (px !== HUDB.px) { HUDB.px = px; rad.style.setProperty('--bar-h', px + 'px'); }
+  if (!on) hudStrip(false, 0, 0); // the strip back to the view's bottom left, in full (2D, a closed demo)
 }
 function drawGameBars(tg, W, H) {
   const on = hudBarsWanted();
   hudBarsClass(on, H);
-  if (!on) { HUDB.clock = HUDB.bottom = ''; return false; }
+  if (!on) { HUDB.clock = HUDB.bottom = ''; HUDB.nameW = 0; hudStrip(false, W, H); return false; }
   hudLoadTimer();
   const P = hudScale(tg.canvas), Wu = P.Wu, t = tNow3, r = roundAt(t);
   const sc = r ? (t >= (r.endT || r.end) && r.scoreAfter ? r.scoreAfter : r.scoreBefore) : [0, 0];
@@ -263,7 +426,7 @@ function drawGameBars(tg, W, H) {
   // the clock as the round pill had it before the bars took it over: with Vanilla, "C4" alone after the plant, as the game
   // hides its timer then (0.26.16)
   const c = clockAt(t, true), clock = !c ? '' : VAN.on && c.phase === 'bomb' ? 'C4' : c.text.replace(/^freeze /, '');
-  HUDB.clock = clock; HUDB.bottom = '';
+  HUDB.clock = clock; HUDB.bottom = ''; HUDB.nameW = 0;
   let upper = null;
   if (POV.on) { const m = D.hud && lastAt(D.hud.money, 2, POV.t); if (m != null) upper = '$' + m; }
   else { const v = viewersAt(t); if (v != null) upper = 'Spectators ' + v; }
@@ -281,9 +444,64 @@ function drawGameBars(tg, W, H) {
     if (who && D.slots[who]) {
       const s = playerState(who, T), alive = !!(s && s.state > 0), hp = alive ? hpAt(who, tNow3) : null;
       const txt = nameAt(who, T) + (hp != null ? ` (${hp})` : ''), side = s ? Math.abs(s.state) : 0, rgb = side === 1 ? HUD_T : side === 2 ? HUD_CT : HUD_GREY;
-      HUDB.bottom = txt;
-      hudDrawText(tg, txt, HUD_DF, Wu / 2 - hudText(txt, HUD_DF, rgb).adv / 2, HUD_H - 38, rgb);
+      HUDB.bottom = txt; HUDB.nameW = hudText(txt, HUD_DF, rgb).adv;
+      hudDrawText(tg, txt, HUD_DF, Wu / 2 - HUDB.nameW / 2, HUD_H - 38, rgb);
     }
   });
+  hudStrip(true, W, H);
   return true;
+}
+// The bottom-left strip (Names to View settings) while the bars are up (0.28.1; Sujan, 28 Nov 2026): inside the bottom
+// bar, above the followed player's centred name, clear of the chat's lines; never over the name, in a narrow window or
+// with a long name. In the order tried: the whole strip in the bar's upper part, clear of the name's ink (from 2 units
+// above its capitals at 562 to 10 below: 560 to 572; the view at least about 465 px high at Interface size 100%); the
+// whole strip beside the name, on its line; icons only (Sujan: shorten the strip rather than overlap) above it, then
+// beside it; else just above the bar, 0.28.0's place, where it can lie over the chat's 4th and 5th lines but not the name.
+// W and H in the view's CSS pixels; worked out again only when the view, the name's width, Interface size or the
+// strip's buttons change.
+const HUDSTRIP = { key: '', mode: '' };
+function hudStrip(on, W, H) {
+  const lg = $('legend'), rad = $('radar'); if (!lg) return;
+  if (!on || lg.hidden) {
+    if (HUDSTRIP.key) { HUDSTRIP.key = ''; HUDSTRIP.mode = ''; hudStripIcons(lg, false); rad.style.removeProperty('--strip-b'); }
+    return;
+  }
+  const kids = [...lg.children].map((e) => (e.hidden ? 0 : 1)).join('') + ($('xrayMark') && !$('xrayMark').hidden ? 1 : 0);
+  const key = [Math.round(W), Math.round(H), UI, Math.round(HUDB.nameW || 0), kids].join('|');
+  if (key === HUDSTRIP.key) return;
+  HUDSTRIP.key = key;
+  const size = (icons) => { hudStripIcons(lg, icons); const r = lg.getBoundingClientRect(), b = lg.querySelector('.btn'); return { w: r.width, h: r.height, row: b ? b.getBoundingClientRect().height : r.height }; };
+  const full = size(false), ico = size(true);
+  const k = H / HUD_H, barTop = H - Math.round(H * HUD_BAR / HUD_H), left = 12 * UI;
+  const nTop = 560 * k - 3, nBot = 573 * k + 3, nLeft = HUDB.nameW ? W / 2 - HUDB.nameW * k / 2 - 8 * UI : W;
+  // the gap under the bar's top edge: 5 px for the whole strip, 3 for icons only, which is there for tight spots
+  const oneRow = (z) => z.h < z.row * 1.5;
+  const above = (z, gap) => oneRow(z) && barTop + gap + z.h <= nTop;
+  const beside = (z, gap) => oneRow(z) && left + z.w <= nLeft && z.h <= H - barTop - 2 * gap;
+  let icons = false, bottom;
+  if (above(full, 5 * UI)) bottom = H - (barTop + 5 * UI + full.h);
+  else if (beside(full, 5 * UI)) bottom = H - ((nTop + nBot) / 2 + full.h / 2);
+  else if (above(ico, 3 * UI)) { icons = true; bottom = H - (barTop + 3 * UI + ico.h); }
+  else if (beside(ico, 3 * UI)) { icons = true; bottom = H - ((nTop + nBot) / 2 + ico.h / 2); }
+  else bottom = H - barTop + 12 * UI;
+  hudStripIcons(lg, icons);
+  HUDSTRIP.mode = icons ? 'icons' : 'full';
+  rad.style.setProperty('--strip-b', Math.round(Math.max(0, bottom)) + 'px');
+}
+// icons only: each button's tooltip starts with its name, then its own explanation; on See through walls, while the ! of
+// the anti-wallhack warning shows (#xrayMark), the warning's too (Sujan, 28 Nov 2026); the name is the button's
+// accessible name, its words being hidden. Back to the button's own tooltip in full.
+function hudStripIcons(lg, on) {
+  lg.classList.toggle('icons', on);
+  const mk = $('xrayMark');
+  for (const b of lg.querySelectorAll('.btn')) {
+    const l = b.querySelector('.lbl'); if (!l) continue;
+    if (b.dataset.tip0 == null) b.dataset.tip0 = b.getAttribute('title') || '';
+    const name = l.textContent.trim(), t0 = b.dataset.tip0;
+    if (on) {
+      let tip = t0 ? `${name}: ${t0}` : name;
+      if (b.id === 'tgXray' && mk && !mk.hidden && mk.title) tip += '. ' + mk.title;
+      b.title = tip; b.setAttribute('aria-label', name);
+    } else if (b.hasAttribute('aria-label')) { if (t0) b.title = t0; else b.removeAttribute('title'); b.removeAttribute('aria-label'); }
+  }
 }

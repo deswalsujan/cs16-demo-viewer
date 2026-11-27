@@ -4,6 +4,7 @@ What changed in the viewer, newest first. The version shows in the viewer's **He
 
 ## Versions
 
+- [0.28.1](#0281-2026-11-28) 2026-11-28: Chat and radio, strip moved
 - [0.28.0](#0280-2026-11-28) 2026-11-28: Game-look kill feed, spectator bars
 - [0.27.7](#0277-2026-11-28) 2026-11-28: Glock bursts, radar dots, spectators
 - [0.27.6](#0276-2026-11-26) 2026-11-26: The Glock's sound, the legs
@@ -95,6 +96,30 @@ What changed in the viewer, newest first. The version shows in the viewer's **He
 - [0.3.0](#030-2026-09-30) 2026-09-30: First-person weapons
 - [0.2.0](#020-2026-09-30) 2026-09-30: Real models and sound
 - [0.1.0](#010-before-2026-09-30) before 2026-09-30: First version: radar, 3D, kills
+
+## 0.28.1 (2026-11-28)
+
+PR 3 of 3 of the plan Sujan approved on 28 Nov 2026 (`tests/logs/kill-feed-spectating-2026-11-27.md`, "The build plan"; `DECISIONS.md`), built on `wip/chat-radio` from origin/main (0.28.0, #73).
+
+### Added
+- Chat and radio lines in 3D, in the game's look, at the bottom left, in every camera, HLTV and POV demos alike: the players' chat and the radio's words, no server or plugin lines (Sujan, 27 Nov 2026). Kept as the game keeps them: up to 5 lines, the newest at the bottom, the top one leaving after 5 seconds, a sixth pushing the oldest out, a line too wide for the screen wrapped at a space. The words are the player's own `cstrike_english.txt` ("(Terrorist) name :  text", "*DEAD* name :  text", "name (RADIO): Fire in the hole!"), the names in their team's colours, a living player's all-chat name too (Sujan, 28 Nov 2026), radio lines yellow throughout. Laid out on Sujan's 800x600 shot: from 24 units in, the top line's capitals at 437 while spectating and at 430 while he plays in **POV mode**, lines 16 apart. Readable over a full flashbang white.
+- What the demos carry: an HLTV demo only dead players' all-chat (the HLTV hears no living player and no team chat) and no radio words; a POV demo what the recorder's game got, his team's chat and radio among it.
+
+### Changed
+- While the spectator bars are up, the strip at the bottom left (**Names** to **View settings**) sits inside the bottom bar, above the followed player's name (Sujan, 28 Nov 2026); 0.28.0 had it just above the bar, where it now would cover the chat's 4th and 5th lines. It never covers the name: where the whole strip can't fit, it goes icons only, beside the name if need be, each tooltip starting with the button's name; **See through walls**' keeps the anti-wallhack warning while its ! shows (Sujan, 28 Nov 2026).
+- In Theatre mode the kill feed keeps left of the side panel while it's out, as 0.27.7's did, moving with it as it slides (Sujan, 28 Nov 2026: the game holds the feed to the visible right edge, and the panel mustn't hide kills); 0.28.0 left it under the panel.
+- The reader keeps the radio's words (TextMsg to the radio) and each chat line's sender name and team at that moment.
+
+### How it was tested
+- `tests/chat_check.py` (new) on SK vs Na`Vi, Train, DreamHack Winter 2011, the GP Tourney POV (Team Guardians vs Lanka Dahan, Mirage, 25 Oct 2026) and Sujan's Korfez POV: 26 of 26 pass, fails on 0.28.0; the strip measured clear of the name at 800x600, 1000x700 and 900x560.
+- `reader_compare.mjs` on 13 demos (9 POV, 4 HLTV): identical but for the new radio list and the chat lines' name and team. `hud_check.py` (the strip line updated, Theatre mode's side panel added; 27 of 27) and `pov_mockup_round_check.py` pass.
+- The nine release checks and `chat_check.py` pass (`ground_truth_check.py`: 246 kills and 52 scores and K-D on 64 demos, 0 mismatches, 10 known gaps; `people_check.py` 94 of 94); 544 s. Full log: `tests/logs/0.28.1.md`.
+
+### Discussed, not changed
+- Server and plugin lines, and the game's own "changed name to" line, stay out (Sujan's answer (d) of 27 Nov 2026).
+- The 2D view shows no chat: the game's look is the 3D view's (Sujan, 28 Nov 2026, for the kill feed).
+- The chat's height while he plays (430 of 600) and its line spacing (16), from his YouTube POV of an older build, stay (Sujan, 28 Nov 2026); his Korfez POV in a review zip will check them later (IDEAS.md).
+- As Valve's code places them, the lines start where they were when the newest one came in, so lines that came in while he was alive stay at 430 after he dies, until the next one.
 
 ## 0.28.0 (2026-11-28)
 

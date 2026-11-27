@@ -116,8 +116,8 @@ button { cursor: pointer; }
 /* View settings in the strip (UI review, item 4): it opens upward, its chevron turned to match; rows only 3D uses (.v3)
    aren't in 2D */
 .legend .vpanel { top: auto; bottom: calc(100% + calc(6px * var(--ui))); max-height: 70vh; overflow-y: auto; }
-.legend #bVset svg { transform: rotate(180deg); }
-.legend #bVset[aria-expanded="true"] svg { transform: none; }
+.legend #bVset svg.chev { transform: rotate(180deg); }
+.legend #bVset[aria-expanded="true"] svg.chev { transform: none; }
 .radar.m2d .vpanel .v3 { display: none; }
 .xwrap:has(.xmark:not([hidden])) { margin-right: calc(6px * var(--ui)); } /* the ! clear of View settings beside it */
 /* POV mode on a server that held enemies back (POV mockup round, Sujan, 11 Nov 2026): a ! on See through walls, its own
@@ -172,9 +172,9 @@ button { cursor: pointer; }
 .cam3 .camseg button.on { background: var(--sand); }
 .cam3 .btn.arr { width: calc(28px * var(--ui)); padding: calc(4px * var(--ui)) 0; justify-content: center; font-size: calc(15px * var(--ui)); line-height: 1; }
 .vset { position: relative; }
-#bVset svg { width: calc(9px * var(--ui)); height: calc(6px * var(--ui)); fill: none; stroke: currentColor; stroke-width: 1.6; }
+#bVset svg.chev { width: calc(9px * var(--ui)); height: calc(6px * var(--ui)); fill: none; stroke: currentColor; stroke-width: 1.6; }
 #bVset[aria-expanded="true"] { border-color: var(--sand); color: var(--sand); }
-#bVset[aria-expanded="true"] svg { transform: rotate(180deg); }
+#bVset[aria-expanded="true"] svg.chev { transform: rotate(180deg); }
 .vpanel { position: absolute; left: 0; top: calc(100% + calc(6px * var(--ui))); z-index: 6; min-width: calc(272px * var(--ui)); display: grid; gap: calc(1px * var(--ui)); padding: calc(6px * var(--ui)); background: var(--panel); border: 1px solid var(--line); border-radius: calc(10px * var(--ui)); box-shadow: 0 calc(10px * var(--ui)) calc(28px * var(--ui)) rgba(0,0,0,.5); }
 .vrow { display: flex; align-items: center; justify-content: space-between; gap: calc(12px * var(--ui)); padding: calc(5px * var(--ui)) calc(6px * var(--ui)); font-size: calc(12px * var(--ui)); border-radius: calc(4px * var(--ui)); }
 .vrow:hover { background: var(--panel-2); }
@@ -680,8 +680,17 @@ body:has(.app.theatre) { overflow: hidden; }
 .app:not(.theatre) .score.bars .num, .app:not(.theatre) .score.bars .sep { display: none; }
 .radar.bars .cam3 { top: calc(var(--bar-h) + 6px * var(--ui)); }
 .app.theatre.show-t .radar.bars .cam3 { top: calc(max(var(--head-h) + 44px * var(--ui), var(--bar-h) + 6px * var(--ui))); }
-.radar.bars .legend, .radar.bars .hint3 { bottom: calc(var(--bar-h) + 12px * var(--ui)); }
-.app.theatre.show-b .radar.bars .legend { bottom: calc(max(var(--tr-h), var(--bar-h)) + 12px * var(--ui)); }
+.radar.bars .hint3 { bottom: calc(var(--bar-h) + 12px * var(--ui)); }
+/* the strip inside the bottom bar, above the followed player's name, never over it (0.28.1; Sujan, 28 Nov 2026): where
+   hud.js (hudStrip) puts it, --strip-b; icons only (.icons) where the whole strip can't fit; in Theatre mode never under
+   the controls sliding in from below */
+.radar.bars .legend { bottom: var(--strip-b, calc(var(--bar-h) + 12px * var(--ui))); }
+.app.theatre.show-b .radar.bars .legend { bottom: max(calc(var(--tr-h) + 12px * var(--ui)), var(--strip-b, calc(var(--bar-h) + 12px * var(--ui)))); }
+.legend .ico { display: none; width: calc(14px * var(--ui)); height: calc(14px * var(--ui)); fill: none; stroke: currentColor; stroke-width: 1.4; stroke-linecap: round; stroke-linejoin: round; vertical-align: -0.2em; }
+.legend.icons .ico { display: inline-block; }
+.legend.icons .lbl { display: none; }
+.legend.icons { gap: calc(4px * var(--ui)); }
+.legend.icons .btn { padding: calc(3px * var(--ui)) calc(5px * var(--ui)); }
 .radar.bars .pov { bottom: calc(var(--bar-h) + 56px * var(--ui)); }
 .app.theatre.show-b .radar.bars .pov { bottom: calc(max(var(--tr-h), var(--bar-h)) + 56px * var(--ui)); }
 .radar.bars:not(.povm) #toast { bottom: calc(var(--bar-h) + 56px * var(--ui)) !important; }
@@ -839,7 +848,7 @@ addEventListener('resize', () => { if (applyUiSize()) dispatchEvent(new Event('u
         </div>
         <h2 class="hpart">About</h2>
         <div class="habout">
-          <p>CS 1.6 Demo Viewer, version 0.28.0. It plays HLTV and POV demos in the browser, from your own Half-Life folder; nothing leaves your computer.</p>
+          <p>CS 1.6 Demo Viewer, version 0.28.1. It plays HLTV and POV demos in the browser, from your own Half-Life folder; nothing leaves your computer.</p>
           <p>A map with no radar picture: drop its overview, the .bmp and .txt pair from cstrike\overviews, anywhere on the page.</p>
           <p class="hlinks"><a href="https://github.com/deswalsujan/cs16-demo-viewer/blob/main/CHANGELOG.md" target="_blank" rel="noopener">What's new</a> · <a href="https://github.com/deswalsujan/cs16-demo-viewer" target="_blank" rel="noopener">Source on GitHub</a> · <a href="https://github.com/deswalsujan/cs16-demo-viewer/issues/new/choose" target="_blank" rel="noopener">Report a bug</a></p>
           <p class="hdbg"><button class="btn" id="bDebug" type="button" title="Copies details for a bug report: browser, demo name, what loaded, errors. No file contents.">Copy debug info</button><span>Paste it into your bug report: it says which browser, demo and files, and any errors, with no file contents.</span></p>
@@ -852,15 +861,16 @@ addEventListener('resize', () => { if (applyUiSize()) dispatchEvent(new Event('u
     <div class="feed" id="feed"></div>
     <!-- The view's options in one strip at the bottom left in 2D, 3D and POV (UI review, item 4, 17 Nov 2026): Names,
          Grenades, Kill lines, See through walls (not in 2D, where it does nothing), Reset view (not in POV), then View
-         settings, opening upward, with only the rows the view uses (.v3: 3D only) -->
+         settings, opening upward, with only the rows the view uses (.v3: 3D only); each button's icon shows only when the strip
+         goes icons only, inside the spectator bars' bottom bar where the full strip can't fit (0.28.1; hud.js, hudStrip) -->
     <div class="legend" id="legend" hidden>
-      <button class="btn on" id="tgNames" type="button">Names</button>
-      <button class="btn on" id="tgNades" type="button">Grenades</button>
-      <button class="btn on" id="tgLines" type="button">Kill lines</button>
-      <span class="xwrap"><button class="btn" id="tgXray" type="button" title="Show players behind walls, and their names, in 3D (H)">See through walls</button><button class="xmark" id="xrayMark" type="button" hidden title="This server seems to use an anti-wallhack plugin. Click the ! to read why." aria-label="Why few enemies show through walls">!</button></span>
-      <button class="btn" id="tgFit" type="button" title="Back to the starting view: the whole radar in 2D, the overview camera in 3D">Reset view</button>
+      <button class="btn on" id="tgNames" type="button"><svg class="ico" viewBox="0 0 14 14" aria-hidden="true"><path d="M1.5 4h7.5l3.5 3-3.5 3H1.5z"/></svg><span class="lbl">Names</span></button>
+      <button class="btn on" id="tgNades" type="button"><svg class="ico" viewBox="0 0 14 14" aria-hidden="true"><circle cx="6.5" cy="8.5" r="4"/><path d="M6.5 4.5V2.5h4"/></svg><span class="lbl">Grenades</span></button>
+      <button class="btn on" id="tgLines" type="button"><svg class="ico" viewBox="0 0 14 14" aria-hidden="true"><circle cx="3" cy="11" r="1.5"/><path d="M4.2 9.8l5.3-5.3M9 2l3 3M12 2L9 5"/></svg><span class="lbl">Kill lines</span></button>
+      <span class="xwrap"><button class="btn" id="tgXray" type="button" title="Show players behind walls, and their names, in 3D (H)"><svg class="ico" viewBox="0 0 14 14" aria-hidden="true"><path d="M1 7s2.3-4 6-4 6 4 6 4-2.3 4-6 4-6-4-6-4z"/><circle cx="7" cy="7" r="1.8"/></svg><span class="lbl">See through walls</span></button><button class="xmark" id="xrayMark" type="button" hidden title="This server seems to use an anti-wallhack plugin. Click the ! to read why." aria-label="Why few enemies show through walls">!</button></span>
+      <button class="btn" id="tgFit" type="button" title="Back to the starting view: the whole radar in 2D, the overview camera in 3D"><svg class="ico" viewBox="0 0 14 14" aria-hidden="true"><path d="M11.5 7.5A4.5 4.5 0 1 1 7 3h3"/><path d="M8.5 1l2 2-2 2"/></svg><span class="lbl">Reset view</span></button>
       <div class="vset">
-        <button class="btn" id="bVset" type="button" aria-expanded="false" aria-controls="vsetPanel" title="Hide all overlays, and in 3D team colours, damage numbers, the crosshair, fixed light and quality; interface size; in a POV demo the flashbangs">View settings <svg viewBox="0 0 10 6" aria-hidden="true"><path d="M1 1l4 4 4-4"/></svg></button>
+        <button class="btn" id="bVset" type="button" aria-expanded="false" aria-controls="vsetPanel" title="Hide all overlays, and in 3D team colours, damage numbers, the crosshair, fixed light and quality; interface size; in a POV demo the flashbangs"><svg class="ico" viewBox="0 0 14 14" aria-hidden="true"><path d="M1.5 4h11M1.5 10h11"/><circle cx="5" cy="4" r="1.6"/><circle cx="9" cy="10" r="1.6"/></svg><span class="lbl">View settings </span><svg class="chev" viewBox="0 0 10 6" aria-hidden="true"><path d="M1 1l4 4 4-4"/></svg></button>
         <div class="vpanel" id="vsetPanel" role="group" aria-label="View settings" hidden>
           <div class="vhead">On the view</div>
           <label class="vrow"><span>Hide all overlays<small>as in the game's own demo player</small></span><input type="checkbox" id="van3" title="Turns off what the game's own demo player doesn't show: damage numbers, kill markers, glow, See through walls, Fixed light, names and HP over the players, kill lines, grenade paths, the death cam's red wash and banner, and the C4 countdown. The buttons and settings still work one by one after"></label>
@@ -951,7 +961,7 @@ addEventListener('resize', () => { if (applyUiSize()) dispatchEvent(new Event('u
         <div class="drophint">Or drop a .dem file anywhere on this page</div>
         <div class="prog" id="prog" hidden><i id="progBar"></i></div>
         <div class="msg" id="msg"></div>
-        <div class="loadfoot"><span>Version 0.28.0 · <a href="https://github.com/deswalsujan/cs16-demo-viewer" target="_blank" rel="noopener">Source on GitHub</a> · <button class="lnk" id="bHelpStart" type="button" title="The keys, the colours and marks, and about the viewer (?)">Help</button></span><button class="btn" id="bClear" type="button" title="Deletes the copies of maps, models, sounds and radar overviews this browser saved from your Half-Life folder. The folder closes until you pick it again, as on a first visit">Delete saved files</button></div>
+        <div class="loadfoot"><span>Version 0.28.1 · <a href="https://github.com/deswalsujan/cs16-demo-viewer" target="_blank" rel="noopener">Source on GitHub</a> · <button class="lnk" id="bHelpStart" type="button" title="The keys, the colours and marks, and about the viewer (?)">Help</button></span><button class="btn" id="bClear" type="button" title="Deletes the copies of maps, models, sounds and radar overviews this browser saved from your Half-Life folder. The folder closes until you pick it again, as on a first visit">Delete saved files</button></div>
       </div>
     </div>
   </section>
@@ -1309,6 +1319,12 @@ export function parseDemo(buffer, onProgress, opts = {}) {
   // hp, which only HLTV sends and which the damage and skip finders read
   const hpInfo = [];
   const radio = [];     // { t, s: sentence name }
+  // the radio's words (0.28.1): TextMsg to HUD_PRINTRADIO (5), which ReGameDLL's CBasePlayer::Radio sends with each radio
+  // sound to the same teammates and to anyone watching one of them: the sender's entity index as text, the format
+  // ("#Game_radio", "%s1 (RADIO): %s2" in the player's cstrike_english.txt), his name as the server has it and the phrase
+  // ("#Fire_in_the_hole"). POV demos carry it; HLTV demos have the radio sounds and none of these (0 in the five HLTV
+  // demos read, 27 Nov 2026; tests/logs/kill-feed-spectating-2026-11-27.md)
+  const radioText = []; // { t, id, fmt, args, team: the sender's then }
   const centre = [];    // { t, s: '#Terrorists_Win' and the like, a: its arguments } (centre-screen messages)
   const corpses = [];   // { t, start, model, pos, yaw, seq, team, e }
   const booms = [];     // time, x, y, z (grenade and C4 explosions)
@@ -1601,6 +1617,11 @@ export function parseDemo(buffer, onProgress, opts = {}) {
           if (msg === '#Bomb_Planted' && inPlayback) bomb.push({ t: time, type: 'planted', round: curRound ? curRound.n : 0 });
           if (msg === '#Game_will_restart_in' && inPlayback) { bomb.push({ t: time, type: 'restart' }); restartAt = time; }
           if (msg && msg[0] !== '#' && inPlayback) notes.push({ t: time, s: msg });
+          if (dest === 5 && inPlayback) {
+            const args = []; while (m.p < m.u8.length && args.length < 4) args.push(m.str());
+            const id = parseInt(msg, 10) || 0;
+            if (args[0]) radioText.push({ t: time, id, fmt: args[0], args: args.slice(1), team: players[id] ? players[id].team : null });
+          }
           break;
         }
         case 'RoundTime': {
@@ -1649,7 +1670,9 @@ export function parseDemo(buffer, onProgress, opts = {}) {
           const a = m.str();
           let b = '', c = '';
           try { b = m.str(); c = m.str(); } catch (e) { /* optional */ }
-          if (inPlayback) chat.push({ t: time, id, fmt: a, text: c || b });
+          // the sender's name and team as the game had them then (0.28.1): the server sends the name empty and the game
+          // fills it in from its player list (cs16-client's saytext.cpp), his team giving the name's colour
+          if (inPlayback) chat.push({ t: time, id, fmt: a, text: c || b, name: players[id] ? players[id].name : null, team: players[id] ? players[id].team : null });
           if (inPlayback && !id) notes.push({ t: time, s: [a, b, c].filter((x) => x && x[0] !== '#').join(' ') });
           break;
         }
@@ -2110,7 +2133,7 @@ export function parseDemo(buffer, onProgress, opts = {}) {
     occupants, brushEvents: new Float32Array(brushEvents), brushPose: new Float32Array(brushPose), viewers: hltvStatus, notes,
     times: new Float32Array(samples.t), slots,
     finalScore: { ...scores }, models: resources.models, stride: STRIDE,
-    pmodels, sounds: resources.sounds, events: resources.events, snds: new Float32Array(snds), shots: new Float32Array(shots), shotPunch: new Float32Array(shotPunch), booms: new Float32Array(booms), hitPoints: new Float32Array(hitPoints), brass: new Float32Array(brass), puffs: new Float32Array(puffs), radio, centre, corpses,
+    pmodels, sounds: resources.sounds, events: resources.events, snds: new Float32Array(snds), shots: new Float32Array(shots), shotPunch: new Float32Array(shotPunch), booms: new Float32Array(booms), hitPoints: new Float32Array(hitPoints), brass: new Float32Array(brass), puffs: new Float32Array(puffs), radio, radioText, centre, corpses,
     errors, errSamples, health, c4drops: new Float32Array(c4drops), c4ents: new Float32Array(c4ents), glows: new Float32Array(glows), slow, stops, pings: new Float32Array(pings),
     ...(povData ? { povData } : {}),
   };
@@ -2721,7 +2744,7 @@ function indexFolder(list) {
 // the look is in the .cmsg style). The words come
 // from the player's own cstrike/resource/cstrike_english.txt (UTF-16, "Cstrike_TitlesTXT_<name>"), like everything
 // else from the game; without that file the same English lines are used.
-const LANG = { map: null };
+const LANG = { map: null, fmt: null };
 const CENTRE_EN = { Terrorists_Win: 'Terrorists Win!', CTs_Win: 'Counter-Terrorists Win!', Round_Draw: 'Round Draw!', Target_Bombed: 'Target Successfully Bombed!',
   Target_Saved: 'Target has been saved!', Bomb_Defused: 'The bomb has been defused!', Bomb_Planted: 'The bomb has been planted!',
   Hostages_Not_Rescued: 'Hostages have not been rescued!', All_Hostages_Rescued: 'All Hostages have been rescued!', VIP_Escaped: 'The VIP has escaped!',
@@ -2738,7 +2761,10 @@ async function loadLang() {
   if (!txt) return;
   const out = {}, re = /"(Cstrike_TitlesTXT_[A-Za-z0-9_]+)"\s+"([^"]*)"/g; let m;
   while ((m = re.exec(txt))) out[m[1].slice(18)] = m[2].replace(/\s*\n\s*/g, ' ');
-  LANG.map = out;
+  // the chat and radio lines' formats (0.28.1; hud.js, hudChatLines), with the game's colour bytes in them
+  const fmt = {}, rf = /"((?:Cstrike_Chat_|Game_radio)[A-Za-z0-9_]*)"\s+"([^"\r\n]*)"/g;
+  while ((m = rf.exec(txt))) fmt[m[1]] = m[2];
+  LANG.map = out; LANG.fmt = fmt;
 }
 function centreText(c) {
   const key = c.s.replace(/^#/, '');
@@ -3131,7 +3157,7 @@ const JOIN_GAP = 3; // seconds of nothing between two parts on the joined timeli
 function joinDemos(parts) {
   const S = parts[0].stride;
   const out = Object.assign({}, parts[0], {
-    kills: [], rounds: [], bomb: [], chat: [], nades: [], roundTimes: [], pauses: [], occupants: [], notes: [], radio: [], centre: [], corpses: [], viewers: [],
+    kills: [], rounds: [], bomb: [], chat: [], nades: [], roundTimes: [], pauses: [], occupants: [], notes: [], radio: [], radioText: [], centre: [], corpses: [], viewers: [],
     models: Object.assign({}, parts[0].models), sounds: Object.assign({}, parts[0].sounds), events: Object.assign({}, parts[0].events), pmodels: parts[0].pmodels.slice(),
     players: {}, errors: 0, errSamples: [], parts: [], maps: parts[0].maps, health: null, slow: [], stops: [],
   });
@@ -3178,7 +3204,7 @@ function joinDemos(parts) {
     // a new file is a new stretch: mark a restart just before it starts
     if (pi) out.bomb.push({ t: sh(P.start) - 0.5, type: 'restart', partStart: pi });
     const tl = (a) => a.map((x) => Object.assign({}, x, { t: sh(x.t) }));
-    out.chat.push(...tl(P.chat)); out.roundTimes.push(...tl(P.roundTimes)); out.pauses.push(...tl(P.pauses)); out.notes.push(...tl(P.notes)); out.radio.push(...tl(P.radio)); out.centre.push(...tl(P.centre || []));
+    out.chat.push(...tl(P.chat)); out.roundTimes.push(...tl(P.roundTimes)); out.pauses.push(...tl(P.pauses)); out.notes.push(...tl(P.notes)); out.radio.push(...tl(P.radio)); out.radioText.push(...tl(P.radioText || [])); out.centre.push(...tl(P.centre || []));
     out.corpses.push(...P.corpses.map((c) => Object.assign({}, c, { t: sh(c.t), start: sh(c.start) })));
     out.nades.push(...P.nades.map((g) => { const pts = g.pts.slice(); for (let i = 0; i < pts.length; i += 4) pts[i] = sh(pts[i]); return Object.assign({}, g, { pts }); }));
     for (let i = 0; i < (P.viewers || []).length; i += 2) out.viewers.push(sh(P.viewers[i]), P.viewers[i + 1]);
@@ -7556,7 +7582,7 @@ function resetForNewDemo() {
     if (R3.c4) { disposeRig(R3.c4.rig); R3.c4 = null; }
   }
   ANIM = {}; stopSounds();
-  $('pov').hidden = true; hudBarsClass(false, 0); HUDF.rows = [];
+  $('pov').hidden = true; hudBarsClass(false, 0); HUDF.rows = []; HUDCH.lines = [];
   // POV mode's state goes with the old demo: onDemo() sets it for the new one only after the overview loads, and the
   // frames drawn in between read the new demo, which may have no view of his (an HLTV demo, or POV mode turned off),
   // so POV.on left set made povView throw (Sujan's two crashes of 3 Nov 2026; on 0.26.16 the frame loop stopped there)
@@ -9569,9 +9595,19 @@ function hudFeedRows(t) {
   const r = roundAt(t), from = r ? r.start - 1e-4 : -Infinity;
   return D.kills.filter((k) => k.t <= t && k.t > t - 6 && k.t >= from).slice(-4);
 }
+// Theatre mode: the side panel, while it's out, covers the view's right part, and the feed keeps to the edge left of it,
+// as the game holds the feed to the visible screen's right edge and as 0.27.7's feed did (Sujan, 28 Nov 2026: the panel
+// mustn't hide kills); read from where the panel is, so the feed moves with it as it slides. In units.
+function hudVisibleRight(P) {
+  const app = $('app'); if (!app || !app.classList.contains('theatre')) return P.Wu;
+  const side = document.querySelector('.side'), rad = $('radar'); if (!side || !rad) return P.Wu;
+  const s = side.getBoundingClientRect(), r = rad.getBoundingClientRect();
+  if (!s.width || s.left >= r.right) return P.Wu;
+  return Math.max(0, Math.min(P.Wu, (s.left - r.left) * dpr / P.k));
+}
 function drawGameFeed(tg, ag, t, playingPov) {
   hudLoadIcons();
-  const rows = hudFeedRows(t), P = hudScale(tg.canvas), RIGHT = P.Wu - 17, top0 = playingPov ? 42 : 80;
+  const rows = hudFeedRows(t), P = hudScale(tg.canvas), VR = hudVisibleRight(P), RIGHT = VR - 17, top0 = playingPov ? 42 : 80;
   HUDF.rows = [];
   hudOn(tg, () => hudOn(ag, () => {
     ag.globalCompositeOperation = 'lighter';
@@ -9597,8 +9633,160 @@ function drawGameFeed(tg, ag, t, playingPov) {
       }
       hudDrawText(tg, vName, HUD_EF, vx, cap, hudSideRgb(k.vteam));
       const s = P.k / dpr;
-      HUDF.rows.push({ left: left * s, right: (P.Wu - 15) * s, top: top * s, bottom: (top + 18) * s });
+      HUDF.rows.push({ left: left * s, right: (VR - 15) * s, top: top * s, bottom: (top + 18) * s });
     });
+  }));
+}
+
+// ---------------- chat and radio lines (0.28.1) ----------------
+// Sujan's plan of 27 Nov 2026, part 4, approved 28 Nov 2026 (tests/logs/kill-feed-spectating-2026-11-27.md, "The build
+// plan", PR 3): the players' chat and radio lines only, no server or plugin lines (his answer (d) of 27 Nov 2026), in
+// HLTV and POV demos, in 3D, every camera. What the demos carry: an HLTV demo dead players' all-chat (the HLTV hears no
+// living player and no team chat); a POV demo what the recorder's game got: his own lines, his team's, the dead and
+// spectators' while he was dead, and his team's radio words (ReGameDLL's SendSayMessage and CBasePlayer::Radio).
+// Kept as Valve's saytext.cpp keeps them (HLSDK, and cs16-client's copy): at most 5 lines (MAX_LINES), the newest at
+// the bottom; once the top line has been up 5 seconds of game time (hud_saytext_time 5) it leaves and the rest move up,
+// the next one 5 seconds after that; a new line when 5 are up pushes the top one out; a line wider than the screen less
+// 40 wraps at its last space, the rest a line of its own that leaves with it. The words are the player's own
+// cstrike_english.txt (Cstrike_Chat_*, Game_radio; the radio's phrase as Cstrike_TitlesTXT_<name>), the same English
+// without it. The game's colour bytes in them: \x01 the chat's yellow (255 179 0, cs16-client's g_ColorYellow), \x03 the
+// sender's team colour, \x04 green (0 255 0). A chat line that starts with \x02, a living player's all-chat, has
+// everything up to the end of the sender's name in his team colour, as Valve's HLSDK draws it (Sujan, 28 Nov 2026); a
+// radio line, which starts with \x02 too, is yellow from end to end, as his YouTube POV shows it. Laid out on his 800x600 shot: EngineFont with its shadow, the ink from 24 units in,
+// the top line's capitals at 437 while spectating (every HLTV demo, and a POV demo while he's dead) and at 430 while he
+// plays in POV mode (his YouTube POV: 71.6% of the height), the lines 16 apart (2.7%). The game places the lines when
+// one comes in (Y_START, set in SayTextPrint), so the state at the newest line decides. On #spec3, over a flashbang's
+// whiteout (Sujan, 27 Nov 2026: the radio lines stay readable at full white).
+const HUD_YEL = [255, 179, 0], HUD_GREEN = [0, 255, 0];
+const HUD_CHAT_EN = {
+  Game_radio: '\x02%s1 (RADIO): %s2', Cstrike_Chat_CT: '\x01(Counter-Terrorist) \x03%s1\x01 :  %s2', Cstrike_Chat_T: '\x01(Terrorist) \x03%s1\x01 :  %s2',
+  Cstrike_Chat_CT_Dead: '\x01*DEAD*(Counter-Terrorist) \x03%s1\x01 :  %s2', Cstrike_Chat_T_Dead: '\x01*DEAD*(Terrorist) \x03%s1\x01 :  %s2',
+  Cstrike_Chat_Spec: '\x01(Spectator) \x03%s1\x01 :  %s2', Cstrike_Chat_All: '\x02%s1 :  %s2', Cstrike_Chat_AllDead: '\x01*DEAD* \x03%s1\x01 :  %s2',
+  Cstrike_Chat_AllSpec: '\x01*SPEC* \x03%s1\x01 :  %s2',
+  // a place in the line, which only servers with ReGameDLL's location_area_info send: ReGameDLL's own words for them
+  Game_radio_location: '\x03%s1\x01 @ \x04%s2\x01 (RADIO): %s3', Cstrike_Chat_CT_Loc: '\x01(Counter-Terrorist) \x03%s1\x01 @ \x04%s3\x01 :  %s2',
+  Cstrike_Chat_T_Loc: '\x01(Terrorist) \x03%s1\x01 @ \x04%s3\x01 :  %s2',
+};
+// the lines' origin 22 units in: the "<" his shot's line starts with has its ink 2 units after its origin in the browser's
+// Verdana, so at 24, as in his shot; the game draws every line from one origin (LINE_START), whatever its first letter
+const HUD_CHAT_X = 22, HUD_CHAT_STEP = 16, HUD_CHAT_SPEC = 437, HUD_CHAT_PLAY = 430, HUD_CHAT_SECS = 5, HUD_CHAT_MAX = 5;
+// a format by its name ("#Cstrike_Chat_T"), from the player's file or the same English; a format the server wrote out
+// itself (ReGameDLL's chat_loc_fallback) as it is
+function hudChatFmt(f) {
+  if (!f || f[0] !== '#') return f || '';
+  const k = f.slice(1);
+  return (LANG.fmt && LANG.fmt[k]) || HUD_CHAT_EN[k] || '';
+}
+// a radio phrase ("#Fire_in_the_hole") in the player's words, as the centre messages are found (folder.js, LANG)
+const hudPhrase = (s) => (s && s[0] === '#' ? (LANG.map && LANG.map[s.slice(1)]) || s.slice(1).replace(/_/g, ' ') : s || '');
+// a line as the game draws it: its tokens, a letter { ch } or a colour change { rgb }, the line starting in yellow; with
+// the sender's name (chat, not radio), a line starting with \x02 is in his team colour up to the end of the name
+// (HLSDK's saytext.cpp: g_iNameLengths, the name's first place in the line plus its length)
+function hudChatTokens(fmt, args, team, name) {
+  const text = fmt.replace(/%s([1-4])/g, (_, n) => (args[+n - 1] != null ? args[+n - 1] : '')).replace(/[\r\n]+$/, '');
+  const at = name && text[0] === '\x02' ? text.indexOf(name) : -1, cut = at >= 0 ? at + name.length : -1;
+  const out = cut >= 0 ? [{ rgb: hudSideRgb(team) }] : [];
+  let i = 0;
+  for (const ch of text) {
+    if (i === cut) out.push({ rgb: HUD_YEL });
+    i += ch.length;
+    if (ch === '\x01') out.push({ rgb: HUD_YEL });
+    else if (ch === '\x03') out.push({ rgb: hudSideRgb(team) });
+    else if (ch === '\x04') out.push({ rgb: HUD_GREEN });
+    else if (ch >= ' ') out.push({ ch });
+  }
+  return out;
+}
+// the players' lines of the demo, each with its tokens and the moment in game time
+function hudChatSource() {
+  const L = [];
+  for (const c of D.chat || []) {
+    if (!/^#Cstrike_Chat_/.test(c.fmt) || !c.id) continue; // players' chat only (Sujan, 27 Nov 2026, (d))
+    const f = hudChatFmt(c.fmt); if (!f) continue;
+    L.push({ t: c.t, toks: hudChatTokens(f, [c.name || '', c.text || '', ''], c.team, c.name), kind: 'chat' });
+  }
+  for (const r of D.radioText || []) {
+    const f = hudChatFmt(r.fmt); if (!f) continue;
+    const a = r.args || [];
+    // the name as sent, the place and the phrase in the player's words (cs16-client's MsgFunc_TextMsg)
+    L.push({ t: r.t, toks: hudChatTokens(f, [a[0] || '', hudPhrase(a[1]), hudPhrase(a[2])], r.team), kind: 'radio' });
+  }
+  L.sort((a, b) => a.t - b.t);
+  for (const l of L) l.g = gameTime(l.t);
+  return L;
+}
+const HUD_CW = new Map(); // a letter's advance in EngineFont, 1 px of spacing with it
+const hudCharW = (ch) => { let w = HUD_CW.get(ch); if (w == null) { w = hudAdvance(ch, HUD_EF); HUD_CW.set(ch, w); } return w; };
+// a line too wide for the screen, broken as EnsureTextFitsInOneLineAndWrapIfHaveTo breaks it: at the last space before
+// the width from the origin runs over (or the letter before), the rest starting with a space
+function hudWrap(toks, maxW) {
+  const out = [];
+  for (;;) {
+    let len = HUD_CHAT_X, brk = -1, cut = -1;
+    for (let i = 0; i < toks.length; i++) {
+      const t = toks[i]; if (!t.ch) continue;
+      if (t.ch === ' ' && i > 0) brk = i;
+      len += hudCharW(t.ch);
+      if (len > maxW) { cut = brk >= 0 ? brk : Math.max(1, i - 1); break; }
+    }
+    if (cut < 0) { out.push(toks); return out; }
+    out.push(toks.slice(0, cut));
+    const rest = toks.slice(cut);
+    toks = rest.length && rest[0].ch === ' ' ? rest : [{ ch: ' ' }, ...rest];
+    if (out.length > 20) return out;
+  }
+}
+// what's on screen from each moment on: the lines' states, in game time, made again when the demo, its words or the
+// width change
+const HUDC = { D: null, pov: false, fmt: null, map: null, wu: 0, states: [] };
+function hudChatStates(Wu) {
+  const wu = Math.round(Wu);
+  if (HUDC.D === D && HUDC.pov === POV.on && HUDC.fmt === LANG.fmt && HUDC.map === LANG.map && HUDC.wu === wu) return HUDC.states;
+  const states = [], lines = [];
+  let scrollAt = Infinity, spec = true;
+  const snap = (g) => states.push({ g, lines: lines.slice(), spec });
+  const scrollUp = () => { lines.shift(); while (lines.length && lines[0].cont) lines.shift(); };
+  const flow = (until) => { while (lines.length && scrollAt <= until) { scrollUp(); snap(scrollAt); scrollAt += HUD_CHAT_SECS; } };
+  for (const l of hudChatSource()) {
+    flow(l.g);
+    // where the game starts the lines: spectating (every HLTV demo, a POV demo while he's dead or watching) or playing
+    spec = !(POV.on && povObs(l.t)[0] === 0);
+    hudWrap(l.toks, wu - 40).forEach((toks, i) => {
+      if (lines.length >= HUD_CHAT_MAX) scrollUp();
+      if (!lines.length) scrollAt = l.g + HUD_CHAT_SECS;
+      lines.push({ toks, cont: i > 0, kind: l.kind });
+    });
+    snap(l.g);
+  }
+  flow(Infinity);
+  Object.assign(HUDC, { D, pov: POV.on, fmt: LANG.fmt, map: LANG.map, wu, states });
+  return states;
+}
+// the lines up at game time g
+function hudChatAt(Wu, t) {
+  const S = hudChatStates(Wu), g = gameTime(t);
+  let lo = 0, hi = S.length - 1, r = -1;
+  while (lo <= hi) { const m = (lo + hi) >> 1; if (S[m].g <= g) { r = m; lo = m + 1; } else hi = m - 1; }
+  return r < 0 ? null : S[r];
+}
+const HUDCH = { lines: [] }; // the lines drawn last, as text, for the checks
+function drawGameChat(tg, t) {
+  const P = hudScale(tg.canvas), st = D && hudChatAt(P.Wu, t);
+  HUDCH.lines = [];
+  if (!st || !st.lines.length) return;
+  const top0 = st.spec ? HUD_CHAT_SPEC : HUD_CHAT_PLAY;
+  hudOn(tg, () => st.lines.forEach((ln, i) => {
+    const cap = top0 + HUD_CHAT_STEP * i;
+    // the pieces of one colour, their shadows first, so a piece's shadow never lies over the letters before it
+    const parts = []; let rgb = HUD_YEL, s = '';
+    for (const k of ln.toks) { if (k.rgb) { if (s) parts.push([s, rgb]); s = ''; rgb = k.rgb; } else s += k.ch; }
+    if (s) parts.push([s, rgb]);
+    let x = HUD_CHAT_X;
+    const at = parts.map(([str, c]) => { const t0 = hudText(str, HUD_EF, c), p = { str, c, x }; x += t0.adv; return p; });
+    const top = cap - hudCapTop(HUD_EF);
+    for (const p of at) { const t0 = hudText(p.str, HUD_EF, p.c); hudImg(tg, t0.sh, Math.round(p.x) - t0.ox + 1, top - t0.oy + 1); }
+    for (const p of at) { const t0 = hudText(p.str, HUD_EF, p.c); hudImg(tg, t0.fg, Math.round(p.x) - t0.ox, top - t0.oy); }
+    HUDCH.lines.push({ text: parts.map((p) => p[0]).join(''), cap, kind: ln.kind, colours: parts.map((p) => p[1].join(' ')) });
   }));
 }
 
@@ -9613,7 +9801,7 @@ function drawGameFeed(tg, ag, t, playingPov) {
 // While following a player in an HLTV demo (Player's eyes and Behind player; not the free camera, Sujan, 28 Nov 2026)
 // and while he spectates in a POV demo (0.26.30). The score is the match's, as the header's, which the bars replace.
 const HUD_BAR = 80;
-const HUDB = { on: false, px: -1, clock: '', bottom: '' }; // clock and bottom: the texts the bars show now
+const HUDB = { on: false, px: -1, clock: '', bottom: '', nameW: 0 }; // clock and bottom: the texts the bars show now; nameW: the bottom name's width in units
 function povBarsOn() { if (!POV.on || POV.mode === 0) return false; const [, tg] = povObs(POV.t); return !(tg === POV.v.rec && POV.mode !== 4) || false; }
 function hudBarsWanted() {
   if (!D || viewMode === '2d') return false;
@@ -9626,11 +9814,12 @@ function hudBarsClass(on, H) {
   const px = on ? Math.round(H * HUD_BAR / HUD_H) : 0, rad = $('radar');
   if (on !== HUDB.on) { HUDB.on = on; rad.classList.toggle('bars', on); $('score').classList.toggle('bars', on); }
   if (px !== HUDB.px) { HUDB.px = px; rad.style.setProperty('--bar-h', px + 'px'); }
+  if (!on) hudStrip(false, 0, 0); // the strip back to the view's bottom left, in full (2D, a closed demo)
 }
 function drawGameBars(tg, W, H) {
   const on = hudBarsWanted();
   hudBarsClass(on, H);
-  if (!on) { HUDB.clock = HUDB.bottom = ''; return false; }
+  if (!on) { HUDB.clock = HUDB.bottom = ''; HUDB.nameW = 0; hudStrip(false, W, H); return false; }
   hudLoadTimer();
   const P = hudScale(tg.canvas), Wu = P.Wu, t = tNow3, r = roundAt(t);
   const sc = r ? (t >= (r.endT || r.end) && r.scoreAfter ? r.scoreAfter : r.scoreBefore) : [0, 0];
@@ -9638,7 +9827,7 @@ function drawGameBars(tg, W, H) {
   // the clock as the round pill had it before the bars took it over: with Vanilla, "C4" alone after the plant, as the game
   // hides its timer then (0.26.16)
   const c = clockAt(t, true), clock = !c ? '' : VAN.on && c.phase === 'bomb' ? 'C4' : c.text.replace(/^freeze /, '');
-  HUDB.clock = clock; HUDB.bottom = '';
+  HUDB.clock = clock; HUDB.bottom = ''; HUDB.nameW = 0;
   let upper = null;
   if (POV.on) { const m = D.hud && lastAt(D.hud.money, 2, POV.t); if (m != null) upper = '$' + m; }
   else { const v = viewersAt(t); if (v != null) upper = 'Spectators ' + v; }
@@ -9656,11 +9845,66 @@ function drawGameBars(tg, W, H) {
     if (who && D.slots[who]) {
       const s = playerState(who, T), alive = !!(s && s.state > 0), hp = alive ? hpAt(who, tNow3) : null;
       const txt = nameAt(who, T) + (hp != null ? ` (${hp})` : ''), side = s ? Math.abs(s.state) : 0, rgb = side === 1 ? HUD_T : side === 2 ? HUD_CT : HUD_GREY;
-      HUDB.bottom = txt;
-      hudDrawText(tg, txt, HUD_DF, Wu / 2 - hudText(txt, HUD_DF, rgb).adv / 2, HUD_H - 38, rgb);
+      HUDB.bottom = txt; HUDB.nameW = hudText(txt, HUD_DF, rgb).adv;
+      hudDrawText(tg, txt, HUD_DF, Wu / 2 - HUDB.nameW / 2, HUD_H - 38, rgb);
     }
   });
+  hudStrip(true, W, H);
   return true;
+}
+// The bottom-left strip (Names to View settings) while the bars are up (0.28.1; Sujan, 28 Nov 2026): inside the bottom
+// bar, above the followed player's centred name, clear of the chat's lines; never over the name, in a narrow window or
+// with a long name. In the order tried: the whole strip in the bar's upper part, clear of the name's ink (from 2 units
+// above its capitals at 562 to 10 below: 560 to 572; the view at least about 465 px high at Interface size 100%); the
+// whole strip beside the name, on its line; icons only (Sujan: shorten the strip rather than overlap) above it, then
+// beside it; else just above the bar, 0.28.0's place, where it can lie over the chat's 4th and 5th lines but not the name.
+// W and H in the view's CSS pixels; worked out again only when the view, the name's width, Interface size or the
+// strip's buttons change.
+const HUDSTRIP = { key: '', mode: '' };
+function hudStrip(on, W, H) {
+  const lg = $('legend'), rad = $('radar'); if (!lg) return;
+  if (!on || lg.hidden) {
+    if (HUDSTRIP.key) { HUDSTRIP.key = ''; HUDSTRIP.mode = ''; hudStripIcons(lg, false); rad.style.removeProperty('--strip-b'); }
+    return;
+  }
+  const kids = [...lg.children].map((e) => (e.hidden ? 0 : 1)).join('') + ($('xrayMark') && !$('xrayMark').hidden ? 1 : 0);
+  const key = [Math.round(W), Math.round(H), UI, Math.round(HUDB.nameW || 0), kids].join('|');
+  if (key === HUDSTRIP.key) return;
+  HUDSTRIP.key = key;
+  const size = (icons) => { hudStripIcons(lg, icons); const r = lg.getBoundingClientRect(), b = lg.querySelector('.btn'); return { w: r.width, h: r.height, row: b ? b.getBoundingClientRect().height : r.height }; };
+  const full = size(false), ico = size(true);
+  const k = H / HUD_H, barTop = H - Math.round(H * HUD_BAR / HUD_H), left = 12 * UI;
+  const nTop = 560 * k - 3, nBot = 573 * k + 3, nLeft = HUDB.nameW ? W / 2 - HUDB.nameW * k / 2 - 8 * UI : W;
+  // the gap under the bar's top edge: 5 px for the whole strip, 3 for icons only, which is there for tight spots
+  const oneRow = (z) => z.h < z.row * 1.5;
+  const above = (z, gap) => oneRow(z) && barTop + gap + z.h <= nTop;
+  const beside = (z, gap) => oneRow(z) && left + z.w <= nLeft && z.h <= H - barTop - 2 * gap;
+  let icons = false, bottom;
+  if (above(full, 5 * UI)) bottom = H - (barTop + 5 * UI + full.h);
+  else if (beside(full, 5 * UI)) bottom = H - ((nTop + nBot) / 2 + full.h / 2);
+  else if (above(ico, 3 * UI)) { icons = true; bottom = H - (barTop + 3 * UI + ico.h); }
+  else if (beside(ico, 3 * UI)) { icons = true; bottom = H - ((nTop + nBot) / 2 + ico.h / 2); }
+  else bottom = H - barTop + 12 * UI;
+  hudStripIcons(lg, icons);
+  HUDSTRIP.mode = icons ? 'icons' : 'full';
+  rad.style.setProperty('--strip-b', Math.round(Math.max(0, bottom)) + 'px');
+}
+// icons only: each button's tooltip starts with its name, then its own explanation; on See through walls, while the ! of
+// the anti-wallhack warning shows (#xrayMark), the warning's too (Sujan, 28 Nov 2026); the name is the button's
+// accessible name, its words being hidden. Back to the button's own tooltip in full.
+function hudStripIcons(lg, on) {
+  lg.classList.toggle('icons', on);
+  const mk = $('xrayMark');
+  for (const b of lg.querySelectorAll('.btn')) {
+    const l = b.querySelector('.lbl'); if (!l) continue;
+    if (b.dataset.tip0 == null) b.dataset.tip0 = b.getAttribute('title') || '';
+    const name = l.textContent.trim(), t0 = b.dataset.tip0;
+    if (on) {
+      let tip = t0 ? `${name}: ${t0}` : name;
+      if (b.id === 'tgXray' && mk && !mk.hidden && mk.title) tip += '. ' + mk.title;
+      b.title = tip; b.setAttribute('aria-label', name);
+    } else if (b.hasAttribute('aria-label')) { if (t0) b.title = t0; else b.removeAttribute('title'); b.removeAttribute('aria-label'); }
+  }
 }
 
 // simple player figures (used when the model files aren't available): body, head and a gun pointing where they look
@@ -10026,6 +10270,8 @@ function update3Now() {
   if (POV.on) drawPovBar(sx, hx, W, H);
   // the kill feed in the game's look, in every camera (hud.js, 0.28.0), on the moment itself as the viewer's own feed
   drawGameFeed(sx, hx, tNow3, POV.on && POV.mode === 0);
+  // the players' chat and radio lines, at the bottom left (hud.js, 0.28.1)
+  drawGameChat(sx, tNow3);
   povFlash();
 }
 // Hit marker on the crosshair when the player you're watching gets a kill:
@@ -11519,7 +11765,7 @@ function frameError(e) {
 function debugInfo() {
   let gpu = '';
   try { const gl = document.createElement('canvas').getContext('webgl'); const x = gl && gl.getExtension('WEBGL_debug_renderer_info'); gpu = gl ? (x ? gl.getParameter(x.UNMASKED_RENDERER_WEBGL) : 'WebGL available') : 'no WebGL'; } catch (e) { gpu = 'unknown'; }
-  const L = [`CS 1.6 Demo Viewer 0.28.0`, `Browser: ${navigator.userAgent}`, `Screen: ${screen.width}x${screen.height} at ${devicePixelRatio}x, window ${innerWidth}x${innerHeight}`, `Graphics: ${gpu}`];
+  const L = [`CS 1.6 Demo Viewer 0.28.1`, `Browser: ${navigator.userAgent}`, `Screen: ${screen.width}x${screen.height} at ${devicePixelRatio}x, window ${innerWidth}x${innerHeight}`, `Graphics: ${gpu}`];
   L.push(`Folder: ${Object.keys(files.maps).length} maps, ${Object.keys(files.overviews).length} overviews, ${Object.keys(files.mdl).length} models, ${Object.keys(files.snd).length} sounds, ${files.demos.length} demos`);
   if (D) {
     L.push(`Demo: ${D.fileName}, protocol ${(D.header && D.header.netProtocol) || '?'}, ${D.pov ? 'POV (recorded by a player)' : 'HLTV'}, map ${D.mapName}, length ${fmt(D.end - D.start)}, ${M.liveR.length} live rounds, final ${M.liveR.length ? M.liveR[M.liveR.length - 1].scoreAfter.join(':') : '-'}`);
