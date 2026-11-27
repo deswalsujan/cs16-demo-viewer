@@ -108,7 +108,7 @@ PR 1 of 3 of the plan Sujan approved on 28 Nov 2026 (`tests/logs/kill-feed-spect
 
 ### How it was tested
 - `tests/page/glock_radar_specs.js` on SK vs Na`Vi, Train and the GP Tourney POV (Team Guardians vs Lanka Dahan, Mirage, 25 Oct 2026), failing on 0.27.6: 67 Glock frames in three-shot groups all show the burst, the 213 others the single shot; starix's 29 R1 frames as expected (only 0:29 to 0:26 confirmed against markeloff's POV, the rest from the rule); dots 2x2 at 768 lines (4x4 before); 4 spectators on 4 lines.
-- The nine release checks: see `tests/logs/0.27.7.md`.
+- The nine release checks pass (`ground_truth_check.py`: 246 kills and 52 scores and K-D on 64 demos, 0 mismatches, 10 known gaps; `people_check.py` 94 of 94); 515 s. Full log: `tests/logs/0.27.7.md`.
 
 ### Discussed, not changed
 - The gun's empty animation on a clip's last shot, which the game plays: for later (IDEAS.md, **The last shot of a clip in Player's eyes**).
