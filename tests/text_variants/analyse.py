@@ -284,10 +284,14 @@ COMBOS = [('R1) feed: whole pixels, cut 208, smear, 12.34 px; bars: whole pixels
           ('R3) feed: whole pixels, 4x cut, smear, shrunk, 12.34 px; bars: whole pixels, cut 192, smear', {'EF': 'ss4cut128sg_e12.34_ls1', 'DF': 'cut192sg_ls1'}),
           ('R4) feed and bars: each letter keeps 1.0 x its coverage, smear, whole pixels; feed 12.34 px', {'EF': 'area1.0s_e12.34_ls1', 'DF': 'area1.0s_e12.34_ls1'}),
           ('R5) feed and bars: each letter keeps 0.9 x its coverage, smear, whole pixels; feed 12.34 px', {'EF': 'area0.9s_e12.34_ls1', 'DF': 'area0.9s_e12.34_ls1'}),
-          ('R6) feed and bars: each letter keeps 0.8 x its coverage, smear, whole pixels; feed 12.34 px', {'EF': 'area0.8s_e12.34_ls1', 'DF': 'area0.8s_e12.34_ls1'})]
+          ('R6) feed and bars: each letter keeps 0.8 x its coverage, smear, whole pixels; feed 12.34 px', {'EF': 'area0.8s_e12.34_ls1', 'DF': 'area0.8s_e12.34_ls1'}),
+          ('R6 as built: each part of a letter keeps 0.8 x its coverage, no bumps, gap rows kept, marks no wider than their stroke', {'EF': 'build_e12.34_ls1', 'DF': 'build_e12.34_ls1'})]
+PLAIN = [(f'plain smoothed, smear {amt}, feed 12.34 px', {'EF': f'plain_m{amt}_e12.34_ls1', 'DF': f'plain_m{amt}_e12.34_ls1'}) for amt in (0, 0.25, 0.5, 0.75, 1)]
+lines += ['', '### Plain smoothed text (no edge cutting), by smear', '', lines[lines.index(next(l for l in lines if l.startswith('| Variant |')))], '|---|---|---|---|---|---|---|---|---|---|---|']
+for name, ids in PLAIN: lines += table_rows(name, ids)
 lines += ['', '### The combinations proposed', '', lines[lines.index(next(l for l in lines if l.startswith('| Variant |')))], '|---|---|---|---|---|---|---|---|---|---|---|']
 for name, ids in COMBOS: lines += table_rows(name, ids)
-PICK = [SHOW[0], SHOW[1], SHOW[2], SHOW[6], SHOW[7]] + [s_ for s_ in SHOW if s_[0] in ('d) cut at 128, no smear, spacing fitted', 'd) cut at 192, no smear, spacing fitted', 'd) cut at 160, smear, spacing fitted', 'd) cut at 192, smear, spacing fitted')] + [s_ for s_ in SHOW if s_[0] == 'e) letters on whole pixels: cut192s (extra)'] + [COMBOS[0], COMBOS[5]]
+PICK = [SHOW[0], SHOW[1], SHOW[2], SHOW[6], SHOW[7]] + [s_ for s_ in SHOW if s_[0] in ('d) cut at 128, no smear, spacing fitted', 'd) cut at 192, no smear, spacing fitted', 'd) cut at 160, smear, spacing fitted', 'd) cut at 192, smear, spacing fitted')] + [s_ for s_ in SHOW if s_[0] == 'e) letters on whole pixels: cut192s (extra)'] + [COMBOS[0], COMBOS[5], COMBOS[6]]
 for name, ids in PICK:
     ef = ids['EF'] if isinstance(ids, dict) else ids; df = ids['DF'] if isinstance(ids, dict) else ids
     sp = f" (spacing feed {META[ef]['spec']['ls']}, bars {META[df]['spec']['ls']})" if isinstance(ids, dict) else ''
@@ -361,7 +365,7 @@ def group_masks(img, ids):
         g = 'bars (BaseText)' if s['region'] == 'top' else 'bottom name (T)' if s['region'] == 'bottom' else ('T names (feed)' if s['rgb'][0] == 255 else 'CT names (feed)')
         out[g][y0:y1, x0:x1] |= T
     return out
-CANDS = [COMBOS[0], COMBOS[5]]
+CANDS = [COMBOS[5], COMBOS[6]]
 cand_imgs = [(n, jpeg(composite((i['EF'], i['DF']) if isinstance(i, dict) else i)), i) for n, i in CANDS]
 ours_a = jpeg(composite(A_ID))
 gh, go = group_masks(H, A_ID), group_masks(ours_a, A_ID)

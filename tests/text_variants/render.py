@@ -39,6 +39,14 @@ def extra():
         for size in (12, 12.34, 12.5):
             yield {'id': f'cut{cut}sg' + ('' if size == 12 else f'_e{size}') + '_ls1', 'mode': 'cut', 'cut': cut, 'smear': True, 'ls': 1, 'weight': 400, 'grid': True, 'efSize': size}
 
+def extra3():
+    # the viewer's own drawing as it ships (src/hud.js), R6 with its parts, gap rows and no bumps (28 Nov 2026)
+    yield {'id': 'build_e12.34_ls1', 'mode': 'build', 'cut': 0, 'smear': True, 'ls': 1, 'weight': 400, 'grid': True, 'efSize': 12.34}
+    # plain smoothed browser text (no edge cutting, the line drawn at once), the feed at 12.34 px as built, with no smear,
+    # a half-pixel smear or the full one: Sujan's fallback of 28 Nov 2026 takes whichever comes closest to his game's weight
+    for amt in (0, 0.25, 0.5, 0.75, 1):
+        yield {'id': f'plain_m{amt}_e12.34_ls1', 'mode': 'smooth', 'cut': 0, 'smear': amt > 0, 'smearAmt': amt, 'ls': 1, 'weight': 400, 'grid': False, 'efSize': 12.34}
+
 def extra2():
     for f in (0.8, 0.9, 1.0, 1.1):
         for size in (12, 12.34):
@@ -49,7 +57,7 @@ with sync_playwright() as p:
     pg = b.new_page(viewport={'width': 800, 'height': 600}, device_scale_factor=1)
     pg.goto(page)
     meta = []
-    for s in list(specs()) + list(extra()) + list(extra2()):
+    for s in list(specs()) + list(extra()) + list(extra2()) + list(extra3()):
         r = pg.evaluate('(s) => renderVariant(s)', s)
         open(os.path.join(out, s['id'] + '.png'), 'wb').write(base64.b64decode(r['png'].split(',')[1]))
         meta.append({'spec': s, 'strings': r['strings'], 'icons': r['icons'], 'caps': r['caps']})

@@ -11,7 +11,7 @@ Chromium and calls window.renderVariant(spec) for each variant; analyse.py measu
 A spec: { id, weight (400 or 700), ls (px between letters), mode: 'cut' (drawn at 1x, every pixel's edge cut at `cut` of
 255) | 'smooth' (drawn at 1x, the browser's smoothing kept) | 'area' (each letter drawn on its own at 1x, its `area`
 times its smoothed coverage in pixels kept, its most covered pixels first, so no letter or thin part vanishes whatever the
-browser's smoothing; letters on whole pixels) | 'ss4' (drawn at 4x, cut at `cut` there, shrunk to 1x by
+browser's smoothing; letters on whole pixels) | 'build' (the viewer's own drawing, src/hud.js, as it ships; efSize 12.34) | 'ss4' (drawn at 4x, cut at `cut` there, shrunk to 1x by
 averaging each 4x4 block), smear (each pixel also takes its left neighbour's ink, Windows' made-up bold), grid (each
 letter drawn on its own at a whole pixel, its advance rounded to whole pixels, `bias` added before rounding), efSize
 (the kill feed's size, 12 px by default) }.
@@ -20,6 +20,8 @@ kill feed, Default Verdana 11 px for the bars.
 -->
 <body style="margin:0;background:#222">
 <canvas id="out" width="800" height="600"></canvas>
+<!-- 'build' mode: the viewer's own text drawing, src/hud.js's hudMask, as it ships -->
+<script src="../../src/hud.js"></script>
 <script>
 const FACE = 'Verdana, "DejaVu Sans", sans-serif';
 const T = [255, 64, 64], CT = [153, 204, 255], BASE = [255, 176, 0];
@@ -31,6 +33,11 @@ const ROWS = [
 ];
 // the mask of a text as an alpha array at 1x: { w, h, a (0..255), ox, oy, adv }
 function mask(str, size, V) {
+  if (V.mode === 'build') {
+    const m = hudMask(str, size === 11 ? HUD_DF : HUD_EF), c = m.cv, d = c.getContext('2d').getImageData(0, 0, c.width, c.height).data;
+    const a = new Float32Array(c.width * c.height); for (let i = 0; i < a.length; i++) a[i] = d[i * 4 + 3];
+    return { w: c.width, h: c.height, a, ox: m.ox, oy: m.oy, adv: m.adv };
+  }
   const S = V.mode === 'ss4' ? 4 : 1, px = size * S, ls = V.ls * S;
   const font = `${V.weight} ${px}px ${FACE}`;
   const m = document.createElement('canvas').getContext('2d'); m.font = font;
@@ -64,7 +71,8 @@ function mask(str, size, V) {
   let A = new Float32Array(w * h);
   for (let i = 0; i < w * h; i++) A[i] = d[i * 4 + 3];
   if (V.mode !== 'smooth') for (let i = 0; i < A.length; i++) A[i] = A[i] >= V.cut ? 255 : 0;
-  if (V.smear) { const s = S; const B = A.slice(); for (let y = 0; y < h; y++) for (let x = w - 1; x >= 0; x--) { let v = A[y * w + x]; for (let k = 1; k <= s && x - k >= 0; k++) v = Math.max(v, A[y * w + x - k]); B[y * w + x] = v; } A = B; }
+  // the smear: each pixel takes its left neighbour's ink, times smearAmt (1 by default; 0.5 a half-pixel smear)
+  if (V.smear) { const s = S, amt = V.smearAmt == null ? 1 : V.smearAmt; const B = A.slice(); for (let y = 0; y < h; y++) for (let x = w - 1; x >= 0; x--) { let v = A[y * w + x]; for (let k = 1; k <= s && x - k >= 0; k++) v = Math.max(v, A[y * w + x - k] * amt); B[y * w + x] = v; } A = B; }
   if (S === 1) return { w, h, a: A, ox: 3, oy: 6, adv };
   // shrink the 4x mask to 1x: each 4x4 block's average
   const w1 = Math.ceil(w / 4), h1 = h / 4, a1 = new Float32Array(w1 * h1);
@@ -73,6 +81,18 @@ function mask(str, size, V) {
 }
 function ink(M) { let l = M.w, r = -1; for (let y = 0; y < M.h; y++) for (let x = 0; x < M.w; x++) if (M.a[y * M.w + x] >= 128) { l = Math.min(l, x); r = Math.max(r, x); } return [l - M.ox, r - M.ox]; }
 function capTop(size, V) { const M = mask('H', size, V); for (let y = 0; y < M.h; y++) for (let x = 0; x < M.w; x++) if (M.a[y * M.w + x] >= 128) return y - M.oy; return 0; }
+// one line of text at actual size on a background colour, for the character sheet (Sujan, 28 Nov 2026): the feed's
+// colours with their 1-px black shadow, the bars' orange without; returns a PNG
+window.renderLine = (V, size, rgb, shadow, bg, text) => {
+  const M = mask(text, size, V), W = M.w + 8, H = 26, c = document.createElement('canvas'); c.width = W; c.height = H;
+  const g = c.getContext('2d'); g.fillStyle = `rgb(${bg.join(',')})`; g.fillRect(0, 0, W, H);
+  const img = g.getImageData(0, 0, W, H), D = img.data, top = 18 - 20; // the baseline at row 18
+  const put = (dx, dy, col) => { for (let j = 0; j < M.h; j++) for (let i = 0; i < M.w; i++) { const a = M.a[j * M.w + i] / 255; if (!a) continue; const X = 4 + i - M.ox + dx, Y = top + j + dy; if (X < 0 || Y < 0 || X >= W || Y >= H) continue; const o = (Y * W + X) * 4; for (let k = 0; k < 3; k++) D[o + k] = col[k] * a + D[o + k] * (1 - a); } };
+  if (shadow) put(1, 1, [0, 0, 0]);
+  put(0, 0, rgb);
+  g.putImageData(img, 0, 0);
+  return c.toDataURL('image/png');
+};
 window.glyphInk = (V, size) => {
   const out = {};
   for (let c = 33; c < 127; c++) { const ch = String.fromCharCode(c), M = mask(ch, size, V); let n = 0; for (let i = 0; i < M.a.length; i++) if (M.a[i] >= 128) n++; out[ch] = n; }

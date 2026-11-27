@@ -13,7 +13,10 @@ Exit code 0 = pass. Fails on 0.27.7 (no bars while following, 5 rows in 3D, the 
    ink against the shot's (the side held to the edge within 1 px, the other within 4% of the name: R6's letters,
    Sujan's choice of 28 Nov 2026, run 1.8% narrow in the feed on average and 3.5% on Na`Vi starix,
    tests/logs/hud-text-variants-2026-11-28.md); the top bar's lines ending at 677, capitals at 20 and 36; the bottom
-   name centred at his height; every printable character drawn with ink at both sizes (R6 keeps every letter whole).
+   name centred at his height; every printable character drawn with ink at both sizes (R6 keeps every letter whole); i and
+   j, and the marks with stacked parts (! ? : ; and accented letters), keep at least one empty row between their parts
+   (Sujan, 28 Nov 2026: Na`Vi read Na`Vf); every letter of the alphabet keeps the gaps its smoothed drawing has where the
+   gap is a full pixel (no ink at all there after the same 1-px smear).
 2. The same at 1440x900 (1.5 device pixels a unit) and 2560x1440 (2.4): the bars and rows where the scale puts them, and
    even strokes: each run of a name's ink across a row weighs the scale times its weight at 800x600 (within a third of
    a pixel), where the nearest pixel would make 1-unit strokes 1 or 2 pixels.
@@ -164,6 +167,35 @@ with sync_playwright() as p:
       for (const f of [HUD_EF, HUD_DF]) for (let c = 33; c < 127; c++) { const ch = String.fromCharCode(c), m = hudMask(ch, f); if (!(m.inkR >= m.inkL)) empty.push(f.name + ch); }
       return empty; })()""")
     check('every printable character has ink in the feed and the bars (R6 keeps every letter whole)', G == [], G)
+    # the rows of a letter's mask holding text (alpha at least half), as groups of consecutive rows
+    PARTS = ev(pg, r"""(() => { if (typeof hudMask !== 'function') return null;
+      const groups = (ch, f) => { const m = hudMask(ch, f), c = m.cv, d = c.getContext('2d').getImageData(0, 0, c.width, c.height).data, rows = [];
+        for (let y = 0; y < c.height; y++) { let on = false; for (let x = 0; x < c.width && !on; x++) on = d[(y * c.width + x) * 4 + 3] >= 128; rows.push(on); }
+        let g = 0; rows.forEach((on, y) => { if (on && !rows[y - 1]) g++; }); return g; };
+      const out = {}; for (const f of [HUD_EF, HUD_DF]) for (const ch of 'ij!?:;éèêëàâäïîôöüûñÉÀÖÜ') out[f.name + ' ' + ch] = groups(ch, f); return out; })()""")
+    ij = {k: v for k, v in (PARTS or {}).items() if k[-1] in 'ij'}
+    check('800x600: i and j keep at least one empty row between dot and stem (feed and bars)', bool(ij) and all(v >= 2 for v in ij.values()), ij)
+    marks = {k: v for k, v in (PARTS or {}).items() if k[-1] not in 'ij'}
+    check('800x600: ! ? : ; and accented letters keep an empty row between their parts (feed and bars)', bool(marks) and all(v >= 2 for v in marks.values()), {k: v for k, v in marks.items() if v < 2} or 'all')
+    GAPS = ev(pg, r"""(() => { if (typeof hudMask !== 'function') return null; const bad = [];
+      for (const f of [HUD_EF, HUD_DF]) for (const ch of 'abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ') {
+        const m = hudMask(ch, f), c = m.cv, W = c.width, H = c.height, md = c.getContext('2d').getImageData(0, 0, W, H).data;
+        // the browser's own smoothed drawing of the letter where the mask has it (its origin at ox, its baseline at 20)
+        const s = document.createElement('canvas'); s.width = W; s.height = H; const g = s.getContext('2d');
+        g.font = f.css; g.fillStyle = '#fff'; g.textBaseline = 'alphabetic'; g.fillText(ch, m.ox, 20);
+        const sd = g.getImageData(0, 0, W, H).data, S = new Float32Array(W * H);
+        for (let y = 0; y < H; y++) for (let x = 0; x < W; x++) { const a = sd[(y * W + x) * 4 + 3], l = x ? sd[(y * W + x - 1) * 4 + 3] : 0; S[y * W + x] = Math.max(a, l); }
+        const ink = (x, y) => x >= 0 && y >= 0 && x < W && y < H && S[y * W + x] >= 128;
+        for (let y = 0; y < H; y++) for (let x = 0; x < W; x++) {
+          if (S[y * W + x] !== 0) continue;
+          let L = false, R = false, U = false, D = false;
+          for (let i = x - 1; i >= 0 && !L; i--) L = ink(i, y); for (let i = x + 1; i < W && !R; i++) R = ink(i, y);
+          for (let j = y - 1; j >= 0 && !U; j--) U = ink(x, j); for (let j = y + 1; j < H && !D; j++) D = ink(x, j);
+          if (((L && R) || (U && D)) && md[(y * W + x) * 4 + 3] > 0) bad.push(f.name + ' ' + ch + ' ' + x + ',' + y);
+        }
+      }
+      return bad; })()""")
+    check('800x600: every letter keeps the gaps its smoothed drawing has where the gap is a full pixel (feed and bars)', GAPS == [], (GAPS or [])[:10])
     check('800x600: top bar lines end at 677 (within 1 px), capitals at 20 and 36', L['l1']['top'] is not None and L['l2']['top'] is not None and abs(L['l1']['right'] - 677) <= 1 and abs(L['l2']['right'] - 677) <= 1 and L['l1']['top'] == 20 and L['l2']['top'] == 36, (L['l1'], L['l2']))
     bn = L['bottom']
     check('800x600: the bottom name centred and at his height (his ink 330 to 469)', bn['top'] is not None and abs(bn['top'] - hisb['top']) <= 1 and abs((bn['left'] + bn['right']) / 2 - (hisb['left'] + hisb['right']) / 2) <= 1.5, (bn, hisb))
