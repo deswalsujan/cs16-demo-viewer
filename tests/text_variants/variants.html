@@ -1,0 +1,126 @@
+<!doctype html>
+<meta charset="utf-8">
+<title>HUD text variants (test page, not part of the build)</title>
+<!--
+Sujan's brief of 28 Nov 2026, on #73: the HUD's text drawn several ways with the browser's own text drawing only (no
+FreeType, no fonts read from the computer, no permission prompt, no new dependency), at the places 0.28.0 puts it on an
+800x600 view of SK vs Na`Vi, Train, DreamHack Winter 2011 at R9 0:31 (Sujan's shot docs/reference/zeus-r9/800x600/
+20261127163514_1.jpg; the clock reads 0:42 there, stale, so 0:42 is drawn). render.py opens this page in headless
+Chromium and calls window.renderVariant(spec) for each variant; analyse.py measures them against his shot.
+
+A spec: { id, weight (400 or 700), ls (px between letters), mode: 'cut' (drawn at 1x, every pixel's edge cut at `cut` of
+255) | 'smooth' (drawn at 1x, the browser's smoothing kept) | 'area' (each letter drawn on its own at 1x, its `area`
+times its smoothed coverage in pixels kept, its most covered pixels first, so no letter or thin part vanishes whatever the
+browser's smoothing; letters on whole pixels) | 'ss4' (drawn at 4x, cut at `cut` there, shrunk to 1x by
+averaging each 4x4 block), smear (each pixel also takes its left neighbour's ink, Windows' made-up bold), grid (each
+letter drawn on its own at a whole pixel, its advance rounded to whole pixels, `bias` added before rounding), efSize
+(the kill feed's size, 12 px by default) }.
+The text, the layout and the colours are 0.28.0's (src/hud.js): EngineFont Verdana 12 px with a 1-px black shadow for the
+kill feed, Default Verdana 11 px for the bars.
+-->
+<body style="margin:0;background:#222">
+<canvas id="out" width="800" height="600"></canvas>
+<script>
+const FACE = 'Verdana, "DejaVu Sans", sans-serif';
+const T = [255, 64, 64], CT = [153, 204, 255], BASE = [255, 176, 0];
+const ROWS = [
+  { k: 'SK.f0rest', kc: CT, v: 'Na`Vi starix', vc: T, gun: 'm4a1', hs: true },
+  { k: 'Na`Vi ceh9 32-33y', kc: T, v: 'SK.GeT_RiGhT -A-', vc: CT, gun: 'ak47', hs: true },
+  { k: 'SK.f0rest', kc: CT, v: 'Na`Vi ceh9 32-33y', vc: T, gun: 'm4a1', hs: false },
+  { k: 'Na`Vi markeloff ~~~', kc: T, v: 'SK.RobbaN', vc: CT, gun: 'ak47', hs: false },
+];
+// the mask of a text as an alpha array at 1x: { w, h, a (0..255), ox, oy, adv }
+function mask(str, size, V) {
+  const S = V.mode === 'ss4' ? 4 : 1, px = size * S, ls = V.ls * S;
+  const font = `${V.weight} ${px}px ${FACE}`;
+  const m = document.createElement('canvas').getContext('2d'); m.font = font;
+  // the advance: the browser's own (letter spacing included), or each letter's advance rounded to whole pixels
+  const glyphs = [...str];
+  let adv = 0; const xs = [];
+  if (V.grid) { for (const ch of glyphs) { xs.push(adv); adv += Math.round(m.measureText(ch).width / S + (V.bias || 0)) * S + ls; } }
+  else { m.letterSpacing = ls + 'px'; adv = m.measureText(str).width; }
+  const ox = 3 * S, oy = 6 * S, w = Math.ceil(adv) + 8 * S, h = 40 * S;
+  const c = document.createElement('canvas'); c.width = w; c.height = h;
+  const g = c.getContext('2d'); g.font = font; g.fillStyle = '#fff'; g.textBaseline = 'alphabetic';
+  if (V.mode === 'area') {
+    // each letter on its own: keep its N most covered pixels, N its smoothed coverage times V.area
+    const A2 = new Float32Array(w * h);
+    glyphs.forEach((ch, i) => {
+      const gw = Math.ceil(m.measureText(ch).width) + 8, gc = document.createElement('canvas'); gc.width = gw; gc.height = h;
+      const gg = gc.getContext('2d'); gg.font = font; gg.fillStyle = '#fff'; gg.textBaseline = 'alphabetic'; gg.fillText(ch, 4, oy + 14);
+      const gd = gg.getImageData(0, 0, gw, h).data, al = []; let sum = 0;
+      for (let k = 0; k < gw * h; k++) { const a = gd[k * 4 + 3]; if (a) { al.push([a, k]); sum += a; } }
+      al.sort((p, q) => q[0] - p[0]);
+      const N = Math.round(sum / 255 * V.area);
+      for (let k = 0; k < N && k < al.length; k++) { const X = ox + xs[i] - 4 + (al[k][1] % gw), Y = Math.floor(al[k][1] / gw); if (X >= 0 && X < w) A2[Y * w + X] = 255; }
+    });
+    let A = A2;
+    if (V.smear) { const B = A.slice(); for (let y = 0; y < h; y++) for (let x = w - 1; x > 0; x--) B[y * w + x] = Math.max(A[y * w + x], A[y * w + x - 1]); A = B; }
+    return { w, h, a: A, ox: 3, oy: 6, adv };
+  }
+  if (V.grid) glyphs.forEach((ch, i) => g.fillText(ch, ox + xs[i], oy + 14 * S));
+  else { g.letterSpacing = ls + 'px'; g.fillText(str, ox, oy + 14 * S); }
+  const d = g.getImageData(0, 0, w, h).data;
+  let A = new Float32Array(w * h);
+  for (let i = 0; i < w * h; i++) A[i] = d[i * 4 + 3];
+  if (V.mode !== 'smooth') for (let i = 0; i < A.length; i++) A[i] = A[i] >= V.cut ? 255 : 0;
+  if (V.smear) { const s = S; const B = A.slice(); for (let y = 0; y < h; y++) for (let x = w - 1; x >= 0; x--) { let v = A[y * w + x]; for (let k = 1; k <= s && x - k >= 0; k++) v = Math.max(v, A[y * w + x - k]); B[y * w + x] = v; } A = B; }
+  if (S === 1) return { w, h, a: A, ox: 3, oy: 6, adv };
+  // shrink the 4x mask to 1x: each 4x4 block's average
+  const w1 = Math.ceil(w / 4), h1 = h / 4, a1 = new Float32Array(w1 * h1);
+  for (let y = 0; y < h; y++) for (let x = 0; x < w; x++) a1[(y >> 2) * w1 + (x >> 2)] += A[y * w + x] / 16;
+  return { w: w1, h: h1, a: a1, ox: 3, oy: 6, adv: adv / 4 };
+}
+function ink(M) { let l = M.w, r = -1; for (let y = 0; y < M.h; y++) for (let x = 0; x < M.w; x++) if (M.a[y * M.w + x] >= 128) { l = Math.min(l, x); r = Math.max(r, x); } return [l - M.ox, r - M.ox]; }
+function capTop(size, V) { const M = mask('H', size, V); for (let y = 0; y < M.h; y++) for (let x = 0; x < M.w; x++) if (M.a[y * M.w + x] >= 128) return y - M.oy; return 0; }
+window.glyphInk = (V, size) => {
+  const out = {};
+  for (let c = 33; c < 127; c++) { const ch = String.fromCharCode(c), M = mask(ch, size, V); let n = 0; for (let i = 0; i < M.a.length; i++) if (M.a[i] >= 128) n++; out[ch] = n; }
+  return out;
+};
+window.renderVariant = (V) => {
+  const out = document.getElementById('out'), g = out.getContext('2d');
+  g.clearRect(0, 0, 800, 600);
+  const img = g.getImageData(0, 0, 800, 600), D = img.data, strings = [];
+  // premultiplied 'source-over' of a coloured mask at (x, y)
+  const put = (M, x, y, rgb) => {
+    for (let j = 0; j < M.h; j++) for (let i = 0; i < M.w; i++) {
+      const a = M.a[j * M.w + i] / 255; if (!a) continue;
+      const X = x + i, Y = y + j; if (X < 0 || Y < 0 || X >= 800 || Y >= 600) continue;
+      const o = (Y * 800 + X) * 4, da = D[o + 3] / 255, oa = a + da * (1 - a);
+      for (let k = 0; k < 3; k++) D[o + k] = oa ? (rgb[k] * a + D[o + k] * da * (1 - a)) / oa : 0;
+      D[o + 3] = oa * 255;
+    }
+  };
+  const EF = V.efSize || 12, caps = { [EF]: capTop(EF, V), 11: capTop(11, V) };
+  const text = (str, size, x0, cap, rgb, shadow, region) => {
+    const M = mask(str, size, V), [il, ir] = ink(M); x0 = Math.round(x0); const top = cap - caps[size];
+    if (shadow) put(M, x0 - M.ox + 1, top - M.oy + 1, [0, 0, 0]);
+    put(M, x0 - M.ox, top - M.oy, rgb);
+    strings.push({ str, font: size === 11 ? 'DF' : 'EF', x0, cap, rgb, inkL: x0 + il, inkR: x0 + ir, adv: M.adv, region });
+    return { M, il, ir, x0 };
+  };
+  const advOf = (str, size) => mask(str, size, V).adv, inkROf = (str, size) => ink(mask(str, size, V))[1];
+  // top bar (Default, 11 px): right-aligned at 678, the spectators and the clock as 0.28.0 places them
+  const l1 = 'Counter-Terrorists : 4', l2 = 'Terrorists : 4';
+  text(l1, 11, 678 - advOf(l1, 11), 20, BASE, false, 'top');
+  text(l2, 11, 678 - advOf(l2, 11), 36, BASE, false, 'top');
+  text('Spectators 9', 11, 701, 20, BASE, false, 'top');
+  text('0:42', 11, 719, 36, BASE, false, 'top');
+  // bottom bar: the followed player, centred
+  const bn = 'Na`Vi Zeus /A/ (100)'; text(bn, 11, 400 - advOf(bn, 11) / 2, 562, T, false, 'bottom');
+  // kill feed (EngineFont, 12 px, shadow): victim's last letter at 783, 6 between the names and the icons
+  const icons = [];
+  ROWS.forEach((r, i) => {
+    const top = 80 + 20 * i, cap = top + 3;
+    const vx = Math.round(783 - inkROf(r.v, EF));
+    let x = vx, hx = null; if (r.hs) { x -= 6 + 36; hx = x; }
+    x -= 6 + 48; const gx = x;
+    icons.push({ row: i, gun: r.gun, gx, hx, top });
+    text(r.k, EF, gx - 6 - advOf(r.k, EF), cap, r.kc, true, 'feed');
+    text(r.v, EF, vx, cap, r.vc, true, 'feed');
+  });
+  g.putImageData(img, 0, 0);
+  return { png: out.toDataURL('image/png'), strings, icons, caps };
+};
+</script>
