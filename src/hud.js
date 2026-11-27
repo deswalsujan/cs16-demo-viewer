@@ -238,7 +238,7 @@ function drawGameFeed(tg, ag, t, playingPov) {
 // While following a player in an HLTV demo (Player's eyes and Behind player; not the free camera, Sujan, 28 Nov 2026)
 // and while he spectates in a POV demo (0.26.30). The score is the match's, as the header's, which the bars replace.
 const HUD_BAR = 80;
-const HUDB = { on: false, px: -1 };
+const HUDB = { on: false, px: -1, clock: '', bottom: '' }; // clock and bottom: the texts the bars show now
 function povBarsOn() { if (!POV.on || POV.mode === 0) return false; const [, tg] = povObs(POV.t); return !(tg === POV.v.rec && POV.mode !== 4) || false; }
 function hudBarsWanted() {
   if (!D || viewMode === '2d') return false;
@@ -255,12 +255,15 @@ function hudBarsClass(on, H) {
 function drawGameBars(tg, W, H) {
   const on = hudBarsWanted();
   hudBarsClass(on, H);
-  if (!on) return false;
+  if (!on) { HUDB.clock = HUDB.bottom = ''; return false; }
   hudLoadTimer();
   const P = hudScale(tg.canvas), Wu = P.Wu, t = tNow3, r = roundAt(t);
   const sc = r ? (t >= (r.endT || r.end) && r.scoreAfter ? r.scoreAfter : r.scoreBefore) : [0, 0];
   const tT = r && r.tTeam != null ? r.tTeam : 0, ctScore = sc[1 - tT], tScore = sc[tT];
-  const c = clockAt(t, true), clock = c ? c.text.replace(/^freeze /, '') : '';
+  // the clock as the round pill had it before the bars took it over: with Vanilla, "C4" alone after the plant, as the game
+  // hides its timer then (0.26.16)
+  const c = clockAt(t, true), clock = !c ? '' : VAN.on && c.phase === 'bomb' ? 'C4' : c.text.replace(/^freeze /, '');
+  HUDB.clock = clock; HUDB.bottom = '';
   let upper = null;
   if (POV.on) { const m = D.hud && lastAt(D.hud.money, 2, POV.t); if (m != null) upper = '$' + m; }
   else { const v = viewersAt(t); if (v != null) upper = 'Spectators ' + v; }
@@ -278,6 +281,7 @@ function drawGameBars(tg, W, H) {
     if (who && D.slots[who]) {
       const s = playerState(who, T), alive = !!(s && s.state > 0), hp = alive ? hpAt(who, tNow3) : null;
       const txt = nameAt(who, T) + (hp != null ? ` (${hp})` : ''), side = s ? Math.abs(s.state) : 0, rgb = side === 1 ? HUD_T : side === 2 ? HUD_CT : HUD_GREY;
+      HUDB.bottom = txt;
       hudDrawText(tg, txt, HUD_DF, Wu / 2 - hudText(txt, HUD_DF, rgb).adv / 2, HUD_H - 38, rgb);
     }
   });

@@ -269,12 +269,14 @@ with sync_playwright() as p:
               and n['off']['white'] < 5 and n['off']['orange'] < 5 and n['off']['red'] < 5, f"direct {n['direct']}, off {n['off']}")
         v = JS(f"({px})('both', true)")
         check('Vanilla: no damage numbers, no names, with Damage numbers on Both before it', v['white'] < 5 and v['orange'] < 5 and v['red'] < 5 and not v['names'], str(v))
-        # the C4 countdown: the round pill says "C4" alone after the plant with Vanilla on
+        # the C4 countdown: the clock says "C4" alone after the plant with Vanilla on: on the round pill, or since 0.28.0 in
+        # the spectator bars while they're up (following a player in 3D), where the pill shows the round alone
         c4 = JS(r"""(async () => { const w = (ms) => new Promise((r) => setTimeout(r, ms)); let t = null;
           for (const r of M.liveR) for (let x = r.start; x < r.end; x += 1) if (t == null && (clockAt(x, true) || {}).phase === 'bomb') t = x + 3;
-          T = t; updateHud(true); await w(200); const on = $('rclock').innerText; setVanilla(false); updateHud(true); await w(200); return { on, off: $('rclock').innerText }; })()""")
-        check('Vanilla: the round pill says "C4" without the countdown after the plant, and counts down again with Vanilla off',
-              c4['on'].endswith('· C4') and re.search(r'C4 \d:\d\d$', c4['off']) is not None, f"{c4['on']!r}, then {c4['off']!r}")
+          const clock = () => (typeof HUDB !== 'undefined' && HUDB.on ? HUDB.clock : $('rclock').innerText);
+          T = t; updateHud(true); await w(200); const on = clock(); setVanilla(false); updateHud(true); await w(200); return { on, off: clock() }; })()""")
+        check('Vanilla: the clock says "C4" without the countdown after the plant (the round pill, or the spectator bars while they are up), and counts down again with Vanilla off',
+              (c4['on'] == 'C4' or c4['on'].endswith('· C4')) and re.search(r'C4 \d:\d\d$', c4['off']) is not None, f"{c4['on']!r}, then {c4['off']!r}")
     except Exception as e:
         check('kill details, Damage numbers, the red skull and Vanilla', False, str(e).split('\n')[0])
     JS("pickedKill = null; if ($('dn3')) $('dn3').value = 'wb'; $('glow3').checked = true")
@@ -1232,12 +1234,14 @@ with sync_playwright() as p:
           const k = D.kills.find((x) => { const r = M.rounds.find((y) => y.n === x.round); return r && r.ln === 21 && killClock(x.t) === '0:39' && /FLEX0R/.test(nameAt(x.killer, x.t)); });
           T = k.t - 2; playing = false; pickedKill = k; tab = 'kills'; renderPane(); await w(300);
           const bs = [...document.querySelectorAll('.kdet .kb')], kb = bs[bs.length - 1]; kb.click(); await w(700);
-          return { title: kb.title, dt: +(T - k.t).toFixed(3), lag: LAG3, bar: $('pov').hidden ? null : $('pov').innerText.replace(/\s+/g, ' ').trim(), wb: k.wb ? (k.wb.loose ? 'loose' : 'strict') : null }; })()""" % view)
+          // the name bar, or since 0.28.0 the spectator bars' bottom line while they're up (following a player in 3D)
+          const bar = !$('pov').hidden ? $('pov').innerText.replace(/\s+/g, ' ').trim() : typeof HUDB !== 'undefined' && HUDB.on ? HUDB.bottom : null;
+          return { title: kb.title, dt: +(T - k.t).toFixed(3), lag: LAG3, bar, wb: k.wb ? (k.wb.loose ? 'loose' : 'strict') : null }; })()""" % view)
         j3 = jump('3d')
         check('Team Belgium vs France, Tuscan, R21 0:39: FLEX0R on R!Go- reads Wallbang, as Sujan saw it', j3['wb'] == 'strict', str(j3))
         check("Jump to this kill in 3D: paused 0.03 s plus the 3D view's 0.1 s after the kill, so the 3D picture is the shot itself (0.03 s after only, up to 0.27.3)",
               j3['title'] == 'Jump to this kill' and abs(j3['dt'] - 0.03 - j3['lag']) < 0.002, str(j3))
-        check('the name bar reads FLEX0R (88), his health at the moment itself (100 up to 0.27.3)', j3['bar'] is not None and 'FLEX0R (88)' in j3['bar'], str(j3['bar']))
+        check('the name bar (the spectator bars since 0.28.0) reads FLEX0R (88), his health at the moment itself (100 up to 0.27.3)', j3['bar'] is not None and 'FLEX0R (88)' in j3['bar'], str(j3['bar']))
         j2 = jump('2d')
         check('Jump to this kill in 2D: 0.03 s after the kill, the 2D map drawing the moment itself', abs(j2['dt'] - 0.03) < 0.002, str(j2))
         check('no page error on the Team Belgium vs France checks', not errs14, '; '.join(errs14[:3]))
