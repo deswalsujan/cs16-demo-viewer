@@ -316,6 +316,12 @@ export function parseDemo(buffer, onProgress, opts = {}) {
   // hp, which only HLTV sends and which the damage and skip finders read
   const hpInfo = [];
   const radio = [];     // { t, s: sentence name }
+  // the radio's words (0.28.1): TextMsg to HUD_PRINTRADIO (5), which ReGameDLL's CBasePlayer::Radio sends with each radio
+  // sound to the same teammates and to anyone watching one of them: the sender's entity index as text, the format
+  // ("#Game_radio", "%s1 (RADIO): %s2" in the player's cstrike_english.txt), his name as the server has it and the phrase
+  // ("#Fire_in_the_hole"). POV demos carry it; HLTV demos have the radio sounds and none of these (0 in the five HLTV
+  // demos read, 27 Nov 2026; tests/logs/kill-feed-spectating-2026-11-27.md)
+  const radioText = []; // { t, id, fmt, args, team: the sender's then }
   const centre = [];    // { t, s: '#Terrorists_Win' and the like, a: its arguments } (centre-screen messages)
   const corpses = [];   // { t, start, model, pos, yaw, seq, team, e }
   const booms = [];     // time, x, y, z (grenade and C4 explosions)
@@ -608,6 +614,11 @@ export function parseDemo(buffer, onProgress, opts = {}) {
           if (msg === '#Bomb_Planted' && inPlayback) bomb.push({ t: time, type: 'planted', round: curRound ? curRound.n : 0 });
           if (msg === '#Game_will_restart_in' && inPlayback) { bomb.push({ t: time, type: 'restart' }); restartAt = time; }
           if (msg && msg[0] !== '#' && inPlayback) notes.push({ t: time, s: msg });
+          if (dest === 5 && inPlayback) {
+            const args = []; while (m.p < m.u8.length && args.length < 4) args.push(m.str());
+            const id = parseInt(msg, 10) || 0;
+            if (args[0]) radioText.push({ t: time, id, fmt: args[0], args: args.slice(1), team: players[id] ? players[id].team : null });
+          }
           break;
         }
         case 'RoundTime': {
@@ -656,7 +667,9 @@ export function parseDemo(buffer, onProgress, opts = {}) {
           const a = m.str();
           let b = '', c = '';
           try { b = m.str(); c = m.str(); } catch (e) { /* optional */ }
-          if (inPlayback) chat.push({ t: time, id, fmt: a, text: c || b });
+          // the sender's name and team as the game had them then (0.28.1): the server sends the name empty and the game
+          // fills it in from its player list (cs16-client's saytext.cpp), his team giving the name's colour
+          if (inPlayback) chat.push({ t: time, id, fmt: a, text: c || b, name: players[id] ? players[id].name : null, team: players[id] ? players[id].team : null });
           if (inPlayback && !id) notes.push({ t: time, s: [a, b, c].filter((x) => x && x[0] !== '#').join(' ') });
           break;
         }
@@ -1117,7 +1130,7 @@ export function parseDemo(buffer, onProgress, opts = {}) {
     occupants, brushEvents: new Float32Array(brushEvents), brushPose: new Float32Array(brushPose), viewers: hltvStatus, notes,
     times: new Float32Array(samples.t), slots,
     finalScore: { ...scores }, models: resources.models, stride: STRIDE,
-    pmodels, sounds: resources.sounds, events: resources.events, snds: new Float32Array(snds), shots: new Float32Array(shots), shotPunch: new Float32Array(shotPunch), booms: new Float32Array(booms), hitPoints: new Float32Array(hitPoints), brass: new Float32Array(brass), puffs: new Float32Array(puffs), radio, centre, corpses,
+    pmodels, sounds: resources.sounds, events: resources.events, snds: new Float32Array(snds), shots: new Float32Array(shots), shotPunch: new Float32Array(shotPunch), booms: new Float32Array(booms), hitPoints: new Float32Array(hitPoints), brass: new Float32Array(brass), puffs: new Float32Array(puffs), radio, radioText, centre, corpses,
     errors, errSamples, health, c4drops: new Float32Array(c4drops), c4ents: new Float32Array(c4ents), glows: new Float32Array(glows), slow, stops, pings: new Float32Array(pings),
     ...(povData ? { povData } : {}),
   };

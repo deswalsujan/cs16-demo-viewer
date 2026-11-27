@@ -81,7 +81,7 @@ function indexFolder(list) {
 // the look is in the .cmsg style). The words come
 // from the player's own cstrike/resource/cstrike_english.txt (UTF-16, "Cstrike_TitlesTXT_<name>"), like everything
 // else from the game; without that file the same English lines are used.
-const LANG = { map: null };
+const LANG = { map: null, fmt: null };
 const CENTRE_EN = { Terrorists_Win: 'Terrorists Win!', CTs_Win: 'Counter-Terrorists Win!', Round_Draw: 'Round Draw!', Target_Bombed: 'Target Successfully Bombed!',
   Target_Saved: 'Target has been saved!', Bomb_Defused: 'The bomb has been defused!', Bomb_Planted: 'The bomb has been planted!',
   Hostages_Not_Rescued: 'Hostages have not been rescued!', All_Hostages_Rescued: 'All Hostages have been rescued!', VIP_Escaped: 'The VIP has escaped!',
@@ -98,7 +98,10 @@ async function loadLang() {
   if (!txt) return;
   const out = {}, re = /"(Cstrike_TitlesTXT_[A-Za-z0-9_]+)"\s+"([^"]*)"/g; let m;
   while ((m = re.exec(txt))) out[m[1].slice(18)] = m[2].replace(/\s*\n\s*/g, ' ');
-  LANG.map = out;
+  // the chat and radio lines' formats (0.28.1; hud.js, hudChatLines), with the game's colour bytes in them
+  const fmt = {}, rf = /"((?:Cstrike_Chat_|Game_radio)[A-Za-z0-9_]*)"\s+"([^"\r\n]*)"/g;
+  while ((m = rf.exec(txt))) fmt[m[1]] = m[2];
+  LANG.map = out; LANG.fmt = fmt;
 }
 function centreText(c) {
   const key = c.s.replace(/^#/, '');

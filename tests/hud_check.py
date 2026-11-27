@@ -222,8 +222,9 @@ with sync_playwright() as p:
     # outside Theatre mode, following: the header's score hidden, the camera buttons under the top bar
     F0 = ev(pg, r"""(async () => { setTheatre(false); await __frames(); await new Promise((r) => setTimeout(r, 400)); await __frames();
       const g = $('gl').getBoundingClientRect(), c = $('cam3').getBoundingClientRect(), l = $('legend').getBoundingClientRect(), bh = parseFloat($('radar').style.getPropertyValue('--bar-h'));
-      return { scoreShown: getComputedStyle($('scA')).display !== 'none', barH: bh, camTop: c.top - g.top, legendBottom: g.bottom - l.bottom, viewH: g.height }; })()""")
-    check('outside Theatre mode, following: no header score, the camera buttons under the top bar, the strip above the bottom bar', not F0['scoreShown'] and abs(F0['barH'] - F0['viewH'] * 80 / 600) <= 1 and F0['camTop'] >= F0['barH'] and F0['legendBottom'] >= F0['barH'], F0)
+      return { scoreShown: getComputedStyle($('scA')).display !== 'none', barH: bh, camTop: c.top - g.top, legendBottom: g.bottom - l.bottom, legendTop: l.top - g.top, viewH: g.height, nameTop: 560 * g.height / 600 }; })()""")
+    # the strip inside the bottom bar, above the followed player's name, since 0.28.1 (Sujan, 28 Nov 2026; above the bar in 0.28.0)
+    check('outside Theatre mode, following: no header score, the camera buttons under the top bar, the strip inside the bottom bar above the name', not F0['scoreShown'] and abs(F0['barH'] - F0['viewH'] * 80 / 600) <= 1 and F0['camTop'] >= F0['barH'] and F0['legendTop'] >= F0['viewH'] - F0['barH'] and F0['viewH'] - F0['legendBottom'] <= F0['nameTop'], F0)
     # 3. the free camera: the game's feed, no bars, the header's score back
     moment('free')
     F = ev(pg, r"""(async () => { setTheatre(false); await __frames(); await new Promise((r) => setTimeout(r, 300)); updateHud(true); await __frames();

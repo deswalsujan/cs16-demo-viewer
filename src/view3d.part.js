@@ -315,7 +315,7 @@ function resetForNewDemo() {
     if (R3.c4) { disposeRig(R3.c4.rig); R3.c4 = null; }
   }
   ANIM = {}; stopSounds();
-  $('pov').hidden = true; hudBarsClass(false, 0); HUDF.rows = [];
+  $('pov').hidden = true; hudBarsClass(false, 0); HUDF.rows = []; HUDCH.lines = [];
   // POV mode's state goes with the old demo: onDemo() sets it for the new one only after the overview loads, and the
   // frames drawn in between read the new demo, which may have no view of his (an HLTV demo, or POV mode turned off),
   // so POV.on left set made povView throw (Sujan's two crashes of 3 Nov 2026; on 0.26.16 the frame loop stopped there)
@@ -865,6 +865,8 @@ function update3Now() {
   if (POV.on) drawPovBar(sx, hx, W, H);
   // the kill feed in the game's look, in every camera (hud.js, 0.28.0), on the moment itself as the viewer's own feed
   drawGameFeed(sx, hx, tNow3, POV.on && POV.mode === 0);
+  // the players' chat and radio lines, at the bottom left (hud.js, 0.28.1)
+  drawGameChat(sx, tNow3);
   povFlash();
 }
 // Hit marker on the crosshair when the player you're watching gets a kill:

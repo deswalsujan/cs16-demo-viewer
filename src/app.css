@@ -103,8 +103,8 @@ button { cursor: pointer; }
 /* View settings in the strip (UI review, item 4): it opens upward, its chevron turned to match; rows only 3D uses (.v3)
    aren't in 2D */
 .legend .vpanel { top: auto; bottom: calc(100% + calc(6px * var(--ui))); max-height: 70vh; overflow-y: auto; }
-.legend #bVset svg { transform: rotate(180deg); }
-.legend #bVset[aria-expanded="true"] svg { transform: none; }
+.legend #bVset svg.chev { transform: rotate(180deg); }
+.legend #bVset[aria-expanded="true"] svg.chev { transform: none; }
 .radar.m2d .vpanel .v3 { display: none; }
 .xwrap:has(.xmark:not([hidden])) { margin-right: calc(6px * var(--ui)); } /* the ! clear of View settings beside it */
 /* POV mode on a server that held enemies back (POV mockup round, Sujan, 11 Nov 2026): a ! on See through walls, its own
@@ -159,9 +159,9 @@ button { cursor: pointer; }
 .cam3 .camseg button.on { background: var(--sand); }
 .cam3 .btn.arr { width: calc(28px * var(--ui)); padding: calc(4px * var(--ui)) 0; justify-content: center; font-size: calc(15px * var(--ui)); line-height: 1; }
 .vset { position: relative; }
-#bVset svg { width: calc(9px * var(--ui)); height: calc(6px * var(--ui)); fill: none; stroke: currentColor; stroke-width: 1.6; }
+#bVset svg.chev { width: calc(9px * var(--ui)); height: calc(6px * var(--ui)); fill: none; stroke: currentColor; stroke-width: 1.6; }
 #bVset[aria-expanded="true"] { border-color: var(--sand); color: var(--sand); }
-#bVset[aria-expanded="true"] svg { transform: rotate(180deg); }
+#bVset[aria-expanded="true"] svg.chev { transform: rotate(180deg); }
 .vpanel { position: absolute; left: 0; top: calc(100% + calc(6px * var(--ui))); z-index: 6; min-width: calc(272px * var(--ui)); display: grid; gap: calc(1px * var(--ui)); padding: calc(6px * var(--ui)); background: var(--panel); border: 1px solid var(--line); border-radius: calc(10px * var(--ui)); box-shadow: 0 calc(10px * var(--ui)) calc(28px * var(--ui)) rgba(0,0,0,.5); }
 .vrow { display: flex; align-items: center; justify-content: space-between; gap: calc(12px * var(--ui)); padding: calc(5px * var(--ui)) calc(6px * var(--ui)); font-size: calc(12px * var(--ui)); border-radius: calc(4px * var(--ui)); }
 .vrow:hover { background: var(--panel-2); }
@@ -667,8 +667,17 @@ body:has(.app.theatre) { overflow: hidden; }
 .app:not(.theatre) .score.bars .num, .app:not(.theatre) .score.bars .sep { display: none; }
 .radar.bars .cam3 { top: calc(var(--bar-h) + 6px * var(--ui)); }
 .app.theatre.show-t .radar.bars .cam3 { top: calc(max(var(--head-h) + 44px * var(--ui), var(--bar-h) + 6px * var(--ui))); }
-.radar.bars .legend, .radar.bars .hint3 { bottom: calc(var(--bar-h) + 12px * var(--ui)); }
-.app.theatre.show-b .radar.bars .legend { bottom: calc(max(var(--tr-h), var(--bar-h)) + 12px * var(--ui)); }
+.radar.bars .hint3 { bottom: calc(var(--bar-h) + 12px * var(--ui)); }
+/* the strip inside the bottom bar, above the followed player's name, never over it (0.28.1; Sujan, 28 Nov 2026): where
+   hud.js (hudStrip) puts it, --strip-b; icons only (.icons) where the whole strip can't fit; in Theatre mode never under
+   the controls sliding in from below */
+.radar.bars .legend { bottom: var(--strip-b, calc(var(--bar-h) + 12px * var(--ui))); }
+.app.theatre.show-b .radar.bars .legend { bottom: max(calc(var(--tr-h) + 12px * var(--ui)), var(--strip-b, calc(var(--bar-h) + 12px * var(--ui)))); }
+.legend .ico { display: none; width: calc(14px * var(--ui)); height: calc(14px * var(--ui)); fill: none; stroke: currentColor; stroke-width: 1.4; stroke-linecap: round; stroke-linejoin: round; vertical-align: -0.2em; }
+.legend.icons .ico { display: inline-block; }
+.legend.icons .lbl { display: none; }
+.legend.icons { gap: calc(4px * var(--ui)); }
+.legend.icons .btn { padding: calc(3px * var(--ui)) calc(5px * var(--ui)); }
 .radar.bars .pov { bottom: calc(var(--bar-h) + 56px * var(--ui)); }
 .app.theatre.show-b .radar.bars .pov { bottom: calc(max(var(--tr-h), var(--bar-h)) + 56px * var(--ui)); }
 .radar.bars:not(.povm) #toast { bottom: calc(var(--bar-h) + 56px * var(--ui)) !important; }

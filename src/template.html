@@ -134,15 +134,16 @@
     <div class="feed" id="feed"></div>
     <!-- The view's options in one strip at the bottom left in 2D, 3D and POV (UI review, item 4, 17 Nov 2026): Names,
          Grenades, Kill lines, See through walls (not in 2D, where it does nothing), Reset view (not in POV), then View
-         settings, opening upward, with only the rows the view uses (.v3: 3D only) -->
+         settings, opening upward, with only the rows the view uses (.v3: 3D only); each button's icon shows only when the strip
+         goes icons only, inside the spectator bars' bottom bar where the full strip can't fit (0.28.1; hud.js, hudStrip) -->
     <div class="legend" id="legend" hidden>
-      <button class="btn on" id="tgNames" type="button">Names</button>
-      <button class="btn on" id="tgNades" type="button">Grenades</button>
-      <button class="btn on" id="tgLines" type="button">Kill lines</button>
-      <span class="xwrap"><button class="btn" id="tgXray" type="button" title="Show players behind walls, and their names, in 3D (H)">See through walls</button><button class="xmark" id="xrayMark" type="button" hidden title="This server seems to use an anti-wallhack plugin. Click the ! to read why." aria-label="Why few enemies show through walls">!</button></span>
-      <button class="btn" id="tgFit" type="button" title="Back to the starting view: the whole radar in 2D, the overview camera in 3D">Reset view</button>
+      <button class="btn on" id="tgNames" type="button"><svg class="ico" viewBox="0 0 14 14" aria-hidden="true"><path d="M1.5 4h7.5l3.5 3-3.5 3H1.5z"/></svg><span class="lbl">Names</span></button>
+      <button class="btn on" id="tgNades" type="button"><svg class="ico" viewBox="0 0 14 14" aria-hidden="true"><circle cx="6.5" cy="8.5" r="4"/><path d="M6.5 4.5V2.5h4"/></svg><span class="lbl">Grenades</span></button>
+      <button class="btn on" id="tgLines" type="button"><svg class="ico" viewBox="0 0 14 14" aria-hidden="true"><circle cx="3" cy="11" r="1.5"/><path d="M4.2 9.8l5.3-5.3M9 2l3 3M12 2L9 5"/></svg><span class="lbl">Kill lines</span></button>
+      <span class="xwrap"><button class="btn" id="tgXray" type="button" title="Show players behind walls, and their names, in 3D (H)"><svg class="ico" viewBox="0 0 14 14" aria-hidden="true"><path d="M1 7s2.3-4 6-4 6 4 6 4-2.3 4-6 4-6-4-6-4z"/><circle cx="7" cy="7" r="1.8"/></svg><span class="lbl">See through walls</span></button><button class="xmark" id="xrayMark" type="button" hidden title="This server seems to use an anti-wallhack plugin. Click the ! to read why." aria-label="Why few enemies show through walls">!</button></span>
+      <button class="btn" id="tgFit" type="button" title="Back to the starting view: the whole radar in 2D, the overview camera in 3D"><svg class="ico" viewBox="0 0 14 14" aria-hidden="true"><path d="M11.5 7.5A4.5 4.5 0 1 1 7 3h3"/><path d="M8.5 1l2 2-2 2"/></svg><span class="lbl">Reset view</span></button>
       <div class="vset">
-        <button class="btn" id="bVset" type="button" aria-expanded="false" aria-controls="vsetPanel" title="Hide all overlays, and in 3D team colours, damage numbers, the crosshair, fixed light and quality; interface size; in a POV demo the flashbangs">View settings <svg viewBox="0 0 10 6" aria-hidden="true"><path d="M1 1l4 4 4-4"/></svg></button>
+        <button class="btn" id="bVset" type="button" aria-expanded="false" aria-controls="vsetPanel" title="Hide all overlays, and in 3D team colours, damage numbers, the crosshair, fixed light and quality; interface size; in a POV demo the flashbangs"><svg class="ico" viewBox="0 0 14 14" aria-hidden="true"><path d="M1.5 4h11M1.5 10h11"/><circle cx="5" cy="4" r="1.6"/><circle cx="9" cy="10" r="1.6"/></svg><span class="lbl">View settings </span><svg class="chev" viewBox="0 0 10 6" aria-hidden="true"><path d="M1 1l4 4 4-4"/></svg></button>
         <div class="vpanel" id="vsetPanel" role="group" aria-label="View settings" hidden>
           <div class="vhead">On the view</div>
           <label class="vrow"><span>Hide all overlays<small>as in the game's own demo player</small></span><input type="checkbox" id="van3" title="Turns off what the game's own demo player doesn't show: damage numbers, kill markers, glow, See through walls, Fixed light, names and HP over the players, kill lines, grenade paths, the death cam's red wash and banner, and the C4 countdown. The buttons and settings still work one by one after"></label>
