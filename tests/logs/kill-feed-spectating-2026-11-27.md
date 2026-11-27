@@ -88,3 +88,112 @@ One branch from origin/main, one pull request, as 0.28.0 (a visible batch across
 ## How the mockup was made
 
 `tests/harness.py` on 0.27.6's `index.html`, 1440x900: for each frame a script seeks and pauses, a screenshot, then a mock layer drawn over the page (DOM text and icon layers, a canvas for the bars, the radar's dot size halved, the scoreboard's spectators split) and a second screenshot; then the crops and the shots put together with Pillow. Frames: the GP Tourney POV at R20 1:22 (alive), R5 with the bomb down (dead, watching a teammate), R3 1:17 (full white, **Flashbang whiteout** ticked) and R16 1:08 (his Tab); SK vs Na`Vi, Train, DreamHack Winter 2011 at R9 0:27, **Player's eyes** on Na`Vi Zeus /A/.
+
+## His files and checks, 27 Nov 2026 (evening)
+
+Sujan's brief of 27 Nov 2026 (evening): his answers on the review zip of 26 Nov 2026 (`~/Downloads/cs16-review-2026-11-26.zip`, a to d), his files in `~/Downloads/cs-assets`, checks and the mockup only, no viewer code changed. Branch `notes/after-0.27.6-c`, from `notes/after-0.27.6-b`.
+
+### 1. Reference files
+
+- In the repo: `docs/reference/game-schemes/TrackerScheme.res` and `ClientScheme.res` (his Windows copies, CS 1.6 25th Anniversary build) and his F5 screenshots of the game's HLTV playback of SK vs Na`Vi, Train, DreamHack Winter 2011, R9, on Na`Vi Zeus /A/: `docs/reference/zeus-r9/800x600/` (12: six in first person, 163513 to 163518, six in the chase camera, 163535 to 163542) and `docs/reference/zeus-r9/1920x1440/` (10). No HUD scale setting changed: both sets use the game's defaults (Sujan).
+- His Windows files are the Mac's: `TrackerScheme.res` byte for byte, `ClientScheme.res` apart from its line endings. "An older build than his Windows one" in "Two findings" above is wrong; the findings stand.
+- The fonts, by band of screen heights (lines):
+
+| Font | 480-599 | 600-767 | 768-1023 | 1024-1299 | 1300-1699 | 1700-1899 | 1900-2499 | 2500-2999 | 3000+ |
+|---|---|---|---|---|---|---|---|---|---|
+| TrackerScheme `EngineFont` (kill feed, chat): Verdana, weight 600, drop shadow, no antialias line in any band | 13 | 15 | 16 | 21 | 28 | 35 | 42 | 56 | 70 |
+
+| Font | 480-599 | 600-767 | 768-1023 | 1024-1199 | 1200-6000 |
+|---|---|---|---|---|---|
+| ClientScheme `Default` (spectator bars): Verdana, weight 600, no drop shadow line | 12 | 13 | 14, antialias | 20, antialias | 24, antialias |
+
+  `DefaultSmall` has the same sizes at weight 0. ClientScheme's colours: `team0` 204 204 204 (spectators), `team1` 255 64 64, `team2` 153 204 255 (its comments call them CT's and T's the other way round), `BaseText` 255 176 0.
+- Stale state in his shots: the 1920 set reads Counter-Terrorists : 5 where the 800 set reads 4 at the same kill feed; 4 : 4 is R9's score, so the 1920 score is stale (Sujan: the game's HLTV player doesn't reset round state when the slider seeks, unless it goes back past a round start). The clock is stale too: shot 163514 reads 0:42, but its four kill feed rows (f0rest on starix, demo 1378.76 s, to markeloff on RobbaN, 1381.78 s, before f0rest on edzie, 1384.69 s) put it at the viewer's 0:31; the chase camera shots read 0:22 to 0:14 with an older feed (f0rest on starix alone). And the chat line in the 800 shots, "<e-s.se | DH MSI BEAT IT> For MSI BEAT IT coverage go to www.HLTV.org", is a server message (svc_print) from R1's start, demo 530.2 s, still on his screen in R9.
+
+### 2. Check a: the Glock's burst fire (nothing changed)
+
+His answer: around edzie's bomb pickup and plant, starix at the train ladder fires only bursts (markeloff's YouTube POV); the game's HLTV playback plays the same single-shot sound for single and burst fire and its gun never shows a burst; the viewer plays the same sound but its gun switches between single and burst.
+
+a) **Why it flips.** `vmAnim` (`src/players3d.js`, the line `opts[lastK % opts.length]`) takes the shoot1, shoot2 and shoot3 animations the gun has and cycles through them by the shot's count among all of that player's shots in the demo. `v_glock18.mdl` has `shoot` (31 frames at 40 fps, 0.78 s), `shoot2` (31, 0.78 s) and `shoot3` (21, 0.53 s), no `shoot1`, so the Glock alternates `shoot2` and `shoot3` shot by shot. `shoot` and `shoot2` are burst animations (the slide cycles three times in the first 8 frames, the arm kicks up 9 to 11°); `shoot3` is a single shot (one slide cycle, the arm barely moves). A burst is three fire events, an odd number, so each burst flips the next one: in R1, 0:29 `shoot2` (burst look), 0:27 `shoot3` (single look), 0:26 `shoot2`. The game: cs16-client's `event_glock18.cpp` plays `GLOCK18_SHOOT` when the burst flag is set and `GLOCK18_SHOOT3` otherwise, and the flag is the watcher's own Glock's (`g_iWeaponFlags`), never set for someone watching a demo, so the game's demo player always shows `shoot3`, as he saw.
+
+b) **What the demo carries.** No ammo: an HLTV demo has no player's CurWeapon or AmmoX (this one has 2 and 32 in all, the HLTV's own, with no player in them); the clip below is rebuilt by counting fire events from 20 after each reload animation (`ref_reload_onehanded`). Each event's `bparam1` (clip empty after the shot) is 0 for all his R1 shots, as the rebuilt clip says. A burst is visible: ReGameDLL (`wpn_glock18.cpp`, `weapons.cpp` `FireRemaining`) fires its second and third shots on the next player frames, with a fixed 0.05 spread, and the next burst no sooner than 0.5 s; single fire is at least 0.15 s apart, so three single shots can't fall in one 0.1-s HLTV frame. The burst's later events send the punch ×10000 instead of ×100, but it's 0 unless he was just hit, so that doesn't help. starix in R1 (demo time; R1 went live at 541.72 s; events in one frame; clip after the frame; what 0.27.6 shows):
+
+| Demo s | R1 | Events | Gap s | Clip | 0.27.6 |
+|---|---|---|---|---|---|
+| 542.42 | 1:44 | 1 | | 19, reload at 1:44 | shoot2 |
+| 546.16 | 1:40 | 3 | 3.73 | 17, reload at 1:39 | shoot3 |
+| 587.25 to 590.77 | 0:59 to 0:55 | 1 each, 11 frames | 0.29 to 0.51 | 16 to 9 | shoot2 and shoot3 by turns |
+| 592.97, 594.29, 594.79, 595.29 | 0:53 to 0:51 | 1 each | 2.21, 1.32, 0.50, 0.50 | 8 to 5, reload at 0:51 | by turns |
+| 609.69 | 0:37 | 3 | 14.40 | 17 | shoot3 |
+| 610.19 | 0:36 | 3 | 0.50 | 14 | shoot2 |
+| 612.21 | 0:34 | 3 | 2.03 | 11 | shoot3 |
+| 613.42 | 0:33 | 3 | 1.20 | 8 | shoot2 |
+| 614.02 | 0:32 | 1 | 0.61 | 7, reload at 0:32 | shoot3 |
+| 617.54 | 0:29 | 3 | 3.52 | 17 | shoot2 |
+| 619.36 | 0:27 | 3 | 1.82 | 14 | shoot3 |
+| 619.87 | 0:26 | 3 | 0.50 | 11 | shoot2 |
+| 625.50, 626.01, 626.31 | 0:21, 0:20, 0:20 | 1 each | 5.64, 0.51, 0.30 | 10 to 8, reload at 0:19 | by turns |
+| 631.65 | 0:15 | 2 | 5.34 | 18; GeT_RiGhT kills him | shoot3 |
+
+edzie picks up the bomb at 0:51 (after markeloff dies with it at 0:53), drops it at 0:48, picks it up again at 0:28 (ScoreAttrib, demo 618.45 s) and plants at 0:23 (623.29 s). Between the pickup and the plant starix fires bursts at 0:29, 0:27 and 0:26, three events in one frame each, 0.5 s or more apart: the demo agrees with the YouTube POV. His single events at 0:59 to 0:55 are 0.29 to 0.41 s apart, too close for burst mode, so single fire. After the plant, 0:21 and 0:20 are single events 0.51 and 0.30 s apart; 0.30 s is too short for burst mode, so either he switched to single fire or the demo lost two events from each of three bursts, which it never does elsewhere in this stretch; markeloff's POV would tell. Across the 81 test demos with Glock fire (14,385 events, a player's events less than 0.15 s apart counted together): 7,594 alone, 1,175 pairs, 1,460 threes, 14 larger groups; a three is always a burst; a pair can be a burst cut short (29 pairs end with the clip empty) or two fast single shots in neighbouring frames, so it proves nothing.
+
+c) **Proposal.** The flipping goes: the Glock's animation comes from the frame's own events, not from the shot count. Where one player's three Glock events arrive within 0.25 s (certain burst), `shoot`, the animation his own game played for a burst; everything else, `shoot3`, as the game's demo player does. That shows a burst only where the demo proves one. The strictly-as-the-game choice is `shoot3` always. The sound stays as it is: three events in one frame on the shooter's weapon channel cut each other in the game (and in 0.27.6, `src/audio.js`, "a new sound on the same entity channel cuts the previous one"), so the game plays one shot; the burst's three shots are one player frame apart (about 10 ms at 100 fps), which the demo doesn't keep, so three separate sounds would be a guess, and at 10 ms they'd still sound like one.
+
+### 3. Checks b and c: the legs (nothing changed)
+
+- His video, `~/Downloads/cs-assets/clip_17,95,77,43,13,536.mp4`: 88.0 s, 1920x1440, HEVC at 60 frames a second, AAC sound, 241.7 MB; R1 of SK vs Na`Vi, Train, DreamHack Winter 2011 in the game's HLTV playback with its chase camera: 0 to 1 s freeze time (0:08, 0:07), a jump, then 2 to 36 s on Na`Vi ceh9 (R1 1:44 to 1:10), 37 and 38 s switching (SK.RobbaN, SK.f0rest), 39 s to the end on Na`Vi edzie (1:07 to the plant at 0:23; health 100, then 16 from 0:46).
+- The video's second v is demo time less 539.17 s: three kill feed rows appear within 0.1 s of that (markeloff's death, 593.49 s, at v 54.35; edzie on face, 594.60 s, at 55.35; ceh9 on Delpan, 599.52 s, at 60.35). The game's spectator clock rounds down, as the viewer's, so the zip's R1 1:14 to 1:11 is v 32.6 to 36.5 and 0:47 to 0:45 is v 59.6 to 62.5.
+- 0.27.6 drawn at the same moments (`tests/harness.py`'s way, Theatre mode, 1200x900, **Behind player**), frame grabs side by side on the branch `screenshots/checks-2026-11-27` (`legs-compare.png`):
+
+| | His game | 0.27.6 |
+|---|---|---|
+| ceh9, R1 1:13 to 1:12, moving 82° to 102° off his view | legs side-on along the move, striding left, his back turned to his view, no flipping | legs along the move (82° to 102°), the run forward, no flipping |
+| edzie, R1 0:46 to 0:45, backing away 135° to 165° off his view | coming toward the camera with his back and heels to it: the legs face his view and the run plays backward | legs turned around (15° to 45° off his view), the run backward |
+
+- cs16-client's `StudioEstimateGait`, read again: the speed and direction come from the drawn origin's move since the last drawn frame, so between two 0.1-s snapshots it's the move between them, as 0.27.6 has it. **The game matches 0.27.6 on both; nothing to change.** The cameras differ (his sits higher and further back; **Behind player** is pulled in by walls, at 35 s and 61 s), which is IDEAS.md, **The Behind player camera against the game's chase camera**.
+
+### 4. The resolution decision, and how the HUD scales today
+
+Sujan's decision (27 Nov 2026, `DECISIONS.md`): every HUD element (kill feed, chat, spectator bars) is laid out in 800x600 screen units with the 800x600 fonts (EngineFont 15, Default 13, no smoothing) and the sprites at their own size, then the whole HUD layer is scaled to the viewer's picture with no smoothing. At 1920x1440 the game drops the round timer's digits and the "(100)" in the spectator bars, and its icons don't grow; the viewer doesn't copy that.
+
+How it scales today (0.27.6):
+- **POV mode**'s HUD, plant bar and radar (`drawPovHud`, `drawPovBar`, `drawPovRadar`): sprites at `H / 768` of the view's height, at any fraction, smoothed, on canvases at the screen's own pixels.
+- The spectator bars (`drawSpecBars`): 40 of 480 lines high (the game's are 64 of 480: 80 at 600), their text sized by **Interface size**, not by the view.
+- The kill feed (`#feed`) and the Tab scoreboard (`#sb`): page elements sized by **Interface size**.
+
+Where it conflicts: (1) the POV HUD's basis moves from 768 lines to 600, so it grows by 28%; (2) the kill feed, chat and spectator bars stop following **Interface size** and follow the view's height, as the game's do (**Interface size** keeps sizing the viewer's own controls); (3) the Tab scoreboard isn't part of this (in the game it's a separate panel); it stays as it is unless Sujan says otherwise.
+
+The width: units 600 high and as wide as the view's shape needs (1067 at 16:9), each element held to the edge the game holds it to (the kill feed to the right, chat to the left, the bars across the whole width); 800x600 is the 4:3 case. Scale factors that aren't whole: k = the view's height in screen pixels / 600 (900 lines: 1.5; a 720-point view on a 2x screen: 2.4). Straight nearest-neighbour at 1.5 makes some 1-px strokes 2 pixels and others 1, and they shimmer as the window changes size; whole factors only would leave the HUD at 1x up to a 1199-line view. Proposed: when k is whole, nearest-neighbour; otherwise draw the layer at the next whole factor up with nearest-neighbour and scale that down to k with smoothing ("sharp bilinear"): every game pixel keeps the same width, with at most one soft screen pixel at its edge.
+
+### 5. The mockup at 800x600
+
+- `docs/proposed/kill-feed-spectating-mock.png`: 800x600, lossless; `docs/proposed/kill-feed-spectating-compare.png`: his shot (`docs/reference/zeus-r9/800x600/20261127163514_1.jpg`) and the mockup side by side at 100%, then the kill feed, chat, top bar and bottom bar at 3x nearest-neighbour: his game, the proposal, and the browser's own text (the fallback below). The first mockup, `docs/proposed/kill-feed-spectating-mock.jpg` (six rows, POV mode included), stays for the parts this one doesn't show.
+- The moment: demo 1382.0 s (R9, the viewer's 0:31), after markeloff on RobbaN and before f0rest on edzie, so the same four kill feed rows; 0.27.6's 3D view at exactly 800x600, **Player's eyes** on Zeus with **Vanilla** on; Zeus where his shot has him. Zeus's AK is still coming out in ours (no gun on screen); his shot has it up. That's the gun, not the HUD.
+- **How the game draws this text** (found by measuring, not in the scheme files): Windows draws "Verdana, weight 600" as Verdana Regular made bold, each letter 1 px wider and smeared 1 px to the right, at the em size the scheme's height gives as a cell height: EngineFont 15 is 12 px, Default 13 is 11 px. FreeType's hinted 1-bit rendering with that rule gives every width and capital height on his shot within 1 px: Counter-Terrorists : 4, 146 px (his 145); Spectators 9, 82 (82); Na`Vi Zeus /A/ (100), 140 (140); SK.RobbaN, 76 (76); Na`Vi starix, 85 (85); the chat line, 531 (531); capitals 8 px in the bars and 9 in the feed and chat. Verdana Bold at the same sizes is 1 to 7% too narrow (SK.RobbaN 71, the chat line 497), and its strokes are heavier.
+- **The browser can't draw these letters by itself.** Its canvas text has no font hinting: with the edges cut at any level (96 to 224 of 255), with or without the smear, the letters differ and lines come out 1 to 2% narrower (the chat line 520 px against 531). The mockup's text is drawn the way that matches: the font's own hinting (FreeType), Verdana from the computer (`/System/Library/Fonts/Supplemental/Verdana.ttf` on the Mac). In the page, that means FreeType built to WebAssembly (FreeType License, credited) and the player's own Verdana, read through the local fonts permission of Chrome and Edge (one prompt); without the permission, the browser's own text with the edges cut and 1 px between letters, the "fallback" rows: heavier and a little narrower. No Verdana bytes or glyph bitmaps are shipped. Sujan decides.
+- **The layout at 800x600, measured on his shot** (the proposal follows it): bars 0 to 79 and 520 to 599, black at 196 of 255; kill feed rows 20 px apart from the bar's edge, capitals from y 83, 103, 123, 143; each row's victim ends 15 px from the right edge (its letters at 783); 6 px between the killer, the gun icon, the headshot icon and the victim (cs16-client has 5, then none); icons at their own size (`d_ak47` and `d_m4a1` 48x16, `d_headshot` 36x16 from `640hud1.spr`), tinted 255 80 0 and added onto the picture; chat from x 24, capitals at 437; top bar: the score lines' letters end at x 677, capitals at 20 and 36; a divider at x 691, y 15 to 51, 255 176 0 at about a quarter; Spectators from 702 (capitals 20); the clock icon, the player's `valve/gfx/vgui/800_timer.tga` at its own 16x16, at 701, 32; the clock from 720 (capitals 36); the bottom bar's name and health centred on 399.5, capitals at 562. In 640x480 units these are 5, 12, 64 and 16: the game scales its 640 layout to the screen while its fonts and sprites keep their own size.
+- **Measured on both** (his shot is a JPEG, so the proposal was put through JPEG at quality 90 for the colours; positions from its lossless copy):
+
+| | His game | Proposed |
+|---|---|---|
+| Capital height, feed and chat / bars | 9 / 8 | 9 / 8 |
+| Kill feed row step | 20 | 20 |
+| Right margin, victim's letters to the edge | 16 (783) | 16 (783) |
+| Killer, gun, headshot icon, victim | 6 px apart | 6 px apart; every name and icon within 1 px of his (row profiles cross-correlated; the two guns over his bright sky can't be matched) |
+| Icons | 48x16, 36x16, as drawn | the same sprites |
+| Team colours, after JPEG | T 230 73 76, CT 161 204 242 | T 226 76 73, CT 161 203 241 (drawn 255 64 64 and 153 204 255) |
+| Bar text, after JPEG | 235 177 48 | 237 178 42 (drawn 255 176 0) |
+| Chat, after JPEG | 242 181 56 | 240 179 35 (drawn 255 179 0) |
+| Shadow | 1 px right and down | 1 px right and down; none in the bars, in both |
+| Chat line, ink | x 24 to 554, capitals 437 | x 24 to 554, capitals 437 |
+| Bottom name, ink | x 330 to 469 | x 330 to 469 |
+
+- **Differences of more than 1 px, or in colour:** (1) the clock reads 0:31 in ours and 0:42 in his, his being stale; (2) the chat line is drawn here only to compare its letters: it's a server line from R1, which his answer (d) of 27 Nov 2026 leaves out, so the build won't show it; (3) the chat's yellow: his is paler in blue after JPEG (56 against 35), so it may be nearer 255 180 40 than 255 179 0; a lossless screenshot (Steam can keep an uncompressed copy) would settle it; (4) the clock icon is about 10% brighter in ours (111 114 51 against 124 127 58), so the game may draw it dimmed; (5) the icons over his bright sky look white in his and orange in ours: the pictures behind them differ, the icons don't; (6) his game draws a small crosshair in first person; **Player's eyes** draws none in HLTV demos (IDEAS.md, for later). Everything else is within 1 px.
+
+### Seeking rebuilds the round's state (nothing changed)
+
+The same moments reached five ways in 0.27.6 (opened fresh; from R10; from later in R9; from R8; played into from 8 s before), **Behind player** on Zeus: at 1382.0 s and at 1384.4 s (with a smoke and two bodies down), the score (4 : 4), clock, kill markers and lines, grenades, smoke, bodies and players are the same every way, and the pictures are identical to the pixel. The viewer works everything out from the moment (score from the round, bodies from the kills, smokes and blood by time); it draws no decals (bullet holes, blood and scorch marks on walls), so there are none to rebuild.
+
+### What's next
+
+Sujan: the Glock's animation (bursts shown where the demo proves them, or `shoot3` always, as the game); the text renderer (FreeType with the player's own Verdana through the local fonts permission, or the browser's own text); the mockup. No build before his answers.
