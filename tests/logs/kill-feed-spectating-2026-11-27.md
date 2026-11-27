@@ -81,7 +81,7 @@ From the Mac copy of `valve/resource/TrackerScheme.res` (an older build than his
 
 **When they're in:** Claude redoes the mockup at his resolution with the edge-forced text, and shows a crop of his screenshot beside the viewer's own at 100%, with no scaling of either, so the size, the position, the row step and the letter shapes compare pixel for pixel. Then the size basis (part 2) and the feed's first row (part 1) are fixed from them. No build before (Sujan, 27 Nov 2026).
 
-## The build, once answered
+## The build, once answered (the first plan; replaced by "The build plan" at the end)
 
 One branch from origin/main, one pull request, as 0.28.0 (a visible batch across the HUD), with a headless check that fails on 0.27.6 and passes after: at most 4 feed rows; chat and radio lines in a POV demo; spectators one per line; the spectator bars while following a player in an HLTV demo; the names over a full whiteout. Then the nine release checks (16 minutes on 0.27.6) and screenshots on `screenshots/0.28.0`. The wallbang labels don't change, so no comparison against main on the 88 demos beyond the release checks.
 
@@ -197,3 +197,44 @@ The same moments reached five ways in 0.27.6 (opened fresh; from R10; from later
 ### What's next
 
 Sujan: the Glock's animation (bursts shown where the demo proves them, or `shoot3` always, as the game); the text renderer (FreeType with the player's own Verdana through the local fonts permission, or the browser's own text); the mockup. No build before his answers.
+
+## Sujan's decisions on #71 (27 Nov 2026)
+
+1. The Glock: the burst animation (`shoot`) only where three of one player's shots come in the same tenth of a second; the single-shot animation (`shoot3`) everywhere else; the sound unchanged, one shot per burst.
+2. The text: the browser's own (the "fallback" rows of `docs/proposed/kill-feed-spectating-compare.png`); FreeType with the player's own Verdana kept as an opt-in for later (IDEAS.md, "Kept for later").
+3. Sizes and scaling: **POV mode**'s HUD 28% larger (600 lines, not 768), the kill feed and spectator bars by the view's height instead of **Interface size**, the bars 64 of 480 lines; drawn at the next whole size with no smoothing, then shrunk with smoothing; **Interface size** still sizes the Tab scoreboard.
+4. The bars' clock icon as dim as the game's (about 10% under the file's colours), fixed in the build.
+5. The review zip's demo, `sk-vs-navi-dhwinter2011-1111261019-de_train.dem`: byte for byte the test demo (SHA-256 `ddd178a207efa59d506bf5b4d298eca7b75768d4e6b42f78fa60cd10030d9243`, 40,049,341 bytes, read straight from the zip; the same in `~/code/cs16-data/test-demos` and `tests/demos-manifest.md`; the repo keeps no demos). Nothing deleted.
+
+How bursts arrive, for decision 1 (all 81 test demos with Glock fire): of 1,460 three-shot groups, 1,024 come in one frame, 1,415 within 0.12 s (one frame or two neighbouring ones), 1,432 within 0.25 s, none over 0.30 s; three single shots need at least 0.30 s.
+
+## The build plan (27 Nov 2026, waiting for Sujan's approval)
+
+Three pull requests, each from origin/main (the third stacked on the second), each with its own version, CHANGELOG entry, `LIMITS.md` update, by-eye lines, screenshots branch and one run of the nine release checks (about 16 minutes; asked before each run).
+
+**PR 1, 0.27.7: the Glock, the POV radar dots, the scoreboard's spectators** (small, independent of the HUD layer)
+- The Glock (`src/players3d.js`, `vmAnim` and `povVmAnim`): for `v_glock18.mdl`, `shoot` when the shot is one of three of that player's Glock shots within 0.12 s, else `shoot3`; the other guns keep today's turns. In **POV mode**, his own shots by the same rule, and an animation his game recorded still wins.
+- The POV radar's dots 2 of the radar's 128 units instead of 4, the marks above, below and the bomb's cross halved with them (`drawPovRadar`).
+- The Tab scoreboard's spectators one per line, a line under their heading (`showScoreboard`, `src/app.css`).
+- Checked: a headless script on SK vs Na`Vi, Train, DreamHack Winter 2011, R1, failing on 0.27.6: starix's animation at 0:59 to 0:55 `shoot3` on every shot, at 0:37 to 0:26 `shoot` on the bursts and `shoot3` at 0:32; on the GP Tourney POV (Team Guardians vs Lanka Dahan, Mirage, 25 Oct 2026) the dot size and the spectators' lines.
+
+**PR 2, 0.28.0: the HUD layer, the kill feed and the spectator bars in the game's look**
+- A new file, `src/hud.js` (in the 3D view's script; `build.py` and "Where the code is" in `AGENTS.md`): the layer in 800x600 units (600 high, as wide as the view's shape), drawn at the next whole size with no smoothing, then shrunk to the view with smoothing (directly at whole sizes); text and bars on `#spec3`, icons added onto the picture on `#hud3`; redrawn only when what it shows changes.
+- Text: the browser's Verdana Regular, 12 px (EngineFont) and 11 px (Default), 1 px between letters, edges cut at half, the 1-px smear, a 1-px black shadow for EngineFont only.
+- Kill feed, in 3D (every camera): 4 rows, 6 s each, rows 20 apart, the first at 80 (spectating, every HLTV demo, dead in POV) or 42 (alive in POV), ending 15 from the right edge, 6 between the names and the icons, the game's team colours, the player's own icons at their size, tinted 255 80 0 (team kills 10 240 10) and added onto the picture; the names readable over a full flashbang white, the icons gone in it.
+- Spectator bars, while following a player in an HLTV demo (**Player's eyes**, **Behind player**) and while he spectates in a POV demo: 80 units each, black at 196 of 255; Counter-Terrorists : n and Terrorists : n, the divider, Spectators n, the clock with the player's `valve/gfx/vgui/800_timer.tga` at 90% (the folder pick reads it from now on); the followed player's name and health at the bottom; his money when he's dead in a POV demo. While they're up: no name box, no header score, the round pill "Round N" alone, the camera buttons under the top bar, the bottom-left strip above the bottom bar.
+- **POV mode**'s HUD, plant bar and radar on the 600-line basis (28% larger), sprites unsmoothed.
+- Checked: a headless script on SK vs Na`Vi, Train at demo 1382.0 s, 800x600: the bars, rows, gaps and icons where his shot has them (within 1 px; the letters are the browser's, 1 to 2% narrower); at 1440x900 and 2560x1440 the scale and even strokes; free camera without bars; the GP Tourney POV's HUD size. The by-eye line **Flashbangs (0.26.30)** changes (the names over the white).
+
+**PR 3, 0.28.1: chat and radio lines** (on PR 2's layer)
+- The reader (`src/demo.js`) also keeps the radio text (TextMsg to the radio, `#Game_radio`: who and the phrase); only POV demos carry it. The chat (SayText) it already keeps; server and plugin lines stay out (his answer (d)).
+- The words from the player's own `cstrike_english.txt`; yellow 255 179 0, the sender's name in his team's colour where the game's text asks for it.
+- EngineFont, from 24 units in, the first line's capitals at 437 while spectating (his shot) and at about 430 while alive in POV (his YouTube POV, 71.6%); up to 5 lines, the oldest leaving every 5 s, readable over a full flashbang white.
+- Checked: `reader_compare.mjs` (only the radio text added), radio lines at known moments of the GP Tourney POV, dead players' all-chat in SK vs Na`Vi, Train.
+
+**Questions with the plan**
+- (1) "The same tenth of a second": one frame only (1,024 of the 1,460 bursts) or within 0.12 s (1,415). Recommended: 0.12 s.
+- (2) The 2D view keeps today's kill feed (the game's look belongs to the game's picture). Recommended: yes.
+- (3) The kill feed in the free camera in the game's look, without the bars (the bars only while following, decided 27 Nov 2026). Recommended: yes.
+
+When Batch B adds blood marks and scorch marks on walls, they're drawn from the moment, as everything else, so seeking keeps rebuilding them.
