@@ -113,7 +113,7 @@ PR 3 of 3 of the plan Sujan approved on 28 Nov 2026 (`tests/logs/kill-feed-spect
 ### How it was tested
 - `tests/chat_check.py` (new) on SK vs Na`Vi, Train, DreamHack Winter 2011, the GP Tourney POV (Team Guardians vs Lanka Dahan, Mirage, 25 Oct 2026) and Sujan's Korfez POV: 26 of 26 pass, fails on 0.28.0; the strip measured clear of the name at 800x600, 1000x700 and 900x560.
 - `reader_compare.mjs` on 13 demos (9 POV, 4 HLTV): identical but for the new radio list and the chat lines' name and team. `hud_check.py` (the strip line updated, Theatre mode's side panel added; 27 of 27) and `pov_mockup_round_check.py` pass.
-- The nine release checks: see `tests/logs/0.28.1.md` (full log).
+- The nine release checks and `chat_check.py` pass (`ground_truth_check.py`: 246 kills and 52 scores and K-D on 64 demos, 0 mismatches, 10 known gaps; `people_check.py` 94 of 94); 544 s. Full log: `tests/logs/0.28.1.md`.
 
 ### Discussed, not changed
 - Server and plugin lines, and the game's own "changed name to" line, stay out (Sujan's answer (d) of 27 Nov 2026).
