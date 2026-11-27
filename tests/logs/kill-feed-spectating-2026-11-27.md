@@ -37,6 +37,8 @@ Read with a copy of `src/demo.js` that also keeps every TextMsg:
 | Match 1 CT (public server, de_barcelona, 27 Mar 2025, POV) | dead all-chat 14, all-chat 2, plugin 289, `%s` 30 | 1,246 | 659 |
 | `match-3_css_cache_00-23-35_28-07-2022.dem` (POV) | plugin 513, `%s` 11 | 264 | 217 |
 
+Correction (28 Nov 2026, 0.28.1, `tests/logs/0.28.1.md`): the radio text column counts each line twice (the probe kept both of the reader's passes): 599, 623 and 132 lines. The other columns are right.
+
 So HLTV demos carry dead players' all-chat and the server's lines, but no team chat and no radio text, though they have the radio sounds; POV demos carry the recorder's team chat, spectator chat and his team's radio text. The reader keeps SayText today (`chat`) but no radio text.
 
 ## Plan, part by part
