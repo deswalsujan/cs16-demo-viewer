@@ -9,9 +9,11 @@ Exit code 0 = pass. Fails on 0.27.7 (no bars while following, 5 rows in 3D, the 
 1. SK vs Na`Vi at demo 1382.0 s (R9 0:31, after markeloff on RobbaN), Player's eyes on Na`Vi Zeus /A/, Vanilla, the
    3D view 800x600 at 1 device pixel a CSS pixel, against what Sujan's 800x600 shot of his game has
    (docs/reference/zeus-r9/800x600/20261127163514_1.jpg, measured in the log, 5): the bars 0 to 79 and 520 to 599;
-   4 kill feed rows, capitals at 83, 103, 123, 143; each victim's last letter at 783; the red names' ink against the
-   shot's (the side held to the edge within 1 px, the other within 2% of the name, the browser's letters being 1 to
-   2% narrower); the top bar's lines ending at 677, capitals at 20 and 36; the bottom name's capitals at 562, centred.
+   4 kill feed rows, each name's first ink row where his shot has it; each victim's last letter at 783; the red names'
+   ink against the shot's (the side held to the edge within 1 px, the other within 4% of the name: R6's letters,
+   Sujan's choice of 28 Nov 2026, run 1.8% narrow in the feed on average and 3.5% on Na`Vi starix,
+   tests/logs/hud-text-variants-2026-11-28.md); the top bar's lines ending at 677, capitals at 20 and 36; the bottom
+   name centred at his height; every printable character drawn with ink at both sizes (R6 keeps every letter whole).
 2. The same at 1440x900 (1.5 device pixels a unit) and 2560x1440 (2.4): the bars and rows where the scale puts them, and
    even strokes: each run of a name's ink across a row weighs the scale times its weight at 800x600 (within a third of
    a pixel), where the nearest pixel would make 1-unit strokes 1 or 2 pixels.
@@ -154,10 +156,14 @@ with sync_playwright() as p:
         if not his[i] or not r['red']: ok = False; det.append((i, 'no red name')); continue
         hs, us = his[i], r['red']
         width = hs[1] - hs[0] + 1
-        if i in (0, 2): good = abs(us[1] - hs[1]) <= 1 and abs(us[0] - hs[0]) <= max(1, round(width * 0.02))
+        if i in (0, 2): good = abs(us[1] - hs[1]) <= 1 and abs(us[0] - hs[0]) <= max(1, round(width * 0.04))
         else: good = abs(us[1] - hs[1]) <= max(1, round(width * 0.03)) + 2 and abs(us[0] - hs[0]) <= max(1, round(width * 0.03)) + 3
         det.append((i + 1, 'his', hs, 'ours', us)); ok = ok and good
-    check("800x600: the red names' ink against his shot (victims within 1 px at the edge and 2% of the name; killers within the CT victim's narrower letters)", ok, det)
+    check("800x600: the red names' ink against his shot (victims within 1 px at the edge and 4% of the name; killers within the CT victim's letters)", ok, det)
+    G = ev(pg, r"""(() => { if (typeof hudMask !== 'function') return null; const empty = [];
+      for (const f of [HUD_EF, HUD_DF]) for (let c = 33; c < 127; c++) { const ch = String.fromCharCode(c), m = hudMask(ch, f); if (!(m.inkR >= m.inkL)) empty.push(f.name + ch); }
+      return empty; })()""")
+    check('every printable character has ink in the feed and the bars (R6 keeps every letter whole)', G == [], G)
     check('800x600: top bar lines end at 677 (within 1 px), capitals at 20 and 36', L['l1']['top'] is not None and L['l2']['top'] is not None and abs(L['l1']['right'] - 677) <= 1 and abs(L['l2']['right'] - 677) <= 1 and L['l1']['top'] == 20 and L['l2']['top'] == 36, (L['l1'], L['l2']))
     bn = L['bottom']
     check('800x600: the bottom name centred and at his height (his ink 330 to 469)', bn['top'] is not None and abs(bn['top'] - hisb['top']) <= 1 and abs((bn['left'] + bn['right']) / 2 - (hisb['left'] + hisb['right']) / 2) <= 1.5, (bn, hisb))

@@ -9420,35 +9420,61 @@ function hudOn(g, f) { g.save(); g.setTransform(1, 0, 0, 1, 0, 0); g.globalAlpha
 // ---------------- the game's text ----------------
 // The kill feed (and the chat, 0.28.1) are TrackerScheme's EngineFont, the spectator bars ClientScheme's Default: Verdana
 // at weight 600 with no antialias line in any band, EngineFont with a drop shadow (docs/reference/game-schemes). At
-// 800x600, Windows draws weight 600 as Verdana Regular made bold, each letter 1 px wider and smeared 1 px to the right,
-// at the em size the scheme's height gives (EngineFont 15: 12 px, Default 13: 11 px); measured on his 800x600 shot
-// (tests/logs/kill-feed-spectating-2026-11-27.md, 5). The browser's own Verdana (Sujan, 27 Nov 2026: the browser's text,
-// the "fallback" rows of docs/proposed/kill-feed-spectating-compare.png): 1 px between letters, every pixel's edge cut
-// fully on or off at half, the 1-px smear, then for EngineFont the 1-px black shadow right and down. The letters are the
-// browser's, so lines come out 1 to 2% narrower than the game's.
+// 800x600, Windows draws weight 600 as Verdana Regular made bold, each letter 1 px wider and smeared 1 px to the right
+// (tests/logs/kill-feed-spectating-2026-11-27.md, 5). The browser's own Verdana, drawn as R6 (Sujan, 28 Nov 2026, on #73;
+// tests/logs/hud-text-variants-2026-11-28.md): each letter drawn on its own at a whole pixel, its advance rounded to whole
+// pixels, 1 px between letters; of each letter the pixels the browser's smoothing covers most are kept, as many as 0.8
+// times its smoothed coverage adds up to, so every pixel is fully on or off and no letter or thin part vanishes however
+// the browser smooths; then the 1-px smear, and for EngineFont the 1-px black shadow right and down. The feed at 12.34 px,
+// the em the scheme's height gives (15 / 1.2153), the bars at 11 px. Against his 800x600 shot: the bars within 0.2 px of
+// the game's widths, the feed 1.8% narrower; strokes 2.26 and 2.39 px against the game's 2.15. Up to the first build of
+// 0.28.0 (#73 before 28 Nov 2026): the whole line drawn at once at 12 px with 1 px between letters, every pixel cut at half
+// and smeared, which left strokes 2 or 3 px wide by where each letter fell and letters touching, 20% heavier.
 const HUD_FACE = 'Verdana, "DejaVu Sans", "Liberation Sans", sans-serif';
-const HUD_EF = { css: `400 12px ${HUD_FACE}`, shadow: true, name: 'EF' };
+const HUD_EF = { css: `400 12.34px ${HUD_FACE}`, shadow: true, name: 'EF' };
 const HUD_DF = { css: `400 11px ${HUD_FACE}`, shadow: false, name: 'DF' };
-const HUD_TXT = new Map();
+const HUD_KEEP = 0.8; // of each letter's smoothed coverage
+const HUD_TXT = new Map(), HUD_GLYPH = new Map();
 const hudMeasure = document.createElement('canvas').getContext('2d');
-const HUD_LS = 'letterSpacing' in hudMeasure;
-function hudAdvance(str, f) {
-  const g = hudMeasure; g.font = f.css;
-  if (HUD_LS) { g.letterSpacing = '1px'; return g.measureText(str).width; }
-  let w = 0; for (const ch of str) w += g.measureText(ch).width + 1; return w;
+// one letter: its advance (rounded) and the pixels it keeps, as offsets in a canvas 40 high with the letter at x 4,
+// its baseline at 20
+function hudGlyph(ch, f) {
+  const key = f.name + '|' + ch;
+  let G = HUD_GLYPH.get(key);
+  if (G) return G;
+  hudMeasure.font = f.css;
+  const aw = hudMeasure.measureText(ch).width, gw = Math.ceil(aw) + 8, h = 40;
+  const c = document.createElement('canvas'); c.width = gw; c.height = h;
+  const g = c.getContext('2d'); g.font = f.css; g.fillStyle = '#fff'; g.textBaseline = 'alphabetic'; g.fillText(ch, 4, 20);
+  const d = g.getImageData(0, 0, gw, h).data, al = []; let sum = 0;
+  for (let k = 0; k < gw * h; k++) { const a = d[k * 4 + 3]; if (a) { al.push([a, k]); sum += a; } }
+  al.sort((p, q) => q[0] - p[0]);
+  const n = Math.min(al.length, Math.round(sum / 255 * HUD_KEEP)), keep = [];
+  for (let k = 0; k < n; k++) keep.push([al[k][1] % gw - 4, Math.floor(al[k][1] / gw)]);
+  G = { adv: Math.round(aw) + 1, keep };
+  if (HUD_GLYPH.size > 2000) HUD_GLYPH.clear();
+  HUD_GLYPH.set(key, G);
+  return G;
 }
+function hudAdvance(str, f) { let w = 0; for (const ch of str) w += hudGlyph(ch, f).adv; return w; }
 // the white mask of a text: { cv, ox, oy (where the text's origin sits in it), adv, inkL, inkR (ink columns from the origin) }
 function hudMask(str, f) {
   const adv = hudAdvance(str, f), w = Math.ceil(adv) + 8, h = 40, ox = 3, oy = 6;
+  const A = new Uint8Array(w * h);
+  let x = 0;
+  for (const ch of str) {
+    const G = hudGlyph(ch, f);
+    for (const [dx, y] of G.keep) { const X = ox + x + dx, Y = y - 20 + oy + 14; if (X >= 0 && X < w && Y >= 0 && Y < h) A[Y * w + X] = 1; }
+    x += G.adv;
+  }
   const cv = document.createElement('canvas'); cv.width = w; cv.height = h;
-  const g = cv.getContext('2d'); g.font = f.css; g.fillStyle = '#fff'; g.textBaseline = 'alphabetic';
-  if (HUD_LS) { g.letterSpacing = '1px'; g.fillText(str, ox, oy + 14); }
-  else { let x = ox; for (const ch of str) { g.fillText(ch, x, oy + 14); x += g.measureText(ch).width + 1; } }
-  const id = g.getImageData(0, 0, w, h), d = id.data;
-  for (let i = 3; i < d.length; i += 4) d[i] = d[i] >= 128 ? 255 : 0;
-  for (let j = 0; j < h; j++) for (let i = w - 1; i > 0; i--) { const o = (j * w + i) * 4 + 3; if (d[o - 4]) d[o] = 255; }
+  const g = cv.getContext('2d'), id = g.createImageData(w, h), d = id.data;
   let inkL = w, inkR = -1;
-  for (let j = 0; j < h; j++) for (let i = 0; i < w; i++) { const o = (j * w + i) * 4; if (d[o + 3]) { d[o] = d[o + 1] = d[o + 2] = 255; inkL = Math.min(inkL, i); inkR = Math.max(inkR, i); } }
+  // the 1-px smear: each pixel also takes its left neighbour's ink
+  for (let j = 0; j < h; j++) for (let i = 0; i < w; i++) {
+    if (!(A[j * w + i] || (i > 0 && A[j * w + i - 1]))) continue;
+    const o = (j * w + i) * 4; d[o] = d[o + 1] = d[o + 2] = d[o + 3] = 255; inkL = Math.min(inkL, i); inkR = Math.max(inkR, i);
+  }
   g.putImageData(id, 0, 0);
   return { cv, ox, oy, adv, inkL: inkL - ox, inkR: inkR - ox };
 }

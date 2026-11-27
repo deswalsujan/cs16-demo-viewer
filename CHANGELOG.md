@@ -101,22 +101,25 @@ What changed in the viewer, newest first. The version shows in the viewer's **He
 PR 2 of 3 of the plan Sujan approved on 28 Nov 2026 (`tests/logs/kill-feed-spectating-2026-11-27.md`, "The build plan"; `DECISIONS.md`), built on `wip/hud-kill-feed-bars` from origin/main (0.27.7, #72).
 
 ### Changed
-- The kill feed in 3D, in the game's look, in every camera, HLTV and POV demos alike: up to 4 rows (5 up to 0.27.7), no box, the names in the game's team colours in its Verdana with hard edges and a 1-px shadow, the player's own gun and headshot icons at their size, tinted orange (green for a team kill) and added onto the picture; laid out as Sujan's 800x600 shot of SK vs Na`Vi, Train, DreamHack Winter 2011 has it: rows 20 apart just under the top bar (from near the top while he plays in **POV mode**), each ending whole near the right edge. The 2D view keeps the viewer's own feed.
+- The kill feed in 3D, in the game's look, in every camera, HLTV and POV demos alike: up to 4 rows (5 up to 0.27.7), no box, the names in the game's team colours and its Verdana with a 1-px shadow, the player's own gun and headshot icons at their size, tinted orange (green for a team kill) and added onto the picture; laid out as Sujan's 800x600 shot of SK vs Na`Vi, Train, DreamHack Winter 2011 has it: rows 20 apart just under the top bar (from near the top while he plays in **POV mode**), each ending whole near the right edge. The 2D view keeps the viewer's own feed.
 - The spectator bars, while following a player in an HLTV demo (**Player's eyes**, **Behind player**; not the free camera) and while he spectates in a POV demo: 64 of 480 lines each (40 up to 0.27.7), the score on the Counter-Terrorists and Terrorists lines, a divider, Spectators n (his money in a POV demo), the clock with the player's own timer icon, the followed player's name and health at the bottom. While they're up, the name box and the header's score go (the header keeps it in Theatre mode), the round pill shows "Round N" alone, the camera buttons sit under the top bar, and the strip at the bottom left and the notes above the bottom bar.
 - The kill feed's names stay readable over a full flashbang white; its icons go, as the game's do.
 - **POV mode**'s HUD, plant bar and radar on the same basis: 28% larger, unsmoothed.
+- The text of the feed and the bars (Sujan's choice of 28 Nov 2026, R6): the browser's own Verdana, each letter on a whole pixel keeping its most covered pixels (0.8 of its smoothed coverage, so every pixel is fully on or off and no letter or thin part vanishes), then the 1-px smear, 1 px between letters; the feed at 12.34 px, the size the game's scheme gives. The bars' text matches the game's widths within 0.2 px; the feed's names are 1.8% narrower. Not checked on Windows Chrome yet.
 - The kill feed and the bars follow the view's height, not **Interface size**, which still sizes the viewer's own controls and the Tab scoreboard: laid out in the game's 800x600 units, drawn at the next whole scale with no smoothing and shrunk to the view with smoothing, so every game pixel keeps one width.
 
 ### Fixed
 - **POV mode**'s spectator bars took the score by team, not by side: the Counter-Terrorists line showed the second team's score whichever side it played.
 
 ### How it was tested
-- `tests/hud_check.py` (new) on SK vs Na`Vi, Train and the GP Tourney POV (Team Guardians vs Lanka Dahan, Mirage, 25 Oct 2026): all 24 pass, 22 fail on 0.27.7; at 800x600 the bars, rows, right edge and top bar within 1 px of his shot; even strokes at 1.5x and 2.4x.
+- `tests/hud_check.py` (new) on SK vs Na`Vi, Train and the GP Tourney POV (Team Guardians vs Lanka Dahan, Mirage, 25 Oct 2026): all 25 pass, 23 fail on 0.27.7; at 800x600 the bars, rows, right edge and top bar within 1 px of his shot; even strokes at 1.5x and 2.4x.
+- The text chosen from 243 ways of drawing it, measured against his shot after his JPEG's own compression (`tests/text_variants/`; `tests/logs/hud-text-variants-2026-11-28.md`).
 - `pov_feedback_check.py` and `pov_mockup_round_check.py` updated for the new layer; both pass.
 - The nine release checks: waiting for Sujan's go. Full log: `tests/logs/0.28.0.md`.
 
 ### Discussed, not changed
 - The game's own letters through FreeType with the player's Verdana: kept for later (IDEAS.md, **The game's letters through FreeType, as an opt-in**).
+- The kill feed's icons and the HUD's colours (Sujan, 28 Nov 2026): unchanged. His icons turn white over the bright sky, as ours do added onto the same background; through his JPEG the colours match his shot once the text is as light as the game's.
 - In Theatre mode the side panel covers the feed when it slides in: a question for Sujan (IDEAS.md, **The kill feed and the spectating screen in the game's look**).
 - Chat and radio lines: 0.28.1.
 
