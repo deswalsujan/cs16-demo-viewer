@@ -109,9 +109,9 @@ Sujan's brief of 28 Nov 2026, after #74 merged (`DECISIONS.md`), built on `wip/h
 - The kill feed's, chat's and spectator bars' text is drawn at the view's own screen size, as sharp as the rest of the viewer at any window size; up to 0.28.1 it was made at 800x600 and enlarged, which looked blurry and blocky (Sujan, 28 Nov 2026). The same 800x600 layout, font, colours and shadow; the smear is one unit wide at every size, so the bars weigh within 4% of 0.28.1's and the feed and chat 4 to 7% lighter. At 800x600 on a 1x screen nothing changes. The weapon, headshot and clock icons are drawn as before.
 
 ### How it was tested
-- `hud_check.py` (32 of 32: the letters made at the view's scale with the same weight; "Spectators 2646" and 9999 at 800x600 and 1512x982) and `chat_check.py` (26 of 26) pass.
+- `hud_check.py` (31 of 31: the letters made at the view's scale with the same weight; "Spectators 2646" and 9999 at 800x600 and 1512x982) and `chat_check.py` (26 of 26) pass.
 - Screenshots old and new at full screen on the Mac (1512x982 at 2x) and 800x600 at 2x, Sweden vs Poland, Nuke, R1 C4 0:30 (`screenshots/0.28.2`).
-- The eleven release checks: after Sujan's look at the screenshots and his go. Full log: `tests/logs/0.28.2.md`.
+- The eleven release checks pass (`ground_truth_check.py`: 246 kills and 52 scores and K-D on 64 demos, 0 mismatches, 10 known gaps; `people_check.py` 94 of 94); 553 s. Full log: `tests/logs/0.28.2.md`.
 
 ### Discussed, not changed
 - The demo has no moment with 264 spectators (its counts run from 114 to 2,735, with 2640 to 2649 among them), so the "Spectators 264" Sujan saw was a four-digit count missing its last digit.
