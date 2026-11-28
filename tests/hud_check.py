@@ -2,7 +2,8 @@
 600-line basis (tests/logs/kill-feed-spectating-2026-11-27.md, "The build plan", PR 2; tests/logs/0.28.0.md).
 
 Usage:  HALF_LIFE_DIR=~/code/cs16-data/Half-Life DEMO_DIRS=~/code/cs16-data/test-demos python3 hud_check.py [page.html] [shots dir]
-Needs SK vs Na`Vi, Train, DreamHack Winter 2011 (sk-vs-navi-dhwinter2011-1111261019-de_train) and the GP Tourney POV
+Needs SK vs Na`Vi, Train, DreamHack Winter 2011 (sk-vs-navi-dhwinter2011-1111261019-de_train), Sweden vs Poland, Nuke, 8 Apr
+2009 (53.47.1132498-0904082305-de_nuke, with de_nuke) and the GP Tourney POV
 (Team Guardians vs Lanka Dahan, Mirage, 25 Oct 2026; forgotten-de_mirage-2026), with de_train and de_mirage_32.
 Exit code 0 = pass. Fails on 0.27.7 (no bars while following, 5 rows in 3D, the names under a flashbang's white).
 
@@ -16,10 +17,14 @@ Exit code 0 = pass. Fails on 0.27.7 (no bars while following, 5 rows in 3D, the 
    sizes; i, j, ! ? : ; keep the empty row between dot and stem (no pixel half covered) where the browser's own smoothed
    drawing has one (Sujan, 28 Nov 2026: Na`Vi read Na`Vf in the hard-edged text he dropped the same day).
 2. The same at 1440x900 (1.5 device pixels a unit) and 2560x1440 (2.4): the bars and rows where the scale puts them, and
-   even strokes: each run of a name's ink across a row weighs the scale times its weight at 800x600 (within a third of
-   a pixel), where the nearest pixel would make 1-unit strokes 1 or 2 pixels.
+   the letters made at the view's own scale, drawn one to one (0.28.2; Sujan, 28 Nov 2026: enlarged from 800x600 they
+   looked blurry), with the same weight: a row through a name's capitals carries the scale times its 800x600 ink, within
+   15%. Up to 0.28.1 the letters were made at 800x600 and enlarged ("even strokes" checked that).
 3. The free camera: the game's kill feed, no bars, the header's score back. Theatre mode with the side panel out (0.28.1):
    the feed's rows end left of the panel, none of the feed under it.
+3b. The top bar's right column (0.28.2; Sujan, 28 Nov 2026): Sweden vs Poland, Nuke, 8 Apr 2009, at R1 C4 0:30 (demo
+   24.0 s), "Spectators 2646", at 800x600 and 1512x982: the whole count drawn and no ink of the bar's text closer than
+   16 units to the right edge, the kill feed's margin; the same with the count forced to 9999.
 4. The GP Tourney POV: alive at R20 1:22, the radar 128 units (128 px at 600 lines; 100 up to 0.27.7) and the feed's
    first row at 42; dead at R5 with the bomb down, the bars with his money; R3 1:17 at full flashbang white with the
    whiteout ticked, the names drawn over the white, the icons added onto it.
@@ -34,6 +39,7 @@ shots = sys.argv[2] if len(sys.argv) > 2 else None
 hl, inside, outside = demo_dirs.collect()
 SK = demo_dirs.find('sk-vs-navi-dhwinter2011-1111261019-de_train', inside, outside).lower()
 POVD = demo_dirs.find('forgotten-de_mirage-2026', inside, outside).lower()
+SWP = demo_dirs.find('53.47.1132498-0904082305-de_nuke', inside, outside).lower()
 HL = demo_dirs.stage(outside)
 html = open(page, encoding='utf-8').read()
 i = html.rindex('})();')
@@ -222,16 +228,17 @@ with sync_playwright() as p:
           let capTop = null; for (let y = Math.floor(80 * k); y < Math.floor(100 * k) && capTop == null; y++) for (let x = W / 2; x < W; x++) { const c = __pm(S, x, y); if (c[3] > 128 && (__isRed(c) || __isBlue(c))) { capTop = y; break; } }
           return { k, size: [W, S.h], barEnd, capTop, rows: __rows().length }; })()""")
         prof = run_profile(87)
-        # each run of ink: its weight against 800x600's, times the scale; matched in order from the right edge
-        a, c = base['runs'][::-1], prof['runs'][::-1]
-        ratios = [round(c[j][1] / a[j][1], 3) for j in range(min(len(a), len(c))) if a[j][1] > 0.5]
+        # the row's whole ink against 800x600's times the scale (the letters drawn at this size, not enlarged)
         k = G['k']
-        print(f'{vw}x{vh}:', json.dumps(G), 'runs', len(a), len(c), 'weights / 800x600', ratios)
+        tot0, tot = sum(r[1] for r in base['runs']), sum(r[1] for r in prof['runs'])
+        made = ev(pg, "(() => { const t = hudText('Terrorists : 4', HUD_DF, HUD_BASE); return { s: t.s, k: HUDP.k, h: t.cv.height }; })()")
+        print(f'{vw}x{vh}:', json.dumps(G), 'ink', round(tot0, 1), round(tot, 1), 'ratio to k times', round(tot / (k * tot0), 3) if tot0 else None, json.dumps(made))
         if shots: pg.screenshot(path=os.path.join(shots, f'sk-{vw}x{vh}-eyes.png'))
         check(f'{vw}x{vh}: the top bar ends at 80 units ({80 * k:.1f} px, within 1 px)', abs(G['barEnd'] - 80 * k) <= 1, G['barEnd'])
         want = (rows[0]['inkTop'] if rows else 82) * k
         check(f'{vw}x{vh}: the first row\'s ink from {want / k:.0f} units ({want:.1f} px, within 1 px)', G['capTop'] is not None and abs(G['capTop'] - want) <= 1, G['capTop'])
-        check(f'{vw}x{vh}: even strokes: every run of ink weighs {k:.1f} times its 800x600 weight (within 0.34 px)', len(a) == len(c) and len(ratios) > 3 and all(abs(r * a[j][1] - k * a[j][1]) <= 0.34 for j, r in enumerate(ratios)), ratios)
+        check(f'{vw}x{vh}: the letters made at the view\'s own scale ({k:.2f}) and drawn one to one, the same weight (a row through the capitals {k:.1f} times its 800x600 ink, within 15%)',
+              abs(made['s'] - round(made['k'], 2)) < 0.006 and tot0 > 0 and abs(tot / (k * tot0) - 1) <= 0.15, {'made': made, 'ratio': round(tot / (k * tot0), 3) if tot0 else None})
     pg.set_viewport_size({'width': 800, 'height': 600})
 
     # outside Theatre mode, following: the header's score hidden, the camera buttons under the top bar
@@ -252,6 +259,27 @@ with sync_playwright() as p:
       setView('2d'); await __frames(); updateHud(true); lastFeedKey = ''; updateFeed(); await __frames();
       return { t, rows3, domRows: $('feed').children.length, shown: getComputedStyle($('feed')).display !== 'none', bars: $('radar').classList.contains('bars') }; })()""")
     check('at most 4 rows in 3D; 2D keeps the viewer\'s own kill feed (5 rows), no bars', not F2.get('none') and F2['rows3'] == 4 and F2['shown'] and F2['domRows'] == 5 and not F2['bars'], F2)
+
+    # 3b. the top bar's right column, Sweden vs Poland, Nuke, R1 C4 0:30: "Spectators 2646", then forced to 9999
+    open_demo(pg, SWP)
+    ev(pg, HELPERS + '0')
+    def column(vw, vh, force=None):
+        pg.set_viewport_size({'width': vw, 'height': vh})
+        return ev(pg, f"""(async () => {{ setView('3d'); setTheatre(true); setVanilla(false); const t = 24.0;
+          {'window.__va = viewersAt; viewersAt = () => ' + str(force) + ';' if force else ''}
+          selected = Object.keys(D.slots).map(Number).find((e) => {{ const s = playerState(e, t); return s && s.state > 0; }});
+          playing = false; setCam('eyes', true); T = t; await __frames(); await new Promise((r) => setTimeout(r, 800)); await __frames();
+          const S = __px('spec3'), k = S.h / 600, isBase = (c) => c[0] > 150 && c[1] > 90 && c[1] < 200 && c[2] < 60;
+          let right = -1; for (let y = 0; y < Math.floor(80 * k); y++) for (let x = Math.floor(S.w / 2); x < S.w; x++) if (isBase(__pm(S, x, y))) right = Math.max(right, x);
+          const out = {{ count: viewersAt(t), k, W: S.w, right, margin: +((S.w - 1 - right) / k).toFixed(2), colRight: HUDB.colRight, Wu: HUDP.Wu, shift: HUDB.shift }};
+          {'viewersAt = window.__va;' if force else ''}
+          return out; }})()""")
+    for vw, vh, force in ((800, 600, None), (1512, 982, None), (800, 600, 9999), (1512, 982, 9999)):
+        C = column(vw, vh, force)
+        if shots: pg.screenshot(path=os.path.join(shots, f'swp-{vw}x{vh}-{C["count"]}.png'))
+        check(f'{vw}x{vh}: "Spectators {C["count"]}" inside the view, no ink of the bar\'s text within 16 units of the right edge (the kill feed\'s margin)',
+              C['right'] > 0 and C['margin'] >= 16 - 1 / C['k'] and C['colRight'] <= C['Wu'] - 17 + 1e-6, C)
+    pg.set_viewport_size({'width': 800, 'height': 600})
 
     # 4. the GP Tourney POV
     pg.set_viewport_size({'width': 800, 'height': 600})
