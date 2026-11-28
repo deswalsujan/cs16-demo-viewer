@@ -115,7 +115,8 @@ Sujan's answers of 28 Nov 2026 on `tests/logs/scope-reload-scores-2026-11-28.md`
 ### How it was tested
 - The scope on all 88 test demos, on the AWP shots whose spread proves them scoped: HLTV demos 2,727 shown scoped in 0.28.2, 2,732 now, 1 lost (kHRYSTAL, SK vs AGAiN, Train, Arbalet Cup Europe 2009, R9 0:30, where his clicks don't add up under either rule) and 6 gained; POV demos 905 and 905. The first build, the rule on clicked scopes too, lost 17 (warm-ups, scoped-in players still slowing down, position jumps) and was narrowed. markeloff's R25 1:02 and 0:44 fixed.
 - `hud_check.py` (34 of 34; three new checks of the score at R16 1:35, R31 1:34 and R32 1:41 of SK vs Na`Vi, Train; "no header score" while following became "the header's score"). His Glock reloads: 4 in Match 2's T file and 3 in Match 5, each `clipout1`, `clipin1` and `sliderelease1` once at the model's frames; every gun's sound found in the picked folder.
-- Screenshots of the header, top bar and Tab at R16 1:35, R31 1:34 and R32 1:41, and of R25 0:44 on markeloff, 0.28.2 against 0.28.3 at 1512x982 (`screenshots/0.28.3`). Full log: `tests/logs/0.28.3.md`.
+- Screenshots of the header, top bar and Tab at R16 1:35, R31 1:34 and R32 1:41, and of R25 0:44 on markeloff, 0.28.2 against 0.28.3 at 1512x982 (`screenshots/0.28.3`).
+- The eleven release checks, 588 s: ten pass; `demo_search_check.py` failed one item on the load card in the full run and passed in full alone on the same commit (`ground_truth_check.py`: 246 kills and 52 scores and K-D on 64 demos, 0 mismatches, 10 known gaps; `people_check.py` 94 of 94). Full log: `tests/logs/0.28.3.md`.
 
 ### Discussed, not changed
 - Sujan's first rule for the scope (every shot closes it, only a click opens it) would show 74 of 482 proven-scoped AWP shots unscoped in 11 test demos, since players fire from the scope that comes back by itself; he chose the speed rule (`tests/logs/scope-reload-scores-2026-11-28.md`).
