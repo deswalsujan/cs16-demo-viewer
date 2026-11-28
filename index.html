@@ -848,7 +848,7 @@ addEventListener('resize', () => { if (applyUiSize()) dispatchEvent(new Event('u
         </div>
         <h2 class="hpart">About</h2>
         <div class="habout">
-          <p>CS 1.6 Demo Viewer, version 0.28.1. It plays HLTV and POV demos in the browser, from your own Half-Life folder; nothing leaves your computer.</p>
+          <p>CS 1.6 Demo Viewer, version 0.28.2. It plays HLTV and POV demos in the browser, from your own Half-Life folder; nothing leaves your computer.</p>
           <p>A map with no radar picture: drop its overview, the .bmp and .txt pair from cstrike\overviews, anywhere on the page.</p>
           <p class="hlinks"><a href="https://github.com/deswalsujan/cs16-demo-viewer/blob/main/CHANGELOG.md" target="_blank" rel="noopener">What's new</a> · <a href="https://github.com/deswalsujan/cs16-demo-viewer" target="_blank" rel="noopener">Source on GitHub</a> · <a href="https://github.com/deswalsujan/cs16-demo-viewer/issues/new/choose" target="_blank" rel="noopener">Report a bug</a></p>
           <p class="hdbg"><button class="btn" id="bDebug" type="button" title="Copies details for a bug report: browser, demo name, what loaded, errors. No file contents.">Copy debug info</button><span>Paste it into your bug report: it says which browser, demo and files, and any errors, with no file contents.</span></p>
@@ -961,7 +961,7 @@ addEventListener('resize', () => { if (applyUiSize()) dispatchEvent(new Event('u
         <div class="drophint">Or drop a .dem file anywhere on this page</div>
         <div class="prog" id="prog" hidden><i id="progBar"></i></div>
         <div class="msg" id="msg"></div>
-        <div class="loadfoot"><span>Version 0.28.1 · <a href="https://github.com/deswalsujan/cs16-demo-viewer" target="_blank" rel="noopener">Source on GitHub</a> · <button class="lnk" id="bHelpStart" type="button" title="The keys, the colours and marks, and about the viewer (?)">Help</button></span><button class="btn" id="bClear" type="button" title="Deletes the copies of maps, models, sounds and radar overviews this browser saved from your Half-Life folder. The folder closes until you pick it again, as on a first visit">Delete saved files</button></div>
+        <div class="loadfoot"><span>Version 0.28.2 · <a href="https://github.com/deswalsujan/cs16-demo-viewer" target="_blank" rel="noopener">Source on GitHub</a> · <button class="lnk" id="bHelpStart" type="button" title="The keys, the colours and marks, and about the viewer (?)">Help</button></span><button class="btn" id="bClear" type="button" title="Deletes the copies of maps, models, sounds and radar overviews this browser saved from your Half-Life folder. The folder closes until you pick it again, as on a first visit">Delete saved files</button></div>
       </div>
     </div>
   </section>
@@ -9406,7 +9406,9 @@ function fxWorld() {
 // scaled to the view: at a whole scale with no smoothing, otherwise drawn at the next whole scale with no smoothing and
 // shrunk to the view with smoothing ("sharp bilinear"), so every game pixel keeps one width with at most one soft screen
 // pixel at its edge. Each piece (a text, an icon, a sprite) goes through that on its own, its enlarged copy kept, so the
-// letters are made only when a text changes and a frame copies the pieces already made. POV mode's HUD, plant bar and
+// letters are made only when a text changes and a frame copies the pieces already made. The text is the exception since
+// 0.28.2: laid out in the same units, its letters are drawn at the view's own screen size, as sharp as the rest of the
+// viewer (Sujan, 28 Nov 2026: enlarged from 800x600 it looked blurry); the icons and sprites still go the first way. POV mode's HUD, plant bar and
 // radar use the same units since 0.28.0 (600 lines; 768 up to 0.27.7, so 28% larger now). Interface size no longer
 // sizes them: it sizes the viewer's own controls and the Tab scoreboard (Sujan, 27 Nov 2026).
 // The layers: the text and the bars on #spec3, over a flashbang's whiteout, so the names stay readable at full white
@@ -9456,33 +9458,45 @@ function hudOn(g, f) { g.save(); g.setTransform(1, 0, 0, 1, 0, 0); g.globalAlpha
 // build), then R6, each letter on a whole pixel keeping 0.8 of its coverage; Sujan dropped R6 the same day, since its I
 // and J merged into a box, the $ lost its bar, the # and the ! broke (its code: tests/text_variants/r6.js).
 const HUD_FACE = 'Verdana, "DejaVu Sans", "Liberation Sans", sans-serif';
-const HUD_EF = { css: `400 12.34px ${HUD_FACE}`, shadow: true, name: 'EF' };
-const HUD_DF = { css: `400 11px ${HUD_FACE}`, shadow: false, name: 'DF' };
+const HUD_EF = { css: `400 12.34px ${HUD_FACE}`, size: 12.34, weight: 400, shadow: true, name: 'EF' };
+const HUD_DF = { css: `400 11px ${HUD_FACE}`, size: 11, weight: 400, shadow: false, name: 'DF' };
+// the font at s device pixels a unit (1: the game's own 800x600 pixels)
+const hudFont = (f, s) => `${f.weight} ${f.size * s}px ${HUD_FACE}`;
 const HUD_SMEAR = 0.75;
 const HUD_TXT = new Map();
 const hudMeasure = document.createElement('canvas').getContext('2d');
 const HUD_LS = 'letterSpacing' in hudMeasure;
-function hudAdvance(str, f) {
-  const g = hudMeasure; g.font = f.css;
-  if (HUD_LS) { g.letterSpacing = '1px'; return g.measureText(str).width; }
-  let w = 0; for (const ch of str) w += g.measureText(ch).width + 1; return w;
+function hudAdvance(str, f, s = 1) {
+  const g = hudMeasure; g.font = hudFont(f, s);
+  if (HUD_LS) { g.letterSpacing = s + 'px'; return g.measureText(str).width; }
+  let w = 0; for (const ch of str) w += g.measureText(ch).width + s; return w;
 }
-// the white mask of a text: { cv, ox, oy (where the text's origin sits in it), adv, inkL, inkR (columns at least half
-// covered, from the origin) }
-function hudMask(str, f) {
-  const adv = hudAdvance(str, f), w = Math.ceil(adv) + 8, h = 40, ox = 3, oy = 6;
+// the white mask of a text drawn s device pixels to a unit (1 by default: the game's 800x600 pixels): { cv, ox, oy
+// (where the text's origin sits in it), adv, inkL, inkR (columns at least half covered, from the origin) }, all in the
+// mask's own pixels. One unit between letters and the smear exactly one unit wide (s pixels: the whole ones at three
+// quarters, the last part-pixel at its share of that), so the weight is the same at any size: against 0.28.1's enlarged
+// text at 1.5, 2, 2.4 and 3.27 device pixels a unit, the bars' ink within 4% and the feed's and chat's 4 to 7% lighter
+// (the browser's small letters carry a little more ink than its large ones); at s = 1 exactly as up to 0.28.1.
+function hudMask(str, f, s = 1) {
+  const adv = hudAdvance(str, f, s), ox = Math.ceil(3 * s), oy = Math.ceil(6 * s), w = Math.ceil(adv) + ox + Math.ceil(5 * s), h = Math.ceil(40 * s);
   const cv = document.createElement('canvas'); cv.width = w; cv.height = h;
-  const g = cv.getContext('2d'); g.font = f.css; g.fillStyle = '#fff'; g.textBaseline = 'alphabetic';
-  if (HUD_LS) { g.letterSpacing = '1px'; g.fillText(str, ox, oy + 14); }
-  else { let x = ox; for (const ch of str) { g.fillText(ch, x, oy + 14); x += g.measureText(ch).width + 1; } }
-  const id = g.getImageData(0, 0, w, h), d = id.data;
+  const g = cv.getContext('2d'); g.font = hudFont(f, s); g.fillStyle = '#fff'; g.textBaseline = 'alphabetic';
+  const base = oy + Math.round(14 * s);
+  if (HUD_LS) { g.letterSpacing = s + 'px'; g.fillText(str, ox, base); }
+  else { let x = ox; for (const ch of str) { g.fillText(ch, x, base); x += g.measureText(ch).width + s; } }
+  const id = g.getImageData(0, 0, w, h), d = id.data, K = Math.floor(s + 1e-6), part = s - K, row = new Uint8Array(w);
   let inkL = w, inkR = -1;
-  for (let j = 0; j < h; j++) for (let i = w - 1; i >= 0; i--) {
-    const o = (j * w + i) * 4;
-    // the smear, right to left so each pixel reads its left neighbour before that one is smeared
-    if (i > 0) d[o + 3] = Math.max(d[o + 3], Math.round(d[o - 1] * HUD_SMEAR));
-    d[o] = d[o + 1] = d[o + 2] = 255;
-    if (d[o + 3] >= 128) { inkL = Math.min(inkL, i); inkR = Math.max(inkR, i); }
+  for (let j = 0; j < h; j++) {
+    for (let i = 0; i < w; i++) row[i] = d[(j * w + i) * 4 + 3];
+    for (let i = 0; i < w; i++) {
+      const o = (j * w + i) * 4;
+      // the smear: each pixel takes three quarters of the ink of the K pixels to its left, as read before smearing, and
+      // of the one after them that share of it which the unit's last part-pixel has
+      let a = row[i]; for (let q = 1; q <= K && q <= i; q++) a = Math.max(a, Math.round(row[i - q] * HUD_SMEAR));
+      if (part > 0.01 && i > K) a = Math.max(a, Math.round(row[i - K - 1] * HUD_SMEAR * part));
+      d[o] = d[o + 1] = d[o + 2] = 255; d[o + 3] = a;
+      if (a >= 128) { inkL = Math.min(inkL, i); inkR = Math.max(inkR, i); }
+    }
   }
   g.putImageData(id, 0, 0);
   return { cv, ox, oy, adv, inkL: inkL - ox, inkR: inkR - ox };
@@ -9492,33 +9506,44 @@ function hudTintCv(src, rgb) {
   const g = c.getContext('2d'); g.drawImage(src, 0, 0); g.globalCompositeOperation = 'source-in'; g.fillStyle = `rgb(${rgb.join(',')})`; g.fillRect(0, 0, c.width, c.height);
   return c;
 }
-// a text in a colour, made once: the tinted letters, its shadow, and where its capitals start below the cell's top
-function hudText(str, f, rgb) {
-  const key = f.name + '|' + rgb.join(',') + '|' + str;
+// a text in a colour, made once at the view's scale (s device pixels a unit; HUDP.k, the scale hudScale set last): the
+// tinted letters and its shadow in device pixels (cv, fg, sh, ox, oy, shOff), its measures in units (adv, inkL, inkR)
+function hudText(str, f, rgb, s = HUDP.k) {
+  const sk = Math.max(0.25, Math.round(s * 100) / 100), key = f.name + '|' + sk + '|' + rgb.join(',') + '|' + str;
   let t = HUD_TXT.get(key);
   if (!t) {
     if (HUD_TXT.size > 400) HUD_TXT.clear();
-    const m = hudMask(str, f);
-    t = { ...m, fg: hudTintCv(m.cv, rgb), sh: f.shadow ? hudTintCv(m.cv, [0, 0, 0]) : null };
+    const m = hudMask(str, f, sk);
+    t = { f, cv: m.cv, ox: m.ox, oy: m.oy, s: sk, advPx: m.adv, adv: m.adv / sk, inkL: m.inkL / sk, inkR: m.inkR / sk,
+      fg: hudTintCv(m.cv, rgb), sh: f.shadow ? hudTintCv(m.cv, [0, 0, 0]) : null, shOff: Math.max(1, Math.round(sk)) };
     HUD_TXT.set(key, t);
   }
   return t;
 }
-// how far below the drawing origin's top a capital's ink (at least half covered) starts (the same for every text in a font)
+// how far below the drawing origin's top a capital's ink (at least half covered) starts, in the mask's pixels at scale s
+// (the same for every text in a font)
 const HUD_CAP = {};
-function hudCapTop(f) {
-  if (HUD_CAP[f.name] != null) return HUD_CAP[f.name];
-  const m = hudMask('H', f), d = m.cv.getContext('2d').getImageData(0, 0, m.cv.width, m.cv.height).data;
-  for (let j = 0; j < m.cv.height; j++) for (let i = 0; i < m.cv.width; i++) if (d[(j * m.cv.width + i) * 4 + 3] >= 128) return (HUD_CAP[f.name] = j - m.oy);
-  return (HUD_CAP[f.name] = 0);
+function hudCapTop(f, s = 1) {
+  const key = f.name + '|' + s;
+  if (HUD_CAP[key] != null) return HUD_CAP[key];
+  const m = hudMask('H', f, s), d = m.cv.getContext('2d').getImageData(0, 0, m.cv.width, m.cv.height).data;
+  for (let j = 0; j < m.cv.height; j++) for (let i = 0; i < m.cv.width; i++) if (d[(j * m.cv.width + i) * 4 + 3] >= 128) return (HUD_CAP[key] = j - m.oy);
+  return (HUD_CAP[key] = 0);
 }
-// draws a text with its origin at x0 and its capitals' top at capTop (units); returns the text's measures in units
+// a text made by hudText put on the layer one to one, its origin at X and its capitals' top at CAP (device pixels, whole);
+// part: 'sh' the shadow only, 'fg' the letters only, both by default
+function hudBlit(g, t, X, CAP, part) {
+  const top = CAP - hudCapTop(t.f, t.s);
+  g.imageSmoothingEnabled = false;
+  if (t.sh && part !== 'fg') g.drawImage(t.sh, X - t.ox + t.shOff, top - t.oy + t.shOff);
+  if (part !== 'sh') g.drawImage(t.fg, X - t.ox, top - t.oy);
+}
+// draws a text with its origin at x0 and its capitals' top at capTop (units), on whole device pixels; returns the text's
+// measures in units
 function hudDrawText(g, str, f, x0, capTop, rgb) {
-  const t = hudText(str, f, rgb), top = capTop - hudCapTop(f);
-  x0 = Math.round(x0);
-  if (t.sh) hudImg(g, t.sh, x0 - t.ox + 1, top - t.oy + 1);
-  hudImg(g, t.fg, x0 - t.ox, top - t.oy);
-  return { x0, adv: t.adv, inkL: x0 + t.inkL, inkR: x0 + t.inkR };
+  const k = HUDP.k, t = hudText(str, f, rgb, k), X = Math.round(x0 * k);
+  hudBlit(g, t, X, Math.round(capTop * k));
+  return { x0: X / k, adv: t.adv, inkL: X / k + t.inkL, inkR: X / k + t.inkR };
 }
 
 // ---------------- the kill feed's icons ----------------
@@ -9615,7 +9640,7 @@ function drawGameFeed(tg, ag, t, playingPov) {
       const top = top0 + 20 * i, cap = top + 3;
       const tk = typeof teamKill === 'function' && teamKill(k) ? 'team' : 'kill', iconRgb = tk === 'team' ? [10, 240, 10] : [255, 80, 0];
       const vName = M.pl[k.vp] ? M.pl[k.vp].name : '?', vt = hudText(vName, HUD_EF, hudSideRgb(k.vteam));
-      const vx = Math.round(RIGHT - vt.inkR);
+      const vx = RIGHT - vt.inkR; // placed on whole device pixels by hudDrawText
       const piece = (name) => { const c = HUD_KI.cv[name]; return c ? { cv: c[tk], w: HUD_KI.rect[name].w, h: HUD_KI.rect[name].h } : null; };
       // the gun's icon, or its name in the icon's colour when the player's files don't have it
       const gun = piece(k.weapon), hs = k.hs ? piece('headshot') : null;
@@ -9781,11 +9806,12 @@ function drawGameChat(tg, t) {
     const parts = []; let rgb = HUD_YEL, s = '';
     for (const k of ln.toks) { if (k.rgb) { if (s) parts.push([s, rgb]); s = ''; rgb = k.rgb; } else s += k.ch; }
     if (s) parts.push([s, rgb]);
-    let x = HUD_CHAT_X;
-    const at = parts.map(([str, c]) => { const t0 = hudText(str, HUD_EF, c), p = { str, c, x }; x += t0.adv; return p; });
-    const top = cap - hudCapTop(HUD_EF);
-    for (const p of at) { const t0 = hudText(p.str, HUD_EF, p.c); hudImg(tg, t0.sh, Math.round(p.x) - t0.ox + 1, top - t0.oy + 1); }
-    for (const p of at) { const t0 = hudText(p.str, HUD_EF, p.c); hudImg(tg, t0.fg, Math.round(p.x) - t0.ox, top - t0.oy); }
+    // at the view's own size (0.28.2): each piece from where the one before ends, in device pixels
+    const k = HUDP.k, CAP = Math.round(cap * k);
+    let x = HUD_CHAT_X * k;
+    const at = parts.map(([str, c]) => { const t0 = hudText(str, HUD_EF, c, k), p = { t0, X: Math.round(x) }; x += t0.advPx; return p; });
+    for (const p of at) hudBlit(tg, p.t0, p.X, CAP, 'sh');
+    for (const p of at) hudBlit(tg, p.t0, p.X, CAP, 'fg');
     HUDCH.lines.push({ text: parts.map((p) => p[0]).join(''), cap, kind: ln.kind, colours: parts.map((p) => p[1].join(' ')) });
   }));
 }
@@ -9801,7 +9827,7 @@ function drawGameChat(tg, t) {
 // While following a player in an HLTV demo (Player's eyes and Behind player; not the free camera, Sujan, 28 Nov 2026)
 // and while he spectates in a POV demo (0.26.30). The score is the match's, as the header's, which the bars replace.
 const HUD_BAR = 80;
-const HUDB = { on: false, px: -1, clock: '', bottom: '', nameW: 0 }; // clock and bottom: the texts the bars show now; nameW: the bottom name's width in units
+const HUDB = { on: false, px: -1, clock: '', bottom: '', nameW: 0, colRight: 0, shift: 0 }; // clock and bottom: the texts the bars show now; nameW: the bottom name's width in units
 function povBarsOn() { if (!POV.on || POV.mode === 0) return false; const [, tg] = povObs(POV.t); return !(tg === POV.v.rec && POV.mode !== 4) || false; }
 function hudBarsWanted() {
   if (!D || viewMode === '2d') return false;
@@ -9835,13 +9861,21 @@ function drawGameBars(tg, W, H) {
   hudOn(tg, () => {
     tg.globalAlpha = 196 / 255; tg.fillStyle = '#000'; hudRect(tg, 0, 0, Wu, HUD_BAR); hudRect(tg, 0, HUD_H - HUD_BAR, Wu, HUD_BAR);
     tg.globalAlpha = 1;
-    const R1 = Wu - 122, l1 = `Counter-Terrorists : ${ctScore}`, l2 = `Terrorists : ${tScore}`;
+    // the right column (Spectators n or his money, the clock icon and the clock) inside the view with the kill feed's right
+    // margin, its last ink at most 17 units in from the edge, as the feed's victim (0.28.2; Sujan, 28 Nov 2026: 0.28.0's
+    // "Spectators 264" lost its last digit, Sweden vs Poland, Nuke, full screen): where a long count would run past it,
+    // the whole top bar's text, the divider and the score lines with it, moves left by as much; a one-digit count stays
+    // where his 800x600 shot has it
+    const inkEnd = (str, x0) => (str ? x0 + Math.max(0, hudText(str, HUD_DF, HUD_BASE).inkR) : -Infinity);
+    const over = Math.max(inkEnd(upper, Wu - 99), inkEnd(clock, Wu - 81)) - (Wu - 17), R = Wu - Math.max(0, over);
+    HUDB.colRight = Math.max(inkEnd(upper, R - 99), inkEnd(clock, R - 81)); HUDB.shift = Wu - R; // for the checks
+    const R1 = R - 122, l1 = `Counter-Terrorists : ${ctScore}`, l2 = `Terrorists : ${tScore}`;
     hudDrawText(tg, l1, HUD_DF, R1 - hudText(l1, HUD_DF, HUD_BASE).adv, 20, HUD_BASE);
     hudDrawText(tg, l2, HUD_DF, R1 - hudText(l2, HUD_DF, HUD_BASE).adv, 36, HUD_BASE);
-    tg.globalAlpha = 0.25; tg.fillStyle = 'rgb(255,176,0)'; hudRect(tg, Wu - 109, 15, 1, 37); tg.globalAlpha = 1;
-    if (upper) hudDrawText(tg, upper, HUD_DF, Wu - 99, 20, HUD_BASE);
-    if (HUD_TIMER.cv) hudImg(tg, HUD_TIMER.cv, Wu - 100, 31);
-    if (clock) hudDrawText(tg, clock, HUD_DF, Wu - 81, 36, HUD_BASE);
+    tg.globalAlpha = 0.25; tg.fillStyle = 'rgb(255,176,0)'; hudRect(tg, R - 109, 15, 1, 37); tg.globalAlpha = 1;
+    if (upper) hudDrawText(tg, upper, HUD_DF, R - 99, 20, HUD_BASE);
+    if (HUD_TIMER.cv) hudImg(tg, HUD_TIMER.cv, R - 100, 31);
+    if (clock) hudDrawText(tg, clock, HUD_DF, R - 81, 36, HUD_BASE);
     if (who && D.slots[who]) {
       const s = playerState(who, T), alive = !!(s && s.state > 0), hp = alive ? hpAt(who, tNow3) : null;
       const txt = nameAt(who, T) + (hp != null ? ` (${hp})` : ''), side = s ? Math.abs(s.state) : 0, rgb = side === 1 ? HUD_T : side === 2 ? HUD_CT : HUD_GREY;
@@ -11765,7 +11799,7 @@ function frameError(e) {
 function debugInfo() {
   let gpu = '';
   try { const gl = document.createElement('canvas').getContext('webgl'); const x = gl && gl.getExtension('WEBGL_debug_renderer_info'); gpu = gl ? (x ? gl.getParameter(x.UNMASKED_RENDERER_WEBGL) : 'WebGL available') : 'no WebGL'; } catch (e) { gpu = 'unknown'; }
-  const L = [`CS 1.6 Demo Viewer 0.28.1`, `Browser: ${navigator.userAgent}`, `Screen: ${screen.width}x${screen.height} at ${devicePixelRatio}x, window ${innerWidth}x${innerHeight}`, `Graphics: ${gpu}`];
+  const L = [`CS 1.6 Demo Viewer 0.28.2`, `Browser: ${navigator.userAgent}`, `Screen: ${screen.width}x${screen.height} at ${devicePixelRatio}x, window ${innerWidth}x${innerHeight}`, `Graphics: ${gpu}`];
   L.push(`Folder: ${Object.keys(files.maps).length} maps, ${Object.keys(files.overviews).length} overviews, ${Object.keys(files.mdl).length} models, ${Object.keys(files.snd).length} sounds, ${files.demos.length} demos`);
   if (D) {
     L.push(`Demo: ${D.fileName}, protocol ${(D.header && D.header.netProtocol) || '?'}, ${D.pov ? 'POV (recorded by a player)' : 'HLTV'}, map ${D.mapName}, length ${fmt(D.end - D.start)}, ${M.liveR.length} live rounds, final ${M.liveR.length ? M.liveR[M.liveR.length - 1].scoreAfter.join(':') : '-'}`);
