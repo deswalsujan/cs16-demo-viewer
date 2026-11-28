@@ -117,17 +117,17 @@ Everything raised in conversation that isn't finished, in one place. Each item s
 - [ ] **The AWP scope after a quick-switch the demo doesn't show** (Sujan, 28 Nov 2026)
   - Status: reported. SK vs Na`Vi, Train, DreamHack Winter 2011, R25 0:46: markeloff's switch away and back fell between two snapshots, so the viewer brings his 2x scope back by itself at 0:44 (the game's rule after the bolt) and keeps it to his death at 0:27. Sujan's rule (no coming back after the bolt, open only on a click) shows 74 of 482 proven-scoped AWP shots unscoped in 11 test demos; a speed rule (cancel the coming back when he then moves faster than a scoped AWP can) keeps all of them and fixes R25 0:44.
   - Built as 0.28.3 on `wip/scope-sounds-scores`: the speed rule for a scope that came back by itself only, tuned for slopes; on all 88 test demos 2,727 proven-scoped AWP shots on HLTV demos shown scoped before, 2,732 after, 1 lost (kHRYSTAL, SK vs AGAiN, Train, R9 0:30, a click the demo missed), 6 gained (`tests/logs/0.28.3.md`).
-  - Next step: Sujan's go on the eleven release checks.
-  - Decided so far: the quick-switch at R25 0:46, from markeloff's POV; the speed rule, not his own (Sujan, 28 Nov 2026; `DECISIONS.md`).
+  - Next step: the eleven release checks (Sujan's go, 28 Nov 2026), then the pull request.
+  - Decided so far: the quick-switch at R25 0:46, from markeloff's POV; the speed rule, not his own; the rule narrowed to a scope that came back by itself (Sujan, 28 Nov 2026; `DECISIONS.md`).
 - [ ] **His own gun's sounds in POV mode** (Sujan, 28 Nov 2026: in a POV demo he recorded, the Glock's reload sound doesn't play)
   - Status: reported. The server never sends a player his own reload sounds; his game plays them from the gun model's animation, and the viewer plays none of a gun model's sounds, so in **POV mode** every gun's reload, draw and silencer are silent. His Glock reloads are in Match 2 (T file) and Match 5, so his demo isn't needed.
   - Built as 0.28.3 on `wip/scope-sounds-scores`: his Glock reloads in Match 2's T file (4) and Match 5 (3) each play clip out, clip in and slide once (`tests/logs/0.28.3.md`).
-  - Next step: Sujan's go on the eleven release checks.
+  - Next step: the eleven release checks (Sujan's go, 28 Nov 2026), then the pull request.
   - Decided so far: his gun model's sounds (reload, draw, silencer) in **POV mode**, for every gun (Sujan, 28 Nov 2026; `DECISIONS.md`).
 - [ ] **The score as the game showed it** (Sujan, 28 Nov 2026)
   - Status: reported, with screenshots of today's viewer at R16, R31 and R32 of SK vs Na`Vi, Train (TeamScore 0 : 0, 0 : 0 and CT 1 : T 0 there); nothing built.
   - Built as 0.28.3 on `wip/scope-sounds-scores`; `hud_check.py` checks it at R16 1:35, R31 1:34 and R32 1:41; screenshots on `screenshots/0.28.3`.
-  - Next step: Sujan's go on the eleven release checks.
+  - Next step: the eleven release checks (Sujan's go, 28 Nov 2026), then the pull request.
   - Decided so far: the header always shows the match total; the top bar and the Tab scoreboard show TeamScore at that moment; no mockup (Sujan, 28 Nov 2026; `DECISIONS.md`).
 - Done (28 Nov 2026): the Glock's burst sound, no change (Sujan; `DECISIONS.md`).
 - [ ] **Proven-scoped AWP shots read unscoped** (seen 28 Nov 2026 in the scope check; for later): 49 of 535 AWP shots whose spread proves them scoped read unscoped with any rule, with no click the viewer counts before them (the log, 1). Not looked into.
