@@ -25,7 +25,11 @@ function parseMdl(u8, texU8) {
       name: str(o, 32), fps: f32(o + 32), flags: i32(o + 36), numframes: i32(o + 56), motiontype: i32(o + 68), motionbone: i32(o + 72),
       linear: [f32(o + 76), f32(o + 80), f32(o + 84)], numblends: i32(o + 120), animindex: i32(o + 124),
       blendtype: i32(o + 128), blendstart: f32(o + 136), blendend: f32(o + 144), group: i32(o + 156), anims: [],
+      sounds: [], // the sequence's play-sound events (5004): [frame, sound under sound/], as a gun model's reload and draw have
     };
+    for (let k = 0, n = i32(o + 48), eo = i32(o + 52); k < n && eo > 0 && eo + (k + 1) * 76 <= u8.length; k++) {
+      const e = eo + k * 76; if (i32(e + 4) === 5004) { const s = str(e + 12, 64).replace(/\\/g, '/').toLowerCase(); if (s) q.sounds.push([i32(e), s]); }
+    }
     // animations stored in the main file (sequence group 0); extra groups live in NAME01.mdl files, which CS player models don't use
     if (q.group === 0) {
       for (let bl = 0; bl < Math.max(1, q.numblends); bl++) {

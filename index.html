@@ -673,11 +673,9 @@ body:has(.app.theatre) { overflow: hidden; }
 @media (prefers-reduced-motion: reduce) { .prog i { transition: none; } }
 /* The kill feed and the spectator bars in the game's look (0.28.0; Sujan, 27 and 28 Nov 2026): drawn on the 3D view
    (hud.js), so the viewer's own kill feed is the 2D view's only. While the bars are up (.bars; --bar-h, their height): the
-   header's score goes, as the bars show it; the round pill stays in the top bar, the camera buttons go under it; the
+   header keeps the match's score (0.28.3); the round pill stays in the top bar, the camera buttons go under it; the
    bottom-left strip, the help line, the name bar, the notices and the corner radar sit above the bottom bar */
 .radar.m3d .feed, .radar.msplit .feed { display: none; }
-/* in Theatre mode the header slides in over the top bar, covering its score, so it keeps its own there */
-.app:not(.theatre) .score.bars .num, .app:not(.theatre) .score.bars .sep { display: none; }
 .radar.bars .cam3 { top: calc(var(--bar-h) + 6px * var(--ui)); }
 .app.theatre.show-t .radar.bars .cam3 { top: calc(max(var(--head-h) + 44px * var(--ui), var(--bar-h) + 6px * var(--ui))); }
 .radar.bars .hint3 { bottom: calc(var(--bar-h) + 12px * var(--ui)); }
@@ -848,7 +846,7 @@ addEventListener('resize', () => { if (applyUiSize()) dispatchEvent(new Event('u
         </div>
         <h2 class="hpart">About</h2>
         <div class="habout">
-          <p>CS 1.6 Demo Viewer, version 0.28.2. It plays HLTV and POV demos in the browser, from your own Half-Life folder; nothing leaves your computer.</p>
+          <p>CS 1.6 Demo Viewer, version 0.28.3. It plays HLTV and POV demos in the browser, from your own Half-Life folder; nothing leaves your computer.</p>
           <p>A map with no radar picture: drop its overview, the .bmp and .txt pair from cstrike\overviews, anywhere on the page.</p>
           <p class="hlinks"><a href="https://github.com/deswalsujan/cs16-demo-viewer/blob/main/CHANGELOG.md" target="_blank" rel="noopener">What's new</a> · <a href="https://github.com/deswalsujan/cs16-demo-viewer" target="_blank" rel="noopener">Source on GitHub</a> · <a href="https://github.com/deswalsujan/cs16-demo-viewer/issues/new/choose" target="_blank" rel="noopener">Report a bug</a></p>
           <p class="hdbg"><button class="btn" id="bDebug" type="button" title="Copies details for a bug report: browser, demo name, what loaded, errors. No file contents.">Copy debug info</button><span>Paste it into your bug report: it says which browser, demo and files, and any errors, with no file contents.</span></p>
@@ -961,7 +959,7 @@ addEventListener('resize', () => { if (applyUiSize()) dispatchEvent(new Event('u
         <div class="drophint">Or drop a .dem file anywhere on this page</div>
         <div class="prog" id="prog" hidden><i id="progBar"></i></div>
         <div class="msg" id="msg"></div>
-        <div class="loadfoot"><span>Version 0.28.2 · <a href="https://github.com/deswalsujan/cs16-demo-viewer" target="_blank" rel="noopener">Source on GitHub</a> · <button class="lnk" id="bHelpStart" type="button" title="The keys, the colours and marks, and about the viewer (?)">Help</button></span><button class="btn" id="bClear" type="button" title="Deletes the copies of maps, models, sounds and radar overviews this browser saved from your Half-Life folder. The folder closes until you pick it again, as on a first visit">Delete saved files</button></div>
+        <div class="loadfoot"><span>Version 0.28.3 · <a href="https://github.com/deswalsujan/cs16-demo-viewer" target="_blank" rel="noopener">Source on GitHub</a> · <button class="lnk" id="bHelpStart" type="button" title="The keys, the colours and marks, and about the viewer (?)">Help</button></span><button class="btn" id="bClear" type="button" title="Deletes the copies of maps, models, sounds and radar overviews this browser saved from your Half-Life folder. The folder closes until you pick it again, as on a first visit">Delete saved files</button></div>
       </div>
     </div>
   </section>
@@ -1280,6 +1278,9 @@ export function parseDemo(buffer, onProgress, opts = {}) {
   const hltvStatus = [];
   // server text (admin plugins announce warmups, "Live !" and scores this way): { t, s }
   const notes = [];
+  // the score as the game showed it (0.28.3): every TeamScore message, time, side (1 T, 2 CT), score. The server sends it at
+  // every round's end and every restart, so it starts again from 0 : 0 at halftime and at each overtime half
+  const teamScores = [];
   // sounds heard in the demo: server sounds, weapon fire events, explosions, radio lines and corpses
   const snds = [];      // time, sound resource index, entity, volume, attenuation, pitch, channel, x, y, z (NaN when not sent)
   const shots = [];     // time, entity, event resource index, bparam1
@@ -1576,6 +1577,7 @@ export function parseDemo(buffer, onProgress, opts = {}) {
         case 'TeamScore': {
           const team = m.str(), score = m.s();
           if (team === 'TERRORIST') scores.T = score; else if (team === 'CT') scores.CT = score;
+          if (team === 'TERRORIST' || team === 'CT') teamScores.push(time, team === 'CT' ? 2 : 1, score);
           break;
         }
         // a shell the server ejects: the AWP's, Scout's and M3's, after the shot (ReGameDLL weapons.cpp, EjectBrassLate and
@@ -2132,7 +2134,7 @@ export function parseDemo(buffer, onProgress, opts = {}) {
     players, kills, rounds, bomb, chat, nades, roundTimes, pauses, hp: new Float32Array(hp), pack: new Float32Array(pack),
     occupants, brushEvents: new Float32Array(brushEvents), brushPose: new Float32Array(brushPose), viewers: hltvStatus, notes,
     times: new Float32Array(samples.t), slots,
-    finalScore: { ...scores }, models: resources.models, stride: STRIDE,
+    finalScore: { ...scores }, teamScores, models: resources.models, stride: STRIDE,
     pmodels, sounds: resources.sounds, events: resources.events, snds: new Float32Array(snds), shots: new Float32Array(shots), shotPunch: new Float32Array(shotPunch), booms: new Float32Array(booms), hitPoints: new Float32Array(hitPoints), brass: new Float32Array(brass), puffs: new Float32Array(puffs), radio, radioText, centre, corpses,
     errors, errSamples, health, c4drops: new Float32Array(c4drops), c4ents: new Float32Array(c4ents), glows: new Float32Array(glows), slow, stops, pings: new Float32Array(pings),
     ...(povData ? { povData } : {}),
@@ -3157,7 +3159,7 @@ const JOIN_GAP = 3; // seconds of nothing between two parts on the joined timeli
 function joinDemos(parts) {
   const S = parts[0].stride;
   const out = Object.assign({}, parts[0], {
-    kills: [], rounds: [], bomb: [], chat: [], nades: [], roundTimes: [], pauses: [], occupants: [], notes: [], radio: [], radioText: [], centre: [], corpses: [], viewers: [],
+    kills: [], rounds: [], bomb: [], chat: [], nades: [], roundTimes: [], pauses: [], occupants: [], notes: [], radio: [], radioText: [], centre: [], corpses: [], viewers: [], teamScores: [],
     models: Object.assign({}, parts[0].models), sounds: Object.assign({}, parts[0].sounds), events: Object.assign({}, parts[0].events), pmodels: parts[0].pmodels.slice(),
     players: {}, errors: 0, errSamples: [], parts: [], maps: parts[0].maps, health: null, slow: [], stops: [],
   });
@@ -3208,6 +3210,7 @@ function joinDemos(parts) {
     out.corpses.push(...P.corpses.map((c) => Object.assign({}, c, { t: sh(c.t), start: sh(c.start) })));
     out.nades.push(...P.nades.map((g) => { const pts = g.pts.slice(); for (let i = 0; i < pts.length; i += 4) pts[i] = sh(pts[i]); return Object.assign({}, g, { pts }); }));
     for (let i = 0; i < (P.viewers || []).length; i += 2) out.viewers.push(sh(P.viewers[i]), P.viewers[i + 1]);
+    for (let i = 0; i < (P.teamScores || []).length; i += 3) out.teamScores.push(sh(P.teamScores[i]), P.teamScores[i + 1], P.teamScores[i + 2]);
     const flat = (src, stride, fix, dst) => { const a = new Float32Array(src.length); for (let i = 0; i < src.length; i += stride) { for (let j = 0; j < stride; j++) a[i + j] = src[i + j]; fix(a, i); } dst.push(a); };
     flat(P.hp, 3, (a, i) => { a[i] = sh(a[i]); }, hpL);
     flat(P.pack || [], 3, (a, i) => { a[i] = sh(a[i]); }, packL);
@@ -5502,6 +5505,7 @@ function addNadesFromEvents(nades) {
 //   - each click steps the zoom: none -> 1x -> 2x -> none
 //   - an AWP or Scout shot drops the zoom while the bolt cycles, then it comes back by itself at the same level
 //   - switching weapons, dying and a new round drop the zoom
+//   - moving faster than the gun allows scoped, after the scope came back by itself, means it never did (0.28.3, below)
 // Clicks are stamped to the demo's snapshot, about a tenth of a second.
 const SNIPERS = {
   awp: { fov: [90, 40, 10], bolt: 1.45 },
@@ -5512,36 +5516,67 @@ const SNIPERS = {
 // A zoom-in and its shot can land in the same snapshot; the scope then shows for this long before the
 // shot, and stays for this long after it, so the moment is visible instead of lasting zero frames.
 const SCOPE_MIN_SHOW = 0.1;
+// The speed rule (0.28.3; Sujan, 28 Nov 2026): scoped, an AWP, G3SG1 or SG550 moves at 150 units/s at most and a Scout at
+// 220 (ReGameDLL's GetMaxSpeed; 210 and 260 unscoped), so a player who moves faster on the ground over half a second isn't
+// scoped, whatever the clicks say. That's how a quick-switch too fast for the snapshots shows, the weapon away and back
+// between two of them: the scope that comes back by itself after the bolt never did (SK vs Na`Vi, Train, DreamHack Winter
+// 2011, R25 0:46, markeloff; Sujan, from his POV). Only for that scope: one he clicked open stays (on the 88 test demos a
+// player who just scoped in while running read up to 190 units/s for a moment, and warm-ups on some servers let scoped
+// players run at 210). Counted from FAST_SETTLE after the scope came back (he slows down), with FAST_MARGIN for the
+// snapshots' timing (they read 3 to 5% high), on the ground: his height within FAST_ARC of a straight line across the
+// half second, which lets slopes and stairs through and keeps jumps out; a step faster than FAST_GLITCH is a jump in the
+// recording, not running (Virtus.pro vs ALTERNATE aTTaX, Inferno, EM II, R20: 974 to 1,488).
+const SCOPED_SPEED = { awp: 150, g3sg1: 150, sg550: 150, scout: 220 };
+const FAST_WIN = 0.5, FAST_MARGIN = 1.12, FAST_SETTLE = 0.25, FAST_ARC = 12, FAST_GLITCH = 500;
 let ZOOM = {}; // slot -> { pts: [time, level, ...] }
 function buildZoom() {
   ZOOM = {};
   if (!D || !M) return;
   const zids = new Set(Object.keys(D.sounds || {}).filter((k) => /(^|\/)weapons\/zoom\.wav$/i.test(String(D.sounds[k]).replace(/\\/g, '/'))).map(Number));
   const S = D.stride, times = D.times, ev = [];
-  // order at the same moment: reset (0), weapon change (1), click (2), shot (3)
+  // order at the same moment: reset (0), weapon change (1), too fast to be scoped (1.5), click (2), shot (3)
   const sn = D.snds || [];
   for (let i = 0; i < sn.length; i += 10) if (zids.has(sn[i + 1])) ev.push([sn[i], sn[i + 2], 2]);
   const sh = fxShots(); // the fire events, and the AWP and Scout shots of the body animation in a demo that lost them (0.27.5)
   for (let i = 0; i < sh.length; i += 4) { const n = eventName(sh[i + 2]); if (SNIPERS[n]) ev.push([sh[i], sh[i + 1], 3, n]); }
+  const capOf = {}; // model index -> the gun's scoped top speed, or 0
   for (const e in D.slots) {
     const a = D.slots[e]; let w = -1, alive = false;
     for (let i = 0; i < times.length; i++) {
       const wi = a[i * S + 6], st = a[i * S + 5];
       if (wi !== w) { w = wi; ev.push([times[i], +e, 1, weaponShort(D.models[wi])]); }
       if ((st > 0) !== alive) { alive = st > 0; if (!alive) ev.push([times[i], +e, 0]); }
+      // moving faster than his gun allows scoped, over the half second up to this snapshot (the speed rule above)
+      const cap = capOf[wi] ?? (capOf[wi] = SCOPED_SPEED[weaponShort(D.models[wi])] || 0);
+      if (!cap || !(st > 0)) continue;
+      let j = i; while (j > 0 && times[i] - times[j - 1] <= FAST_WIN) j--;
+      const dt = times[i] - times[j]; if (dt < FAST_WIN * 0.6) continue;
+      const z0 = a[j * S + 2], z1 = a[i * S + 2]; let L = 0, ok = true;
+      for (let k = j + 1; k <= i && ok; k++) {
+        if (a[k * S + 6] !== wi || !(a[k * S + 5] > 0)) ok = false;
+        const step = Math.hypot(a[k * S] - a[(k - 1) * S], a[k * S + 1] - a[(k - 1) * S + 1]); L += step;
+        if (step > FAST_GLITCH * (times[k] - times[k - 1]) || Math.abs(a[k * S + 2] - (z0 + (z1 - z0) * (times[k] - times[j]) / dt)) > FAST_ARC) ok = false;
+      }
+      if (ok && L / dt > cap * FAST_MARGIN) ev.push([times[i], +e, 1.5, times[j]]);
     }
     for (const r of M.rounds) ev.push([r.start, +e, 0]);
   }
   ev.sort((x, y) => x[0] - y[0] || x[2] - y[2]);
   const st = {};
   for (const [t, e, kind, extra] of ev) {
-    const z = st[e] || (st[e] = { lvl: 0, w: '', resumeAt: null, resumeLvl: 0, inAt: null, inIdx: -1 });
+    // since: when the level last changed; fromResume: where in pts the scope came back by itself, while it's the level now
+    const z = st[e] || (st[e] = { lvl: 0, w: '', resumeAt: null, resumeLvl: 0, inAt: null, inIdx: -1, since: -Infinity, fromResume: -1 });
     const Z = ZOOM[e] || (ZOOM[e] = { pts: [] });
-    const set = (time, lvl) => { if (lvl === z.lvl) return; z.lvl = lvl; Z.pts.push(time, lvl); };
-    if (z.resumeAt != null && z.resumeAt <= t) { set(z.resumeAt, z.resumeLvl); z.resumeAt = null; z.inAt = null; }
+    const set = (time, lvl) => { if (lvl === z.lvl) return; z.lvl = lvl; z.since = time; z.fromResume = -1; Z.pts.push(time, lvl); };
+    if (z.resumeAt != null && z.resumeAt <= t) { const n = Z.pts.length; set(z.resumeAt, z.resumeLvl); if (Z.pts.length > n) z.fromResume = n; z.resumeAt = null; z.inAt = null; }
     if (kind === 0) { set(t, 0); z.resumeAt = null; z.inAt = null; }
     else if (kind === 1) { z.w = extra; set(t, 0); z.resumeAt = null; z.inAt = null; }
-    else if (kind === 2) {
+    else if (kind === 1.5) {
+      // too fast to be scoped, settled from FAST_SETTLE after it came back by itself: it never did (a quick-switch between
+      // two snapshots), so the scope stays closed from the shot
+      if (z.lvl === 0 || z.fromResume < 0 || z.fromResume !== Z.pts.length - 2 || extra < z.since + FAST_SETTLE) continue;
+      Z.pts.length = z.fromResume; z.lvl = 0; z.since = Z.pts.length ? Z.pts[Z.pts.length - 2] : -Infinity; z.fromResume = -1; z.inAt = null;
+    } else if (kind === 2) {
       if (!SNIPERS[z.w]) continue;
       let base = z.lvl;
       if (z.resumeAt != null) { base = z.resumeLvl; z.resumeAt = null; }
@@ -5847,6 +5882,16 @@ function posesAt(t) {
   return out;
 }
 // HLTV broadcast audience at time t (from the relay's status updates)
+// The score as the game showed it at t (0.28.3; Sujan, 28 Nov 2026), for the spectator bars and the Tab scoreboard: each
+// side's latest TeamScore, which the server sends at every round's end and every restart, so in that era it starts again
+// from 0 : 0 at halftime and at each overtime half (SK vs Na`Vi, Train, DreamHack Winter 2011: R16 and R31 read CT 0 : T 0).
+// The header keeps the match's score. null when the demo has none yet.
+function gameScoreAt(t) {
+  const L = D.teamScores; if (!L || !L.length) return null;
+  let tS = null, ctS = null;
+  for (let i = 0; i < L.length && L[i] <= t + 0.001; i += 3) { if (L[i + 1] === 1) tS = L[i + 2]; else ctS = L[i + 2]; }
+  return tS == null && ctS == null ? null : { T: tS || 0, CT: ctS || 0 };
+}
 function viewersAt(t) {
   const v = D.viewers; if (!v || !v.length) return null;
   let res = null;
@@ -6613,11 +6658,14 @@ function showScoreboard(v, auto = false) {
     const host = D.serverInfo && D.serverInfo.hostName ? D.serverInfo.hostName : 'Counter-Strike';
     let h = `<div class="gsb${listed.length > 24 ? ' dense' : ''}" style="--gsb-cols: ${grid}">`;
     h += row(cells('', `<b>${esc(host)}</b>`, '', 'HP', 'Weapon', 'Kills', 'Deaths', 'Latency'), 'title') + '<div class="oline"></div>';
-    for (const ti of [0, 1].sort((a, b) => sc[b] - sc[a])) {
+    // each side's score as the game showed it, its TeamScore (0.28.3; Sujan, 28 Nov 2026), 0 : 0 again at halftime and each
+    // overtime half; the side ahead on top, the match's score breaking a tie; the match's by side only in a demo with none
+    const gs = gameScoreAt(T), gsc = (ti) => (gs ? (tT === ti ? gs.T : gs.CT) : sc[ti]);
+    for (const ti of [0, 1].sort((a, b) => gsc(b) - gsc(a) || sc[b] - sc[a])) {
       const side = tT === ti ? 1 : 2, sd = side === 1 ? 't' : 'ct';
       const rows = now.filter((x) => x.side === side).map((x) => Object.assign(x, { s: st[x.pid] || { k: 0, d: 0 } })).sort((a, b) => b.s.k - a.s.k || a.s.d - b.s.d || (a.pid < b.pid ? -1 : 1));
       const ls = rows.map((x) => pingAt(x.e, T)).filter((v) => v != null), avg = ls.length ? ls.reduce((a, b) => a + b, 0) / ls.length : null;
-      h += row(cells('', `<b>${esc(M.tnames[ti])}</b><span class="gsep">·</span>${side === 1 ? 'Terrorists' : 'Counter-Terrorists'}<span class="gsep">-</span>${plural(rows.length, 'player')}`, '', '', '', `<b>${sc[ti]}</b>`, '', lat(avg)), 'th ' + sd);
+      h += row(cells('', `<b>${esc(M.tnames[ti])}</b><span class="gsep">·</span>${side === 1 ? 'Terrorists' : 'Counter-Terrorists'}<span class="gsep">-</span>${plural(rows.length, 'player')}`, '', '', '', `<b>${gsc(ti)}</b>`, '', lat(avg)), 'th ' + sd);
       h += `<div class="tline ${sd}"></div>`;
       for (const x of rows) {
         const alive = x.alive;
@@ -7889,7 +7937,11 @@ function parseMdl(u8, texU8) {
       name: str(o, 32), fps: f32(o + 32), flags: i32(o + 36), numframes: i32(o + 56), motiontype: i32(o + 68), motionbone: i32(o + 72),
       linear: [f32(o + 76), f32(o + 80), f32(o + 84)], numblends: i32(o + 120), animindex: i32(o + 124),
       blendtype: i32(o + 128), blendstart: f32(o + 136), blendend: f32(o + 144), group: i32(o + 156), anims: [],
+      sounds: [], // the sequence's play-sound events (5004): [frame, sound under sound/], as a gun model's reload and draw have
     };
+    for (let k = 0, n = i32(o + 48), eo = i32(o + 52); k < n && eo > 0 && eo + (k + 1) * 76 <= u8.length; k++) {
+      const e = eo + k * 76; if (i32(e + 4) === 5004) { const s = str(e + 12, 64).replace(/\\/g, '/').toLowerCase(); if (s) q.sounds.push([i32(e), s]); }
+    }
     // animations stored in the main file (sequence group 0); extra groups live in NAME01.mdl files, which CS player models don't use
     if (q.group === 0) {
       for (let bl = 0; bl < Math.max(1, q.numblends); bl++) {
@@ -8916,6 +8968,29 @@ function playSound(name, pos, vol, atten, pitch, key, L) {
 // first index in a flat, time-sorted array (stride n) with time > t
 function firstAfter(arr, n, t) { let lo = 0, hi = arr.length / n; while (lo < hi) { const m = (lo + hi) >> 1; if (arr[m * n] > t) hi = m; else lo = m + 1; } return lo; }
 function entPos(e, t) { if (e >= 1 && e <= 64) { const s = playerState(e, t); if (s) return [s.x, s.y, s.z]; } return null; }
+// POV mode: the sounds of his own gun's animations (0.28.3; Sujan, 28 Nov 2026): reload, draw, silencer on and off, the
+// AWP's and Scout's bolt, a grenade's pin. The server never sends a player these: his game plays them from the gun model's
+// own animation (studio event 5004, cs16-client's HUD_StudioEvent), and when it plays the demo back, from the animations it
+// wrote into it (demo frame type 7, D.wanims). So each animation he wrote plays its sounds at their frames, at the
+// listener, until his next written animation or another gun in his hands cuts it off, only while he's alive and in his
+// own view (not spectating). Returns [time, sound] between t0 (excluded) and t1.
+const GUNSND = { D: null, models: null, ready: new Set() };
+function povGunSoundsBetween(t0, t1) {
+  const W = D.wanims, out = []; if (!POV.on || !W || !W.length) return out;
+  // his guns' models and their sounds loaded ahead, so the first reload of each gun is heard
+  if (GUNSND.D !== D) { GUNSND.D = D; GUNSND.ready = new Set(); GUNSND.models = new Set(); const VM = D.vmodels || []; for (let i = 1; i < VM.length; i += 2) if (D.models[VM[i]]) GUNSND.models.add(D.models[VM[i]]); }
+  for (const n of GUNSND.models) if (!GUNSND.ready.has(n)) { const m = modelEntry(n); if (m.status === 'ok') { GUNSND.ready.add(n); for (const q of m.mdl.seqs) for (const [, s] of q.sounds) loadSound(s); } else if (m.status !== 'loading') GUNSND.ready.add(n); }
+  for (let k = firstAfter(W, 2, t0 - 8); k * 2 < W.length && W[k * 2] <= t1; k++) {
+    const s = W[k * 2], end = (k + 1) * 2 < W.length ? W[(k + 1) * 2] : Infinity; if (end <= t0) continue;
+    const name = povViewModel(s + 0.05), M2 = getModel(name), q = M2 && M2.mdl.seqs[W[k * 2 + 1]];
+    if (!q || !q.sounds.length) continue;
+    for (const [f, snd] of q.sounds) {
+      const te = s + f / (q.fps || 30);
+      if (te > t0 && te <= t1 && te < end && povObs(te)[0] === 0 && povViewModel(te) === name) out.push([te, snd]);
+    }
+  }
+  return out;
+}
 // play everything that happened between the last frame and now
 function soundTick(t0, t1) {
   if (!SND.on || !D || !D.snds || t1 <= t0 || t1 - t0 > 0.5 * Math.max(1, speed)) return;
@@ -8951,6 +9026,8 @@ function soundTick(t0, t1) {
     const o = i * 4; playSound('weapons/explode' + (3 + i % 3) + '.wav', [b[o + 1], b[o + 2], b[o + 3]], 1, 0.3, 100, null, L);
   }
   if (SND.sentences) for (const r of D.radio || []) if (r.t > t0 && r.t <= t1) { const p = SND.sentences[r.s.toUpperCase()]; if (p) playSound(p, null, 0.8, 0, 100, 'radio', L); }
+  // POV mode: his own gun's reload, draw and silencer, from the animations his game wrote (0.28.3)
+  if (!fast) for (const [, name] of povGunSoundsBetween(t0, t1)) playSound(name, null, 1, 0, 100, null, L);
   // the shells in Player's eyes landing, each sound where its shell hit (shotfx.js, 0.26.27)
   if (!fast) for (const [name, pos, vol] of fxShellSounds(t0, t1)) playSound(name, pos, vol, 0.8, 100, null, L);
 }
@@ -9825,20 +9902,22 @@ function drawGameChat(tg, t) {
 // "Spectators n" (the HLTV's viewers; in a POV demo while he's dead, his money, as the game, Sujan, 27 Nov 2026), and
 // the clock with the timer icon under it. Bottom, centred: the followed player's name and health in his team's colour.
 // While following a player in an HLTV demo (Player's eyes and Behind player; not the free camera, Sujan, 28 Nov 2026)
-// and while he spectates in a POV demo (0.26.30). The score is the match's, as the header's, which the bars replace.
+// and while he spectates in a POV demo (0.26.30). The score is the game's at that moment, each side's TeamScore (0.28.3;
+// Sujan, 28 Nov 2026), 0 : 0 again at halftime and each overtime half; the header keeps the match's.
 const HUD_BAR = 80;
-const HUDB = { on: false, px: -1, clock: '', bottom: '', nameW: 0, colRight: 0, shift: 0 }; // clock and bottom: the texts the bars show now; nameW: the bottom name's width in units
+const HUDB = { on: false, px: -1, clock: '', bottom: '', nameW: 0, colRight: 0, shift: 0, score: null }; // clock and bottom: the texts the bars show now; nameW: the bottom name's width in units
 function povBarsOn() { if (!POV.on || POV.mode === 0) return false; const [, tg] = povObs(POV.t); return !(tg === POV.v.rec && POV.mode !== 4) || false; }
 function hudBarsWanted() {
   if (!D || viewMode === '2d') return false;
   if (POV.on) return povBarsOn();
   return cam3.mode !== 'free' && !!selected && !!D.slots[selected];
 }
-// the viewer's own controls make room while the bars are up: no header score, the round pill "Round N" alone, the
-// camera buttons under the top bar, the bottom-left strip and the notes above the bottom bar (Sujan, 27 Nov 2026)
+// the viewer's own controls make room while the bars are up: the round pill "Round N" alone, the camera buttons under
+// the top bar, the bottom-left strip and the notes above the bottom bar (Sujan, 27 Nov 2026); the header keeps its
+// score (0.28.3; Sujan, 28 Nov 2026)
 function hudBarsClass(on, H) {
   const px = on ? Math.round(H * HUD_BAR / HUD_H) : 0, rad = $('radar');
-  if (on !== HUDB.on) { HUDB.on = on; rad.classList.toggle('bars', on); $('score').classList.toggle('bars', on); }
+  if (on !== HUDB.on) { HUDB.on = on; rad.classList.toggle('bars', on); }
   if (px !== HUDB.px) { HUDB.px = px; rad.style.setProperty('--bar-h', px + 'px'); }
   if (!on) hudStrip(false, 0, 0); // the strip back to the view's bottom left, in full (2D, a closed demo)
 }
@@ -9848,8 +9927,10 @@ function drawGameBars(tg, W, H) {
   if (!on) { HUDB.clock = HUDB.bottom = ''; HUDB.nameW = 0; hudStrip(false, W, H); return false; }
   hudLoadTimer();
   const P = hudScale(tg.canvas), Wu = P.Wu, t = tNow3, r = roundAt(t);
-  const sc = r ? (t >= (r.endT || r.end) && r.scoreAfter ? r.scoreAfter : r.scoreBefore) : [0, 0];
-  const tT = r && r.tTeam != null ? r.tTeam : 0, ctScore = sc[1 - tT], tScore = sc[tT];
+  // the game's score, each side's TeamScore (0.28.3); the match's by side only in a demo with none
+  const gs = gameScoreAt(t), sc = r ? (t >= (r.endT || r.end) && r.scoreAfter ? r.scoreAfter : r.scoreBefore) : [0, 0];
+  const tT = r && r.tTeam != null ? r.tTeam : 0, ctScore = gs ? gs.CT : sc[1 - tT], tScore = gs ? gs.T : sc[tT];
+  HUDB.score = [ctScore, tScore]; // for the checks
   // the clock as the round pill had it before the bars took it over: with Vanilla, "C4" alone after the plant, as the game
   // hides its timer then (0.26.16)
   const c = clockAt(t, true), clock = !c ? '' : VAN.on && c.phase === 'bomb' ? 'C4' : c.text.replace(/^freeze /, '');
@@ -11799,7 +11880,7 @@ function frameError(e) {
 function debugInfo() {
   let gpu = '';
   try { const gl = document.createElement('canvas').getContext('webgl'); const x = gl && gl.getExtension('WEBGL_debug_renderer_info'); gpu = gl ? (x ? gl.getParameter(x.UNMASKED_RENDERER_WEBGL) : 'WebGL available') : 'no WebGL'; } catch (e) { gpu = 'unknown'; }
-  const L = [`CS 1.6 Demo Viewer 0.28.2`, `Browser: ${navigator.userAgent}`, `Screen: ${screen.width}x${screen.height} at ${devicePixelRatio}x, window ${innerWidth}x${innerHeight}`, `Graphics: ${gpu}`];
+  const L = [`CS 1.6 Demo Viewer 0.28.3`, `Browser: ${navigator.userAgent}`, `Screen: ${screen.width}x${screen.height} at ${devicePixelRatio}x, window ${innerWidth}x${innerHeight}`, `Graphics: ${gpu}`];
   L.push(`Folder: ${Object.keys(files.maps).length} maps, ${Object.keys(files.overviews).length} overviews, ${Object.keys(files.mdl).length} models, ${Object.keys(files.snd).length} sounds, ${files.demos.length} demos`);
   if (D) {
     L.push(`Demo: ${D.fileName}, protocol ${(D.header && D.header.netProtocol) || '?'}, ${D.pov ? 'POV (recorded by a player)' : 'HLTV'}, map ${D.mapName}, length ${fmt(D.end - D.start)}, ${M.liveR.length} live rounds, final ${M.liveR.length ? M.liveR[M.liveR.length - 1].scoreAfter.join(':') : '-'}`);

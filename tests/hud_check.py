@@ -20,8 +20,12 @@ Exit code 0 = pass. Fails on 0.27.7 (no bars while following, 5 rows in 3D, the 
    the letters made at the view's own scale, drawn one to one (0.28.2; Sujan, 28 Nov 2026: enlarged from 800x600 they
    looked blurry), with the same weight: a row through a name's capitals carries the scale times its 800x600 ink, within
    15%. Up to 0.28.1 the letters were made at 800x600 and enlarged ("even strokes" checked that).
-3. The free camera: the game's kill feed, no bars, the header's score back. Theatre mode with the side panel out (0.28.1):
+3. The free camera: the game's kill feed, no bars. Theatre mode off, following: the header keeps its score (0.28.3). Theatre mode with the side panel out (0.28.1):
    the feed's rows end left of the panel, none of the feed under it.
+3c. The score (0.28.3; Sujan, 28 Nov 2026), SK vs Na`Vi at R16 1:35, R31 1:34 and R32 1:41 in Player's eyes with Tab held:
+   the header shows the match's score (10 : 5, 15 : 15, 16 : 15) with the bars up; the top bar and the Tab scoreboard's
+   sides show the game's, each side's TeamScore (CT 0 : T 0, CT 0 : T 0, CT 1 : T 0), 0 : 0 again at halftime and at
+   the first overtime half. Up to 0.28.2 the bars and Tab showed the match's score and the header hid its own.
 3b. The top bar's right column (0.28.2; Sujan, 28 Nov 2026): Sweden vs Poland, Nuke, 8 Apr 2009, at R1 C4 0:30 (demo
    24.0 s), "Spectators 2646", at 800x600 and 1512x982: the whole count drawn and no ink of the bar's text closer than
    16 units to the right edge, the kill feed's margin; the same with the count forced to 9999.
@@ -241,24 +245,37 @@ with sync_playwright() as p:
               abs(made['s'] - round(made['k'], 2)) < 0.006 and tot0 > 0 and abs(tot / (k * tot0) - 1) <= 0.15, {'made': made, 'ratio': round(tot / (k * tot0), 3) if tot0 else None})
     pg.set_viewport_size({'width': 800, 'height': 600})
 
-    # outside Theatre mode, following: the header's score hidden, the camera buttons under the top bar
+    # outside Theatre mode, following: the header keeps its score (0.28.3; hidden in 0.28.0 to 0.28.2), the camera buttons under the top bar
     F0 = ev(pg, r"""(async () => { setTheatre(false); await __frames(); await new Promise((r) => setTimeout(r, 400)); await __frames();
       const g = $('gl').getBoundingClientRect(), c = $('cam3').getBoundingClientRect(), l = $('legend').getBoundingClientRect(), bh = parseFloat($('radar').style.getPropertyValue('--bar-h'));
       return { scoreShown: getComputedStyle($('scA')).display !== 'none', barH: bh, camTop: c.top - g.top, legendBottom: g.bottom - l.bottom, legendTop: l.top - g.top, viewH: g.height, nameTop: 560 * g.height / 600 }; })()""")
     # the strip inside the bottom bar, above the followed player's name, since 0.28.1 (Sujan, 28 Nov 2026; above the bar in 0.28.0)
-    check('outside Theatre mode, following: no header score, the camera buttons under the top bar, the strip inside the bottom bar above the name', not F0['scoreShown'] and abs(F0['barH'] - F0['viewH'] * 80 / 600) <= 1 and F0['camTop'] >= F0['barH'] and F0['legendTop'] >= F0['viewH'] - F0['barH'] and F0['viewH'] - F0['legendBottom'] <= F0['nameTop'], F0)
+    check('outside Theatre mode, following: the header\'s score, the camera buttons under the top bar, the strip inside the bottom bar above the name', F0['scoreShown'] and abs(F0['barH'] - F0['viewH'] * 80 / 600) <= 1 and F0['camTop'] >= F0['barH'] and F0['legendTop'] >= F0['viewH'] - F0['barH'] and F0['viewH'] - F0['legendBottom'] <= F0['nameTop'], F0)
     # 3. the free camera: the game's feed, no bars, the header's score back
     moment('free')
     F = ev(pg, r"""(async () => { setTheatre(false); await __frames(); await new Promise((r) => setTimeout(r, 300)); updateHud(true); await __frames();
       const S = __px('spec3'); return { topAlpha: S.d[(10 * S.w + 20) * 4 + 3], rows: __rows().length, bars: $('radar').classList.contains('bars'), scoreShown: getComputedStyle($('scA')).display !== 'none', pill: $('rclock').innerText,
         domFeedShown: getComputedStyle($('feed')).display !== 'none' }; })()""")
-    check('free camera: no bars, the game\'s kill feed, the header\'s score and the pill\'s clock back', F['topAlpha'] == 0 and not F['bars'] and F['rows'] == 4 and F['scoreShown'] and ':' in F['pill'] and not F['domFeedShown'], F)
+    check('free camera: no bars, the game\'s kill feed, the header\'s score and the pill\'s clock', F['topAlpha'] == 0 and not F['bars'] and F['rows'] == 4 and F['scoreShown'] and ':' in F['pill'] and not F['domFeedShown'], F)
     F2 = ev(pg, r"""(async () => { let t = null; for (const k of D.kills) { const r = roundAt(k.t + 0.01); if (D.kills.filter((q) => q.t <= k.t + 0.01 && q.t > k.t + 0.01 - 6 && r && q.t >= r.start).length >= 5) { t = k.t + 0.01; break; } }
       if (t == null) return { none: true };
       playing = false; T = t; await __frames(); await new Promise((r) => setTimeout(r, 400)); await __frames(); const rows3 = __rows().length;
       setView('2d'); await __frames(); updateHud(true); lastFeedKey = ''; updateFeed(); await __frames();
       return { t, rows3, domRows: $('feed').children.length, shown: getComputedStyle($('feed')).display !== 'none', bars: $('radar').classList.contains('bars') }; })()""")
     check('at most 4 rows in 3D; 2D keeps the viewer\'s own kill feed (5 rows), no bars', not F2.get('none') and F2['rows3'] == 4 and F2['shown'] and F2['domRows'] == 5 and not F2['bars'], F2)
+
+    # 3c. the score: the header the match's, the bars and Tab the game's (TeamScore), 0 : 0 again at halftime and in overtime
+    for (rn, clk, head, ct, t) in [(16, '1:35', '10 : 5', 0, 0), (31, '1:34', '15 : 15', 0, 0), (32, '1:41', '16 : 15', 1, 0)]:
+        S = ev(pg, f"""(async () => {{ setView('3d'); setTheatre(false); setVanilla(false); const r = M.liveR.find((x) => x.ln === {rn});
+          let t = r.start; while (t < r.end && (clockAt(t) || {{}}).text !== '{clk}') t += 0.05;
+          selected = Object.keys(D.slots).map(Number).find((e) => /markeloff/.test(nameAt(e, t))); playing = false; setCam('eyes', true); T = t + 0.5;
+          await __frames(); await new Promise((r) => setTimeout(r, 500)); updateHud(true); showScoreboard(true); await __frames();
+          const th = [...$('sb').querySelectorAll('.gr.th')].map((el) => [el.classList.contains('t') ? 'T' : 'CT', [...el.querySelectorAll('b')].pop().textContent]);
+          const out = {{ clock: (clockAt(T) || {{}}).text, bars: HUDB.on, barScore: HUDB.score, head: $('scA').textContent + ' : ' + $('scB').textContent,
+            headShown: getComputedStyle($('scA')).display !== 'none' && getComputedStyle($('scB')).display !== 'none', tab: Object.fromEntries(th) }};
+          showScoreboard(false); return out; }})()""")
+        check(f'R{rn} {clk}: the header {head} with the bars up; the top bar and Tab CT {ct} : T {t}, as the game showed it',
+              S['bars'] and S['headShown'] and S['head'] == head and S['barScore'] == [ct, t] and S['tab'] == {'CT': str(ct), 'T': str(t)}, S)
 
     # 3b. the top bar's right column, Sweden vs Poland, Nuke, R1 C4 0:30: "Spectators 2646", then forced to 9999
     open_demo(pg, SWP)

@@ -277,6 +277,9 @@ export function parseDemo(buffer, onProgress, opts = {}) {
   const hltvStatus = [];
   // server text (admin plugins announce warmups, "Live !" and scores this way): { t, s }
   const notes = [];
+  // the score as the game showed it (0.28.3): every TeamScore message, time, side (1 T, 2 CT), score. The server sends it at
+  // every round's end and every restart, so it starts again from 0 : 0 at halftime and at each overtime half
+  const teamScores = [];
   // sounds heard in the demo: server sounds, weapon fire events, explosions, radio lines and corpses
   const snds = [];      // time, sound resource index, entity, volume, attenuation, pitch, channel, x, y, z (NaN when not sent)
   const shots = [];     // time, entity, event resource index, bparam1
@@ -573,6 +576,7 @@ export function parseDemo(buffer, onProgress, opts = {}) {
         case 'TeamScore': {
           const team = m.str(), score = m.s();
           if (team === 'TERRORIST') scores.T = score; else if (team === 'CT') scores.CT = score;
+          if (team === 'TERRORIST' || team === 'CT') teamScores.push(time, team === 'CT' ? 2 : 1, score);
           break;
         }
         // a shell the server ejects: the AWP's, Scout's and M3's, after the shot (ReGameDLL weapons.cpp, EjectBrassLate and
@@ -1129,7 +1133,7 @@ export function parseDemo(buffer, onProgress, opts = {}) {
     players, kills, rounds, bomb, chat, nades, roundTimes, pauses, hp: new Float32Array(hp), pack: new Float32Array(pack),
     occupants, brushEvents: new Float32Array(brushEvents), brushPose: new Float32Array(brushPose), viewers: hltvStatus, notes,
     times: new Float32Array(samples.t), slots,
-    finalScore: { ...scores }, models: resources.models, stride: STRIDE,
+    finalScore: { ...scores }, teamScores, models: resources.models, stride: STRIDE,
     pmodels, sounds: resources.sounds, events: resources.events, snds: new Float32Array(snds), shots: new Float32Array(shots), shotPunch: new Float32Array(shotPunch), booms: new Float32Array(booms), hitPoints: new Float32Array(hitPoints), brass: new Float32Array(brass), puffs: new Float32Array(puffs), radio, radioText, centre, corpses,
     errors, errSamples, health, c4drops: new Float32Array(c4drops), c4ents: new Float32Array(c4ents), glows: new Float32Array(glows), slow, stops, pings: new Float32Array(pings),
     ...(povData ? { povData } : {}),

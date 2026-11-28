@@ -173,6 +173,29 @@ function playSound(name, pos, vol, atten, pitch, key, L) {
 // first index in a flat, time-sorted array (stride n) with time > t
 function firstAfter(arr, n, t) { let lo = 0, hi = arr.length / n; while (lo < hi) { const m = (lo + hi) >> 1; if (arr[m * n] > t) hi = m; else lo = m + 1; } return lo; }
 function entPos(e, t) { if (e >= 1 && e <= 64) { const s = playerState(e, t); if (s) return [s.x, s.y, s.z]; } return null; }
+// POV mode: the sounds of his own gun's animations (0.28.3; Sujan, 28 Nov 2026): reload, draw, silencer on and off, the
+// AWP's and Scout's bolt, a grenade's pin. The server never sends a player these: his game plays them from the gun model's
+// own animation (studio event 5004, cs16-client's HUD_StudioEvent), and when it plays the demo back, from the animations it
+// wrote into it (demo frame type 7, D.wanims). So each animation he wrote plays its sounds at their frames, at the
+// listener, until his next written animation or another gun in his hands cuts it off, only while he's alive and in his
+// own view (not spectating). Returns [time, sound] between t0 (excluded) and t1.
+const GUNSND = { D: null, models: null, ready: new Set() };
+function povGunSoundsBetween(t0, t1) {
+  const W = D.wanims, out = []; if (!POV.on || !W || !W.length) return out;
+  // his guns' models and their sounds loaded ahead, so the first reload of each gun is heard
+  if (GUNSND.D !== D) { GUNSND.D = D; GUNSND.ready = new Set(); GUNSND.models = new Set(); const VM = D.vmodels || []; for (let i = 1; i < VM.length; i += 2) if (D.models[VM[i]]) GUNSND.models.add(D.models[VM[i]]); }
+  for (const n of GUNSND.models) if (!GUNSND.ready.has(n)) { const m = modelEntry(n); if (m.status === 'ok') { GUNSND.ready.add(n); for (const q of m.mdl.seqs) for (const [, s] of q.sounds) loadSound(s); } else if (m.status !== 'loading') GUNSND.ready.add(n); }
+  for (let k = firstAfter(W, 2, t0 - 8); k * 2 < W.length && W[k * 2] <= t1; k++) {
+    const s = W[k * 2], end = (k + 1) * 2 < W.length ? W[(k + 1) * 2] : Infinity; if (end <= t0) continue;
+    const name = povViewModel(s + 0.05), M2 = getModel(name), q = M2 && M2.mdl.seqs[W[k * 2 + 1]];
+    if (!q || !q.sounds.length) continue;
+    for (const [f, snd] of q.sounds) {
+      const te = s + f / (q.fps || 30);
+      if (te > t0 && te <= t1 && te < end && povObs(te)[0] === 0 && povViewModel(te) === name) out.push([te, snd]);
+    }
+  }
+  return out;
+}
 // play everything that happened between the last frame and now
 function soundTick(t0, t1) {
   if (!SND.on || !D || !D.snds || t1 <= t0 || t1 - t0 > 0.5 * Math.max(1, speed)) return;
@@ -208,6 +231,8 @@ function soundTick(t0, t1) {
     const o = i * 4; playSound('weapons/explode' + (3 + i % 3) + '.wav', [b[o + 1], b[o + 2], b[o + 3]], 1, 0.3, 100, null, L);
   }
   if (SND.sentences) for (const r of D.radio || []) if (r.t > t0 && r.t <= t1) { const p = SND.sentences[r.s.toUpperCase()]; if (p) playSound(p, null, 0.8, 0, 100, 'radio', L); }
+  // POV mode: his own gun's reload, draw and silencer, from the animations his game wrote (0.28.3)
+  if (!fast) for (const [, name] of povGunSoundsBetween(t0, t1)) playSound(name, null, 1, 0, 100, null, L);
   // the shells in Player's eyes landing, each sound where its shell hit (shotfx.js, 0.26.27)
   if (!fast) for (const [name, pos, vol] of fxShellSounds(t0, t1)) playSound(name, pos, vol, 0.8, 100, null, L);
 }

@@ -5,6 +5,7 @@
 //   - each click steps the zoom: none -> 1x -> 2x -> none
 //   - an AWP or Scout shot drops the zoom while the bolt cycles, then it comes back by itself at the same level
 //   - switching weapons, dying and a new round drop the zoom
+//   - moving faster than the gun allows scoped, after the scope came back by itself, means it never did (0.28.3, below)
 // Clicks are stamped to the demo's snapshot, about a tenth of a second.
 const SNIPERS = {
   awp: { fov: [90, 40, 10], bolt: 1.45 },
@@ -15,36 +16,67 @@ const SNIPERS = {
 // A zoom-in and its shot can land in the same snapshot; the scope then shows for this long before the
 // shot, and stays for this long after it, so the moment is visible instead of lasting zero frames.
 const SCOPE_MIN_SHOW = 0.1;
+// The speed rule (0.28.3; Sujan, 28 Nov 2026): scoped, an AWP, G3SG1 or SG550 moves at 150 units/s at most and a Scout at
+// 220 (ReGameDLL's GetMaxSpeed; 210 and 260 unscoped), so a player who moves faster on the ground over half a second isn't
+// scoped, whatever the clicks say. That's how a quick-switch too fast for the snapshots shows, the weapon away and back
+// between two of them: the scope that comes back by itself after the bolt never did (SK vs Na`Vi, Train, DreamHack Winter
+// 2011, R25 0:46, markeloff; Sujan, from his POV). Only for that scope: one he clicked open stays (on the 88 test demos a
+// player who just scoped in while running read up to 190 units/s for a moment, and warm-ups on some servers let scoped
+// players run at 210). Counted from FAST_SETTLE after the scope came back (he slows down), with FAST_MARGIN for the
+// snapshots' timing (they read 3 to 5% high), on the ground: his height within FAST_ARC of a straight line across the
+// half second, which lets slopes and stairs through and keeps jumps out; a step faster than FAST_GLITCH is a jump in the
+// recording, not running (Virtus.pro vs ALTERNATE aTTaX, Inferno, EM II, R20: 974 to 1,488).
+const SCOPED_SPEED = { awp: 150, g3sg1: 150, sg550: 150, scout: 220 };
+const FAST_WIN = 0.5, FAST_MARGIN = 1.12, FAST_SETTLE = 0.25, FAST_ARC = 12, FAST_GLITCH = 500;
 let ZOOM = {}; // slot -> { pts: [time, level, ...] }
 function buildZoom() {
   ZOOM = {};
   if (!D || !M) return;
   const zids = new Set(Object.keys(D.sounds || {}).filter((k) => /(^|\/)weapons\/zoom\.wav$/i.test(String(D.sounds[k]).replace(/\\/g, '/'))).map(Number));
   const S = D.stride, times = D.times, ev = [];
-  // order at the same moment: reset (0), weapon change (1), click (2), shot (3)
+  // order at the same moment: reset (0), weapon change (1), too fast to be scoped (1.5), click (2), shot (3)
   const sn = D.snds || [];
   for (let i = 0; i < sn.length; i += 10) if (zids.has(sn[i + 1])) ev.push([sn[i], sn[i + 2], 2]);
   const sh = fxShots(); // the fire events, and the AWP and Scout shots of the body animation in a demo that lost them (0.27.5)
   for (let i = 0; i < sh.length; i += 4) { const n = eventName(sh[i + 2]); if (SNIPERS[n]) ev.push([sh[i], sh[i + 1], 3, n]); }
+  const capOf = {}; // model index -> the gun's scoped top speed, or 0
   for (const e in D.slots) {
     const a = D.slots[e]; let w = -1, alive = false;
     for (let i = 0; i < times.length; i++) {
       const wi = a[i * S + 6], st = a[i * S + 5];
       if (wi !== w) { w = wi; ev.push([times[i], +e, 1, weaponShort(D.models[wi])]); }
       if ((st > 0) !== alive) { alive = st > 0; if (!alive) ev.push([times[i], +e, 0]); }
+      // moving faster than his gun allows scoped, over the half second up to this snapshot (the speed rule above)
+      const cap = capOf[wi] ?? (capOf[wi] = SCOPED_SPEED[weaponShort(D.models[wi])] || 0);
+      if (!cap || !(st > 0)) continue;
+      let j = i; while (j > 0 && times[i] - times[j - 1] <= FAST_WIN) j--;
+      const dt = times[i] - times[j]; if (dt < FAST_WIN * 0.6) continue;
+      const z0 = a[j * S + 2], z1 = a[i * S + 2]; let L = 0, ok = true;
+      for (let k = j + 1; k <= i && ok; k++) {
+        if (a[k * S + 6] !== wi || !(a[k * S + 5] > 0)) ok = false;
+        const step = Math.hypot(a[k * S] - a[(k - 1) * S], a[k * S + 1] - a[(k - 1) * S + 1]); L += step;
+        if (step > FAST_GLITCH * (times[k] - times[k - 1]) || Math.abs(a[k * S + 2] - (z0 + (z1 - z0) * (times[k] - times[j]) / dt)) > FAST_ARC) ok = false;
+      }
+      if (ok && L / dt > cap * FAST_MARGIN) ev.push([times[i], +e, 1.5, times[j]]);
     }
     for (const r of M.rounds) ev.push([r.start, +e, 0]);
   }
   ev.sort((x, y) => x[0] - y[0] || x[2] - y[2]);
   const st = {};
   for (const [t, e, kind, extra] of ev) {
-    const z = st[e] || (st[e] = { lvl: 0, w: '', resumeAt: null, resumeLvl: 0, inAt: null, inIdx: -1 });
+    // since: when the level last changed; fromResume: where in pts the scope came back by itself, while it's the level now
+    const z = st[e] || (st[e] = { lvl: 0, w: '', resumeAt: null, resumeLvl: 0, inAt: null, inIdx: -1, since: -Infinity, fromResume: -1 });
     const Z = ZOOM[e] || (ZOOM[e] = { pts: [] });
-    const set = (time, lvl) => { if (lvl === z.lvl) return; z.lvl = lvl; Z.pts.push(time, lvl); };
-    if (z.resumeAt != null && z.resumeAt <= t) { set(z.resumeAt, z.resumeLvl); z.resumeAt = null; z.inAt = null; }
+    const set = (time, lvl) => { if (lvl === z.lvl) return; z.lvl = lvl; z.since = time; z.fromResume = -1; Z.pts.push(time, lvl); };
+    if (z.resumeAt != null && z.resumeAt <= t) { const n = Z.pts.length; set(z.resumeAt, z.resumeLvl); if (Z.pts.length > n) z.fromResume = n; z.resumeAt = null; z.inAt = null; }
     if (kind === 0) { set(t, 0); z.resumeAt = null; z.inAt = null; }
     else if (kind === 1) { z.w = extra; set(t, 0); z.resumeAt = null; z.inAt = null; }
-    else if (kind === 2) {
+    else if (kind === 1.5) {
+      // too fast to be scoped, settled from FAST_SETTLE after it came back by itself: it never did (a quick-switch between
+      // two snapshots), so the scope stays closed from the shot
+      if (z.lvl === 0 || z.fromResume < 0 || z.fromResume !== Z.pts.length - 2 || extra < z.since + FAST_SETTLE) continue;
+      Z.pts.length = z.fromResume; z.lvl = 0; z.since = Z.pts.length ? Z.pts[Z.pts.length - 2] : -Infinity; z.fromResume = -1; z.inAt = null;
+    } else if (kind === 2) {
       if (!SNIPERS[z.w]) continue;
       let base = z.lvl;
       if (z.resumeAt != null) { base = z.resumeLvl; z.resumeAt = null; }
@@ -350,6 +382,16 @@ function posesAt(t) {
   return out;
 }
 // HLTV broadcast audience at time t (from the relay's status updates)
+// The score as the game showed it at t (0.28.3; Sujan, 28 Nov 2026), for the spectator bars and the Tab scoreboard: each
+// side's latest TeamScore, which the server sends at every round's end and every restart, so in that era it starts again
+// from 0 : 0 at halftime and at each overtime half (SK vs Na`Vi, Train, DreamHack Winter 2011: R16 and R31 read CT 0 : T 0).
+// The header keeps the match's score. null when the demo has none yet.
+function gameScoreAt(t) {
+  const L = D.teamScores; if (!L || !L.length) return null;
+  let tS = null, ctS = null;
+  for (let i = 0; i < L.length && L[i] <= t + 0.001; i += 3) { if (L[i + 1] === 1) tS = L[i + 2]; else ctS = L[i + 2]; }
+  return tS == null && ctS == null ? null : { T: tS || 0, CT: ctS || 0 };
+}
 function viewersAt(t) {
   const v = D.viewers; if (!v || !v.length) return null;
   let res = null;

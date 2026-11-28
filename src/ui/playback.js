@@ -177,11 +177,14 @@ function showScoreboard(v, auto = false) {
     const host = D.serverInfo && D.serverInfo.hostName ? D.serverInfo.hostName : 'Counter-Strike';
     let h = `<div class="gsb${listed.length > 24 ? ' dense' : ''}" style="--gsb-cols: ${grid}">`;
     h += row(cells('', `<b>${esc(host)}</b>`, '', 'HP', 'Weapon', 'Kills', 'Deaths', 'Latency'), 'title') + '<div class="oline"></div>';
-    for (const ti of [0, 1].sort((a, b) => sc[b] - sc[a])) {
+    // each side's score as the game showed it, its TeamScore (0.28.3; Sujan, 28 Nov 2026), 0 : 0 again at halftime and each
+    // overtime half; the side ahead on top, the match's score breaking a tie; the match's by side only in a demo with none
+    const gs = gameScoreAt(T), gsc = (ti) => (gs ? (tT === ti ? gs.T : gs.CT) : sc[ti]);
+    for (const ti of [0, 1].sort((a, b) => gsc(b) - gsc(a) || sc[b] - sc[a])) {
       const side = tT === ti ? 1 : 2, sd = side === 1 ? 't' : 'ct';
       const rows = now.filter((x) => x.side === side).map((x) => Object.assign(x, { s: st[x.pid] || { k: 0, d: 0 } })).sort((a, b) => b.s.k - a.s.k || a.s.d - b.s.d || (a.pid < b.pid ? -1 : 1));
       const ls = rows.map((x) => pingAt(x.e, T)).filter((v) => v != null), avg = ls.length ? ls.reduce((a, b) => a + b, 0) / ls.length : null;
-      h += row(cells('', `<b>${esc(M.tnames[ti])}</b><span class="gsep">·</span>${side === 1 ? 'Terrorists' : 'Counter-Terrorists'}<span class="gsep">-</span>${plural(rows.length, 'player')}`, '', '', '', `<b>${sc[ti]}</b>`, '', lat(avg)), 'th ' + sd);
+      h += row(cells('', `<b>${esc(M.tnames[ti])}</b><span class="gsep">·</span>${side === 1 ? 'Terrorists' : 'Counter-Terrorists'}<span class="gsep">-</span>${plural(rows.length, 'player')}`, '', '', '', `<b>${gsc(ti)}</b>`, '', lat(avg)), 'th ' + sd);
       h += `<div class="tline ${sd}"></div>`;
       for (const x of rows) {
         const alive = x.alive;
