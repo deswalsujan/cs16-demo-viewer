@@ -424,20 +424,22 @@ function drawGameChat(tg, t) {
 // "Spectators n" (the HLTV's viewers; in a POV demo while he's dead, his money, as the game, Sujan, 27 Nov 2026), and
 // the clock with the timer icon under it. Bottom, centred: the followed player's name and health in his team's colour.
 // While following a player in an HLTV demo (Player's eyes and Behind player; not the free camera, Sujan, 28 Nov 2026)
-// and while he spectates in a POV demo (0.26.30). The score is the match's, as the header's, which the bars replace.
+// and while he spectates in a POV demo (0.26.30). The score is the game's at that moment, each side's TeamScore (0.28.3;
+// Sujan, 28 Nov 2026), 0 : 0 again at halftime and each overtime half; the header keeps the match's.
 const HUD_BAR = 80;
-const HUDB = { on: false, px: -1, clock: '', bottom: '', nameW: 0, colRight: 0, shift: 0 }; // clock and bottom: the texts the bars show now; nameW: the bottom name's width in units
+const HUDB = { on: false, px: -1, clock: '', bottom: '', nameW: 0, colRight: 0, shift: 0, score: null }; // clock and bottom: the texts the bars show now; nameW: the bottom name's width in units
 function povBarsOn() { if (!POV.on || POV.mode === 0) return false; const [, tg] = povObs(POV.t); return !(tg === POV.v.rec && POV.mode !== 4) || false; }
 function hudBarsWanted() {
   if (!D || viewMode === '2d') return false;
   if (POV.on) return povBarsOn();
   return cam3.mode !== 'free' && !!selected && !!D.slots[selected];
 }
-// the viewer's own controls make room while the bars are up: no header score, the round pill "Round N" alone, the
-// camera buttons under the top bar, the bottom-left strip and the notes above the bottom bar (Sujan, 27 Nov 2026)
+// the viewer's own controls make room while the bars are up: the round pill "Round N" alone, the camera buttons under
+// the top bar, the bottom-left strip and the notes above the bottom bar (Sujan, 27 Nov 2026); the header keeps its
+// score (0.28.3; Sujan, 28 Nov 2026)
 function hudBarsClass(on, H) {
   const px = on ? Math.round(H * HUD_BAR / HUD_H) : 0, rad = $('radar');
-  if (on !== HUDB.on) { HUDB.on = on; rad.classList.toggle('bars', on); $('score').classList.toggle('bars', on); }
+  if (on !== HUDB.on) { HUDB.on = on; rad.classList.toggle('bars', on); }
   if (px !== HUDB.px) { HUDB.px = px; rad.style.setProperty('--bar-h', px + 'px'); }
   if (!on) hudStrip(false, 0, 0); // the strip back to the view's bottom left, in full (2D, a closed demo)
 }
@@ -447,8 +449,10 @@ function drawGameBars(tg, W, H) {
   if (!on) { HUDB.clock = HUDB.bottom = ''; HUDB.nameW = 0; hudStrip(false, W, H); return false; }
   hudLoadTimer();
   const P = hudScale(tg.canvas), Wu = P.Wu, t = tNow3, r = roundAt(t);
-  const sc = r ? (t >= (r.endT || r.end) && r.scoreAfter ? r.scoreAfter : r.scoreBefore) : [0, 0];
-  const tT = r && r.tTeam != null ? r.tTeam : 0, ctScore = sc[1 - tT], tScore = sc[tT];
+  // the game's score, each side's TeamScore (0.28.3); the match's by side only in a demo with none
+  const gs = gameScoreAt(t), sc = r ? (t >= (r.endT || r.end) && r.scoreAfter ? r.scoreAfter : r.scoreBefore) : [0, 0];
+  const tT = r && r.tTeam != null ? r.tTeam : 0, ctScore = gs ? gs.CT : sc[1 - tT], tScore = gs ? gs.T : sc[tT];
+  HUDB.score = [ctScore, tScore]; // for the checks
   // the clock as the round pill had it before the bars took it over: with Vanilla, "C4" alone after the plant, as the game
   // hides its timer then (0.26.16)
   const c = clockAt(t, true), clock = !c ? '' : VAN.on && c.phase === 'bomb' ? 'C4' : c.text.replace(/^freeze /, '');

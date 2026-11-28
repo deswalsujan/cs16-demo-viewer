@@ -4,6 +4,7 @@ What changed in the viewer, newest first. The version shows in the viewer's **He
 
 ## Versions
 
+- [0.28.3](#0283-2026-11-28) 2026-11-28: Scope, POV gun sounds, scores
 - [0.28.2](#0282-2026-11-28) 2026-11-28: Sharp HUD text, spectator count
 - [0.28.1](#0281-2026-11-28) 2026-11-28: Chat and radio, strip moved
 - [0.28.0](#0280-2026-11-28) 2026-11-28: Game-look kill feed, spectator bars
@@ -97,6 +98,31 @@ What changed in the viewer, newest first. The version shows in the viewer's **He
 - [0.3.0](#030-2026-09-30) 2026-09-30: First-person weapons
 - [0.2.0](#020-2026-09-30) 2026-09-30: Real models and sound
 - [0.1.0](#010-before-2026-09-30) before 2026-09-30: First version: radar, 3D, kills
+
+## 0.28.3 (2026-11-28)
+
+Sujan's answers of 28 Nov 2026 on `tests/logs/scope-reload-scores-2026-11-28.md` (`DECISIONS.md`), built on `wip/scope-sounds-scores` from origin/main (0.28.2, #75) with `notes/after-0.28.2` merged in.
+
+### Fixed
+- The AWP scope stayed open after a quick-switch the demo doesn't show: SK vs Na`Vi, Train, DreamHack Winter 2011, R25 0:44 to 0:27, markeloff in **Player's eyes** had his 2x scope back by itself after his 0:46 shot and kept it to his death, where in the game he switched weapon and back to skip the rechamber and his scope stayed closed (Sujan, from markeloff's POV). The switch fell between two snapshots, so the demo has no trace of it. The scope that comes back by itself after the bolt (the game's own rule, and players fire from it) now counts as never back once he moves faster on the ground than his gun allows scoped (AWP, G3SG1 and SG550 150 units/s, Scout 220; ReGameDLL's `GetMaxSpeed`), over half a second, from a quarter second after it came back. Slopes and stairs count as ground, jumps and position jumps in the recording don't; a scope he clicked open stays. The next click then opens 1x, as in the game (R25 0:56 read 2x up to 0.28.2).
+- In **POV mode** his own gun made no sound for reloads, draws or the silencer, for any gun (Sujan: the Glock's reload, in a POV demo of his). The server never sends a player these; his game plays them from the gun model's animation, and when it plays the demo back, from the animations it wrote into it. The viewer now does the same: each animation his game wrote plays its model's sounds at their frames (the Glock's reload: `clipout1`, `clipin1`, `sliderelease1`), while he's alive and in his own view, until his next animation or another gun cuts it off.
+
+### Changed
+- The top spectator bar and the Tab scoreboard show the score as the game showed it at that moment: each side's TeamScore, which starts again from 0 : 0 at halftime and at each overtime half (Sujan, 28 Nov 2026). SK vs Na`Vi, Train: R16 1:35 reads CT 0 : T 0 (10 : 5 up to 0.28.2), R31 1:34 CT 0 : T 0 (15 : 15), R32 1:41 CT 1 : T 0 (16 : 15). The Tab scoreboard puts the side ahead on top by that score, the match's breaking a tie.
+- The header always shows the match's score, also while the spectator bars are up (0.28.0 to 0.28.2 hid it then).
+- The reader keeps every TeamScore message with its time, and the model reader each sequence's sound events.
+
+### How it was tested
+- The scope on all 88 test demos, on the AWP shots whose spread proves them scoped: HLTV demos 2,727 shown scoped in 0.28.2, 2,732 now, 1 lost (kHRYSTAL, SK vs AGAiN, Train, Arbalet Cup Europe 2009, R9 0:30, where his clicks don't add up under either rule) and 6 gained; POV demos 905 and 905. The first build, the rule on clicked scopes too, lost 17 (warm-ups, scoped-in players still slowing down, position jumps) and was narrowed. markeloff's R25 1:02 and 0:44 fixed.
+- `hud_check.py` (34 of 34; three new checks of the score at R16 1:35, R31 1:34 and R32 1:41 of SK vs Na`Vi, Train; "no header score" while following became "the header's score"). His Glock reloads: 4 in Match 2's T file and 3 in Match 5, each `clipout1`, `clipin1` and `sliderelease1` once at the model's frames; every gun's sound found in the picked folder.
+- Screenshots of the header, top bar and Tab at R16 1:35, R31 1:34 and R32 1:41, and of R25 0:44 on markeloff, 0.28.2 against 0.28.3 at 1512x982 (`screenshots/0.28.3`).
+- The eleven release checks, 588 s: ten pass; `demo_search_check.py` failed one item on the load card in the full run and passed in full alone on the same commit (`ground_truth_check.py`: 246 kills and 52 scores and K-D on 64 demos, 0 mismatches, 10 known gaps; `people_check.py` 94 of 94). Full log: `tests/logs/0.28.3.md`.
+
+### Discussed, not changed
+- Sujan's first rule for the scope (every shot closes it, only a click opens it) would show 74 of 482 proven-scoped AWP shots unscoped in 11 test demos, since players fire from the scope that comes back by itself; he chose the speed rule (`tests/logs/scope-reload-scores-2026-11-28.md`).
+- A quick-switch followed by standing still has no speed to show it, so the scope still comes back there until his next click, shot or a switch the snapshots show.
+- The Glock's burst keeps one shot sound per burst (Sujan, 28 Nov 2026, as decided for 0.27.7).
+- Other players' reloads near the recorder (ReloadSound) aren't played (IDEAS.md, for later).
 
 ## 0.28.2 (2026-11-28)
 

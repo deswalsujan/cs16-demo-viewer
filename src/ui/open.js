@@ -73,7 +73,7 @@ const JOIN_GAP = 3; // seconds of nothing between two parts on the joined timeli
 function joinDemos(parts) {
   const S = parts[0].stride;
   const out = Object.assign({}, parts[0], {
-    kills: [], rounds: [], bomb: [], chat: [], nades: [], roundTimes: [], pauses: [], occupants: [], notes: [], radio: [], radioText: [], centre: [], corpses: [], viewers: [],
+    kills: [], rounds: [], bomb: [], chat: [], nades: [], roundTimes: [], pauses: [], occupants: [], notes: [], radio: [], radioText: [], centre: [], corpses: [], viewers: [], teamScores: [],
     models: Object.assign({}, parts[0].models), sounds: Object.assign({}, parts[0].sounds), events: Object.assign({}, parts[0].events), pmodels: parts[0].pmodels.slice(),
     players: {}, errors: 0, errSamples: [], parts: [], maps: parts[0].maps, health: null, slow: [], stops: [],
   });
@@ -124,6 +124,7 @@ function joinDemos(parts) {
     out.corpses.push(...P.corpses.map((c) => Object.assign({}, c, { t: sh(c.t), start: sh(c.start) })));
     out.nades.push(...P.nades.map((g) => { const pts = g.pts.slice(); for (let i = 0; i < pts.length; i += 4) pts[i] = sh(pts[i]); return Object.assign({}, g, { pts }); }));
     for (let i = 0; i < (P.viewers || []).length; i += 2) out.viewers.push(sh(P.viewers[i]), P.viewers[i + 1]);
+    for (let i = 0; i < (P.teamScores || []).length; i += 3) out.teamScores.push(sh(P.teamScores[i]), P.teamScores[i + 1], P.teamScores[i + 2]);
     const flat = (src, stride, fix, dst) => { const a = new Float32Array(src.length); for (let i = 0; i < src.length; i += stride) { for (let j = 0; j < stride; j++) a[i + j] = src[i + j]; fix(a, i); } dst.push(a); };
     flat(P.hp, 3, (a, i) => { a[i] = sh(a[i]); }, hpL);
     flat(P.pack || [], 3, (a, i) => { a[i] = sh(a[i]); }, packL);
