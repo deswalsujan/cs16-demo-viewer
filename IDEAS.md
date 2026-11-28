@@ -113,16 +113,16 @@ Everything raised in conversation that isn't finished, in one place. Each item s
 **Sujan's four items of 28 Nov 2026** (after #75 merged; Claude's report: `tests/logs/scope-reload-scores-2026-11-28.md`; nothing built until he approves)
 - [ ] **The AWP scope after a quick-switch the demo doesn't show** (Sujan, 28 Nov 2026)
   - Status: reported. SK vs Na`Vi, Train, DreamHack Winter 2011, R25 0:46: markeloff's switch away and back fell between two snapshots, so the viewer brings his 2x scope back by itself at 0:44 (the game's rule after the bolt) and keeps it to his death at 0:27. Sujan's rule (no coming back after the bolt, open only on a click) shows 74 of 482 proven-scoped AWP shots unscoped in 11 test demos; a speed rule (cancel the coming back when he then moves faster than a scoped AWP can) keeps all of them and fixes R25 0:44.
-  - Next step: Sujan picks the rule; then the same check on all 88 test demos (about 7 minutes, with his go) and the build.
-  - Decided so far: the quick-switch at R25 0:46, from markeloff's POV (Sujan, 28 Nov 2026; `DECISIONS.md`).
+  - Next step: building as 0.28.3 on `wip/scope-sounds-scores`: the speed rule tuned for slopes (R25 1:02 to 0:57), then the check on all 88 test demos.
+  - Decided so far: the quick-switch at R25 0:46, from markeloff's POV; the speed rule, not his own (Sujan, 28 Nov 2026; `DECISIONS.md`).
 - [ ] **His own gun's sounds in POV mode** (Sujan, 28 Nov 2026: in a POV demo he recorded, the Glock's reload sound doesn't play)
   - Status: reported. The server never sends a player his own reload sounds; his game plays them from the gun model's animation, and the viewer plays none of a gun model's sounds, so in **POV mode** every gun's reload, draw and silencer are silent. His Glock reloads are in Match 2 (T file) and Match 5, so his demo isn't needed.
-  - Next step: Sujan approves playing his gun model's own sounds in **POV mode**, as his game does when it plays the demo.
-  - Decided so far: nothing.
+  - Next step: building as 0.28.3 on `wip/scope-sounds-scores`; checked on his Glock reloads in Match 2's T file and Match 5.
+  - Decided so far: his gun model's sounds (reload, draw, silencer) in **POV mode**, for every gun (Sujan, 28 Nov 2026; `DECISIONS.md`).
 - [ ] **The score as the game showed it** (Sujan, 28 Nov 2026)
   - Status: reported, with screenshots of today's viewer at R16, R31 and R32 of SK vs Na`Vi, Train (TeamScore 0 : 0, 0 : 0 and CT 1 : T 0 there); nothing built.
-  - Next step: Sujan's approval, and whether he wants a mockup first.
-  - Decided so far: the header always shows the match total; the top bar and the Tab scoreboard show TeamScore at that moment (Sujan, 28 Nov 2026; `DECISIONS.md`).
+  - Next step: building as 0.28.3 on `wip/scope-sounds-scores`, no mockup.
+  - Decided so far: the header always shows the match total; the top bar and the Tab scoreboard show TeamScore at that moment; no mockup (Sujan, 28 Nov 2026; `DECISIONS.md`).
 - Done (28 Nov 2026): the Glock's burst sound, no change (Sujan; `DECISIONS.md`).
 - [ ] **Proven-scoped AWP shots read unscoped** (seen 28 Nov 2026 in the scope check; for later): 49 of 535 AWP shots whose spread proves them scoped read unscoped with any rule, with no click the viewer counts before them (the log, 1). Not looked into.
 - [ ] **Other players' reloads in POV demos** (seen 28 Nov 2026; for later): the server sends the recorder a ReloadSound message for each reload within 512 units of him (ReGameDLL's `ReloadSound`); the viewer doesn't read it.
